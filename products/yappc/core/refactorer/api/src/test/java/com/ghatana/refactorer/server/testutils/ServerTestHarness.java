@@ -50,207 +50,207 @@ public class ServerTestHarness implements AutoCloseable {
     private HttpServer httpServer;
     private int grpcPort;
     private int httpPort;
-    private final TestJobService testJobService = new TestJobService(); // GH-90000
-    private final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-    private final AtomicLong jobsSubmitted = new AtomicLong(); // GH-90000
-    private final AtomicLong jobsCancelled = new AtomicLong(); // GH-90000
+    private final TestJobService testJobService = new TestJobService(); 
+    private final ObjectMapper objectMapper = new ObjectMapper(); 
+    private final AtomicLong jobsSubmitted = new AtomicLong(); 
+    private final AtomicLong jobsCancelled = new AtomicLong(); 
 
-    public ServerTestHarness() { // GH-90000
-        // port assigned on start() // GH-90000
+    public ServerTestHarness() { 
+        // port assigned on start() 
     }
 
-    public ServerTestHarness start() throws IOException { // GH-90000
-        grpcPort = findAvailablePort(); // GH-90000
-        httpPort = findAvailablePort(); // GH-90000
+    public ServerTestHarness start() throws IOException { 
+        grpcPort = findAvailablePort(); 
+        httpPort = findAvailablePort(); 
 
         // Start gRPC server
-        FakePolyfixService fakeService = new FakePolyfixService(testJobService); // GH-90000
-        grpcServer = ServerBuilder.forPort(grpcPort) // GH-90000
-                .addService(fakeService) // GH-90000
-                .build() // GH-90000
-                .start(); // GH-90000
+        FakePolyfixService fakeService = new FakePolyfixService(testJobService); 
+        grpcServer = ServerBuilder.forPort(grpcPort) 
+                .addService(fakeService) 
+                .build() 
+                .start(); 
 
         // Start HTTP server for REST / SSE endpoints
-        httpServer = HttpServer.create(new InetSocketAddress(httpPort), 0); // GH-90000
-        httpServer.setExecutor(Executors.newFixedThreadPool(4)); // GH-90000
-        registerHttpEndpoints(); // GH-90000
-        httpServer.start(); // GH-90000
+        httpServer = HttpServer.create(new InetSocketAddress(httpPort), 0); 
+        httpServer.setExecutor(Executors.newFixedThreadPool(4)); 
+        registerHttpEndpoints(); 
+        httpServer.start(); 
 
         return this;
     }
 
-    public int getGrpcPort() { // GH-90000
+    public int getGrpcPort() { 
         return grpcPort;
     }
 
     /** Returns `host:port` string for gRPC channel targets. */
-    public String getGrpcAddress() { // GH-90000
+    public String getGrpcAddress() { 
         return "localhost:" + grpcPort;
     }
 
     /** Returns the HTTP port allocated for REST / streaming endpoints. */
-    public int getHttpPort() { // GH-90000
+    public int getHttpPort() { 
         return httpPort;
     }
 
-    /** Returns the HTTP base URL (e.g. `http://localhost:PORT`). */ // GH-90000
-    public String getHttpBaseUrl() { // GH-90000
+    /** Returns the HTTP base URL (e.g. `http://localhost:PORT`). */ 
+    public String getHttpBaseUrl() { 
         return "http://localhost:" + httpPort;
     }
 
     @Override
-    public void close() throws Exception { // GH-90000
-        if (httpServer != null) { // GH-90000
-            httpServer.stop(0); // GH-90000
+    public void close() throws Exception { 
+        if (httpServer != null) { 
+            httpServer.stop(0); 
         }
-        if (grpcServer != null) { // GH-90000
-            grpcServer.shutdownNow(); // GH-90000
-            grpcServer.awaitTermination(); // GH-90000
+        if (grpcServer != null) { 
+            grpcServer.shutdownNow(); 
+            grpcServer.awaitTermination(); 
         }
     }
 
-    private static int findAvailablePort() throws IOException { // GH-90000
-        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
-            return socket.getLocalPort(); // GH-90000
+    private static int findAvailablePort() throws IOException { 
+        try (ServerSocket socket = new ServerSocket(0)) { 
+            return socket.getLocalPort(); 
         }
     }
 
     /**
      * Returns the {@link TestJobService} backed by this harness.
      */
-    public TestJobService getJobService() { // GH-90000
+    public TestJobService getJobService() { 
         return testJobService;
     }
 
     // ---- HTTP endpoint registration ----
 
-    private void registerHttpEndpoints() { // GH-90000
-        httpServer.createContext("/api/v1/run", this::handleRun); // GH-90000
-        httpServer.createContext("/api/v1/jobs/", this::handleJobRoutes); // GH-90000
-        httpServer.createContext("/metrics", this::handleMetrics); // GH-90000
+    private void registerHttpEndpoints() { 
+        httpServer.createContext("/api/v1/run", this::handleRun); 
+        httpServer.createContext("/api/v1/jobs/", this::handleJobRoutes); 
+        httpServer.createContext("/metrics", this::handleMetrics); 
     }
 
-    private void handleRun(HttpExchange exchange) throws IOException { // GH-90000
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) { // GH-90000
-            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}"); // GH-90000
+    private void handleRun(HttpExchange exchange) throws IOException { 
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) { 
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}"); 
             return;
         }
-        try (InputStream is = exchange.getRequestBody()) { // GH-90000
-            RestModels.RunRequest req = objectMapper.readValue(is, RestModels.RunRequest.class); // GH-90000
-            String idempotencyKey = req.idempotencyKey(); // GH-90000
-            String jobId = "job-" + UUID.randomUUID(); // GH-90000
+        try (InputStream is = exchange.getRequestBody()) { 
+            RestModels.RunRequest req = objectMapper.readValue(is, RestModels.RunRequest.class); 
+            String idempotencyKey = req.idempotencyKey(); 
+            String jobId = "job-" + UUID.randomUUID(); 
 
-            Map<String, String> attrs = new java.util.HashMap<>(); // GH-90000
-            if (idempotencyKey != null) { // GH-90000
-                attrs.put("idempotencyKey", idempotencyKey); // GH-90000
+            Map<String, String> attrs = new java.util.HashMap<>(); 
+            if (idempotencyKey != null) { 
+                attrs.put("idempotencyKey", idempotencyKey); 
             }
-            testJobService.submit(jobId, attrs); // GH-90000
-            jobsSubmitted.incrementAndGet(); // GH-90000
+            testJobService.submit(jobId, attrs); 
+            jobsSubmitted.incrementAndGet(); 
 
-            String json = objectMapper.writeValueAsString(new RestModels.JobResponse(jobId)); // GH-90000
-            sendJson(exchange, 200, json); // GH-90000
+            String json = objectMapper.writeValueAsString(new RestModels.JobResponse(jobId)); 
+            sendJson(exchange, 200, json); 
         }
     }
 
     @SuppressWarnings("resource")
-    private void handleJobRoutes(HttpExchange exchange) throws IOException { // GH-90000
-        String path = exchange.getRequestURI().getPath(); // GH-90000
+    private void handleJobRoutes(HttpExchange exchange) throws IOException { 
+        String path = exchange.getRequestURI().getPath(); 
         // path pattern: /api/v1/jobs/{jobId}[/status|/report|/events]
-        String suffix = path.substring("/api/v1/jobs/".length()); // GH-90000
-        String[] parts = suffix.split("/", 2); // GH-90000
+        String suffix = path.substring("/api/v1/jobs/".length()); 
+        String[] parts = suffix.split("/", 2); 
         String jobId = parts[0];
         String action = parts.length > 1 ? parts[1] : "";
 
-        Optional<JobRecord> optRecord = testJobService.get(jobId); // GH-90000
+        Optional<JobRecord> optRecord = testJobService.get(jobId); 
 
-        if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod()) && action.isEmpty()) { // GH-90000
+        if ("DELETE".equalsIgnoreCase(exchange.getRequestMethod()) && action.isEmpty()) { 
             // Cancel
-            if (optRecord.isPresent()) { // GH-90000
-                JobRecord updated = optRecord.get().transition(JobState.CANCELLED, 0, null); // GH-90000
-                testJobService.store.put(jobId, updated); // GH-90000
-                jobsCancelled.incrementAndGet(); // GH-90000
-                sendJson(exchange, 200, objectMapper.writeValueAsString(toRunStatus(updated))); // GH-90000
+            if (optRecord.isPresent()) { 
+                JobRecord updated = optRecord.get().transition(JobState.CANCELLED, 0, null); 
+                testJobService.store.put(jobId, updated); 
+                jobsCancelled.incrementAndGet(); 
+                sendJson(exchange, 200, objectMapper.writeValueAsString(toRunStatus(updated))); 
             } else {
-                sendJson(exchange, 404, "{\"error\":\"not found\"}"); // GH-90000
+                sendJson(exchange, 404, "{\"error\":\"not found\"}"); 
             }
             return;
         }
 
-        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) { // GH-90000
-            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}"); // GH-90000
+        if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) { 
+            sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}"); 
             return;
         }
 
-        switch (action) { // GH-90000
+        switch (action) { 
             case "status" -> {
-                if (optRecord.isEmpty()) { // GH-90000
-                    sendJson(exchange, 404, "{\"error\":\"not found\"}"); // GH-90000
+                if (optRecord.isEmpty()) { 
+                    sendJson(exchange, 404, "{\"error\":\"not found\"}"); 
                     return;
                 }
-                sendJson(exchange, 200, objectMapper.writeValueAsString(toRunStatus(optRecord.get()))); // GH-90000
+                sendJson(exchange, 200, objectMapper.writeValueAsString(toRunStatus(optRecord.get()))); 
             }
             case "report" -> {
-                if (optRecord.isEmpty()) { // GH-90000
-                    sendJson(exchange, 404, "{\"error\":\"not found\"}"); // GH-90000
+                if (optRecord.isEmpty()) { 
+                    sendJson(exchange, 404, "{\"error\":\"not found\"}"); 
                     return;
                 }
-                JobRecord rec = optRecord.get(); // GH-90000
-                RestModels.Report report = new RestModels.Report( // GH-90000
-                        rec.jobId(), // GH-90000
-                        "{\"state\":\"" + rec.state().name() + "\"}", // GH-90000
+                JobRecord rec = optRecord.get(); 
+                RestModels.Report report = new RestModels.Report( 
+                        rec.jobId(), 
+                        "{\"state\":\"" + rec.state().name() + "\"}", 
                         null,
-                        rec.updatedAt()); // GH-90000
-                sendJson(exchange, 200, objectMapper.writeValueAsString(report)); // GH-90000
+                        rec.updatedAt()); 
+                sendJson(exchange, 200, objectMapper.writeValueAsString(report)); 
             }
             case "events" -> {
                 // SSE endpoint
-                exchange.getResponseHeaders().set("Content-Type", "text/event-stream"); // GH-90000
-                exchange.getResponseHeaders().set("Cache-Control", "no-cache"); // GH-90000
-                exchange.sendResponseHeaders(200, 0); // GH-90000
-                OutputStream os = exchange.getResponseBody(); // GH-90000
+                exchange.getResponseHeaders().set("Content-Type", "text/event-stream"); 
+                exchange.getResponseHeaders().set("Cache-Control", "no-cache"); 
+                exchange.sendResponseHeaders(200, 0); 
+                OutputStream os = exchange.getResponseBody(); 
                 String dataPrefix = "data: {\"jobId\":\"" + jobId + "\"";
-                os.write(("event: connected\n" + dataPrefix + "}\n\n").getBytes(StandardCharsets.UTF_8)); // GH-90000
-                os.write(("event: status\n" + dataPrefix + ",\"state\":\"QUEUED\"}\n\n").getBytes(StandardCharsets.UTF_8)); // GH-90000
-                os.write(("event: progress\n" + dataPrefix + ",\"pass\":1}\n\n").getBytes(StandardCharsets.UTF_8)); // GH-90000
-                os.write(("event: complete\n" + dataPrefix + "}\n\n").getBytes(StandardCharsets.UTF_8)); // GH-90000
-                os.flush(); // GH-90000
-                os.close(); // GH-90000
+                os.write(("event: connected\n" + dataPrefix + "}\n\n").getBytes(StandardCharsets.UTF_8)); 
+                os.write(("event: status\n" + dataPrefix + ",\"state\":\"QUEUED\"}\n\n").getBytes(StandardCharsets.UTF_8)); 
+                os.write(("event: progress\n" + dataPrefix + ",\"pass\":1}\n\n").getBytes(StandardCharsets.UTF_8)); 
+                os.write(("event: complete\n" + dataPrefix + "}\n\n").getBytes(StandardCharsets.UTF_8)); 
+                os.flush(); 
+                os.close(); 
             }
-            default -> sendJson(exchange, 404, "{\"error\":\"unknown route\"}"); // GH-90000
+            default -> sendJson(exchange, 404, "{\"error\":\"unknown route\"}"); 
         }
     }
 
-    private void handleMetrics(HttpExchange exchange) throws IOException { // GH-90000
+    private void handleMetrics(HttpExchange exchange) throws IOException { 
         String body = "# HELP polyfix_jobs_submitted_total Total submitted jobs\n"
                 + "# TYPE polyfix_jobs_submitted_total counter\n"
-                + "polyfix_jobs_submitted_total " + jobsSubmitted.get() + "\n" // GH-90000
+                + "polyfix_jobs_submitted_total " + jobsSubmitted.get() + "\n" 
                 + "# HELP polyfix_jobs_cancelled_total Total cancelled jobs\n"
                 + "# TYPE polyfix_jobs_cancelled_total counter\n"
-                + "polyfix_jobs_cancelled_total " + jobsCancelled.get() + "\n"; // GH-90000
-        exchange.getResponseHeaders().set("Content-Type", "text/plain"); // GH-90000
-        byte[] bytes = body.getBytes(StandardCharsets.UTF_8); // GH-90000
-        exchange.sendResponseHeaders(200, bytes.length); // GH-90000
-        exchange.getResponseBody().write(bytes); // GH-90000
-        exchange.getResponseBody().close(); // GH-90000
+                + "polyfix_jobs_cancelled_total " + jobsCancelled.get() + "\n"; 
+        exchange.getResponseHeaders().set("Content-Type", "text/plain"); 
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8); 
+        exchange.sendResponseHeaders(200, bytes.length); 
+        exchange.getResponseBody().write(bytes); 
+        exchange.getResponseBody().close(); 
     }
 
-    private void sendJson(HttpExchange exchange, int status, String json) throws IOException { // GH-90000
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8); // GH-90000
-        exchange.getResponseHeaders().set("Content-Type", "application/json"); // GH-90000
-        exchange.sendResponseHeaders(status, bytes.length); // GH-90000
-        exchange.getResponseBody().write(bytes); // GH-90000
-        exchange.getResponseBody().close(); // GH-90000
+    private void sendJson(HttpExchange exchange, int status, String json) throws IOException { 
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8); 
+        exchange.getResponseHeaders().set("Content-Type", "application/json"); 
+        exchange.sendResponseHeaders(status, bytes.length); 
+        exchange.getResponseBody().write(bytes); 
+        exchange.getResponseBody().close(); 
     }
 
-    private RestModels.RunStatus toRunStatus(JobRecord rec) { // GH-90000
-        return new RestModels.RunStatus( // GH-90000
-                rec.jobId(), // GH-90000
-                rec.state().name(), // GH-90000
-                rec.currentPass(), // GH-90000
-                rec.createdAt(), // GH-90000
-                rec.updatedAt(), // GH-90000
-                rec.attributes(), // GH-90000
-                rec.errorMessage()); // GH-90000
+    private RestModels.RunStatus toRunStatus(JobRecord rec) { 
+        return new RestModels.RunStatus( 
+                rec.jobId(), 
+                rec.state().name(), 
+                rec.currentPass(), 
+                rec.createdAt(), 
+                rec.updatedAt(), 
+                rec.attributes(), 
+                rec.errorMessage()); 
     }
 
     /**
@@ -258,22 +258,22 @@ public class ServerTestHarness implements AutoCloseable {
      */
     public class TestJobService {
 
-        final Map<String, JobRecord> store = new ConcurrentHashMap<>(); // GH-90000
+        final Map<String, JobRecord> store = new ConcurrentHashMap<>(); 
 
         /**
          * Creates and stores a {@link JobRecord}
          * using the given idempotency key as the job id.
          */
-        public JobRecord submit(String jobId, Map<String, ?> attributes) { // GH-90000
+        public JobRecord submit(String jobId, Map<String, ?> attributes) { 
             @SuppressWarnings("unchecked")
-            Map<String, String> attrs = (Map<String, String>) (Map<?, ?>) attributes; // GH-90000
-            JobRecord record = JobRecord.newQueued(jobId, "test-tenant", attrs); // GH-90000
-            store.put(jobId, record); // GH-90000
+            Map<String, String> attrs = (Map<String, String>) (Map<?, ?>) attributes; 
+            JobRecord record = JobRecord.newQueued(jobId, "test-tenant", attrs); 
+            store.put(jobId, record); 
             return record;
         }
 
-        public Optional<JobRecord> get(String jobId) { // GH-90000
-            return Optional.ofNullable(store.get(jobId)); // GH-90000
+        public Optional<JobRecord> get(String jobId) { 
+            return Optional.ofNullable(store.get(jobId)); 
         }
     }
 
@@ -285,125 +285,125 @@ public class ServerTestHarness implements AutoCloseable {
             extends PolyfixServiceGrpc.PolyfixServiceImplBase {
 
         private final TestJobService jobService;
-        private final Map<String, RunStatus> grpcJobs = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, RunStatus> grpcJobs = new ConcurrentHashMap<>(); 
 
-        FakePolyfixService(TestJobService jobService) { // GH-90000
+        FakePolyfixService(TestJobService jobService) { 
             this.jobService = jobService;
         }
 
         @Override
-        public void run(RunRequest request, StreamObserver<JobId> responseObserver) { // GH-90000
-            String jobId = "job-" + UUID.randomUUID(); // GH-90000
-            Map<String, String> attrs = new java.util.HashMap<>(); // GH-90000
-            String idempotencyKey = request.getIdempotencyKey(); // GH-90000
-            if (idempotencyKey != null && !idempotencyKey.isEmpty()) { // GH-90000
-                attrs.put("idempotencyKey", idempotencyKey); // GH-90000
+        public void run(RunRequest request, StreamObserver<JobId> responseObserver) { 
+            String jobId = "job-" + UUID.randomUUID(); 
+            Map<String, String> attrs = new java.util.HashMap<>(); 
+            String idempotencyKey = request.getIdempotencyKey(); 
+            if (idempotencyKey != null && !idempotencyKey.isEmpty()) { 
+                attrs.put("idempotencyKey", idempotencyKey); 
             }
 
-            RunStatus status = RunStatus.newBuilder() // GH-90000
-                    .setJobId(jobId) // GH-90000
+            RunStatus status = RunStatus.newBuilder() 
+                    .setJobId(jobId) 
                     .setState("QUEUED")
-                    .setPass(0) // GH-90000
-                    .setStartedAt(String.valueOf(System.currentTimeMillis())) // GH-90000
-                    .setUpdatedAt(String.valueOf(System.currentTimeMillis())) // GH-90000
-                    .putAllToolVersions(attrs) // GH-90000
-                    .build(); // GH-90000
-            grpcJobs.put(jobId, status); // GH-90000
+                    .setPass(0) 
+                    .setStartedAt(String.valueOf(System.currentTimeMillis())) 
+                    .setUpdatedAt(String.valueOf(System.currentTimeMillis())) 
+                    .putAllToolVersions(attrs) 
+                    .build(); 
+            grpcJobs.put(jobId, status); 
 
             // Also register in the shared test job service
-            jobService.submit(jobId, attrs); // GH-90000
+            jobService.submit(jobId, attrs); 
 
-            responseObserver.onNext(JobId.newBuilder().setId(jobId).build()); // GH-90000
-            responseObserver.onCompleted(); // GH-90000
+            responseObserver.onNext(JobId.newBuilder().setId(jobId).build()); 
+            responseObserver.onCompleted(); 
         }
 
         @Override
-        public void getStatus(JobId request, StreamObserver<RunStatus> responseObserver) { // GH-90000
-            RunStatus status = grpcJobs.get(request.getId()); // GH-90000
-            if (status != null) { // GH-90000
-                responseObserver.onNext(status); // GH-90000
-                responseObserver.onCompleted(); // GH-90000
+        public void getStatus(JobId request, StreamObserver<RunStatus> responseObserver) { 
+            RunStatus status = grpcJobs.get(request.getId()); 
+            if (status != null) { 
+                responseObserver.onNext(status); 
+                responseObserver.onCompleted(); 
             } else {
-                responseObserver.onError( // GH-90000
+                responseObserver.onError( 
                         io.grpc.Status.NOT_FOUND
-                                .withDescription("Job not found: " + request.getId()) // GH-90000
-                                .asRuntimeException()); // GH-90000
+                                .withDescription("Job not found: " + request.getId()) 
+                                .asRuntimeException()); 
             }
         }
 
         @Override
-        public void getReport(JobId request, StreamObserver<Report> responseObserver) { // GH-90000
-            RunStatus status = grpcJobs.get(request.getId()); // GH-90000
-            if (status != null) { // GH-90000
-                responseObserver.onNext( // GH-90000
-                        Report.newBuilder() // GH-90000
-                                .setJobId(status.getJobId()) // GH-90000
-                                .setSummaryJson("{\"state\":\"" + status.getState() + "\"}") // GH-90000
-                                .setGeneratedAt(String.valueOf(System.currentTimeMillis())) // GH-90000
-                                .build()); // GH-90000
-                responseObserver.onCompleted(); // GH-90000
+        public void getReport(JobId request, StreamObserver<Report> responseObserver) { 
+            RunStatus status = grpcJobs.get(request.getId()); 
+            if (status != null) { 
+                responseObserver.onNext( 
+                        Report.newBuilder() 
+                                .setJobId(status.getJobId()) 
+                                .setSummaryJson("{\"state\":\"" + status.getState() + "\"}") 
+                                .setGeneratedAt(String.valueOf(System.currentTimeMillis())) 
+                                .build()); 
+                responseObserver.onCompleted(); 
             } else {
-                responseObserver.onError( // GH-90000
+                responseObserver.onError( 
                         io.grpc.Status.NOT_FOUND
-                                .withDescription("Job not found: " + request.getId()) // GH-90000
-                                .asRuntimeException()); // GH-90000
+                                .withDescription("Job not found: " + request.getId()) 
+                                .asRuntimeException()); 
             }
         }
 
         @Override
-        public void streamProgress(JobId request, StreamObserver<ProgressEvent> responseObserver) { // GH-90000
-            RunStatus status = grpcJobs.get(request.getId()); // GH-90000
-            if (status == null) { // GH-90000
-                responseObserver.onError( // GH-90000
+        public void streamProgress(JobId request, StreamObserver<ProgressEvent> responseObserver) { 
+            RunStatus status = grpcJobs.get(request.getId()); 
+            if (status == null) { 
+                responseObserver.onError( 
                         io.grpc.Status.NOT_FOUND
-                                .withDescription("Job not found: " + request.getId()) // GH-90000
-                                .asRuntimeException()); // GH-90000
+                                .withDescription("Job not found: " + request.getId()) 
+                                .asRuntimeException()); 
                 return;
             }
             // Emit 3 progress events
-            for (int i = 1; i <= 3; i++) { // GH-90000
-                responseObserver.onNext( // GH-90000
-                        ProgressEvent.newBuilder() // GH-90000
-                                .setJobId(request.getId()) // GH-90000
+            for (int i = 1; i <= 3; i++) { 
+                responseObserver.onNext( 
+                        ProgressEvent.newBuilder() 
+                                .setJobId(request.getId()) 
                                 .setEventType("progress")
-                                .setMessage("Processing pass " + i) // GH-90000
-                                .setCurrentPass(i) // GH-90000
-                                .setTotalPasses(3) // GH-90000
-                                .setTimestamp(System.currentTimeMillis()) // GH-90000
-                                .build()); // GH-90000
+                                .setMessage("Processing pass " + i) 
+                                .setCurrentPass(i) 
+                                .setTotalPasses(3) 
+                                .setTimestamp(System.currentTimeMillis()) 
+                                .build()); 
             }
-            responseObserver.onCompleted(); // GH-90000
+            responseObserver.onCompleted(); 
         }
 
         @Override
-        public void health(HealthRequest request, StreamObserver<HealthResponse> responseObserver) { // GH-90000
-            responseObserver.onNext( // GH-90000
-                    HealthResponse.newBuilder() // GH-90000
+        public void health(HealthRequest request, StreamObserver<HealthResponse> responseObserver) { 
+            responseObserver.onNext( 
+                    HealthResponse.newBuilder() 
                             .setStatus("UP")
-                            .setTimestamp(System.currentTimeMillis()) // GH-90000
-                            .build()); // GH-90000
-            responseObserver.onCompleted(); // GH-90000
+                            .setTimestamp(System.currentTimeMillis()) 
+                            .build()); 
+            responseObserver.onCompleted(); 
         }
 
         @Override
-        public void diagnose( // GH-90000
+        public void diagnose( 
                 DiagnoseRequest request, StreamObserver<DiagnoseResponse> responseObserver) {
-            responseObserver.onNext( // GH-90000
-                    DiagnoseResponse.newBuilder() // GH-90000
-                            .setExecutionId("exec-" + UUID.randomUUID()) // GH-90000
-                            .setTimestamp(System.currentTimeMillis()) // GH-90000
-                            .addDiagnostics( // GH-90000
-                                    UnifiedDiagnostic.newBuilder() // GH-90000
+            responseObserver.onNext( 
+                    DiagnoseResponse.newBuilder() 
+                            .setExecutionId("exec-" + UUID.randomUUID()) 
+                            .setTimestamp(System.currentTimeMillis()) 
+                            .addDiagnostics( 
+                                    UnifiedDiagnostic.newBuilder() 
                                             .setTool("fake-tool")
                                             .setRule("fake-rule")
                                             .setMessage("Fake diagnostic")
-                                            .setFile(request.getRepoRoot() + "/Test.java") // GH-90000
-                                            .setLine(1) // GH-90000
-                                            .setColumn(1) // GH-90000
+                                            .setFile(request.getRepoRoot() + "/Test.java") 
+                                            .setLine(1) 
+                                            .setColumn(1) 
                                             .setSeverity("WARNING")
-                                            .build()) // GH-90000
-                            .build()); // GH-90000
-            responseObserver.onCompleted(); // GH-90000
+                                            .build()) 
+                            .build()); 
+            responseObserver.onCompleted(); 
         }
     }
 }

@@ -33,42 +33,42 @@ class IntakeStepTest extends EventloopTestBase {
   private IntakeStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new IntakeStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new IntakeStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("architecture.intake");
   }
 
   @Test
   @DisplayName("Should load requirements baseline and initiate architecture phase")
-  void shouldInitiateArchitecturePhase() { // GH-90000
+  void shouldInitiateArchitecturePhase() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("baselineId", "req-baseline-001"); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("baselineId", "req-baseline-001"); 
 
     Map<String, Object> baseline =
-        Map.of( // GH-90000
+        Map.of( 
             "baselineId", "req-baseline-001",
             "status", "PUBLISHED",
             "requirementId", "req-001",
             "version", "1.0",
-            "requirements", List.of()); // GH-90000
+            "requirements", List.of()); 
     when(dbClient.query(eq("requirements_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+        .thenReturn(Promise.of(List.of(baseline))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("baselineId")).isEqualTo("req-baseline-001");
   }
 }

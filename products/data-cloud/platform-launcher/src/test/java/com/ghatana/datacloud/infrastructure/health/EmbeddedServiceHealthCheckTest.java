@@ -26,16 +26,16 @@ import static org.mockito.Mockito.when;
  * 
  * <p>This test suite covers health checks for:
  * <ul>
- *   <li>Redis (key-value store, cache)</li> // GH-90000
- *   <li>OpenSearch (search and analytics)</li> // GH-90000
- *   <li>ClickHouse (time-series data)</li> // GH-90000
- *   <li>BlobStorage (object storage)</li> // GH-90000
+ *   <li>Redis (key-value store, cache)</li> 
+ *   <li>OpenSearch (search and analytics)</li> 
+ *   <li>ClickHouse (time-series data)</li> 
+ *   <li>BlobStorage (object storage)</li> 
  * </ul>
  * 
  * <p>Note: Database health checks are already covered in DatabaseHealthCheckTest.java
  */
 @DisplayName("Embedded Service Health Check Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
     @Mock
@@ -56,73 +56,73 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("readiness returns true when PING succeeds")
-        void redisReadinessReturnsTrueWhenHealthy() { // GH-90000
-            when(redisClient.connect()).thenReturn(connection); // GH-90000
-            when(connection.sync()).thenReturn(commands); // GH-90000
+        void redisReadinessReturnsTrueWhenHealthy() { 
+            when(redisClient.connect()).thenReturn(connection); 
+            when(connection.sync()).thenReturn(commands); 
             when(commands.ping()).thenReturn("PONG");
 
-            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
+            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isTrue(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.UP); // GH-90000
-            assertThat(healthCheck.getLastLatencyMs()).isGreaterThanOrEqualTo(0L); // GH-90000
-            verify(metricsCollector).recordTimer(anyString(), anyLong()); // GH-90000
+            assertThat(ready).isTrue(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.UP); 
+            assertThat(healthCheck.getLastLatencyMs()).isGreaterThanOrEqualTo(0L); 
+            verify(metricsCollector).recordTimer(anyString(), anyLong()); 
         }
 
         @Test
         @DisplayName("readiness returns false when PING fails")
-        void redisReadinessReturnsFalseWhenDown() { // GH-90000
+        void redisReadinessReturnsFalseWhenDown() { 
             when(redisClient.connect()).thenThrow(new IllegalStateException("Redis unavailable"));
 
-            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
+            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isFalse(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.DOWN); // GH-90000
+            assertThat(ready).isFalse(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.DOWN); 
         }
 
         @Test
         @DisplayName("liveness returns true when Redis is degraded")
-        void redisLivenessReturnsTrueWhenDegraded() { // GH-90000
-            when(redisClient.connect()).thenReturn(connection); // GH-90000
-            when(connection.sync()).thenReturn(commands); // GH-90000
-            when(commands.ping()).thenAnswer(invocation -> { // GH-90000
-                Thread.sleep(10L); // GH-90000
+        void redisLivenessReturnsTrueWhenDegraded() { 
+            when(redisClient.connect()).thenReturn(connection); 
+            when(connection.sync()).thenReturn(commands); 
+            when(commands.ping()).thenAnswer(invocation -> { 
+                Thread.sleep(10L); 
                 return "PONG";
             });
 
-            RedisHealthCheck healthCheck = new RedisHealthCheck( // GH-90000
+            RedisHealthCheck healthCheck = new RedisHealthCheck( 
                 redisClient,
                 metricsCollector,
-                RedisHealthCheck.RedisHealthCheckConfig.builder() // GH-90000
-                    .degradedThresholdMs(1L) // GH-90000
-                    .build() // GH-90000
+                RedisHealthCheck.RedisHealthCheckConfig.builder() 
+                    .degradedThresholdMs(1L) 
+                    .build() 
             );
 
-            Boolean live = runPromise(healthCheck::checkLiveness); // GH-90000
+            Boolean live = runPromise(healthCheck::checkLiveness); 
 
-            assertThat(live).isTrue(); // GH-90000
+            assertThat(live).isTrue(); 
             // checkLiveness should set the status, so this should now work
-            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.DEGRADED); // GH-90000
+            assertThat(healthCheck.getLastStatus()).isEqualTo(RedisHealthCheck.HealthStatus.DEGRADED); 
         }
 
         @Test
         @DisplayName("health response includes Redis details")
-        void redisHealthResponseIncludesDetails() { // GH-90000
-            when(redisClient.connect()).thenReturn(connection); // GH-90000
-            when(connection.sync()).thenReturn(commands); // GH-90000
+        void redisHealthResponseIncludesDetails() { 
+            when(redisClient.connect()).thenReturn(connection); 
+            when(connection.sync()).thenReturn(commands); 
             when(commands.ping()).thenReturn("PONG");
 
-            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); // GH-90000
+            RedisHealthCheck healthCheck = new RedisHealthCheck(redisClient, metricsCollector); 
 
-            runPromise(healthCheck::checkReadiness); // GH-90000
-            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); // GH-90000
+            runPromise(healthCheck::checkReadiness); 
+            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); 
 
-            assertThat(details).containsEntry("status", "UP"); // GH-90000
-            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "redis"); // GH-90000
+            assertThat(details).containsEntry("status", "UP"); 
+            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "redis"); 
             assertThat(details.get("redis")).isInstanceOf(Map.class);
         }
     }
@@ -136,65 +136,65 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("readiness returns true when cluster is green")
-        void openSearchReadinessReturnsTrueWhenHealthy() { // GH-90000
-            when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
+        void openSearchReadinessReturnsTrueWhenHealthy() { 
+            when(openSearchClient.clusterHealth()).thenReturn(Map.of( 
                 "status", "green",
                 "number_of_nodes", 3
             ));
 
-            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); // GH-90000
+            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isTrue(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.UP); // GH-90000
+            assertThat(ready).isTrue(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.UP); 
         }
 
         @Test
         @DisplayName("readiness returns false when cluster is red")
-        void openSearchReadinessReturnsFalseWhenDown() { // GH-90000
+        void openSearchReadinessReturnsFalseWhenDown() { 
             when(openSearchClient.clusterHealth()).thenThrow(new IllegalStateException("OpenSearch unavailable"));
 
-            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); // GH-90000
+            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isFalse(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.DOWN); // GH-90000
+            assertThat(ready).isFalse(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.DOWN); 
         }
 
         @Test
         @DisplayName("readiness returns true when cluster is yellow (degraded)")
-        void openSearchReadinessReturnsTrueWhenDegraded() { // GH-90000
-            when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
+        void openSearchReadinessReturnsTrueWhenDegraded() { 
+            when(openSearchClient.clusterHealth()).thenReturn(Map.of( 
                 "status", "yellow",
                 "number_of_nodes", 3
             ));
 
-            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); // GH-90000
+            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isTrue(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.DEGRADED); // GH-90000
+            assertThat(ready).isTrue(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(OpenSearchHealthCheck.HealthStatus.DEGRADED); 
         }
 
         @Test
         @DisplayName("health response includes OpenSearch cluster details")
-        void openSearchHealthResponseIncludesDetails() { // GH-90000
-            when(openSearchClient.clusterHealth()).thenReturn(Map.of( // GH-90000
+        void openSearchHealthResponseIncludesDetails() { 
+            when(openSearchClient.clusterHealth()).thenReturn(Map.of( 
                 "status", "green",
                 "number_of_nodes", 3,
                 "active_shards", 15
             ));
 
-            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); // GH-90000
+            OpenSearchHealthCheck healthCheck = new OpenSearchHealthCheck(openSearchClient, metricsCollector); 
 
-            runPromise(healthCheck::checkReadiness); // GH-90000
-            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); // GH-90000
+            runPromise(healthCheck::checkReadiness); 
+            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); 
 
-            assertThat(details).containsEntry("status", "UP"); // GH-90000
-            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "opensearch"); // GH-90000
+            assertThat(details).containsEntry("status", "UP"); 
+            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "opensearch"); 
         }
     }
 
@@ -207,42 +207,42 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("readiness returns true when query succeeds")
-        void clickHouseReadinessReturnsTrueWhenHealthy() { // GH-90000
+        void clickHouseReadinessReturnsTrueWhenHealthy() { 
             when(clickHouseClient.execute("SELECT 1")).thenReturn(1L);
 
-            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
+            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isTrue(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(ClickHouseHealthCheck.HealthStatus.UP); // GH-90000
+            assertThat(ready).isTrue(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(ClickHouseHealthCheck.HealthStatus.UP); 
         }
 
         @Test
         @DisplayName("readiness returns false when query fails")
-        void clickHouseReadinessReturnsFalseWhenDown() { // GH-90000
+        void clickHouseReadinessReturnsFalseWhenDown() { 
             when(clickHouseClient.execute("SELECT 1")).thenThrow(new IllegalStateException("ClickHouse unavailable"));
 
-            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
+            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); 
 
-            Boolean ready = runPromise(healthCheck::checkReadiness); // GH-90000
+            Boolean ready = runPromise(healthCheck::checkReadiness); 
 
-            assertThat(ready).isFalse(); // GH-90000
-            assertThat(healthCheck.getLastStatus()).isEqualTo(ClickHouseHealthCheck.HealthStatus.DOWN); // GH-90000
+            assertThat(ready).isFalse(); 
+            assertThat(healthCheck.getLastStatus()).isEqualTo(ClickHouseHealthCheck.HealthStatus.DOWN); 
         }
 
         @Test
         @DisplayName("health response includes ClickHouse details")
-        void clickHouseHealthResponseIncludesDetails() { // GH-90000
+        void clickHouseHealthResponseIncludesDetails() { 
             when(clickHouseClient.execute("SELECT 1")).thenReturn(1L);
 
-            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); // GH-90000
+            ClickHouseHealthCheck healthCheck = new ClickHouseHealthCheck(clickHouseClient, metricsCollector); 
 
-            runPromise(healthCheck::checkReadiness); // GH-90000
-            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); // GH-90000
+            runPromise(healthCheck::checkReadiness); 
+            Map<String, Object> details = runPromise(healthCheck::getHealthDetails); 
 
-            assertThat(details).containsEntry("status", "UP"); // GH-90000
-            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "clickhouse"); // GH-90000
+            assertThat(details).containsEntry("status", "UP"); 
+            assertThat(details).containsKeys("timestamp", "latency_ms", "last_check", "clickhouse"); 
         }
     }
 
@@ -254,63 +254,63 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         private HealthStatus lastStatus;
         private long lastLatencyMs;
 
-        public RedisHealthCheck(RedisClient redisClient, MetricsCollector metricsCollector) { // GH-90000
-            this(redisClient, metricsCollector, RedisHealthCheckConfig.builder().build()); // GH-90000
+        public RedisHealthCheck(RedisClient redisClient, MetricsCollector metricsCollector) { 
+            this(redisClient, metricsCollector, RedisHealthCheckConfig.builder().build()); 
         }
 
-        public RedisHealthCheck(RedisClient redisClient, MetricsCollector metricsCollector, RedisHealthCheckConfig config) { // GH-90000
+        public RedisHealthCheck(RedisClient redisClient, MetricsCollector metricsCollector, RedisHealthCheckConfig config) { 
             this.redisClient = redisClient;
             this.metricsCollector = metricsCollector;
             this.config = config;
         }
 
-        public Promise<Boolean> checkReadiness() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
+        public Promise<Boolean> checkReadiness() { 
+            long start = System.currentTimeMillis(); 
             try {
-                StatefulRedisConnection<String, String> conn = redisClient.connect(); // GH-90000
-                String result = conn.sync().ping(); // GH-90000
-                long latency = System.currentTimeMillis() - start; // GH-90000
+                StatefulRedisConnection<String, String> conn = redisClient.connect(); 
+                String result = conn.sync().ping(); 
+                long latency = System.currentTimeMillis() - start; 
                 this.lastLatencyMs = latency;
                 this.lastStatus = latency > config.degradedThresholdMs ? HealthStatus.DEGRADED : HealthStatus.UP;
-                metricsCollector.recordTimer("redis.health.check.latency", latency); // GH-90000
-                return Promise.of(true); // GH-90000
-            } catch (Exception e) { // GH-90000
+                metricsCollector.recordTimer("redis.health.check.latency", latency); 
+                return Promise.of(true); 
+            } catch (Exception e) { 
                 this.lastStatus = HealthStatus.DOWN;
-                return Promise.of(false); // GH-90000
+                return Promise.of(false); 
             }
         }
 
-        public Promise<Boolean> checkLiveness() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
+        public Promise<Boolean> checkLiveness() { 
+            long start = System.currentTimeMillis(); 
             try {
-                StatefulRedisConnection<String, String> conn = redisClient.connect(); // GH-90000
-                String result = conn.sync().ping(); // GH-90000
-                long latency = System.currentTimeMillis() - start; // GH-90000
+                StatefulRedisConnection<String, String> conn = redisClient.connect(); 
+                String result = conn.sync().ping(); 
+                long latency = System.currentTimeMillis() - start; 
                 this.lastLatencyMs = latency;
                 this.lastStatus = latency > config.degradedThresholdMs ? HealthStatus.DEGRADED : HealthStatus.UP;
-                metricsCollector.recordTimer("redis.health.check.latency", latency); // GH-90000
-                return Promise.of(true); // GH-90000
-            } catch (Exception e) { // GH-90000
+                metricsCollector.recordTimer("redis.health.check.latency", latency); 
+                return Promise.of(true); 
+            } catch (Exception e) { 
                 this.lastStatus = HealthStatus.DOWN;
-                return Promise.of(false); // GH-90000
+                return Promise.of(false); 
             }
         }
 
-        public Promise<Map<String, Object>> getHealthDetails() { // GH-90000
-            return Promise.of(Map.of( // GH-90000
-                "status", lastStatus.name(), // GH-90000
-                "timestamp", System.currentTimeMillis(), // GH-90000
+        public Promise<Map<String, Object>> getHealthDetails() { 
+            return Promise.of(Map.of( 
+                "status", lastStatus.name(), 
+                "timestamp", System.currentTimeMillis(), 
                 "latency_ms", lastLatencyMs,
-                "last_check", System.currentTimeMillis(), // GH-90000
-                "redis", Map.of("connected", lastStatus != HealthStatus.DOWN) // GH-90000
+                "last_check", System.currentTimeMillis(), 
+                "redis", Map.of("connected", lastStatus != HealthStatus.DOWN) 
             ));
         }
 
-        public HealthStatus getLastStatus() { // GH-90000
+        public HealthStatus getLastStatus() { 
             return lastStatus;
         }
 
-        public long getLastLatencyMs() { // GH-90000
+        public long getLastLatencyMs() { 
             return lastLatencyMs;
         }
 
@@ -319,28 +319,28 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         static class RedisHealthCheckConfig {
             private final long degradedThresholdMs;
 
-            private RedisHealthCheckConfig(long degradedThresholdMs) { // GH-90000
+            private RedisHealthCheckConfig(long degradedThresholdMs) { 
                 this.degradedThresholdMs = degradedThresholdMs;
             }
 
-            public static Builder builder() { // GH-90000
-                return new Builder(); // GH-90000
+            public static Builder builder() { 
+                return new Builder(); 
             }
 
-            public long degradedThresholdMs() { // GH-90000
+            public long degradedThresholdMs() { 
                 return degradedThresholdMs;
             }
 
             static class Builder {
                 private long degradedThresholdMs = 1000L;
 
-                public Builder degradedThresholdMs(long degradedThresholdMs) { // GH-90000
+                public Builder degradedThresholdMs(long degradedThresholdMs) { 
                     this.degradedThresholdMs = degradedThresholdMs;
                     return this;
                 }
 
-                public RedisHealthCheckConfig build() { // GH-90000
-                    return new RedisHealthCheckConfig(degradedThresholdMs); // GH-90000
+                public RedisHealthCheckConfig build() { 
+                    return new RedisHealthCheckConfig(degradedThresholdMs); 
                 }
             }
         }
@@ -351,53 +351,53 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         private final MetricsCollector metricsCollector;
         private HealthStatus lastStatus;
 
-        public OpenSearchHealthCheck(OpenSearchClient openSearchClient, MetricsCollector metricsCollector) { // GH-90000
+        public OpenSearchHealthCheck(OpenSearchClient openSearchClient, MetricsCollector metricsCollector) { 
             this.openSearchClient = openSearchClient;
             this.metricsCollector = metricsCollector;
         }
 
-        public Promise<Boolean> checkReadiness() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
+        public Promise<Boolean> checkReadiness() { 
+            long start = System.currentTimeMillis(); 
             try {
-                Map<String, Object> health = openSearchClient.clusterHealth(); // GH-90000
+                Map<String, Object> health = openSearchClient.clusterHealth(); 
                 String status = (String) health.get("status");
-                long latency = System.currentTimeMillis() - start; // GH-90000
-                metricsCollector.recordTimer("opensearch.health.check.latency", latency); // GH-90000
+                long latency = System.currentTimeMillis() - start; 
+                metricsCollector.recordTimer("opensearch.health.check.latency", latency); 
                 
-                if ("green".equals(status)) { // GH-90000
+                if ("green".equals(status)) { 
                     this.lastStatus = HealthStatus.UP;
-                    return Promise.of(true); // GH-90000
-                } else if ("yellow".equals(status)) { // GH-90000
+                    return Promise.of(true); 
+                } else if ("yellow".equals(status)) { 
                     this.lastStatus = HealthStatus.DEGRADED;
-                    return Promise.of(true); // GH-90000
+                    return Promise.of(true); 
                 } else {
                     this.lastStatus = HealthStatus.DOWN;
-                    return Promise.of(false); // GH-90000
+                    return Promise.of(false); 
                 }
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 this.lastStatus = HealthStatus.DOWN;
-                return Promise.of(false); // GH-90000
+                return Promise.of(false); 
             }
         }
 
-        public Promise<Map<String, Object>> getHealthDetails() { // GH-90000
-            return Promise.of(Map.of( // GH-90000
-                "status", lastStatus.name(), // GH-90000
-                "timestamp", System.currentTimeMillis(), // GH-90000
+        public Promise<Map<String, Object>> getHealthDetails() { 
+            return Promise.of(Map.of( 
+                "status", lastStatus.name(), 
+                "timestamp", System.currentTimeMillis(), 
                 "latency_ms", 0L,
-                "last_check", System.currentTimeMillis(), // GH-90000
-                "opensearch", Map.of("status", lastStatus.name()) // GH-90000
+                "last_check", System.currentTimeMillis(), 
+                "opensearch", Map.of("status", lastStatus.name()) 
             ));
         }
 
-        public HealthStatus getLastStatus() { // GH-90000
+        public HealthStatus getLastStatus() { 
             return lastStatus;
         }
 
         enum HealthStatus { UP, DOWN, DEGRADED }
 
         interface OpenSearchClient {
-            Map<String, Object> clusterHealth(); // GH-90000
+            Map<String, Object> clusterHealth(); 
         }
     }
 
@@ -406,43 +406,43 @@ class EmbeddedServiceHealthCheckTest extends EventloopTestBase {
         private final MetricsCollector metricsCollector;
         private HealthStatus lastStatus;
 
-        public ClickHouseHealthCheck(ClickHouseClient clickHouseClient, MetricsCollector metricsCollector) { // GH-90000
+        public ClickHouseHealthCheck(ClickHouseClient clickHouseClient, MetricsCollector metricsCollector) { 
             this.clickHouseClient = clickHouseClient;
             this.metricsCollector = metricsCollector;
         }
 
-        public Promise<Boolean> checkReadiness() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
+        public Promise<Boolean> checkReadiness() { 
+            long start = System.currentTimeMillis(); 
             try {
                 Object result = clickHouseClient.execute("SELECT 1");
-                long latency = System.currentTimeMillis() - start; // GH-90000
-                metricsCollector.recordTimer("clickhouse.health.check.latency", latency); // GH-90000
+                long latency = System.currentTimeMillis() - start; 
+                metricsCollector.recordTimer("clickhouse.health.check.latency", latency); 
                 this.lastStatus = HealthStatus.UP;
-                return Promise.of(true); // GH-90000
-            } catch (Exception e) { // GH-90000
+                return Promise.of(true); 
+            } catch (Exception e) { 
                 this.lastStatus = HealthStatus.DOWN;
-                return Promise.of(false); // GH-90000
+                return Promise.of(false); 
             }
         }
 
-        public Promise<Map<String, Object>> getHealthDetails() { // GH-90000
-            return Promise.of(Map.of( // GH-90000
-                "status", lastStatus.name(), // GH-90000
-                "timestamp", System.currentTimeMillis(), // GH-90000
+        public Promise<Map<String, Object>> getHealthDetails() { 
+            return Promise.of(Map.of( 
+                "status", lastStatus.name(), 
+                "timestamp", System.currentTimeMillis(), 
                 "latency_ms", 0L,
-                "last_check", System.currentTimeMillis(), // GH-90000
-                "clickhouse", Map.of("status", lastStatus.name()) // GH-90000
+                "last_check", System.currentTimeMillis(), 
+                "clickhouse", Map.of("status", lastStatus.name()) 
             ));
         }
 
-        public HealthStatus getLastStatus() { // GH-90000
+        public HealthStatus getLastStatus() { 
             return lastStatus;
         }
 
         enum HealthStatus { UP, DOWN, DEGRADED }
 
         interface ClickHouseClient {
-            Object execute(String query); // GH-90000
+            Object execute(String query); 
         }
     }
 }

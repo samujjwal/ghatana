@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Contract tests for the Multimodal API surface (AV-P1-07). // GH-90000
+ * Contract tests for the Multimodal API surface (AV-P1-07). 
  *
  * <p>These tests verify the stable data contract of {@link MultimodalRequest},
  * {@link MultimodalResult}, and the hasAudio/hasImage/hasVideo predicates as
@@ -26,11 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Empty / null data bytes are treated as absent</li>
  *   <li>{@link MultimodalResult} carries audioResult, visualResult, combinedAnalysis, processingTimeMs</li>
  *   <li>Processing time is non-negative</li>
- *   <li>Combined analysis field is at least an empty string (never null)</li> // GH-90000
+ *   <li>Combined analysis field is at least an empty string (never null)</li> 
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Contract tests for Multimodal request/response shape stability (AV-P1-07) // GH-90000
+ * @doc.purpose Contract tests for Multimodal request/response shape stability (AV-P1-07) 
  * @doc.layer test
  * @doc.pattern ContractTest
  */
@@ -44,62 +44,62 @@ class MultimodalContractTest {
 
         @Test
         @DisplayName("hasAudio returns false when no audio data provided")
-        void shouldReturnFalseHasAudioWhenAbsent() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder() // GH-90000
-                    .imageData(new byte[]{1, 2, 3}) // GH-90000
-                    .build(); // GH-90000
+        void shouldReturnFalseHasAudioWhenAbsent() { 
+            MultimodalRequest request = MultimodalRequest.builder() 
+                    .imageData(new byte[]{1, 2, 3}) 
+                    .build(); 
 
-            assertThat(request.hasAudio()).isFalse(); // GH-90000
-            assertThat(request.hasImage()).isTrue(); // GH-90000
-            assertThat(request.hasVideo()).isFalse(); // GH-90000
+            assertThat(request.hasAudio()).isFalse(); 
+            assertThat(request.hasImage()).isTrue(); 
+            assertThat(request.hasVideo()).isFalse(); 
         }
 
         @Test
         @DisplayName("hasAudio returns false for empty byte array")
-        void shouldReturnFalseHasAudioForEmptyArray() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder() // GH-90000
-                    .audioData(new byte[0]) // GH-90000
-                    .build(); // GH-90000
+        void shouldReturnFalseHasAudioForEmptyArray() { 
+            MultimodalRequest request = MultimodalRequest.builder() 
+                    .audioData(new byte[0]) 
+                    .build(); 
 
-            assertThat(request.hasAudio()).isFalse(); // GH-90000
+            assertThat(request.hasAudio()).isFalse(); 
         }
 
         @Test
         @DisplayName("hasAudio/hasImage/hasVideo all true when all provided")
-        void shouldReportAllModalitiesWhenAllPresent() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder() // GH-90000
-                    .audioData(new byte[]{1}) // GH-90000
-                    .imageData(new byte[]{2}) // GH-90000
-                    .videoData(new byte[]{3}) // GH-90000
-                    .build(); // GH-90000
+        void shouldReportAllModalitiesWhenAllPresent() { 
+            MultimodalRequest request = MultimodalRequest.builder() 
+                    .audioData(new byte[]{1}) 
+                    .imageData(new byte[]{2}) 
+                    .videoData(new byte[]{3}) 
+                    .build(); 
 
-            assertThat(request.hasAudio()).isTrue(); // GH-90000
-            assertThat(request.hasImage()).isTrue(); // GH-90000
-            assertThat(request.hasVideo()).isTrue(); // GH-90000
+            assertThat(request.hasAudio()).isTrue(); 
+            assertThat(request.hasImage()).isTrue(); 
+            assertThat(request.hasVideo()).isTrue(); 
         }
 
         @Test
         @DisplayName("getText returns empty string when not set")
-        void shouldReturnEmptyStringForAbsentText() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
+        void shouldReturnEmptyStringForAbsentText() { 
+            MultimodalRequest request = MultimodalRequest.builder().build(); 
 
-            assertThat(request.getText()).isNotNull().isEmpty(); // GH-90000
+            assertThat(request.getText()).isNotNull().isEmpty(); 
         }
 
         @Test
         @DisplayName("videoSampleFps defaults to 1 when not set")
-        void shouldDefaultVideoSampleFpsToOne() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
+        void shouldDefaultVideoSampleFpsToOne() { 
+            MultimodalRequest request = MultimodalRequest.builder().build(); 
 
-            assertThat(request.getVideoSampleFps()).isEqualTo(1); // GH-90000
+            assertThat(request.getVideoSampleFps()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("videoMaxFrames defaults to 50 when not set")
-        void shouldDefaultVideoMaxFramesToFifty() { // GH-90000
-            MultimodalRequest request = MultimodalRequest.builder().build(); // GH-90000
+        void shouldDefaultVideoMaxFramesToFifty() { 
+            MultimodalRequest request = MultimodalRequest.builder().build(); 
 
-            assertThat(request.getVideoMaxFrames()).isEqualTo(50); // GH-90000
+            assertThat(request.getVideoMaxFrames()).isEqualTo(50); 
         }
     }
 
@@ -109,30 +109,30 @@ class MultimodalContractTest {
 
         @Test
         @DisplayName("combinedAnalysis defaults to empty string (never null)")
-        void combinedAnalysisDefaultsToEmptyString() { // GH-90000
-            MultimodalResult result = MultimodalResult.builder().build(); // GH-90000
+        void combinedAnalysisDefaultsToEmptyString() { 
+            MultimodalResult result = MultimodalResult.builder().build(); 
 
-            assertThat(result.getCombinedAnalysis()).isNotNull().isEmpty(); // GH-90000
+            assertThat(result.getCombinedAnalysis()).isNotNull().isEmpty(); 
         }
 
         @Test
         @DisplayName("processingTimeMs is zero when not set")
-        void processingTimeMsDefaultsToZero() { // GH-90000
-            MultimodalResult result = MultimodalResult.builder().build(); // GH-90000
+        void processingTimeMsDefaultsToZero() { 
+            MultimodalResult result = MultimodalResult.builder().build(); 
 
-            assertThat(result.getProcessingTimeMs()).isZero(); // GH-90000
+            assertThat(result.getProcessingTimeMs()).isZero(); 
         }
 
         @Test
         @DisplayName("Result fields are accessible after builder construction")
-        void shouldExposeBuilderSetFields() { // GH-90000
-            MultimodalResult result = MultimodalResult.builder() // GH-90000
+        void shouldExposeBuilderSetFields() { 
+            MultimodalResult result = MultimodalResult.builder() 
                     .combinedAnalysis("Audio: Hello | Scene: Room")
-                    .processingTimeMs(99L) // GH-90000
-                    .build(); // GH-90000
+                    .processingTimeMs(99L) 
+                    .build(); 
 
             assertThat(result.getCombinedAnalysis()).isEqualTo("Audio: Hello | Scene: Room");
-            assertThat(result.getProcessingTimeMs()).isEqualTo(99L); // GH-90000
+            assertThat(result.getProcessingTimeMs()).isEqualTo(99L); 
         }
     }
 }

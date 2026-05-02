@@ -25,225 +25,225 @@ class EmbeddedYAPPCClientTest extends EventloopTestBase {
     private YAPPCConfig config;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        config = YAPPCConfig.builder() // GH-90000
+    void setUp() { 
+        config = YAPPCConfig.builder() 
             .aiProvider("ollama")
             .storagePlugin("memory")
-            .build(); // GH-90000
+            .build(); 
 
-        client = new EmbeddedYAPPCClient(config); // GH-90000
+        client = new EmbeddedYAPPCClient(config); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (client != null) { // GH-90000
-            runPromise(() -> client.stop()); // GH-90000
+    void tearDown() { 
+        if (client != null) { 
+            runPromise(() -> client.stop()); 
         }
     }
 
     @Test
-    void testStartAndStop() { // GH-90000
-        assertFalse(client.isRunning()); // GH-90000
+    void testStartAndStop() { 
+        assertFalse(client.isRunning()); 
 
-        runPromise(() -> client.start()); // GH-90000
-        assertTrue(client.isRunning()); // GH-90000
-        assertTrue(runPromise(() -> client.healthCheck())); // GH-90000
+        runPromise(() -> client.start()); 
+        assertTrue(client.isRunning()); 
+        assertTrue(runPromise(() -> client.healthCheck())); 
 
-        HealthStatus health = runPromise(() -> client.checkHealth()); // GH-90000
-        assertTrue(health.isHealthy()); // GH-90000
-        assertEquals("UP", health.getStatus()); // GH-90000
+        HealthStatus health = runPromise(() -> client.checkHealth()); 
+        assertTrue(health.isHealthy()); 
+        assertEquals("UP", health.getStatus()); 
 
-        runPromise(() -> client.stop()); // GH-90000
-        assertFalse(client.isRunning()); // GH-90000
-        assertFalse(runPromise(() -> client.healthCheck())); // GH-90000
+        runPromise(() -> client.stop()); 
+        assertFalse(client.isRunning()); 
+        assertFalse(runPromise(() -> client.healthCheck())); 
     }
 
     @Test
-    void testRegisterTask() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testRegisterTask() { 
+        runPromise(() -> client.start()); 
 
-        TaskDefinition task = TaskDefinition.builder() // GH-90000
+        TaskDefinition task = TaskDefinition.builder() 
             .id("test-task")
             .name("Test Task")
             .description("A test task")
             .category("testing")
-            .build(); // GH-90000
+            .build(); 
 
-        TaskRegistrationResult result = runPromise(() -> client.registerTask(task)); // GH-90000
+        TaskRegistrationResult result = runPromise(() -> client.registerTask(task)); 
 
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals("test-task", result.getTaskId()); // GH-90000
+        assertTrue(result.isSuccess()); 
+        assertEquals("test-task", result.getTaskId()); 
     }
 
     @Test
-    void testExecuteTask() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testExecuteTask() { 
+        runPromise(() -> client.start()); 
 
-        TaskDefinition task = TaskDefinition.builder() // GH-90000
+        TaskDefinition task = TaskDefinition.builder() 
             .id("test-task")
             .name("Test Task")
-            .build(); // GH-90000
+            .build(); 
 
-        runPromise(() -> client.registerTask(task)); // GH-90000
+        runPromise(() -> client.registerTask(task)); 
 
-        TaskResult<Map<String, Object>> result = runPromise(() -> client.<Map<String, Object>>executeTask( // GH-90000
+        TaskResult<Map<String, Object>> result = runPromise(() -> client.<Map<String, Object>>executeTask( 
             "test-task",
-            Map.of("input", "test"), // GH-90000
-            TaskContext.defaultContext() // GH-90000
+            Map.of("input", "test"), 
+            TaskContext.defaultContext() 
         ));
 
-        assertNotNull(result); // GH-90000
-        assertEquals("test-task", result.getTaskId()); // GH-90000
-        assertTrue(result.isSuccess()); // GH-90000
+        assertNotNull(result); 
+        assertEquals("test-task", result.getTaskId()); 
+        assertTrue(result.isSuccess()); 
     }
 
     @Test
-    void testListTasks() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testListTasks() { 
+        runPromise(() -> client.start()); 
 
-        TaskDefinition task1 = TaskDefinition.builder() // GH-90000
+        TaskDefinition task1 = TaskDefinition.builder() 
             .id("task-1")
             .name("Task 1")
-            .build(); // GH-90000
+            .build(); 
 
-        TaskDefinition task2 = TaskDefinition.builder() // GH-90000
+        TaskDefinition task2 = TaskDefinition.builder() 
             .id("task-2")
             .name("Task 2")
-            .build(); // GH-90000
+            .build(); 
 
-        runPromise(() -> client.registerTask(task1)); // GH-90000
-        runPromise(() -> client.registerTask(task2)); // GH-90000
+        runPromise(() -> client.registerTask(task1)); 
+        runPromise(() -> client.registerTask(task2)); 
 
-        List<TaskDefinition> tasks = runPromise(() -> client.listTasks()); // GH-90000
+        List<TaskDefinition> tasks = runPromise(() -> client.listTasks()); 
 
-        assertEquals(2, tasks.size()); // GH-90000
+        assertEquals(2, tasks.size()); 
     }
 
     @Test
-    void testInvokeAgent() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testInvokeAgent() { 
+        runPromise(() -> client.start()); 
 
-        StepContext context = StepContext.builder() // GH-90000
+        StepContext context = StepContext.builder() 
             .projectId("test-project")
             .phase("planning")
-            .build(); // GH-90000
+            .build(); 
 
         @SuppressWarnings("unchecked")
-        StepResult<Map<String, Object>> result = (StepResult<Map<String, Object>>) (StepResult<?>) runPromise(() -> client.invokeAgent( // GH-90000
+        StepResult<Map<String, Object>> result = (StepResult<Map<String, Object>>) (StepResult<?>) runPromise(() -> client.invokeAgent( 
             "planning",
             "create-architecture",
-            Map.of("input", "test"), // GH-90000
+            Map.of("input", "test"), 
             context
         ));
 
-        assertNotNull(result); // GH-90000
-        assertEquals("create-architecture", result.getStepName()); // GH-90000
-        assertEquals("planning", result.getPhase()); // GH-90000
-        assertTrue(result.isSuccess()); // GH-90000
+        assertNotNull(result); 
+        assertEquals("create-architecture", result.getStepName()); 
+        assertEquals("planning", result.getPhase()); 
+        assertTrue(result.isSuccess()); 
     }
 
     @Test
-    void testCreateCanvas() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testCreateCanvas() { 
+        runPromise(() -> client.start()); 
 
-        CreateCanvasRequest request = new CreateCanvasRequest( // GH-90000
+        CreateCanvasRequest request = new CreateCanvasRequest( 
             "Test Canvas",
             "A test canvas",
             null
         );
 
-        CanvasResult result = runPromise(() -> client.createCanvas(request)); // GH-90000
+        CanvasResult result = runPromise(() -> client.createCanvas(request)); 
 
-        assertNotNull(result); // GH-90000
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals("Test Canvas", result.getName()); // GH-90000
+        assertNotNull(result); 
+        assertTrue(result.isSuccess()); 
+        assertEquals("Test Canvas", result.getName()); 
     }
 
     @Test
-    void testValidateCanvas() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testValidateCanvas() { 
+        runPromise(() -> client.start()); 
 
-        CreateCanvasRequest createRequest = new CreateCanvasRequest( // GH-90000
+        CreateCanvasRequest createRequest = new CreateCanvasRequest( 
             "Test Canvas",
             "A test canvas",
             null
         );
 
-        CanvasResult canvasResult = runPromise(() -> client.createCanvas(createRequest)); // GH-90000
+        CanvasResult canvasResult = runPromise(() -> client.createCanvas(createRequest)); 
 
         ValidationContext context = ValidationContext.forPhase("planning");
-        ValidationReport report = runPromise(() -> client.validateCanvas( // GH-90000
-            canvasResult.getCanvasId(), // GH-90000
+        ValidationReport report = runPromise(() -> client.validateCanvas( 
+            canvasResult.getCanvasId(), 
             context
         ));
 
-        assertNotNull(report); // GH-90000
-        assertTrue(report.isValid()); // GH-90000
+        assertNotNull(report); 
+        assertTrue(report.isValid()); 
     }
 
     @Test
-    void testSearchKnowledge() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testSearchKnowledge() { 
+        runPromise(() -> client.start()); 
 
-        KnowledgeQuery query = new KnowledgeQuery("test query", 10, 0.5); // GH-90000
-        SearchResults results = runPromise(() -> client.searchKnowledge(query)); // GH-90000
+        KnowledgeQuery query = new KnowledgeQuery("test query", 10, 0.5); 
+        SearchResults results = runPromise(() -> client.searchKnowledge(query)); 
 
-        assertNotNull(results); // GH-90000
-        assertEquals(0, results.getTotalCount()); // GH-90000
+        assertNotNull(results); 
+        assertEquals(0, results.getTotalCount()); 
     }
 
     @Test
-    void testIngestKnowledge() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testIngestKnowledge() { 
+        runPromise(() -> client.start()); 
 
-        KnowledgeDocument document = new KnowledgeDocument( // GH-90000
+        KnowledgeDocument document = new KnowledgeDocument( 
             "doc-1",
             "Test Document",
             "This is a test document",
-            Map.of("type", "test") // GH-90000
+            Map.of("type", "test") 
         );
 
-        assertDoesNotThrow(() -> runPromise(() -> client.ingestKnowledge(document))); // GH-90000
+        assertDoesNotThrow(() -> runPromise(() -> client.ingestKnowledge(document))); 
     }
 
     @Test
-    void testGetLifecycleState() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testGetLifecycleState() { 
+        runPromise(() -> client.start()); 
 
         LifecycleState state = runPromise(() -> client.getLifecycleState("test-project"));
 
-        assertNotNull(state); // GH-90000
-        assertEquals("test-project", state.getProjectId()); // GH-90000
-        assertEquals("planning", state.getCurrentPhase()); // GH-90000
+        assertNotNull(state); 
+        assertEquals("test-project", state.getProjectId()); 
+        assertEquals("planning", state.getCurrentPhase()); 
     }
 
     @Test
-    void testAdvancePhase() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testAdvancePhase() { 
+        runPromise(() -> client.start()); 
 
-        AdvancePhaseRequest request = new AdvancePhaseRequest("implementation", false); // GH-90000
-        PhaseResult result = runPromise(() -> client.advancePhase("test-project", request)); // GH-90000
+        AdvancePhaseRequest request = new AdvancePhaseRequest("implementation", false); 
+        PhaseResult result = runPromise(() -> client.advancePhase("test-project", request)); 
 
-        assertNotNull(result); // GH-90000
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals("implementation", result.getNewPhase()); // GH-90000
+        assertNotNull(result); 
+        assertTrue(result.isSuccess()); 
+        assertEquals("implementation", result.getNewPhase()); 
     }
 
     @Test
-    void testGetConfiguration() { // GH-90000
-        YAPPCConfig retrievedConfig = runPromise(() -> client.getConfiguration()); // GH-90000
+    void testGetConfiguration() { 
+        YAPPCConfig retrievedConfig = runPromise(() -> client.getConfiguration()); 
 
-        assertNotNull(retrievedConfig); // GH-90000
-        assertEquals("ollama", retrievedConfig.getAiProvider()); // GH-90000
+        assertNotNull(retrievedConfig); 
+        assertEquals("ollama", retrievedConfig.getAiProvider()); 
     }
 
     @Test
-    void testGetMetrics() { // GH-90000
-        runPromise(() -> client.start()); // GH-90000
+    void testGetMetrics() { 
+        runPromise(() -> client.start()); 
 
-        Map<String, Object> metrics = runPromise(() -> client.getMetrics()); // GH-90000
+        Map<String, Object> metrics = runPromise(() -> client.getMetrics()); 
 
-        assertNotNull(metrics); // GH-90000
+        assertNotNull(metrics); 
         assertTrue(metrics.containsKey("started"));
         assertTrue((Boolean) metrics.get("started"));
     }

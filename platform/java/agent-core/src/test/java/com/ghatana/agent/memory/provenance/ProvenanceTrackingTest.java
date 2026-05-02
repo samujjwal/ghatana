@@ -33,38 +33,38 @@ class ProvenanceTrackingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("provenance records the originating source")
-        void provenance_recordsOriginatingSource() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenance_recordsOriginatingSource() { 
+            Provenance provenance = Provenance.builder() 
                     .source("agent:reasoning-agent-v2")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(provenance.getSource()).isEqualTo("agent:reasoning-agent-v2");
         }
 
         @Test
         @DisplayName("provenance with tool source uses tool: prefix by convention")
-        void provenanceWithToolSource_usesToolPrefix() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenanceWithToolSource_usesToolPrefix() { 
+            Provenance provenance = Provenance.builder() 
                     .source("tool:grep")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(provenance.getSource()).startsWith("tool:");
         }
 
         @Test
         @DisplayName("provenance with user source uses user: prefix by convention")
-        void provenanceWithUserSource_usesUserPrefix() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenanceWithUserSource_usesUserPrefix() { 
+            Provenance provenance = Provenance.builder() 
                     .source("user:input")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(provenance.getSource()).startsWith("user:");
         }
 
         @Test
         @DisplayName("default provenance has source unknown")
-        void defaultProvenance_hasSourceUnknown() { // GH-90000
-            Provenance provenance = Provenance.builder().build(); // GH-90000
+        void defaultProvenance_hasSourceUnknown() { 
+            Provenance provenance = Provenance.builder().build(); 
 
             assertThat(provenance.getSource()).isEqualTo("unknown");
         }
@@ -78,25 +78,25 @@ class ProvenanceTrackingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("provenance stores trace ID for correlation")
-        void provenance_storesTraceIdForCorrelation() { // GH-90000
-            String traceId = UUID.randomUUID().toString(); // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenance_storesTraceIdForCorrelation() { 
+            String traceId = UUID.randomUUID().toString(); 
+            Provenance provenance = Provenance.builder() 
                     .source("inference:gpt-4")
-                    .traceId(traceId) // GH-90000
-                    .build(); // GH-90000
+                    .traceId(traceId) 
+                    .build(); 
 
-            assertThat(provenance.getTraceId()).isEqualTo(traceId); // GH-90000
+            assertThat(provenance.getTraceId()).isEqualTo(traceId); 
         }
 
         @Test
         @DisplayName("provenance with null trace ID is valid (offline mode)")
-        void provenanceWithNullTraceId_isValid() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenanceWithNullTraceId_isValid() { 
+            Provenance provenance = Provenance.builder() 
                     .source("consolidation:v2")
-                    .traceId(null) // GH-90000
-                    .build(); // GH-90000
+                    .traceId(null) 
+                    .build(); 
 
-            assertThat(provenance.getTraceId()).isNull(); // GH-90000
+            assertThat(provenance.getTraceId()).isNull(); 
         }
     }
 
@@ -108,29 +108,29 @@ class ProvenanceTrackingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("LLM_INFERENCE confidence source is default")
-        void llmInference_isDefaultConfidenceSource() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void llmInference_isDefaultConfidenceSource() { 
+            Provenance provenance = Provenance.builder() 
                     .source("agent:reasoner")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(provenance.getConfidenceSource()) // GH-90000
-                    .isEqualTo(com.ghatana.agent.memory.model.Provenance.ConfidenceSource.LLM_INFERENCE); // GH-90000
+            assertThat(provenance.getConfidenceSource()) 
+                    .isEqualTo(com.ghatana.agent.memory.model.Provenance.ConfidenceSource.LLM_INFERENCE); 
         }
 
         @Test
         @DisplayName("provenance can record HUMAN_FEEDBACK as confidence source")
-        void provenance_canRecordHumanFeedbackAsConfidenceSource() { // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void provenance_canRecordHumanFeedbackAsConfidenceSource() { 
+            Provenance provenance = Provenance.builder() 
                     .source("user:feedback")
-                .confidenceSource(Provenance.ConfidenceSource.HUMAN) // GH-90000
-                    .build(); // GH-90000
+                .confidenceSource(Provenance.ConfidenceSource.HUMAN) 
+                    .build(); 
 
-            assertThat(provenance.getConfidenceSource()) // GH-90000
-                .isEqualTo(Provenance.ConfidenceSource.HUMAN); // GH-90000
+            assertThat(provenance.getConfidenceSource()) 
+                .isEqualTo(Provenance.ConfidenceSource.HUMAN); 
         }
     }
 
-    // ── Chain of custody (via memory item) ─────────────────────────────────── // GH-90000
+    // ── Chain of custody (via memory item) ─────────────────────────────────── 
 
     @Nested
     @DisplayName("chain of custody via memory items")
@@ -138,46 +138,46 @@ class ProvenanceTrackingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("procedure records provenance attached to memory item")
-        void procedure_recordsProvenanceAttachedToMemoryItem() { // GH-90000
-            String traceId = UUID.randomUUID().toString(); // GH-90000
-            Provenance provenance = Provenance.builder() // GH-90000
+        void procedure_recordsProvenanceAttachedToMemoryItem() { 
+            String traceId = UUID.randomUUID().toString(); 
+            Provenance provenance = Provenance.builder() 
                     .source("consolidation:hourly-run")
-                    .traceId(traceId) // GH-90000
-                    .build(); // GH-90000
+                    .traceId(traceId) 
+                    .build(); 
 
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
-                    .id(UUID.randomUUID().toString()) // GH-90000
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
+                    .id(UUID.randomUUID().toString()) 
                     .situation("Optimize database queries")
                     .action("Apply query hints")
-                    .provenance(provenance) // GH-90000
-                    .build(); // GH-90000
+                    .provenance(provenance) 
+                    .build(); 
 
             assertThat(procedure.getProvenance().getSource()).isEqualTo("consolidation:hourly-run");
-            assertThat(procedure.getProvenance().getTraceId()).isEqualTo(traceId); // GH-90000
+            assertThat(procedure.getProvenance().getTraceId()).isEqualTo(traceId); 
         }
 
         @Test
         @DisplayName("provenance of derived item differs from originating source")
-        void provenanceOfDerivedItem_differsFromOriginatingSource() { // GH-90000
+        void provenanceOfDerivedItem_differsFromOriginatingSource() { 
             Provenance original  = Provenance.builder().source("user:input").build();
-            Provenance derived   = Provenance.builder() // GH-90000
+            Provenance derived   = Provenance.builder() 
                     .source("inference:gpt-4")
-                    .confidenceSource(Provenance.ConfidenceSource.LLM_INFERENCE) // GH-90000
-                    .build(); // GH-90000
+                    .confidenceSource(Provenance.ConfidenceSource.LLM_INFERENCE) 
+                    .build(); 
 
-            assertThat(original.getSource()).isNotEqualTo(derived.getSource()); // GH-90000
+            assertThat(original.getSource()).isNotEqualTo(derived.getSource()); 
             assertThat(derived.getSource()).startsWith("inference:");
         }
 
         @Test
         @DisplayName("two items with same trace ID can be correlated across a flow")
-        void twoItemsWithSameTraceId_canBeCorrelatedAcrossFlow() { // GH-90000
-            String sharedTraceId = UUID.randomUUID().toString(); // GH-90000
+        void twoItemsWithSameTraceId_canBeCorrelatedAcrossFlow() { 
+            String sharedTraceId = UUID.randomUUID().toString(); 
 
             Provenance prov1 = Provenance.builder().source("agent:a").traceId(sharedTraceId).build();
             Provenance prov2 = Provenance.builder().source("agent:b").traceId(sharedTraceId).build();
 
-            assertThat(prov1.getTraceId()).isEqualTo(prov2.getTraceId()); // GH-90000
+            assertThat(prov1.getTraceId()).isEqualTo(prov2.getTraceId()); 
         }
     }
 }

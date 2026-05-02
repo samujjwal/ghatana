@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -53,41 +53,41 @@ import static org.mockito.Mockito.mock;
  * audit report.
  *
  * @doc.type class
- * @doc.purpose WebSocket resilience and connection lifecycle tests (Gap 005) // GH-90000
+ * @doc.purpose WebSocket resilience and connection lifecycle tests (Gap 005) 
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
-@Timeout(value = 20, unit = TimeUnit.SECONDS) // GH-90000
+@ExtendWith(MockitoExtension.class) 
+@Timeout(value = 20, unit = TimeUnit.SECONDS) 
 @DisplayName("WebSocket – Connection Resilience")
 class WebSocketResilienceTest {
 
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private int port;
-    private final HttpClient httpClient = HttpClient.newBuilder() // GH-90000
-        .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-        .build(); // GH-90000
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final HttpClient httpClient = HttpClient.newBuilder() 
+        .connectTimeout(Duration.ofSeconds(5)) 
+        .build(); 
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        mockClient = mock(DataCloudClient.class); // GH-90000
+    void setUp() throws Exception { 
+        mockClient = mock(DataCloudClient.class); 
         // Lenient stubs — only exercised by tests that push data through the WebSocket pipeline
-        lenient().when(mockClient.save(anyString(), anyString(), any())) // GH-90000
-            .thenReturn(Promise.of(DataCloudClient.Entity.of("ws-ent-1", "ws-col", Map.of()))); // GH-90000
-        lenient().when(mockClient.appendEvent(anyString(), any())) // GH-90000
-            .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
+        lenient().when(mockClient.save(anyString(), anyString(), any())) 
+            .thenReturn(Promise.of(DataCloudClient.Entity.of("ws-ent-1", "ws-col", Map.of()))); 
+        lenient().when(mockClient.appendEvent(anyString(), any())) 
+            .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); 
 
-        port = findFreePort(); // GH-90000
-        server = new DataCloudHttpServer(mockClient, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+        port = findFreePort(); 
+        server = new DataCloudHttpServer(mockClient, port); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -100,50 +100,50 @@ class WebSocketResilienceTest {
 
         @Test
         @DisplayName("connecting to /ws succeeds and server sends greeting frame")
-        void connect_serverSendsGreetingFrame() throws Exception { // GH-90000
-            List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
-            CountDownLatch greetingLatch = new CountDownLatch(1); // GH-90000
+        void connect_serverSendsGreetingFrame() throws Exception { 
+            List<String> received = new CopyOnWriteArrayList<>(); 
+            CountDownLatch greetingLatch = new CountDownLatch(1); 
 
-            WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new CollectingListener(received, greetingLatch)) // GH-90000
-                .get(5, TimeUnit.SECONDS); // GH-90000
+            WebSocket ws = httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new CollectingListener(received, greetingLatch)) 
+                .get(5, TimeUnit.SECONDS); 
 
             // Server must send an initial greeting within 3 seconds
-            boolean gotGreeting = greetingLatch.await(3, TimeUnit.SECONDS); // GH-90000
+            boolean gotGreeting = greetingLatch.await(3, TimeUnit.SECONDS); 
             assertThat(gotGreeting).as("Server must send greeting within 3 s").isTrue();
 
             // Parse the greeting frame
-            assertThat(received).isNotEmpty(); // GH-90000
-            JsonNode greeting = mapper.readTree(received.get(0)); // GH-90000
+            assertThat(received).isNotEmpty(); 
+            JsonNode greeting = mapper.readTree(received.get(0)); 
             assertThat(greeting.has("type")).isTrue();
             assertThat(greeting.get("type").asText()).isEqualTo("system.notification");
             assertThat(greeting.has("data")).isTrue();
 
-            ws.sendClose(WebSocket.NORMAL_CLOSURE, "test done").get(3, TimeUnit.SECONDS); // GH-90000
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "test done").get(3, TimeUnit.SECONDS); 
         }
 
         @Test
         @DisplayName("greeting frame data contains serverTime and message fields")
-        void connect_greetingHasRequiredFields() throws Exception { // GH-90000
-            List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
+        void connect_greetingHasRequiredFields() throws Exception { 
+            List<String> received = new CopyOnWriteArrayList<>(); 
+            CountDownLatch latch = new CountDownLatch(1); 
 
-            WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new CollectingListener(received, latch)) // GH-90000
-                .get(5, TimeUnit.SECONDS); // GH-90000
+            WebSocket ws = httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new CollectingListener(received, latch)) 
+                .get(5, TimeUnit.SECONDS); 
 
-            boolean got = latch.await(3, TimeUnit.SECONDS); // GH-90000
-            assertThat(got).isTrue(); // GH-90000
+            boolean got = latch.await(3, TimeUnit.SECONDS); 
+            assertThat(got).isTrue(); 
 
-            JsonNode greeting = mapper.readTree(received.get(0)); // GH-90000
+            JsonNode greeting = mapper.readTree(received.get(0)); 
             JsonNode data = greeting.get("data");
-            assertThat(data).isNotNull(); // GH-90000
+            assertThat(data).isNotNull(); 
             assertThat(data.has("serverTime")).as("data.serverTime must be present").isTrue();
             assertThat(data.has("message")).as("data.message must be present").isTrue();
 
-            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); // GH-90000
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); 
         }
     }
 
@@ -157,50 +157,50 @@ class WebSocketResilienceTest {
 
         @Test
         @DisplayName("client sends CLOSE frame → server accepts without error")
-        void clientClose_serverAcceptsGracefully() throws Exception { // GH-90000
-            CountDownLatch greetingLatch = new CountDownLatch(1); // GH-90000
-            WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new CollectingListener(new ArrayList<>(), greetingLatch)) // GH-90000
-                .get(5, TimeUnit.SECONDS); // GH-90000
+        void clientClose_serverAcceptsGracefully() throws Exception { 
+            CountDownLatch greetingLatch = new CountDownLatch(1); 
+            WebSocket ws = httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new CollectingListener(new ArrayList<>(), greetingLatch)) 
+                .get(5, TimeUnit.SECONDS); 
 
-            assertThat(greetingLatch.await(3, TimeUnit.SECONDS)).isTrue(); // GH-90000
+            assertThat(greetingLatch.await(3, TimeUnit.SECONDS)).isTrue(); 
 
             // Send normal close — must not throw
-            ws.sendClose(WebSocket.NORMAL_CLOSURE, "bye").get(3, TimeUnit.SECONDS); // GH-90000
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "bye").get(3, TimeUnit.SECONDS); 
 
             // Server should still be alive — verify via HTTP health check
-            Thread.sleep(200); // GH-90000
-            HttpResponse<String> health = httpClient.send( // GH-90000
-                HttpRequest.newBuilder().GET() // GH-90000
-                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) // GH-90000
-                    .build(), // GH-90000
-                HttpResponse.BodyHandlers.ofString()); // GH-90000
-            assertThat(health.statusCode()).isEqualTo(200); // GH-90000
+            Thread.sleep(200); 
+            HttpResponse<String> health = httpClient.send( 
+                HttpRequest.newBuilder().GET() 
+                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) 
+                    .build(), 
+                HttpResponse.BodyHandlers.ofString()); 
+            assertThat(health.statusCode()).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("repeated connect-disconnect cycles do not degrade server")
-        void repeatedConnectDisconnect_serverRemainsHealthy() throws Exception { // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
-                CountDownLatch latch = new CountDownLatch(1); // GH-90000
-                WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                    .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                        new CollectingListener(new ArrayList<>(), latch)) // GH-90000
-                    .get(5, TimeUnit.SECONDS); // GH-90000
+        void repeatedConnectDisconnect_serverRemainsHealthy() throws Exception { 
+            for (int i = 0; i < 5; i++) { 
+                CountDownLatch latch = new CountDownLatch(1); 
+                WebSocket ws = httpClient.newWebSocketBuilder() 
+                    .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                        new CollectingListener(new ArrayList<>(), latch)) 
+                    .get(5, TimeUnit.SECONDS); 
 
-                assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); // GH-90000
-                ws.sendClose(WebSocket.NORMAL_CLOSURE, "cycle-" + i).get(3, TimeUnit.SECONDS); // GH-90000
-                Thread.sleep(50); // GH-90000
+                assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); 
+                ws.sendClose(WebSocket.NORMAL_CLOSURE, "cycle-" + i).get(3, TimeUnit.SECONDS); 
+                Thread.sleep(50); 
             }
 
             // Server still responsive after 5 connect-disconnect cycles
-            HttpResponse<String> health = httpClient.send( // GH-90000
-                HttpRequest.newBuilder().GET() // GH-90000
-                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) // GH-90000
-                    .build(), // GH-90000
-                HttpResponse.BodyHandlers.ofString()); // GH-90000
-            assertThat(health.statusCode()).isEqualTo(200); // GH-90000
+            HttpResponse<String> health = httpClient.send( 
+                HttpRequest.newBuilder().GET() 
+                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) 
+                    .build(), 
+                HttpResponse.BodyHandlers.ofString()); 
+            assertThat(health.statusCode()).isEqualTo(200); 
         }
     }
 
@@ -214,53 +214,53 @@ class WebSocketResilienceTest {
 
         @Test
         @DisplayName("3 concurrent WebSocket clients all receive greeting frames")
-        void concurrentClients_allReceiveGreeting() throws Exception { // GH-90000
+        void concurrentClients_allReceiveGreeting() throws Exception { 
             int clientCount = 3;
-            List<CountDownLatch> latches = new ArrayList<>(); // GH-90000
-            List<WebSocket> sockets = new ArrayList<>(); // GH-90000
+            List<CountDownLatch> latches = new ArrayList<>(); 
+            List<WebSocket> sockets = new ArrayList<>(); 
 
-            for (int i = 0; i < clientCount; i++) { // GH-90000
-                CountDownLatch latch = new CountDownLatch(1); // GH-90000
-                latches.add(latch); // GH-90000
-                WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                    .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                        new CollectingListener(new ArrayList<>(), latch)) // GH-90000
-                    .get(5, TimeUnit.SECONDS); // GH-90000
-                sockets.add(ws); // GH-90000
+            for (int i = 0; i < clientCount; i++) { 
+                CountDownLatch latch = new CountDownLatch(1); 
+                latches.add(latch); 
+                WebSocket ws = httpClient.newWebSocketBuilder() 
+                    .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                        new CollectingListener(new ArrayList<>(), latch)) 
+                    .get(5, TimeUnit.SECONDS); 
+                sockets.add(ws); 
             }
 
             // All clients must receive a greeting
-            for (CountDownLatch latch : latches) { // GH-90000
-                assertThat(latch.await(4, TimeUnit.SECONDS)) // GH-90000
+            for (CountDownLatch latch : latches) { 
+                assertThat(latch.await(4, TimeUnit.SECONDS)) 
                     .as("Each concurrent client must receive a greeting").isTrue();
             }
 
             // Clean up
-            for (WebSocket ws : sockets) { // GH-90000
-                ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(2, TimeUnit.SECONDS); // GH-90000
+            for (WebSocket ws : sockets) { 
+                ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(2, TimeUnit.SECONDS); 
             }
         }
 
         @Test
         @DisplayName("server sends /health 200 while WebSocket clients are connected")
-        void httpHealthCheck_worksWhileWsClientsConnected() throws Exception { // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
-            WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new CollectingListener(new ArrayList<>(), latch)) // GH-90000
-                .get(5, TimeUnit.SECONDS); // GH-90000
+        void httpHealthCheck_worksWhileWsClientsConnected() throws Exception { 
+            CountDownLatch latch = new CountDownLatch(1); 
+            WebSocket ws = httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new CollectingListener(new ArrayList<>(), latch)) 
+                .get(5, TimeUnit.SECONDS); 
 
-            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); // GH-90000
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); 
 
             // HTTP must work concurrently with active WebSocket clients
-            HttpResponse<String> health = httpClient.send( // GH-90000
-                HttpRequest.newBuilder().GET() // GH-90000
-                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) // GH-90000
-                    .build(), // GH-90000
-                HttpResponse.BodyHandlers.ofString()); // GH-90000
-            assertThat(health.statusCode()).isEqualTo(200); // GH-90000
+            HttpResponse<String> health = httpClient.send( 
+                HttpRequest.newBuilder().GET() 
+                    .uri(URI.create("http://127.0.0.1:" + port + "/health")) 
+                    .build(), 
+                HttpResponse.BodyHandlers.ofString()); 
+            assertThat(health.statusCode()).isEqualTo(200); 
 
-            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); // GH-90000
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); 
         }
     }
 
@@ -274,43 +274,43 @@ class WebSocketResilienceTest {
 
         @Test
         @DisplayName("server.stop() closes active WebSocket connections without deadlock")
-        void serverStop_closesActiveWebSocketConnections() throws Exception { // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
-            AtomicInteger closeCallbacks = new AtomicInteger(0); // GH-90000
+        void serverStop_closesActiveWebSocketConnections() throws Exception { 
+            CountDownLatch latch = new CountDownLatch(1); 
+            AtomicInteger closeCallbacks = new AtomicInteger(0); 
 
-            httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new WebSocket.Listener() { // GH-90000
+            httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new WebSocket.Listener() { 
                         @Override
-                        public CompletableFuture<?> onText(WebSocket webSocket, CharSequence data, boolean last) { // GH-90000
-                            latch.countDown(); // GH-90000
-                            webSocket.request(1); // GH-90000
-                            return CompletableFuture.completedFuture(null); // GH-90000
+                        public CompletableFuture<?> onText(WebSocket webSocket, CharSequence data, boolean last) { 
+                            latch.countDown(); 
+                            webSocket.request(1); 
+                            return CompletableFuture.completedFuture(null); 
                         }
 
                         @Override
-                        public CompletableFuture<?> onClose(WebSocket webSocket, int statusCode, String reason) { // GH-90000
-                            closeCallbacks.incrementAndGet(); // GH-90000
-                            return CompletableFuture.completedFuture(null); // GH-90000
+                        public CompletableFuture<?> onClose(WebSocket webSocket, int statusCode, String reason) { 
+                            closeCallbacks.incrementAndGet(); 
+                            return CompletableFuture.completedFuture(null); 
                         }
 
                         @Override
-                        public void onOpen(WebSocket webSocket) { // GH-90000
-                            webSocket.request(1); // GH-90000
+                        public void onOpen(WebSocket webSocket) { 
+                            webSocket.request(1); 
                         }
                     })
-                .get(5, TimeUnit.SECONDS); // GH-90000
+                .get(5, TimeUnit.SECONDS); 
 
-            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); // GH-90000
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); 
 
             // Stop the server — must not deadlock and must close the WebSocket
-            long before = System.currentTimeMillis(); // GH-90000
-            server.stop(); // GH-90000
+            long before = System.currentTimeMillis(); 
+            server.stop(); 
             server = null; // prevent double-stop in tearDown
-            long elapsed = System.currentTimeMillis() - before; // GH-90000
+            long elapsed = System.currentTimeMillis() - before; 
 
             // Stop must complete within 5 seconds
-            assertThat(elapsed).isLessThan(5_000L); // GH-90000
+            assertThat(elapsed).isLessThan(5_000L); 
         }
     }
 
@@ -324,25 +324,25 @@ class WebSocketResilienceTest {
 
         @Test
         @DisplayName("all server frames are valid JSON objects with 'type' and 'data' fields")
-        void serverFrames_areValidJsonWithTypeAndData() throws Exception { // GH-90000
-            List<String> received = new CopyOnWriteArrayList<>(); // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
+        void serverFrames_areValidJsonWithTypeAndData() throws Exception { 
+            List<String> received = new CopyOnWriteArrayList<>(); 
+            CountDownLatch latch = new CountDownLatch(1); 
 
-            WebSocket ws = httpClient.newWebSocketBuilder() // GH-90000
-                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), // GH-90000
-                    new CollectingListener(received, latch)) // GH-90000
-                .get(5, TimeUnit.SECONDS); // GH-90000
+            WebSocket ws = httpClient.newWebSocketBuilder() 
+                .buildAsync(URI.create("ws://127.0.0.1:" + port + "/ws"), 
+                    new CollectingListener(received, latch)) 
+                .get(5, TimeUnit.SECONDS); 
 
-            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); // GH-90000
+            assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue(); 
 
-            for (String frame : received) { // GH-90000
-                JsonNode node = mapper.readTree(frame); // GH-90000
-                assertThat(node.isObject()).as("Frame must be JSON object: " + frame).isTrue(); // GH-90000
+            for (String frame : received) { 
+                JsonNode node = mapper.readTree(frame); 
+                assertThat(node.isObject()).as("Frame must be JSON object: " + frame).isTrue(); 
                 assertThat(node.has("type")).as("Frame must have 'type' field: " + frame).isTrue();
                 assertThat(node.has("data")).as("Frame must have 'data' field: " + frame).isTrue();
             }
 
-            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); // GH-90000
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "done").get(3, TimeUnit.SECONDS); 
         }
     }
 
@@ -354,58 +354,58 @@ class WebSocketResilienceTest {
     private static class CollectingListener implements WebSocket.Listener {
         private final List<String> messages;
         private final CountDownLatch firstMessageLatch;
-        private final StringBuilder buffer = new StringBuilder(); // GH-90000
+        private final StringBuilder buffer = new StringBuilder(); 
 
-        CollectingListener(List<String> messages, CountDownLatch firstMessageLatch) { // GH-90000
+        CollectingListener(List<String> messages, CountDownLatch firstMessageLatch) { 
             this.messages           = messages;
             this.firstMessageLatch  = firstMessageLatch;
         }
 
         @Override
-        public void onOpen(WebSocket webSocket) { // GH-90000
-            webSocket.request(10); // GH-90000
+        public void onOpen(WebSocket webSocket) { 
+            webSocket.request(10); 
         }
 
         @Override
-        public CompletableFuture<?> onText(WebSocket webSocket, CharSequence data, boolean last) { // GH-90000
-            buffer.append(data); // GH-90000
-            if (last) { // GH-90000
-                messages.add(buffer.toString()); // GH-90000
-                buffer.setLength(0); // GH-90000
-                firstMessageLatch.countDown(); // GH-90000
+        public CompletableFuture<?> onText(WebSocket webSocket, CharSequence data, boolean last) { 
+            buffer.append(data); 
+            if (last) { 
+                messages.add(buffer.toString()); 
+                buffer.setLength(0); 
+                firstMessageLatch.countDown(); 
             }
-            webSocket.request(1); // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+            webSocket.request(1); 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<?> onClose(WebSocket webSocket, int statusCode, String reason) { // GH-90000
-            firstMessageLatch.countDown(); // unblock on close too // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+        public CompletableFuture<?> onClose(WebSocket webSocket, int statusCode, String reason) { 
+            firstMessageLatch.countDown(); // unblock on close too 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public void onError(WebSocket webSocket, Throwable error) { // GH-90000
-            firstMessageLatch.countDown(); // unblock so tests don't hang // GH-90000
+        public void onError(WebSocket webSocket, Throwable error) { 
+            firstMessageLatch.countDown(); // unblock so tests don't hang 
         }
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); 
     }
 }

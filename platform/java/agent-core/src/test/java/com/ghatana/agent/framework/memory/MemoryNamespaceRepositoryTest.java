@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.framework.memory;
@@ -36,19 +36,19 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
     private InMemoryMemoryNamespaceRepository repo;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        repo = new InMemoryMemoryNamespaceRepository(); // GH-90000
+    void setUp() { 
+        repo = new InMemoryMemoryNamespaceRepository(); 
     }
 
     // ─────────────────── helpers ──────────────────────────────────────────────
 
-    private MemoryNamespace episodicNs(String nsId) { // GH-90000
-        return MemoryNamespace.of(nsId, TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Episodic Log", NOW); // GH-90000
+    private MemoryNamespace episodicNs(String nsId) { 
+        return MemoryNamespace.of(nsId, TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Episodic Log", NOW); 
     }
 
-    private MemoryNamespace promotableProceduralNs(String nsId) { // GH-90000
-        return new MemoryNamespace(nsId, TENANT_ID, AGENT_ID, MemoryScope.PROCEDURAL, // GH-90000
-                "Procedural Skills", "Promoted skills", 365, true, 1000, NOW, NOW, Map.of()); // GH-90000
+    private MemoryNamespace promotableProceduralNs(String nsId) { 
+        return new MemoryNamespace(nsId, TENANT_ID, AGENT_ID, MemoryScope.PROCEDURAL, 
+                "Procedural Skills", "Promoted skills", 365, true, 1000, NOW, NOW, Map.of()); 
     }
 
     // ─────────────────── MemoryNamespace record validation ───────────────────
@@ -59,63 +59,63 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("factory method creates valid namespace")
-        void factoryCreatesValidNamespace() { // GH-90000
+        void factoryCreatesValidNamespace() { 
             MemoryNamespace ns = episodicNs("ns-1");
             assertThat(ns.namespaceId()).isEqualTo("ns-1");
-            assertThat(ns.tenantId()).isEqualTo(TENANT_ID); // GH-90000
-            assertThat(ns.agentId()).isEqualTo(AGENT_ID); // GH-90000
-            assertThat(ns.scope()).isEqualTo(MemoryScope.EPISODIC); // GH-90000
+            assertThat(ns.tenantId()).isEqualTo(TENANT_ID); 
+            assertThat(ns.agentId()).isEqualTo(AGENT_ID); 
+            assertThat(ns.scope()).isEqualTo(MemoryScope.EPISODIC); 
             assertThat(ns.label()).isEqualTo("Episodic Log");
-            assertThat(ns.promotionEnabled()).isFalse(); // GH-90000
-            assertThat(ns.retentionDays()).isNull(); // GH-90000
-            assertThat(ns.maxEntries()).isNull(); // GH-90000
+            assertThat(ns.promotionEnabled()).isFalse(); 
+            assertThat(ns.retentionDays()).isNull(); 
+            assertThat(ns.maxEntries()).isNull(); 
         }
 
         @Test
         @DisplayName("blank namespaceId is rejected")
-        void blankNamespaceIdRejected() { // GH-90000
-            assertThatThrownBy(() -> MemoryNamespace.of("  ", TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Label", NOW)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void blankNamespaceIdRejected() { 
+            assertThatThrownBy(() -> MemoryNamespace.of("  ", TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Label", NOW)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("namespaceId");
         }
 
         @Test
         @DisplayName("blank label is rejected")
-        void blankLabelRejected() { // GH-90000
-            assertThatThrownBy(() -> MemoryNamespace.of("ns-1", TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "  ", NOW)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void blankLabelRejected() { 
+            assertThatThrownBy(() -> MemoryNamespace.of("ns-1", TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "  ", NOW)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("label");
         }
 
         @Test
         @DisplayName("negative retentionDays is rejected")
-        void negativeRetentionDaysRejected() { // GH-90000
-            assertThatThrownBy(() -> new MemoryNamespace( // GH-90000
+        void negativeRetentionDaysRejected() { 
+            assertThatThrownBy(() -> new MemoryNamespace( 
                     "ns-1", TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Label",
-                    null, -1, false, null, NOW, NOW, Map.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    null, -1, false, null, NOW, NOW, Map.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("retentionDays");
         }
 
         @Test
         @DisplayName("data map is made immutable on construction")
-        void dataMapIsImmutable() { // GH-90000
-            Map<String, Object> mutable = new java.util.HashMap<>(); // GH-90000
-            mutable.put("key", "value"); // GH-90000
-            MemoryNamespace ns = new MemoryNamespace( // GH-90000
+        void dataMapIsImmutable() { 
+            Map<String, Object> mutable = new java.util.HashMap<>(); 
+            mutable.put("key", "value"); 
+            MemoryNamespace ns = new MemoryNamespace( 
                     "ns-1", TENANT_ID, AGENT_ID, MemoryScope.SEMANTIC, "Label",
                     null, null, false, null, NOW, NOW, mutable);
-            assertThatThrownBy(() -> ns.data().put("extra", "data")) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+            assertThatThrownBy(() -> ns.data().put("extra", "data")) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("null scope is rejected")
-        void nullScopeRejected() { // GH-90000
-            assertThatThrownBy(() -> new MemoryNamespace( // GH-90000
+        void nullScopeRejected() { 
+            assertThatThrownBy(() -> new MemoryNamespace( 
                     "ns-1", TENANT_ID, AGENT_ID, null, "Label",
-                    null, null, false, null, NOW, NOW, Map.of())) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+                    null, null, false, null, NOW, NOW, Map.of())) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -127,26 +127,26 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("save returns the same instance")
-        void saveReturnsSameInstance() { // GH-90000
+        void saveReturnsSameInstance() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            MemoryNamespace saved = runPromise(() -> repo.save(ns)); // GH-90000
-            assertThat(saved).isSameAs(ns); // GH-90000
+            MemoryNamespace saved = runPromise(() -> repo.save(ns)); 
+            assertThat(saved).isSameAs(ns); 
         }
 
         @Test
         @DisplayName("findById returns saved namespace")
-        void findByIdReturnsSaved() { // GH-90000
+        void findByIdReturnsSaved() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            runPromise(() -> repo.save(ns)); // GH-90000
+            runPromise(() -> repo.save(ns)); 
             Optional<MemoryNamespace> found = runPromise(() -> repo.findById("ns-1"));
-            assertThat(found).isPresent().contains(ns); // GH-90000
+            assertThat(found).isPresent().contains(ns); 
         }
 
         @Test
         @DisplayName("findById returns empty for unknown ID")
-        void findByIdEmptyForUnknown() { // GH-90000
+        void findByIdEmptyForUnknown() { 
             Optional<MemoryNamespace> result = runPromise(() -> repo.findById("unknown"));
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -158,38 +158,38 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns all namespaces for an agent")
-        void returnsAllForAgent() { // GH-90000
+        void returnsAllForAgent() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
             runPromise(() -> repo.save(promotableProceduralNs("ns-2")));
-            List<MemoryNamespace> list = runPromise(() -> repo.findByAgent(AGENT_ID, TENANT_ID)); // GH-90000
-            assertThat(list).hasSize(2); // GH-90000
+            List<MemoryNamespace> list = runPromise(() -> repo.findByAgent(AGENT_ID, TENANT_ID)); 
+            assertThat(list).hasSize(2); 
         }
 
         @Test
         @DisplayName("returns empty for unknown agent")
-        void emptyForUnknownAgent() { // GH-90000
-            List<MemoryNamespace> list = runPromise(() -> repo.findByAgent("no-agent", TENANT_ID)); // GH-90000
-            assertThat(list).isEmpty(); // GH-90000
+        void emptyForUnknownAgent() { 
+            List<MemoryNamespace> list = runPromise(() -> repo.findByAgent("no-agent", TENANT_ID)); 
+            assertThat(list).isEmpty(); 
         }
 
         @Test
         @DisplayName("findByAgentAndScope returns namespace for matching scope")
-        void findByAgentAndScopeReturnsMatch() { // GH-90000
+        void findByAgentAndScopeReturnsMatch() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
             runPromise(() -> repo.save(promotableProceduralNs("ns-2")));
-            Optional<MemoryNamespace> result = runPromise( // GH-90000
-                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.PROCEDURAL, TENANT_ID)); // GH-90000
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().scope()).isEqualTo(MemoryScope.PROCEDURAL); // GH-90000
+            Optional<MemoryNamespace> result = runPromise( 
+                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.PROCEDURAL, TENANT_ID)); 
+            assertThat(result).isPresent(); 
+            assertThat(result.get().scope()).isEqualTo(MemoryScope.PROCEDURAL); 
         }
 
         @Test
         @DisplayName("findByAgentAndScope returns empty when scope not found")
-        void findByAgentAndScopeEmptyWhenMissing() { // GH-90000
+        void findByAgentAndScopeEmptyWhenMissing() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
-            Optional<MemoryNamespace> result = runPromise( // GH-90000
-                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.SEMANTIC, TENANT_ID)); // GH-90000
-            assertThat(result).isEmpty(); // GH-90000
+            Optional<MemoryNamespace> result = runPromise( 
+                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.SEMANTIC, TENANT_ID)); 
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -201,22 +201,22 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns only promotion-enabled namespaces")
-        void returnsOnlyPromotionEnabled() { // GH-90000
+        void returnsOnlyPromotionEnabled() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));          // not promotable
             runPromise(() -> repo.save(promotableProceduralNs("ns-2"))); // promotable
-            List<MemoryNamespace> promotable = runPromise( // GH-90000
-                    () -> repo.findPromotionEnabledByAgent(AGENT_ID, TENANT_ID)); // GH-90000
-            assertThat(promotable).hasSize(1); // GH-90000
-            assertThat(promotable.getFirst().promotionEnabled()).isTrue(); // GH-90000
+            List<MemoryNamespace> promotable = runPromise( 
+                    () -> repo.findPromotionEnabledByAgent(AGENT_ID, TENANT_ID)); 
+            assertThat(promotable).hasSize(1); 
+            assertThat(promotable.getFirst().promotionEnabled()).isTrue(); 
         }
 
         @Test
         @DisplayName("returns empty when no promotion-enabled namespaces")
-        void emptyWhenNonePromotable() { // GH-90000
+        void emptyWhenNonePromotable() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
-            List<MemoryNamespace> promotable = runPromise( // GH-90000
-                    () -> repo.findPromotionEnabledByAgent(AGENT_ID, TENANT_ID)); // GH-90000
-            assertThat(promotable).isEmpty(); // GH-90000
+            List<MemoryNamespace> promotable = runPromise( 
+                    () -> repo.findPromotionEnabledByAgent(AGENT_ID, TENANT_ID)); 
+            assertThat(promotable).isEmpty(); 
         }
     }
 
@@ -228,29 +228,29 @@ class MemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deletes an existing namespace and returns true")
-        void deletesExistingNamespace() { // GH-90000
+        void deletesExistingNamespace() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
-            boolean deleted = runPromise(() -> repo.delete("ns-1", TENANT_ID)); // GH-90000
-            assertThat(deleted).isTrue(); // GH-90000
+            boolean deleted = runPromise(() -> repo.delete("ns-1", TENANT_ID)); 
+            assertThat(deleted).isTrue(); 
             Optional<MemoryNamespace> after = runPromise(() -> repo.findById("ns-1"));
-            assertThat(after).isEmpty(); // GH-90000
+            assertThat(after).isEmpty(); 
         }
 
         @Test
         @DisplayName("returns false when namespace not found")
-        void returnsFalseWhenNotFound() { // GH-90000
-            boolean deleted = runPromise(() -> repo.delete("no-such-ns", TENANT_ID)); // GH-90000
-            assertThat(deleted).isFalse(); // GH-90000
+        void returnsFalseWhenNotFound() { 
+            boolean deleted = runPromise(() -> repo.delete("no-such-ns", TENANT_ID)); 
+            assertThat(deleted).isFalse(); 
         }
 
         @Test
         @DisplayName("returns false when tenant does not match")
-        void returnsFalseWhenTenantMismatch() { // GH-90000
+        void returnsFalseWhenTenantMismatch() { 
             runPromise(() -> repo.save(episodicNs("ns-1")));
-            boolean deleted = runPromise(() -> repo.delete("ns-1", "wrong-tenant")); // GH-90000
-            assertThat(deleted).isFalse(); // GH-90000
+            boolean deleted = runPromise(() -> repo.delete("ns-1", "wrong-tenant")); 
+            assertThat(deleted).isFalse(); 
             Optional<MemoryNamespace> still = runPromise(() -> repo.findById("ns-1"));
-            assertThat(still).isPresent(); // GH-90000
+            assertThat(still).isPresent(); 
         }
     }
 }

@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("DefaultLlmExecutionPlan")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DefaultLlmExecutionPlanTest extends EventloopTestBase {
 
     @Mock
@@ -37,181 +37,181 @@ class DefaultLlmExecutionPlanTest extends EventloopTestBase {
 
     @Test
     @DisplayName("execute hydrates the prompt and forwards provider and model settings")
-    void executeHydratesPromptAndForwardsRoutingSettings() { // GH-90000
-        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+    void executeHydratesPromptAndForwardsRoutingSettings() { 
+        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
             .id("fraud-triage")
             .name("Fraud Triage")
-            .generator(Map.of( // GH-90000
-                "steps", List.of(Map.of( // GH-90000
+            .generator(Map.of( 
+                "steps", List.of(Map.of( 
                     "type", "LLM",
                     "provider", "OPENAI",
                     "model", "gpt-4o-mini",
                     "prompt", "Agent {{agent_name}}/{{agent_id}} sees {{input}} within {{context}}",
                     "temperature", 0.35,
                     "max_tokens", 512))))
-            .build(); // GH-90000
-        AgentContext context = AgentContext.builder() // GH-90000
+            .build(); 
+        AgentContext context = AgentContext.builder() 
             .turnId("turn-1")
             .agentId("fraud-triage")
             .tenantId("tenant-a")
-            .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) // GH-90000
-            .build(); // GH-90000
+            .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) 
+            .build(); 
 
-        when(llmProvider.invoke( // GH-90000
+        when(llmProvider.invoke( 
                 "OPENAI",
                 "gpt-4o-mini",
                 "Agent Fraud Triage/fraud-triage sees suspicious payment within " + context,
                 0.35,
                 512,
                 context))
-            .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+            .thenReturn(Promise.of(CompletionResult.builder() 
                 .text("triage-result")
                 .modelUsed("gpt-4o-mini")
-                .promptTokens(120) // GH-90000
-                .completionTokens(60) // GH-90000
-                .tokensUsed(180) // GH-90000
-                .latencyMs(240) // GH-90000
-                .build())); // GH-90000
+                .promptTokens(120) 
+                .completionTokens(60) 
+                .tokensUsed(180) 
+                .latencyMs(240) 
+                .build())); 
 
-        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "suspicious payment", context)); // GH-90000
+        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "suspicious payment", context)); 
 
-        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         assertThat(result.getOutput()).isEqualTo("triage-result");
-        assertThat(result.getMetrics()) // GH-90000
-            .containsEntry("tier", "LLM_EXECUTED") // GH-90000
-            .containsEntry("provider", "OPENAI") // GH-90000
-            .containsEntry("model", "gpt-4o-mini") // GH-90000
-            .containsEntry("prompt_tokens", 120) // GH-90000
-            .containsEntry("completion_tokens", 60) // GH-90000
-            .containsEntry("total_tokens", 180); // GH-90000
+        assertThat(result.getMetrics()) 
+            .containsEntry("tier", "LLM_EXECUTED") 
+            .containsEntry("provider", "OPENAI") 
+            .containsEntry("model", "gpt-4o-mini") 
+            .containsEntry("prompt_tokens", 120) 
+            .containsEntry("completion_tokens", 60) 
+            .containsEntry("total_tokens", 180); 
     }
 
     @Test
     @DisplayName("execute uses the default provider and token limit when optional values are omitted")
-    void executeUsesDefaultProviderAndTokenLimit() { // GH-90000
-        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+    void executeUsesDefaultProviderAndTokenLimit() { 
+        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
             .id("summary-agent")
             .name("Summary Agent")
-            .generator(Map.of( // GH-90000
-                "steps", List.of(Map.of( // GH-90000
+            .generator(Map.of( 
+                "steps", List.of(Map.of( 
                     "type", "LLM",
                     "model", "claude-3-5-sonnet-20241022",
                     "prompt", "Summarize {{input}} for {{agent_id}}"))))
-            .build(); // GH-90000
-        AgentContext context = AgentContext.empty(); // GH-90000
+            .build(); 
+        AgentContext context = AgentContext.empty(); 
 
-        when(llmProvider.invoke( // GH-90000
+        when(llmProvider.invoke( 
                 "ANTHROPIC",
                 "claude-3-5-sonnet-20241022",
                 "Summarize inbox backlog for summary-agent",
                 0.2,
                 2000,
                 context))
-            .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+            .thenReturn(Promise.of(CompletionResult.builder() 
                 .text("summary")
                 .modelUsed("claude-3-5-sonnet-20241022")
-                .promptTokens(40) // GH-90000
-                .completionTokens(20) // GH-90000
-                .tokensUsed(60) // GH-90000
-                .latencyMs(120) // GH-90000
-                .build())); // GH-90000
+                .promptTokens(40) 
+                .completionTokens(20) 
+                .tokensUsed(60) 
+                .latencyMs(120) 
+                .build())); 
 
-        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "inbox backlog", context)); // GH-90000
+        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "inbox backlog", context)); 
 
-        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         assertThat(result.getExplanation()).contains("ANTHROPIC/claude-3-5-sonnet-20241022");
     }
 
     @Test
     @DisplayName("execute records token metrics and deducts cost from the agent budget")
-    void executeRecordsTokenMetricsAndDeductsCost() { // GH-90000
-        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+    void executeRecordsTokenMetricsAndDeductsCost() { 
+        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
             .id("budget-agent")
             .name("Budget Agent")
-            .generator(Map.of( // GH-90000
-                "steps", List.of(Map.of( // GH-90000
+            .generator(Map.of( 
+                "steps", List.of(Map.of( 
                     "type", "LLM",
                     "provider", "OPENAI",
                     "model", "gpt-4o-mini",
                     "prompt", "Assess {{input}}"))))
-            .build(); // GH-90000
-        DefaultAgentContext context = (DefaultAgentContext) AgentContext.builder() // GH-90000
+            .build(); 
+        DefaultAgentContext context = (DefaultAgentContext) AgentContext.builder() 
             .turnId("turn-budget")
             .agentId("budget-agent")
             .tenantId("tenant-budget")
-            .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) // GH-90000
-            .remainingBudget(5.0) // GH-90000
-            .addConfig("llm.cost.inputPer1kUsd", 0.02) // GH-90000
-            .addConfig("llm.cost.outputPer1kUsd", 0.04) // GH-90000
-            .build(); // GH-90000
+            .memoryStore(com.ghatana.agent.framework.memory.MemoryStore.noOp()) 
+            .remainingBudget(5.0) 
+            .addConfig("llm.cost.inputPer1kUsd", 0.02) 
+            .addConfig("llm.cost.outputPer1kUsd", 0.04) 
+            .build(); 
 
-        when(llmProvider.invoke( // GH-90000
+        when(llmProvider.invoke( 
                 "OPENAI",
                 "gpt-4o-mini",
                 "Assess risky transfer",
                 0.2,
                 2000,
                 context))
-            .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+            .thenReturn(Promise.of(CompletionResult.builder() 
                 .text("approved")
                 .modelUsed("gpt-4o-mini")
-                .promptTokens(100) // GH-90000
-                .completionTokens(50) // GH-90000
-                .tokensUsed(150) // GH-90000
-                .latencyMs(321) // GH-90000
-                .build())); // GH-90000
+                .promptTokens(100) 
+                .completionTokens(50) 
+                .tokensUsed(150) 
+                .latencyMs(321) 
+                .build())); 
 
-        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "risky transfer", context)); // GH-90000
+        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "risky transfer", context)); 
 
-        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
-        assertThat(result.getMetrics()).containsEntry("cost_usd", 0.004d); // GH-90000
-        assertThat(context.getMetrics()) // GH-90000
-            .containsEntry("llm.cost", 0.004d) // GH-90000
-            .containsEntry("llm.tokens.input", 100.0) // GH-90000
-            .containsEntry("llm.tokens.output", 50.0) // GH-90000
-            .containsEntry("llm.tokens.total", 150.0) // GH-90000
-            .containsEntry("llm.latency", 321.0); // GH-90000
-        assertThat(context.getRemainingBudget()).isCloseTo(4.996, offset(0.000001)); // GH-90000
+        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
+        assertThat(result.getMetrics()).containsEntry("cost_usd", 0.004d); 
+        assertThat(context.getMetrics()) 
+            .containsEntry("llm.cost", 0.004d) 
+            .containsEntry("llm.tokens.input", 100.0) 
+            .containsEntry("llm.tokens.output", 50.0) 
+            .containsEntry("llm.tokens.total", 150.0) 
+            .containsEntry("llm.latency", 321.0); 
+        assertThat(context.getRemainingBudget()).isCloseTo(4.996, offset(0.000001)); 
     }
 
     @Test
     @DisplayName("execute returns a failed result when no LLM step exists in the generator")
-    void executeFailsWhenNoLlmStepExists() { // GH-90000
-        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+    void executeFailsWhenNoLlmStepExists() { 
+        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
             .id("rule-agent")
             .name("Rule Agent")
-            .generator(Map.of( // GH-90000
-                "steps", List.of(Map.of( // GH-90000
+            .generator(Map.of( 
+                "steps", List.of(Map.of( 
                     "type", "SERVICE",
                     "agent", "fallback-agent"))))
-            .build(); // GH-90000
+            .build(); 
 
-        AgentResult<Object> result = runPromise(() -> plan.execute(entry, Map.of("signal", "x"), AgentContext.empty())); // GH-90000
+        AgentResult<Object> result = runPromise(() -> plan.execute(entry, Map.of("signal", "x"), AgentContext.empty())); 
 
-        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
+        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); 
         assertThat(result.getExplanation()).contains("No LLM step found");
     }
 
     @Test
     @DisplayName("execute returns a failed result when the LLM step omits the model")
-    void executeFailsWhenModelIsMissing() { // GH-90000
-        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+    void executeFailsWhenModelIsMissing() { 
+        DefaultLlmExecutionPlan plan = new DefaultLlmExecutionPlan(llmProvider); 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
             .id("broken-agent")
             .name("Broken Agent")
-            .generator(Map.of( // GH-90000
-                "steps", List.of(Map.of( // GH-90000
+            .generator(Map.of( 
+                "steps", List.of(Map.of( 
                     "type", "LLM",
                     "prompt", "Broken {{input}}"))))
-            .build(); // GH-90000
+            .build(); 
 
-        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "request", AgentContext.empty())); // GH-90000
+        AgentResult<Object> result = runPromise(() -> plan.execute(entry, "request", AgentContext.empty())); 
 
-        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); // GH-90000
+        assertThat(result.getStatus()).isEqualTo(AgentResultStatus.FAILED); 
         assertThat(result.getExplanation()).contains("missing required 'model' property");
     }
 }

@@ -26,33 +26,33 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
     // ── In-memory Kafka topic simulation ──────────────────────────────────────
 
-    record KafkaMessage(String key, String value, long offset) {} // GH-90000
+    record KafkaMessage(String key, String value, long offset) {} 
 
     static class InMemoryTopic {
-        private final List<KafkaMessage> log = new ArrayList<>(); // GH-90000
+        private final List<KafkaMessage> log = new ArrayList<>(); 
         private long nextOffset = 0L;
 
-        void produce(String key, String value) { // GH-90000
-            log.add(new KafkaMessage(key, value, nextOffset++)); // GH-90000
+        void produce(String key, String value) { 
+            log.add(new KafkaMessage(key, value, nextOffset++)); 
         }
 
-        List<KafkaMessage> consume(long fromOffset) { // GH-90000
-            return log.stream().filter(m -> m.offset() >= fromOffset).toList(); // GH-90000
+        List<KafkaMessage> consume(long fromOffset) { 
+            return log.stream().filter(m -> m.offset() >= fromOffset).toList(); 
         }
 
-        List<KafkaMessage> consumeN(long fromOffset, int maxMessages) { // GH-90000
-            return log.stream() // GH-90000
-                    .filter(m -> m.offset() >= fromOffset) // GH-90000
-                    .limit(maxMessages) // GH-90000
-                    .toList(); // GH-90000
+        List<KafkaMessage> consumeN(long fromOffset, int maxMessages) { 
+            return log.stream() 
+                    .filter(m -> m.offset() >= fromOffset) 
+                    .limit(maxMessages) 
+                    .toList(); 
         }
 
-        long latestOffset() { // GH-90000
+        long latestOffset() { 
             return nextOffset;
         }
 
-        int size() { // GH-90000
-            return log.size(); // GH-90000
+        int size() { 
+            return log.size(); 
         }
     }
 
@@ -64,44 +64,44 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("produced message is stored at monotonically increasing offset")
-        void producedMessage_storedAtMonotonicallyIncreasingOffset() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("k1", "v1"); // GH-90000
-            topic.produce("k2", "v2"); // GH-90000
-            topic.produce("k3", "v3"); // GH-90000
+        void producedMessage_storedAtMonotonicallyIncreasingOffset() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("k1", "v1"); 
+            topic.produce("k2", "v2"); 
+            topic.produce("k3", "v3"); 
 
-            List<KafkaMessage> messages = topic.consume(0L); // GH-90000
+            List<KafkaMessage> messages = topic.consume(0L); 
 
-            assertThat(messages).hasSize(3); // GH-90000
-            assertThat(messages.get(0).offset()).isEqualTo(0); // GH-90000
-            assertThat(messages.get(1).offset()).isEqualTo(1); // GH-90000
-            assertThat(messages.get(2).offset()).isEqualTo(2); // GH-90000
+            assertThat(messages).hasSize(3); 
+            assertThat(messages.get(0).offset()).isEqualTo(0); 
+            assertThat(messages.get(1).offset()).isEqualTo(1); 
+            assertThat(messages.get(2).offset()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("producing with null value stores empty record")
-        void producingWithNullValue_storesEmptyRecord() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("tombstone-key", null); // GH-90000
+        void producingWithNullValue_storesEmptyRecord() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("tombstone-key", null); 
 
-            List<KafkaMessage> messages = topic.consume(0L); // GH-90000
+            List<KafkaMessage> messages = topic.consume(0L); 
 
-            assertThat(messages).hasSize(1); // GH-90000
-            assertThat(messages.getFirst().value()).isNull(); // GH-90000
+            assertThat(messages).hasSize(1); 
+            assertThat(messages.getFirst().value()).isNull(); 
         }
 
         @Test
         @DisplayName("batch produce stores all messages in order")
-        void batchProduce_storesAllMessagesInOrder() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            List<String> keys = List.of("a", "b", "c", "d", "e"); // GH-90000
+        void batchProduce_storesAllMessagesInOrder() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            List<String> keys = List.of("a", "b", "c", "d", "e"); 
 
-            keys.forEach(k -> topic.produce(k, "value-" + k)); // GH-90000
+            keys.forEach(k -> topic.produce(k, "value-" + k)); 
 
-            assertThat(topic.size()).isEqualTo(5); // GH-90000
-            List<KafkaMessage> all = topic.consume(0L); // GH-90000
-            assertThat(all).extracting(KafkaMessage::key) // GH-90000
-                    .containsExactlyElementsOf(keys); // GH-90000
+            assertThat(topic.size()).isEqualTo(5); 
+            List<KafkaMessage> all = topic.consume(0L); 
+            assertThat(all).extracting(KafkaMessage::key) 
+                    .containsExactlyElementsOf(keys); 
         }
     }
 
@@ -113,41 +113,41 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("consume from offset 0 returns all messages")
-        void consumeFromOffset0_returnsAllMessages() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("k1", "v1"); // GH-90000
-            topic.produce("k2", "v2"); // GH-90000
+        void consumeFromOffset0_returnsAllMessages() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("k1", "v1"); 
+            topic.produce("k2", "v2"); 
 
-            List<KafkaMessage> all = topic.consume(0L); // GH-90000
+            List<KafkaMessage> all = topic.consume(0L); 
 
-            assertThat(all).hasSize(2); // GH-90000
+            assertThat(all).hasSize(2); 
         }
 
         @Test
         @DisplayName("consume from mid-offset returns only newer messages")
-        void consumeFromMidOffset_returnsOnlyNewerMessages() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("old-k", "old-v");     // offset 0 // GH-90000
-            topic.produce("old-k2", "old-v2");   // offset 1 // GH-90000
-            topic.produce("new-k", "new-v");     // offset 2 // GH-90000
+        void consumeFromMidOffset_returnsOnlyNewerMessages() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("old-k", "old-v");     // offset 0 
+            topic.produce("old-k2", "old-v2");   // offset 1 
+            topic.produce("new-k", "new-v");     // offset 2 
 
-            List<KafkaMessage> newer = topic.consume(2L); // GH-90000
+            List<KafkaMessage> newer = topic.consume(2L); 
 
-            assertThat(newer).hasSize(1); // GH-90000
+            assertThat(newer).hasSize(1); 
             assertThat(newer.getFirst().key()).isEqualTo("new-k");
         }
 
         @Test
         @DisplayName("consume with maxMessages limits returned records")
-        void consumeWithMaxMessages_limitsReturnedRecords() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            for (int i = 0; i < 10; i++) { // GH-90000
-                topic.produce("k" + i, "v" + i); // GH-90000
+        void consumeWithMaxMessages_limitsReturnedRecords() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            for (int i = 0; i < 10; i++) { 
+                topic.produce("k" + i, "v" + i); 
             }
 
-            List<KafkaMessage> batch = topic.consumeN(0L, 5); // GH-90000
+            List<KafkaMessage> batch = topic.consumeN(0L, 5); 
 
-            assertThat(batch).hasSize(5); // GH-90000
+            assertThat(batch).hasSize(5); 
         }
     }
 
@@ -159,49 +159,49 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("committed offset advances consumer position correctly")
-        void committedOffset_advancesConsumerPositionCorrectly() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("a", "1");  // offset 0 // GH-90000
-            topic.produce("b", "2");  // offset 1 // GH-90000
-            topic.produce("c", "3");  // offset 2 // GH-90000
+        void committedOffset_advancesConsumerPositionCorrectly() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("a", "1");  // offset 0 
+            topic.produce("b", "2");  // offset 1 
+            topic.produce("c", "3");  // offset 2 
 
             long committedOffset = 2L;
-            List<KafkaMessage> remaining = topic.consume(committedOffset); // GH-90000
+            List<KafkaMessage> remaining = topic.consume(committedOffset); 
 
-            assertThat(remaining).hasSize(1); // GH-90000
+            assertThat(remaining).hasSize(1); 
             assertThat(remaining.getFirst().key()).isEqualTo("c");
         }
 
         @Test
         @DisplayName("seek to latest offset returns empty if no new messages")
-        void seekToLatestOffset_returnsEmpty_ifNoNewMessages() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            topic.produce("k", "v"); // GH-90000
-            long latestOffset = topic.latestOffset(); // GH-90000
+        void seekToLatestOffset_returnsEmpty_ifNoNewMessages() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            topic.produce("k", "v"); 
+            long latestOffset = topic.latestOffset(); 
 
-            List<KafkaMessage> fresh = topic.consume(latestOffset); // GH-90000
+            List<KafkaMessage> fresh = topic.consume(latestOffset); 
 
-            assertThat(fresh).isEmpty(); // GH-90000
+            assertThat(fresh).isEmpty(); 
         }
 
         @Test
         @DisplayName("consumer position is tracked between poll cycles")
-        void consumerPosition_isTrackedBetweenPollCycles() { // GH-90000
-            InMemoryTopic topic = new InMemoryTopic(); // GH-90000
-            for (int i = 0; i < 6; i++) { // GH-90000
-                topic.produce("k" + i, "v" + i); // GH-90000
+        void consumerPosition_isTrackedBetweenPollCycles() { 
+            InMemoryTopic topic = new InMemoryTopic(); 
+            for (int i = 0; i < 6; i++) { 
+                topic.produce("k" + i, "v" + i); 
             }
 
             // First poll: messages 0–2
-            List<KafkaMessage> firstBatch = topic.consumeN(0L, 3); // GH-90000
-            long nextOffset = firstBatch.getLast().offset() + 1; // GH-90000
+            List<KafkaMessage> firstBatch = topic.consumeN(0L, 3); 
+            long nextOffset = firstBatch.getLast().offset() + 1; 
 
             // Second poll: messages 3–5
-            List<KafkaMessage> secondBatch = topic.consumeN(nextOffset, 3); // GH-90000
+            List<KafkaMessage> secondBatch = topic.consumeN(nextOffset, 3); 
 
-            assertThat(firstBatch).hasSize(3); // GH-90000
-            assertThat(secondBatch).hasSize(3); // GH-90000
-            assertThat(secondBatch.getFirst().offset()).isEqualTo(3L); // GH-90000
+            assertThat(firstBatch).hasSize(3); 
+            assertThat(secondBatch).hasSize(3); 
+            assertThat(secondBatch.getFirst().offset()).isEqualTo(3L); 
         }
     }
 
@@ -213,26 +213,26 @@ class KafkaConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("idempotent producer does not duplicate a retried message")
-        void idempotentProducer_doesNotDuplicateRetriedMessage() { // GH-90000
+        void idempotentProducer_doesNotDuplicateRetriedMessage() { 
             // Simulate: deduplication by sequence ID
-            record ProducerRecord(String key, String value, long sequenceId) {} // GH-90000
+            record ProducerRecord(String key, String value, long sequenceId) {} 
 
-            java.util.Set<Long> seenSequences = new java.util.HashSet<>(); // GH-90000
-            List<KafkaMessage> committed = new ArrayList<>(); // GH-90000
+            java.util.Set<Long> seenSequences = new java.util.HashSet<>(); 
+            List<KafkaMessage> committed = new ArrayList<>(); 
             long nextOffset = 0L;
 
-            ProducerRecord msg = new ProducerRecord("k1", "v1", 42L); // GH-90000
+            ProducerRecord msg = new ProducerRecord("k1", "v1", 42L); 
 
             // First send
-            if (seenSequences.add(msg.sequenceId())) { // GH-90000
-                committed.add(new KafkaMessage(msg.key(), msg.value(), nextOffset++)); // GH-90000
+            if (seenSequences.add(msg.sequenceId())) { 
+                committed.add(new KafkaMessage(msg.key(), msg.value(), nextOffset++)); 
             }
-            // Retry (same sequence) // GH-90000
-            if (seenSequences.add(msg.sequenceId())) { // GH-90000
-                committed.add(new KafkaMessage(msg.key(), msg.value(), nextOffset++)); // GH-90000
+            // Retry (same sequence) 
+            if (seenSequences.add(msg.sequenceId())) { 
+                committed.add(new KafkaMessage(msg.key(), msg.value(), nextOffset++)); 
             }
 
-            assertThat(committed).hasSize(1); // no duplicate // GH-90000
+            assertThat(committed).hasSize(1); // no duplicate 
         }
     }
 }

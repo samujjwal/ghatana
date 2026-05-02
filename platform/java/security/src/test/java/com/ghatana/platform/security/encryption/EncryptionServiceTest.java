@@ -27,9 +27,9 @@ class EncryptionServiceTest extends EventloopTestBase {
     private AesGcmEncryptionProvider provider;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        provider = AesGcmEncryptionProvider.withNewKey(256, "svc-test-key"); // GH-90000
-        encryptionService = new EncryptionService(provider, eventloop()); // GH-90000
+    void setUp() { 
+        provider = AesGcmEncryptionProvider.withNewKey(256, "svc-test-key"); 
+        encryptionService = new EncryptionService(provider, eventloop()); 
     }
 
     @Nested
@@ -38,36 +38,36 @@ class EncryptionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should encrypt and decrypt text data")
-        void shouldRoundTripText() { // GH-90000
-            byte[] plaintext = "Sensitive data for encryption".getBytes(StandardCharsets.UTF_8); // GH-90000
+        void shouldRoundTripText() { 
+            byte[] plaintext = "Sensitive data for encryption".getBytes(StandardCharsets.UTF_8); 
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            assertThat(new String(decrypted, StandardCharsets.UTF_8)) // GH-90000
+            assertThat(new String(decrypted, StandardCharsets.UTF_8)) 
                     .isEqualTo("Sensitive data for encryption");
         }
 
         @Test
         @DisplayName("should encrypt and decrypt empty data")
-        void shouldRoundTripEmptyData() { // GH-90000
+        void shouldRoundTripEmptyData() { 
             byte[] plaintext = new byte[0];
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            assertThat(decrypted).isEqualTo(plaintext); // GH-90000
+            assertThat(decrypted).isEqualTo(plaintext); 
         }
 
         @Test
         @DisplayName("encrypted output should differ from plaintext")
-        void shouldDifferFromPlaintext() { // GH-90000
-            byte[] plaintext = "Hello World".getBytes(StandardCharsets.UTF_8); // GH-90000
+        void shouldDifferFromPlaintext() { 
+            byte[] plaintext = "Hello World".getBytes(StandardCharsets.UTF_8); 
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
 
-            assertThat(encrypted).isNotEqualTo(plaintext); // GH-90000
-            assertThat(encrypted.length).isGreaterThan(plaintext.length); // GH-90000
+            assertThat(encrypted).isNotEqualTo(plaintext); 
+            assertThat(encrypted.length).isGreaterThan(plaintext.length); 
         }
     }
 
@@ -77,8 +77,8 @@ class EncryptionServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return the configured provider")
-        void shouldReturnProvider() { // GH-90000
-            assertThat(encryptionService.getEncryptionProvider()).isSameAs(provider); // GH-90000
+        void shouldReturnProvider() { 
+            assertThat(encryptionService.getEncryptionProvider()).isSameAs(provider); 
         }
     }
 }

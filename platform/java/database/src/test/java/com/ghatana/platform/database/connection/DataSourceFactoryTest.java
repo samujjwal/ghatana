@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.database.connection;
@@ -16,67 +16,67 @@ import static org.assertj.core.api.Assertions.*;
 class DataSourceFactoryTest {
 
     @AfterEach
-    void tearDown() { // GH-90000
-        DataSourceFactory.closeAll(); // GH-90000
+    void tearDown() { 
+        DataSourceFactory.closeAll(); 
     }
 
     @Test
-    void shouldCreateDataSource() { // GH-90000
-        DataSourceConfig config = DataSourceConfig.builder() // GH-90000
+    void shouldCreateDataSource() { 
+        DataSourceConfig config = DataSourceConfig.builder() 
             .jdbcUrl("jdbc:h2:mem:test-factory;DB_CLOSE_DELAY=-1")
             .username("sa")
             .password("")
             .driverClassName("org.h2.Driver")
             .poolName("factory-test")
-            .build(); // GH-90000
+            .build(); 
 
-        DataSource ds = DataSourceFactory.create(config); // GH-90000
+        DataSource ds = DataSourceFactory.create(config); 
 
-        assertThat(ds).isNotNull(); // GH-90000
-        assertThat(DataSourceFactory.poolCount()).isEqualTo(1); // GH-90000
+        assertThat(ds).isNotNull(); 
+        assertThat(DataSourceFactory.poolCount()).isEqualTo(1); 
     }
 
     @Test
-    void shouldTrackMultiplePools() { // GH-90000
-        DataSourceConfig config1 = DataSourceConfig.builder() // GH-90000
+    void shouldTrackMultiplePools() { 
+        DataSourceConfig config1 = DataSourceConfig.builder() 
             .jdbcUrl("jdbc:h2:mem:test1;DB_CLOSE_DELAY=-1")
             .username("sa").password("")
             .driverClassName("org.h2.Driver")
             .poolName("pool-1")
-            .build(); // GH-90000
+            .build(); 
 
-        DataSourceConfig config2 = DataSourceConfig.builder() // GH-90000
+        DataSourceConfig config2 = DataSourceConfig.builder() 
             .jdbcUrl("jdbc:h2:mem:test2;DB_CLOSE_DELAY=-1")
             .username("sa").password("")
             .driverClassName("org.h2.Driver")
             .poolName("pool-2")
-            .build(); // GH-90000
+            .build(); 
 
-        DataSourceFactory.create(config1); // GH-90000
-        DataSourceFactory.create(config2); // GH-90000
+        DataSourceFactory.create(config1); 
+        DataSourceFactory.create(config2); 
 
-        assertThat(DataSourceFactory.poolCount()).isEqualTo(2); // GH-90000
+        assertThat(DataSourceFactory.poolCount()).isEqualTo(2); 
     }
 
     @Test
-    void shouldCloseAllPools() { // GH-90000
-        DataSourceConfig config = DataSourceConfig.builder() // GH-90000
+    void shouldCloseAllPools() { 
+        DataSourceConfig config = DataSourceConfig.builder() 
             .jdbcUrl("jdbc:h2:mem:closetest;DB_CLOSE_DELAY=-1")
             .username("sa").password("")
             .driverClassName("org.h2.Driver")
             .poolName("close-test")
-            .build(); // GH-90000
+            .build(); 
 
-        DataSourceFactory.create(config); // GH-90000
-        assertThat(DataSourceFactory.poolCount()).isEqualTo(1); // GH-90000
+        DataSourceFactory.create(config); 
+        assertThat(DataSourceFactory.poolCount()).isEqualTo(1); 
 
-        DataSourceFactory.closeAll(); // GH-90000
-        assertThat(DataSourceFactory.poolCount()).isZero(); // GH-90000
+        DataSourceFactory.closeAll(); 
+        assertThat(DataSourceFactory.poolCount()).isZero(); 
     }
 
     @Test
-    void shouldRejectNullConfig() { // GH-90000
-        assertThatThrownBy(() -> DataSourceFactory.create(null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullConfig() { 
+        assertThatThrownBy(() -> DataSourceFactory.create(null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 }

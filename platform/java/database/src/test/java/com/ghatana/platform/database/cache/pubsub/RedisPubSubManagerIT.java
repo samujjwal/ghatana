@@ -41,7 +41,7 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     @SuppressWarnings("resource")
     static final GenericContainer<?> REDIS =
             new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
-                    .withExposedPorts(6379); // GH-90000
+                    .withExposedPorts(6379); 
 
     private JedisPool jedisPool;
     private ObjectMapper objectMapper;
@@ -49,154 +49,154 @@ class RedisPubSubManagerIT extends EventloopTestBase {
     private RedisPubSubManager subscriberManager;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.findAndRegisterModules(); // for Instant serialization // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
+        objectMapper.findAndRegisterModules(); // for Instant serialization 
 
-        JedisPoolConfig config = new JedisPoolConfig(); // GH-90000
-        config.setMaxTotal(16); // GH-90000
-        jedisPool = new JedisPool(config, REDIS.getHost(), REDIS.getFirstMappedPort(), 5000); // GH-90000
+        JedisPoolConfig config = new JedisPoolConfig(); 
+        config.setMaxTotal(16); 
+        jedisPool = new JedisPool(config, REDIS.getHost(), REDIS.getFirstMappedPort(), 5000); 
 
-        publisherManager = new RedisPubSubManager( // GH-90000
-                jedisPool, objectMapper, "test-channel", "publisher-1", new NoopMetricsCollector()); // GH-90000
-        subscriberManager = new RedisPubSubManager( // GH-90000
-                jedisPool, objectMapper, "test-channel", "subscriber-2", new NoopMetricsCollector()); // GH-90000
+        publisherManager = new RedisPubSubManager( 
+                jedisPool, objectMapper, "test-channel", "publisher-1", new NoopMetricsCollector()); 
+        subscriberManager = new RedisPubSubManager( 
+                jedisPool, objectMapper, "test-channel", "subscriber-2", new NoopMetricsCollector()); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (subscriberManager != null) { // GH-90000
-            runPromise(() -> subscriberManager.stop()); // GH-90000
+    void tearDown() { 
+        if (subscriberManager != null) { 
+            runPromise(() -> subscriberManager.stop()); 
         }
-        if (publisherManager != null) { // GH-90000
-            runPromise(() -> publisherManager.stop()); // GH-90000
+        if (publisherManager != null) { 
+            runPromise(() -> publisherManager.stop()); 
         }
-        if (jedisPool != null) { // GH-90000
-            jedisPool.close(); // GH-90000
+        if (jedisPool != null) { 
+            jedisPool.close(); 
         }
     }
 
     @Test
     @DisplayName("start succeeds and isRunning reflects running state via stats")
-    void startAndStop() { // GH-90000
-        runPromise(() -> subscriberManager.start()); // GH-90000
-        RedisPubSubManager.PubSubStats stats = subscriberManager.getStats(); // GH-90000
-        assertThat(stats.isRunning()).isTrue(); // GH-90000
+    void startAndStop() { 
+        runPromise(() -> subscriberManager.start()); 
+        RedisPubSubManager.PubSubStats stats = subscriberManager.getStats(); 
+        assertThat(stats.isRunning()).isTrue(); 
 
-        runPromise(() -> subscriberManager.stop()); // GH-90000
-        RedisPubSubManager.PubSubStats stoppedStats = subscriberManager.getStats(); // GH-90000
-        assertThat(stoppedStats.isRunning()).isFalse(); // GH-90000
+        runPromise(() -> subscriberManager.stop()); 
+        RedisPubSubManager.PubSubStats stoppedStats = subscriberManager.getStats(); 
+        assertThat(stoppedStats.isRunning()).isFalse(); 
     }
 
     @Test
     @DisplayName("publish increments publish count in stats")
-    void publishIncrementsCount() { // GH-90000
-        runPromise(() -> subscriberManager.start()); // GH-90000
-        CacheInvalidationMessage msg = CacheInvalidationMessage.invalidateKeys( // GH-90000
+    void publishIncrementsCount() { 
+        runPromise(() -> subscriberManager.start()); 
+        CacheInvalidationMessage msg = CacheInvalidationMessage.invalidateKeys( 
                 Set.of("user:123"), "tenant-a", "publisher-1");
 
-        runPromise(() -> publisherManager.publish(msg)); // GH-90000
+        runPromise(() -> publisherManager.publish(msg)); 
 
-        RedisPubSubManager.PubSubStats stats = publisherManager.getStats(); // GH-90000
-        assertThat(stats.getPublishCount()).isEqualTo(1L); // GH-90000
+        RedisPubSubManager.PubSubStats stats = publisherManager.getStats(); 
+        assertThat(stats.getPublishCount()).isEqualTo(1L); 
     }
 
     @Test
     @DisplayName("subscriber receives published message from a different instance")
-    void subscriberReceivesMessage() throws InterruptedException { // GH-90000
-        CountDownLatch latch = new CountDownLatch(1); // GH-90000
-        List<CacheInvalidationMessage> received = new ArrayList<>(); // GH-90000
+    void subscriberReceivesMessage() throws InterruptedException { 
+        CountDownLatch latch = new CountDownLatch(1); 
+        List<CacheInvalidationMessage> received = new ArrayList<>(); 
 
-        runPromise(() -> subscriberManager.start()); // GH-90000
+        runPromise(() -> subscriberManager.start()); 
         // Allow subscriber thread to initialize and subscribe
-        Thread.sleep(500); // GH-90000
+        Thread.sleep(500); 
 
-        subscriberManager.subscribe(msg -> { // GH-90000
-            received.add(msg); // GH-90000
-            latch.countDown(); // GH-90000
+        subscriberManager.subscribe(msg -> { 
+            received.add(msg); 
+            latch.countDown(); 
         });
 
-        CacheInvalidationMessage outbound = CacheInvalidationMessage.invalidateKeys( // GH-90000
+        CacheInvalidationMessage outbound = CacheInvalidationMessage.invalidateKeys( 
                 Set.of("key:abc"), "tenant-b", "publisher-1");
-        runPromise(() -> publisherManager.publish(outbound)); // GH-90000
+        runPromise(() -> publisherManager.publish(outbound)); 
 
-        boolean delivered = latch.await(5, TimeUnit.SECONDS); // GH-90000
-        assertThat(delivered).isTrue(); // GH-90000
-        assertThat(received).hasSize(1); // GH-90000
-        assertThat(received.get(0).getOperation()) // GH-90000
-                .isEqualTo(CacheInvalidationMessage.Operation.INVALIDATE_KEYS); // GH-90000
+        boolean delivered = latch.await(5, TimeUnit.SECONDS); 
+        assertThat(delivered).isTrue(); 
+        assertThat(received).hasSize(1); 
+        assertThat(received.get(0).getOperation()) 
+                .isEqualTo(CacheInvalidationMessage.Operation.INVALIDATE_KEYS); 
     }
 
     @Test
     @DisplayName("messages from same instance are skipped by subscriber")
-    void sameInstanceMessagesSkipped() throws InterruptedException { // GH-90000
+    void sameInstanceMessagesSkipped() throws InterruptedException { 
         // Use same instanceId for both publisher and subscriber
-        RedisPubSubManager sameInstance = new RedisPubSubManager( // GH-90000
-                jedisPool, objectMapper, "test-channel-self", "same-id", new NoopMetricsCollector()); // GH-90000
+        RedisPubSubManager sameInstance = new RedisPubSubManager( 
+                jedisPool, objectMapper, "test-channel-self", "same-id", new NoopMetricsCollector()); 
 
-        CountDownLatch latch = new CountDownLatch(1); // GH-90000
-        List<CacheInvalidationMessage> received = new ArrayList<>(); // GH-90000
+        CountDownLatch latch = new CountDownLatch(1); 
+        List<CacheInvalidationMessage> received = new ArrayList<>(); 
 
         try {
-            runPromise(() -> sameInstance.start()); // GH-90000
-            Thread.sleep(300); // GH-90000
+            runPromise(() -> sameInstance.start()); 
+            Thread.sleep(300); 
 
-            sameInstance.subscribe(msg -> { // GH-90000
-                received.add(msg); // GH-90000
-                latch.countDown(); // GH-90000
+            sameInstance.subscribe(msg -> { 
+                received.add(msg); 
+                latch.countDown(); 
             });
 
-            CacheInvalidationMessage selfMsg = CacheInvalidationMessage.invalidateKeys( // GH-90000
+            CacheInvalidationMessage selfMsg = CacheInvalidationMessage.invalidateKeys( 
                     Set.of("own-key"), "tenant-x", "same-id");
-            runPromise(() -> sameInstance.publish(selfMsg)); // GH-90000
+            runPromise(() -> sameInstance.publish(selfMsg)); 
 
             // Should NOT deliver because sourceInstance == instanceId
-            boolean delivered = latch.await(2, TimeUnit.SECONDS); // GH-90000
-            assertThat(delivered).isFalse(); // GH-90000
-            assertThat(received).isEmpty(); // GH-90000
+            boolean delivered = latch.await(2, TimeUnit.SECONDS); 
+            assertThat(delivered).isFalse(); 
+            assertThat(received).isEmpty(); 
         } finally {
-            runPromise(() -> sameInstance.stop()); // GH-90000
+            runPromise(() -> sameInstance.stop()); 
         }
     }
 
     @Test
     @DisplayName("subscribe adds listener, unsubscribe removes it")
-    void subscribeAndUnsubscribe() { // GH-90000
-        List<CacheInvalidationMessage> received = new ArrayList<>(); // GH-90000
+    void subscribeAndUnsubscribe() { 
+        List<CacheInvalidationMessage> received = new ArrayList<>(); 
         CacheInvalidationListener listener = received::add;
 
-        subscriberManager.subscribe(listener); // GH-90000
-        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(1); // GH-90000
+        subscriberManager.subscribe(listener); 
+        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(1); 
 
-        subscriberManager.unsubscribe(listener); // GH-90000
-        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(0); // GH-90000
+        subscriberManager.unsubscribe(listener); 
+        assertThat(subscriberManager.getStats().getListenerCount()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("clearNamespace message is published successfully")
-    void publishClearNamespace() { // GH-90000
-        runPromise(() -> subscriberManager.start()); // GH-90000
-        CacheInvalidationMessage msg = CacheInvalidationMessage.clearNamespace( // GH-90000
+    void publishClearNamespace() { 
+        runPromise(() -> subscriberManager.start()); 
+        CacheInvalidationMessage msg = CacheInvalidationMessage.clearNamespace( 
                 "tenant-clear", "publisher-1");
-        runPromise(() -> publisherManager.publish(msg)); // GH-90000
+        runPromise(() -> publisherManager.publish(msg)); 
 
-        assertThat(publisherManager.getStats().getPublishCount()).isEqualTo(1L); // GH-90000
+        assertThat(publisherManager.getStats().getPublishCount()).isEqualTo(1L); 
     }
 
     @Test
     @DisplayName("double start is idempotent — does not throw")
-    void doubleStart() { // GH-90000
-        runPromise(() -> subscriberManager.start()); // GH-90000
-        runPromise(() -> subscriberManager.start()); // idempotent // GH-90000
-        assertThat(subscriberManager.getStats().isRunning()).isTrue(); // GH-90000
+    void doubleStart() { 
+        runPromise(() -> subscriberManager.start()); 
+        runPromise(() -> subscriberManager.start()); // idempotent 
+        assertThat(subscriberManager.getStats().isRunning()).isTrue(); 
     }
 
     @Test
     @DisplayName("double stop is idempotent — does not throw")
-    void doubleStop() { // GH-90000
-        runPromise(() -> subscriberManager.start()); // GH-90000
-        runPromise(() -> subscriberManager.stop()); // GH-90000
-        runPromise(() -> subscriberManager.stop()); // idempotent // GH-90000
-        assertThat(subscriberManager.getStats().isRunning()).isFalse(); // GH-90000
+    void doubleStop() { 
+        runPromise(() -> subscriberManager.start()); 
+        runPromise(() -> subscriberManager.stop()); 
+        runPromise(() -> subscriberManager.stop()); // idempotent 
+        assertThat(subscriberManager.getStats().isRunning()).isFalse(); 
     }
 }

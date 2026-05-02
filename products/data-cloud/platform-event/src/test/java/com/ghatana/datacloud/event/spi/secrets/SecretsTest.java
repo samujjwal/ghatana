@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.spi.secrets;
@@ -27,15 +27,15 @@ class SecretsTest {
     class SecretResolutionExceptionTest {
 
         @Test
-        void messageConstructor() { // GH-90000
+        void messageConstructor() { 
             SecretResolutionException ex = new SecretResolutionException("boom");
             assertThat(ex).hasMessage("boom");
         }
 
         @Test
-        void messageCauseConstructor() { // GH-90000
+        void messageCauseConstructor() { 
             Throwable cause = new RuntimeException("root");
-            SecretResolutionException ex = new SecretResolutionException("wrapped", cause); // GH-90000
+            SecretResolutionException ex = new SecretResolutionException("wrapped", cause); 
             assertThat(ex).hasMessage("wrapped").hasCause(cause);
         }
     }
@@ -47,53 +47,53 @@ class SecretsTest {
     class SecretValueTest {
 
         @Test
-        void ofStringAndBack() { // GH-90000
+        void ofStringAndBack() { 
             SecretValue sv = SecretValue.ofString("mysecret");
             assertThat(sv.asString()).isEqualTo("mysecret");
         }
 
         @Test
-        void ofCharArray() { // GH-90000
+        void ofCharArray() { 
             char[] chars = {'a', 'b', 'c'};
-            SecretValue sv = SecretValue.of(chars); // GH-90000
+            SecretValue sv = SecretValue.of(chars); 
             assertThat(sv.asString()).isEqualTo("abc");
         }
 
         @Test
-        void asCharArrayCopyIsDefensive() { // GH-90000
+        void asCharArrayCopyIsDefensive() { 
             SecretValue sv = SecretValue.ofString("xyz");
-            char[] copy = sv.asCharArrayCopy(); // GH-90000
+            char[] copy = sv.asCharArrayCopy(); 
             copy[0] = 'Z';
             // Original should be unchanged
             assertThat(sv.asString()).isEqualTo("xyz");
         }
 
         @Test
-        void clearMakesValueInaccessible() { // GH-90000
+        void clearMakesValueInaccessible() { 
             SecretValue sv = SecretValue.ofString("secret");
-            sv.clear(); // GH-90000
-            assertThatThrownBy(sv::asString) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            sv.clear(); 
+            assertThatThrownBy(sv::asString) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("cleared");
         }
 
         @Test
-        void clearMakesCharArrayInaccessible() { // GH-90000
+        void clearMakesCharArrayInaccessible() { 
             SecretValue sv = SecretValue.ofString("secret");
-            sv.clear(); // GH-90000
-            assertThatThrownBy(sv::asCharArrayCopy) // GH-90000
-                    .isInstanceOf(IllegalStateException.class); // GH-90000
+            sv.clear(); 
+            assertThatThrownBy(sv::asCharArrayCopy) 
+                    .isInstanceOf(IllegalStateException.class); 
         }
 
         @Test
-        void clearIsIdempotent() { // GH-90000
+        void clearIsIdempotent() { 
             SecretValue sv = SecretValue.ofString("secret");
-            sv.clear(); // GH-90000
-            sv.clear(); // should not throw // GH-90000
+            sv.clear(); 
+            sv.clear(); // should not throw 
         }
 
         @Test
-        void toStringIsRedacted() { // GH-90000
+        void toStringIsRedacted() { 
             assertThat(SecretValue.ofString("mypassword").toString()).isEqualTo("***");
         }
     }
@@ -105,72 +105,72 @@ class SecretsTest {
     class SecretReferenceTest {
 
         @Test
-        void parseValidReference() { // GH-90000
+        void parseValidReference() { 
             SecretReference ref = SecretReference.parse("secret:env:MY_VAR");
             assertThat(ref.provider()).isEqualTo("env");
             assertThat(ref.locator()).isEqualTo("MY_VAR");
         }
 
         @Test
-        void parseWithColonInLocator() { // GH-90000
+        void parseWithColonInLocator() { 
             SecretReference ref = SecretReference.parse("secret:file:/etc/secrets/db:password");
             assertThat(ref.provider()).isEqualTo("file");
             assertThat(ref.locator()).isEqualTo("/etc/secrets/db:password");
         }
 
         @Test
-        void toStringRoundTrip() { // GH-90000
+        void toStringRoundTrip() { 
             String original = "secret:env:MY_VAR";
-            assertThat(SecretReference.parse(original).toString()).isEqualTo(original); // GH-90000
+            assertThat(SecretReference.parse(original).toString()).isEqualTo(original); 
         }
 
         @Test
-        void isSecretReferenceReturnsTrueForPrefixed() { // GH-90000
+        void isSecretReferenceReturnsTrueForPrefixed() { 
             assertThat(SecretReference.isSecretReference("secret:env:VAR")).isTrue();
         }
 
         @Test
-        void isSecretReferenceReturnsFalseForPlain() { // GH-90000
+        void isSecretReferenceReturnsFalseForPlain() { 
             assertThat(SecretReference.isSecretReference("plainvalue")).isFalse();
         }
 
         @Test
-        void isSecretReferenceReturnsFalseForNull() { // GH-90000
-            assertThat(SecretReference.isSecretReference(null)).isFalse(); // GH-90000
+        void isSecretReferenceReturnsFalseForNull() { 
+            assertThat(SecretReference.isSecretReference(null)).isFalse(); 
         }
 
         @Test
-        void parseBlankThrows() { // GH-90000
+        void parseBlankThrows() { 
             assertThatThrownBy(() -> SecretReference.parse(""))
-                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) 
                     .hasMessageContaining("blank");
         }
 
         @Test
-        void parseNullThrows() { // GH-90000
-            assertThatThrownBy(() -> SecretReference.parse(null)) // GH-90000
-                    .isInstanceOf(SecretResolutionException.class); // GH-90000
+        void parseNullThrows() { 
+            assertThatThrownBy(() -> SecretReference.parse(null)) 
+                    .isInstanceOf(SecretResolutionException.class); 
         }
 
         @Test
-        void parseMissingPrefixThrows() { // GH-90000
+        void parseMissingPrefixThrows() { 
             assertThatThrownBy(() -> SecretReference.parse("env:MY_VAR"))
-                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) 
                     .hasMessageContaining("prefix");
         }
 
         @Test
-        void parseMissingLocatorThrows() { // GH-90000
+        void parseMissingLocatorThrows() { 
             // "secret:env:" — locator is empty
             assertThatThrownBy(() -> SecretReference.parse("secret:env:"))
-                    .isInstanceOf(SecretResolutionException.class); // GH-90000
+                    .isInstanceOf(SecretResolutionException.class); 
         }
 
         @Test
-        void parseMissingProviderSeparatorThrows() { // GH-90000
+        void parseMissingProviderSeparatorThrows() { 
             // "secret:nocoronafter" — no second colon
             assertThatThrownBy(() -> SecretReference.parse("secret:nocolon"))
-                    .isInstanceOf(SecretResolutionException.class); // GH-90000
+                    .isInstanceOf(SecretResolutionException.class); 
         }
     }
 
@@ -181,73 +181,73 @@ class SecretsTest {
     class SecretResolverTest {
 
         @Test
-        void defaultResolverHasEnvAndFileProviders() { // GH-90000
-            SecretResolver resolver = SecretResolver.defaultResolver(); // GH-90000
-            assertThat(resolver.providers()).containsKeys("env", "file"); // GH-90000
+        void defaultResolverHasEnvAndFileProviders() { 
+            SecretResolver resolver = SecretResolver.defaultResolver(); 
+            assertThat(resolver.providers()).containsKeys("env", "file"); 
         }
 
         @Test
-        void ofWithCustomProvider() { // GH-90000
-            SecretProvider stub = new SecretProvider() { // GH-90000
+        void ofWithCustomProvider() { 
+            SecretProvider stub = new SecretProvider() { 
                 @Override
-                public String name() { return "stub"; } // GH-90000
+                public String name() { return "stub"; } 
                 @Override
-                public SecretValue resolve(String locator) { // GH-90000
-                    return SecretValue.ofString("stubval-" + locator); // GH-90000
+                public SecretValue resolve(String locator) { 
+                    return SecretValue.ofString("stubval-" + locator); 
                 }
             };
-            SecretResolver resolver = SecretResolver.of(Map.of("stub", stub)); // GH-90000
+            SecretResolver resolver = SecretResolver.of(Map.of("stub", stub)); 
             SecretValue val = resolver.resolveSecretReference("secret:stub:mykey");
             assertThat(val.asString()).isEqualTo("stubval-mykey");
         }
 
         @Test
-        void resolveToStringPassesThroughPlainValue() { // GH-90000
-            SecretResolver resolver = SecretResolver.of(Map.of()); // GH-90000
+        void resolveToStringPassesThroughPlainValue() { 
+            SecretResolver resolver = SecretResolver.of(Map.of()); 
             assertThat(resolver.resolveToString("plain-text")).isEqualTo("plain-text");
         }
 
         @Test
-        void resolveToStringResolvesSecretRef() { // GH-90000
-            SecretProvider stub = new SecretProvider() { // GH-90000
-                @Override public String name() { return "stub"; } // GH-90000
+        void resolveToStringResolvesSecretRef() { 
+            SecretProvider stub = new SecretProvider() { 
+                @Override public String name() { return "stub"; } 
                 @Override public SecretValue resolve(String locator) { return SecretValue.ofString("resolved"); }
             };
-            SecretResolver resolver = SecretResolver.of(Map.of("stub", stub)); // GH-90000
+            SecretResolver resolver = SecretResolver.of(Map.of("stub", stub)); 
             assertThat(resolver.resolveToString("secret:stub:key")).isEqualTo("resolved");
         }
 
         @Test
-        void resolveUnknownProviderThrows() { // GH-90000
-            SecretResolver resolver = SecretResolver.of(Map.of()); // GH-90000
+        void resolveUnknownProviderThrows() { 
+            SecretResolver resolver = SecretResolver.of(Map.of()); 
             assertThatThrownBy(() -> resolver.resolveSecretReference("secret:unknown:key"))
-                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) 
                     .hasMessageContaining("unknown");
         }
 
         @Test
-        void ofNullThrows() { // GH-90000
-            assertThatThrownBy(() -> SecretResolver.of(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void ofNullThrows() { 
+            assertThatThrownBy(() -> SecretResolver.of(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
-        void redactSecretReference() { // GH-90000
-            SecretResolver resolver = SecretResolver.of(Map.of()); // GH-90000
+        void redactSecretReference() { 
+            SecretResolver resolver = SecretResolver.of(Map.of()); 
             String redacted = resolver.redact("secret:env:MY_SECRET");
             assertThat(redacted).isEqualTo("secret:env:***");
         }
 
         @Test
-        void redactPlainValue() { // GH-90000
-            SecretResolver resolver = SecretResolver.of(Map.of()); // GH-90000
+        void redactPlainValue() { 
+            SecretResolver resolver = SecretResolver.of(Map.of()); 
             assertThat(resolver.redact("plaintext")).isEqualTo("***");
         }
 
         @Test
-        void redactNull() { // GH-90000
-            SecretResolver resolver = SecretResolver.of(Map.of()); // GH-90000
-            assertThat(resolver.redact(null)).isNull(); // GH-90000
+        void redactNull() { 
+            SecretResolver resolver = SecretResolver.of(Map.of()); 
+            assertThat(resolver.redact(null)).isNull(); 
         }
     }
 
@@ -258,38 +258,38 @@ class SecretsTest {
     class EnvSecretProviderTest {
 
         @Test
-        void nameIsEnv() { // GH-90000
+        void nameIsEnv() { 
             assertThat(new EnvSecretProvider().name()).isEqualTo("env");
         }
 
         @Test
-        void blankLocatorThrows() { // GH-90000
+        void blankLocatorThrows() { 
             assertThatThrownBy(() -> new EnvSecretProvider().resolve(""))
-                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) 
                     .hasMessageContaining("blank");
         }
 
         @Test
-        void nullLocatorThrows() { // GH-90000
-            assertThatThrownBy(() -> new EnvSecretProvider().resolve(null)) // GH-90000
-                    .isInstanceOf(SecretResolutionException.class); // GH-90000
+        void nullLocatorThrows() { 
+            assertThatThrownBy(() -> new EnvSecretProvider().resolve(null)) 
+                    .isInstanceOf(SecretResolutionException.class); 
         }
 
         @Test
-        void missingEnvVarThrows() { // GH-90000
+        void missingEnvVarThrows() { 
             // Use an env var that will not be set
             assertThatThrownBy(() -> new EnvSecretProvider().resolve("__GHATANA_NOT_SET_EVER__"))
-                    .isInstanceOf(SecretResolutionException.class) // GH-90000
+                    .isInstanceOf(SecretResolutionException.class) 
                     .hasMessageContaining("not set");
         }
 
         @Test
-        void pathVariableResolvedWhenSet() { // GH-90000
+        void pathVariableResolvedWhenSet() { 
             // PATH is always set in test environments
             String path = System.getenv("PATH");
-            if (path != null && !path.isBlank()) { // GH-90000
+            if (path != null && !path.isBlank()) { 
                 SecretValue val = new EnvSecretProvider().resolve("PATH");
-                assertThat(val.asString()).isEqualTo(path); // GH-90000
+                assertThat(val.asString()).isEqualTo(path); 
             }
         }
     }

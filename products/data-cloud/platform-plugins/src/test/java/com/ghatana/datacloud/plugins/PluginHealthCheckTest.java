@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.plugins;
@@ -21,8 +21,8 @@ import static org.mockito.Mockito.*;
  *
  * <p>Tests health check implementations across all plugin types:
  * <ul>
- *   <li>Storage plugins (Redis, Iceberg, S3)</li> // GH-90000
- *   <li>Streaming plugins (Kafka)</li> // GH-90000
+ *   <li>Storage plugins (Redis, Iceberg, S3)</li> 
+ *   <li>Streaming plugins (Kafka)</li> 
  *   <li>Knowledge graph plugin</li>
  *   <li>Vector memory plugin</li>
  *   <li>Disaster recovery manager</li>
@@ -47,53 +47,53 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return healthy status when plugin is running and connected")
-        void shouldReturnHealthyWhenRunningAndConnected() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyWhenRunningAndConnected() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Storage connection healthy")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("healthy");
         }
 
         @Test
         @DisplayName("should return unhealthy status when plugin is not running")
-        void shouldReturnUnhealthyWhenNotRunning() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnUnhealthyWhenNotRunning() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.error("Plugin not running, state: INITIALIZING")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("not running");
         }
 
         @Test
         @DisplayName("should return unhealthy status when connection fails")
-        void shouldReturnUnhealthyWhenConnectionFails() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnUnhealthyWhenConnectionFails() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.error("Connection failed: timeout")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("Connection failed");
         }
 
         @Test
         @DisplayName("should return healthy status with message")
-        void shouldReturnHealthyStatusWithMessage() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyStatusWithMessage() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Redis connection healthy")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("healthy");
         }
     }
@@ -108,40 +108,40 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return healthy when Kafka cluster is reachable")
-        void shouldReturnHealthyWhenKafkaReachable() { // GH-90000
-            StreamingPlugin plugin = mock(StreamingPlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyWhenKafkaReachable() { 
+            StreamingPlugin plugin = mock(StreamingPlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Kafka cluster reachable")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("reachable");
         }
 
         @Test
         @DisplayName("should return unhealthy when Kafka cluster is unreachable")
-        void shouldReturnUnhealthyWhenKafkaUnreachable() { // GH-90000
-            StreamingPlugin plugin = mock(StreamingPlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnUnhealthyWhenKafkaUnreachable() { 
+            StreamingPlugin plugin = mock(StreamingPlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.error("Kafka health check failed: timeout")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("health check failed");
         }
 
         @Test
         @DisplayName("should return healthy with consumer group information")
-        void shouldReturnHealthyWithConsumerGroupInformation() { // GH-90000
-            StreamingPlugin plugin = mock(StreamingPlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyWithConsumerGroupInformation() { 
+            StreamingPlugin plugin = mock(StreamingPlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Kafka cluster healthy with 3 consumer groups")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("consumer groups");
         }
     }
@@ -156,40 +156,40 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return healthy when all components are healthy")
-        void shouldReturnHealthyWhenAllComponentsHealthy() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyWhenAllComponentsHealthy() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("All components healthy: storage, traversal")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("All components healthy");
         }
 
         @Test
         @DisplayName("should return unhealthy when storage component is unhealthy")
-        void shouldReturnUnhealthyWhenStorageUnhealthy() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnUnhealthyWhenStorageUnhealthy() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.unhealthy("Plugin running but storage component unhealthy")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("storage component unhealthy");
         }
 
         @Test
         @DisplayName("should return unhealthy when traversal component is unhealthy")
-        void shouldReturnUnhealthyWhenTraversalUnhealthy() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnUnhealthyWhenTraversalUnhealthy() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.unhealthy("Plugin running but traversal component unhealthy")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("traversal component unhealthy");
         }
     }
@@ -204,28 +204,28 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return healthy with storage statistics in message")
-        void shouldReturnHealthyWithStorageStatisticsInMessage() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldReturnHealthyWithStorageStatisticsInMessage() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Vector storage healthy: 5000 vectors, 10 tenants")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("5000 vectors");
             assertThat(result.getMessage()).contains("10 tenants");
         }
 
         @Test
         @DisplayName("should handle empty storage gracefully")
-        void shouldHandleEmptyStorageGracefully() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldHandleEmptyStorageGracefully() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Vector storage healthy: 0 vectors, 0 tenants")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("0 vectors");
         }
     }
@@ -240,26 +240,26 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle health check timeout gracefully")
-        void shouldHandleHealthCheckTimeoutGracefully() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldHandleHealthCheckTimeoutGracefully() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.error("Health check timed out")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isFalse(); // GH-90000
+            assertThat(result.isHealthy()).isFalse(); 
             assertThat(result.getMessage()).contains("timed out");
         }
 
         @Test
         @DisplayName("should handle health check exceptions gracefully")
-        void shouldHandleHealthCheckExceptionsGracefully() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldHandleHealthCheckExceptionsGracefully() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.ofException(new RuntimeException("Unexpected error")));
 
-            assertThatThrownBy(() -> runPromise(() -> plugin.healthCheck())) // GH-90000
-                .isInstanceOf(RuntimeException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> plugin.healthCheck())) 
+                .isInstanceOf(RuntimeException.class) 
                 .hasMessageContaining("Unexpected error");
         }
     }
@@ -274,40 +274,40 @@ class PluginHealthCheckTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should include plugin state in message")
-        void shouldIncludePluginStateInMessage() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldIncludePluginStateInMessage() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Plugin healthy, state: RUNNING")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("RUNNING");
         }
 
         @Test
         @DisplayName("should include version information in message")
-        void shouldIncludeVersionInMessage() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldIncludeVersionInMessage() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Plugin healthy, version: 1.0.0, state: RUNNING")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("1.0.0");
         }
 
         @Test
         @DisplayName("should include performance metrics in message")
-        void shouldIncludePerformanceMetricsInMessage() { // GH-90000
-            StoragePlugin plugin = mock(StoragePlugin.class); // GH-90000
-            when(plugin.healthCheck()) // GH-90000
+        void shouldIncludePerformanceMetricsInMessage() { 
+            StoragePlugin plugin = mock(StoragePlugin.class); 
+            when(plugin.healthCheck()) 
                 .thenReturn(Promise.of(HealthStatus.ok("Plugin healthy, latency: 5ms, throughput: 1000/s")));
 
-            HealthStatus result = runPromise(() -> plugin.healthCheck()); // GH-90000
+            HealthStatus result = runPromise(() -> plugin.healthCheck()); 
 
-            assertThat(result.isHealthy()).isTrue(); // GH-90000
+            assertThat(result.isHealthy()).isTrue(); 
             assertThat(result.getMessage()).contains("5ms");
             assertThat(result.getMessage()).contains("1000");
         }

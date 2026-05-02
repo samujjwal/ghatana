@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("DataCloudAgentReleaseRepository")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-test-001";
@@ -55,47 +55,47 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
     private DataCloudAgentReleaseRepository repo;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        repo = new DataCloudAgentReleaseRepository(dataCloud, TENANT_ID); // GH-90000
+    void setUp() { 
+        repo = new DataCloudAgentReleaseRepository(dataCloud, TENANT_ID); 
     }
 
     // ─────────────────── helpers ────────────────────────────────────────────
 
-    private AgentRelease minimalRelease() { // GH-90000
-        return new AgentReleaseBuilder() // GH-90000
+    private AgentRelease minimalRelease() { 
+        return new AgentReleaseBuilder() 
                 .agentId("agent-001")
                 .releaseVersion("1.0.0")
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); // GH-90000
+                .build(); 
     }
 
-    /** Builds the data map that {@code save()} would pass to createEntity. */ // GH-90000
-    private Map<String, Object> minimalDataMap(AgentRelease r) { // GH-90000
-        Map<String, Object> m = new HashMap<>(); // GH-90000
-        m.put("agentReleaseId", r.agentReleaseId()); // GH-90000
-        m.put("agentId", r.agentId()); // GH-90000
-        m.put("specVersion", r.specVersion()); // GH-90000
-        m.put("releaseVersion", r.releaseVersion()); // GH-90000
-        m.put("state", r.state().name()); // GH-90000
-        m.put("compatibleRuntimeVersions", List.of()); // GH-90000
-        m.put("dataClassesHandled", List.of()); // GH-90000
-        m.put("permittedPurposes", List.of(r.permittedPurposes().iterator().next())); // GH-90000
-        m.put("redactionProfileId", r.redactionProfileId()); // GH-90000
-        m.put("threatModelId", r.threatModelId()); // GH-90000
-        m.put("capabilityMaturityProfile", r.capabilityMaturityProfile()); // GH-90000
-        m.put("createdAt", r.createdAt().toString()); // GH-90000
-        m.put("updatedAt", r.updatedAt().toString()); // GH-90000
+    /** Builds the data map that {@code save()} would pass to createEntity. */ 
+    private Map<String, Object> minimalDataMap(AgentRelease r) { 
+        Map<String, Object> m = new HashMap<>(); 
+        m.put("agentReleaseId", r.agentReleaseId()); 
+        m.put("agentId", r.agentId()); 
+        m.put("specVersion", r.specVersion()); 
+        m.put("releaseVersion", r.releaseVersion()); 
+        m.put("state", r.state().name()); 
+        m.put("compatibleRuntimeVersions", List.of()); 
+        m.put("dataClassesHandled", List.of()); 
+        m.put("permittedPurposes", List.of(r.permittedPurposes().iterator().next())); 
+        m.put("redactionProfileId", r.redactionProfileId()); 
+        m.put("threatModelId", r.threatModelId()); 
+        m.put("capabilityMaturityProfile", r.capabilityMaturityProfile()); 
+        m.put("createdAt", r.createdAt().toString()); 
+        m.put("updatedAt", r.updatedAt().toString()); 
         return m;
     }
 
-    private void stubCreateEntity() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        when(mockEntity.getId()).thenReturn(id); // GH-90000
-        when(dataCloud.createEntity(any(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(mockEntity)); // GH-90000
+    private void stubCreateEntity() { 
+        UUID id = UUID.randomUUID(); 
+        when(mockEntity.getId()).thenReturn(id); 
+        when(dataCloud.createEntity(any(), any(), any())) 
+                .thenReturn(Promise.of(mockEntity)); 
     }
 
     // ─────────────────── save ───────────────────────────────────────────────
@@ -106,23 +106,23 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delegates to dataCloud.createEntity with correct collection")
-        void delegatesToDataCloud() { // GH-90000
-            stubCreateEntity(); // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
+        void delegatesToDataCloud() { 
+            stubCreateEntity(); 
+            AgentRelease release = minimalRelease(); 
 
-            AgentRelease result = runPromise(() -> repo.save(release)); // GH-90000
+            AgentRelease result = runPromise(() -> repo.save(release)); 
 
-            assertThat(result.agentReleaseId()).isEqualTo(release.agentReleaseId()); // GH-90000
-            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any()); // GH-90000
+            assertThat(result.agentReleaseId()).isEqualTo(release.agentReleaseId()); 
+            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any()); 
         }
 
         @Test
         @DisplayName("propagates DataCloud failure")
-        void propagatesFailure() { // GH-90000
-            when(dataCloud.createEntity(any(), any(), any())) // GH-90000
+        void propagatesFailure() { 
+            when(dataCloud.createEntity(any(), any(), any())) 
                     .thenReturn(Promise.ofException(new RuntimeException("DC unavailable")));
 
-            assertThatThrownBy(() -> runPromise(() -> repo.save(minimalRelease()))) // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> repo.save(minimalRelease()))) 
                     .hasMessageContaining("DC unavailable");
         }
     }
@@ -135,29 +135,29 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns release when entity found")
-        void returnsReleaseWhenFound() { // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
-            Map<String, Object> data = minimalDataMap(release); // GH-90000
-            EntityInterface entity = mock(EntityInterface.class); // GH-90000
-            when(entity.getData()).thenReturn(data); // GH-90000
-            when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of(entity))); // GH-90000
+        void returnsReleaseWhenFound() { 
+            AgentRelease release = minimalRelease(); 
+            Map<String, Object> data = minimalDataMap(release); 
+            EntityInterface entity = mock(EntityInterface.class); 
+            when(entity.getData()).thenReturn(data); 
+            when(dataCloud.queryEntities(any(), any(), any())) 
+                    .thenReturn(Promise.of(List.of(entity))); 
 
-            Optional<AgentRelease> found = runPromise(() -> repo.findById(release.agentReleaseId())); // GH-90000
+            Optional<AgentRelease> found = runPromise(() -> repo.findById(release.agentReleaseId())); 
 
-            assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().agentReleaseId()).isEqualTo(release.agentReleaseId()); // GH-90000
+            assertThat(found).isPresent(); 
+            assertThat(found.get().agentReleaseId()).isEqualTo(release.agentReleaseId()); 
         }
 
         @Test
         @DisplayName("returns empty when entity not found")
-        void returnsEmptyWhenNotFound() { // GH-90000
-            when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void returnsEmptyWhenNotFound() { 
+            when(dataCloud.queryEntities(any(), any(), any())) 
+                    .thenReturn(Promise.of(List.of())); 
 
             Optional<AgentRelease> found = runPromise(() -> repo.findById("no-such-id"));
 
-            assertThat(found).isEmpty(); // GH-90000
+            assertThat(found).isEmpty(); 
         }
     }
 
@@ -165,58 +165,58 @@ class DataCloudAgentReleaseRepositoryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findByState queries collection with state filter")
-    void findByStateQueriesCollection() { // GH-90000
-        AgentRelease active = new AgentReleaseBuilder() // GH-90000
+    void findByStateQueriesCollection() { 
+        AgentRelease active = new AgentReleaseBuilder() 
                 .agentId("agent-001")
                 .releaseVersion("1.0.0")
-                .state(AgentReleaseState.ACTIVE) // GH-90000
+                .state(AgentReleaseState.ACTIVE) 
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); // GH-90000
-        Map<String, Object> data = minimalDataMap(active); // GH-90000
-        EntityInterface entity = mock(EntityInterface.class); // GH-90000
-        when(entity.getData()).thenReturn(data); // GH-90000
-        when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any())) // GH-90000
-                .thenReturn(Promise.of(List.of(entity))); // GH-90000
+                .build(); 
+        Map<String, Object> data = minimalDataMap(active); 
+        EntityInterface entity = mock(EntityInterface.class); 
+        when(entity.getData()).thenReturn(data); 
+        when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any())) 
+                .thenReturn(Promise.of(List.of(entity))); 
 
-        List<AgentRelease> results = runPromise(() -> repo.findByState(AgentReleaseState.ACTIVE)); // GH-90000
+        List<AgentRelease> results = runPromise(() -> repo.findByState(AgentReleaseState.ACTIVE)); 
 
-        assertThat(results).hasSize(1); // GH-90000
-        verify(dataCloud).queryEntities(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any()); // GH-90000
+        assertThat(results).hasSize(1); 
+        verify(dataCloud).queryEntities(eq(TENANT_ID), eq(DataCloudAgentReleaseRepository.COLLECTION), any()); 
     }
 
     // ─────────────────── transition ─────────────────────────────────────────
 
     @Test
     @DisplayName("transition saves updated state")
-    void transitionSavesUpdatedState() { // GH-90000
-        AgentRelease draft = minimalRelease(); // GH-90000
-        Map<String, Object> draftData = minimalDataMap(draft); // GH-90000
-        EntityInterface entity = mock(EntityInterface.class); // GH-90000
-        when(entity.getData()).thenReturn(draftData); // GH-90000
+    void transitionSavesUpdatedState() { 
+        AgentRelease draft = minimalRelease(); 
+        Map<String, Object> draftData = minimalDataMap(draft); 
+        EntityInterface entity = mock(EntityInterface.class); 
+        when(entity.getData()).thenReturn(draftData); 
 
         // findById stub → returns one entity
-        when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(List.of(entity))); // GH-90000
+        when(dataCloud.queryEntities(any(), any(), any())) 
+                .thenReturn(Promise.of(List.of(entity))); 
         // save stub → returns mock entity
-        stubCreateEntity(); // GH-90000
+        stubCreateEntity(); 
 
-        AgentRelease validated = runPromise(() -> // GH-90000
-                repo.transition(draft.agentReleaseId(), AgentReleaseState.VALIDATED, "admin@test.com")); // GH-90000
+        AgentRelease validated = runPromise(() -> 
+                repo.transition(draft.agentReleaseId(), AgentReleaseState.VALIDATED, "admin@test.com")); 
 
-        assertThat(validated.state()).isEqualTo(AgentReleaseState.VALIDATED); // GH-90000
+        assertThat(validated.state()).isEqualTo(AgentReleaseState.VALIDATED); 
     }
 
     @Test
     @DisplayName("transition fails when release not found")
-    void transitionFailsWhenNotFound() { // GH-90000
-        when(dataCloud.queryEntities(any(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(List.of())); // GH-90000
+    void transitionFailsWhenNotFound() { 
+        when(dataCloud.queryEntities(any(), any(), any())) 
+                .thenReturn(Promise.of(List.of())); 
 
-        assertThatThrownBy(() -> runPromise(() -> // GH-90000
-                repo.transition("no-such-id", AgentReleaseState.VALIDATED, "admin@test.com"))) // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> 
+                repo.transition("no-such-id", AgentReleaseState.VALIDATED, "admin@test.com"))) 
                 .hasMessageContaining("no-such-id");
     }
 }

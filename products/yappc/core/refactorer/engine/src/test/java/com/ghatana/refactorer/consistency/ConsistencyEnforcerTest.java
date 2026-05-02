@@ -31,58 +31,58 @@ class ConsistencyEnforcerTest extends EventloopTestBase {
     private PolyfixProjectContext context;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        context = mock(PolyfixProjectContext.class); // GH-90000
-        ConsistencyConfig config = ConsistencyConfig.builder() // GH-90000
-                .withMode(ConsistencyConfig.Mode.CHECK_ONLY) // GH-90000
-                .withFailOnError(true) // GH-90000
-                .build(); // GH-90000
-        enforcer = new ConsistencyEnforcer(context, config, eventloop()); // GH-90000
+    void setUp() { 
+        context = mock(PolyfixProjectContext.class); 
+        ConsistencyConfig config = ConsistencyConfig.builder() 
+                .withMode(ConsistencyConfig.Mode.CHECK_ONLY) 
+                .withFailOnError(true) 
+                .build(); 
+        enforcer = new ConsistencyEnforcer(context, config, eventloop()); 
     }
 
     @Test
-    void testCheckFilesWithEmptyList() { // GH-90000
-        var diagnostics = runPromise(() -> enforcer.checkFiles(List.of())); // GH-90000
-        assertTrue(diagnostics.isEmpty(), "Should return empty list for empty input"); // GH-90000
+    void testCheckFilesWithEmptyList() { 
+        var diagnostics = runPromise(() -> enforcer.checkFiles(List.of())); 
+        assertTrue(diagnostics.isEmpty(), "Should return empty list for empty input"); 
     }
 
     @Test
-    void testCheckFilesWithNonExistentFile() { // GH-90000
+    void testCheckFilesWithNonExistentFile() { 
         Path nonExistentFile = tempDir.resolve("nonexistent.txt");
-        var diagnostics = runPromise(() -> enforcer.checkFiles(List.of(nonExistentFile))); // GH-90000
-        assertTrue(diagnostics.isEmpty(), "Should handle non-existent files gracefully"); // GH-90000
+        var diagnostics = runPromise(() -> enforcer.checkFiles(List.of(nonExistentFile))); 
+        assertTrue(diagnostics.isEmpty(), "Should handle non-existent files gracefully"); 
     }
 
     @Test
-    void testFixFiles() { // GH-90000
-        assertDoesNotThrow(() -> // GH-90000
+    void testFixFiles() { 
+        assertDoesNotThrow(() -> 
             runPromise(() -> enforcer.fixFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }
 
     @Test
-    void testFormatFiles() { // GH-90000
-        assertDoesNotThrow(() -> // GH-90000
+    void testFormatFiles() { 
+        assertDoesNotThrow(() -> 
             runPromise(() -> enforcer.formatFiles(List.of(tempDir.resolve("test.sh"))))
         );
     }
 
     @Test
-    void testFixModeEnabled() { // GH-90000
-        ConsistencyConfig config = ConsistencyConfig.builder() // GH-90000
-                .withMode(ConsistencyConfig.Mode.FIX) // GH-90000
-                .build(); // GH-90000
-        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FIX)); // GH-90000
-        assertFalse(config.isModeEnabled(ConsistencyConfig.Mode.FORMAT)); // GH-90000
+    void testFixModeEnabled() { 
+        ConsistencyConfig config = ConsistencyConfig.builder() 
+                .withMode(ConsistencyConfig.Mode.FIX) 
+                .build(); 
+        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FIX)); 
+        assertFalse(config.isModeEnabled(ConsistencyConfig.Mode.FORMAT)); 
     }
 
     @Test
-    void testMultipleModesEnabled() { // GH-90000
-        ConsistencyConfig config = ConsistencyConfig.builder() // GH-90000
-                .withMode(ConsistencyConfig.Mode.FIX) // GH-90000
-                .withMode(ConsistencyConfig.Mode.FORMAT) // GH-90000
-                .build(); // GH-90000
-        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FIX)); // GH-90000
-        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FORMAT)); // GH-90000
+    void testMultipleModesEnabled() { 
+        ConsistencyConfig config = ConsistencyConfig.builder() 
+                .withMode(ConsistencyConfig.Mode.FIX) 
+                .withMode(ConsistencyConfig.Mode.FORMAT) 
+                .build(); 
+        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FIX)); 
+        assertTrue(config.isModeEnabled(ConsistencyConfig.Mode.FORMAT)); 
     }
 }

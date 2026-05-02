@@ -1,0 +1,246 @@
+# Finance Schema Pack Registry
+# Declares Finance-specific data schemas for use with the generic platform schema registry.
+# Products register schemas here; the platform kernel has no knowledge of these schemas.
+
+registry:
+  id: finance-schema-registry
+  name: "Finance Schema Pack Registry"
+  version: "1.0.0"
+  product: finance
+  description: "Capital-markets domain entity schemas for orders, trades, positions, risk metrics, and compliance"
+  schema-version: "1"
+
+schemas:
+
+  # ── Order and trade schemas ──────────────────────────────────────────────────
+
+  - id: finance.order
+    name: "Trade Order"
+    version: "1.0.0"
+    description: "Immutable trade order submitted for execution"
+    fields:
+      - name: orderId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: traderId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: instrumentId
+        type: string
+        required: true
+        classification: INTERNAL
+        description: "Security or instrument identifier (ISIN, ticker, etc.)"
+      - name: side
+        type: enum
+        values: [BUY, SELL, SHORT, COVER]
+        required: true
+        classification: INTERNAL
+      - name: quantity
+        type: decimal
+        required: true
+        classification: CONFIDENTIAL
+      - name: limitPrice
+        type: decimal
+        required: false
+        classification: CONFIDENTIAL
+      - name: orderType
+        type: enum
+        values: [MARKET, LIMIT, STOP, STOP_LIMIT, IOC, FOK]
+        required: true
+        classification: INTERNAL
+      - name: status
+        type: enum
+        values: [PENDING, SUBMITTED, PARTIALLY_FILLED, FILLED, CANCELLED, REJECTED]
+        required: true
+        classification: INTERNAL
+      - name: submittedAt
+        type: datetime
+        required: true
+        classification: INTERNAL
+      - name: crossBorder
+        type: boolean
+        required: false
+        classification: CONFIDENTIAL
+      - name: notionalUsd
+        type: decimal
+        required: false
+        classification: CONFIDENTIAL
+        description: "Estimated notional value in USD for cross-border threshold checks"
+
+  - id: finance.trade
+    name: "Executed Trade"
+    version: "1.0.0"
+    description: "Confirmed trade execution record"
+    fields:
+      - name: tradeId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: orderId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: executedAt
+        type: datetime
+        required: true
+        classification: CONFIDENTIAL
+      - name: executedQuantity
+        type: decimal
+        required: true
+        classification: CONFIDENTIAL
+      - name: executedPrice
+        type: decimal
+        required: true
+        classification: CONFIDENTIAL
+      - name: settlementStatus
+        type: enum
+        values: [PENDING_SETTLEMENT, SETTLED, FAILED]
+        required: true
+        classification: INTERNAL
+      - name: counterpartyId
+        type: string
+        required: false
+        classification: CONFIDENTIAL
+
+  # ── Risk metric schemas ──────────────────────────────────────────────────────
+
+  - id: finance.risk-score
+    name: "Risk Score"
+    version: "1.0.0"
+    description: "Model-evaluated risk score for an entity"
+    fields:
+      - name: entityId
+        type: string
+        required: true
+        classification: INTERNAL
+      - name: modelId
+        type: string
+        required: true
+        classification: INTERNAL
+        description: "Risk model identifier (see RiskModelId)"
+      - name: score
+        type: decimal
+        required: true
+        classification: CONFIDENTIAL
+        description: "Normalized risk score [0.0, 1.0]"
+      - name: level
+        type: enum
+        values: [LOW, MEDIUM, HIGH, CRITICAL]
+        required: true
+        classification: INTERNAL
+      - name: componentScores
+        type: map
+        required: true
+        classification: CONFIDENTIAL
+      - name: calculatedAt
+        type: datetime
+        required: true
+        classification: INTERNAL
+
+  - id: finance.risk-limit
+    name: "Risk Limit"
+    version: "1.0.0"
+    description: "Entity-level risk exposure limits"
+    fields:
+      - name: entityId
+        type: string
+        required: true
+        classification: INTERNAL
+      - name: limits
+        type: map
+        required: true
+        classification: CONFIDENTIAL
+        description: "Limit name to value map (e.g., max_position_size, max_concentration)"
+      - name: effectiveFrom
+        type: datetime
+        required: true
+        classification: INTERNAL
+      - name: setByActorId
+        type: string
+        required: true
+        classification: INTERNAL
+
+  # ── Compliance schemas ───────────────────────────────────────────────────────
+
+  - id: finance.compliance-event
+    name: "Compliance Event"
+    version: "1.0.0"
+    description: "Regulatory compliance check result and audit record"
+    fields:
+      - name: eventId
+        type: string
+        required: true
+        classification: INTERNAL
+      - name: tradeId
+        type: string
+        required: false
+        classification: CONFIDENTIAL
+      - name: orderId
+        type: string
+        required: false
+        classification: CONFIDENTIAL
+      - name: checkType
+        type: string
+        required: true
+        classification: INTERNAL
+        description: "Type of compliance check (AML, KYC, pre-clearance, etc.)"
+      - name: outcome
+        type: enum
+        values: [PASS, FAIL, FLAGGED, OVERRIDDEN]
+        required: true
+        classification: CONFIDENTIAL
+      - name: checkedAt
+        type: datetime
+        required: true
+        classification: INTERNAL
+      - name: checkedByActorId
+        type: string
+        required: true
+        classification: INTERNAL
+      - name: notes
+        type: string
+        required: false
+        classification: CONFIDENTIAL
+
+  # ── Portfolio schemas ────────────────────────────────────────────────────────
+
+  - id: finance.position
+    name: "Portfolio Position"
+    version: "1.0.0"
+    description: "Current portfolio position for an instrument"
+    fields:
+      - name: positionId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: portfolioId
+        type: string
+        required: true
+        classification: CONFIDENTIAL
+      - name: instrumentId
+        type: string
+        required: true
+        classification: INTERNAL
+      - name: quantity
+        type: decimal
+        required: true
+        classification: CONFIDENTIAL
+      - name: averageCost
+        type: decimal
+        required: false
+        classification: CONFIDENTIAL
+      - name: marketValue
+        type: decimal
+        required: false
+        classification: CONFIDENTIAL
+      - name: concentration
+        type: decimal
+        required: false
+        classification: CONFIDENTIAL
+        description: "Fraction of portfolio [0.0, 1.0]"
+      - name: updatedAt
+        type: datetime
+        required: true
+        classification: INTERNAL

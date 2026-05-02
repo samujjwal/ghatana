@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for {@link EventCloudPatternStateStore} in in-memory fallback mode
- * (no Redis required — safe for CI and local development). // GH-90000
+ * (no Redis required — safe for CI and local development). 
  *
  * @doc.type class
  * @doc.purpose Verify EventCloudPatternStateStore CRUD and tenant isolation without Redis
@@ -26,10 +26,10 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
     private EventCloudPatternStateStore<String> store;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new EventCloudPatternStateStore<>( // GH-90000
-            s -> s.getBytes(StandardCharsets.UTF_8), // GH-90000
-            bytes -> new String(bytes, StandardCharsets.UTF_8) // GH-90000
+    void setUp() { 
+        store = new EventCloudPatternStateStore<>( 
+            s -> s.getBytes(StandardCharsets.UTF_8), 
+            bytes -> new String(bytes, StandardCharsets.UTF_8) 
         );
     }
 
@@ -39,25 +39,25 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("saves state and loads it back correctly")
-        void shouldSaveAndLoadState() { // GH-90000
-            runPromise(() -> store.save("t1", "p1", "state-value")); // GH-90000
-            Optional<String> result = runPromise(() -> store.load("t1", "p1")); // GH-90000
+        void shouldSaveAndLoadState() { 
+            runPromise(() -> store.save("t1", "p1", "state-value")); 
+            Optional<String> result = runPromise(() -> store.load("t1", "p1")); 
             assertThat(result).isPresent().hasValue("state-value");
         }
 
         @Test
         @DisplayName("load() returns empty when no state stored")
-        void shouldReturnEmptyWhenMissing() { // GH-90000
-            Optional<String> result = runPromise(() -> store.load("t1", "missing")); // GH-90000
-            assertThat(result).isEmpty(); // GH-90000
+        void shouldReturnEmptyWhenMissing() { 
+            Optional<String> result = runPromise(() -> store.load("t1", "missing")); 
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("second save() overwrites previous state")
-        void shouldOverwriteOnSave() { // GH-90000
-            runPromise(() -> store.save("t1", "p1", "v1")); // GH-90000
-            runPromise(() -> store.save("t1", "p1", "v2")); // GH-90000
-            Optional<String> result = runPromise(() -> store.load("t1", "p1")); // GH-90000
+        void shouldOverwriteOnSave() { 
+            runPromise(() -> store.save("t1", "p1", "v1")); 
+            runPromise(() -> store.save("t1", "p1", "v2")); 
+            Optional<String> result = runPromise(() -> store.load("t1", "p1")); 
             assertThat(result).isPresent().hasValue("v2");
         }
     }
@@ -68,17 +68,17 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("exists() returns true after save()")
-        void shouldReturnTrueAfterSave() { // GH-90000
-            runPromise(() -> store.save("t1", "p1", "some-state")); // GH-90000
-            boolean exists = runPromise(() -> store.exists("t1", "p1")); // GH-90000
-            assertThat(exists).isTrue(); // GH-90000
+        void shouldReturnTrueAfterSave() { 
+            runPromise(() -> store.save("t1", "p1", "some-state")); 
+            boolean exists = runPromise(() -> store.exists("t1", "p1")); 
+            assertThat(exists).isTrue(); 
         }
 
         @Test
         @DisplayName("exists() returns false when not saved")
-        void shouldReturnFalseWhenNotSaved() { // GH-90000
-            boolean exists = runPromise(() -> store.exists("t1", "ghost-pattern")); // GH-90000
-            assertThat(exists).isFalse(); // GH-90000
+        void shouldReturnFalseWhenNotSaved() { 
+            boolean exists = runPromise(() -> store.exists("t1", "ghost-pattern")); 
+            assertThat(exists).isFalse(); 
         }
     }
 
@@ -88,17 +88,17 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delete() removes state so load() returns empty")
-        void shouldDeleteState() { // GH-90000
-            runPromise(() -> store.save("t1", "p1", "state")); // GH-90000
-            runPromise(() -> store.delete("t1", "p1")); // GH-90000
-            Optional<String> result = runPromise(() -> store.load("t1", "p1")); // GH-90000
-            assertThat(result).isEmpty(); // GH-90000
+        void shouldDeleteState() { 
+            runPromise(() -> store.save("t1", "p1", "state")); 
+            runPromise(() -> store.delete("t1", "p1")); 
+            Optional<String> result = runPromise(() -> store.load("t1", "p1")); 
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("delete() on non-existent pattern completes without error")
-        void shouldDeleteNonExistentSilently() { // GH-90000
-            runPromise(() -> store.delete("t1", "never-existed")); // GH-90000
+        void shouldDeleteNonExistentSilently() { 
+            runPromise(() -> store.delete("t1", "never-existed")); 
             // No exception == pass
         }
     }
@@ -109,12 +109,12 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("same patternId for different tenants is stored independently")
-        void shouldIsolateTenants() { // GH-90000
-            runPromise(() -> store.save("tenant-a", "p1", "state-a")); // GH-90000
-            runPromise(() -> store.save("tenant-b", "p1", "state-b")); // GH-90000
+        void shouldIsolateTenants() { 
+            runPromise(() -> store.save("tenant-a", "p1", "state-a")); 
+            runPromise(() -> store.save("tenant-b", "p1", "state-b")); 
 
-            Optional<String> resultA = runPromise(() -> store.load("tenant-a", "p1")); // GH-90000
-            Optional<String> resultB = runPromise(() -> store.load("tenant-b", "p1")); // GH-90000
+            Optional<String> resultA = runPromise(() -> store.load("tenant-a", "p1")); 
+            Optional<String> resultB = runPromise(() -> store.load("tenant-b", "p1")); 
 
             assertThat(resultA).isPresent().hasValue("state-a");
             assertThat(resultB).isPresent().hasValue("state-b");
@@ -122,13 +122,13 @@ class EventCloudPatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delete() for tenant-a does not affect tenant-b")
-        void shouldNotDeleteAcrossTenants() { // GH-90000
-            runPromise(() -> store.save("tenant-a", "p1", "state-a")); // GH-90000
-            runPromise(() -> store.save("tenant-b", "p1", "state-b")); // GH-90000
+        void shouldNotDeleteAcrossTenants() { 
+            runPromise(() -> store.save("tenant-a", "p1", "state-a")); 
+            runPromise(() -> store.save("tenant-b", "p1", "state-b")); 
 
-            runPromise(() -> store.delete("tenant-a", "p1")); // GH-90000
+            runPromise(() -> store.delete("tenant-a", "p1")); 
 
-            assertThat(runPromise(() -> store.load("tenant-a", "p1"))).isEmpty(); // GH-90000
+            assertThat(runPromise(() -> store.load("tenant-a", "p1"))).isEmpty(); 
             assertThat(runPromise(() -> store.load("tenant-b", "p1"))).isPresent().hasValue("state-b");
         }
     }

@@ -8,13 +8,14 @@ rootProject.name = "platform-plugins"
 
 includeBuild("../platform-kernel")
 
-include("plugin-billing-ledger")
+include("plugin-ledger")
 include("plugin-fraud-detection")
 include("plugin-compliance")
 include("plugin-consent")
 include("plugin-risk-management")
 include("plugin-audit-trail")
 include("plugin-human-approval")
+include("core-observability")
 
 // =============================================================================
 // Version Catalog Bridge

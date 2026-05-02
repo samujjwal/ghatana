@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
  * @doc.pattern ValueObject
 */
 public class ESLintSetupHelper {
-    private static final Logger logger = LogManager.getLogger(ESLintSetupHelper.class); // GH-90000
+    private static final Logger logger = LogManager.getLogger(ESLintSetupHelper.class); 
 
     /**
      * Set up ESLint for testing by ensuring the required configuration and dependencies are in
@@ -35,17 +35,17 @@ public class ESLintSetupHelper {
      * @param projectRoot The project root directory
      * @return true if ESLint is properly set up, false otherwise
      */
-    public static boolean setupESLint(Path projectRoot) { // GH-90000
+    public static boolean setupESLint(Path projectRoot) { 
         try {
             // Create the project root directory if it doesn't exist
-            if (!Files.exists(projectRoot)) { // GH-90000
-                Files.createDirectories(projectRoot); // GH-90000
-                logger.info("Created project directory at: {}", projectRoot); // GH-90000
+            if (!Files.exists(projectRoot)) { 
+                Files.createDirectories(projectRoot); 
+                logger.info("Created project directory at: {}", projectRoot); 
             }
 
             // Create a basic ESLint config file if it doesn't exist
             Path eslintConfig = projectRoot.resolve(".eslintrc.js");
-            if (!Files.exists(eslintConfig)) { // GH-90000
+            if (!Files.exists(eslintConfig)) { 
                 String defaultConfig =
                         """
                     module.exports = {
@@ -71,13 +71,13 @@ public class ESLintSetupHelper {
                       }
                     };
                     """;
-                Files.writeString(eslintConfig, defaultConfig, StandardCharsets.UTF_8); // GH-90000
-                logger.info("Created default ESLint config at: {}", eslintConfig); // GH-90000
+                Files.writeString(eslintConfig, defaultConfig, StandardCharsets.UTF_8); 
+                logger.info("Created default ESLint config at: {}", eslintConfig); 
             }
 
             // Check if package.json exists, create one if it doesn't
             Path packageJson = projectRoot.resolve("package.json");
-            if (!Files.exists(packageJson)) { // GH-90000
+            if (!Files.exists(packageJson)) { 
                 String defaultPackageJson =
                         """
                     {
@@ -93,33 +93,33 @@ public class ESLintSetupHelper {
                       }
                     }
                     """;
-                Files.writeString(packageJson, defaultPackageJson, StandardCharsets.UTF_8); // GH-90000
-                logger.info("Created default package.json at: {}", packageJson); // GH-90000
+                Files.writeString(packageJson, defaultPackageJson, StandardCharsets.UTF_8); 
+                logger.info("Created default package.json at: {}", packageJson); 
             }
 
             // Check if Node.js is available
-            if (!isNodeAvailable()) { // GH-90000
+            if (!isNodeAvailable()) { 
                 logger.warn("Node.js is not available. ESLint setup will be incomplete.");
                 return false;
             }
 
             // Install dependencies if node_modules doesn't exist
             Path nodeModules = projectRoot.resolve("node_modules");
-            if (!Files.exists(nodeModules)) { // GH-90000
-                if (!installDependencies(projectRoot)) { // GH-90000
+            if (!Files.exists(nodeModules)) { 
+                if (!installDependencies(projectRoot)) { 
                     logger.warn("Failed to install npm dependencies. Some tests may fail.");
                     // Continue setup even if installation fails
                 }
             }
 
             // Create a minimal PolyfixConfig
-            List<String> languages = List.of("typescript", "javascript"); // GH-90000
+            List<String> languages = List.of("typescript", "javascript"); 
             List<String> schemaPaths = List.of("schemas/");
 
             // Create config with default values
-            PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(10, 100); // GH-90000
+            PolyfixConfig.Budgets budgets = new PolyfixConfig.Budgets(10, 100); 
             PolyfixConfig.Policies policies =
-                    new PolyfixConfig.Policies( // GH-90000
+                    new PolyfixConfig.Policies( 
                             true, // tsAllowTemporaryAny
                             true, // pythonAddMissingImports
                             true, // bashEnforceStrictMode
@@ -128,7 +128,7 @@ public class ESLintSetupHelper {
 
             // Create tools with default paths
             PolyfixConfig.Tools tools =
-                    new PolyfixConfig.Tools( // GH-90000
+                    new PolyfixConfig.Tools( 
                             "/usr/bin/node", // node
                             "eslint", // eslint
                             "tsc", // tsc
@@ -145,30 +145,30 @@ public class ESLintSetupHelper {
 
             // Create the config
             PolyfixConfig config =
-                    new PolyfixConfig(languages, schemaPaths, budgets, policies, tools); // GH-90000
+                    new PolyfixConfig(languages, schemaPaths, budgets, policies, tools); 
 
             // Create a simple PolyfixProjectContext for testing
-            List<LanguageService> services = new ArrayList<>(); // GH-90000
+            List<LanguageService> services = new ArrayList<>(); 
             Logger logger = LogManager.getLogger("test-eslint-setup");
 
-            // Verify ESLint can be created (don't fail if it can't) // GH-90000
-            try (ExecutorService executor = Executors.newSingleThreadExecutor()) { // GH-90000
+            // Verify ESLint can be created (don't fail if it can't) 
+            try (ExecutorService executor = Executors.newSingleThreadExecutor()) { 
                 PolyfixProjectContext context =
-                        new PolyfixProjectContext(projectRoot, config, services, executor, logger); // GH-90000
+                        new PolyfixProjectContext(projectRoot, config, services, executor, logger); 
 
                 try {
-                    ESLintService esLintService = new ESLintService(context); // GH-90000
+                    ESLintService esLintService = new ESLintService(context); 
                     logger.info("ESLint service initialized successfully");
                     return true;
-                } catch (Exception e) { // GH-90000
-                    logger.warn("Failed to initialize ESLint service: {}", e.getMessage()); // GH-90000
-                    logger.debug("Stack trace:", e); // GH-90000
+                } catch (Exception e) { 
+                    logger.warn("Failed to initialize ESLint service: {}", e.getMessage()); 
+                    logger.debug("Stack trace:", e); 
                     return false;
                 }
             }
 
-        } catch (Exception e) { // GH-90000
-            logger.error("Failed to set up ESLint: {}", e.getMessage(), e); // GH-90000
+        } catch (Exception e) { 
+            logger.error("Failed to set up ESLint: {}", e.getMessage(), e); 
             return false;
         }
     }
@@ -178,20 +178,20 @@ public class ESLintSetupHelper {
      *
      * @return true if Node.js is available, false otherwise
      */
-    private static boolean isNodeAvailable() { // GH-90000
+    private static boolean isNodeAvailable() { 
         try {
             Process process =
-                    new ProcessBuilder("node", "--version").redirectErrorStream(true).start(); // GH-90000
+                    new ProcessBuilder("node", "--version").redirectErrorStream(true).start(); 
 
-            boolean finished = process.waitFor(5, TimeUnit.SECONDS); // GH-90000
-            if (!finished) { // GH-90000
-                process.destroy(); // GH-90000
+            boolean finished = process.waitFor(5, TimeUnit.SECONDS); 
+            if (!finished) { 
+                process.destroy(); 
                 return false;
             }
 
-            return process.exitValue() == 0; // GH-90000
-        } catch (Exception e) { // GH-90000
-            logger.debug("Node.js check failed: {}", e.getMessage()); // GH-90000
+            return process.exitValue() == 0; 
+        } catch (Exception e) { 
+            logger.debug("Node.js check failed: {}", e.getMessage()); 
             return false;
         }
     }
@@ -202,66 +202,66 @@ public class ESLintSetupHelper {
      * @param projectRoot The directory containing package.json
      * @return true if installation was successful, false otherwise
      */
-    private static boolean installDependencies(Path projectRoot) { // GH-90000
-        logger.info("Installing npm dependencies in {}", projectRoot); // GH-90000
+    private static boolean installDependencies(Path projectRoot) { 
+        logger.info("Installing npm dependencies in {}", projectRoot); 
 
         try {
             ProcessBuilder pb =
-                    new ProcessBuilder( // GH-90000
+                    new ProcessBuilder( 
                                     "npm",
                                     "install",
                                     "--no-package-lock",
                                     "--no-audit",
                                     "--no-fund")
-                            .directory(projectRoot.toFile()) // GH-90000
-                            .redirectErrorStream(true); // GH-90000
+                            .directory(projectRoot.toFile()) 
+                            .redirectErrorStream(true); 
 
-            Process process = pb.start(); // GH-90000
+            Process process = pb.start(); 
 
             // Read output in a separate thread to prevent deadlocks
             Thread outputReader =
-                    new Thread( // GH-90000
-                            () -> { // GH-90000
-                                try (BufferedReader reader = // GH-90000
-                                        new BufferedReader( // GH-90000
-                                                new InputStreamReader( // GH-90000
-                                                        process.getInputStream(), // GH-90000
+                    new Thread( 
+                            () -> { 
+                                try (BufferedReader reader = 
+                                        new BufferedReader( 
+                                                new InputStreamReader( 
+                                                        process.getInputStream(), 
                                                         StandardCharsets.UTF_8))) {
                                     String line;
-                                    while (true) { // GH-90000
-                                        line = reader.readLine(); // GH-90000
-                                        if (line == null) { // GH-90000
+                                    while (true) { 
+                                        line = reader.readLine(); 
+                                        if (line == null) { 
                                             break;
                                         }
-                                        logger.info("[npm] {}", line); // GH-90000
+                                        logger.info("[npm] {}", line); 
                                     }
-                                } catch (IOException e) { // GH-90000
-                                    logger.warn("Error reading npm output: {}", e.getMessage()); // GH-90000
+                                } catch (IOException e) { 
+                                    logger.warn("Error reading npm output: {}", e.getMessage()); 
                                 }
                             });
-            outputReader.setDaemon(true); // GH-90000
-            outputReader.start(); // GH-90000
+            outputReader.setDaemon(true); 
+            outputReader.start(); 
 
-            // Wait for process to complete with timeout (5 minutes) // GH-90000
-            boolean finished = process.waitFor(5, TimeUnit.MINUTES); // GH-90000
-            if (!finished) { // GH-90000
+            // Wait for process to complete with timeout (5 minutes) 
+            boolean finished = process.waitFor(5, TimeUnit.MINUTES); 
+            if (!finished) { 
                 logger.warn("npm install timed out after 5 minutes");
-                process.destroy(); // GH-90000
+                process.destroy(); 
                 return false;
             }
 
-            int exitCode = process.exitValue(); // GH-90000
-            if (exitCode != 0) { // GH-90000
-                logger.warn("npm install failed with exit code: {}", exitCode); // GH-90000
+            int exitCode = process.exitValue(); 
+            if (exitCode != 0) { 
+                logger.warn("npm install failed with exit code: {}", exitCode); 
                 return false;
             }
 
             logger.info("Successfully installed npm dependencies");
             return true;
 
-        } catch (Exception e) { // GH-90000
-            logger.warn("Failed to install npm dependencies: {}", e.getMessage()); // GH-90000
-            logger.debug("Stack trace:", e); // GH-90000
+        } catch (Exception e) { 
+            logger.warn("Failed to install npm dependencies: {}", e.getMessage()); 
+            logger.debug("Stack trace:", e); 
             return false;
         }
     }

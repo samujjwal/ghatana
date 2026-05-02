@@ -28,78 +28,78 @@ class DAGBuilderTest {
 
     @Test
     @DisplayName("build converts AST into nodes edges and metadata")
-    void buildConvertsAstIntoNodesEdgesAndMetadata() throws PatternValidationException { // GH-90000
-        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); // GH-90000
-        AST ast = new ASTBuilder(null, new SimpleMeterRegistry()).build( // GH-90000
-                OperatorSpec.builder() // GH-90000
+    void buildConvertsAstIntoNodesEdgesAndMetadata() throws PatternValidationException { 
+        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); 
+        AST ast = new ASTBuilder(null, new SimpleMeterRegistry()).build( 
+                OperatorSpec.builder() 
                         .type("SEQ")
                         .id("root")
                         .operand(OperatorSpec.builder().type("SELECT").id("select-1").build())
                         .operand(OperatorSpec.builder().type("FILTER").id("filter-1").build())
-                        .build()); // GH-90000
+                        .build()); 
 
-        OperatorDAG dag = dagBuilder.build(ast); // GH-90000
+        OperatorDAG dag = dagBuilder.build(ast); 
 
-        assertEquals(3, dag.getNodes().size()); // GH-90000
-        assertEquals(2, dag.getEdges().size()); // GH-90000
-        assertEquals("root", dag.getRootNodeId()); // GH-90000
+        assertEquals(3, dag.getNodes().size()); 
+        assertEquals(2, dag.getEdges().size()); 
+        assertEquals("root", dag.getRootNodeId()); 
         assertEquals(2, dag.getMetadata().get("edgeCount"));
         assertEquals(3, dag.getMetadata().get("nodeCount"));
         assertEquals(ast.getDepth(), dag.getMetadata().get("astDepth"));
         assertNotNull(dag.getMetadata().get("buildTime"));
-        assertTrue(dag.getEdges().stream().allMatch(edge -> edge.getEdgeType() == OperatorDAG.EdgeType.DATA_FLOW)); // GH-90000
+        assertTrue(dag.getEdges().stream().allMatch(edge -> edge.getEdgeType() == OperatorDAG.EdgeType.DATA_FLOW)); 
         assertTrue(dag.getEdges().stream().allMatch(edge -> edge.getMetadata().containsKey("astDepth")));
     }
 
     @Test
     @DisplayName("build rejects null AST")
-    void buildRejectsNullAst() { // GH-90000
-        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); // GH-90000
+    void buildRejectsNullAst() { 
+        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); 
 
-        PatternValidationException exception = assertThrows(PatternValidationException.class, // GH-90000
-                () -> dagBuilder.build(null)); // GH-90000
+        PatternValidationException exception = assertThrows(PatternValidationException.class, 
+                () -> dagBuilder.build(null)); 
 
         assertTrue(exception.getMessage().contains("AST cannot be null"));
     }
 
     @Test
     @DisplayName("generateStateKeys only includes stateful operators")
-    void generateStateKeysOnlyIncludesStatefulOperators() { // GH-90000
-        OperatorRegistry registry = mock(OperatorRegistry.class); // GH-90000
+    void generateStateKeysOnlyIncludesStatefulOperators() { 
+        OperatorRegistry registry = mock(OperatorRegistry.class); 
         when(registry.getMetadata("SEQ")).thenReturn(OperatorMetadata.builder().type("SEQ").supportsStateful(true).build());
         when(registry.getMetadata("SELECT")).thenReturn(OperatorMetadata.builder().type("SELECT").supportsStateful(false).build());
 
-        DAGBuilder dagBuilder = new DAGBuilder(registry, new SimpleMeterRegistry()); // GH-90000
-        OperatorDAG dag = OperatorDAG.builder() // GH-90000
-                .nodes(List.of( // GH-90000
+        DAGBuilder dagBuilder = new DAGBuilder(registry, new SimpleMeterRegistry()); 
+        OperatorDAG dag = OperatorDAG.builder() 
+                .nodes(List.of( 
                         OperatorDAG.OperatorNode.builder().id("seq-1").type("SEQ").build(),
                         OperatorDAG.OperatorNode.builder().id("select-1").type("SELECT").build(),
                         OperatorDAG.OperatorNode.builder().id("unknown-1").type("UNKNOWN").build()))
-                .edges(List.of()) // GH-90000
+                .edges(List.of()) 
                 .rootNodeId("seq-1")
-                .metadata(Map.of()) // GH-90000
-                .build(); // GH-90000
+                .metadata(Map.of()) 
+                .build(); 
 
         Map<String, String> stateKeys = dagBuilder.generateStateKeys(UUID.fromString("11111111-1111-1111-1111-111111111111"), dag);
 
-        assertEquals(1, stateKeys.size()); // GH-90000
+        assertEquals(1, stateKeys.size()); 
         assertEquals("pattern:11111111-1111-1111-1111-111111111111:operator:seq-1", stateKeys.get("seq-1"));
         assertFalse(stateKeys.containsKey("select-1"));
     }
 
     @Test
     @DisplayName("extractRequiredStreams converts event types to distinct stream names")
-    void extractRequiredStreamsConvertsEventTypesToDistinctStreamNames() { // GH-90000
-        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); // GH-90000
+    void extractRequiredStreamsConvertsEventTypesToDistinctStreamNames() { 
+        DAGBuilder dagBuilder = new DAGBuilder(null, new SimpleMeterRegistry()); 
 
-        List<String> streams = dagBuilder.extractRequiredStreams(List.of( // GH-90000
+        List<String> streams = dagBuilder.extractRequiredStreams(List.of( 
                 "com.ghatana.financial.TransactionEvent",
                 "com.ghatana.financial.TransactionEvent",
                 "com.ghatana.identity.UserLoginEvent",
                 "raw-event"
         ));
 
-        assertEquals(List.of("financial-transaction-event", "identity-user-login-event", "raw-event"), streams); // GH-90000
-        assertEquals(List.of(), dagBuilder.extractRequiredStreams(List.of())); // GH-90000
+        assertEquals(List.of("financial-transaction-event", "identity-user-login-event", "raw-event"), streams); 
+        assertEquals(List.of(), dagBuilder.extractRequiredStreams(List.of())); 
     }
 }

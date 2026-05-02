@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.pattern.engine.agent;
@@ -36,26 +36,26 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
     private PatternDetectionAgentAdapter adapter;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        NFA nfa = createSimpleNFA("test-pattern", "login.attempt"); // GH-90000
-        agent = PatternDetectionAgent.builder() // GH-90000
-            .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0")) // GH-90000
+    void setUp() { 
+        NFA nfa = createSimpleNFA("test-pattern", "login.attempt"); 
+        agent = PatternDetectionAgent.builder() 
+            .operatorId(com.ghatana.core.operator.OperatorId.of("test", "pattern", "detector", "1.0")) 
             .name("Test Pattern Detector")
-            .nfa(nfa) // GH-90000
-            .confidenceThreshold(0.5) // GH-90000
-            .windowDuration(Duration.ofMinutes(5)) // GH-90000
-            .build(); // GH-90000
+            .nfa(nfa) 
+            .confidenceThreshold(0.5) 
+            .windowDuration(Duration.ofMinutes(5)) 
+            .build(); 
         
-        agent.initialize(com.ghatana.core.operator.OperatorConfig.empty()); // GH-90000
-        agent.start(); // GH-90000
+        agent.initialize(com.ghatana.core.operator.OperatorConfig.empty()); 
+        agent.start(); 
         
-        adapter = PatternDetectionAgentAdapter.wrap(agent, "pattern-1"); // GH-90000
+        adapter = PatternDetectionAgentAdapter.wrap(agent, "pattern-1"); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (agent != null) { // GH-90000
-            agent.stop(); // GH-90000
+    void tearDown() { 
+        if (agent != null) { 
+            agent.stop(); 
         }
     }
 
@@ -65,60 +65,60 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns empty list when agent produces no output")
-        void returnsEmptyListWhenNoOutput() { // GH-90000
-            AepEngine.Event event = new AepEngine.Event("unmatched.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
-            List<AepEngine.Pattern> patterns = List.of(); // GH-90000
+        void returnsEmptyListWhenNoOutput() { 
+            AepEngine.Event event = new AepEngine.Event("unmatched.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
+            List<AepEngine.Pattern> patterns = List.of(); 
 
-            List<AepEngine.Detection> detections = runPromise(() ->  // GH-90000
-                adapter.detect("tenant-1", event, patterns)); // GH-90000
+            List<AepEngine.Detection> detections = runPromise(() ->  
+                adapter.detect("tenant-1", event, patterns)); 
 
-            assertThat(detections).isNotNull(); // GH-90000
-            assertThat(detections).isEmpty(); // GH-90000
+            assertThat(detections).isNotNull(); 
+            assertThat(detections).isEmpty(); 
         }
 
         @Test
         @DisplayName("handles agent errors gracefully")
-        void handlesAgentErrorsGracefully() { // GH-90000
+        void handlesAgentErrorsGracefully() { 
             // Create a null agent to trigger error
-            PatternDetectionAgentAdapter badAdapter = new PatternDetectionAgentAdapter(null, "bad-pattern"); // GH-90000
+            PatternDetectionAgentAdapter badAdapter = new PatternDetectionAgentAdapter(null, "bad-pattern"); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
-            List<AepEngine.Pattern> patterns = List.of(); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
+            List<AepEngine.Pattern> patterns = List.of(); 
 
-            List<AepEngine.Detection> detections = runPromise(() ->  // GH-90000
-                badAdapter.detect("tenant-1", event, patterns)); // GH-90000
+            List<AepEngine.Detection> detections = runPromise(() ->  
+                badAdapter.detect("tenant-1", event, patterns)); 
 
             // Should return empty list on error, not throw
-            assertThat(detections).isNotNull(); // GH-90000
-            assertThat(detections).isEmpty(); // GH-90000
+            assertThat(detections).isNotNull(); 
+            assertThat(detections).isEmpty(); 
         }
 
         @Test
         @DisplayName("converts AepEngine.Event to platform Event correctly")
-        void convertsEventCorrectly() { // GH-90000
-            Map<String, String> headers = Map.of("correlationId", "corr-123", "traceId", "trace-456"); // GH-90000
-            Map<String, Object> payload = Map.of("userId", "user-123", "action", "login"); // GH-90000
+        void convertsEventCorrectly() { 
+            Map<String, String> headers = Map.of("correlationId", "corr-123", "traceId", "trace-456"); 
+            Map<String, Object> payload = Map.of("userId", "user-123", "action", "login"); 
             
-            AepEngine.Event event = new AepEngine.Event("user.login", payload, headers, Instant.now()); // GH-90000
-            List<AepEngine.Pattern> patterns = List.of(); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("user.login", payload, headers, Instant.now()); 
+            List<AepEngine.Pattern> patterns = List.of(); 
 
-            List<AepEngine.Detection> detections = runPromise(() ->  // GH-90000
-                adapter.detect("tenant-test", event, patterns)); // GH-90000
+            List<AepEngine.Detection> detections = runPromise(() ->  
+                adapter.detect("tenant-test", event, patterns)); 
 
             // Should not throw exception during conversion
-            assertThat(detections).isNotNull(); // GH-90000
+            assertThat(detections).isNotNull(); 
         }
 
         @Test
         @DisplayName("preserves tenantId in conversion")
-        void preservesTenantId() { // GH-90000
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of(), Map.of(), Instant.now()); // GH-90000
-            List<AepEngine.Pattern> patterns = List.of(); // GH-90000
+        void preservesTenantId() { 
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of(), Map.of(), Instant.now()); 
+            List<AepEngine.Pattern> patterns = List.of(); 
 
-            runPromise(() -> adapter.detect("specific-tenant", event, patterns)); // GH-90000
+            runPromise(() -> adapter.detect("specific-tenant", event, patterns)); 
 
             // If conversion failed, promise would have thrown
             // Success means tenantId was preserved
@@ -131,31 +131,31 @@ class PatternDetectionAgentAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("creates adapter with given agent and patternId")
-        void createsAdapterWithGivenParameters() { // GH-90000
-            PatternDetectionAgentAdapter result = PatternDetectionAgentAdapter.wrap(agent, "pattern-x"); // GH-90000
+        void createsAdapterWithGivenParameters() { 
+            PatternDetectionAgentAdapter result = PatternDetectionAgentAdapter.wrap(agent, "pattern-x"); 
             
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("throws on null agent")
-        void throwsOnNullAgent() { // GH-90000
+        void throwsOnNullAgent() { 
             // The wrap method should handle null gracefully or throw
             // Based on implementation, it creates the adapter which will fail at runtime
-            PatternDetectionAgentAdapter result = PatternDetectionAgentAdapter.wrap(null, "pattern-x"); // GH-90000
-            assertThat(result).isNotNull(); // GH-90000
+            PatternDetectionAgentAdapter result = PatternDetectionAgentAdapter.wrap(null, "pattern-x"); 
+            assertThat(result).isNotNull(); 
         }
     }
 
     // Helper method to create a simple NFA
-    private NFA createSimpleNFA(String patternName, String eventType) { // GH-90000
-        NFA nfa = new NFA(patternName); // GH-90000
+    private NFA createSimpleNFA(String patternName, String eventType) { 
+        NFA nfa = new NFA(patternName); 
         
-        NFAState startState = nfa.getStartState(); // GH-90000
-        NFAState acceptState = new NFAState("accept", com.ghatana.pattern.engine.nfa.NFAStateType.END); // GH-90000
+        NFAState startState = nfa.getStartState(); 
+        NFAState acceptState = new NFAState("accept", com.ghatana.pattern.engine.nfa.NFAStateType.END); 
         
-        nfa.addState(acceptState); // GH-90000
-        nfa.addTransition(startState, acceptState, eventType); // GH-90000
+        nfa.addState(acceptState); 
+        nfa.addTransition(startState, acceptState, eventType); 
         
         return nfa;
     }

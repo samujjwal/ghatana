@@ -37,59 +37,59 @@ class RecordImplTest {
 
         @Test
         @DisplayName("generate() produces a non-null, unique UUID wrapper")
-        void generateProducesUniqueId() { // GH-90000
-            RecordId id1 = RecordId.generate(); // GH-90000
-            RecordId id2 = RecordId.generate(); // GH-90000
+        void generateProducesUniqueId() { 
+            RecordId id1 = RecordId.generate(); 
+            RecordId id2 = RecordId.generate(); 
 
-            assertThat(id1).isNotNull(); // GH-90000
-            assertThat(id1.value()).isNotNull(); // GH-90000
-            assertThat(id1).isNotEqualTo(id2); // GH-90000
+            assertThat(id1).isNotNull(); 
+            assertThat(id1.value()).isNotNull(); 
+            assertThat(id1).isNotEqualTo(id2); 
         }
 
         @Test
         @DisplayName("of(String) parses valid UUID string")
-        void ofStringParsesValidUuid() { // GH-90000
+        void ofStringParsesValidUuid() { 
             String uuidStr = "550e8400-e29b-41d4-a716-446655440000";
-            RecordId id = RecordId.of(uuidStr); // GH-90000
-            assertThat(id.value().toString()).isEqualTo(uuidStr); // GH-90000
+            RecordId id = RecordId.of(uuidStr); 
+            assertThat(id.value().toString()).isEqualTo(uuidStr); 
         }
 
         @Test
         @DisplayName("of(UUID) wraps the UUID correctly")
-        void ofUuidWrapsCorrectly() { // GH-90000
-            UUID uuid = UUID.randomUUID(); // GH-90000
-            RecordId id = RecordId.of(uuid); // GH-90000
-            assertThat(id.value()).isEqualTo(uuid); // GH-90000
+        void ofUuidWrapsCorrectly() { 
+            UUID uuid = UUID.randomUUID(); 
+            RecordId id = RecordId.of(uuid); 
+            assertThat(id.value()).isEqualTo(uuid); 
         }
 
         @Test
         @DisplayName("null value throws NullPointerException")
-        void nullValueThrows() { // GH-90000
-            assertThatThrownBy(() -> new RecordId(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullValueThrows() { 
+            assertThatThrownBy(() -> new RecordId(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("toString() returns UUID string representation")
-        void toStringReturnsUuidString() { // GH-90000
-            RecordId id = RecordId.generate(); // GH-90000
-            assertThat(id.toString()).isEqualTo(id.value().toString()); // GH-90000
+        void toStringReturnsUuidString() { 
+            RecordId id = RecordId.generate(); 
+            assertThat(id.toString()).isEqualTo(id.value().toString()); 
         }
 
         @Test
         @DisplayName("getMostSignificantBits() and getLeastSignificantBits() match UUID")
-        void msbLsbMatchUuid() { // GH-90000
-            UUID uuid = UUID.randomUUID(); // GH-90000
-            RecordId id = RecordId.of(uuid); // GH-90000
-            assertThat(id.getMostSignificantBits()).isEqualTo(uuid.getMostSignificantBits()); // GH-90000
-            assertThat(id.getLeastSignificantBits()).isEqualTo(uuid.getLeastSignificantBits()); // GH-90000
+        void msbLsbMatchUuid() { 
+            UUID uuid = UUID.randomUUID(); 
+            RecordId id = RecordId.of(uuid); 
+            assertThat(id.getMostSignificantBits()).isEqualTo(uuid.getMostSignificantBits()); 
+            assertThat(id.getLeastSignificantBits()).isEqualTo(uuid.getLeastSignificantBits()); 
         }
 
         @Test
         @DisplayName("invalid UUID string throws IllegalArgumentException")
-        void invalidUuidStringThrows() { // GH-90000
+        void invalidUuidStringThrows() { 
             assertThatThrownBy(() -> RecordId.of("not-a-uuid"))
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -103,100 +103,100 @@ class RecordImplTest {
 
         @Test
         @DisplayName("entity() creates ENTITY type with generated ID")
-        void entityFactoryCreatesEntityRecord() { // GH-90000
-            SimpleRecord record = SimpleRecord.entity(TENANT, COLLECTION); // GH-90000
-            assertThat(record.recordType()).isEqualTo(RecordType.ENTITY); // GH-90000
-            assertThat(record.id()).isNotNull(); // GH-90000
+        void entityFactoryCreatesEntityRecord() { 
+            SimpleRecord record = SimpleRecord.entity(TENANT, COLLECTION); 
+            assertThat(record.recordType()).isEqualTo(RecordType.ENTITY); 
+            assertThat(record.id()).isNotNull(); 
             assertThat(record.tenantId()).isEqualTo("acme-corp");
-            assertThat(record.collectionName()).isEqualTo(COLLECTION); // GH-90000
+            assertThat(record.collectionName()).isEqualTo(COLLECTION); 
         }
 
         @Test
         @DisplayName("event() creates EVENT type")
-        void eventFactoryCreatesEventRecord() { // GH-90000
-            SimpleRecord record = SimpleRecord.event(TENANT, COLLECTION); // GH-90000
-            assertThat(record.recordType()).isEqualTo(RecordType.EVENT); // GH-90000
+        void eventFactoryCreatesEventRecord() { 
+            SimpleRecord record = SimpleRecord.event(TENANT, COLLECTION); 
+            assertThat(record.recordType()).isEqualTo(RecordType.EVENT); 
         }
 
         @Test
         @DisplayName("document() creates DOCUMENT type")
-        void documentFactoryCreatesDocumentRecord() { // GH-90000
-            SimpleRecord record = SimpleRecord.document(TENANT, COLLECTION); // GH-90000
-            assertThat(record.recordType()).isEqualTo(RecordType.DOCUMENT); // GH-90000
+        void documentFactoryCreatesDocumentRecord() { 
+            SimpleRecord record = SimpleRecord.document(TENANT, COLLECTION); 
+            assertThat(record.recordType()).isEqualTo(RecordType.DOCUMENT); 
         }
 
         @Test
         @DisplayName("graph() creates GRAPH type")
-        void graphFactoryCreatesGraphRecord() { // GH-90000
-            SimpleRecord record = SimpleRecord.graph(TENANT, COLLECTION); // GH-90000
-            assertThat(record.recordType()).isEqualTo(RecordType.GRAPH); // GH-90000
+        void graphFactoryCreatesGraphRecord() { 
+            SimpleRecord record = SimpleRecord.graph(TENANT, COLLECTION); 
+            assertThat(record.recordType()).isEqualTo(RecordType.GRAPH); 
         }
 
         @Test
         @DisplayName("data() returns an empty map (SimpleRecord has no payload)")
-        void dataIsAlwaysEmpty() { // GH-90000
-            SimpleRecord record = SimpleRecord.entity(TENANT, COLLECTION); // GH-90000
-            assertThat(record.data()).isEmpty(); // GH-90000
+        void dataIsAlwaysEmpty() { 
+            SimpleRecord record = SimpleRecord.entity(TENANT, COLLECTION); 
+            assertThat(record.data()).isEmpty(); 
         }
 
         @Test
         @DisplayName("each entity() call generates a unique ID")
-        void eachCallGeneratesUniqueId() { // GH-90000
-            SimpleRecord r1 = SimpleRecord.entity(TENANT, COLLECTION); // GH-90000
-            SimpleRecord r2 = SimpleRecord.entity(TENANT, COLLECTION); // GH-90000
-            assertThat(r1.id()).isNotEqualTo(r2.id()); // GH-90000
+        void eachCallGeneratesUniqueId() { 
+            SimpleRecord r1 = SimpleRecord.entity(TENANT, COLLECTION); 
+            SimpleRecord r2 = SimpleRecord.entity(TENANT, COLLECTION); 
+            assertThat(r1.id()).isNotEqualTo(r2.id()); 
         }
 
         @Test
         @DisplayName("of(RecordId, TenantId, String, RecordType) constructs with explicit values")
-        void ofWithRecordIdAndTenantId() { // GH-90000
-            RecordId id = RecordId.generate(); // GH-90000
-            SimpleRecord record = SimpleRecord.of(id, TENANT, COLLECTION, RecordType.ENTITY); // GH-90000
+        void ofWithRecordIdAndTenantId() { 
+            RecordId id = RecordId.generate(); 
+            SimpleRecord record = SimpleRecord.of(id, TENANT, COLLECTION, RecordType.ENTITY); 
 
-            assertThat(record.recordId()).isEqualTo(id); // GH-90000
-            assertThat(record.tenantIdValue()).isEqualTo(TENANT); // GH-90000
+            assertThat(record.recordId()).isEqualTo(id); 
+            assertThat(record.tenantIdValue()).isEqualTo(TENANT); 
         }
 
         @Test
         @DisplayName("of(String, String, String, RecordType) constructs from strings")
-        void ofWithStrings() { // GH-90000
+        void ofWithStrings() { 
             String uuidStr = "550e8400-e29b-41d4-a716-446655440000";
-            SimpleRecord record = SimpleRecord.of(uuidStr, "acme", COLLECTION, RecordType.EVENT); // GH-90000
+            SimpleRecord record = SimpleRecord.of(uuidStr, "acme", COLLECTION, RecordType.EVENT); 
 
-            assertThat(record.id().toString()).isEqualTo(uuidStr); // GH-90000
+            assertThat(record.id().toString()).isEqualTo(uuidStr); 
             assertThat(record.tenantId()).isEqualTo("acme");
-            assertThat(record.recordType()).isEqualTo(RecordType.EVENT); // GH-90000
+            assertThat(record.recordType()).isEqualTo(RecordType.EVENT); 
         }
 
         @Test
         @DisplayName("null recordId throws NullPointerException")
-        void nullRecordIdThrows() { // GH-90000
-            assertThatThrownBy(() -> new SimpleRecord(null, TENANT, COLLECTION, RecordType.ENTITY)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullRecordIdThrows() { 
+            assertThatThrownBy(() -> new SimpleRecord(null, TENANT, COLLECTION, RecordType.ENTITY)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("recordId");
         }
 
         @Test
         @DisplayName("null tenantId throws NullPointerException")
-        void nullTenantIdThrows() { // GH-90000
-            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), null, COLLECTION, RecordType.ENTITY)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullTenantIdThrows() { 
+            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), null, COLLECTION, RecordType.ENTITY)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("tenantId");
         }
 
         @Test
         @DisplayName("null collectionName throws NullPointerException")
-        void nullCollectionNameThrows() { // GH-90000
-            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), TENANT, null, RecordType.ENTITY)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullCollectionNameThrows() { 
+            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), TENANT, null, RecordType.ENTITY)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("collectionName");
         }
 
         @Test
         @DisplayName("null recordType throws NullPointerException")
-        void nullRecordTypeThrows() { // GH-90000
-            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), TENANT, COLLECTION, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullRecordTypeThrows() { 
+            assertThatThrownBy(() -> new SimpleRecord(RecordId.generate(), TENANT, COLLECTION, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("recordType");
         }
     }
@@ -211,148 +211,148 @@ class RecordImplTest {
 
         @Test
         @DisplayName("builder() creates entity with all required fields")
-        void builderCreatesValidRecord() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void builderCreatesValidRecord() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("acme")
-                    .collectionName(COLLECTION) // GH-90000
-                    .data("name", "Alice") // GH-90000
-                    .data("email", "alice@acme.com") // GH-90000
+                    .collectionName(COLLECTION) 
+                    .data("name", "Alice") 
+                    .data("email", "alice@acme.com") 
                     .createdBy("admin")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(record.tenantId()).isEqualTo("acme");
-            assertThat(record.collectionName()).isEqualTo(COLLECTION); // GH-90000
-            assertThat(record.data()).containsEntry("name", "Alice"); // GH-90000
+            assertThat(record.collectionName()).isEqualTo(COLLECTION); 
+            assertThat(record.data()).containsEntry("name", "Alice"); 
             assertThat(record.createdBy()).isEqualTo("admin");
-            assertThat(record.recordType()).isEqualTo(RecordType.ENTITY); // GH-90000
+            assertThat(record.recordType()).isEqualTo(RecordType.ENTITY); 
         }
 
         @Test
         @DisplayName("null data in builder defaults to empty map")
-        void nullDataDefaultsToEmpty() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void nullDataDefaultsToEmpty() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(record.data()).isEmpty(); // GH-90000
+            assertThat(record.data()).isEmpty(); 
         }
 
         @Test
         @DisplayName("null metadata in builder defaults to empty map")
-        void nullMetadataDefaultsToEmpty() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void nullMetadataDefaultsToEmpty() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(record.metadata()).isEmpty(); // GH-90000
+            assertThat(record.metadata()).isEmpty(); 
         }
 
         @Test
         @DisplayName("incrementVersion() returns new record with version + 1")
-        void incrementVersionIncrements() { // GH-90000
-            FullEntityRecord original = FullEntityRecord.builder() // GH-90000
+        void incrementVersionIncrements() { 
+            FullEntityRecord original = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .version(3) // GH-90000
-                    .build(); // GH-90000
+                    .version(3) 
+                    .build(); 
 
-            FullEntityRecord incremented = original.incrementVersion(); // GH-90000
+            FullEntityRecord incremented = original.incrementVersion(); 
 
-            assertThat(incremented.version()).isEqualTo(4); // GH-90000
-            assertThat(original.version()).isEqualTo(3); // original unchanged // GH-90000
+            assertThat(incremented.version()).isEqualTo(4); 
+            assertThat(original.version()).isEqualTo(3); // original unchanged 
         }
 
         @Test
         @DisplayName("withData() returns new record with updated data, preserving ID")
-        void withDataReturnsNewRecord() { // GH-90000
-            FullEntityRecord original = FullEntityRecord.builder() // GH-90000
+        void withDataReturnsNewRecord() { 
+            FullEntityRecord original = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .data("key", "old") // GH-90000
-                    .build(); // GH-90000
+                    .data("key", "old") 
+                    .build(); 
 
-            FullEntityRecord updated = (FullEntityRecord) original.withData(Map.of("key", "new")); // GH-90000
+            FullEntityRecord updated = (FullEntityRecord) original.withData(Map.of("key", "new")); 
 
-            assertThat(updated.data()).containsEntry("key", "new"); // GH-90000
-            assertThat(updated.id()).isEqualTo(original.id()); // same identity // GH-90000
-            assertThat(original.data()).containsEntry("key", "old"); // original unchanged // GH-90000
+            assertThat(updated.data()).containsEntry("key", "new"); 
+            assertThat(updated.id()).isEqualTo(original.id()); // same identity 
+            assertThat(original.data()).containsEntry("key", "old"); // original unchanged 
         }
 
         @Test
         @DisplayName("withMetadata() returns new record with updated metadata")
-        void withMetadataReturnsNewRecord() { // GH-90000
-            FullEntityRecord original = FullEntityRecord.builder() // GH-90000
+        void withMetadataReturnsNewRecord() { 
+            FullEntityRecord original = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            FullEntityRecord updated = (FullEntityRecord) original.withMetadata(Map.of("source", "import")); // GH-90000
+            FullEntityRecord updated = (FullEntityRecord) original.withMetadata(Map.of("source", "import")); 
 
-            assertThat(updated.metadata()).containsEntry("source", "import"); // GH-90000
+            assertThat(updated.metadata()).containsEntry("source", "import"); 
         }
 
         @Test
         @DisplayName("schemaVersion() returns Optional.empty() when not set")
-        void schemaVersionEmptyWhenNotSet() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void schemaVersionEmptyWhenNotSet() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(record.schemaVersion()).isEmpty(); // GH-90000
+            assertThat(record.schemaVersion()).isEmpty(); 
         }
 
         @Test
         @DisplayName("schemaVersion() contains value when set")
-        void schemaVersionPresentWhenSet() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void schemaVersionPresentWhenSet() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
                     .schemaVersion("v1.2.3")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(record.schemaVersion()).hasValue("v1.2.3");
         }
 
         @Test
         @DisplayName("aiConfidence() returns Optional.empty() when not set")
-        void aiConfidenceEmptyWhenNotSet() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void aiConfidenceEmptyWhenNotSet() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(record.aiConfidence()).isEmpty(); // GH-90000
+            assertThat(record.aiConfidence()).isEmpty(); 
         }
 
         @Test
         @DisplayName("data map is defensively copied — external mutation does not affect record")
-        void dataMapIsDefensivelyCopied() { // GH-90000
-            Map<String, Object> mutableData = new java.util.HashMap<>(); // GH-90000
-            mutableData.put("x", 1); // GH-90000
+        void dataMapIsDefensivelyCopied() { 
+            Map<String, Object> mutableData = new java.util.HashMap<>(); 
+            mutableData.put("x", 1); 
 
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .data(mutableData) // GH-90000
-                    .build(); // GH-90000
+                    .data(mutableData) 
+                    .build(); 
 
             // Attempt to verify the record uses a copy
-            assertThat(record.data()).containsEntry("x", 1); // GH-90000
+            assertThat(record.data()).containsEntry("x", 1); 
         }
 
         @Test
         @DisplayName("id() returns non-null UUID")
-        void idIsNonNull() { // GH-90000
-            FullEntityRecord record = FullEntityRecord.builder() // GH-90000
+        void idIsNonNull() { 
+            FullEntityRecord record = FullEntityRecord.builder() 
                     .tenantId("t")
                     .collectionName("c")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(record.id()).isNotNull(); // GH-90000
-            assertThat(record.id()).isInstanceOf(UUID.class); // GH-90000
+            assertThat(record.id()).isNotNull(); 
+            assertThat(record.id()).isInstanceOf(UUID.class); 
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.identity;
@@ -30,8 +30,8 @@ class DelegationTokenServiceTest extends EventloopTestBase {
     private DefaultDelegationTokenService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new DefaultDelegationTokenService(); // GH-90000
+    void setUp() { 
+        service = new DefaultDelegationTokenService(); 
     }
 
     @Nested
@@ -40,37 +40,37 @@ class DelegationTokenServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Issues delegation token with correct principal info")
-        void issuesDelegationToken() { // GH-90000
-            DelegationToken token = runPromise(() -> // GH-90000
-                service.delegate("t1", "agent-a", "agent-b", // GH-90000
-                    Set.of("read", "query"), Duration.ofMinutes(30))); // GH-90000
+        void issuesDelegationToken() { 
+            DelegationToken token = runPromise(() -> 
+                service.delegate("t1", "agent-a", "agent-b", 
+                    Set.of("read", "query"), Duration.ofMinutes(30))); 
 
-            assertThat(token).isNotNull(); // GH-90000
+            assertThat(token).isNotNull(); 
             assertThat(token.delegator()).isEqualTo("agent-a");
             assertThat(token.delegatee()).isEqualTo("agent-b");
             assertThat(token.tenantId()).isEqualTo("t1");
-            assertThat(token.scopes()).containsExactlyInAnyOrder("read", "query"); // GH-90000
-            assertThat(token.isExpired()).isFalse(); // GH-90000
+            assertThat(token.scopes()).containsExactlyInAnyOrder("read", "query"); 
+            assertThat(token.isExpired()).isFalse(); 
         }
 
         @Test
         @DisplayName("Principal chain includes both delegator and delegatee")
-        void chainIncludesBothPrincipals() { // GH-90000
-            DelegationToken token = runPromise(() -> // GH-90000
-                service.delegate("t1", "agent-a", "agent-b", // GH-90000
+        void chainIncludesBothPrincipals() { 
+            DelegationToken token = runPromise(() -> 
+                service.delegate("t1", "agent-a", "agent-b", 
                     Set.of("read"), Duration.ofHours(1)));
 
-            assertThat(token.chain()).containsExactly("agent-a", "agent-b"); // GH-90000
+            assertThat(token.chain()).containsExactly("agent-a", "agent-b"); 
         }
 
         @Test
         @DisplayName("Caps TTL at 8 hours")
-        void capsTtlAtEightHours() { // GH-90000
-            DelegationToken token = runPromise(() -> // GH-90000
+        void capsTtlAtEightHours() { 
+            DelegationToken token = runPromise(() -> 
                 service.delegate("t1", "a", "b", Set.of("read"), Duration.ofDays(7)));
 
-            long ttlHours = Duration.between(token.issuedAt(), token.expiresAt()).toHours(); // GH-90000
-            assertThat(ttlHours).isLessThanOrEqualTo(8); // GH-90000
+            long ttlHours = Duration.between(token.issuedAt(), token.expiresAt()).toHours(); 
+            assertThat(ttlHours).isLessThanOrEqualTo(8); 
         }
     }
 
@@ -80,20 +80,20 @@ class DelegationTokenServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Valid token resolves to the original token")
-        void validTokenResolves() { // GH-90000
-            DelegationToken issued = runPromise(() -> // GH-90000
+        void validTokenResolves() { 
+            DelegationToken issued = runPromise(() -> 
                 service.delegate("t1", "a", "b", Set.of("read"), Duration.ofMinutes(10)));
 
-            Optional<DelegationToken> found = runPromise(() -> service.validate(issued.tokenId())); // GH-90000
-            assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().tokenId()).isEqualTo(issued.tokenId()); // GH-90000
+            Optional<DelegationToken> found = runPromise(() -> service.validate(issued.tokenId())); 
+            assertThat(found).isPresent(); 
+            assertThat(found.get().tokenId()).isEqualTo(issued.tokenId()); 
         }
 
         @Test
         @DisplayName("Unknown tokenId returns empty")
-        void unknownTokenReturnsEmpty() { // GH-90000
+        void unknownTokenReturnsEmpty() { 
             Optional<DelegationToken> result = runPromise(() -> service.validate("nonexistent"));
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -103,13 +103,13 @@ class DelegationTokenServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Revoked token is no longer valid")
-        void revokedTokenIsInvalid() { // GH-90000
-            DelegationToken token = runPromise(() -> // GH-90000
+        void revokedTokenIsInvalid() { 
+            DelegationToken token = runPromise(() -> 
                 service.delegate("t1", "a", "b", Set.of("x"), Duration.ofMinutes(5)));
 
-            runPromise(() -> service.revoke(token.tokenId()).map(v -> v)); // GH-90000
-            Optional<DelegationToken> found = runPromise(() -> service.validate(token.tokenId())); // GH-90000
-            assertThat(found).isEmpty(); // GH-90000
+            runPromise(() -> service.revoke(token.tokenId()).map(v -> v)); 
+            Optional<DelegationToken> found = runPromise(() -> service.validate(token.tokenId())); 
+            assertThat(found).isEmpty(); 
         }
     }
 }

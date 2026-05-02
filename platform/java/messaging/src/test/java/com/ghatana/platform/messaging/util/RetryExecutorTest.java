@@ -14,47 +14,47 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("RetryExecutor")
 class RetryExecutorTest {
 
-    private static final RetryConfig FAST_RETRY = RetryConfig.builder() // GH-90000
-        .maxAttempts(3) // GH-90000
-        .initialDelay(Duration.ZERO) // GH-90000
-        .maxDelay(Duration.ZERO) // GH-90000
-        .backoffMultiplier(2.0) // GH-90000
-        .build(); // GH-90000
+    private static final RetryConfig FAST_RETRY = RetryConfig.builder() 
+        .maxAttempts(3) 
+        .initialDelay(Duration.ZERO) 
+        .maxDelay(Duration.ZERO) 
+        .backoffMultiplier(2.0) 
+        .build(); 
 
     @Test
     @DisplayName("retries retryable false results until success")
-    void retriesRetryableResultsUntilSuccess() throws Exception { // GH-90000
-        AtomicInteger attempts = new AtomicInteger(); // GH-90000
+    void retriesRetryableResultsUntilSuccess() throws Exception { 
+        AtomicInteger attempts = new AtomicInteger(); 
 
-        boolean result = RetryExecutor.execute( // GH-90000
+        boolean result = RetryExecutor.execute( 
             FAST_RETRY,
-            LoggerFactory.getLogger(RetryExecutorTest.class), // GH-90000
+            LoggerFactory.getLogger(RetryExecutorTest.class), 
             "soft-failure",
-            () -> attempts.incrementAndGet() >= 3, // GH-90000
+            () -> attempts.incrementAndGet() >= 3, 
             Boolean.TRUE::equals
         );
 
-        assertThat(result).isTrue(); // GH-90000
-        assertThat(attempts.get()).isEqualTo(3); // GH-90000
+        assertThat(result).isTrue(); 
+        assertThat(attempts.get()).isEqualTo(3); 
     }
 
     @Test
     @DisplayName("rethrows the terminal exception after max attempts")
-    void rethrowsTerminalExceptionAfterMaxAttempts() { // GH-90000
-        AtomicInteger attempts = new AtomicInteger(); // GH-90000
+    void rethrowsTerminalExceptionAfterMaxAttempts() { 
+        AtomicInteger attempts = new AtomicInteger(); 
 
-        assertThatThrownBy(() -> RetryExecutor.execute( // GH-90000
+        assertThatThrownBy(() -> RetryExecutor.execute( 
             FAST_RETRY,
-            LoggerFactory.getLogger(RetryExecutorTest.class), // GH-90000
+            LoggerFactory.getLogger(RetryExecutorTest.class), 
             "hard-failure",
-            () -> { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            () -> { 
+                attempts.incrementAndGet(); 
                 throw new IllegalStateException("boom");
             },
             ignored -> true
-        )).isInstanceOf(IllegalStateException.class) // GH-90000
+        )).isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("boom");
 
-        assertThat(attempts.get()).isEqualTo(3); // GH-90000
+        assertThat(attempts.get()).isEqualTo(3); 
     }
 }

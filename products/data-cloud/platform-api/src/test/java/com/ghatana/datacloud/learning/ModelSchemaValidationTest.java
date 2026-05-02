@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.learning;
@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for model input/output schema validation (D012). // GH-90000
+ * Tests for model input/output schema validation (D012). 
  *
  * <p>Validates schema compliance for model inputs and outputs.
  *
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("ModelSchemaValidation – Input/Output Schema (D012)")
 class ModelSchemaValidationTest extends EventloopTestBase {
 
@@ -47,118 +47,118 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: valid_input_passes_validation")
-        void validInputPassesValidation() { // GH-90000
+        void validInputPassesValidation() { 
             String modelId = "model-001";
-            Map<String, Object> validInput = Map.of( // GH-90000
+            Map<String, Object> validInput = Map.of( 
                 "text", "Sample input text",
                 "temperature", 0.7,
                 "max_tokens", 100
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
-                    true, List.of(), List.of() // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
+                    true, List.of(), List.of() 
                 );
 
-            when(evaluationService.validateInputSchema(modelId, validInput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, validInput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, validInput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, validInput) 
             );
 
-            assertThat(validation.isValid()).isTrue(); // GH-90000
-            assertThat(validation.errors()).isEmpty(); // GH-90000
+            assertThat(validation.isValid()).isTrue(); 
+            assertThat(validation.errors()).isEmpty(); 
         }
 
         @Test
         @DisplayName("[D012]: missing_required_field_fails_validation")
-        void missingRequiredFieldFailsValidation() { // GH-90000
+        void missingRequiredFieldFailsValidation() { 
             String modelId = "model-001";
-            Map<String, Object> invalidInput = Map.of( // GH-90000
+            Map<String, Object> invalidInput = Map.of( 
                 // Missing required "text" field
                 "temperature", 0.7
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "text", "string", "null",
                         "Required field 'text' is missing"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateInputSchema(modelId, invalidInput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, invalidInput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, invalidInput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, invalidInput) 
             );
 
-            assertThat(validation.isValid()).isFalse(); // GH-90000
-            assertThat(validation.errors()).hasSize(1); // GH-90000
+            assertThat(validation.isValid()).isFalse(); 
+            assertThat(validation.errors()).hasSize(1); 
             assertThat(validation.errors().get(0).field()).isEqualTo("text");
         }
 
         @Test
         @DisplayName("[D012]: wrong_type_fails_validation")
-        void wrongTypeFailsValidation() { // GH-90000
+        void wrongTypeFailsValidation() { 
             String modelId = "model-001";
-            Map<String, Object> wrongTypeInput = Map.of( // GH-90000
+            Map<String, Object> wrongTypeInput = Map.of( 
                 "text", "valid text",
                 "temperature", "not_a_number"  // Should be number
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "temperature", "number", "string",
                         "Field 'temperature' expected type 'number' but got 'string'"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateInputSchema(modelId, wrongTypeInput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, wrongTypeInput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, wrongTypeInput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, wrongTypeInput) 
             );
 
-            assertThat(validation.isValid()).isFalse(); // GH-90000
+            assertThat(validation.isValid()).isFalse(); 
             assertThat(validation.errors().get(0).expectedType()).isEqualTo("number");
             assertThat(validation.errors().get(0).actualType()).isEqualTo("string");
         }
 
         @Test
         @DisplayName("[D012]: extra_fields_produce_warning")
-        void extraFieldsProduceWarning() { // GH-90000
+        void extraFieldsProduceWarning() { 
             String modelId = "model-001";
-            Map<String, Object> inputWithExtra = Map.of( // GH-90000
+            Map<String, Object> inputWithExtra = Map.of( 
                 "text", "valid",
                 "temperature", 0.7,
                 "extra_field", "unexpected"  // Not in schema
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     true,  // Still valid
-                    List.of(), // GH-90000
+                    List.of(), 
                     List.of("Unexpected field 'extra_field' will be ignored")
                 );
 
-            when(evaluationService.validateInputSchema(modelId, inputWithExtra)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, inputWithExtra)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, inputWithExtra) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, inputWithExtra) 
             );
 
-            assertThat(validation.isValid()).isTrue(); // GH-90000
-            assertThat(validation.warnings()).isNotEmpty(); // GH-90000
+            assertThat(validation.isValid()).isTrue(); 
+            assertThat(validation.warnings()).isNotEmpty(); 
         }
     }
 
@@ -172,84 +172,84 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: valid_output_passes_validation")
-        void validOutputPassesValidation() { // GH-90000
+        void validOutputPassesValidation() { 
             String modelId = "model-001";
-            Map<String, Object> validOutput = Map.of( // GH-90000
+            Map<String, Object> validOutput = Map.of( 
                 "text", "Generated response",
                 "tokens_used", 50,
                 "finish_reason", "stop"
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); // GH-90000
+                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); 
 
-            when(evaluationService.validateOutputSchema(modelId, validOutput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateOutputSchema(modelId, validOutput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateOutputSchema(modelId, validOutput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateOutputSchema(modelId, validOutput) 
             );
 
-            assertThat(validation.isValid()).isTrue(); // GH-90000
+            assertThat(validation.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("[D012]: missing_output_field_fails_validation")
-        void missingOutputFieldFailsValidation() { // GH-90000
+        void missingOutputFieldFailsValidation() { 
             String modelId = "model-001";
-            Map<String, Object> incompleteOutput = Map.of( // GH-90000
+            Map<String, Object> incompleteOutput = Map.of( 
                 // Missing "text" field
                 "tokens_used", 50
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "text", "string", "null",
                         "Required output field 'text' is missing"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateOutputSchema(modelId, incompleteOutput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateOutputSchema(modelId, incompleteOutput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateOutputSchema(modelId, incompleteOutput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateOutputSchema(modelId, incompleteOutput) 
             );
 
-            assertThat(validation.isValid()).isFalse(); // GH-90000
+            assertThat(validation.isValid()).isFalse(); 
             assertThat(validation.errors().get(0).field()).isEqualTo("text");
         }
 
         @Test
         @DisplayName("[D012]: output_type_mismatch_fails")
-        void outputTypeMismatchFails() { // GH-90000
+        void outputTypeMismatchFails() { 
             String modelId = "model-001";
-            Map<String, Object> wrongTypeOutput = Map.of( // GH-90000
+            Map<String, Object> wrongTypeOutput = Map.of( 
                 "text", "valid",
                 "tokens_used", "fifty"  // Should be integer
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "tokens_used", "integer", "string",
                         "Output field 'tokens_used' type mismatch"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateOutputSchema(modelId, wrongTypeOutput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateOutputSchema(modelId, wrongTypeOutput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateOutputSchema(modelId, wrongTypeOutput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateOutputSchema(modelId, wrongTypeOutput) 
             );
 
-            assertThat(validation.isValid()).isFalse(); // GH-90000
+            assertThat(validation.isValid()).isFalse(); 
             assertThat(validation.errors().get(0).expectedType()).isEqualTo("integer");
         }
     }
@@ -264,56 +264,56 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: nested_object_validated_recursively")
-        void nestedObjectValidatedRecursively() { // GH-90000
+        void nestedObjectValidatedRecursively() { 
             String modelId = "model-001";
-            Map<String, Object> nestedInput = Map.of( // GH-90000
-                "config", Map.of( // GH-90000
+            Map<String, Object> nestedInput = Map.of( 
+                "config", Map.of( 
                     "temperature", 0.7,
                     "top_p", 0.9
                 ),
-                "messages", List.of( // GH-90000
-                    Map.of("role", "user", "content", "Hello") // GH-90000
+                "messages", List.of( 
+                    Map.of("role", "user", "content", "Hello") 
                 )
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); // GH-90000
+                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); 
 
-            when(evaluationService.validateInputSchema(modelId, nestedInput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, nestedInput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, nestedInput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, nestedInput) 
             );
 
-            assertThat(validation.isValid()).isTrue(); // GH-90000
+            assertThat(validation.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("[D012]: nested_field_error_reports_path")
-        void nestedFieldErrorReportsPath() { // GH-90000
+        void nestedFieldErrorReportsPath() { 
             String modelId = "model-001";
-            Map<String, Object> invalidNested = Map.of( // GH-90000
-                "config", Map.of( // GH-90000
+            Map<String, Object> invalidNested = Map.of( 
+                "config", Map.of( 
                     "temperature", "invalid"  // Should be number
                 )
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "config.temperature", "number", "string",
                         "Field 'config.temperature' type mismatch"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateInputSchema(modelId, invalidNested)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, invalidNested)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, invalidNested) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, invalidNested) 
             );
 
             assertThat(validation.errors().get(0).field()).contains("config.temperature");
@@ -330,51 +330,51 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: array_elements_validated")
-        void arrayElementsValidated() { // GH-90000
+        void arrayElementsValidated() { 
             String modelId = "model-001";
-            Map<String, Object> arrayInput = Map.of( // GH-90000
-                "items", List.of("item1", "item2", "item3") // GH-90000
+            Map<String, Object> arrayInput = Map.of( 
+                "items", List.of("item1", "item2", "item3") 
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); // GH-90000
+                new ModelEvaluationService.SchemaValidationResult(true, List.of(), List.of()); 
 
-            when(evaluationService.validateInputSchema(modelId, arrayInput)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, arrayInput)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, arrayInput) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, arrayInput) 
             );
 
-            assertThat(validation.isValid()).isTrue(); // GH-90000
+            assertThat(validation.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("[D012]: array_element_type_mismatch_fails")
-        void arrayElementTypeMismatchFails() { // GH-90000
+        void arrayElementTypeMismatchFails() { 
             String modelId = "model-001";
-            Map<String, Object> mixedArray = Map.of( // GH-90000
-                "numbers", List.of(1, 2, "three")  // Should be all integers // GH-90000
+            Map<String, Object> mixedArray = Map.of( 
+                "numbers", List.of(1, 2, "three")  // Should be all integers 
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "numbers[2]", "integer", "string",
                         "Array element at index 2 type mismatch"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            when(evaluationService.validateInputSchema(modelId, mixedArray)) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(evaluationService.validateInputSchema(modelId, mixedArray)) 
+                .thenReturn(Promise.of(result)); 
 
-            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> // GH-90000
-                evaluationService.validateInputSchema(modelId, mixedArray) // GH-90000
+            ModelEvaluationService.SchemaValidationResult validation = runPromise(() -> 
+                evaluationService.validateInputSchema(modelId, mixedArray) 
             );
 
-            assertThat(validation.isValid()).isFalse(); // GH-90000
+            assertThat(validation.isValid()).isFalse(); 
             assertThat(validation.errors().get(0).field()).contains("numbers");
         }
     }
@@ -389,9 +389,9 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: schema_error_contains_expected_type")
-        void schemaErrorContainsExpectedType() { // GH-90000
+        void schemaErrorContainsExpectedType() { 
             ModelEvaluationService.SchemaError error =
-                new ModelEvaluationService.SchemaError( // GH-90000
+                new ModelEvaluationService.SchemaError( 
                     "field", "number", "string", "Type mismatch"
                 );
 
@@ -402,18 +402,18 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: multiple_errors_collected")
-        void multipleErrorsCollected() { // GH-90000
-            List<ModelEvaluationService.SchemaError> errors = List.of( // GH-90000
-                new ModelEvaluationService.SchemaError("field1", "string", "null", "Missing"), // GH-90000
-                new ModelEvaluationService.SchemaError("field2", "number", "string", "Wrong type"), // GH-90000
-                new ModelEvaluationService.SchemaError("field3", "boolean", "integer", "Wrong type") // GH-90000
+        void multipleErrorsCollected() { 
+            List<ModelEvaluationService.SchemaError> errors = List.of( 
+                new ModelEvaluationService.SchemaError("field1", "string", "null", "Missing"), 
+                new ModelEvaluationService.SchemaError("field2", "number", "string", "Wrong type"), 
+                new ModelEvaluationService.SchemaError("field3", "boolean", "integer", "Wrong type") 
             );
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult(false, errors, List.of()); // GH-90000
+                new ModelEvaluationService.SchemaValidationResult(false, errors, List.of()); 
 
-            assertThat(result.errors()).hasSize(3); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+            assertThat(result.errors()).hasSize(3); 
+            assertThat(result.isValid()).isFalse(); 
         }
     }
 
@@ -427,22 +427,22 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: backward_compatible_changes_accepted")
-        void backwardCompatibleChangesAccepted() { // GH-90000
+        void backwardCompatibleChangesAccepted() { 
             // Adding optional fields is backward compatible
-            Map<String, Object> inputWithOptional = Map.of( // GH-90000
+            Map<String, Object> inputWithOptional = Map.of( 
                 "required_field", "value",
                 "optional_field", "extra value"  // Optional field added
             );
 
             // Should be valid if optional_field is not required
-            assertThat(inputWithOptional).containsKeys("required_field", "optional_field"); // GH-90000
+            assertThat(inputWithOptional).containsKeys("required_field", "optional_field"); 
         }
 
         @Test
         @DisplayName("[D012]: breaking_changes_rejected")
-        void breakingChangesRejected() { // GH-90000
+        void breakingChangesRejected() { 
             // Removing required fields is breaking
-            Map<String, Object> missingRequired = Map.of( // GH-90000
+            Map<String, Object> missingRequired = Map.of( 
                 // "required_field" is missing
                 "other_field", "value"
             );
@@ -452,23 +452,23 @@ class ModelSchemaValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D012]: null_values_handled_correctly")
-        void nullValuesHandledCorrectly() { // GH-90000
-            Map<String, Object> withNull = new java.util.HashMap<>(); // GH-90000
-            withNull.put("field", null); // GH-90000
+        void nullValuesHandledCorrectly() { 
+            Map<String, Object> withNull = new java.util.HashMap<>(); 
+            withNull.put("field", null); 
 
             ModelEvaluationService.SchemaValidationResult result =
-                new ModelEvaluationService.SchemaValidationResult( // GH-90000
+                new ModelEvaluationService.SchemaValidationResult( 
                     false,
-                    List.of(new ModelEvaluationService.SchemaError( // GH-90000
+                    List.of(new ModelEvaluationService.SchemaError( 
                         "field", "string", "null",
                         "Field 'field' cannot be null"
                     )),
-                    List.of() // GH-90000
+                    List.of() 
                 );
 
-            assertThat(result.isValid()).isFalse(); // GH-90000
-            assertThat(withNull).containsKey(result.errors().get(0).field()); // GH-90000
-            assertThat(withNull.get(result.errors().get(0).field())).isNull(); // GH-90000
+            assertThat(result.isValid()).isFalse(); 
+            assertThat(withNull).containsKey(result.errors().get(0).field()); 
+            assertThat(withNull.get(result.errors().get(0).field())).isNull(); 
         }
     }
 }

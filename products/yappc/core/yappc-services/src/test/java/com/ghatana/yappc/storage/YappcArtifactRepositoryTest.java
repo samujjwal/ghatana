@@ -22,72 +22,72 @@ class YappcArtifactRepositoryTest extends EventloopTestBase {
     private InMemoryArtifactStore store;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new InMemoryArtifactStore(); // GH-90000
-        repository = new YappcArtifactRepository(store); // GH-90000
+    void setUp() { 
+        store = new InMemoryArtifactStore(); 
+        repository = new YappcArtifactRepository(store); 
     }
 
     @Test
-    void shouldStoreAndRetrieveArtifact() { // GH-90000
+    void shouldStoreAndRetrieveArtifact() { 
         // GIVEN
         String productId = "product-123";
         PhaseType phase = PhaseType.INTENT;
-        byte[] content = "test content".getBytes(); // GH-90000
+        byte[] content = "test content".getBytes(); 
 
         // WHEN
-        String version = runPromise(() -> repository.storeArtifact(productId, phase, content)); // GH-90000
-        byte[] retrieved = runPromise(() -> repository.getArtifact(productId, phase, version)); // GH-90000
+        String version = runPromise(() -> repository.storeArtifact(productId, phase, content)); 
+        byte[] retrieved = runPromise(() -> repository.getArtifact(productId, phase, version)); 
 
         // THEN
-        assertNotNull(version); // GH-90000
-        assertArrayEquals(content, retrieved); // GH-90000
+        assertNotNull(version); 
+        assertArrayEquals(content, retrieved); 
     }
 
     @Test
-    void shouldListVersions() { // GH-90000
+    void shouldListVersions() { 
         // GIVEN
         String productId = "product-123";
         PhaseType phase = PhaseType.SHAPE;
 
-        runPromise(() -> repository.storeArtifact(productId, phase, "v1".getBytes())); // GH-90000
-        runPromise(() -> repository.storeArtifact(productId, phase, "v2".getBytes())); // GH-90000
+        runPromise(() -> repository.storeArtifact(productId, phase, "v1".getBytes())); 
+        runPromise(() -> repository.storeArtifact(productId, phase, "v2".getBytes())); 
 
         // WHEN
-        List<String> versions = runPromise(() -> repository.listVersions(productId, phase)); // GH-90000
+        List<String> versions = runPromise(() -> repository.listVersions(productId, phase)); 
 
         // THEN
-        assertNotNull(versions); // GH-90000
-        assertEquals(2, versions.size()); // GH-90000
+        assertNotNull(versions); 
+        assertEquals(2, versions.size()); 
     }
 
     @Test
-    void shouldStoreAndRetrieveMetadata() { // GH-90000
+    void shouldStoreAndRetrieveMetadata() { 
         // GIVEN
         String productId = "product-123";
         PhaseType phase = PhaseType.GENERATE;
         String version = "v1";
-        Map<String, String> metadata = Map.of("author", "test", "timestamp", "2025-01-07"); // GH-90000
+        Map<String, String> metadata = Map.of("author", "test", "timestamp", "2025-01-07"); 
 
         // WHEN
-        runPromise(() -> repository.storeMetadata(productId, phase, version, metadata)); // GH-90000
+        runPromise(() -> repository.storeMetadata(productId, phase, version, metadata)); 
 
         // THEN - metadata stored successfully and can be retrieved
-        Map<String, String> retrieved = runPromise(() -> store.getMetadata( // GH-90000
-            String.format("products/%s/phases/%s/%s/metadata", productId, phase.name().toLowerCase(), version))); // GH-90000
+        Map<String, String> retrieved = runPromise(() -> store.getMetadata( 
+            String.format("products/%s/phases/%s/%s/metadata", productId, phase.name().toLowerCase(), version))); 
         assertEquals("test", retrieved.get("author"));
         assertEquals("2025-01-07", retrieved.get("timestamp"));
     }
 
     @Test
-    void shouldHandleNonExistentArtifact() { // GH-90000
+    void shouldHandleNonExistentArtifact() { 
         // GIVEN
         String productId = "nonexistent";
         PhaseType phase = PhaseType.INTENT;
         String version = "v1";
 
         // WHEN/THEN
-        Exception e = assertThrows(Exception.class, () -> // GH-90000
-                runPromise(() -> repository.getArtifact(productId, phase, version))); // GH-90000
+        Exception e = assertThrows(Exception.class, () -> 
+                runPromise(() -> repository.getArtifact(productId, phase, version))); 
         assertTrue(e.getMessage().contains("not found"));
     }
 }

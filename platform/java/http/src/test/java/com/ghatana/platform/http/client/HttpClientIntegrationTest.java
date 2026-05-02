@@ -35,25 +35,25 @@ class HttpClientIntegrationTest extends EventloopTestBase {
     private MetricsCollector metrics;
 
     @AfterEach
-    void tearDown() throws Exception { // GH-90000
-        if (mockWebServer != null) { // GH-90000
-            mockWebServer.shutdown(); // GH-90000
+    void tearDown() throws Exception { 
+        if (mockWebServer != null) { 
+            mockWebServer.shutdown(); 
         }
     }
 
     @Test
     @DisplayName("Should handle HTTP GET requests")
-    void shouldHandleHttpGetRequests() { // GH-90000
-        mockWebServer = new MockWebServer(); // GH-90000
-        okHttpClient = new OkHttpClient(); // GH-90000
-        rateLimiter = RateLimiter.create(10.0); // GH-90000
-        metrics = mock(MetricsCollector.class); // GH-90000
+    void shouldHandleHttpGetRequests() { 
+        mockWebServer = new MockWebServer(); 
+        okHttpClient = new OkHttpClient(); 
+        rateLimiter = RateLimiter.create(10.0); 
+        metrics = mock(MetricsCollector.class); 
 
         // Test configuration setup - informational test
-        assertThat(mockWebServer).isNotNull(); // GH-90000
-        assertThat(okHttpClient).isNotNull(); // GH-90000
-        assertThat(rateLimiter).isNotNull(); // GH-90000
-        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(mockWebServer).isNotNull(); 
+        assertThat(okHttpClient).isNotNull(); 
+        assertThat(rateLimiter).isNotNull(); 
+        assertThat(metrics).isNotNull(); 
 
         // HTTP client integration tests are informational until ActiveJ reactor issues are resolved
         // The actual HTTP calls require proper reactor context setup
@@ -61,17 +61,17 @@ class HttpClientIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should handle HTTP POST requests")
-    void shouldHandleHttpPostRequests() { // GH-90000
-        mockWebServer = new MockWebServer(); // GH-90000
-        okHttpClient = new OkHttpClient(); // GH-90000
-        rateLimiter = RateLimiter.create(10.0); // GH-90000
-        metrics = mock(MetricsCollector.class); // GH-90000
+    void shouldHandleHttpPostRequests() { 
+        mockWebServer = new MockWebServer(); 
+        okHttpClient = new OkHttpClient(); 
+        rateLimiter = RateLimiter.create(10.0); 
+        metrics = mock(MetricsCollector.class); 
 
         // Test configuration setup - informational test
-        assertThat(mockWebServer).isNotNull(); // GH-90000
-        assertThat(okHttpClient).isNotNull(); // GH-90000
-        assertThat(rateLimiter).isNotNull(); // GH-90000
-        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(mockWebServer).isNotNull(); 
+        assertThat(okHttpClient).isNotNull(); 
+        assertThat(rateLimiter).isNotNull(); 
+        assertThat(metrics).isNotNull(); 
 
         // HTTP client integration tests are informational until ActiveJ reactor issues are resolved
         // The actual HTTP calls require proper reactor context setup
@@ -79,55 +79,55 @@ class HttpClientIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should handle connection retries")
-    void shouldHandleConnectionRetries() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-            .retryOnConnectionFailure(true) // GH-90000
-            .requestsPerSecond(5.0) // GH-90000
-            .build(); // GH-90000
+    void shouldHandleConnectionRetries() { 
+        HttpClientConfig config = HttpClientConfig.builder() 
+            .retryOnConnectionFailure(true) 
+            .requestsPerSecond(5.0) 
+            .build(); 
 
-        assertThat(config.isRetryOnConnectionFailure()).isTrue(); // GH-90000
-        assertThat(config.getRequestsPerSecond()).isEqualTo(5.0); // GH-90000
+        assertThat(config.isRetryOnConnectionFailure()).isTrue(); 
+        assertThat(config.getRequestsPerSecond()).isEqualTo(5.0); 
     }
 
     @Test
     @DisplayName("Should handle request timeouts")
-    void shouldHandleRequestTimeouts() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-            .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-            .readTimeout(Duration.ofSeconds(10)) // GH-90000
-            .callTimeout(Duration.ofSeconds(15)) // GH-90000
-            .build(); // GH-90000
+    void shouldHandleRequestTimeouts() { 
+        HttpClientConfig config = HttpClientConfig.builder() 
+            .connectTimeout(Duration.ofSeconds(5)) 
+            .readTimeout(Duration.ofSeconds(10)) 
+            .callTimeout(Duration.ofSeconds(15)) 
+            .build(); 
 
-        assertThat(config.getConnectTimeout()).isEqualTo(Duration.ofSeconds(5)); // GH-90000
-        assertThat(config.getReadTimeout()).isEqualTo(Duration.ofSeconds(10)); // GH-90000
-        assertThat(config.getCallTimeout()).isEqualTo(Duration.ofSeconds(15)); // GH-90000
+        assertThat(config.getConnectTimeout()).isEqualTo(Duration.ofSeconds(5)); 
+        assertThat(config.getReadTimeout()).isEqualTo(Duration.ofSeconds(10)); 
+        assertThat(config.getCallTimeout()).isEqualTo(Duration.ofSeconds(15)); 
     }
 
     @Test
     @DisplayName("Should handle connection pooling")
-    void shouldHandleConnectionPooling() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-            .maxConnections(20) // GH-90000
-            .keepAliveDuration(Duration.ofMinutes(5)) // GH-90000
-            .build(); // GH-90000
+    void shouldHandleConnectionPooling() { 
+        HttpClientConfig config = HttpClientConfig.builder() 
+            .maxConnections(20) 
+            .keepAliveDuration(Duration.ofMinutes(5)) 
+            .build(); 
 
-        assertThat(config.getMaxConnections()).isEqualTo(20); // GH-90000
-        assertThat(config.getKeepAliveDuration()).isEqualTo(Duration.ofMinutes(5)); // GH-90000
+        assertThat(config.getMaxConnections()).isEqualTo(20); 
+        assertThat(config.getKeepAliveDuration()).isEqualTo(Duration.ofMinutes(5)); 
     }
 
     @Test
     @DisplayName("Should handle HTTP error responses")
-    void shouldHandleHttpErrorResponses() { // GH-90000
-        mockWebServer = new MockWebServer(); // GH-90000
-        okHttpClient = new OkHttpClient(); // GH-90000
-        rateLimiter = RateLimiter.create(10.0); // GH-90000
-        metrics = mock(MetricsCollector.class); // GH-90000
+    void shouldHandleHttpErrorResponses() { 
+        mockWebServer = new MockWebServer(); 
+        okHttpClient = new OkHttpClient(); 
+        rateLimiter = RateLimiter.create(10.0); 
+        metrics = mock(MetricsCollector.class); 
 
         // Test configuration setup - informational test
-        assertThat(mockWebServer).isNotNull(); // GH-90000
-        assertThat(okHttpClient).isNotNull(); // GH-90000
-        assertThat(rateLimiter).isNotNull(); // GH-90000
-        assertThat(metrics).isNotNull(); // GH-90000
+        assertThat(mockWebServer).isNotNull(); 
+        assertThat(okHttpClient).isNotNull(); 
+        assertThat(rateLimiter).isNotNull(); 
+        assertThat(metrics).isNotNull(); 
 
         // HTTP client integration tests are informational until ActiveJ reactor issues are resolved
         // The actual HTTP calls require proper reactor context setup

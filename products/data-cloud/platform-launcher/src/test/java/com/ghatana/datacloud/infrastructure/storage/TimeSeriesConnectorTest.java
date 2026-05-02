@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class TimeSeriesConnectorTest extends EventloopTestBase {
 
     @Mock
@@ -33,203 +33,203 @@ class TimeSeriesConnectorTest extends EventloopTestBase {
 
     static final String TENANT = "ts-tenant";
     static final String COLLECTION = "metrics";
-    static final UUID COLLECTION_ID = UUID.randomUUID(); // GH-90000
+    static final UUID COLLECTION_ID = UUID.randomUUID(); 
 
     @BeforeEach
-    void setUp() { // GH-90000
-        lenient().doNothing().when(metrics).incrementCounter(anyString(), any(String[].class)); // GH-90000
-        lenient().doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class)); // GH-90000
-        connector = new TimeSeriesConnector(metrics); // GH-90000
+    void setUp() { 
+        lenient().doNothing().when(metrics).incrementCounter(anyString(), any(String[].class)); 
+        lenient().doNothing().when(metrics).recordTimer(anyString(), anyLong(), any(String[].class)); 
+        connector = new TimeSeriesConnector(metrics); 
     }
 
     // ── constructor ──────────────────────────────────────────────────────────
 
     @Test
-    void constructor_null_throwsNPE() { // GH-90000
-        assertThatNullPointerException().isThrownBy(() -> new TimeSeriesConnector(null)); // GH-90000
+    void constructor_null_throwsNPE() { 
+        assertThatNullPointerException().isThrownBy(() -> new TimeSeriesConnector(null)); 
     }
 
     // ── create ───────────────────────────────────────────────────────────────
 
     @Test
-    void create_generatesId_whenAbsent() { // GH-90000
-        Entity saved = resolve(connector.create(event(null))); // GH-90000
-        assertThat(saved.getId()).isNotNull(); // GH-90000
+    void create_generatesId_whenAbsent() { 
+        Entity saved = resolve(connector.create(event(null))); 
+        assertThat(saved.getId()).isNotNull(); 
     }
 
     @Test
-    void create_preservesExplicitId() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        Entity saved = resolve(connector.create(event(id))); // GH-90000
-        assertThat(saved.getId()).isEqualTo(id); // GH-90000
+    void create_preservesExplicitId() { 
+        UUID id = UUID.randomUUID(); 
+        Entity saved = resolve(connector.create(event(id))); 
+        assertThat(saved.getId()).isEqualTo(id); 
     }
 
     @Test
-    void create_multipleEntities_allStored() { // GH-90000
-        for (int i = 0; i < 5; i++) resolve(connector.create(event(null))); // GH-90000
-        long count = resolve(connector.count(COLLECTION_ID, TENANT, null)); // GH-90000
-        assertThat(count).isEqualTo(5); // GH-90000
+    void create_multipleEntities_allStored() { 
+        for (int i = 0; i < 5; i++) resolve(connector.create(event(null))); 
+        long count = resolve(connector.count(COLLECTION_ID, TENANT, null)); 
+        assertThat(count).isEqualTo(5); 
     }
 
     // ── read ─────────────────────────────────────────────────────────────────
 
     @Test
-    void read_findsCreatedEntity() { // GH-90000
-        Entity saved = resolve(connector.create(event(null))); // GH-90000
-        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, saved.getId())); // GH-90000
-        assertThat(found).isPresent(); // GH-90000
+    void read_findsCreatedEntity() { 
+        Entity saved = resolve(connector.create(event(null))); 
+        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, saved.getId())); 
+        assertThat(found).isPresent(); 
     }
 
     @Test
-    void read_returnsEmpty_forUnknownId() { // GH-90000
-        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, UUID.randomUUID())); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+    void read_returnsEmpty_forUnknownId() { 
+        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, UUID.randomUUID())); 
+        assertThat(found).isEmpty(); 
     }
 
     @Test
-    void read_isolatesByTenant() { // GH-90000
-        Entity saved = resolve(connector.create(event(null))); // GH-90000
-        Optional<Entity> crossTenant = resolve(connector.read(COLLECTION_ID, "other-tenant", saved.getId())); // GH-90000
-        assertThat(crossTenant).isEmpty(); // GH-90000
+    void read_isolatesByTenant() { 
+        Entity saved = resolve(connector.create(event(null))); 
+        Optional<Entity> crossTenant = resolve(connector.read(COLLECTION_ID, "other-tenant", saved.getId())); 
+        assertThat(crossTenant).isEmpty(); 
     }
 
     // ── update ───────────────────────────────────────────────────────────────
 
     @Test
-    void update_replacesData() { // GH-90000
-        Entity saved = resolve(connector.create(event(null))); // GH-90000
-        Entity updated = Entity.builder() // GH-90000
-                .id(saved.getId()) // GH-90000
-                .tenantId(TENANT) // GH-90000
-                .collectionName(COLLECTION) // GH-90000
-                .data(Map.of("value", 99.0, "timestamp", Instant.now().toString())) // GH-90000
-                .build(); // GH-90000
-        Entity result = resolve(connector.update(updated)); // GH-90000
+    void update_replacesData() { 
+        Entity saved = resolve(connector.create(event(null))); 
+        Entity updated = Entity.builder() 
+                .id(saved.getId()) 
+                .tenantId(TENANT) 
+                .collectionName(COLLECTION) 
+                .data(Map.of("value", 99.0, "timestamp", Instant.now().toString())) 
+                .build(); 
+        Entity result = resolve(connector.update(updated)); 
         assertThat(result.getData().get("value")).isEqualTo(99.0);
     }
 
     @Test
-    void update_failsForMissingEntity() { // GH-90000
-        Entity ghost = event(UUID.randomUUID()); // GH-90000
-        assertThatThrownBy(() -> resolve(connector.update(ghost))).isInstanceOf(Exception.class); // GH-90000
+    void update_failsForMissingEntity() { 
+        Entity ghost = event(UUID.randomUUID()); 
+        assertThatThrownBy(() -> resolve(connector.update(ghost))).isInstanceOf(Exception.class); 
     }
 
     // ── delete ───────────────────────────────────────────────────────────────
 
     @Test
-    void delete_removesEntity() { // GH-90000
-        Entity saved = resolve(connector.create(event(null))); // GH-90000
-        resolve(connector.delete(COLLECTION_ID, TENANT, saved.getId())); // GH-90000
-        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, saved.getId())); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+    void delete_removesEntity() { 
+        Entity saved = resolve(connector.create(event(null))); 
+        resolve(connector.delete(COLLECTION_ID, TENANT, saved.getId())); 
+        Optional<Entity> found = resolve(connector.read(COLLECTION_ID, TENANT, saved.getId())); 
+        assertThat(found).isEmpty(); 
     }
 
     // ── query with time window ────────────────────────────────────────────────
 
     @Test
-    void query_returnsAllEntities_withoutFilter() { // GH-90000
-        for (int i = 0; i < 3; i++) resolve(connector.create(event(null))); // GH-90000
-        QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build(); // GH-90000
-        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); // GH-90000
-        assertThat(result.entities()).hasSize(3); // GH-90000
+    void query_returnsAllEntities_withoutFilter() { 
+        for (int i = 0; i < 3; i++) resolve(connector.create(event(null))); 
+        QuerySpec spec = QuerySpec.builder().limit(10).offset(0).build(); 
+        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); 
+        assertThat(result.entities()).hasSize(3); 
     }
 
     @Test
-    void query_paginatesCorrectly() { // GH-90000
-        for (int i = 0; i < 6; i++) resolve(connector.create(event(null))); // GH-90000
-        QuerySpec spec = QuerySpec.builder().limit(2).offset(4).build(); // GH-90000
-        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); // GH-90000
-        assertThat(result.entities()).hasSize(2); // GH-90000
+    void query_paginatesCorrectly() { 
+        for (int i = 0; i < 6; i++) resolve(connector.create(event(null))); 
+        QuerySpec spec = QuerySpec.builder().limit(2).offset(4).build(); 
+        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); 
+        assertThat(result.entities()).hasSize(2); 
     }
 
     @Test
-    void query_timeWindow_filtersEntities() { // GH-90000
-        resolve(connector.create(event(null))); // GH-90000
-        Instant futureStart = Instant.now().plusSeconds(3600); // GH-90000
-        Instant futureEnd = Instant.now().plusSeconds(7200); // GH-90000
-        QuerySpec spec = QuerySpec.builder() // GH-90000
-                .timeWindow(futureStart, futureEnd) // GH-90000
-                .limit(100).offset(0).build(); // GH-90000
-        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); // GH-90000
-        assertThat(result.entities()).isEmpty(); // GH-90000
+    void query_timeWindow_filtersEntities() { 
+        resolve(connector.create(event(null))); 
+        Instant futureStart = Instant.now().plusSeconds(3600); 
+        Instant futureEnd = Instant.now().plusSeconds(7200); 
+        QuerySpec spec = QuerySpec.builder() 
+                .timeWindow(futureStart, futureEnd) 
+                .limit(100).offset(0).build(); 
+        StorageConnector.QueryResult result = resolve(connector.query(COLLECTION_ID, TENANT, spec)); 
+        assertThat(result.entities()).isEmpty(); 
     }
 
     // ── scan ─────────────────────────────────────────────────────────────────
 
     @Test
-    void scan_returnsAllEntities_noFilter() { // GH-90000
-        for (int i = 0; i < 4; i++) resolve(connector.create(event(null))); // GH-90000
-        List<Entity> found = resolve(connector.scan(COLLECTION_ID, TENANT, null, 100, 0)); // GH-90000
-        assertThat(found).hasSize(4); // GH-90000
+    void scan_returnsAllEntities_noFilter() { 
+        for (int i = 0; i < 4; i++) resolve(connector.create(event(null))); 
+        List<Entity> found = resolve(connector.scan(COLLECTION_ID, TENANT, null, 100, 0)); 
+        assertThat(found).hasSize(4); 
     }
 
     // ── concurrency ──────────────────────────────────────────────────────────
 
     @Test
-    void concurrentCreates_areThreadSafe() throws InterruptedException { // GH-90000
+    void concurrentCreates_areThreadSafe() throws InterruptedException { 
         int threads = 8;
         int perThread = 50;
-        ExecutorService exec = Executors.newFixedThreadPool(threads); // GH-90000
-        CountDownLatch latch = new CountDownLatch(threads); // GH-90000
-        AtomicInteger errors = new AtomicInteger(0); // GH-90000
+        ExecutorService exec = Executors.newFixedThreadPool(threads); 
+        CountDownLatch latch = new CountDownLatch(threads); 
+        AtomicInteger errors = new AtomicInteger(0); 
 
-        for (int t = 0; t < threads; t++) { // GH-90000
-            exec.submit(() -> { // GH-90000
+        for (int t = 0; t < threads; t++) { 
+            exec.submit(() -> { 
                 try {
-                    for (int i = 0; i < perThread; i++) resolve(connector.create(event(null))); // GH-90000
-                } catch (Exception e) { // GH-90000
-                    errors.incrementAndGet(); // GH-90000
+                    for (int i = 0; i < perThread; i++) resolve(connector.create(event(null))); 
+                } catch (Exception e) { 
+                    errors.incrementAndGet(); 
                 } finally {
-                    latch.countDown(); // GH-90000
+                    latch.countDown(); 
                 }
             });
         }
 
-        latch.await(10, TimeUnit.SECONDS); // GH-90000
-        exec.shutdown(); // GH-90000
+        latch.await(10, TimeUnit.SECONDS); 
+        exec.shutdown(); 
 
-        assertThat(errors.get()).isZero(); // GH-90000
-        assertThat(resolve(connector.count(COLLECTION_ID, TENANT, null))) // GH-90000
-                .isEqualTo((long) threads * perThread); // GH-90000
+        assertThat(errors.get()).isZero(); 
+        assertThat(resolve(connector.count(COLLECTION_ID, TENANT, null))) 
+                .isEqualTo((long) threads * perThread); 
     }
 
     // ── metadata ─────────────────────────────────────────────────────────────
 
     @Test
-    void metadata_isTimeSeries() { // GH-90000
-        assertThat(connector.getMetadata().supportsTimeSeries()).isTrue(); // GH-90000
+    void metadata_isTimeSeries() { 
+        assertThat(connector.getMetadata().supportsTimeSeries()).isTrue(); 
     }
 
     @Test
-    void healthCheck_completes() { // GH-90000
-        assertThatCode(() -> resolve(connector.healthCheck())).doesNotThrowAnyException(); // GH-90000
+    void healthCheck_completes() { 
+        assertThatCode(() -> resolve(connector.healthCheck())).doesNotThrowAnyException(); 
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private Entity event(UUID id) { // GH-90000
-        if (id != null) { // GH-90000
-            return Entity.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .tenantId(TENANT) // GH-90000
-                    .collectionName(COLLECTION) // GH-90000
-                    .data(Map.of( // GH-90000
-                            "timestamp", Instant.now().toString(), // GH-90000
+    private Entity event(UUID id) { 
+        if (id != null) { 
+            return Entity.builder() 
+                    .id(id) 
+                    .tenantId(TENANT) 
+                    .collectionName(COLLECTION) 
+                    .data(Map.of( 
+                            "timestamp", Instant.now().toString(), 
                             "metric", "cpu_usage",
-                            "value", Math.random() * 100)) // GH-90000
-                    .build(); // GH-90000
+                            "value", Math.random() * 100)) 
+                    .build(); 
         }
-        return Entity.builder() // GH-90000
-                .tenantId(TENANT) // GH-90000
-                .collectionName(COLLECTION) // GH-90000
-                .data(Map.of( // GH-90000
-                        "timestamp", Instant.now().toString(), // GH-90000
+        return Entity.builder() 
+                .tenantId(TENANT) 
+                .collectionName(COLLECTION) 
+                .data(Map.of( 
+                        "timestamp", Instant.now().toString(), 
                         "metric", "cpu_usage",
-                        "value", Math.random() * 100)) // GH-90000
-                .build(); // GH-90000
+                        "value", Math.random() * 100)) 
+                .build(); 
     }
 
-    private <T> T resolve(Promise<T> promise) { // GH-90000
-        return runPromise(() -> promise); // GH-90000
+    private <T> T resolve(Promise<T> promise) { 
+        return runPromise(() -> promise); 
     }
 }

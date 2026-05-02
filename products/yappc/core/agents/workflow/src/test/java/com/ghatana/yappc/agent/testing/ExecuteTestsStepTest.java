@@ -33,38 +33,38 @@ class ExecuteTestsStepTest extends EventloopTestBase {
   private ExecuteTestsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new ExecuteTestsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new ExecuteTestsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("testing.execute_tests");
   }
 
   @Test
   @DisplayName("Should execute tests")
-  void shouldExecuteTests() { // GH-90000
+  void shouldExecuteTests() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("runId", "test-run-001"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // Required by step validation // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("runId", "test-run-001"); 
+    context.put("tenantId", "tenant-abc"); // Required by step validation 
 
     List<Map<String, Object>> testCases =
-        List.of(Map.of("_id", "test-001", "runId", "test-run-001", "status", "READY")); // GH-90000
+        List.of(Map.of("_id", "test-001", "runId", "test-run-001", "status", "READY")); 
     when(dbClient.query(eq("test_cases"), any(), anyInt())).thenReturn(Promise.of(testCases));
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("runId")).isEqualTo("test-run-001");
   }
 }

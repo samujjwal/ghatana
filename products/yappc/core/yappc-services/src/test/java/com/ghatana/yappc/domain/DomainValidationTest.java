@@ -17,48 +17,48 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class DomainValidationTest {
 
     @Test
-    void shouldRejectBlankIntentIdentityAndCoreFields() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+    void shouldRejectBlankIntentIdentityAndCoreFields() { 
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() 
             .id(" ")
             .productName("Valid Product")
             .description("Valid description")
-            .build()); // GH-90000
+            .build()); 
 
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() 
             .id("intent-1")
             .productName(" ")
             .description("Valid description")
-            .build()); // GH-90000
+            .build()); 
 
-        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> IntentSpec.builder() 
             .id("intent-1")
             .productName("Valid Product")
             .description(" ")
-            .build()); // GH-90000
+            .build()); 
     }
 
     @Test
-    void shouldInitializeNullCollectionsToSafeDefaults() { // GH-90000
-        IntentSpec intentSpec = assertDoesNotThrow(() -> IntentSpec.builder() // GH-90000
+    void shouldInitializeNullCollectionsToSafeDefaults() { 
+        IntentSpec intentSpec = assertDoesNotThrow(() -> IntentSpec.builder() 
             .id("intent-1")
             .productName("Product")
             .description("Description")
-            .goals(null) // GH-90000
-            .personas(null) // GH-90000
-            .constraints(null) // GH-90000
-            .metadata(null) // GH-90000
-            .build()); // GH-90000
+            .goals(null) 
+            .personas(null) 
+            .constraints(null) 
+            .metadata(null) 
+            .build()); 
 
-        assertEquals(0, intentSpec.goals().size()); // GH-90000
-        assertEquals(0, intentSpec.personas().size()); // GH-90000
-        assertEquals(0, intentSpec.constraints().size()); // GH-90000
-        assertEquals(0, intentSpec.metadata().size()); // GH-90000
+        assertEquals(0, intentSpec.goals().size()); 
+        assertEquals(0, intentSpec.personas().size()); 
+        assertEquals(0, intentSpec.constraints().size()); 
+        assertEquals(0, intentSpec.metadata().size()); 
     }
 
     @Test
-    void shouldRejectBlankShapeIdentity() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> ShapeSpec.builder() // GH-90000
+    void shouldRejectBlankShapeIdentity() { 
+        assertThrows(IllegalArgumentException.class, () -> ShapeSpec.builder() 
             .id("\t")
-            .build()); // GH-90000
+            .build()); 
     }
 }

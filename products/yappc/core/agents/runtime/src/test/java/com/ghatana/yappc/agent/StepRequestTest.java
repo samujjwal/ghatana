@@ -19,74 +19,74 @@ class StepRequestTest {
 
   @Test
   @DisplayName("should create StepRequest with valid input and context")
-  void shouldCreateStepRequest() { // GH-90000
+  void shouldCreateStepRequest() { 
     String input = "test input";
-    StepContext context = createTestContext(); // GH-90000
+    StepContext context = createTestContext(); 
 
-    StepRequest<String> request = new StepRequest<>(input, context); // GH-90000
+    StepRequest<String> request = new StepRequest<>(input, context); 
 
-    assertThat(request.input()).isEqualTo(input); // GH-90000
-    assertThat(request.context()).isEqualTo(context); // GH-90000
+    assertThat(request.input()).isEqualTo(input); 
+    assertThat(request.context()).isEqualTo(context); 
   }
 
   @Test
   @DisplayName("should reject null input")
-  void shouldRejectNullInput() { // GH-90000
-    StepContext context = createTestContext(); // GH-90000
+  void shouldRejectNullInput() { 
+    StepContext context = createTestContext(); 
 
-    assertThatThrownBy(() -> new StepRequest<>(null, context)) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> new StepRequest<>(null, context)) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("input cannot be null");
   }
 
   @Test
   @DisplayName("should reject null context")
-  void shouldRejectNullContext() { // GH-90000
+  void shouldRejectNullContext() { 
     String input = "test input";
 
-    assertThatThrownBy(() -> new StepRequest<>(input, null)) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> new StepRequest<>(input, null)) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("context cannot be null");
   }
 
   @Test
   @DisplayName("should create StepRequest with default context using factory method")
-  void shouldCreateWithDefaultContext() { // GH-90000
+  void shouldCreateWithDefaultContext() { 
     String stepId = "test-step";
     String input = "test input";
 
-    StepRequest<String> request = StepRequest.of(stepId, input); // GH-90000
+    StepRequest<String> request = StepRequest.of(stepId, input); 
 
-    assertThat(request.input()).isEqualTo(input); // GH-90000
-    assertThat(request.context()).isNotNull(); // GH-90000
-    assertThat(request.context().runId()).isEqualTo(stepId); // GH-90000
+    assertThat(request.input()).isEqualTo(input); 
+    assertThat(request.context()).isNotNull(); 
+    assertThat(request.context().runId()).isEqualTo(stepId); 
     assertThat(request.context().tenantId()).isEqualTo("system");
   }
 
   @Test
   @DisplayName("should handle null stepId in factory method")
-  void shouldHandleNullStepIdInFactory() { // GH-90000
-    StepRequest<String> request = StepRequest.of(null, "input"); // GH-90000
+  void shouldHandleNullStepIdInFactory() { 
+    StepRequest<String> request = StepRequest.of(null, "input"); 
 
     assertThat(request.input()).isEqualTo("input");
-    assertThat(request.context().runId()).isNull(); // GH-90000
+    assertThat(request.context().runId()).isNull(); 
   }
 
   @Test
   @DisplayName("should handle null input in factory method")
-  void shouldHandleNullInputInFactory() { // GH-90000
-    assertThatThrownBy(() -> StepRequest.of("stepId", null)) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+  void shouldHandleNullInputInFactory() { 
+    assertThatThrownBy(() -> StepRequest.of("stepId", null)) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("input cannot be null");
   }
 
-  private StepContext createTestContext() { // GH-90000
-    return new StepContext( // GH-90000
+  private StepContext createTestContext() { 
+    return new StepContext( 
         "tenant-1",
         "run-1",
         "phase-1",
         "config-1",
-        new Budget(100L, 1.0, 60000L), // GH-90000
+        new Budget(100L, 1.0, 60000L), 
         null,
         null
     );

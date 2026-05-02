@@ -32,10 +32,10 @@ class RagServiceTest extends EventloopTestBase {
     private RagService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        searchService = mock(SemanticSearchService.class); // GH-90000
-        llmGateway = mock(LLMGateway.class); // GH-90000
-        service = new RagService(searchService, llmGateway); // GH-90000
+    void setUp() { 
+        searchService = mock(SemanticSearchService.class); 
+        llmGateway = mock(LLMGateway.class); 
+        service = new RagService(searchService, llmGateway); 
     }
 
     @Nested
@@ -44,25 +44,25 @@ class RagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should generate response with context retrieval")
-        void shouldGenerateResponseWithContextRetrieval() { // GH-90000
+        void shouldGenerateResponseWithContextRetrieval() { 
             // GIVEN
             String query = "How do I create a workflow?";
 
             SemanticSearchService.SemanticSearchResult searchResult =
-                    new SemanticSearchService.SemanticSearchResult( // GH-90000
+                    new SemanticSearchService.SemanticSearchResult( 
                             query,
-                            List.of( // GH-90000
-                                    new SemanticSearchService.SearchHit( // GH-90000
+                            List.of( 
+                                    new SemanticSearchService.SearchHit( 
                                             "doc-1",
                                             "Workflows are created using the AiWorkflowService...",
                                             0.95,
-                                            Map.of("source", "workflow-guide.md") // GH-90000
+                                            Map.of("source", "workflow-guide.md") 
                                     ),
-                                    new SemanticSearchService.SearchHit( // GH-90000
+                                    new SemanticSearchService.SearchHit( 
                                             "doc-2",
                                             "The workflow lifecycle includes DRAFT, IN_PROGRESS, PAUSED states...",
                                             0.85,
-                                            Map.of("source", "workflow-states.md") // GH-90000
+                                            Map.of("source", "workflow-states.md") 
                                     )
                             ),
                             2,
@@ -70,63 +70,63 @@ class RagServiceTest extends EventloopTestBase {
                             null
                     );
 
-            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) // GH-90000
-                    .thenReturn(Promise.of(searchResult)); // GH-90000
+            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) 
+                    .thenReturn(Promise.of(searchResult)); 
 
-            CompletionResult completionResult = CompletionResult.of( // GH-90000
-                    "To create a workflow, use the AiWorkflowService.createWorkflow() method..." // GH-90000
+            CompletionResult completionResult = CompletionResult.of( 
+                    "To create a workflow, use the AiWorkflowService.createWorkflow() method..." 
             );
-            when(llmGateway.complete(any())) // GH-90000
-                    .thenReturn(Promise.of(completionResult)); // GH-90000
+            when(llmGateway.complete(any())) 
+                    .thenReturn(Promise.of(completionResult)); 
 
-            RagService.RagRequest request = new RagService.RagRequest( // GH-90000
+            RagService.RagRequest request = new RagService.RagRequest( 
                     query, null, 5, 0.7, 1000, 0.7, null, null
             );
 
             // WHEN
-            RagService.RagResponse response = runPromise(() -> service.generate(request)); // GH-90000
+            RagService.RagResponse response = runPromise(() -> service.generate(request)); 
 
             // THEN
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.success()).isTrue(); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.success()).isTrue(); 
             assertThat(response.response()).contains("AiWorkflowService");
-            assertThat(response.contexts()).hasSize(2); // GH-90000
+            assertThat(response.contexts()).hasSize(2); 
             assertThat(response.contexts().get(0).id()).isEqualTo("doc-1");
-            verify(searchService).search(any(SemanticSearchService.SemanticSearchRequest.class)); // GH-90000
-            verify(llmGateway).complete(any()); // GH-90000
+            verify(searchService).search(any(SemanticSearchService.SemanticSearchRequest.class)); 
+            verify(llmGateway).complete(any()); 
         }
 
         @Test
         @DisplayName("should handle empty search results")
-        void shouldHandleEmptySearchResults() { // GH-90000
+        void shouldHandleEmptySearchResults() { 
             // GIVEN
             String query = "Completely unrelated query";
 
             SemanticSearchService.SemanticSearchResult emptyResult =
-                    new SemanticSearchService.SemanticSearchResult( // GH-90000
-                            query, List.of(), 0, 5L, null // GH-90000
+                    new SemanticSearchService.SemanticSearchResult( 
+                            query, List.of(), 0, 5L, null 
                     );
 
-            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) // GH-90000
-                    .thenReturn(Promise.of(emptyResult)); // GH-90000
+            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) 
+                    .thenReturn(Promise.of(emptyResult)); 
 
-            CompletionResult completionResult = CompletionResult.of( // GH-90000
+            CompletionResult completionResult = CompletionResult.of( 
                     "I don't have enough context to answer that question."
             );
-            when(llmGateway.complete(any())) // GH-90000
-                    .thenReturn(Promise.of(completionResult)); // GH-90000
+            when(llmGateway.complete(any())) 
+                    .thenReturn(Promise.of(completionResult)); 
 
-            RagService.RagRequest request = RagService.RagRequest.of(query); // GH-90000
+            RagService.RagRequest request = RagService.RagRequest.of(query); 
 
             // WHEN
-            RagService.RagResponse response = runPromise(() -> service.generate(request)); // GH-90000
+            RagService.RagResponse response = runPromise(() -> service.generate(request)); 
 
             // THEN
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.success()).isTrue(); // GH-90000
-            assertThat(response.contexts()).isEmpty(); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.success()).isTrue(); 
+            assertThat(response.contexts()).isEmpty(); 
             // Should have a warning about no context
-            assertThat(response.warning()).isNotNull(); // GH-90000
+            assertThat(response.warning()).isNotNull(); 
         }
     }
 
@@ -136,10 +136,10 @@ class RagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should maintain conversation context")
-        void shouldMaintainConversationContext() { // GH-90000
+        void shouldMaintainConversationContext() { 
             // GIVEN
-            List<RagService.ConversationTurn> history = List.of( // GH-90000
-                    new RagService.ConversationTurn( // GH-90000
+            List<RagService.ConversationTurn> history = List.of( 
+                    new RagService.ConversationTurn( 
                             "What is a workflow?",
                             "A workflow is an automated sequence of steps..."
                     )
@@ -148,14 +148,14 @@ class RagServiceTest extends EventloopTestBase {
             String currentQuery = "How do I start one?";
 
             SemanticSearchService.SemanticSearchResult searchResult =
-                    new SemanticSearchService.SemanticSearchResult( // GH-90000
+                    new SemanticSearchService.SemanticSearchResult( 
                             currentQuery,
-                            List.of( // GH-90000
-                                    new SemanticSearchService.SearchHit( // GH-90000
+                            List.of( 
+                                    new SemanticSearchService.SearchHit( 
                                             "doc-1",
-                                            "To start a workflow, call startWorkflow(workflowId)...", // GH-90000
+                                            "To start a workflow, call startWorkflow(workflowId)...", 
                                             0.9,
-                                            Map.of() // GH-90000
+                                            Map.of() 
                                     )
                             ),
                             1,
@@ -163,29 +163,29 @@ class RagServiceTest extends EventloopTestBase {
                             null
                     );
 
-            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) // GH-90000
-                    .thenReturn(Promise.of(searchResult)); // GH-90000
+            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) 
+                    .thenReturn(Promise.of(searchResult)); 
 
-            CompletionResult completionResult = CompletionResult.of( // GH-90000
-                    "To start a workflow, use the startWorkflow() method with your workflow ID..." // GH-90000
+            CompletionResult completionResult = CompletionResult.of( 
+                    "To start a workflow, use the startWorkflow() method with your workflow ID..." 
             );
-            when(llmGateway.complete(any())) // GH-90000
-                    .thenReturn(Promise.of(completionResult)); // GH-90000
+            when(llmGateway.complete(any())) 
+                    .thenReturn(Promise.of(completionResult)); 
 
             RagService.ConversationalRagRequest request =
-                    new RagService.ConversationalRagRequest( // GH-90000
+                    new RagService.ConversationalRagRequest( 
                             currentQuery, history, null, 5, 0.7, 1000, 0.7, null, null
                     );
 
             // WHEN
-            RagService.RagResponse response = runPromise(() -> service.chat(request)); // GH-90000
+            RagService.RagResponse response = runPromise(() -> service.chat(request)); 
 
             // THEN
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.success()).isTrue(); // GH-90000
-            assertThat(response.response()).isNotEmpty(); // GH-90000
-            verify(searchService).search(any(SemanticSearchService.SemanticSearchRequest.class)); // GH-90000
-            verify(llmGateway).complete(any()); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.success()).isTrue(); 
+            assertThat(response.response()).isNotEmpty(); 
+            verify(searchService).search(any(SemanticSearchService.SemanticSearchRequest.class)); 
+            verify(llmGateway).complete(any()); 
         }
     }
 
@@ -195,14 +195,14 @@ class RagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should track usage stats")
-        void shouldTrackUsageStats() { // GH-90000
+        void shouldTrackUsageStats() { 
             // GIVEN
             SemanticSearchService.SemanticSearchResult searchResult =
-                    new SemanticSearchService.SemanticSearchResult( // GH-90000
+                    new SemanticSearchService.SemanticSearchResult( 
                             "query",
-                            List.of( // GH-90000
-                                    new SemanticSearchService.SearchHit( // GH-90000
-                                            "doc-1", "Content", 0.9, Map.of() // GH-90000
+                            List.of( 
+                                    new SemanticSearchService.SearchHit( 
+                                            "doc-1", "Content", 0.9, Map.of() 
                                     )
                             ),
                             1,
@@ -210,22 +210,22 @@ class RagServiceTest extends EventloopTestBase {
                             null
                     );
 
-            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) // GH-90000
-                    .thenReturn(Promise.of(searchResult)); // GH-90000
+            when(searchService.search(any(SemanticSearchService.SemanticSearchRequest.class))) 
+                    .thenReturn(Promise.of(searchResult)); 
 
             CompletionResult completionResult = CompletionResult.of("Answer with some length to it");
-            when(llmGateway.complete(any())) // GH-90000
-                    .thenReturn(Promise.of(completionResult)); // GH-90000
+            when(llmGateway.complete(any())) 
+                    .thenReturn(Promise.of(completionResult)); 
 
             RagService.RagRequest request = RagService.RagRequest.of("test query");
 
             // WHEN
-            RagService.RagResponse response = runPromise(() -> service.generate(request)); // GH-90000
+            RagService.RagResponse response = runPromise(() -> service.generate(request)); 
 
             // THEN
-            assertThat(response.usage()).isNotNull(); // GH-90000
-            assertThat(response.usage().contextDocumentsUsed()).isEqualTo(1); // GH-90000
-            assertThat(response.usage().responseLength()).isGreaterThan(0); // GH-90000
+            assertThat(response.usage()).isNotNull(); 
+            assertThat(response.usage().contextDocumentsUsed()).isEqualTo(1); 
+            assertThat(response.usage().responseLength()).isGreaterThan(0); 
         }
     }
 }

@@ -18,21 +18,21 @@ class ValidationResultTest {
 
   @Test
   @DisplayName("success should produce valid result with no errors")
-  void successShouldProduceValidResult() { // GH-90000
-    ValidationResult result = ValidationResult.success(); // GH-90000
+  void successShouldProduceValidResult() { 
+    ValidationResult result = ValidationResult.success(); 
 
-    assertThat(result.ok()).isTrue(); // GH-90000
-    assertThat(result.isValid()).isTrue(); // GH-90000
-    assertThat(result.errors()).isEmpty(); // GH-90000
+    assertThat(result.ok()).isTrue(); 
+    assertThat(result.isValid()).isTrue(); 
+    assertThat(result.errors()).isEmpty(); 
   }
 
   @Test
   @DisplayName("fail should preserve all supplied error messages")
-  void failShouldPreserveErrors() { // GH-90000
-    ValidationResult result = ValidationResult.fail("missing id", "invalid phase"); // GH-90000
+  void failShouldPreserveErrors() { 
+    ValidationResult result = ValidationResult.fail("missing id", "invalid phase"); 
 
-    assertThat(result.ok()).isFalse(); // GH-90000
-    assertThat(result.isValid()).isFalse(); // GH-90000
-    assertThat(result.errors()).containsExactly("missing id", "invalid phase"); // GH-90000
+    assertThat(result.ok()).isFalse(); 
+    assertThat(result.isValid()).isFalse(); 
+    assertThat(result.errors()).containsExactly("missing id", "invalid phase"); 
   }
 }

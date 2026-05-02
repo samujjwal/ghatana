@@ -21,64 +21,64 @@ class LoadTest {
 
     @Test
     @DisplayName("Should handle concurrent audio processing")
-    void shouldHandleConcurrentAudioProcessing() { // GH-90000
+    void shouldHandleConcurrentAudioProcessing() { 
         int concurrentTasks = 100;
         int maxCapacity = 1000;
         int completedTasks = 100;
         
-        assertThat(concurrentTasks).isLessThan(maxCapacity); // GH-90000
-        assertThat(completedTasks).isEqualTo(concurrentTasks); // GH-90000
+        assertThat(concurrentTasks).isLessThan(maxCapacity); 
+        assertThat(completedTasks).isEqualTo(concurrentTasks); 
     }
 
     @Test
     @DisplayName("Should handle concurrent video processing")
-    void shouldHandleConcurrentVideoProcessing() { // GH-90000
+    void shouldHandleConcurrentVideoProcessing() { 
         int concurrentTasks = 50;
         int maxCapacity = 500;
         int completedTasks = 50;
         
-        assertThat(concurrentTasks).isLessThan(maxCapacity); // GH-90000
-        assertThat(completedTasks).isEqualTo(concurrentTasks); // GH-90000
+        assertThat(concurrentTasks).isLessThan(maxCapacity); 
+        assertThat(completedTasks).isEqualTo(concurrentTasks); 
     }
 
     @Test
     @DisplayName("Should handle high throughput streaming")
-    void shouldHandleHighThroughputStreaming() { // GH-90000
+    void shouldHandleHighThroughputStreaming() { 
         int streamsPerSecond = 1000;
         int targetThroughput = 500;
         
-        assertThat(streamsPerSecond).isGreaterThan(targetThroughput); // GH-90000
+        assertThat(streamsPerSecond).isGreaterThan(targetThroughput); 
     }
 
     @Test
     @DisplayName("Should maintain performance under load")
-    void shouldMaintainPerformanceUnderLoad() { // GH-90000
+    void shouldMaintainPerformanceUnderLoad() { 
         long baselineLatency = 50L;
         long loadedLatency = 75L;
         long maxAcceptableLatency = 100L;
         
-        assertThat(loadedLatency).isLessThan(maxAcceptableLatency); // GH-90000
-        assertThat(loadedLatency).isGreaterThan(baselineLatency); // GH-90000
+        assertThat(loadedLatency).isLessThan(maxAcceptableLatency); 
+        assertThat(loadedLatency).isGreaterThan(baselineLatency); 
     }
 
     @Test
     @DisplayName("Should handle resource exhaustion")
-    void shouldHandleResourceExhaustion() { // GH-90000
+    void shouldHandleResourceExhaustion() { 
         double cpuUtilization = 0.95;
         double memoryUtilization = 0.90;
         double maxThreshold = 1.0;
         
-        assertThat(cpuUtilization).isLessThan(maxThreshold); // GH-90000
-        assertThat(memoryUtilization).isLessThan(maxThreshold); // GH-90000
+        assertThat(cpuUtilization).isLessThan(maxThreshold); 
+        assertThat(memoryUtilization).isLessThan(maxThreshold); 
     }
 
     @Test
     @DisplayName("Should handle graceful degradation")
-    void shouldHandleGracefulDegradation() { // GH-90000
+    void shouldHandleGracefulDegradation() { 
         boolean degraded = true;
         boolean operational = true;
         
-        assertThat(degraded).isTrue(); // GH-90000
-        assertThat(operational).isTrue(); // GH-90000
+        assertThat(degraded).isTrue(); 
+        assertThat(operational).isTrue(); 
     }
 }

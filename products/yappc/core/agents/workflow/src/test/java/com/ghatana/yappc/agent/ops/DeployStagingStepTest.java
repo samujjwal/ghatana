@@ -33,29 +33,29 @@ class DeployStagingStepTest extends EventloopTestBase {
   private DeployStagingStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new DeployStagingStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new DeployStagingStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("ops.deploy_staging");
   }
 
   @Test
   @DisplayName("Should deploy to staging environment")
-  void shouldDeployToStaging() { // GH-90000
+  void shouldDeployToStaging() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // Required by step validation // GH-90000
-    context.put("baselineId", "test-baseline-001"); // GH-90000
-    context.put("releaseApproved", true); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("tenantId", "tenant-abc"); // Required by step validation 
+    context.put("baselineId", "test-baseline-001"); 
+    context.put("releaseApproved", true); 
 
     Map<String, Object> baseline =
-        Map.of( // GH-90000
+        Map.of( 
             "_id",
             "test-baseline-001",
             "tenantId",
@@ -63,18 +63,18 @@ class DeployStagingStepTest extends EventloopTestBase {
             "productionReady",
             true,
             "testResults",
-            Map.of()); // GH-90000
+            Map.of()); 
     when(dbClient.query(eq("test_baselines"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+        .thenReturn(Promise.of(List.of(baseline))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("baselineId")).isEqualTo("test-baseline-001");
   }
 }

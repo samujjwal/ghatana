@@ -4,9 +4,9 @@ import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.impl.DurableAuditTrailPlugin;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
-import com.ghatana.plugin.billing.impl.DurableBillingLedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
+import com.ghatana.plugin.ledger.impl.DurableLedgerPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
 import org.h2.jdbcx.JdbcDataSource;
@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  * KP-013 — Durable plugin cross-product integration tests.
  *
  * <p>These tests exercise the three durable plugins ({@link DurableAuditTrailPlugin},
- * {@link DurableBillingLedgerPlugin}, {@link DurableConsentPlugin}) working together
+ * {@link DurableLedgerPlugin}, {@link DurableConsentPlugin}) working together
  * in realistic PHR-Finance cross-domain scenarios. Each scenario verifies isolation,
  * audit continuity, and consent-gated data access across JDBC-backed stores using
  * an H2 in-memory database.</p>
@@ -44,7 +44,7 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
     private PluginContext mockContext;
 
     private DurableAuditTrailPlugin auditPlugin;
-    private DurableBillingLedgerPlugin billingPlugin;
+    private DurableLedgerPlugin billingPlugin;
     private DurableConsentPlugin consentPlugin;
 
     @BeforeEach
@@ -56,7 +56,7 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         JdbcDataSource consentDs = h2ds("consent_it_" + nanos);
 
         auditPlugin   = new DurableAuditTrailPlugin(auditDs);
-        billingPlugin = new DurableBillingLedgerPlugin(billingDs);
+        billingPlugin = new DurableLedgerPlugin(billingDs);
         consentPlugin = new DurableConsentPlugin(consentDs);
 
         auditPlugin.ensureSchema();
@@ -94,15 +94,15 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
                 auditDetails("tenant-nep", "phr.encounter", "dr-paudel", "{\"encounterId\":\"enc-99\"}")));
 
         // Linked billing charge is posted to the ledger
-        BillingTransaction charge = BillingTransaction.builder()
+        LedgerTransaction charge = LedgerTransaction.builder()
                 .transactionId("tx-enc-99")
-                .sourceProductId("phr")
+                .sourceId("phr")
                 .tenantId("tenant-nep")
                 .debitAccount("PHR:AR:patient-001")
                 .creditAccount("PHR:REVENUE:provider-paudel")
                 .amount(new BigDecimal("1800.00"))
                 .currency("NPR")
-                .type(BillingTransaction.TransactionType.CHARGE)
+                .type(LedgerTransaction.TransactionType.CHARGE)
                 .description("Encounter enc-99 closure charge")
                 .occurredAt(Instant.now())
                 .build();
@@ -110,7 +110,7 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         String entryId = runPromise(() -> billingPlugin.postTransaction(charge));
         assertThat(entryId).isNotBlank();
         assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-enc-99")))
-                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+                .isEqualTo(LedgerPlugin.PostingStatus.POSTED);
 
         // Audit trail has 1 PHR entry
         List<AuditTrailPlugin.AuditEntry> auditEntries = getAuditTrail("patient-001", "phr.encounter");
@@ -118,9 +118,9 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         assertThat(auditEntries.get(0).action()).isEqualTo("ENCOUNTER_CLOSED");
 
         // Ledger does NOT store PHR audit events — isolation check
-        BillingLedgerPlugin.PostingStatus noEntry =
+        LedgerPlugin.PostingStatus noEntry =
                 runPromise(() -> billingPlugin.getPostingStatus("NON_EXISTENT_TX"));
-        assertThat(noEntry).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        assertThat(noEntry).isEqualTo(LedgerPlugin.PostingStatus.NOT_FOUND);
     }
 
     // ── Scenario 2: Consent-gated PHR billing flow ───────────────────────────
@@ -147,15 +147,15 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         assertThat(consentAfterGrant).isTrue();
 
         // Finance product posts billing only after confirmed consent
-        BillingTransaction charge = BillingTransaction.builder()
+        LedgerTransaction charge = LedgerTransaction.builder()
                 .transactionId("tx-consent-guarded-1")
-                .sourceProductId("finance")
+                .sourceId("finance")
                 .tenantId("tenant-nep")
                 .debitAccount("FIN:AR:patient-002")
                 .creditAccount("FIN:REVENUE:billing-dept")
                 .amount(new BigDecimal("500.00"))
                 .currency("NPR")
-                .type(BillingTransaction.TransactionType.CHARGE)
+                .type(LedgerTransaction.TransactionType.CHARGE)
                 .description("PHR-authorized finance charge")
                 .occurredAt(Instant.now())
                 .build();
@@ -163,7 +163,7 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         String entryId = runPromise(() -> billingPlugin.postTransaction(charge));
         assertThat(entryId).isNotBlank();
         assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-consent-guarded-1")))
-                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+                .isEqualTo(LedgerPlugin.PostingStatus.POSTED);
     }
 
     // ── Scenario 3: Finance audit trail is isolated from PHR audit trail ─────
@@ -199,15 +199,15 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
     @Test
     @DisplayName("Idempotent billing re-submission returns ALREADY_POSTED and audit has no duplicate entries")
     void idempotentBilling_noDoubleAuditEntry() {
-        BillingTransaction posting = BillingTransaction.builder()
+        LedgerTransaction posting = LedgerTransaction.builder()
                 .transactionId("tx-idempotent-99")
-                .sourceProductId("finance")
+                .sourceId("finance")
                 .tenantId("tenant-fin")
                 .debitAccount("FIN:AR:cust-1")
                 .creditAccount("FIN:REVENUE:dept-A")
                 .amount(new BigDecimal("250.00"))
                 .currency("NPR")
-                .type(BillingTransaction.TransactionType.CHARGE)
+                .type(LedgerTransaction.TransactionType.CHARGE)
                 .description("Idempotency test charge")
                 .occurredAt(Instant.now())
                 .build();
@@ -218,7 +218,7 @@ class DurablePluginIntegrationIT extends EventloopTestBase {
         assertThat(firstEntryId).isNotBlank();
         assertThat(secondEntryId).isEqualTo(firstEntryId);
         assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-idempotent-99")))
-                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+                .isEqualTo(LedgerPlugin.PostingStatus.POSTED);
 
         // Only one audit event logged for the transaction (prevent double-audit on re-submit)
         runPromise(() -> auditPlugin.logEvent(

@@ -26,55 +26,55 @@ class QueryValidationTest {
 
     @Test
     @DisplayName("Should handle complex join queries")
-    void shouldHandleComplexJoinQueries() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleComplexJoinQueries() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle query pagination correctly")
-    void shouldHandleQueryPaginationCorrectly() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleQueryPaginationCorrectly() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle query sorting correctly")
-    void shouldHandleQuerySortingCorrectly() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleQuerySortingCorrectly() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle large dataset queries efficiently")
-    void shouldHandleLargeDatasetQueriesEfficiently() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleLargeDatasetQueriesEfficiently() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle aggregate functions correctly")
-    void shouldHandleAggregateFunctionsCorrectly() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleAggregateFunctionsCorrectly() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle subqueries correctly")
-    void shouldHandleSubqueriesCorrectly() { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+    void shouldHandleSubqueriesCorrectly() { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        assertThat(jdbcTemplate).isNotNull(); // GH-90000
+        assertThat(jdbcTemplate).isNotNull(); 
     }
 }

@@ -1,6 +1,10 @@
 package com.ghatana.kernel.adapter.datacloud;
 
 import com.ghatana.kernel.audit.CrossScopeAuditService;
+import com.ghatana.kernel.bridge.AbstractKernelBridge;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.kernel.communication.KernelInterScopeBus;
 import com.ghatana.platform.core.client.AsyncClient;
 import com.ghatana.platform.core.util.JsonUtils;
@@ -28,13 +32,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ul></p>
  *
  * @doc.type class
- * @doc.purpose Concrete Data-Cloud adapter with multi-tier storage
+ * @doc.purpose Concrete Data-Cloud adapter with multi-tier storage and kernel bridge infrastructure
  * @doc.layer adapter
  * @doc.pattern Adapter, Facade
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
+public class DataCloudKernelAdapterImpl extends AbstractKernelBridge implements DataCloudKernelAdapter {
 
     // Constants for duplicate literals
     private static final String REQUEST_CANNOT_BE_NULL = "request cannot be null";
@@ -54,11 +58,34 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
 
     /**
      * Creates a new DataCloud adapter with the given client.
+     * Uses no-op bridge ports — suitable for development and testing scaffolding.
      *
      * @param dataCloudClient the Data-Cloud client for storage operations
      */
     public DataCloudKernelAdapterImpl(DataCloudClient dataCloudClient) {
+        this(dataCloudClient,
+                BridgeAuthorizationService.allowAll(),
+                BridgeAuditEmitter.noOp(),
+                BridgeHealthIndicator.noOp());
+    }
+
+    /**
+     * Creates a new DataCloud adapter with the given client and kernel bridge ports.
+     * This constructor wires production-grade authorization, audit, and health.
+     *
+     * @param dataCloudClient the Data-Cloud client for storage operations
+     * @param authService     authorization port — must not be {@code null}
+     * @param auditEmitter    audit emission port — must not be {@code null}
+     * @param healthIndicator health indicator port — must not be {@code null}
+     */
+    public DataCloudKernelAdapterImpl(
+            DataCloudClient dataCloudClient,
+            BridgeAuthorizationService authService,
+            BridgeAuditEmitter auditEmitter,
+            BridgeHealthIndicator healthIndicator) {
+        super("data-cloud-kernel-bridge", authService, auditEmitter, healthIndicator);
         this.dataCloudClient = Objects.requireNonNull(dataCloudClient, DATACLOUD_CLIENT_CANNOT_BE_NULL);
+        markStarted();
     }
 
     @Override
@@ -305,7 +332,7 @@ public class DataCloudKernelAdapterImpl implements DataCloudKernelAdapter {
     // ==================== Private Methods ====================
 
     private <T> Promise<T> wrapFuture(CompletableFuture<T> future) {
-        return Promise.ofFuture(future);
+        return wrapAsync(() -> future);
     }
 
     // ==================== Inner Types ====================

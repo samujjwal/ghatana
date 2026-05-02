@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests for EntityManagerProvider.
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EntityManagerProviderTest {
 
     @Mock
@@ -36,281 +36,281 @@ class EntityManagerProviderTest {
     private Thread testThread;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Use lenient stubbing for default single-threaded tests
-        lenient().when(entityManager.getTransaction()).thenReturn(transaction); // GH-90000
-        lenient().when(entityManager.isOpen()).thenReturn(true); // GH-90000
-        lenient().when(transaction.isActive()).thenReturn(false); // GH-90000
+        lenient().when(entityManager.getTransaction()).thenReturn(transaction); 
+        lenient().when(entityManager.isOpen()).thenReturn(true); 
+        lenient().when(transaction.isActive()).thenReturn(false); 
 
         // By default return the same mock; some tests override to return distinct Ems.
-        lenient().when(entityManagerFactory.createEntityManager()).thenReturn(entityManager); // GH-90000
+        lenient().when(entityManagerFactory.createEntityManager()).thenReturn(entityManager); 
 
-        provider = new EntityManagerProvider(entityManagerFactory); // GH-90000
+        provider = new EntityManagerProvider(entityManagerFactory); 
     }
 
     @Test
-    void testConstructorValidation() { // GH-90000
-        assertThatThrownBy(() -> new EntityManagerProvider(null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void testConstructorValidation() { 
+        assertThatThrownBy(() -> new EntityManagerProvider(null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("EntityManagerFactory cannot be null");
     }
 
     @Test
-    void testCreateEntityManager() { // GH-90000
-        EntityManager em = provider.createEntityManager(); // GH-90000
+    void testCreateEntityManager() { 
+        EntityManager em = provider.createEntityManager(); 
 
-        assertThat(em).isNotNull(); // GH-90000
-        verify(entityManagerFactory).createEntityManager(); // GH-90000
+        assertThat(em).isNotNull(); 
+        verify(entityManagerFactory).createEntityManager(); 
     }
 
     @Test
-    void testCreateEntityManagerWhenClosed() { // GH-90000
-        provider.close(); // GH-90000
+    void testCreateEntityManagerWhenClosed() { 
+        provider.close(); 
 
-        assertThatThrownBy(() -> provider.createEntityManager()) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> provider.createEntityManager()) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("EntityManagerProvider is closed");
     }
 
     @Test
-    void testGetThreadLocalEntityManager() { // GH-90000
-        EntityManager em1 = provider.getThreadLocalEntityManager(); // GH-90000
-        EntityManager em2 = provider.getThreadLocalEntityManager(); // GH-90000
+    void testGetThreadLocalEntityManager() { 
+        EntityManager em1 = provider.getThreadLocalEntityManager(); 
+        EntityManager em2 = provider.getThreadLocalEntityManager(); 
 
-        assertThat(em1).isNotNull(); // GH-90000
-        assertThat(em2).isSameAs(em1); // Same instance for same thread // GH-90000
+        assertThat(em1).isNotNull(); 
+        assertThat(em2).isSameAs(em1); // Same instance for same thread 
 
-        verify(entityManagerFactory, times(1)).createEntityManager(); // Only created once // GH-90000
+        verify(entityManagerFactory, times(1)).createEntityManager(); // Only created once 
     }
 
     @Test
-    void testGetThreadLocalEntityManagerDifferentThreads() throws Exception { // GH-90000
-        AtomicReference<EntityManager> em1Ref = new AtomicReference<>(); // GH-90000
-        AtomicReference<EntityManager> em2Ref = new AtomicReference<>(); // GH-90000
-        CountDownLatch latch = new CountDownLatch(2); // GH-90000
+    void testGetThreadLocalEntityManagerDifferentThreads() throws Exception { 
+        AtomicReference<EntityManager> em1Ref = new AtomicReference<>(); 
+        AtomicReference<EntityManager> em2Ref = new AtomicReference<>(); 
+        CountDownLatch latch = new CountDownLatch(2); 
 
         // Make the factory create a new mock EntityManager per call so different threads get different instances
-        when(entityManagerFactory.createEntityManager()).thenAnswer(invocation -> { // GH-90000
-            EntityManager em = mock(EntityManager.class); // GH-90000
-            EntityTransaction tx = mock(EntityTransaction.class); // GH-90000
-            when(em.getTransaction()).thenReturn(tx); // GH-90000
-            when(em.isOpen()).thenReturn(true); // GH-90000
-            when(tx.isActive()).thenReturn(false); // GH-90000
+        when(entityManagerFactory.createEntityManager()).thenAnswer(invocation -> { 
+            EntityManager em = mock(EntityManager.class); 
+            EntityTransaction tx = mock(EntityTransaction.class); 
+            when(em.getTransaction()).thenReturn(tx); 
+            when(em.isOpen()).thenReturn(true); 
+            when(tx.isActive()).thenReturn(false); 
             return em;
         });
 
         // Create EntityManagers in different threads
-        ExecutorService executor = Executors.newFixedThreadPool(2); // GH-90000
+        ExecutorService executor = Executors.newFixedThreadPool(2); 
 
-        executor.submit(() -> { // GH-90000
+        executor.submit(() -> { 
             try {
-                em1Ref.set(provider.getThreadLocalEntityManager()); // GH-90000
+                em1Ref.set(provider.getThreadLocalEntityManager()); 
             } finally {
-                latch.countDown(); // GH-90000
+                latch.countDown(); 
             }
         });
 
-        executor.submit(() -> { // GH-90000
+        executor.submit(() -> { 
             try {
-                em2Ref.set(provider.getThreadLocalEntityManager()); // GH-90000
+                em2Ref.set(provider.getThreadLocalEntityManager()); 
             } finally {
-                latch.countDown(); // GH-90000
+                latch.countDown(); 
             }
         });
 
-        latch.await(); // GH-90000
-        executor.shutdown(); // GH-90000
+        latch.await(); 
+        executor.shutdown(); 
 
-        assertThat(em1Ref.get()).isNotNull(); // GH-90000
-        assertThat(em2Ref.get()).isNotNull(); // GH-90000
-        assertThat(em1Ref.get()).isNotSameAs(em2Ref.get()); // Different instances for different threads // GH-90000
+        assertThat(em1Ref.get()).isNotNull(); 
+        assertThat(em2Ref.get()).isNotNull(); 
+        assertThat(em1Ref.get()).isNotSameAs(em2Ref.get()); // Different instances for different threads 
 
-        verify(entityManagerFactory, times(2)).createEntityManager(); // Created for each thread // GH-90000
+        verify(entityManagerFactory, times(2)).createEntityManager(); // Created for each thread 
     }
 
     @Test
-    void testCloseThreadLocalEntityManager() { // GH-90000
-        EntityManager em = provider.getThreadLocalEntityManager(); // GH-90000
+    void testCloseThreadLocalEntityManager() { 
+        EntityManager em = provider.getThreadLocalEntityManager(); 
 
-        boolean closed = provider.closeThreadLocalEntityManager(); // GH-90000
+        boolean closed = provider.closeThreadLocalEntityManager(); 
 
-        assertThat(closed).isTrue(); // GH-90000
-        verify(entityManager).close(); // GH-90000
+        assertThat(closed).isTrue(); 
+        verify(entityManager).close(); 
     }
 
     @Test
-    void testCloseThreadLocalEntityManagerWhenNone() { // GH-90000
-        boolean closed = provider.closeThreadLocalEntityManager(); // GH-90000
+    void testCloseThreadLocalEntityManagerWhenNone() { 
+        boolean closed = provider.closeThreadLocalEntityManager(); 
 
-        assertThat(closed).isFalse(); // GH-90000
-        verify(entityManager, never()).close(); // GH-90000
+        assertThat(closed).isFalse(); 
+        verify(entityManager, never()).close(); 
     }
 
     @Test
-    void testCloseEntityManager() { // GH-90000
-        provider.closeEntityManager(entityManager); // GH-90000
+    void testCloseEntityManager() { 
+        provider.closeEntityManager(entityManager); 
 
-        verify(entityManager).close(); // GH-90000
+        verify(entityManager).close(); 
     }
 
     @Test
-    void testCloseEntityManagerWithActiveTransaction() { // GH-90000
-        when(transaction.isActive()).thenReturn(true); // GH-90000
+    void testCloseEntityManagerWithActiveTransaction() { 
+        when(transaction.isActive()).thenReturn(true); 
 
-        provider.closeEntityManager(entityManager); // GH-90000
+        provider.closeEntityManager(entityManager); 
 
-        verify(transaction).rollback(); // GH-90000
-        verify(entityManager).close(); // GH-90000
+        verify(transaction).rollback(); 
+        verify(entityManager).close(); 
     }
 
     @Test
-    void testCloseEntityManagerWithNull() { // GH-90000
-        assertThatCode(() -> provider.closeEntityManager(null)) // GH-90000
-            .doesNotThrowAnyException(); // GH-90000
+    void testCloseEntityManagerWithNull() { 
+        assertThatCode(() -> provider.closeEntityManager(null)) 
+            .doesNotThrowAnyException(); 
     }
 
     @Test
-    void testCloseEntityManagerWhenAlreadyClosed() { // GH-90000
-        when(entityManager.isOpen()).thenReturn(false); // GH-90000
+    void testCloseEntityManagerWhenAlreadyClosed() { 
+        when(entityManager.isOpen()).thenReturn(false); 
 
-        provider.closeEntityManager(entityManager); // GH-90000
+        provider.closeEntityManager(entityManager); 
 
-        verify(entityManager, never()).close(); // GH-90000
+        verify(entityManager, never()).close(); 
     }
 
     @Test
-    void testWithEntityManager() { // GH-90000
-        String result = provider.withEntityManager(em -> { // GH-90000
-            assertThat(em).isNotNull(); // GH-90000
+    void testWithEntityManager() { 
+        String result = provider.withEntityManager(em -> { 
+            assertThat(em).isNotNull(); 
             return "test-result";
         });
 
         assertThat(result).isEqualTo("test-result");
-        verify(entityManager).close(); // GH-90000
+        verify(entityManager).close(); 
     }
 
     @Test
-    void testWithEntityManagerException() { // GH-90000
+    void testWithEntityManagerException() { 
         RuntimeException testException = new RuntimeException("Test exception");
 
-        assertThatThrownBy(() -> // GH-90000
-            provider.withEntityManager((java.util.function.Function<jakarta.persistence.EntityManager, Object>) em -> { // GH-90000
+        assertThatThrownBy(() -> 
+            provider.withEntityManager((java.util.function.Function<jakarta.persistence.EntityManager, Object>) em -> { 
                 throw testException;
             })
-        ).isSameAs(testException); // GH-90000
+        ).isSameAs(testException); 
 
-        verify(entityManager).close(); // Should still close on exception // GH-90000
+        verify(entityManager).close(); // Should still close on exception 
     }
 
     @Test
-    void testWithEntityManagerConsumer() { // GH-90000
-        java.util.concurrent.atomic.AtomicReference<jakarta.persistence.EntityManager> emRef = new java.util.concurrent.atomic.AtomicReference<>(); // GH-90000
+    void testWithEntityManagerConsumer() { 
+        java.util.concurrent.atomic.AtomicReference<jakarta.persistence.EntityManager> emRef = new java.util.concurrent.atomic.AtomicReference<>(); 
 
-        provider.withEntityManager((java.util.function.Consumer<jakarta.persistence.EntityManager>) em -> { // GH-90000
-            emRef.set(em); // GH-90000
+        provider.withEntityManager((java.util.function.Consumer<jakarta.persistence.EntityManager>) em -> { 
+            emRef.set(em); 
         });
 
-        assertThat(emRef.get()).isNotNull(); // GH-90000
-        verify(entityManager).close(); // GH-90000
+        assertThat(emRef.get()).isNotNull(); 
+        verify(entityManager).close(); 
     }
 
     @Test
-    void testWithThreadLocalEntityManager() { // GH-90000
-        String result = provider.withThreadLocalEntityManager(em -> { // GH-90000
-            assertThat(em).isNotNull(); // GH-90000
+    void testWithThreadLocalEntityManager() { 
+        String result = provider.withThreadLocalEntityManager(em -> { 
+            assertThat(em).isNotNull(); 
             return "test-result";
         });
 
         assertThat(result).isEqualTo("test-result");
-        verify(entityManager, never()).close(); // Should not close thread-local EM // GH-90000
+        verify(entityManager, never()).close(); // Should not close thread-local EM 
     }
 
     @Test
-    void testWithThreadLocalEntityManagerConsumer() { // GH-90000
-        AtomicReference<EntityManager> emRef = new AtomicReference<>(); // GH-90000
+    void testWithThreadLocalEntityManagerConsumer() { 
+        AtomicReference<EntityManager> emRef = new AtomicReference<>(); 
 
-        provider.withThreadLocalEntityManager(em -> { // GH-90000
-            emRef.set(em); // GH-90000
+        provider.withThreadLocalEntityManager(em -> { 
+            emRef.set(em); 
         });
 
-        assertThat(emRef.get()).isNotNull(); // GH-90000
-        verify(entityManager, never()).close(); // Should not close thread-local EM // GH-90000
+        assertThat(emRef.get()).isNotNull(); 
+        verify(entityManager, never()).close(); // Should not close thread-local EM 
     }
 
     @Test
-    void testFunctionValidation() { // GH-90000
-        assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Function<EntityManager, String>) null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void testFunctionValidation() { 
+        assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Function<EntityManager, String>) null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Function cannot be null");
 
-        assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Consumer<EntityManager>) null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> provider.withEntityManager((java.util.function.Consumer<EntityManager>) null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Consumer cannot be null");
 
-        assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Function<EntityManager, String>) null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Function<EntityManager, String>) null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Function cannot be null");
 
-        assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Consumer<EntityManager>) null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> provider.withThreadLocalEntityManager((java.util.function.Consumer<EntityManager>) null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Consumer cannot be null");
     }
 
     @Test
-    void testIsClosed() { // GH-90000
-        assertThat(provider.isClosed()).isFalse(); // GH-90000
+    void testIsClosed() { 
+        assertThat(provider.isClosed()).isFalse(); 
 
-        provider.close(); // GH-90000
+        provider.close(); 
 
-        assertThat(provider.isClosed()).isTrue(); // GH-90000
+        assertThat(provider.isClosed()).isTrue(); 
     }
 
     @Test
-    void testGetEntityManagerFactory() { // GH-90000
-        assertThat(provider.getEntityManagerFactory()).isSameAs(entityManagerFactory); // GH-90000
+    void testGetEntityManagerFactory() { 
+        assertThat(provider.getEntityManagerFactory()).isSameAs(entityManagerFactory); 
     }
 
     @Test
-    void testGetActiveThreadLocalEntityManagerCount() { // GH-90000
-        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(0); // GH-90000
+    void testGetActiveThreadLocalEntityManagerCount() { 
+        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(0); 
 
-        provider.getThreadLocalEntityManager(); // GH-90000
+        provider.getThreadLocalEntityManager(); 
 
-        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(1); // GH-90000
+        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(1); 
 
-        provider.closeThreadLocalEntityManager(); // GH-90000
+        provider.closeThreadLocalEntityManager(); 
 
-        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(0); // GH-90000
+        assertThat(provider.getActiveThreadLocalEntityManagerCount()).isEqualTo(0); 
     }
 
     @Test
-    void testClose() { // GH-90000
+    void testClose() { 
         // Create thread-local EntityManager
-        provider.getThreadLocalEntityManager(); // GH-90000
+        provider.getThreadLocalEntityManager(); 
 
-        when(entityManagerFactory.isOpen()).thenReturn(true); // GH-90000
+        when(entityManagerFactory.isOpen()).thenReturn(true); 
 
-        provider.close(); // GH-90000
+        provider.close(); 
 
-        assertThat(provider.isClosed()).isTrue(); // GH-90000
-        verify(entityManager).close(); // Thread-local EM should be closed // GH-90000
-        verify(entityManagerFactory).close(); // EMF should be closed // GH-90000
+        assertThat(provider.isClosed()).isTrue(); 
+        verify(entityManager).close(); // Thread-local EM should be closed 
+        verify(entityManagerFactory).close(); // EMF should be closed 
     }
 
     @Test
-    void testCloseIdempotent() { // GH-90000
-        provider.close(); // GH-90000
-        provider.close(); // Should not throw exception // GH-90000
+    void testCloseIdempotent() { 
+        provider.close(); 
+        provider.close(); // Should not throw exception 
 
-        assertThat(provider.isClosed()).isTrue(); // GH-90000
+        assertThat(provider.isClosed()).isTrue(); 
     }
 
     @Test
-    void testCloseWithClosedEntityManagerFactory() { // GH-90000
-        when(entityManagerFactory.isOpen()).thenReturn(false); // GH-90000
+    void testCloseWithClosedEntityManagerFactory() { 
+        when(entityManagerFactory.isOpen()).thenReturn(false); 
 
-        provider.close(); // GH-90000
+        provider.close(); 
 
-        verify(entityManagerFactory, never()).close(); // Should not try to close already closed EMF // GH-90000
+        verify(entityManagerFactory, never()).close(); // Should not try to close already closed EMF 
     }
 }

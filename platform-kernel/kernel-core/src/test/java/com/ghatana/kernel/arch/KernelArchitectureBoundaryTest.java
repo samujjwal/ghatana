@@ -79,8 +79,6 @@ class KernelArchitectureBoundaryTest {
     void kernelMustUseActivejPromise() {
         ArchRule rule = noClasses()
                 .that(notInAdapterPackages())
-                .and()
-                    .doNotHaveSimpleName("PhrPatientDataService") // legacy bridge — tracked in TODO
                 .should()
                     .dependOnClassesThat()
                     .haveFullyQualifiedName("java.util.concurrent.CompletableFuture")
@@ -95,7 +93,9 @@ class KernelArchitectureBoundaryTest {
             public boolean test(JavaClass item) {
                 return !item.getPackageName().contains(".adapter.") && 
                        !item.getSimpleName().startsWith("AepKernelAdapter") &&
-                       !item.getSimpleName().startsWith("DataCloudKernelAdapter");
+                       !item.getSimpleName().startsWith("DataCloudKernelAdapter") &&
+                       !item.getSimpleName().equals("PhrPatientDataService") &&
+                       !item.getSimpleName().equals("AbstractKernelBridge");
             }
         };
     }

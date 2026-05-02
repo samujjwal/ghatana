@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.event;
@@ -23,56 +23,56 @@ class EventDurabilityConfigTest {
     class Defaults {
 
         @Test
-        void defaultDurabilityLevel() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            assertThat(cfg.getDefaultDurabilityLevel()) // GH-90000
-                    .isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); // GH-90000
+        void defaultDurabilityLevel() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            assertThat(cfg.getDefaultDurabilityLevel()) 
+                    .isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); 
         }
 
         @Test
-        void defaultTimeout() { // GH-90000
-            assertThat(new EventDurabilityConfig().getDurabilityTimeout()) // GH-90000
-                    .isEqualTo(Duration.ofSeconds(30)); // GH-90000
+        void defaultTimeout() { 
+            assertThat(new EventDurabilityConfig().getDurabilityTimeout()) 
+                    .isEqualTo(Duration.ofSeconds(30)); 
         }
 
         @Test
-        void defaultReplicaCount() { // GH-90000
-            assertThat(new EventDurabilityConfig().getRequiredReplicaCount()).isEqualTo(2); // GH-90000
+        void defaultReplicaCount() { 
+            assertThat(new EventDurabilityConfig().getRequiredReplicaCount()).isEqualTo(2); 
         }
 
         @Test
-        void fsyncEnabledByDefault() { // GH-90000
-            assertThat(new EventDurabilityConfig().isFsyncEnabled()).isTrue(); // GH-90000
+        void fsyncEnabledByDefault() { 
+            assertThat(new EventDurabilityConfig().isFsyncEnabled()).isTrue(); 
         }
 
         @Test
-        void defaultCheckpointInterval() { // GH-90000
-            assertThat(new EventDurabilityConfig().getCheckpointIntervalMs()).isEqualTo(5000L); // GH-90000
+        void defaultCheckpointInterval() { 
+            assertThat(new EventDurabilityConfig().getCheckpointIntervalMs()).isEqualTo(5000L); 
         }
 
         @Test
-        void defaultMaxCheckpointLag() { // GH-90000
-            assertThat(new EventDurabilityConfig().getMaxCheckpointLagMs()).isEqualTo(30000L); // GH-90000
+        void defaultMaxCheckpointLag() { 
+            assertThat(new EventDurabilityConfig().getMaxCheckpointLagMs()).isEqualTo(30000L); 
         }
 
         @Test
-        void cdcEnabledByDefault() { // GH-90000
-            assertThat(new EventDurabilityConfig().isCdcEnabled()).isTrue(); // GH-90000
+        void cdcEnabledByDefault() { 
+            assertThat(new EventDurabilityConfig().isCdcEnabled()).isTrue(); 
         }
 
         @Test
-        void defaultCdcBufferSize() { // GH-90000
-            assertThat(new EventDurabilityConfig().getCdcBufferSize()).isEqualTo(1000); // GH-90000
+        void defaultCdcBufferSize() { 
+            assertThat(new EventDurabilityConfig().getCdcBufferSize()).isEqualTo(1000); 
         }
 
         @Test
-        void defaultReplayBatchSize() { // GH-90000
-            assertThat(new EventDurabilityConfig().getReplayBatchSize()).isEqualTo(100); // GH-90000
+        void defaultReplayBatchSize() { 
+            assertThat(new EventDurabilityConfig().getReplayBatchSize()).isEqualTo(100); 
         }
 
         @Test
-        void defaultMaxReplayEvents() { // GH-90000
-            assertThat(new EventDurabilityConfig().getMaxReplayEvents()).isEqualTo(10000L); // GH-90000
+        void defaultMaxReplayEvents() { 
+            assertThat(new EventDurabilityConfig().getMaxReplayEvents()).isEqualTo(10000L); 
         }
     }
 
@@ -81,74 +81,74 @@ class EventDurabilityConfigTest {
     class Setters {
 
         @Test
-        void setDurabilityLevel() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setDefaultDurabilityLevel(EventDurabilityService.DurabilityLevel.ALL_ACK); // GH-90000
-            assertThat(cfg.getDefaultDurabilityLevel()) // GH-90000
-                    .isEqualTo(EventDurabilityService.DurabilityLevel.ALL_ACK); // GH-90000
+        void setDurabilityLevel() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setDefaultDurabilityLevel(EventDurabilityService.DurabilityLevel.ALL_ACK); 
+            assertThat(cfg.getDefaultDurabilityLevel()) 
+                    .isEqualTo(EventDurabilityService.DurabilityLevel.ALL_ACK); 
         }
 
         @Test
-        void setDurabilityTimeout() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setDurabilityTimeout(Duration.ofSeconds(60)); // GH-90000
-            assertThat(cfg.getDurabilityTimeout()).isEqualTo(Duration.ofSeconds(60)); // GH-90000
+        void setDurabilityTimeout() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setDurabilityTimeout(Duration.ofSeconds(60)); 
+            assertThat(cfg.getDurabilityTimeout()).isEqualTo(Duration.ofSeconds(60)); 
         }
 
         @Test
-        void setReplicaCount() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setRequiredReplicaCount(3); // GH-90000
-            assertThat(cfg.getRequiredReplicaCount()).isEqualTo(3); // GH-90000
+        void setReplicaCount() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setRequiredReplicaCount(3); 
+            assertThat(cfg.getRequiredReplicaCount()).isEqualTo(3); 
         }
 
         @Test
-        void setFsyncEnabled() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setFsyncEnabled(false); // GH-90000
-            assertThat(cfg.isFsyncEnabled()).isFalse(); // GH-90000
+        void setFsyncEnabled() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setFsyncEnabled(false); 
+            assertThat(cfg.isFsyncEnabled()).isFalse(); 
         }
 
         @Test
-        void setCheckpointInterval() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setCheckpointIntervalMs(1000L); // GH-90000
-            assertThat(cfg.getCheckpointIntervalMs()).isEqualTo(1000L); // GH-90000
+        void setCheckpointInterval() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setCheckpointIntervalMs(1000L); 
+            assertThat(cfg.getCheckpointIntervalMs()).isEqualTo(1000L); 
         }
 
         @Test
-        void setMaxCheckpointLag() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setMaxCheckpointLagMs(60000L); // GH-90000
-            assertThat(cfg.getMaxCheckpointLagMs()).isEqualTo(60000L); // GH-90000
+        void setMaxCheckpointLag() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setMaxCheckpointLagMs(60000L); 
+            assertThat(cfg.getMaxCheckpointLagMs()).isEqualTo(60000L); 
         }
 
         @Test
-        void setCdcEnabled() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setCdcEnabled(false); // GH-90000
-            assertThat(cfg.isCdcEnabled()).isFalse(); // GH-90000
+        void setCdcEnabled() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setCdcEnabled(false); 
+            assertThat(cfg.isCdcEnabled()).isFalse(); 
         }
 
         @Test
-        void setCdcBufferSize() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setCdcBufferSize(500); // GH-90000
-            assertThat(cfg.getCdcBufferSize()).isEqualTo(500); // GH-90000
+        void setCdcBufferSize() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setCdcBufferSize(500); 
+            assertThat(cfg.getCdcBufferSize()).isEqualTo(500); 
         }
 
         @Test
-        void setReplayBatchSize() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setReplayBatchSize(200); // GH-90000
-            assertThat(cfg.getReplayBatchSize()).isEqualTo(200); // GH-90000
+        void setReplayBatchSize() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setReplayBatchSize(200); 
+            assertThat(cfg.getReplayBatchSize()).isEqualTo(200); 
         }
 
         @Test
-        void setMaxReplayEvents() { // GH-90000
-            EventDurabilityConfig cfg = new EventDurabilityConfig(); // GH-90000
-            cfg.setMaxReplayEvents(50000L); // GH-90000
-            assertThat(cfg.getMaxReplayEvents()).isEqualTo(50000L); // GH-90000
+        void setMaxReplayEvents() { 
+            EventDurabilityConfig cfg = new EventDurabilityConfig(); 
+            cfg.setMaxReplayEvents(50000L); 
+            assertThat(cfg.getMaxReplayEvents()).isEqualTo(50000L); 
         }
     }
 
@@ -157,8 +157,8 @@ class EventDurabilityConfigTest {
     class DurabilityLevelEnum {
 
         @Test
-        void allValuesPresent() { // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.values()).containsExactlyInAnyOrder( // GH-90000
+        void allValuesPresent() { 
+            assertThat(EventDurabilityService.DurabilityLevel.values()).containsExactlyInAnyOrder( 
                     EventDurabilityService.DurabilityLevel.NONE,
                     EventDurabilityService.DurabilityLevel.LEADER_ACK,
                     EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
@@ -168,9 +168,9 @@ class EventDurabilityConfigTest {
         }
 
         @Test
-        void valueOfByName() { // GH-90000
+        void valueOfByName() { 
             assertThat(EventDurabilityService.DurabilityLevel.valueOf("NONE"))
-                    .isSameAs(EventDurabilityService.DurabilityLevel.NONE); // GH-90000
+                    .isSameAs(EventDurabilityService.DurabilityLevel.NONE); 
         }
     }
 }

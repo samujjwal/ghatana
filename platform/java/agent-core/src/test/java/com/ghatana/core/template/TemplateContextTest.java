@@ -26,36 +26,36 @@ class TemplateContextTest {
 
         @Test
         @DisplayName("of(Map) creates context with provided entries")
-        void ofMapCreatesContext() { // GH-90000
-            TemplateContext ctx = TemplateContext.of(Map.of("key", "value")); // GH-90000
+        void ofMapCreatesContext() { 
+            TemplateContext ctx = TemplateContext.of(Map.of("key", "value")); 
             assertThat(ctx.get("key")).isEqualTo("value");
         }
 
         @Test
         @DisplayName("empty() creates context that throws on any get")
-        void emptyContextThrowsOnGet() { // GH-90000
-            TemplateContext ctx = TemplateContext.empty(); // GH-90000
+        void emptyContextThrowsOnGet() { 
+            TemplateContext ctx = TemplateContext.empty(); 
             assertThatThrownBy(() -> ctx.get("anything"))
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("anything");
         }
 
         @Test
         @DisplayName("of(Map) defensively copies the input map")
-        void ofMapDefensivelyCopies() { // GH-90000
-            Map<String, String> mutable = new HashMap<>(); // GH-90000
-            mutable.put("k", "v1"); // GH-90000
-            TemplateContext ctx = TemplateContext.of(mutable); // GH-90000
+        void ofMapDefensivelyCopies() { 
+            Map<String, String> mutable = new HashMap<>(); 
+            mutable.put("k", "v1"); 
+            TemplateContext ctx = TemplateContext.of(mutable); 
 
-            mutable.put("k", "v2"); // mutate original // GH-90000
+            mutable.put("k", "v2"); // mutate original 
 
             assertThat(ctx.get("k")).isEqualTo("v1"); // context is unaffected
         }
 
         @Test
         @DisplayName("of(null) throws NullPointerException")
-        void ofNullThrowsNPE() { // GH-90000
-            assertThatNullPointerException().isThrownBy(() -> TemplateContext.of(null)); // GH-90000
+        void ofNullThrowsNPE() { 
+            assertThatNullPointerException().isThrownBy(() -> TemplateContext.of(null)); 
         }
     }
 
@@ -65,12 +65,12 @@ class TemplateContextTest {
 
         @Test
         @DisplayName("builder() accumulates multiple puts")
-        void builderAccumulatesEntries() { // GH-90000
-            TemplateContext ctx = TemplateContext.builder() // GH-90000
-                    .put("a", "1") // GH-90000
-                    .put("b", "2") // GH-90000
-                    .put("c", "3") // GH-90000
-                    .build(); // GH-90000
+        void builderAccumulatesEntries() { 
+            TemplateContext ctx = TemplateContext.builder() 
+                    .put("a", "1") 
+                    .put("b", "2") 
+                    .put("c", "3") 
+                    .build(); 
 
             assertThat(ctx.get("a")).isEqualTo("1");
             assertThat(ctx.get("b")).isEqualTo("2");
@@ -79,11 +79,11 @@ class TemplateContextTest {
 
         @Test
         @DisplayName("putAll() merges a map into the builder")
-        void putAllMergesMap() { // GH-90000
-            TemplateContext ctx = TemplateContext.builder() // GH-90000
-                    .put("existing", "yes") // GH-90000
-                    .putAll(Map.of("added1", "v1", "added2", "v2")) // GH-90000
-                    .build(); // GH-90000
+        void putAllMergesMap() { 
+            TemplateContext ctx = TemplateContext.builder() 
+                    .put("existing", "yes") 
+                    .putAll(Map.of("added1", "v1", "added2", "v2")) 
+                    .build(); 
 
             assertThat(ctx.get("existing")).isEqualTo("yes");
             assertThat(ctx.get("added1")).isEqualTo("v1");
@@ -91,11 +91,11 @@ class TemplateContextTest {
 
         @Test
         @DisplayName("later put() overrides earlier put() for same key")
-        void laterPutOverridesEarlier() { // GH-90000
-            TemplateContext ctx = TemplateContext.builder() // GH-90000
-                    .put("key", "first") // GH-90000
-                    .put("key", "second") // GH-90000
-                    .build(); // GH-90000
+        void laterPutOverridesEarlier() { 
+            TemplateContext ctx = TemplateContext.builder() 
+                    .put("key", "first") 
+                    .put("key", "second") 
+                    .build(); 
 
             assertThat(ctx.get("key")).isEqualTo("second");
         }
@@ -107,33 +107,33 @@ class TemplateContextTest {
 
         @Test
         @DisplayName("throws ISE with helpful message listing available keys")
-        void missingKeyThrowsIseWithHelpfulMessage() { // GH-90000
-            TemplateContext ctx = TemplateContext.builder().put("model", "gpt-4o").build(); // GH-90000
+        void missingKeyThrowsIseWithHelpfulMessage() { 
+            TemplateContext ctx = TemplateContext.builder().put("model", "gpt-4o").build(); 
 
             assertThatThrownBy(() -> ctx.get("missingKey"))
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("missingKey")
                     .hasMessageContaining("model"); // available keys listed
         }
 
         @Test
         @DisplayName("get(null) throws NullPointerException")
-        void getNullKeyThrowsNPE() { // GH-90000
-            TemplateContext ctx = TemplateContext.empty(); // GH-90000
-            assertThatNullPointerException().isThrownBy(() -> ctx.get(null)); // GH-90000
+        void getNullKeyThrowsNPE() { 
+            TemplateContext ctx = TemplateContext.empty(); 
+            assertThatNullPointerException().isThrownBy(() -> ctx.get(null)); 
         }
 
         @Test
         @DisplayName("has() returns true for known keys")
-        void hasReturnsTrueForKnownKey() { // GH-90000
-            TemplateContext ctx = TemplateContext.builder().put("x", "1").build(); // GH-90000
+        void hasReturnsTrueForKnownKey() { 
+            TemplateContext ctx = TemplateContext.builder().put("x", "1").build(); 
             assertThat(ctx.has("x")).isTrue();
         }
 
         @Test
         @DisplayName("has() returns false for unknown keys")
-        void hasReturnsFalseForUnknownKey() { // GH-90000
-            TemplateContext ctx = TemplateContext.empty(); // GH-90000
+        void hasReturnsFalseForUnknownKey() { 
+            TemplateContext ctx = TemplateContext.empty(); 
             assertThat(ctx.has("unknown")).isFalse();
         }
     }

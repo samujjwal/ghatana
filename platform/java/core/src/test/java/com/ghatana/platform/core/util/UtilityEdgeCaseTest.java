@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 
@@ -38,66 +38,66 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle extremely long strings")
-        void shouldHandleExtremelyLongStrings() { // GH-90000
-            StringBuilder sb = new StringBuilder(); // GH-90000
-            for (int i = 0; i < 100000; i++) { // GH-90000
+        void shouldHandleExtremelyLongStrings() { 
+            StringBuilder sb = new StringBuilder(); 
+            for (int i = 0; i < 100000; i++) { 
                 sb.append("a");
             }
-            String veryLong = sb.toString(); // GH-90000
+            String veryLong = sb.toString(); 
 
-            assertThat(StringUtils.isBlank(veryLong)).isFalse(); // GH-90000
-            assertThat(StringUtils.truncate(veryLong, 100)).hasSize(103); // 100 + "..." // GH-90000
+            assertThat(StringUtils.isBlank(veryLong)).isFalse(); 
+            assertThat(StringUtils.truncate(veryLong, 100)).hasSize(103); // 100 + "..." 
         }
 
         @Test
         @DisplayName("should handle unicode and special characters")
-        void shouldHandleUnicodeAndSpecialCharacters() { // GH-90000
+        void shouldHandleUnicodeAndSpecialCharacters() { 
             String unicode = "Hello 世界 🌍 Ñoño";
-            assertThat(StringUtils.isBlank(unicode)).isFalse(); // GH-90000
+            assertThat(StringUtils.isBlank(unicode)).isFalse(); 
             assertThat(StringUtils.toSnakeCase(unicode)).contains("hello");
         }
 
         @Test
         @DisplayName("should handle mixed whitespace types")
-        void shouldHandleMixedWhitespaceTypes() { // GH-90000
-            String mixed = " \t\n\r\f"; // Various whitespace types (excluding Unicode non-breaking space) // GH-90000
-            assertThat(StringUtils.isBlank(mixed)).isTrue(); // GH-90000
+        void shouldHandleMixedWhitespaceTypes() { 
+            String mixed = " \t\n\r\f"; // Various whitespace types (excluding Unicode non-breaking space) 
+            assertThat(StringUtils.isBlank(mixed)).isTrue(); 
         }
 
         @Test
         @DisplayName("should handle zero-width characters")
-        void shouldHandleZeroWidthCharacters() { // GH-90000
+        void shouldHandleZeroWidthCharacters() { 
             String zeroWidth = "test\u200B\u200C\u200D"; // Zero-width joiners
-            assertThat(StringUtils.isBlank(zeroWidth)).isFalse(); // GH-90000
-            assertThat(zeroWidth.length()).isEqualTo(7); // GH-90000
+            assertThat(StringUtils.isBlank(zeroWidth)).isFalse(); 
+            assertThat(zeroWidth.length()).isEqualTo(7); 
         }
 
         @Test
         @DisplayName("should handle surrogate pairs")
-        void shouldHandleSurrogatePairs() { // GH-90000
+        void shouldHandleSurrogatePairs() { 
             String emoji = "😀😁😂"; // Emoji using surrogate pairs
-            assertThat(StringUtils.isBlank(emoji)).isFalse(); // GH-90000
-            assertThat(emoji.length()).isEqualTo(6); // 3 emoji * 2 code units each // GH-90000
+            assertThat(StringUtils.isBlank(emoji)).isFalse(); 
+            assertThat(emoji.length()).isEqualTo(6); // 3 emoji * 2 code units each 
         }
 
         @Test
         @DisplayName("should handle empty arrays in join")
-        void shouldHandleEmptyArraysInJoin() { // GH-90000
-            assertThat(StringUtils.join(Collections.emptyList(), ",")).isEmpty(); // GH-90000
-            assertThat(StringUtils.join(Arrays.asList(), ",")).isEmpty(); // GH-90000
+        void shouldHandleEmptyArraysInJoin() { 
+            assertThat(StringUtils.join(Collections.emptyList(), ",")).isEmpty(); 
+            assertThat(StringUtils.join(Arrays.asList(), ",")).isEmpty(); 
         }
 
         @Test
         @DisplayName("should handle single element arrays")
-        void shouldHandleSingleElementArrays() { // GH-90000
+        void shouldHandleSingleElementArrays() { 
             assertThat(StringUtils.join(Arrays.asList("single"), ",")).isEqualTo("single");
         }
 
         @Test
         @DisplayName("should handle all null elements in join")
-        void shouldHandleAllNullElementsInJoin() { // GH-90000
-            List<String> allNull = Arrays.asList(null, null, null); // GH-90000
-            assertThat(StringUtils.join(allNull, ",")).isEmpty(); // GH-90000
+        void shouldHandleAllNullElementsInJoin() { 
+            List<String> allNull = Arrays.asList(null, null, null); 
+            assertThat(StringUtils.join(allNull, ",")).isEmpty(); 
         }
     }
 
@@ -111,38 +111,38 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle empty collections")
-        void shouldHandleEmptyCollections() { // GH-90000
-            assertThat(CollectionUtils.isEmpty(Collections.emptyList())).isTrue(); // GH-90000
+        void shouldHandleEmptyCollections() { 
+            assertThat(CollectionUtils.isEmpty(Collections.emptyList())).isTrue(); 
         }
 
         @Test
         @DisplayName("should handle null collections")
-        void shouldHandleNullCollections() { // GH-90000
-            assertThat(CollectionUtils.isEmpty(null)).isTrue(); // GH-90000
-            assertThat(CollectionUtils.isEmpty((List<?>) null)).isTrue(); // GH-90000
+        void shouldHandleNullCollections() { 
+            assertThat(CollectionUtils.isEmpty(null)).isTrue(); 
+            assertThat(CollectionUtils.isEmpty((List<?>) null)).isTrue(); 
         }
 
         @Test
         @DisplayName("should handle single element collections")
-        void shouldHandleSingleElementCollections() { // GH-90000
+        void shouldHandleSingleElementCollections() { 
             assertThat(CollectionUtils.isEmpty(Arrays.asList("one"))).isFalse();
         }
 
         @Test
         @DisplayName("should handle nested collections")
-        void shouldHandleNestedCollections() { // GH-90000
-            List<List<String>> nested = Arrays.asList( // GH-90000
-                Arrays.asList("a", "b"), // GH-90000
-                Arrays.asList("c", "d") // GH-90000
+        void shouldHandleNestedCollections() { 
+            List<List<String>> nested = Arrays.asList( 
+                Arrays.asList("a", "b"), 
+                Arrays.asList("c", "d") 
             );
-            assertThat(CollectionUtils.isEmpty(nested)).isFalse(); // GH-90000
+            assertThat(CollectionUtils.isEmpty(nested)).isFalse(); 
         }
 
         @Test
         @DisplayName("should handle collections with null elements")
-        void shouldHandleCollectionsWithNullElements() { // GH-90000
-            List<String> withNulls = Arrays.asList("a", null, "c"); // GH-90000
-            assertThat(CollectionUtils.isEmpty(withNulls)).isFalse(); // GH-90000
+        void shouldHandleCollectionsWithNullElements() { 
+            List<String> withNulls = Arrays.asList("a", null, "c"); 
+            assertThat(CollectionUtils.isEmpty(withNulls)).isFalse(); 
         }
     }
 
@@ -156,45 +156,45 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle null JSON strings")
-        void shouldHandleNullJsonStrings() { // GH-90000
-            assertThat(JsonUtils.fromJsonSafe(null, Object.class)).isNull(); // GH-90000
+        void shouldHandleNullJsonStrings() { 
+            assertThat(JsonUtils.fromJsonSafe(null, Object.class)).isNull(); 
         }
 
         @Test
         @DisplayName("should handle empty JSON strings")
-        void shouldHandleEmptyJsonStrings() { // GH-90000
-            assertThat(JsonUtils.fromJsonSafe("", Object.class)).isNull(); // GH-90000
-            assertThat(JsonUtils.fromJsonSafe("{}", Object.class)).isNotNull(); // GH-90000
+        void shouldHandleEmptyJsonStrings() { 
+            assertThat(JsonUtils.fromJsonSafe("", Object.class)).isNull(); 
+            assertThat(JsonUtils.fromJsonSafe("{}", Object.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("should handle malformed JSON")
-        void shouldHandleMalformedJson() { // GH-90000
-            assertThat(JsonUtils.fromJsonSafe("{invalid}", Object.class)).isNull(); // GH-90000
+        void shouldHandleMalformedJson() { 
+            assertThat(JsonUtils.fromJsonSafe("{invalid}", Object.class)).isNull(); 
         }
 
         @Test
         @DisplayName("should handle deeply nested JSON")
-        void shouldHandleDeeplyNestedJson() { // GH-90000
+        void shouldHandleDeeplyNestedJson() { 
             String deepJson = "{\"a\":{\"b\":{\"c\":{\"d\":{\"e\":\"value\"}}}}}";
-            Object parsed = JsonUtils.fromJsonSafe(deepJson, Object.class); // GH-90000
-            assertThat(parsed).isNotNull(); // GH-90000
+            Object parsed = JsonUtils.fromJsonSafe(deepJson, Object.class); 
+            assertThat(parsed).isNotNull(); 
         }
 
         @Test
         @DisplayName("should handle JSON arrays")
-        void shouldHandleJsonArrays() { // GH-90000
+        void shouldHandleJsonArrays() { 
             String arrayJson = "[1,2,3,4,5]";
-            Object parsed = JsonUtils.fromJsonSafe(arrayJson, Object.class); // GH-90000
-            assertThat(parsed).isNotNull(); // GH-90000
+            Object parsed = JsonUtils.fromJsonSafe(arrayJson, Object.class); 
+            assertThat(parsed).isNotNull(); 
         }
 
         @Test
         @DisplayName("should handle JSON with special characters")
-        void shouldHandleJsonWithSpecialCharacters() { // GH-90000
+        void shouldHandleJsonWithSpecialCharacters() { 
             String specialJson = "{\"text\":\"Hello \\\"World\\\" \\n Newline\"}";
-            Object parsed = JsonUtils.fromJsonSafe(specialJson, Object.class); // GH-90000
-            assertThat(parsed).isNotNull(); // GH-90000
+            Object parsed = JsonUtils.fromJsonSafe(specialJson, Object.class); 
+            assertThat(parsed).isNotNull(); 
         }
     }
 
@@ -208,37 +208,37 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle zero page size")
-        void shouldHandleZeroPageSize() { // GH-90000
+        void shouldHandleZeroPageSize() { 
             // calculateOffset is a pure math function, validation is done in validateRequest
-            assertThat(PaginationUtils.calculateOffset(0, 0)).isEqualTo(0L); // GH-90000
+            assertThat(PaginationUtils.calculateOffset(0, 0)).isEqualTo(0L); 
         }
 
         @Test
         @DisplayName("should handle negative page numbers")
-        void shouldHandleNegativePageNumbers() { // GH-90000
+        void shouldHandleNegativePageNumbers() { 
             // calculateOffset is a pure math function, validation is done in validateRequest
-            assertThat(PaginationUtils.calculateOffset(-1, 10)).isEqualTo(-10L); // GH-90000
+            assertThat(PaginationUtils.calculateOffset(-1, 10)).isEqualTo(-10L); 
         }
 
         @Test
         @DisplayName("should handle very large page numbers")
-        void shouldHandleVeryLargePageNumbers() { // GH-90000
-            long offset = PaginationUtils.calculateOffset(Integer.MAX_VALUE, 10); // GH-90000
-            assertThat(offset).isEqualTo(Integer.MAX_VALUE * 10L); // GH-90000
+        void shouldHandleVeryLargePageNumbers() { 
+            long offset = PaginationUtils.calculateOffset(Integer.MAX_VALUE, 10); 
+            assertThat(offset).isEqualTo(Integer.MAX_VALUE * 10L); 
         }
 
         @Test
         @DisplayName("should handle page size 1")
-        void shouldHandlePageSizeOne() { // GH-90000
-            long offset = PaginationUtils.calculateOffset(5, 1); // GH-90000
-            assertThat(offset).isEqualTo(5); // GH-90000
+        void shouldHandlePageSizeOne() { 
+            long offset = PaginationUtils.calculateOffset(5, 1); 
+            assertThat(offset).isEqualTo(5); 
         }
 
         @Test
         @DisplayName("should handle page number 0")
-        void shouldHandlePageNumberZero() { // GH-90000
-            long offset = PaginationUtils.calculateOffset(0, 10); // GH-90000
-            assertThat(offset).isEqualTo(0); // GH-90000
+        void shouldHandlePageNumberZero() { 
+            long offset = PaginationUtils.calculateOffset(0, 10); 
+            assertThat(offset).isEqualTo(0); 
         }
     }
 
@@ -252,46 +252,46 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle null check with null")
-        void shouldHandleNullCheckWithNull() { // GH-90000
-            assertThatThrownBy(() -> Preconditions.requireNonNull(null, "value")) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldHandleNullCheckWithNull() { 
+            assertThatThrownBy(() -> Preconditions.requireNonNull(null, "value")) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should handle null check with valid value")
-        void shouldHandleNullCheckWithValidValue() { // GH-90000
-            String result = Preconditions.requireNonNull("valid", "value"); // GH-90000
+        void shouldHandleNullCheckWithValidValue() { 
+            String result = Preconditions.requireNonNull("valid", "value"); 
             assertThat(result).isEqualTo("valid");
         }
 
         @Test
         @DisplayName("should handle check argument with false")
-        void shouldHandleCheckArgumentWithFalse() { // GH-90000
-            assertThatThrownBy(() -> Preconditions.require(false, "error message")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void shouldHandleCheckArgumentWithFalse() { 
+            assertThatThrownBy(() -> Preconditions.require(false, "error message")) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("error message");
         }
 
         @Test
         @DisplayName("should handle check state with false")
-        void shouldHandleCheckStateWithFalse() { // GH-90000
-            assertThatThrownBy(() -> Preconditions.require(false, "state error")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void shouldHandleCheckStateWithFalse() { 
+            assertThatThrownBy(() -> Preconditions.require(false, "state error")) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("state error");
         }
 
         @Test
         @DisplayName("should handle check element index")
-        void shouldHandleCheckElementIndex() { // GH-90000
-            assertThatThrownBy(() -> Preconditions.requireInRange(10, 0, 5, "index")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void shouldHandleCheckElementIndex() { 
+            assertThatThrownBy(() -> Preconditions.requireInRange(10, 0, 5, "index")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("should handle valid element index")
-        void shouldHandleValidElementIndex() { // GH-90000
-            int index = Preconditions.requireInRange(2, 0, 5, "index"); // GH-90000
-            assertThat(index).isEqualTo(2); // GH-90000
+        void shouldHandleValidElementIndex() { 
+            int index = Preconditions.requireInRange(2, 0, 5, "index"); 
+            assertThat(index).isEqualTo(2); 
         }
     }
 
@@ -305,39 +305,39 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle large collection operations efficiently")
-        void shouldHandleLargeCollectionOperationsEfficiently() { // GH-90000
-            List<Integer> largeList = Arrays.asList(new Integer[10000]); // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
-            CollectionUtils.isEmpty(largeList); // GH-90000
-            long duration = System.currentTimeMillis() - start; // GH-90000
-            assertThat(duration).isLessThan(100); // Should complete in < 100ms // GH-90000
+        void shouldHandleLargeCollectionOperationsEfficiently() { 
+            List<Integer> largeList = Arrays.asList(new Integer[10000]); 
+            long start = System.currentTimeMillis(); 
+            CollectionUtils.isEmpty(largeList); 
+            long duration = System.currentTimeMillis() - start; 
+            assertThat(duration).isLessThan(100); // Should complete in < 100ms 
         }
 
         @Test
         @DisplayName("should handle large string operations efficiently")
-        void shouldHandleLargeStringOperationsEfficiently() { // GH-90000
-            StringBuilder sb = new StringBuilder(); // GH-90000
-            for (int i = 0; i < 10000; i++) { // GH-90000
+        void shouldHandleLargeStringOperationsEfficiently() { 
+            StringBuilder sb = new StringBuilder(); 
+            for (int i = 0; i < 10000; i++) { 
                 sb.append("test-");
             }
-            String largeString = sb.toString(); // GH-90000
+            String largeString = sb.toString(); 
 
-            long start = System.currentTimeMillis(); // GH-90000
-            StringUtils.isBlank(largeString); // GH-90000
-            long duration = System.currentTimeMillis() - start; // GH-90000
-            assertThat(duration).isLessThan(100); // GH-90000
+            long start = System.currentTimeMillis(); 
+            StringUtils.isBlank(largeString); 
+            long duration = System.currentTimeMillis() - start; 
+            assertThat(duration).isLessThan(100); 
         }
 
         @Test
         @DisplayName("should handle repeated operations efficiently")
-        void shouldHandleRepeatedOperationsEfficiently() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
-            for (int i = 0; i < 1000; i++) { // GH-90000
+        void shouldHandleRepeatedOperationsEfficiently() { 
+            long start = System.currentTimeMillis(); 
+            for (int i = 0; i < 1000; i++) { 
                 StringUtils.isBlank("test");
-                CollectionUtils.isEmpty(Arrays.asList(1, 2, 3)); // GH-90000
+                CollectionUtils.isEmpty(Arrays.asList(1, 2, 3)); 
             }
-            long duration = System.currentTimeMillis() - start; // GH-90000
-            assertThat(duration).isLessThan(500); // GH-90000
+            long duration = System.currentTimeMillis() - start; 
+            assertThat(duration).isLessThan(500); 
         }
     }
 
@@ -351,31 +351,31 @@ class UtilityEdgeCaseTest {
 
         @Test
         @DisplayName("should handle integer max value in string operations")
-        void shouldHandleIntegerMaxValueInStringOperations() { // GH-90000
-            String maxInt = String.valueOf(Integer.MAX_VALUE); // GH-90000
-            assertThat(StringUtils.isBlank(maxInt)).isFalse(); // GH-90000
-            assertThat(StringUtils.toSnakeCase(maxInt)).isNotNull(); // GH-90000
+        void shouldHandleIntegerMaxValueInStringOperations() { 
+            String maxInt = String.valueOf(Integer.MAX_VALUE); 
+            assertThat(StringUtils.isBlank(maxInt)).isFalse(); 
+            assertThat(StringUtils.toSnakeCase(maxInt)).isNotNull(); 
         }
 
         @Test
         @DisplayName("should handle integer min value in string operations")
-        void shouldHandleIntegerMinValueInStringOperations() { // GH-90000
-            String minInt = String.valueOf(Integer.MIN_VALUE); // GH-90000
-            assertThat(StringUtils.isBlank(minInt)).isFalse(); // GH-90000
+        void shouldHandleIntegerMinValueInStringOperations() { 
+            String minInt = String.valueOf(Integer.MIN_VALUE); 
+            assertThat(StringUtils.isBlank(minInt)).isFalse(); 
         }
 
         @Test
         @DisplayName("should handle long max value in string operations")
-        void shouldHandleLongMaxValueInStringOperations() { // GH-90000
-            String maxLong = String.valueOf(Long.MAX_VALUE); // GH-90000
-            assertThat(StringUtils.isBlank(maxLong)).isFalse(); // GH-90000
+        void shouldHandleLongMaxValueInStringOperations() { 
+            String maxLong = String.valueOf(Long.MAX_VALUE); 
+            assertThat(StringUtils.isBlank(maxLong)).isFalse(); 
         }
 
         @Test
         @DisplayName("should handle collection at capacity boundaries")
-        void shouldHandleCollectionAtCapacityBoundaries() { // GH-90000
-            List<Integer> atBoundary = Arrays.asList(new Integer[100]); // GH-90000
-            assertThat(CollectionUtils.isEmpty(atBoundary)).isFalse(); // GH-90000
+        void shouldHandleCollectionAtCapacityBoundaries() { 
+            List<Integer> atBoundary = Arrays.asList(new Integer[100]); 
+            assertThat(CollectionUtils.isEmpty(atBoundary)).isFalse(); 
         }
     }
 }

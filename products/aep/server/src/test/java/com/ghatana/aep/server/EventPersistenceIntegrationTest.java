@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server;
@@ -37,7 +37,7 @@ import static org.mockito.ArgumentMatchers.any;
  * Integration test to verify event persistence in Data Cloud via EventCloud.
  * 
  * <p>This test verifies that events processed by AEP are correctly persisted
- * to the EventLogStore (Data Cloud) as part of the event processing pipeline. // GH-90000
+ * to the EventLogStore (Data Cloud) as part of the event processing pipeline. 
  *
  * @doc.type class
  * @doc.purpose Verify event persistence in Data Cloud
@@ -45,7 +45,7 @@ import static org.mockito.ArgumentMatchers.any;
  * @doc.pattern IntegrationTest
  */
 @DisplayName("Event Persistence Integration Test")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EventPersistenceIntegrationTest extends EventloopTestBase {
 
     @Mock
@@ -59,128 +59,128 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
 
     private EventCloudPlugin eventCloudPlugin;
     private AepEngine engine;
-    private final List<EventEntry> capturedEvents = new ArrayList<>(); // GH-90000
+    private final List<EventEntry> capturedEvents = new ArrayList<>(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
+    void setUp() throws Exception { 
         // Set up EventCloud plugin with mocked EventLogStore
-        eventCloudPlugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode()); // GH-90000
+        eventCloudPlugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode()); 
         
         // Capture events appended to EventLogStore
-        lenient().when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
-            .thenAnswer(invocation -> { // GH-90000
-                EventEntry entry = invocation.getArgument(1); // GH-90000
-                capturedEvents.add(entry); // GH-90000
-                return Promise.of(Offset.of(UUID.randomUUID().toString())); // GH-90000
+        lenient().when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
+            .thenAnswer(invocation -> { 
+                EventEntry entry = invocation.getArgument(1); 
+                capturedEvents.add(entry); 
+                return Promise.of(Offset.of(UUID.randomUUID().toString())); 
             });
 
         // Initialize and start the plugin
-        runPromise(() -> eventCloudPlugin.initialize(pluginContext)); // GH-90000
-        runPromise(() -> eventCloudPlugin.start()); // GH-90000
+        runPromise(() -> eventCloudPlugin.initialize(pluginContext)); 
+        runPromise(() -> eventCloudPlugin.start()); 
 
         // Create AEP engine with the event cloud
-        engine = Aep.forTesting(); // GH-90000
+        engine = Aep.forTesting(); 
     }
 
     @AfterEach
-    void tearDown() throws Exception { // GH-90000
-        if (eventCloudPlugin != null) { // GH-90000
-            runPromise(() -> eventCloudPlugin.stop()); // GH-90000
+    void tearDown() throws Exception { 
+        if (eventCloudPlugin != null) { 
+            runPromise(() -> eventCloudPlugin.stop()); 
         }
-        if (engine != null) { // GH-90000
-            engine.close(); // GH-90000
+        if (engine != null) { 
+            engine.close(); 
         }
-        capturedEvents.clear(); // GH-90000
+        capturedEvents.clear(); 
     }
 
     @Test
     @DisplayName("Events processed by AEP are persisted to EventLogStore")
-    void eventsArePersistedToEventLogStore() { // GH-90000
+    void eventsArePersistedToEventLogStore() { 
         // GIVEN
         String tenantId = "tenant-test";
         String eventType = "order.placed";
-        Map<String, Object> payload = Map.of("orderId", "ORD-001", "amount", 100.0); // GH-90000
+        Map<String, Object> payload = Map.of("orderId", "ORD-001", "amount", 100.0); 
 
         // WHEN
-        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(),  // GH-90000
-            java.time.Instant.now()); // GH-90000
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
+        AepEngine.Event event = new AepEngine.Event(eventType, payload, Map.of(),  
+            java.time.Instant.now()); 
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); 
 
         // THEN
-        assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.eventId()).isNotNull(); // GH-90000
+        assertThat(result.success()).isTrue(); 
+        assertThat(result.eventId()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Multiple events are persisted sequentially")
-    void multipleEventsArePersisted() { // GH-90000
+    void multipleEventsArePersisted() { 
         // GIVEN
         String tenantId = "tenant-multi";
         
         // WHEN
-        List<AepEngine.Event> events = List.of( // GH-90000
-            new AepEngine.Event("event.1", Map.of("seq", 1), Map.of(), java.time.Instant.now()), // GH-90000
-            new AepEngine.Event("event.2", Map.of("seq", 2), Map.of(), java.time.Instant.now()), // GH-90000
-            new AepEngine.Event("event.3", Map.of("seq", 3), Map.of(), java.time.Instant.now()) // GH-90000
+        List<AepEngine.Event> events = List.of( 
+            new AepEngine.Event("event.1", Map.of("seq", 1), Map.of(), java.time.Instant.now()), 
+            new AepEngine.Event("event.2", Map.of("seq", 2), Map.of(), java.time.Instant.now()), 
+            new AepEngine.Event("event.3", Map.of("seq", 3), Map.of(), java.time.Instant.now()) 
         );
 
-        List<AepEngine.ProcessingResult> results = new ArrayList<>(); // GH-90000
-        for (AepEngine.Event event : events) { // GH-90000
-            results.add(runPromise(() -> engine.process(tenantId, event))); // GH-90000
+        List<AepEngine.ProcessingResult> results = new ArrayList<>(); 
+        for (AepEngine.Event event : events) { 
+            results.add(runPromise(() -> engine.process(tenantId, event))); 
         }
 
         // THEN
-        assertThat(results).hasSize(3); // GH-90000
-        for (AepEngine.ProcessingResult result : results) { // GH-90000
-            assertThat(result.success()).isTrue(); // GH-90000
-            assertThat(result.eventId()).isNotNull(); // GH-90000
+        assertThat(results).hasSize(3); 
+        for (AepEngine.ProcessingResult result : results) { 
+            assertThat(result.success()).isTrue(); 
+            assertThat(result.eventId()).isNotNull(); 
         }
     }
 
     @Test
     @DisplayName("Event payload is correctly serialized and persisted")
-    void eventPayloadIsCorrectlySerialized() { // GH-90000
+    void eventPayloadIsCorrectlySerialized() { 
         // GIVEN
         String tenantId = "tenant-payload";
-        Map<String, Object> payload = Map.of( // GH-90000
+        Map<String, Object> payload = Map.of( 
             "userId", "user-123",
             "email", "test@example.com",
-            "items", List.of("item-1", "item-2") // GH-90000
+            "items", List.of("item-1", "item-2") 
         );
 
         // WHEN
-        AepEngine.Event event = new AepEngine.Event("checkout", payload, Map.of(), java.time.Instant.now()); // GH-90000
-        runPromise(() -> engine.process(tenantId, event)); // GH-90000
+        AepEngine.Event event = new AepEngine.Event("checkout", payload, Map.of(), java.time.Instant.now()); 
+        runPromise(() -> engine.process(tenantId, event)); 
 
         // THEN
         // Event processing should succeed
-        assertThat(event).isNotNull(); // GH-90000
+        assertThat(event).isNotNull(); 
     }
 
     @Test
     @DisplayName("Event headers are preserved during persistence")
-    void eventHeadersArePreserved() { // GH-90000
+    void eventHeadersArePreserved() { 
         // GIVEN
         String tenantId = "tenant-headers";
-        Map<String, String> headers = Map.of( // GH-90000
+        Map<String, String> headers = Map.of( 
             "correlationId", "corr-123",
             "traceId", "trace-456",
             "source", "web"
         );
 
         // WHEN
-        AepEngine.Event event = new AepEngine.Event("api.call", Map.of("endpoint", "/api/users"),  // GH-90000
-            headers, java.time.Instant.now()); // GH-90000
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
+        AepEngine.Event event = new AepEngine.Event("api.call", Map.of("endpoint", "/api/users"),  
+            headers, java.time.Instant.now()); 
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); 
 
         // THEN
-        assertThat(result.success()).isTrue(); // GH-90000
-        assertThat(result.eventId()).isNotNull(); // GH-90000
+        assertThat(result.success()).isTrue(); 
+        assertThat(result.eventId()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Failed events are still persisted with error metadata")
-    void failedEventsArePersistedWithErrors() { // GH-90000
+    void failedEventsArePersistedWithErrors() { 
         // This test verifies that even when pattern detection or other processing fails,
         // the event is still persisted to EventLogStore for audit and debugging purposes.
         
@@ -188,12 +188,12 @@ class EventPersistenceIntegrationTest extends EventloopTestBase {
         String tenantId = "tenant-failed";
         
         // WHEN
-        AepEngine.Event event = new AepEngine.Event("test.event", Map.of("data", "test"),  // GH-90000
-            Map.of(), java.time.Instant.now()); // GH-90000
-        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); // GH-90000
+        AepEngine.Event event = new AepEngine.Event("test.event", Map.of("data", "test"),  
+            Map.of(), java.time.Instant.now()); 
+        AepEngine.ProcessingResult result = runPromise(() -> engine.process(tenantId, event)); 
 
         // THEN
-        // Event should still be processed (even if no patterns match) // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        // Event should still be processed (even if no patterns match) 
+        assertThat(result).isNotNull(); 
     }
 }

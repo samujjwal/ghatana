@@ -35,26 +35,26 @@ class AuthenticationFlowTest {
 
     @Test
     @DisplayName("Should validate JWT tokens correctly")
-    void shouldValidateJwtTokensCorrectly() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldValidateJwtTokensCorrectly() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
-        when(mockTokenProvider.validateToken(anyString())).thenReturn(true); // GH-90000
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(true); 
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
 
         TokenCredentials credentials = new TokenCredentials("valid-token");
-        Promise<Optional<User>> result = provider.authenticate(credentials); // GH-90000
+        Promise<Optional<User>> result = provider.authenticate(credentials); 
 
-        assertThat(result.getResult()).isPresent(); // GH-90000
+        assertThat(result.getResult()).isPresent(); 
         assertThat(result.getResult().get().getUserId()).isEqualTo("user123");
     }
 
     @Test
     @DisplayName("Should handle token refresh correctly")
-    void shouldHandleTokenRefreshCorrectly() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldHandleTokenRefreshCorrectly() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("USER"));
@@ -67,60 +67,60 @@ class AuthenticationFlowTest {
 
     @Test
     @DisplayName("Should propagate security context correctly")
-    void shouldPropagateSecurityContextCorrectly() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldPropagateSecurityContextCorrectly() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
-        when(mockTokenProvider.validateToken(anyString())).thenReturn(true); // GH-90000
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(true); 
         when(mockTokenProvider.getUserIdFromToken(anyString())).thenReturn(Optional.of("user123"));
         when(mockTokenProvider.getRolesFromToken(anyString())).thenReturn(List.of("ADMIN"));
 
         TokenCredentials credentials = new TokenCredentials("valid-token");
-        Promise<Optional<User>> result = provider.authenticate(credentials); // GH-90000
+        Promise<Optional<User>> result = provider.authenticate(credentials); 
 
-        assertThat(result.getResult()).isPresent(); // GH-90000
+        assertThat(result.getResult()).isPresent(); 
         assertThat(result.getResult().get().getRoles()).contains("ADMIN");
     }
 
     @Test
     @DisplayName("Should reject expired tokens")
-    void shouldRejectExpiredTokens() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldRejectExpiredTokens() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
-        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); // GH-90000
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); 
 
         TokenCredentials credentials = new TokenCredentials("expired-token");
-        Promise<Optional<User>> result = provider.authenticate(credentials); // GH-90000
+        Promise<Optional<User>> result = provider.authenticate(credentials); 
 
-        assertThat(result.getResult()).isEmpty(); // GH-90000
+        assertThat(result.getResult()).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should reject invalid signatures")
-    void shouldRejectInvalidSignatures() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldRejectInvalidSignatures() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
-        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); // GH-90000
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); 
 
         TokenCredentials credentials = new TokenCredentials("invalid-signature");
-        Promise<Optional<User>> result = provider.authenticate(credentials); // GH-90000
+        Promise<Optional<User>> result = provider.authenticate(credentials); 
 
-        assertThat(result.getResult()).isEmpty(); // GH-90000
+        assertThat(result.getResult()).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should handle token revocation")
-    void shouldHandleTokenRevocation() { // GH-90000
-        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); // GH-90000
+    void shouldHandleTokenRevocation() { 
+        JwtTokenProvider mockTokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthenticationProvider provider = new JwtAuthenticationProvider(mockTokenProvider); 
 
-        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); // GH-90000
+        when(mockTokenProvider.validateToken(anyString())).thenReturn(false); 
 
         TokenCredentials credentials = new TokenCredentials("revoked-token");
-        Promise<Optional<User>> result = provider.authenticate(credentials); // GH-90000
+        Promise<Optional<User>> result = provider.authenticate(credentials); 
 
-        assertThat(result.getResult()).isEmpty(); // GH-90000
+        assertThat(result.getResult()).isEmpty(); 
     }
 }

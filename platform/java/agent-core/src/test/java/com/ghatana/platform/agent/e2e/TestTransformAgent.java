@@ -25,49 +25,49 @@ public class TestTransformAgent<I, O> implements TypedAgent<I, O> {
     private final String agentId;
     private final Function<I, O> transform;
 
-    public TestTransformAgent(String agentId, Function<I, O> transform) { // GH-90000
+    public TestTransformAgent(String agentId, Function<I, O> transform) { 
         this.agentId = agentId;
         this.transform = transform;
     }
 
     @Override
-    public @NotNull AgentDescriptor descriptor() { // GH-90000
-        return AgentDescriptor.builder() // GH-90000
-                .agentId(agentId) // GH-90000
+    public @NotNull AgentDescriptor descriptor() { 
+        return AgentDescriptor.builder() 
+                .agentId(agentId) 
                 .name("Test Transform Agent")
-                .type(AgentType.DETERMINISTIC) // GH-90000
-                .determinism(DeterminismGuarantee.FULL) // GH-90000
-                .build(); // GH-90000
+                .type(AgentType.DETERMINISTIC) 
+                .determinism(DeterminismGuarantee.FULL) 
+                .build(); 
     }
 
     @Override
-    public @NotNull Promise<Void> initialize(@NotNull AgentConfig config) { // GH-90000
-        return Promise.complete(); // GH-90000
+    public @NotNull Promise<Void> initialize(@NotNull AgentConfig config) { 
+        return Promise.complete(); 
     }
 
     @Override
-    public @NotNull Promise<Void> shutdown() { // GH-90000
-        return Promise.complete(); // GH-90000
+    public @NotNull Promise<Void> shutdown() { 
+        return Promise.complete(); 
     }
 
     @Override
-    public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
+    public @NotNull Promise<HealthStatus> healthCheck() { 
         return Promise.of(HealthStatus.healthy("Agent is healthy"));
     }
 
     @Override
-    public @NotNull Promise<AgentResult<O>> process( // GH-90000
+    public @NotNull Promise<AgentResult<O>> process( 
             @NotNull AgentContext ctx,
             @NotNull I input) {
 
-        Instant start = Instant.now(); // GH-90000
+        Instant start = Instant.now(); 
         try {
-            O output = transform.apply(input); // GH-90000
-            Duration elapsed = Duration.between(start, Instant.now()); // GH-90000
-            return Promise.of(AgentResult.success(output, agentId, elapsed)); // GH-90000
-        } catch (Exception e) { // GH-90000
-            Duration elapsed = Duration.between(start, Instant.now()); // GH-90000
-            return Promise.of(AgentResult.failure(e, agentId, elapsed)); // GH-90000
+            O output = transform.apply(input); 
+            Duration elapsed = Duration.between(start, Instant.now()); 
+            return Promise.of(AgentResult.success(output, agentId, elapsed)); 
+        } catch (Exception e) { 
+            Duration elapsed = Duration.between(start, Instant.now()); 
+            return Promise.of(AgentResult.failure(e, agentId, elapsed)); 
         }
     }
 }

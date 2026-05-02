@@ -32,47 +32,47 @@ class ValidateArchitectureStepTest extends EventloopTestBase {
   private ValidateArchitectureStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new ValidateArchitectureStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new ValidateArchitectureStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("architecture.validate");
   }
 
   @Test
   @DisplayName("Should validate architecture design")
-  void shouldValidateArchitecture() { // GH-90000
+  void shouldValidateArchitecture() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("architectureId", "arch-001"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("architectureId", "arch-001"); 
+    context.put( 
         "nfrTargets",
-        Map.of( // GH-90000
-            "latency", Map.of("target", 100), // GH-90000
-            "availability", Map.of("target", 99.9))); // GH-90000
-    context.put("deploymentTopology", Map.of("metadata", Map.of("multiAZ", true))); // GH-90000
-    context.put( // GH-90000
+        Map.of( 
+            "latency", Map.of("target", 100), 
+            "availability", Map.of("target", 99.9))); 
+    context.put("deploymentTopology", Map.of("metadata", Map.of("multiAZ", true))); 
+    context.put( 
         "c4Views",
-        List.of( // GH-90000
-            Map.of("type", "C4_CONTAINER", "diagram", "Auth Service"), // GH-90000
-            Map.of("type", "C4_COMPONENT", "diagram", "User Service"))); // GH-90000
+        List.of( 
+            Map.of("type", "C4_CONTAINER", "diagram", "Auth Service"), 
+            Map.of("type", "C4_COMPONENT", "diagram", "User Service"))); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of())); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); 
+    when(dbClient.query(anyString(), any(), anyInt())).thenReturn(Promise.of(List.of())); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("architectureId")).isEqualTo("arch-001");
   }
 }

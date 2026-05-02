@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  * Phase 4 — Task 4.1: Gap-filling tests for ReactiveAgent.
  */
 
@@ -24,11 +24,11 @@ import static org.mockito.Mockito.mock;
  *
  * <p>Fills gaps identified in Phase 4 audit:
  * <ul>
- *   <li>Sliding window expiry (events aging out of the window)</li> // GH-90000
+ *   <li>Sliding window expiry (events aging out of the window)</li> 
  *   <li>Multiple triggers firing on the same event and merging actions</li>
- *   <li>Trigger with threshold=0 (always fires immediately)</li> // GH-90000
+ *   <li>Trigger with threshold=0 (always fires immediately)</li> 
  *   <li>Unknown condition operator graceful handling</li>
- *   <li>Additional condition operators (>=, <=)</li> // GH-90000
+ *   <li>Additional condition operators (>=, <=)</li> 
  *   <li>Null actual value in condition evaluation</li>
  * </ul>
  */
@@ -38,35 +38,35 @@ class ReactiveAgentGapTest {
     private AgentContext ctx;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        ctx = AgentContext.builder() // GH-90000
+    void setUp() { 
+        ctx = AgentContext.builder() 
                 .turnId("turn-1")
                 .agentId("reactive-gap")
                 .tenantId("test-tenant")
-                .memoryStore(mock(MemoryStore.class)) // GH-90000
-                .build(); // GH-90000
+                .memoryStore(mock(MemoryStore.class)) 
+                .build(); 
     }
 
-    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
-        AtomicReference<T> result = new AtomicReference<>(); // GH-90000
-        AtomicReference<Exception> err = new AtomicReference<>(); // GH-90000
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
-        eventloop.post(() -> supplier.get() // GH-90000
-                .whenResult(result::set) // GH-90000
-                .whenException(err::set)); // GH-90000
-        eventloop.run(); // GH-90000
-        if (err.get() != null) throw new RuntimeException(err.get()); // GH-90000
-        return result.get(); // GH-90000
+    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { 
+        AtomicReference<T> result = new AtomicReference<>(); 
+        AtomicReference<Exception> err = new AtomicReference<>(); 
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); 
+        eventloop.post(() -> supplier.get() 
+                .whenResult(result::set) 
+                .whenException(err::set)); 
+        eventloop.run(); 
+        if (err.get() != null) throw new RuntimeException(err.get()); 
+        return result.get(); 
     }
 
-    private ReactiveAgent createAgent(String id, List<ReactiveAgentConfig.TriggerDefinition> triggers) { // GH-90000
-        ReactiveAgent agent = new ReactiveAgent(id); // GH-90000
-        ReactiveAgentConfig config = ReactiveAgentConfig.builder() // GH-90000
-                .agentId(id) // GH-90000
-                .type(AgentType.REACTIVE) // GH-90000
-                .triggers(triggers) // GH-90000
-                .build(); // GH-90000
-        runOnEventloop(() -> agent.initialize(config)); // GH-90000
+    private ReactiveAgent createAgent(String id, List<ReactiveAgentConfig.TriggerDefinition> triggers) { 
+        ReactiveAgent agent = new ReactiveAgent(id); 
+        ReactiveAgentConfig config = ReactiveAgentConfig.builder() 
+                .agentId(id) 
+                .type(AgentType.REACTIVE) 
+                .triggers(triggers) 
+                .build(); 
+        runOnEventloop(() -> agent.initialize(config)); 
         return agent;
     }
 
@@ -79,60 +79,60 @@ class ReactiveAgentGapTest {
     class SlidingWindowExpiryTests {
 
         @Test
-        void windowWithVeryShortDurationExpiresOldEvents() throws InterruptedException { // GH-90000
-            // Use a very short window (10ms) so events age out quickly // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void windowWithVeryShortDurationExpiresOldEvents() throws InterruptedException { 
+            // Use a very short window (10ms) so events age out quickly 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("expiring")
                     .eventTypeField("type")
                     .eventTypeValue("EVENT")
-                    .threshold(3) // GH-90000
-                    .countingWindow(Duration.ofMillis(10)) // GH-90000
-                    .action("fired", true) // GH-90000
-                    .build(); // GH-90000
+                    .threshold(3) 
+                    .countingWindow(Duration.ofMillis(10)) 
+                    .action("fired", true) 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("expire-test", List.of(trigger)); // GH-90000
+            ReactiveAgent agent = createAgent("expire-test", List.of(trigger)); 
 
             // Send 2 events
-            runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); // GH-90000
-            runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); 
+            runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); 
 
             // Wait for the window to expire
-            Thread.sleep(50); // GH-90000
+            Thread.sleep(50); 
 
             // Send 1 more event — should NOT fire because the first 2 expired
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); // GH-90000
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "EVENT"))); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
         }
 
         @Test
-        void windowReAccumulatesAfterExpiry() throws InterruptedException { // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void windowReAccumulatesAfterExpiry() throws InterruptedException { 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("reaccum")
                     .eventTypeField("type")
                     .eventTypeValue("TICK")
-                    .threshold(2) // GH-90000
-                    .countingWindow(Duration.ofMillis(500)) // GH-90000
-                    .action("accumulated", true) // GH-90000
-                    .build(); // GH-90000
+                    .threshold(2) 
+                    .countingWindow(Duration.ofMillis(500)) 
+                    .action("accumulated", true) 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("reaccum-test", List.of(trigger)); // GH-90000
+            ReactiveAgent agent = createAgent("reaccum-test", List.of(trigger)); 
 
             // First batch — accumulates to threshold
-            runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); // GH-90000
-            var result1 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); // GH-90000
-            assertThat(result1.isSuccess()).isTrue(); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); 
+            var result1 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); 
+            assertThat(result1.isSuccess()).isTrue(); 
 
-            // Wait for window to expire (sleep > window duration) // GH-90000
-            Thread.sleep(750); // GH-90000
-            agent.resetState(); // GH-90000
+            // Wait for window to expire (sleep > window duration) 
+            Thread.sleep(750); 
+            agent.resetState(); 
 
             // Second batch — should re-accumulate from zero
-            var notFired = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); // GH-90000
-            assertThat(notFired.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            var notFired = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); 
+            assertThat(notFired.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
 
             // One more → reaches threshold again
-            var fired = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); // GH-90000
-            assertThat(fired.isSuccess()).isTrue(); // GH-90000
+            var fired = runOnEventloop(() -> agent.process(ctx, Map.of("type", "TICK"))); 
+            assertThat(fired.isSuccess()).isTrue(); 
         }
     }
 
@@ -145,64 +145,64 @@ class ReactiveAgentGapTest {
     class MultiTriggerMergeTests {
 
         @Test
-        void multipleTriggersSameEventTypeMergeActions() { // GH-90000
-            var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void multipleTriggersSameEventTypeMergeActions() { 
+            var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("log-trigger")
                     .eventTypeField("type")
                     .eventTypeValue("ERROR")
-                    .priority(10) // GH-90000
-                    .action("log", true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(10) 
+                    .action("log", true) 
+                    .build(); 
 
-            var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+            var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("alert-trigger")
                     .eventTypeField("type")
                     .eventTypeValue("ERROR")
-                    .priority(20) // GH-90000
-                    .action("alert", "CRITICAL") // GH-90000
-                    .build(); // GH-90000
+                    .priority(20) 
+                    .action("alert", "CRITICAL") 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("multi-merge", List.of(trigger1, trigger2)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ERROR"))); // GH-90000
+            ReactiveAgent agent = createAgent("multi-merge", List.of(trigger1, trigger2)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ERROR"))); 
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
             // Both triggers fire and actions merge
-            assertThat(result.getOutput()).containsEntry("log", true); // GH-90000
-            assertThat(result.getOutput()).containsEntry("alert", "CRITICAL"); // GH-90000
+            assertThat(result.getOutput()).containsEntry("log", true); 
+            assertThat(result.getOutput()).containsEntry("alert", "CRITICAL"); 
 
             assertThat(result.getOutput().get("_reactive.firedTriggers")).isInstanceOf(List.class);
             List<?> fired = (List<?>) result.getOutput().get("_reactive.firedTriggers");
-            assertThat(fired).hasSize(2); // GH-90000
-            assertThat(fired.containsAll(List.of("log-trigger", "alert-trigger"))).isTrue(); // GH-90000
+            assertThat(fired).hasSize(2); 
+            assertThat(fired.containsAll(List.of("log-trigger", "alert-trigger"))).isTrue(); 
         }
 
         @Test
-        void laterTriggerOverwritesConflictingKey() { // GH-90000
-            var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void laterTriggerOverwritesConflictingKey() { 
+            var trigger1 = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("first")
                     .eventTypeField("type")
                     .eventTypeValue("WARN")
-                    .priority(10) // GH-90000
-                    .action("severity", "LOW") // GH-90000
-                    .action("source", "first") // GH-90000
-                    .build(); // GH-90000
+                    .priority(10) 
+                    .action("severity", "LOW") 
+                    .action("source", "first") 
+                    .build(); 
 
-            var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+            var trigger2 = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("second")
                     .eventTypeField("type")
                     .eventTypeValue("WARN")
-                    .priority(20) // GH-90000
-                    .action("severity", "HIGH") // GH-90000
-                    .action("channel", "email") // GH-90000
-                    .build(); // GH-90000
+                    .priority(20) 
+                    .action("severity", "HIGH") 
+                    .action("channel", "email") 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("overwrite-merge", List.of(trigger1, trigger2)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "WARN"))); // GH-90000
+            ReactiveAgent agent = createAgent("overwrite-merge", List.of(trigger1, trigger2)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("type", "WARN"))); 
 
-            // trigger2 (priority 20, processed after 10) overwrites "severity" // GH-90000
-            assertThat(result.getOutput()).containsEntry("severity", "HIGH"); // GH-90000
-            assertThat(result.getOutput()).containsEntry("source", "first"); // GH-90000
-            assertThat(result.getOutput()).containsEntry("channel", "email"); // GH-90000
+            // trigger2 (priority 20, processed after 10) overwrites "severity" 
+            assertThat(result.getOutput()).containsEntry("severity", "HIGH"); 
+            assertThat(result.getOutput()).containsEntry("source", "first"); 
+            assertThat(result.getOutput()).containsEntry("channel", "email"); 
         }
     }
 
@@ -214,43 +214,43 @@ class ReactiveAgentGapTest {
     @DisplayName("Additional Condition Operators")
     class AdditionalOperatorTests {
 
-        private ReactiveAgent agentWithCondition(String op, String value) { // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        private ReactiveAgent agentWithCondition(String op, String value) { 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("cond")
                     .eventTypeField("type")
                     .eventTypeValue("E")
                     .conditionField("x")
-                    .conditionOperator(op) // GH-90000
-                    .conditionValue(value) // GH-90000
-                    .action("matched", true) // GH-90000
-                    .build(); // GH-90000
-            return createAgent("cond-" + op, List.of(trigger)); // GH-90000
+                    .conditionOperator(op) 
+                    .conditionValue(value) 
+                    .action("matched", true) 
+                    .build(); 
+            return createAgent("cond-" + op, List.of(trigger)); 
         }
 
         @Test
-        void greaterThanOrEqualOperator() { // GH-90000
-            ReactiveAgent agent = agentWithCondition(">=", "50"); // GH-90000
-            var exact = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "E", "x", "50"))); // GH-90000
-            assertThat(exact.isSuccess()).isTrue(); // GH-90000
+        void greaterThanOrEqualOperator() { 
+            ReactiveAgent agent = agentWithCondition(">=", "50"); 
+            var exact = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "E", "x", "50"))); 
+            assertThat(exact.isSuccess()).isTrue(); 
 
-            agent.resetState(); // GH-90000
-            var above = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "E", "x", "51"))); // GH-90000
-            assertThat(above.isSuccess()).isTrue(); // GH-90000
+            agent.resetState(); 
+            var above = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "E", "x", "51"))); 
+            assertThat(above.isSuccess()).isTrue(); 
         }
 
         @Test
-        void lessThanOrEqualOperator() { // GH-90000
-            ReactiveAgent agent = agentWithCondition("<=", "50"); // GH-90000
-            var exact = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "E", "x", "50"))); // GH-90000
-            assertThat(exact.isSuccess()).isTrue(); // GH-90000
+        void lessThanOrEqualOperator() { 
+            ReactiveAgent agent = agentWithCondition("<=", "50"); 
+            var exact = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "E", "x", "50"))); 
+            assertThat(exact.isSuccess()).isTrue(); 
 
-            agent.resetState(); // GH-90000
-            var below = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "E", "x", "49"))); // GH-90000
-            assertThat(below.isSuccess()).isTrue(); // GH-90000
+            agent.resetState(); 
+            var below = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "E", "x", "49"))); 
+            assertThat(below.isSuccess()).isTrue(); 
         }
     }
 
@@ -263,23 +263,23 @@ class ReactiveAgentGapTest {
     class NullConditionTests {
 
         @Test
-        void missingConditionFieldDoesNotMatch() { // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void missingConditionFieldDoesNotMatch() { 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("null-cond")
                     .eventTypeField("type")
                     .eventTypeValue("E")
                     .conditionField("missing")
                     .conditionOperator(">")
                     .conditionValue("10")
-                    .action("fired", true) // GH-90000
-                    .build(); // GH-90000
+                    .action("fired", true) 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("null-cond-test", List.of(trigger)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "E"))); // GH-90000
+            ReactiveAgent agent = createAgent("null-cond-test", List.of(trigger)); 
+            var result = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "E"))); 
 
             // Missing field → condition evaluates to false → skipped
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
         }
     }
 
@@ -292,30 +292,30 @@ class ReactiveAgentGapTest {
     class CooldownWindowInteractionTests {
 
         @Test
-        void triggerWithBothThresholdAndCooldown() { // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void triggerWithBothThresholdAndCooldown() { 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("combo")
                     .eventTypeField("type")
                     .eventTypeValue("ALERT")
-                    .threshold(2) // GH-90000
-                    .countingWindow(Duration.ofMinutes(5)) // GH-90000
-                    .cooldown(Duration.ofHours(1)) // GH-90000
-                    .action("action", "ESCALATE") // GH-90000
-                    .build(); // GH-90000
+                    .threshold(2) 
+                    .countingWindow(Duration.ofMinutes(5)) 
+                    .cooldown(Duration.ofHours(1)) 
+                    .action("action", "ESCALATE") 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("combo-test", List.of(trigger)); // GH-90000
+            ReactiveAgent agent = createAgent("combo-test", List.of(trigger)); 
 
             // Event 1: below threshold → SKIPPED
-            var r1 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); // GH-90000
-            assertThat(r1.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            var r1 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); 
+            assertThat(r1.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
 
             // Event 2: reaches threshold → fires
-            var r2 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); // GH-90000
-            assertThat(r2.isSuccess()).isTrue(); // GH-90000
+            var r2 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); 
+            assertThat(r2.isSuccess()).isTrue(); 
 
             // Event 3: would reach threshold again but cooldown prevents firing
-            var r3 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); // GH-90000
-            assertThat(r3.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            var r3 = runOnEventloop(() -> agent.process(ctx, Map.of("type", "ALERT"))); 
+            assertThat(r3.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
         }
     }
 
@@ -328,13 +328,13 @@ class ReactiveAgentGapTest {
     class NoTriggersTests {
 
         @Test
-        void noTriggersAlwaysReturnsSkipped() { // GH-90000
-            ReactiveAgent agent = createAgent("no-triggers", List.of()); // GH-90000
+        void noTriggersAlwaysReturnsSkipped() { 
+            ReactiveAgent agent = createAgent("no-triggers", List.of()); 
 
-            var result = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "ANYTHING"))); // GH-90000
+            var result = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "ANYTHING"))); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
         }
     }
 
@@ -347,22 +347,22 @@ class ReactiveAgentGapTest {
     class TriggerMetadataTests {
 
         @Test
-        void skippedResultContainsEmptyFiredList() { // GH-90000
-            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() // GH-90000
+        void skippedResultContainsEmptyFiredList() { 
+            var trigger = ReactiveAgentConfig.TriggerDefinition.builder() 
                     .name("non-matching")
                     .eventTypeField("type")
                     .eventTypeValue("SPECIFIC")
-                    .action("x", 1) // GH-90000
-                    .build(); // GH-90000
+                    .action("x", 1) 
+                    .build(); 
 
-            ReactiveAgent agent = createAgent("meta-skip", List.of(trigger)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, // GH-90000
-                    Map.of("type", "OTHER"))); // GH-90000
+            ReactiveAgent agent = createAgent("meta-skip", List.of(trigger)); 
+            var result = runOnEventloop(() -> agent.process(ctx, 
+                    Map.of("type", "OTHER"))); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
             assertThat(result.getOutput().get("_reactive.firedTriggers")).isInstanceOf(List.class);
             List<?> fired = (List<?>) result.getOutput().get("_reactive.firedTriggers");
-            assertThat(fired).isEmpty(); // GH-90000
+            assertThat(fired).isEmpty(); 
         }
     }
 }

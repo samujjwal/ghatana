@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.event;
@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 /**
- * Contract tests for event durability (D006). // GH-90000
+ * Contract tests for event durability (D006). 
  *
  * <p>Validates durability contract: stronger guarantees must meet weaker ones.
  *
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("EventDurability – Contract Tests (D006)")
 class EventDurabilityContractTest extends EventloopTestBase {
 
@@ -46,80 +46,80 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: all_ack_meets_majority_ack")
-        void allAckMeetsMajorityAck() { // GH-90000
+        void allAckMeetsMajorityAck() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.ALL_ACK,
                     50, 100, true
                 );
 
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)) // GH-90000
-                .isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)) // GH-90000
-                .isTrue(); // GH-90000
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)) 
+                .isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)) 
+                .isTrue(); 
         }
 
         @Test
         @DisplayName("[D006]: majority_ack_meets_leader_ack")
-        void majorityAckMeetsLeaderAck() { // GH-90000
+        void majorityAckMeetsLeaderAck() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                     30, 50, true
                 );
 
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)) // GH-90000
-                .isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)) // GH-90000
-                .isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.ALL_ACK)) // GH-90000
-                .isFalse(); // GH-90000
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)) 
+                .isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)) 
+                .isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.ALL_ACK)) 
+                .isFalse(); 
         }
 
         @Test
         @DisplayName("[D006]: leader_ack_meets_none")
-        void leaderAckMeetsNone() { // GH-90000
+        void leaderAckMeetsNone() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.LEADER_ACK,
                     10, 0, true
                 );
 
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)).isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isFalse(); // GH-90000
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)).isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.MAJORITY_ACK)).isFalse(); 
         }
 
         @Test
         @DisplayName("[D006]: fsync_ack_meets_all_ack_if_replicated")
-        void fsyncAckMeetsAllAckIfReplicated() { // GH-90000
+        void fsyncAckMeetsAllAckIfReplicated() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.FSYNC_ACK,
                     50, 100, true
                 );
 
             // FSYNC_ACK is higher than ALL_ACK in ordinal
-            assertThat(result.achievedLevel().ordinal()) // GH-90000
-                .isGreaterThan(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()); // GH-90000
+            assertThat(result.achievedLevel().ordinal()) 
+                .isGreaterThan(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()); 
         }
 
         @Test
         @DisplayName("[D006]: none_meets_only_none")
-        void noneMeetsOnlyNone() { // GH-90000
+        void noneMeetsOnlyNone() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.NONE,
                     0, 0, true
                 );
 
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); // GH-90000
-            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)).isFalse(); // GH-90000
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); 
+            assertThat(result.meetsLevel(EventDurabilityService.DurabilityLevel.LEADER_ACK)).isFalse(); 
         }
     }
 
@@ -133,22 +133,22 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: durability_levels_ordered_correctly")
-        void durabilityLevelsOrderedCorrectly() { // GH-90000
+        void durabilityLevelsOrderedCorrectly() { 
             // NONE < LEADER_ACK < MAJORITY_ACK < ALL_ACK < FSYNC_ACK
-            assertThat(EventDurabilityService.DurabilityLevel.NONE.ordinal()).isEqualTo(0); // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.LEADER_ACK.ordinal()).isEqualTo(1); // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()).isEqualTo(2); // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()).isEqualTo(3); // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.FSYNC_ACK.ordinal()).isEqualTo(4); // GH-90000
+            assertThat(EventDurabilityService.DurabilityLevel.NONE.ordinal()).isEqualTo(0); 
+            assertThat(EventDurabilityService.DurabilityLevel.LEADER_ACK.ordinal()).isEqualTo(1); 
+            assertThat(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()).isEqualTo(2); 
+            assertThat(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()).isEqualTo(3); 
+            assertThat(EventDurabilityService.DurabilityLevel.FSYNC_ACK.ordinal()).isEqualTo(4); 
         }
 
         @Test
         @DisplayName("[D006]: higher_level_ordinal_greater_than_lower")
-        void higherLevelOrdinalGreaterThanLower() { // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()) // GH-90000
-                .isGreaterThan(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()); // GH-90000
-            assertThat(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()) // GH-90000
-                .isGreaterThan(EventDurabilityService.DurabilityLevel.LEADER_ACK.ordinal()); // GH-90000
+        void higherLevelOrdinalGreaterThanLower() { 
+            assertThat(EventDurabilityService.DurabilityLevel.ALL_ACK.ordinal()) 
+                .isGreaterThan(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()); 
+            assertThat(EventDurabilityService.DurabilityLevel.MAJORITY_ACK.ordinal()) 
+                .isGreaterThan(EventDurabilityService.DurabilityLevel.LEADER_ACK.ordinal()); 
         }
     }
 
@@ -162,39 +162,39 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: consumer_acknowledges_durability")
-        void consumerAcknowledgesDurability() { // GH-90000
+        void consumerAcknowledgesDurability() { 
             String eventId = "evt-001";
             String consumerId = "consumer-001";
 
-            when(durabilityService.acknowledgeDurability(eventId, consumerId)) // GH-90000
-                .thenReturn(Promise.of((Void) null)); // GH-90000
+            when(durabilityService.acknowledgeDurability(eventId, consumerId)) 
+                .thenReturn(Promise.of((Void) null)); 
 
-            runPromise(() -> durabilityService.acknowledgeDurability(eventId, consumerId)); // GH-90000
+            runPromise(() -> durabilityService.acknowledgeDurability(eventId, consumerId)); 
 
-            verify(durabilityService).acknowledgeDurability(eventId, consumerId); // GH-90000
+            verify(durabilityService).acknowledgeDurability(eventId, consumerId); 
         }
 
         @Test
         @DisplayName("[D006]: acknowledged_consumers_tracked_in_status")
-        void acknowledgedConsumersTrackedInStatus() { // GH-90000
+        void acknowledgedConsumersTrackedInStatus() { 
             String eventId = "evt-001";
-            List<String> acknowledged = List.of("consumer-1", "consumer-2", "consumer-3"); // GH-90000
+            List<String> acknowledged = List.of("consumer-1", "consumer-2", "consumer-3"); 
 
             EventDurabilityService.DurabilityStatus status =
-                new EventDurabilityService.DurabilityStatus( // GH-90000
+                new EventDurabilityService.DurabilityStatus( 
                     eventId,
                     EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                     3, 2, true, acknowledged
                 );
 
-            when(durabilityService.getDurabilityStatus(eventId)) // GH-90000
-                .thenReturn(Promise.of(status)); // GH-90000
+            when(durabilityService.getDurabilityStatus(eventId)) 
+                .thenReturn(Promise.of(status)); 
 
-            EventDurabilityService.DurabilityStatus actual = runPromise(() -> // GH-90000
-                durabilityService.getDurabilityStatus(eventId) // GH-90000
+            EventDurabilityService.DurabilityStatus actual = runPromise(() -> 
+                durabilityService.getDurabilityStatus(eventId) 
             );
 
-            assertThat(actual.acknowledgedConsumers()).containsExactlyElementsOf(acknowledged); // GH-90000
+            assertThat(actual.acknowledgedConsumers()).containsExactlyElementsOf(acknowledged); 
         }
     }
 
@@ -208,37 +208,37 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: unsuccessful_result_does_not_meet_any_level")
-        void unsuccessfulResultDoesNotMeetAnyLevel() { // GH-90000
+        void unsuccessfulResultDoesNotMeetAnyLevel() { 
             EventDurabilityService.DurabilityResult failed =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-failed", 0,
                     EventDurabilityService.DurabilityLevel.NONE,
                     0, 0, false
                 );
 
-            assertThat(failed.successful()).isFalse(); // GH-90000
-            assertThat(failed.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); // GH-90000
+            assertThat(failed.successful()).isFalse(); 
+            assertThat(failed.meetsLevel(EventDurabilityService.DurabilityLevel.NONE)).isTrue(); 
             // A failed write at NONE level meets NONE but no higher level
         }
 
         @Test
         @DisplayName("[D006]: failed_write_reports_error")
-        void failedWriteReportsError() { // GH-90000
+        void failedWriteReportsError() { 
             EventDurabilityService.DurabilityResult failed =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-failed", 0,
                     EventDurabilityService.DurabilityLevel.NONE,
                     0, 0, false
                 );
 
-            assertThat(failed.offset()).isZero(); // GH-90000
-            assertThat(filledCount(failed)).isZero(); // GH-90000
+            assertThat(failed.offset()).isZero(); 
+            assertThat(filledCount(failed)).isZero(); 
         }
 
-        private int filledCount(EventDurabilityService.DurabilityResult result) { // GH-90000
+        private int filledCount(EventDurabilityService.DurabilityResult result) { 
             int count = 0;
-            if (result.fsyncLatencyMs() > 0) count++; // GH-90000
-            if (result.replicationLatencyMs() > 0) count++; // GH-90000
+            if (result.fsyncLatencyMs() > 0) count++; 
+            if (result.replicationLatencyMs() > 0) count++; 
             return count;
         }
     }
@@ -253,37 +253,37 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: default_durability_level_is_majority_ack")
-        void defaultDurabilityLevelIsMajorityAck() { // GH-90000
-            EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
+        void defaultDurabilityLevelIsMajorityAck() { 
+            EventDurabilityConfig config = new EventDurabilityConfig(); 
 
-            assertThat(config.getDefaultDurabilityLevel()) // GH-90000
-                .isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); // GH-90000
+            assertThat(config.getDefaultDurabilityLevel()) 
+                .isEqualTo(EventDurabilityService.DurabilityLevel.MAJORITY_ACK); 
         }
 
         @Test
         @DisplayName("[D006]: durability_timeout_configurable")
-        void durabilityTimeoutConfigurable() { // GH-90000
-            EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
-            config.setDurabilityTimeout(Duration.ofSeconds(60)); // GH-90000
+        void durabilityTimeoutConfigurable() { 
+            EventDurabilityConfig config = new EventDurabilityConfig(); 
+            config.setDurabilityTimeout(Duration.ofSeconds(60)); 
 
-            assertThat(config.getDurabilityTimeout()).isEqualTo(Duration.ofSeconds(60)); // GH-90000
+            assertThat(config.getDurabilityTimeout()).isEqualTo(Duration.ofSeconds(60)); 
         }
 
         @Test
         @DisplayName("[D006]: required_replica_count_configurable")
-        void requiredReplicaCountConfigurable() { // GH-90000
-            EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
-            config.setRequiredReplicaCount(3); // GH-90000
+        void requiredReplicaCountConfigurable() { 
+            EventDurabilityConfig config = new EventDurabilityConfig(); 
+            config.setRequiredReplicaCount(3); 
 
-            assertThat(config.getRequiredReplicaCount()).isEqualTo(3); // GH-90000
+            assertThat(config.getRequiredReplicaCount()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("[D006]: fsync_enabled_by_default")
-        void fsyncEnabledByDefault() { // GH-90000
-            EventDurabilityConfig config = new EventDurabilityConfig(); // GH-90000
+        void fsyncEnabledByDefault() { 
+            EventDurabilityConfig config = new EventDurabilityConfig(); 
 
-            assertThat(config.isFsyncEnabled()).isTrue(); // GH-90000
+            assertThat(config.isFsyncEnabled()).isTrue(); 
         }
     }
 
@@ -297,41 +297,41 @@ class EventDurabilityContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D006]: fsync_latency_tracked")
-        void fsyncLatencyTracked() { // GH-90000
+        void fsyncLatencyTracked() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.FSYNC_ACK,
                     50, 30, true
                 );
 
-            assertThat(result.fsyncLatencyMs()).isEqualTo(50); // GH-90000
+            assertThat(result.fsyncLatencyMs()).isEqualTo(50); 
         }
 
         @Test
         @DisplayName("[D006]: replication_latency_tracked")
-        void replicationLatencyTracked() { // GH-90000
+        void replicationLatencyTracked() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.MAJORITY_ACK,
                     10, 100, true
                 );
 
-            assertThat(result.replicationLatencyMs()).isEqualTo(100); // GH-90000
+            assertThat(result.replicationLatencyMs()).isEqualTo(100); 
         }
 
         @Test
         @DisplayName("[D006]: leader_ack_has_no_replication_latency")
-        void leaderAckHasNoReplicationLatency() { // GH-90000
+        void leaderAckHasNoReplicationLatency() { 
             EventDurabilityService.DurabilityResult result =
-                new EventDurabilityService.DurabilityResult( // GH-90000
+                new EventDurabilityService.DurabilityResult( 
                     "evt-001", 1,
                     EventDurabilityService.DurabilityLevel.LEADER_ACK,
                     10, 0, true
                 );
 
-            assertThat(result.replicationLatencyMs()).isZero(); // GH-90000
+            assertThat(result.replicationLatencyMs()).isZero(); 
         }
     }
 }

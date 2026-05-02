@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer   registry
  * @doc.pattern Test, Mockito
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AgentCatalogQueryTest")
 class AgentCatalogQueryTest extends EventloopTestBase {
 
@@ -61,45 +61,45 @@ class AgentCatalogQueryTest extends EventloopTestBase {
     private DataCloudAgentRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new DataCloudAgentRegistry(dataCloud, TENANT); // GH-90000
+    void setUp() { 
+        registry = new DataCloudAgentRegistry(dataCloud, TENANT); 
 
-        lenient().when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
-        lenient().when(dataCloud.createEntity(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), anyMap())) // GH-90000
-                .thenReturn(Promise.of(mockEntity)); // GH-90000
-        lenient().when(dataCloud.appendEvent(eq(TENANT), anyString(), any())) // GH-90000
-                .thenReturn(Promise.of(0L)); // GH-90000
+        lenient().when(mockEntity.getId()).thenReturn(UUID.randomUUID()); 
+        lenient().when(dataCloud.createEntity(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), anyMap())) 
+                .thenReturn(Promise.of(mockEntity)); 
+        lenient().when(dataCloud.appendEvent(eq(TENANT), anyString(), any())) 
+                .thenReturn(Promise.of(0L)); 
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
-    private static TypedAgent<String, String> mockAgent(String id, // GH-90000
+    private static TypedAgent<String, String> mockAgent(String id, 
                                                          AgentType type,
                                                          Set<String> capabilities) {
-        TypedAgent<String, String> agent = org.mockito.Mockito.mock(TypedAgent.class); // GH-90000
-        AgentDescriptor descriptor = AgentDescriptor.builder() // GH-90000
-                .agentId(id) // GH-90000
-                .type(type) // GH-90000
-                .determinism(DeterminismGuarantee.FULL) // GH-90000
-                .capabilities(capabilities) // GH-90000
-                .build(); // GH-90000
-        lenient().when(agent.descriptor()).thenReturn(descriptor); // GH-90000
+        TypedAgent<String, String> agent = org.mockito.Mockito.mock(TypedAgent.class); 
+        AgentDescriptor descriptor = AgentDescriptor.builder() 
+                .agentId(id) 
+                .type(type) 
+                .determinism(DeterminismGuarantee.FULL) 
+                .capabilities(capabilities) 
+                .build(); 
+        lenient().when(agent.descriptor()).thenReturn(descriptor); 
         return agent;
     }
 
-    private static AgentConfig configFor(String id) { // GH-90000
-        return AgentConfig.builder() // GH-90000
-                .agentId(id) // GH-90000
-                .timeout(Duration.ofSeconds(10)) // GH-90000
-                .build(); // GH-90000
+    private static AgentConfig configFor(String id) { 
+        return AgentConfig.builder() 
+                .agentId(id) 
+                .timeout(Duration.ofSeconds(10)) 
+                .build(); 
     }
 
-    private void registerAll(TypedAgent<?, ?> ... agents) { // GH-90000
-        for (TypedAgent<?, ?> agent : agents) { // GH-90000
+    private void registerAll(TypedAgent<?, ?> ... agents) { 
+        for (TypedAgent<?, ?> agent : agents) { 
             @SuppressWarnings("unchecked")
-            TypedAgent<String, String> typed = (TypedAgent<String, String>) agent; // GH-90000
-            runPromise(() -> registry.register(typed, configFor(typed.descriptor().getAgentId()))); // GH-90000
+            TypedAgent<String, String> typed = (TypedAgent<String, String>) agent; 
+            runPromise(() -> registry.register(typed, configFor(typed.descriptor().getAgentId()))); 
         }
     }
 
@@ -111,33 +111,33 @@ class AgentCatalogQueryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns empty set when no agents are registered")
-        void emptyWhenNoneRegistered() { // GH-90000
-            Set<String> ids = runPromise(() -> registry.listAgentIds()); // GH-90000
-            assertThat(ids).isEmpty(); // GH-90000
+        void emptyWhenNoneRegistered() { 
+            Set<String> ids = runPromise(() -> registry.listAgentIds()); 
+            assertThat(ids).isEmpty(); 
         }
 
         @Test
         @DisplayName("returns all registered agent IDs")
-        void returnsAllRegisteredIds() { // GH-90000
+        void returnsAllRegisteredIds() { 
             TypedAgent<String, String> a = mockAgent("list-a", AgentType.DETERMINISTIC, Set.of("cap"));
             TypedAgent<String, String> b = mockAgent("list-b", AgentType.PROBABILISTIC, Set.of("score"));
-            TypedAgent<String, String> c = mockAgent("list-c", AgentType.HYBRID, Set.of("cap", "score")); // GH-90000
+            TypedAgent<String, String> c = mockAgent("list-c", AgentType.HYBRID, Set.of("cap", "score")); 
 
-            registerAll(a, b, c); // GH-90000
+            registerAll(a, b, c); 
 
-            Set<String> ids = runPromise(() -> registry.listAgentIds()); // GH-90000
-            assertThat(ids).containsExactlyInAnyOrder("list-a", "list-b", "list-c"); // GH-90000
+            Set<String> ids = runPromise(() -> registry.listAgentIds()); 
+            assertThat(ids).containsExactlyInAnyOrder("list-a", "list-b", "list-c"); 
         }
 
         @Test
         @DisplayName("returns an immutable snapshot — mutations do not affect live map")
-        void returnsImmutableSnapshot() { // GH-90000
-            TypedAgent<String, String> a = mockAgent("snap-a", AgentType.DETERMINISTIC, Set.of()); // GH-90000
-            registerAll(a); // GH-90000
+        void returnsImmutableSnapshot() { 
+            TypedAgent<String, String> a = mockAgent("snap-a", AgentType.DETERMINISTIC, Set.of()); 
+            registerAll(a); 
 
-            Set<String> snapshot = runPromise(() -> registry.listAgentIds()); // GH-90000
+            Set<String> snapshot = runPromise(() -> registry.listAgentIds()); 
             // The returned snapshot should not be backed by the live map
-            assertThat(snapshot).isNotSameAs(registry); // structural guard // GH-90000
+            assertThat(snapshot).isNotSameAs(registry); // structural guard 
             assertThat(snapshot).contains("snap-a");
         }
     }
@@ -150,37 +150,37 @@ class AgentCatalogQueryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("filters to only agents that advertise the requested capability")
-        void filtersToMatchingCapability() { // GH-90000
+        void filtersToMatchingCapability() { 
             TypedAgent<String, String> fraud  = mockAgent("filter-fraud",  AgentType.DETERMINISTIC, Set.of("fraud-detection"));
-            TypedAgent<String, String> hybrid = mockAgent("filter-hybrid", AgentType.HYBRID,        Set.of("fraud-detection", "anomaly")); // GH-90000
+            TypedAgent<String, String> hybrid = mockAgent("filter-hybrid", AgentType.HYBRID,        Set.of("fraud-detection", "anomaly")); 
             TypedAgent<String, String> other  = mockAgent("filter-other",  AgentType.PROBABILISTIC, Set.of("sentiment"));
 
-            registerAll(fraud, hybrid, other); // GH-90000
+            registerAll(fraud, hybrid, other); 
 
             List<String> results = runPromise(() -> registry.findByCapability("fraud-detection"));
 
-            assertThat(results).containsExactlyInAnyOrder("filter-fraud", "filter-hybrid"); // GH-90000
+            assertThat(results).containsExactlyInAnyOrder("filter-fraud", "filter-hybrid"); 
             assertThat(results).doesNotContain("filter-other");
         }
 
         @Test
         @DisplayName("empty list when capability is not advertised by any agent")
-        void emptyListForUnknownCapability() { // GH-90000
+        void emptyListForUnknownCapability() { 
             TypedAgent<String, String> agent = mockAgent("no-match-agent", AgentType.DETERMINISTIC, Set.of("known-cap"));
-            registerAll(agent); // GH-90000
+            registerAll(agent); 
 
             List<String> results = runPromise(() -> registry.findByCapability("unknown-cap"));
-            assertThat(results).isEmpty(); // GH-90000
+            assertThat(results).isEmpty(); 
         }
 
         @Test
         @DisplayName("agent advertising multiple capabilities matches each individually")
-        void multiCapabilityAgentMatchesEachCapability() { // GH-90000
-            TypedAgent<String, String> agent = mockAgent( // GH-90000
+        void multiCapabilityAgentMatchesEachCapability() { 
+            TypedAgent<String, String> agent = mockAgent( 
                     "multi-cap-agent", AgentType.COMPOSITE,
-                    Set.of("classification", "ranking", "search") // GH-90000
+                    Set.of("classification", "ranking", "search") 
             );
-            registerAll(agent); // GH-90000
+            registerAll(agent); 
 
             assertThat(runPromise(() -> registry.findByCapability("classification"))).contains("multi-cap-agent");
             assertThat(runPromise(() -> registry.findByCapability("ranking"))).contains("multi-cap-agent");
@@ -196,23 +196,23 @@ class AgentCatalogQueryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("results are sorted by agent ID in ascending alphabetical order")
-        void sortedAlphabeticallyByAgentId() { // GH-90000
+        void sortedAlphabeticallyByAgentId() { 
             TypedAgent<String, String> z = mockAgent("sort-z", AgentType.DETERMINISTIC, Set.of("sort-cap"));
             TypedAgent<String, String> a = mockAgent("sort-a", AgentType.DETERMINISTIC, Set.of("sort-cap"));
             TypedAgent<String, String> m = mockAgent("sort-m", AgentType.DETERMINISTIC, Set.of("sort-cap"));
 
-            registerAll(z, a, m); // GH-90000
+            registerAll(z, a, m); 
 
             List<String> results = runPromise(() -> registry.findByCapability("sort-cap"));
 
-            assertThat(results).containsExactly("sort-a", "sort-m", "sort-z"); // GH-90000
+            assertThat(results).containsExactly("sort-a", "sort-m", "sort-z"); 
         }
 
         @Test
         @DisplayName("single-result query is still returned as a list")
-        void singleResultReturnedAsList() { // GH-90000
+        void singleResultReturnedAsList() { 
             TypedAgent<String, String> agent = mockAgent("only-agent", AgentType.REACTIVE, Set.of("unique-cap"));
-            registerAll(agent); // GH-90000
+            registerAll(agent); 
 
             List<String> results = runPromise(() -> registry.findByCapability("unique-cap"));
 
@@ -228,43 +228,43 @@ class AgentCatalogQueryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("stats report live agent count from in-memory cache")
-        void statsReportLiveAgentCount() { // GH-90000
-            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(2L)); // GH-90000
+        void statsReportLiveAgentCount() { 
+            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) 
+                    .thenReturn(Promise.of(2L)); 
 
-            TypedAgent<String, String> a = mockAgent("stats-a", AgentType.DETERMINISTIC, Set.of()); // GH-90000
-            TypedAgent<String, String> b = mockAgent("stats-b", AgentType.PROBABILISTIC, Set.of()); // GH-90000
-            registerAll(a, b); // GH-90000
+            TypedAgent<String, String> a = mockAgent("stats-a", AgentType.DETERMINISTIC, Set.of()); 
+            TypedAgent<String, String> b = mockAgent("stats-b", AgentType.PROBABILISTIC, Set.of()); 
+            registerAll(a, b); 
 
-            Map<String, Object> stats = runPromise(() -> registry.getStats()); // GH-90000
+            Map<String, Object> stats = runPromise(() -> registry.getStats()); 
 
-            assertThat(stats).containsEntry("registeredAgents", 2); // GH-90000
-            assertThat(stats).containsEntry("persistedAgents", 2L); // GH-90000
-            assertThat(stats).containsEntry("registryType", "DataCloud"); // GH-90000
-            assertThat(stats).containsEntry("registryTenantId", TENANT); // GH-90000
+            assertThat(stats).containsEntry("registeredAgents", 2); 
+            assertThat(stats).containsEntry("persistedAgents", 2L); 
+            assertThat(stats).containsEntry("registryType", "DataCloud"); 
+            assertThat(stats).containsEntry("registryTenantId", TENANT); 
         }
 
         @Test
         @DisplayName("stats map is unmodifiable")
-        void statsMapIsUnmodifiable() { // GH-90000
-            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(0L)); // GH-90000
+        void statsMapIsUnmodifiable() { 
+            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) 
+                    .thenReturn(Promise.of(0L)); 
 
-            Map<String, Object> stats = runPromise(() -> registry.getStats()); // GH-90000
+            Map<String, Object> stats = runPromise(() -> registry.getStats()); 
 
-            org.assertj.core.api.Assertions.assertThatExceptionOfType(UnsupportedOperationException.class) // GH-90000
-                    .isThrownBy(() -> stats.put("extra", "value")); // GH-90000
+            org.assertj.core.api.Assertions.assertThatExceptionOfType(UnsupportedOperationException.class) 
+                    .isThrownBy(() -> stats.put("extra", "value")); 
         }
 
         @Test
         @DisplayName("empty registry reports zero registered agents")
-        void emptyRegistryReportsZero() { // GH-90000
-            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(0L)); // GH-90000
+        void emptyRegistryReportsZero() { 
+            when(dataCloud.countEntities(eq(TENANT), eq(DataCloudAgentRegistry.REGISTRY_COLLECTION), any())) 
+                    .thenReturn(Promise.of(0L)); 
 
-            Map<String, Object> stats = runPromise(() -> registry.getStats()); // GH-90000
+            Map<String, Object> stats = runPromise(() -> registry.getStats()); 
 
-            assertThat(stats).containsEntry("registeredAgents", 0); // GH-90000
+            assertThat(stats).containsEntry("registeredAgents", 0); 
         }
     }
 }

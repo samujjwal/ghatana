@@ -18,44 +18,44 @@ class TraceContextTest {
 
   @Test
   @DisplayName("should create TraceContext with all fields")
-  void shouldCreateTraceContext() { // GH-90000
+  void shouldCreateTraceContext() { 
     String traceId = "trace-123";
     String spanId = "span-456";
 
-    TraceContext context = new TraceContext(traceId, spanId); // GH-90000
+    TraceContext context = new TraceContext(traceId, spanId); 
 
-    assertThat(context.traceId()).isEqualTo(traceId); // GH-90000
-    assertThat(context.spanId()).isEqualTo(spanId); // GH-90000
+    assertThat(context.traceId()).isEqualTo(traceId); 
+    assertThat(context.spanId()).isEqualTo(spanId); 
   }
 
   @Test
   @DisplayName("should create TraceContext with single traceId")
-  void shouldCreateWithSingleTraceId() { // GH-90000
+  void shouldCreateWithSingleTraceId() { 
     String traceId = "trace-123";
 
-    TraceContext context = new TraceContext(traceId, null); // GH-90000
+    TraceContext context = new TraceContext(traceId, null); 
 
-    assertThat(context.traceId()).isEqualTo(traceId); // GH-90000
-    assertThat(context.spanId()).isNull(); // GH-90000
+    assertThat(context.traceId()).isEqualTo(traceId); 
+    assertThat(context.spanId()).isNull(); 
   }
 
   @Test
   @DisplayName("should implement equals correctly")
-  void shouldImplementEquals() { // GH-90000
-    TraceContext ctx1 = new TraceContext("trace-1", "span-1"); // GH-90000
-    TraceContext ctx2 = new TraceContext("trace-1", "span-1"); // GH-90000
-    TraceContext ctx3 = new TraceContext("trace-2", "span-2"); // GH-90000
+  void shouldImplementEquals() { 
+    TraceContext ctx1 = new TraceContext("trace-1", "span-1"); 
+    TraceContext ctx2 = new TraceContext("trace-1", "span-1"); 
+    TraceContext ctx3 = new TraceContext("trace-2", "span-2"); 
 
-    assertThat(ctx1).isEqualTo(ctx2); // GH-90000
-    assertThat(ctx1).isNotEqualTo(ctx3); // GH-90000
+    assertThat(ctx1).isEqualTo(ctx2); 
+    assertThat(ctx1).isNotEqualTo(ctx3); 
   }
 
   @Test
   @DisplayName("should handle null values")
-  void shouldHandleNullValues() { // GH-90000
-    TraceContext context = new TraceContext(null, null); // GH-90000
+  void shouldHandleNullValues() { 
+    TraceContext context = new TraceContext(null, null); 
 
-    assertThat(context.traceId()).isNull(); // GH-90000
-    assertThat(context.spanId()).isNull(); // GH-90000
+    assertThat(context.traceId()).isNull(); 
+    assertThat(context.spanId()).isNull(); 
   }
 }

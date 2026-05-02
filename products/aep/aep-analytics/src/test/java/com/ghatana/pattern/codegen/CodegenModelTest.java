@@ -12,23 +12,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @DisplayName("Codegen Model Tests")
 class CodegenModelTest {
 
-    private final SanitizedFieldNamingStrategy strategy = new SanitizedFieldNamingStrategy(); // GH-90000
+    private final SanitizedFieldNamingStrategy strategy = new SanitizedFieldNamingStrategy(); 
 
     @Test
     @DisplayName("sanitized naming strategy normalizes mixed input into java-safe field names")
-    void sanitizedNamingStrategyNormalizesMixedInputIntoJavaSafeFieldNames() { // GH-90000
+    void sanitizedNamingStrategyNormalizesMixedInputIntoJavaSafeFieldNames() { 
         assertEquals("customerId", strategy.toFieldName("Customer ID"));
                 assertEquals("f123Status", strategy.toFieldName("123-status"));
         assertEquals("classValue", strategy.toFieldName("class"));
-        assertEquals("field", strategy.toFieldName(null)); // GH-90000
+        assertEquals("field", strategy.toFieldName(null)); 
         assertEquals("field", strategy.toFieldName("   "));
         assertEquals("field", strategy.toFieldName("---"));
     }
 
     @Test
     @DisplayName("field definition preserves values and derives getter name")
-    void fieldDefinitionPreservesValuesAndDerivesGetterName() { // GH-90000
-        FieldDefinition definition = new FieldDefinition( // GH-90000
+    void fieldDefinitionPreservesValuesAndDerivesGetterName() { 
+        FieldDefinition definition = new FieldDefinition( 
                 "event_id",
                 "eventId",
                 String.class,
@@ -36,7 +36,7 @@ class CodegenModelTest {
                 FieldCategory.HEADER,
                 null
         );
-        FieldDefinition singleLetterDefinition = new FieldDefinition( // GH-90000
+        FieldDefinition singleLetterDefinition = new FieldDefinition( 
                 "x",
                 "x",
                 Integer.class,
@@ -45,27 +45,27 @@ class CodegenModelTest {
                 "Count"
         );
 
-        assertEquals("event_id", definition.originalName()); // GH-90000
-        assertEquals("eventId", definition.javaName()); // GH-90000
-        assertEquals(String.class, definition.javaType()); // GH-90000
-        assertEquals(true, definition.required()); // GH-90000
-        assertEquals(FieldCategory.HEADER, definition.category()); // GH-90000
-        assertEquals("", definition.description()); // GH-90000
-        assertEquals("getEventId", definition.getterName()); // GH-90000
-        assertEquals("getX", singleLetterDefinition.getterName()); // GH-90000
-        assertEquals("Count", singleLetterDefinition.description()); // GH-90000
+        assertEquals("event_id", definition.originalName()); 
+        assertEquals("eventId", definition.javaName()); 
+        assertEquals(String.class, definition.javaType()); 
+        assertEquals(true, definition.required()); 
+        assertEquals(FieldCategory.HEADER, definition.category()); 
+        assertEquals("", definition.description()); 
+        assertEquals("getEventId", definition.getterName()); 
+        assertEquals("getX", singleLetterDefinition.getterName()); 
+        assertEquals("Count", singleLetterDefinition.description()); 
     }
 
     @Test
     @DisplayName("field definition rejects required null constructor arguments")
-    void fieldDefinitionRejectsRequiredNullConstructorArguments() { // GH-90000
-        assertThrows(NullPointerException.class, // GH-90000
-                () -> new FieldDefinition(null, "field", String.class, true, FieldCategory.PAYLOAD, "desc")); // GH-90000
-        assertThrows(NullPointerException.class, // GH-90000
-                () -> new FieldDefinition("orig", null, String.class, true, FieldCategory.PAYLOAD, "desc")); // GH-90000
-        assertThrows(NullPointerException.class, // GH-90000
-                () -> new FieldDefinition("orig", "field", null, true, FieldCategory.PAYLOAD, "desc")); // GH-90000
-        assertThrows(NullPointerException.class, // GH-90000
-                () -> new FieldDefinition("orig", "field", String.class, true, null, "desc")); // GH-90000
+    void fieldDefinitionRejectsRequiredNullConstructorArguments() { 
+        assertThrows(NullPointerException.class, 
+                () -> new FieldDefinition(null, "field", String.class, true, FieldCategory.PAYLOAD, "desc")); 
+        assertThrows(NullPointerException.class, 
+                () -> new FieldDefinition("orig", null, String.class, true, FieldCategory.PAYLOAD, "desc")); 
+        assertThrows(NullPointerException.class, 
+                () -> new FieldDefinition("orig", "field", null, true, FieldCategory.PAYLOAD, "desc")); 
+        assertThrows(NullPointerException.class, 
+                () -> new FieldDefinition("orig", "field", String.class, true, null, "desc")); 
     }
 }

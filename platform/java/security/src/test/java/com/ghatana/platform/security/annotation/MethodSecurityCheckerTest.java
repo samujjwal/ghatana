@@ -27,46 +27,46 @@ class MethodSecurityCheckerTest {
 
         @Test
         @DisplayName("Should deny access when principal is null and @Secured is present")
-        void shouldDenyAccessWhenPrincipalNullAndSecuredPresent() throws NoSuchMethodException { // GH-90000
-            MethodSecurityChecker checker = new MethodSecurityChecker(null); // GH-90000
+        void shouldDenyAccessWhenPrincipalNullAndSecuredPresent() throws NoSuchMethodException { 
+            MethodSecurityChecker checker = new MethodSecurityChecker(null); 
             Method method = TestHandler.class.getMethod("securedMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
 
         @Test
         @DisplayName("Should grant access when principal is present and @Secured is present")
-        void shouldGrantAccessWhenPrincipalPresentAndSecuredPresent() throws NoSuchMethodException { // GH-90000
+        void shouldGrantAccessWhenPrincipalPresentAndSecuredPresent() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("securedMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should grant access to class with @Secured when principal is present")
-        void shouldGrantAccessToClassWithSecuredWhenPrincipalPresent() { // GH-90000
+        void shouldGrantAccessToClassWithSecuredWhenPrincipalPresent() { 
             Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             
-            boolean result = checker.checkClassLevelAccess(TestHandler.class); // GH-90000
+            boolean result = checker.checkClassLevelAccess(TestHandler.class); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should deny access to class with @Secured when principal is null")
-        void shouldDenyAccessToClassWithSecuredWhenPrincipalNull() { // GH-90000
-            MethodSecurityChecker checker = new MethodSecurityChecker(null); // GH-90000
+        void shouldDenyAccessToClassWithSecuredWhenPrincipalNull() { 
+            MethodSecurityChecker checker = new MethodSecurityChecker(null); 
             
-            boolean result = checker.checkClassLevelAccess(TestHandler.class); // GH-90000
+            boolean result = checker.checkClassLevelAccess(TestHandler.class); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
     }
 
@@ -76,86 +76,86 @@ class MethodSecurityCheckerTest {
 
         @Test
         @DisplayName("Should grant access when principal has required role")
-        void shouldGrantAccessWhenPrincipalHasRequiredRole() throws NoSuchMethodException { // GH-90000
+        void shouldGrantAccessWhenPrincipalHasRequiredRole() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("adminMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should deny access when principal lacks required role")
-        void shouldDenyAccessWhenPrincipalLacksRequiredRole() throws NoSuchMethodException { // GH-90000
+        void shouldDenyAccessWhenPrincipalLacksRequiredRole() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("adminMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
 
         @Test
         @DisplayName("Should grant access when principal has any of the required roles (OR semantics)")
-        void shouldGrantAccessWhenPrincipalHasAnyRequiredRole() throws NoSuchMethodException { // GH-90000
+        void shouldGrantAccessWhenPrincipalHasAnyRequiredRole() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("VIEWER"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("operatorOrViewerMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should deny access when principal has none of the required roles (OR semantics)")
-        void shouldDenyAccessWhenPrincipalHasNoneRequiredRole() throws NoSuchMethodException { // GH-90000
+        void shouldDenyAccessWhenPrincipalHasNoneRequiredRole() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("GUEST"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("operatorOrViewerMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
 
         @Test
         @DisplayName("Should grant access when principal has all required roles (AND semantics)")
-        void shouldGrantAccessWhenPrincipalHasAllRequiredRoles() throws NoSuchMethodException { // GH-90000
-            Principal principal = new Principal("user1", List.of("ADMIN", "OPERATOR"), "tenant1"); // GH-90000
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+        void shouldGrantAccessWhenPrincipalHasAllRequiredRoles() throws NoSuchMethodException { 
+            Principal principal = new Principal("user1", List.of("ADMIN", "OPERATOR"), "tenant1"); 
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("adminAndOperatorMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should deny access when principal lacks some required roles (AND semantics)")
-        void shouldDenyAccessWhenPrincipalLacksSomeRequiredRoles() throws NoSuchMethodException { // GH-90000
+        void shouldDenyAccessWhenPrincipalLacksSomeRequiredRoles() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("adminAndOperatorMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
 
         @Test
         @DisplayName("Should handle case-insensitive role matching")
-        void shouldHandleCaseInsensitiveRoleMatching() throws NoSuchMethodException { // GH-90000
+        void shouldHandleCaseInsensitiveRoleMatching() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("admin"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("adminMethod");
             
-            boolean result = checker.checkMethodLevelAccess(method); // GH-90000
+            boolean result = checker.checkMethodLevelAccess(method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
     }
 
@@ -165,26 +165,26 @@ class MethodSecurityCheckerTest {
 
         @Test
         @DisplayName("Should check both class and method level annotations")
-        void shouldCheckBothClassAndMethodLevelAnnotations() throws NoSuchMethodException { // GH-90000
+        void shouldCheckBothClassAndMethodLevelAnnotations() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("classAdminMethod");
             
-            boolean result = checker.checkAccess(TestHandler.class, method); // GH-90000
+            boolean result = checker.checkAccess(TestHandler.class, method); 
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("Should deny when method annotation fails even if class annotation passes")
-        void shouldDenyWhenMethodAnnotationFailsEvenIfClassPasses() throws NoSuchMethodException { // GH-90000
+        void shouldDenyWhenMethodAnnotationFailsEvenIfClassPasses() throws NoSuchMethodException { 
             Principal principal = new Principal("user1", List.of("ADMIN"), "tenant1");
-            MethodSecurityChecker checker = new MethodSecurityChecker(principal); // GH-90000
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal); 
             Method method = TestHandler.class.getMethod("classAdminMethodViewerRequired");
             
-            boolean result = checker.checkAccess(TestHandler.class, method); // GH-90000
+            boolean result = checker.checkAccess(TestHandler.class, method); 
             
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
     }
 
@@ -193,27 +193,27 @@ class MethodSecurityCheckerTest {
     static class TestHandler {
 
         @Secured
-        public void securedMethod() { // GH-90000
+        public void securedMethod() { 
         }
 
         @RequiresRole("ADMIN")
-        public void adminMethod() { // GH-90000
+        public void adminMethod() { 
         }
 
-        @RequiresRole({"OPERATOR", "VIEWER"}) // GH-90000
-        public void operatorOrViewerMethod() { // GH-90000
+        @RequiresRole({"OPERATOR", "VIEWER"}) 
+        public void operatorOrViewerMethod() { 
         }
 
-        @RequiresRole(value = {"ADMIN", "OPERATOR"}, requireAll = true) // GH-90000
-        public void adminAndOperatorMethod() { // GH-90000
+        @RequiresRole(value = {"ADMIN", "OPERATOR"}, requireAll = true) 
+        public void adminAndOperatorMethod() { 
         }
 
         @RequiresRole("ADMIN")
-        public void classAdminMethod() { // GH-90000
+        public void classAdminMethod() { 
         }
 
         @RequiresRole("VIEWER")
-        public void classAdminMethodViewerRequired() { // GH-90000
+        public void classAdminMethodViewerRequired() { 
         }
     }
 }

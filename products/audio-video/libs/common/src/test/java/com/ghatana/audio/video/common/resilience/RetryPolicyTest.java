@@ -26,10 +26,10 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("defaults: creates policy with sensible defaults")
-    void defaults_hasSensibleConfiguration() { // GH-90000
+    void defaults_hasSensibleConfiguration() { 
         // Should not throw
-        RetryPolicy policy = RetryPolicy.defaults(); // GH-90000
-        assertThat(policy).isNotNull(); // GH-90000
+        RetryPolicy policy = RetryPolicy.defaults(); 
+        assertThat(policy).isNotNull(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -38,10 +38,10 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("executeWithResult: success on first attempt → returns result")
-    void executeWithResult_successFirstAttempt_returnsResult() throws InterruptedException { // GH-90000
-        RetryPolicy policy = RetryPolicy.builder().maxAttempts(3).build(); // GH-90000
+    void executeWithResult_successFirstAttempt_returnsResult() throws InterruptedException { 
+        RetryPolicy policy = RetryPolicy.builder().maxAttempts(3).build(); 
 
-        String result = policy.executeWithResult(() -> "hello"); // GH-90000
+        String result = policy.executeWithResult(() -> "hello"); 
 
         assertThat(result).isEqualTo("hello");
     }
@@ -52,23 +52,23 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("executeWithResult: fails twice then succeeds → result returned")
-    void executeWithResult_failsTwiceThenSucceeds_returnsResult() throws InterruptedException { // GH-90000
-        AtomicInteger calls = new AtomicInteger(0); // GH-90000
-        RetryPolicy policy = RetryPolicy.builder() // GH-90000
-            .maxAttempts(3) // GH-90000
-            .initialDelay(Duration.ofMillis(1)) // GH-90000
-            .jitterFactor(0) // GH-90000
-            .build(); // GH-90000
+    void executeWithResult_failsTwiceThenSucceeds_returnsResult() throws InterruptedException { 
+        AtomicInteger calls = new AtomicInteger(0); 
+        RetryPolicy policy = RetryPolicy.builder() 
+            .maxAttempts(3) 
+            .initialDelay(Duration.ofMillis(1)) 
+            .jitterFactor(0) 
+            .build(); 
 
-        String result = policy.executeWithResult(() -> { // GH-90000
-            if (calls.incrementAndGet() < 3) { // GH-90000
+        String result = policy.executeWithResult(() -> { 
+            if (calls.incrementAndGet() < 3) { 
                 throw new RuntimeException("transient error");
             }
             return "success";
         });
 
         assertThat(result).isEqualTo("success");
-        assertThat(calls.get()).isEqualTo(3); // GH-90000
+        assertThat(calls.get()).isEqualTo(3); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,26 +77,26 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("executeWithResult: all attempts fail → RetryExhaustedException thrown")
-    void executeWithResult_allAttemptsFail_throwsRetryExhausted() { // GH-90000
-        AtomicInteger calls = new AtomicInteger(0); // GH-90000
-        RetryPolicy policy = RetryPolicy.builder() // GH-90000
-            .maxAttempts(3) // GH-90000
-            .initialDelay(Duration.ofMillis(1)) // GH-90000
-            .jitterFactor(0) // GH-90000
-            .build(); // GH-90000
+    void executeWithResult_allAttemptsFail_throwsRetryExhausted() { 
+        AtomicInteger calls = new AtomicInteger(0); 
+        RetryPolicy policy = RetryPolicy.builder() 
+            .maxAttempts(3) 
+            .initialDelay(Duration.ofMillis(1)) 
+            .jitterFactor(0) 
+            .build(); 
 
-        assertThatThrownBy(() -> policy.executeWithResult(() -> { // GH-90000
-            calls.incrementAndGet(); // GH-90000
+        assertThatThrownBy(() -> policy.executeWithResult(() -> { 
+            calls.incrementAndGet(); 
             throw new RuntimeException("always fails");
         }))
-            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) // GH-90000
-            .satisfies(ex -> { // GH-90000
-                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; // GH-90000
-                assertThat(retryEx.getAttemptsMade()).isEqualTo(3); // GH-90000
+            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) 
+            .satisfies(ex -> { 
+                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; 
+                assertThat(retryEx.getAttemptsMade()).isEqualTo(3); 
                 assertThat(retryEx.getCause()).hasMessage("always fails");
             });
 
-        assertThat(calls.get()).isEqualTo(3); // GH-90000
+        assertThat(calls.get()).isEqualTo(3); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -105,78 +105,78 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("executeWithResult: non-retryable exception → throws immediately without retry")
-    void executeWithResult_nonRetryable_throwsImmediately() { // GH-90000
-        AtomicInteger calls = new AtomicInteger(0); // GH-90000
-        RetryPolicy policy = RetryPolicy.builder() // GH-90000
-            .maxAttempts(5) // GH-90000
-            .retryOnlyOn(RuntimeException.class) // only retry RuntimeException // GH-90000
-            .initialDelay(Duration.ofMillis(1)) // GH-90000
-            .build(); // GH-90000
+    void executeWithResult_nonRetryable_throwsImmediately() { 
+        AtomicInteger calls = new AtomicInteger(0); 
+        RetryPolicy policy = RetryPolicy.builder() 
+            .maxAttempts(5) 
+            .retryOnlyOn(RuntimeException.class) // only retry RuntimeException 
+            .initialDelay(Duration.ofMillis(1)) 
+            .build(); 
 
-        assertThatThrownBy(() -> policy.executeWithResult(() -> { // GH-90000
-            calls.incrementAndGet(); // GH-90000
+        assertThatThrownBy(() -> policy.executeWithResult(() -> { 
+            calls.incrementAndGet(); 
             throw new IllegalArgumentException("not retryable");
         }))
-            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) // GH-90000
-            .satisfies(ex -> { // GH-90000
-                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; // GH-90000
+            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) 
+            .satisfies(ex -> { 
+                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; 
                 // IllegalArgumentException is a RuntimeException, so it will be retried
                 // Let's verify with a non-RuntimeException instead
-                assertThat(retryEx.getAttemptsMade()).isGreaterThanOrEqualTo(1); // GH-90000
+                assertThat(retryEx.getAttemptsMade()).isGreaterThanOrEqualTo(1); 
             });
     }
 
     @Test
     @DisplayName("executeWithResult: retryOn predicate excludes specific type → immediate failure")
-    void executeWithResult_customRetryPredicate_excludesSpecificType() { // GH-90000
-        AtomicInteger calls = new AtomicInteger(0); // GH-90000
-        RetryPolicy policy = RetryPolicy.builder() // GH-90000
-            .maxAttempts(5) // GH-90000
-            .initialDelay(Duration.ofMillis(1)) // GH-90000
-            .retryOn(t -> !(t instanceof UnsupportedOperationException)) // GH-90000
-            .build(); // GH-90000
+    void executeWithResult_customRetryPredicate_excludesSpecificType() { 
+        AtomicInteger calls = new AtomicInteger(0); 
+        RetryPolicy policy = RetryPolicy.builder() 
+            .maxAttempts(5) 
+            .initialDelay(Duration.ofMillis(1)) 
+            .retryOn(t -> !(t instanceof UnsupportedOperationException)) 
+            .build(); 
 
-        assertThatThrownBy(() -> policy.executeWithResult(() -> { // GH-90000
-            calls.incrementAndGet(); // GH-90000
+        assertThatThrownBy(() -> policy.executeWithResult(() -> { 
+            calls.incrementAndGet(); 
             throw new UnsupportedOperationException("not supported");
         }))
-            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) // GH-90000
-            .satisfies(ex -> { // GH-90000
-                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; // GH-90000
-                assertThat(retryEx.getAttemptsMade()).isEqualTo(1); // no retry on UnsupportedOperationException // GH-90000
+            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) 
+            .satisfies(ex -> { 
+                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; 
+                assertThat(retryEx.getAttemptsMade()).isEqualTo(1); // no retry on UnsupportedOperationException 
             });
 
-        assertThat(calls.get()).isEqualTo(1); // GH-90000
+        assertThat(calls.get()).isEqualTo(1); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // execute (void variant) // GH-90000
+    // execute (void variant) 
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("execute: action succeeds → no exception thrown")
-    void execute_success_noException() throws InterruptedException { // GH-90000
-        AtomicInteger calls = new AtomicInteger(0); // GH-90000
-        RetryPolicy policy = RetryPolicy.builder().maxAttempts(1).build(); // GH-90000
+    void execute_success_noException() throws InterruptedException { 
+        AtomicInteger calls = new AtomicInteger(0); 
+        RetryPolicy policy = RetryPolicy.builder().maxAttempts(1).build(); 
 
-        policy.execute(() -> calls.incrementAndGet()); // GH-90000
+        policy.execute(() -> calls.incrementAndGet()); 
 
-        assertThat(calls.get()).isEqualTo(1); // GH-90000
+        assertThat(calls.get()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("execute: all attempts fail → RetryExhaustedException thrown")
-    void execute_allFail_throwsRetryExhausted() { // GH-90000
-        RetryPolicy policy = RetryPolicy.builder() // GH-90000
-            .maxAttempts(2) // GH-90000
-            .initialDelay(Duration.ofMillis(1)) // GH-90000
-            .jitterFactor(0) // GH-90000
-            .build(); // GH-90000
+    void execute_allFail_throwsRetryExhausted() { 
+        RetryPolicy policy = RetryPolicy.builder() 
+            .maxAttempts(2) 
+            .initialDelay(Duration.ofMillis(1)) 
+            .jitterFactor(0) 
+            .build(); 
 
-        assertThatThrownBy(() -> policy.execute(() -> { // GH-90000
+        assertThatThrownBy(() -> policy.execute(() -> { 
             throw new RuntimeException("failed");
         }))
-            .isInstanceOf(RetryPolicy.RetryExhaustedException.class); // GH-90000
+            .isInstanceOf(RetryPolicy.RetryExhaustedException.class); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -185,33 +185,33 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("builder: maxAttempts < 1 → IllegalArgumentException")
-    void builder_invalidMaxAttempts_throwsException() { // GH-90000
-        assertThatThrownBy(() -> RetryPolicy.builder().maxAttempts(0).build()) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void builder_invalidMaxAttempts_throwsException() { 
+        assertThatThrownBy(() -> RetryPolicy.builder().maxAttempts(0).build()) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("maxAttempts");
     }
 
     @Test
     @DisplayName("builder: multiplier < 1.0 → IllegalArgumentException")
-    void builder_invalidMultiplier_throwsException() { // GH-90000
-        assertThatThrownBy(() -> RetryPolicy.builder().multiplier(0.5).build()) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void builder_invalidMultiplier_throwsException() { 
+        assertThatThrownBy(() -> RetryPolicy.builder().multiplier(0.5).build()) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("multiplier");
     }
 
     @Test
     @DisplayName("builder: jitterFactor out of [0,1] → IllegalArgumentException")
-    void builder_invalidJitterFactor_throwsException() { // GH-90000
-        assertThatThrownBy(() -> RetryPolicy.builder().jitterFactor(1.5).build()) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void builder_invalidJitterFactor_throwsException() { 
+        assertThatThrownBy(() -> RetryPolicy.builder().jitterFactor(1.5).build()) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("jitterFactor");
     }
 
     @Test
     @DisplayName("builder: null retryOn → IllegalArgumentException")
-    void builder_nullRetryOn_throwsException() { // GH-90000
-        assertThatThrownBy(() -> RetryPolicy.builder().retryOn(null).build()) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void builder_nullRetryOn_throwsException() { 
+        assertThatThrownBy(() -> RetryPolicy.builder().retryOn(null).build()) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("retryOn");
     }
 
@@ -221,31 +221,31 @@ class RetryPolicyTest {
 
     @Test
     @DisplayName("RetryExhaustedException: getAttemptsMade returns constructor value")
-    void retryExhaustedException_getAttemptsMade_returnsValue() { // GH-90000
+    void retryExhaustedException_getAttemptsMade_returnsValue() { 
         RetryPolicy.RetryExhaustedException ex =
             new RetryPolicy.RetryExhaustedException("test", new RuntimeException("cause"), 5);
 
-        assertThat(ex.getAttemptsMade()).isEqualTo(5); // GH-90000
+        assertThat(ex.getAttemptsMade()).isEqualTo(5); 
         assertThat(ex.getMessage()).isEqualTo("test");
         assertThat(ex.getCause()).hasMessage("cause");
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // maxAttempts=1 (no retry) // GH-90000
+    // maxAttempts=1 (no retry) 
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("maxAttempts=1: single failure → immediate exhaustion")
-    void maxAttempts_one_immediateExhaustion() { // GH-90000
-        RetryPolicy policy = RetryPolicy.builder().maxAttempts(1).build(); // GH-90000
+    void maxAttempts_one_immediateExhaustion() { 
+        RetryPolicy policy = RetryPolicy.builder().maxAttempts(1).build(); 
 
-        assertThatThrownBy(() -> policy.executeWithResult(() -> { // GH-90000
+        assertThatThrownBy(() -> policy.executeWithResult(() -> { 
             throw new RuntimeException("error");
         }))
-            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) // GH-90000
-            .satisfies(ex -> { // GH-90000
-                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; // GH-90000
-                assertThat(retryEx.getAttemptsMade()).isEqualTo(1); // GH-90000
+            .isInstanceOf(RetryPolicy.RetryExhaustedException.class) 
+            .satisfies(ex -> { 
+                RetryPolicy.RetryExhaustedException retryEx = (RetryPolicy.RetryExhaustedException) ex; 
+                assertThat(retryEx.getAttemptsMade()).isEqualTo(1); 
             });
     }
 }

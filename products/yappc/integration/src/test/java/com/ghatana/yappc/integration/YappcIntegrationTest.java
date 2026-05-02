@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Technologies // GH-90000
+ * Copyright (c) 2026 Ghatana Technologies 
  * YAPPC Complete Integration Test
  */
 package com.ghatana.yappc.integration;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * End-to-end integration tests for complete YAPPC platform enhancements.
  *
- * <p><b>Objective:</b> Validate that all new components (Security Scanner, Knowledge Retrievers) // GH-90000
+ * <p><b>Objective:</b> Validate that all new components (Security Scanner, Knowledge Retrievers) 
  * work together correctly and are properly wired through DI modules.</p>
  *
  * <p><b>Components Tested:</b>
@@ -63,110 +63,110 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class YappcIntegrationTest {
 
     @ClassRule
-    public static EventloopRule eventloopRule = new EventloopRule(); // GH-90000
+    public static EventloopRule eventloopRule = new EventloopRule(); 
 
     @Test
     @DisplayName("Complete setup - all new security and retrieval components instantiate")
-    public void testAllComponentsInstantiate() { // GH-90000
+    public void testAllComponentsInstantiate() { 
         // GIVEN - All executors available
-        Executor executor = Executors.newCachedThreadPool(); // GH-90000
+        Executor executor = Executors.newCachedThreadPool(); 
 
         // WHEN - Instantiate all new components
-        OsvScannerAdapter osvScanner = new OsvScannerAdapter(executor); // GH-90000
-        StaticAnalysisScanner satScanner = new StaticAnalysisScanner(executor); // GH-90000
-        CompositeSecurityScanner compositeScanner = new CompositeSecurityScanner( // GH-90000
-            List.of(satScanner, osvScanner) // GH-90000
+        OsvScannerAdapter osvScanner = new OsvScannerAdapter(executor); 
+        StaticAnalysisScanner satScanner = new StaticAnalysisScanner(executor); 
+        CompositeSecurityScanner compositeScanner = new CompositeSecurityScanner( 
+            List.of(satScanner, osvScanner) 
         );
-        SecurityServiceAdapter securityAdapter = new SecurityServiceAdapter(compositeScanner); // GH-90000
+        SecurityServiceAdapter securityAdapter = new SecurityServiceAdapter(compositeScanner); 
 
         // THEN - All components created successfully
-        assertThat(osvScanner).isNotNull(); // GH-90000
-        assertThat(satScanner).isNotNull(); // GH-90000
-        assertThat(compositeScanner).isNotNull(); // GH-90000
-        assertThat(securityAdapter).isNotNull(); // GH-90000
+        assertThat(osvScanner).isNotNull(); 
+        assertThat(satScanner).isNotNull(); 
+        assertThat(compositeScanner).isNotNull(); 
+        assertThat(securityAdapter).isNotNull(); 
     }
 
     @Test
     @DisplayName("Complete setup - all new retrieval components instantiate")
-    public void testAllRetrievalComponentsInstantiate() { // GH-90000
+    public void testAllRetrievalComponentsInstantiate() { 
         // GIVEN
-        Executor executor = Executors.newCachedThreadPool(); // GH-90000
+        Executor executor = Executors.newCachedThreadPool(); 
 
         // WHEN - Instantiate all retrieval components
-        RetrievalPipeline bm25Retriever = new YappcBM25Retriever(null, executor); // GH-90000
-        RetrievalPipeline denseRetriever = new YappcDenseVectorRetriever(null, executor); // GH-90000
+        RetrievalPipeline bm25Retriever = new YappcBM25Retriever(null, executor); 
+        RetrievalPipeline denseRetriever = new YappcDenseVectorRetriever(null, executor); 
 
         // THEN - Both retrievers created successfully
-        assertThat(bm25Retriever).isNotNull(); // GH-90000
-        assertThat(denseRetriever).isNotNull(); // GH-90000
-        assertThat(bm25Retriever).isInstanceOf(RetrievalPipeline.class); // GH-90000
-        assertThat(denseRetriever).isInstanceOf(RetrievalPipeline.class); // GH-90000
+        assertThat(bm25Retriever).isNotNull(); 
+        assertThat(denseRetriever).isNotNull(); 
+        assertThat(bm25Retriever).isInstanceOf(RetrievalPipeline.class); 
+        assertThat(denseRetriever).isInstanceOf(RetrievalPipeline.class); 
     }
 
     @Test
     @DisplayName("DI modules - InfrastructureServiceModule configures without error")
-    public void testInfrastructureServiceModuleConfiguration() { // GH-90000
+    public void testInfrastructureServiceModuleConfiguration() { 
         // GIVEN
-        InfrastructureServiceModule module = new InfrastructureServiceModule(); // GH-90000
+        InfrastructureServiceModule module = new InfrastructureServiceModule(); 
 
-        // WHEN / THEN - Module is valid (no exception during instantiation) // GH-90000
-        assertThat(module).isNotNull(); // GH-90000
+        // WHEN / THEN - Module is valid (no exception during instantiation) 
+        assertThat(module).isNotNull(); 
     }
 
     @Test
     @DisplayName("DI modules - KnowledgeModule configures without error")
-    public void testKnowledgeModuleConfiguration() { // GH-90000
+    public void testKnowledgeModuleConfiguration() { 
         // GIVEN
-        KnowledgeModule module = new KnowledgeModule(); // GH-90000
+        KnowledgeModule module = new KnowledgeModule(); 
 
         // WHEN / THEN
-        assertThat(module).isNotNull(); // GH-90000
+        assertThat(module).isNotNull(); 
     }
 
     @Test
     @DisplayName("Security architecture - CompositeScanner correctly identifies itself")
-    public void testCompositeSecurityScannerIdentification() { // GH-90000
+    public void testCompositeSecurityScannerIdentification() { 
         // GIVEN
-        Executor executor = Executors.newCachedThreadPool(); // GH-90000
-        StaticAnalysisScanner sast = new StaticAnalysisScanner(executor); // GH-90000
-        OsvScannerAdapter osv = new OsvScannerAdapter(executor); // GH-90000
+        Executor executor = Executors.newCachedThreadPool(); 
+        StaticAnalysisScanner sast = new StaticAnalysisScanner(executor); 
+        OsvScannerAdapter osv = new OsvScannerAdapter(executor); 
 
         // WHEN
-        CompositeSecurityScanner composite = new CompositeSecurityScanner(List.of(sast, osv)); // GH-90000
+        CompositeSecurityScanner composite = new CompositeSecurityScanner(List.of(sast, osv)); 
 
         // THEN - Can identify component scanners
-        assertThat(composite).isNotNull(); // GH-90000
+        assertThat(composite).isNotNull(); 
         // In practice, would verify scanner names in results
     }
 
     @Test
     @DisplayName("Retrieval architecture - Both retrievers implement correct interface")
-    public void testRetrieverInterfaceCompliance() { // GH-90000
+    public void testRetrieverInterfaceCompliance() { 
         // GIVEN
-        Executor executor = Executors.newCachedThreadPool(); // GH-90000
-        YappcBM25Retriever bm25 = new YappcBM25Retriever(null, executor); // GH-90000
-        YappcDenseVectorRetriever dense = new YappcDenseVectorRetriever(null, executor); // GH-90000
+        Executor executor = Executors.newCachedThreadPool(); 
+        YappcBM25Retriever bm25 = new YappcBM25Retriever(null, executor); 
+        YappcDenseVectorRetriever dense = new YappcDenseVectorRetriever(null, executor); 
 
         // WHEN / THEN - Both implement RetrievalPipeline
-        assertThat(bm25) // GH-90000
-            .isInstanceOf(RetrievalPipeline.class) // GH-90000
-            .isInstanceOf(com.ghatana.yappc.knowledge.retrieval.YappcBM25Retriever.class); // GH-90000
+        assertThat(bm25) 
+            .isInstanceOf(RetrievalPipeline.class) 
+            .isInstanceOf(com.ghatana.yappc.knowledge.retrieval.YappcBM25Retriever.class); 
 
-        assertThat(dense) // GH-90000
-            .isInstanceOf(RetrievalPipeline.class) // GH-90000
-            .isInstanceOf(com.ghatana.yappc.knowledge.retrieval.YappcDenseVectorRetriever.class); // GH-90000
+        assertThat(dense) 
+            .isInstanceOf(RetrievalPipeline.class) 
+            .isInstanceOf(com.ghatana.yappc.knowledge.retrieval.YappcDenseVectorRetriever.class); 
     }
 
     @Test
     @DisplayName("Architectural constraints - No shell execution in security scanner")
-    public void testNoShellExecutionViolations() { // GH-90000
-        // GIVEN - OSV adapter uses SafeHookExecutor pattern (no sh -c) // GH-90000
-        Executor executor = Executors.newCachedThreadPool(); // GH-90000
-        OsvScannerAdapter osvScanner = new OsvScannerAdapter(executor); // GH-90000
+    public void testNoShellExecutionViolations() { 
+        // GIVEN - OSV adapter uses SafeHookExecutor pattern (no sh -c) 
+        Executor executor = Executors.newCachedThreadPool(); 
+        OsvScannerAdapter osvScanner = new OsvScannerAdapter(executor); 
 
         // WHEN / THEN - Verify no unsafe patterns
-        assertThat(osvScanner).isNotNull(); // GH-90000
-        assertThat(osvScanner.getClass().getName()) // GH-90000
+        assertThat(osvScanner).isNotNull(); 
+        assertThat(osvScanner.getClass().getName()) 
             .doesNotContain("ProcessBuilder")
             .doesNotContain("Runtime.exec");
         // Implementation uses safe HTTP client approach
@@ -174,40 +174,40 @@ public class YappcIntegrationTest {
 
     @Test
     @DisplayName("Code quality - All components follow @doc tagging standards")
-    public void testCodeQualityStandards() { // GH-90000
-        // VERIFY - All classes have @doc comments (checked at compile time via annotation processor) // GH-90000
+    public void testCodeQualityStandards() { 
+        // VERIFY - All classes have @doc comments (checked at compile time via annotation processor) 
         // This test exists to document the requirement
-        assertThat(OsvScannerAdapter.class.getAnnotations()).isNotEmpty(); // GH-90000
-        assertThat(CompositeSecurityScanner.class.getAnnotations()).isNotEmpty(); // GH-90000
-        assertThat(YappcBM25Retriever.class.getAnnotations()).isNotEmpty(); // GH-90000
-        assertThat(YappcDenseVectorRetriever.class.getAnnotations()).isNotEmpty(); // GH-90000
+        assertThat(OsvScannerAdapter.class.getAnnotations()).isNotEmpty(); 
+        assertThat(CompositeSecurityScanner.class.getAnnotations()).isNotEmpty(); 
+        assertThat(YappcBM25Retriever.class.getAnnotations()).isNotEmpty(); 
+        assertThat(YappcDenseVectorRetriever.class.getAnnotations()).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Session 6 Summary - All 4 core work items completed")
-    public void testSession6Completion() { // GH-90000
+    public void testSession6Completion() { 
         // VERIFICATION OF SESSION 6 ITEMS:
         // ✅ Item 4.6-4.7: OsvScannerAdapter + CompositeSecurityScanner + SecurityServiceAdapter wiring
-        // ✅ Item 6.2.3-6.2.5: AuditQueryService (existing in platform, audit query E2E tests created) // GH-90000
+        // ✅ Item 6.2.3-6.2.5: AuditQueryService (existing in platform, audit query E2E tests created) 
         // ✅ Item 9.3-9.6: YappcBM25Retriever + YappcDenseVectorRetriever + KnowledgeModule wiring
         // ✅ Item 5.3-5.4: JDBC persistence already implemented and wired in ProductionModule
 
         // GIVEN - All components exist
-        assertThat(OsvScannerAdapter.class).isNotNull(); // GH-90000
-        assertThat(CompositeSecurityScanner.class).isNotNull(); // GH-90000
-        assertThat(YappcBM25Retriever.class).isNotNull(); // GH-90000
-        assertThat(YappcDenseVectorRetriever.class).isNotNull(); // GH-90000
-        assertThat(com.ghatana.yappc.api.audit.AuditController.class).isNotNull(); // GH-90000
+        assertThat(OsvScannerAdapter.class).isNotNull(); 
+        assertThat(CompositeSecurityScanner.class).isNotNull(); 
+        assertThat(YappcBM25Retriever.class).isNotNull(); 
+        assertThat(YappcDenseVectorRetriever.class).isNotNull(); 
+        assertThat(com.ghatana.yappc.api.audit.AuditController.class).isNotNull(); 
 
         // WHEN / THEN - System is production-ready
-        Executor e = Executors.newCachedThreadPool(); // GH-90000
-        SecurityServiceAdapter secAdapter = new SecurityServiceAdapter( // GH-90000
-            new CompositeSecurityScanner(List.of( // GH-90000
-                new StaticAnalysisScanner(e), // GH-90000
-                new OsvScannerAdapter(e) // GH-90000
+        Executor e = Executors.newCachedThreadPool(); 
+        SecurityServiceAdapter secAdapter = new SecurityServiceAdapter( 
+            new CompositeSecurityScanner(List.of( 
+                new StaticAnalysisScanner(e), 
+                new OsvScannerAdapter(e) 
             ))
         );
 
-        assertThat(secAdapter).isNotNull(); // GH-90000
+        assertThat(secAdapter).isNotNull(); 
     }
 }

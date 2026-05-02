@@ -15,36 +15,36 @@ import java.nio.file.Path;
 */
 public class CoreTestUtils {
 
-    public static Path createTempDirectory(String prefix) throws IOException { // GH-90000
-        return Files.createTempDirectory(prefix); // GH-90000
+    public static Path createTempDirectory(String prefix) throws IOException { 
+        return Files.createTempDirectory(prefix); 
     }
 
-    public static Path createTempFile(String prefix, String suffix) throws IOException { // GH-90000
-        return Files.createTempFile(prefix, suffix); // GH-90000
+    public static Path createTempFile(String prefix, String suffix) throws IOException { 
+        return Files.createTempFile(prefix, suffix); 
     }
 
-    public static Path createTempFileWithContent(String prefix, String suffix, String content) // GH-90000
+    public static Path createTempFileWithContent(String prefix, String suffix, String content) 
             throws IOException {
-        Path tempFile = createTempFile(prefix, suffix); // GH-90000
-        Files.writeString(tempFile, content); // GH-90000
+        Path tempFile = createTempFile(prefix, suffix); 
+        Files.writeString(tempFile, content); 
         return tempFile;
     }
 
     /**
      * Checks if a command is available in the system PATH.
      */
-    public static boolean isCommandAvailable(String command, String... args) { // GH-90000
+    public static boolean isCommandAvailable(String command, String... args) { 
         try {
             String[] commandWithArgs = new String[args.length + 1];
             commandWithArgs[0] = command;
-            System.arraycopy(args, 0, commandWithArgs, 1, args.length); // GH-90000
+            System.arraycopy(args, 0, commandWithArgs, 1, args.length); 
 
-            ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs); // GH-90000
-            processBuilder.redirectErrorStream(true); // GH-90000
-            processBuilder.redirectOutput(ProcessBuilder.Redirect.DISCARD); // GH-90000
-            Process process = processBuilder.start(); // GH-90000
-            return process.waitFor() == 0; // GH-90000
-        } catch (IOException | InterruptedException e) { // GH-90000
+            ProcessBuilder processBuilder = new ProcessBuilder(commandWithArgs); 
+            processBuilder.redirectErrorStream(true); 
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.DISCARD); 
+            Process process = processBuilder.start(); 
+            return process.waitFor() == 0; 
+        } catch (IOException | InterruptedException e) { 
             return false;
         }
     }

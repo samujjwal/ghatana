@@ -31,20 +31,20 @@ class ClickHouseTraceStorageExpansionTest {
     private Instant baseTime;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        storage = ClickHouseTraceStorage.builder() // GH-90000
+    void setUp() { 
+        storage = ClickHouseTraceStorage.builder() 
                 .withHost("localhost")
-                .withPort(8123) // GH-90000
+                .withPort(8123) 
                 .withDatabase("observability")
-                .withBatchSize(1000) // GH-90000
-                .withFlushInterval(Duration.ofSeconds(5)) // GH-90000
-                .build(); // GH-90000
+                .withBatchSize(1000) 
+                .withFlushInterval(Duration.ofSeconds(5)) 
+                .build(); 
 
-        baseTime = Instant.now(); // GH-90000
+        baseTime = Instant.now(); 
     }
 
     // ============================================
-    // LARGE BATCH PERSISTENCE (1 test) // GH-90000
+    // LARGE BATCH PERSISTENCE (1 test) 
     // ============================================
 
     @Nested
@@ -53,28 +53,28 @@ class ClickHouseTraceStorageExpansionTest {
 
         @Test
         @DisplayName("Store and retrieve large batch of spans (5000+)")
-        void storeLargeBatch() { // GH-90000
-            List<SpanData> largeBatch = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 5000; i++) { // GH-90000
-                SpanData span = createTestSpan( // GH-90000
-                    "trace-batch-" + (i / 100), // GH-90000
+        void storeLargeBatch() { 
+            List<SpanData> largeBatch = new ArrayList<>(); 
+            for (int i = 0; i < 5000; i++) { 
+                SpanData span = createTestSpan( 
+                    "trace-batch-" + (i / 100), 
                     "span-" + i,
                     null,
-                    "operation-" + (i % 50), // GH-90000
+                    "operation-" + (i % 50), 
                     "OK"
                 );
-                largeBatch.add(span); // GH-90000
+                largeBatch.add(span); 
             }
 
             // Storage should handle large batch
-            assertThat(largeBatch).hasSize(5000); // GH-90000
+            assertThat(largeBatch).hasSize(5000); 
             // Verify span structure
             assertThat(largeBatch.get(0).traceId()).startsWith("trace-batch-");
         }
     }
 
     // ============================================
-    // BATCH SIZE BOUNDARY HANDLING (1 test) // GH-90000
+    // BATCH SIZE BOUNDARY HANDLING (1 test) 
     // ============================================
 
     @Nested
@@ -83,27 +83,27 @@ class ClickHouseTraceStorageExpansionTest {
 
         @Test
         @DisplayName("Handle batches exactly at configured size limit")
-        void batchSizeAtBoundary() { // GH-90000
-            List<SpanData> exactBatch = new ArrayList<>(); // GH-90000
-            // Create exactly 1000 spans (configured batch size) // GH-90000
-            for (int i = 0; i < 1000; i++) { // GH-90000
-                SpanData span = createTestSpan( // GH-90000
+        void batchSizeAtBoundary() { 
+            List<SpanData> exactBatch = new ArrayList<>(); 
+            // Create exactly 1000 spans (configured batch size) 
+            for (int i = 0; i < 1000; i++) { 
+                SpanData span = createTestSpan( 
                     "trace-exact",
                     "span-boundary-" + i,
                     null,
                     "op-boundary",
                     "OK"
                 );
-                exactBatch.add(span); // GH-90000
+                exactBatch.add(span); 
             }
 
-            assertThat(exactBatch).hasSize(1000); // GH-90000
+            assertThat(exactBatch).hasSize(1000); 
             assertThat(exactBatch.get(999).spanId()).isEqualTo("span-boundary-999");
         }
     }
 
     // ============================================
-    // CONCURRENT WRITE SAFETY (2 tests) // GH-90000
+    // CONCURRENT WRITE SAFETY (2 tests) 
     // ============================================
 
     @Nested
@@ -112,70 +112,70 @@ class ClickHouseTraceStorageExpansionTest {
 
         @Test
         @DisplayName("Concurrent span writes maintain data integrity")
-        void concurrentWrites() throws InterruptedException { // GH-90000
+        void concurrentWrites() throws InterruptedException { 
             int threadCount = 4;
             int spansPerThread = 250;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            AtomicInteger writeCount = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
+            AtomicInteger writeCount = new AtomicInteger(0); 
 
-            for (int t = 0; t < threadCount; t++) { // GH-90000
+            for (int t = 0; t < threadCount; t++) { 
                 int threadId = t;
-                new Thread(() -> { // GH-90000
+                new Thread(() -> { 
                     try {
-                        for (int i = 0; i < spansPerThread; i++) { // GH-90000
-                            SpanData span = createTestSpan( // GH-90000
+                        for (int i = 0; i < spansPerThread; i++) { 
+                            SpanData span = createTestSpan( 
                                 "trace-concurrent-" + threadId,
                                 "span-t" + threadId + "-" + i,
                                 null,
                                 "op-concurrent",
                                 threadId % 2 == 0 ? "OK" : "ERROR"
                             );
-                            writeCount.incrementAndGet(); // GH-90000
+                            writeCount.incrementAndGet(); 
                         }
                     } finally {
-                        latch.countDown(); // GH-90000
+                        latch.countDown(); 
                     }
-                }).start(); // GH-90000
+                }).start(); 
             }
 
-            latch.await(); // GH-90000
+            latch.await(); 
 
-            assertThat(writeCount.get()).isEqualTo(threadCount * spansPerThread); // GH-90000
+            assertThat(writeCount.get()).isEqualTo(threadCount * spansPerThread); 
         }
 
         @Test
         @DisplayName("Storage remains consistent under concurrent batch operations")
-        void concurrentBatchOperations() throws InterruptedException { // GH-90000
+        void concurrentBatchOperations() throws InterruptedException { 
             int batchCount = 10;
             int spansPerBatch = 100;
-            CountDownLatch latch = new CountDownLatch(batchCount); // GH-90000
-            AtomicInteger totalStored = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(batchCount); 
+            AtomicInteger totalStored = new AtomicInteger(0); 
 
-            for (int b = 0; b < batchCount; b++) { // GH-90000
+            for (int b = 0; b < batchCount; b++) { 
                 int batchId = b;
-                new Thread(() -> { // GH-90000
+                new Thread(() -> { 
                     try {
-                        List<SpanData> batch = new ArrayList<>(); // GH-90000
-                        for (int i = 0; i < spansPerBatch; i++) { // GH-90000
-                            SpanData span = createTestSpan( // GH-90000
+                        List<SpanData> batch = new ArrayList<>(); 
+                        for (int i = 0; i < spansPerBatch; i++) { 
+                            SpanData span = createTestSpan( 
                                 "trace-batch-" + batchId,
                                 "span-batch-" + batchId + "-" + i,
                                 null,
                                 "op-batch-" + i,
                                 "OK"
                             );
-                            batch.add(span); // GH-90000
+                            batch.add(span); 
                         }
-                        totalStored.addAndGet(batch.size()); // GH-90000
+                        totalStored.addAndGet(batch.size()); 
                     } finally {
-                        latch.countDown(); // GH-90000
+                        latch.countDown(); 
                     }
-                }).start(); // GH-90000
+                }).start(); 
             }
 
-            latch.await(); // GH-90000
+            latch.await(); 
 
-            assertThat(totalStored.get()).isEqualTo(batchCount * spansPerBatch); // GH-90000
+            assertThat(totalStored.get()).isEqualTo(batchCount * spansPerBatch); 
         }
     }
 
@@ -183,10 +183,10 @@ class ClickHouseTraceStorageExpansionTest {
     // HELPER METHODS
     // ============================================
 
-    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId, // GH-90000
+    private SpanData createTestSpan(String traceId, String spanId, String parentSpanId, 
                                     String operation, String status) {
-        return new SpanData(traceId, spanId, parentSpanId, operation, // GH-90000
-            baseTime, baseTime.plusMillis(100), status); // GH-90000
+        return new SpanData(traceId, spanId, parentSpanId, operation, 
+            baseTime, baseTime.plusMillis(100), status); 
     }
 
     /**
@@ -201,7 +201,7 @@ class ClickHouseTraceStorageExpansionTest {
         private final Instant endTime;
         private final String status;
 
-        public SpanData(String traceId, String spanId, String parentSpanId, // GH-90000
+        public SpanData(String traceId, String spanId, String parentSpanId, 
                        String operation, Instant startTime, Instant endTime, String status) {
             this.traceId = traceId;
             this.spanId = spanId;
@@ -212,12 +212,12 @@ class ClickHouseTraceStorageExpansionTest {
             this.status = status;
         }
 
-        public String traceId() { return traceId; } // GH-90000
-        public String spanId() { return spanId; } // GH-90000
-        public String parentSpanId() { return parentSpanId; } // GH-90000
-        public String operation() { return operation; } // GH-90000
-        public Instant startTime() { return startTime; } // GH-90000
-        public Instant endTime() { return endTime; } // GH-90000
-        public String status() { return status; } // GH-90000
+        public String traceId() { return traceId; } 
+        public String spanId() { return spanId; } 
+        public String parentSpanId() { return parentSpanId; } 
+        public String operation() { return operation; } 
+        public Instant startTime() { return startTime; } 
+        public Instant endTime() { return endTime; } 
+        public String status() { return status; } 
     }
 }

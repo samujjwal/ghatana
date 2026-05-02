@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * HTTP versioning and request/response validation contract tests.
  *
  * Validates contracts for API versioning and payload validation.
@@ -42,8 +42,8 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
     }
 
     // =========================================================================
@@ -56,18 +56,18 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("API versions must be in URL path (e.g., /api/v1/, /api/v2/)")
-        void versionMustBeInUrlPath() { // GH-90000
+        void versionMustBeInUrlPath() { 
             String v1Path = "/api/v1/users";
             String v2Path = "/api/v2/users";
 
             assertThat(v1Path).contains("/v1/");
             assertThat(v2Path).contains("/v2/");
-            assertThat(v1Path).isNotEqualTo(v2Path); // GH-90000
+            assertThat(v1Path).isNotEqualTo(v2Path); 
         }
 
         @Test
         @DisplayName("version number must be major.minor semantic versioning")
-        void versionMustBeSemantic() { // GH-90000
+        void versionMustBeSemantic() { 
             String validVersion = "v1";
             String validVersion2 = "v2";
 
@@ -77,7 +77,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("v1 endpoints must remain available for backwards compatibility")
-        void v1EndpointsMustRemain() { // GH-90000
+        void v1EndpointsMustRemain() { 
             // If /api/v2/users exists, /api/v1/users must also exist
             String v1Endpoint = "/api/v1/users";
             String v2Endpoint = "/api/v2/users";
@@ -88,14 +88,14 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("API version in response body must match request version")
-        void responseVersionMustMatchRequest() { // GH-90000
+        void responseVersionMustMatchRequest() { 
             // Request: GET /api/v1/users
             // Response: {version: "v1", ...}
 
             String requestVersion = "v1";
             String responseVersion = "v1";
 
-            assertThat(responseVersion).isEqualTo(requestVersion); // GH-90000
+            assertThat(responseVersion).isEqualTo(requestVersion); 
         }
     }
 
@@ -109,7 +109,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deprecated endpoints must include deprecation warning")
-        void deprecatedEndpointMustWarn() { // GH-90000
+        void deprecatedEndpointMustWarn() { 
             // Old API pattern for deprecation:
             // 1. Old endpoint still works
             // 2. Response includes Deprecation: true header
@@ -118,14 +118,14 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             String headerName = "Deprecation";
             String headerValue = "true";
 
-            assertThat(headerName).isNotBlank(); // GH-90000
+            assertThat(headerName).isNotBlank(); 
             assertThat(headerValue).isEqualTo("true");
         }
 
         @Test
         @DisplayName("deprecation message must document migration path")
-        void deprecationMustDocumentMigration() { // GH-90000
-            // GET /api/v1/users (deprecated) // GH-90000
+        void deprecationMustDocumentMigration() { 
+            // GET /api/v1/users (deprecated) 
             // Response header: Link: </api/v2/users>; rel="successor-version"
 
             // Or in response body:
@@ -138,14 +138,14 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             // }
 
             String newEndpoint = "/api/v2/users";
-            assertThat(newEndpoint).isNotBlank(); // GH-90000
+            assertThat(newEndpoint).isNotBlank(); 
         }
 
         @Test
         @DisplayName("response schema must be backwards compatible")
-        void responseSchemaMustBeBackwardsCompatible() { // GH-90000
+        void responseSchemaMustBeBackwardsCompatible() { 
             // V1: {id, name, email}
-            // V2: {id, name, email, phoneNumber} (added optional field) // GH-90000
+            // V2: {id, name, email, phoneNumber} (added optional field) 
             // V1 client: ignores phoneNumber, works fine
 
             // V1 expected fields must exist in V2
@@ -153,21 +153,21 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             String v2Fields = "id,name,email,phoneNumber";
 
             for (String field : v1Fields.split(",")) {
-                assertThat(v2Fields).contains(field); // GH-90000
+                assertThat(v2Fields).contains(field); 
             }
         }
 
         @Test
         @DisplayName("removal of fields requires major version bump")
-        void removedFieldRequiresMajorVersionBump() { // GH-90000
+        void removedFieldRequiresMajorVersionBump() { 
             // V1: {id, name, email, deprecated_field}
-            // V2: {id, name, email} (removed deprecated_field) // GH-90000
+            // V2: {id, name, email} (removed deprecated_field) 
             // This is a breaking change → V1 → V2 = major version
 
             String v1Version = "v1";
-            String v2Version = "v2"; // Major bump (v1 to v2) // GH-90000
+            String v2Version = "v2"; // Major bump (v1 to v2) 
 
-            assertThat(v2Version).isNotEqualTo(v1Version); // GH-90000
+            assertThat(v2Version).isNotEqualTo(v1Version); 
         }
     }
 
@@ -181,7 +181,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("POST request must have valid JSON body")
-        void postMustHaveValidJson() { // GH-90000
+        void postMustHaveValidJson() { 
             String validJson = "{\"name\": \"Alice\", \"age\": 28}";
             String invalidJson = "invalid json string";
 
@@ -191,9 +191,9 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("required fields in request body must be present")
-        void requiredFieldsMustBePresent() throws IOException { // GH-90000
+        void requiredFieldsMustBePresent() throws IOException { 
             String requestBody = "{\"name\": \"Bob\"}";
-            JsonNode json = objectMapper.readTree(requestBody); // GH-90000
+            JsonNode json = objectMapper.readTree(requestBody); 
 
             assertThat(json.has("name")).isTrue();
             assertThat(json.has("email")).isFalse(); // Missing required field
@@ -201,9 +201,9 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("request body with unknown fields should be rejected or ignored")
-        void unknownFieldsMustBeHandled() throws IOException { // GH-90000
+        void unknownFieldsMustBeHandled() throws IOException { 
             String requestBody = "{\"name\": \"Charlie\", \"unknown_field\": \"value\"}";
-            JsonNode json = objectMapper.readTree(requestBody); // GH-90000
+            JsonNode json = objectMapper.readTree(requestBody); 
 
             assertThat(json.has("unknown_field")).isTrue();
             // Contract: either reject or silently ignore unknown fields
@@ -211,13 +211,13 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("field types in request must match schema")
-        void fieldTypesMustMatch() throws IOException { // GH-90000
-            // Schema: age (integer), name (string) // GH-90000
+        void fieldTypesMustMatch() throws IOException { 
+            // Schema: age (integer), name (string) 
             String validRequest = "{\"name\": \"Dave\", \"age\": 30}";
             String invalidRequest = "{\"name\": \"Eve\", \"age\": \"thirty\"}";
 
-            JsonNode valid = objectMapper.readTree(validRequest); // GH-90000
-            JsonNode invalid = objectMapper.readTree(invalidRequest); // GH-90000
+            JsonNode valid = objectMapper.readTree(validRequest); 
+            JsonNode invalid = objectMapper.readTree(invalidRequest); 
 
             assertThat(valid.path("age").isIntegralNumber()).isTrue();
             assertThat(invalid.path("age").isTextual()).isTrue(); // Type mismatch
@@ -225,17 +225,17 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("batch request must respect size limits")
-        void batchRequestMustHaveSizeLimit() { // GH-90000
+        void batchRequestMustHaveSizeLimit() { 
             // Typical limit: 100 items per batch
             int batchSize = 100;
             int oversizeLimit = 1000;
 
-            assertThat(batchSize).isLessThan(oversizeLimit); // GH-90000
+            assertThat(batchSize).isLessThan(oversizeLimit); 
         }
 
         @Test
         @DisplayName("missing Content-Type header should use application/json by default")
-        void contentTypeDefaultMustBeJson() { // GH-90000
+        void contentTypeDefaultMustBeJson() { 
             // If Content-Type is missing in POST, assume application/json
             String contentType = "application/json";
             assertThat(contentType).contains("json");
@@ -252,12 +252,12 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("response structure must be consistent across endpoints")
-        void responseStructureMustBeConsistent() throws IOException { // GH-90000
+        void responseStructureMustBeConsistent() throws IOException { 
             // All success responses: { data: {...}, status: "success", timestamp: "..." }
             // All error responses: { error: {...}, status: "error", timestamp: "..." }
 
             String successResponse = "{\"data\": {\"id\": 1}, \"status\": \"success\"}";
-            JsonNode success = objectMapper.readTree(successResponse); // GH-90000
+            JsonNode success = objectMapper.readTree(successResponse); 
 
             assertThat(success.has("status")).isTrue();
             assertThat(success.has("data") || success.has("error")).isTrue();
@@ -265,9 +265,9 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("list responses must include pagination metadata")
-        void listResponsesMustIncludePagination() throws IOException { // GH-90000
+        void listResponsesMustIncludePagination() throws IOException { 
             String listResponse = "{\"items\": [], \"total\": 100, \"limit\": 10, \"offset\": 0}";
-            JsonNode list = objectMapper.readTree(listResponse); // GH-90000
+            JsonNode list = objectMapper.readTree(listResponse); 
 
             assertThat(list.has("items")).isTrue();
             assertThat(list.has("total")).isTrue();
@@ -277,9 +277,9 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("partial responses must clearly indicate missing data")
-        void partialResponsesMustIndicateMissing() throws IOException { // GH-90000
+        void partialResponsesMustIndicateMissing() throws IOException { 
             String partialResponse = "{\"id\": 1, \"name\": null, \"email\": \"test@example.com\"}";
-            JsonNode partial = objectMapper.readTree(partialResponse); // GH-90000
+            JsonNode partial = objectMapper.readTree(partialResponse); 
 
             assertThat(partial.path("name").isNull()).isTrue();
             // Contract: null indicates missing/unavailable data
@@ -287,15 +287,15 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("large response bodies should be paginated")
-        void largeResponsesMustBePaginated() { // GH-90000
+        void largeResponsesMustBePaginated() { 
             // Response with 10,000 items should be paginated
-            // Contract: max items per page (typically 100-1000) // GH-90000
+            // Contract: max items per page (typically 100-1000) 
 
             int itemsPerPage = 100;
             int totalItems = 10_000;
             int expectedPages = totalItems / itemsPerPage;
 
-            assertThat(expectedPages).isGreaterThan(1); // GH-90000
+            assertThat(expectedPages).isGreaterThan(1); 
         }
     }
 
@@ -309,7 +309,7 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("response status must match operation result")
-        void statusMustMatchResult() { // GH-90000
+        void statusMustMatchResult() { 
             // Success: 200, 201, 204
             // Client error: 400, 401, 403, 404
             // Server error: 500, 502, 503
@@ -319,14 +319,14 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             int clientErrorCode = 400;
             int serverErrorCode = 500;
 
-            assertThat(successCode).isBetween(200, 299); // GH-90000
-            assertThat(clientErrorCode).isBetween(400, 499); // GH-90000
-            assertThat(serverErrorCode).isBetween(500, 599); // GH-90000
+            assertThat(successCode).isBetween(200, 299); 
+            assertThat(clientErrorCode).isBetween(400, 499); 
+            assertThat(serverErrorCode).isBetween(500, 599); 
         }
 
         @Test
         @DisplayName("response body must correspond to status code")
-        void responseBodyMustMatchStatus() { // GH-90000
+        void responseBodyMustMatchStatus() { 
             // 200: should have response body
             // 204: should NOT have response body
             // 404: should have error body
@@ -335,13 +335,13 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
             int noContent = 204;
             int notFound = 404;
 
-            assertThat(okWithBody).isNotEqualTo(noContent); // GH-90000
-            assertThat(notFound).isNotEqualTo(okWithBody); // GH-90000
+            assertThat(okWithBody).isNotEqualTo(noContent); 
+            assertThat(notFound).isNotEqualTo(okWithBody); 
         }
 
         @Test
         @DisplayName("Content-Type must match response body")
-        void contentTypeMustMatch() { // GH-90000
+        void contentTypeMustMatch() { 
             // If Content-Type: application/json, body must be JSON
             // If Content-Type: text/plain, body must be text
 
@@ -363,50 +363,50 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("GET must not modify server state")
-        void getMustBeIdempotent() { // GH-90000
-            // GET /api/v1/users (read-only, safe, idempotent) // GH-90000
+        void getMustBeIdempotent() { 
+            // GET /api/v1/users (read-only, safe, idempotent) 
             // No side effects, can be called multiple times
 
-            String method = HttpMethod.GET.toString(); // GH-90000
+            String method = HttpMethod.GET.toString(); 
             assertThat(method).isEqualTo("GET");
         }
 
         @Test
         @DisplayName("POST must create new resource")
-        void postMustCreate() { // GH-90000
-            // POST /api/v1/users (creates new user) // GH-90000
+        void postMustCreate() { 
+            // POST /api/v1/users (creates new user) 
             // Response: 201 Created with Location header
 
-            String method = HttpMethod.POST.toString(); // GH-90000
+            String method = HttpMethod.POST.toString(); 
             assertThat(method).isEqualTo("POST");
         }
 
         @Test
         @DisplayName("PATCH must partially update resource")
-        void patchMustPartiallyUpdate() { // GH-90000
-            // PATCH /api/v1/users/:id (update specific fields) // GH-90000
+        void patchMustPartiallyUpdate() { 
+            // PATCH /api/v1/users/:id (update specific fields) 
 
-            String method = HttpMethod.PATCH.toString(); // GH-90000
+            String method = HttpMethod.PATCH.toString(); 
             assertThat(method).isEqualTo("PATCH");
         }
 
         @Test
         @DisplayName("DELETE must remove resource")
-        void deleteMustRemove() { // GH-90000
-            // DELETE /api/v1/users/:id (delete user) // GH-90000
-            // Can be idempotent (repeated deletes are safe) // GH-90000
+        void deleteMustRemove() { 
+            // DELETE /api/v1/users/:id (delete user) 
+            // Can be idempotent (repeated deletes are safe) 
 
-            String method = HttpMethod.DELETE.toString(); // GH-90000
+            String method = HttpMethod.DELETE.toString(); 
             assertThat(method).isEqualTo("DELETE");
         }
 
         @Test
         @DisplayName("PUT must replace entire resource")
-        void putMustReplace() { // GH-90000
-            // PUT /api/v1/users/:id (replace entire user) // GH-90000
+        void putMustReplace() { 
+            // PUT /api/v1/users/:id (replace entire user) 
             // Less common than PATCH for partial updates
 
-            String method = HttpMethod.PUT.toString(); // GH-90000
+            String method = HttpMethod.PUT.toString(); 
             assertThat(method).isEqualTo("PUT");
         }
     }
@@ -421,34 +421,34 @@ class HttpApiVersioningContractTest extends EventloopTestBase {
 
         @Test
         @DisplayName("individual request must not exceed max body size")
-        void requestMustRespectBodyLimit() { // GH-90000
+        void requestMustRespectBodyLimit() { 
             // Typical limit: 10MB for request body
             // Typical limit: 100KB for individual field
 
             int maxBodySize = 10 * 1024 * 1024; // 10MB
             int requestSize = 5 * 1024 * 1024; // 5MB
 
-            assertThat(requestSize).isLessThan(maxBodySize); // GH-90000
+            assertThat(requestSize).isLessThan(maxBodySize); 
         }
 
         @Test
         @DisplayName("batch operations must not exceed item count limit")
-        void batchMustHaveItemLimit() { // GH-90000
+        void batchMustHaveItemLimit() { 
             // Typical limit: 100-1000 items per batch operation
             int batchItemLimit = 100;
             int batchSize = 50;
 
-            assertThat(batchSize).isLessThan(batchItemLimit); // GH-90000
+            assertThat(batchSize).isLessThan(batchItemLimit); 
         }
 
         @Test
         @DisplayName("response must be reasonable size for API bandwidth")
-        void responseSizeMustBeReasonable() { // GH-90000
+        void responseSizeMustBeReasonable() { 
             // Typical limit: 100MB for streaming response
             // Paginated response: max 50MB per page
 
             int maxPageSize = 50 * 1024 * 1024; // 50MB
-            assertThat(maxPageSize).isGreaterThan(1024); // GH-90000
+            assertThat(maxPageSize).isGreaterThan(1024); 
         }
     }
 }

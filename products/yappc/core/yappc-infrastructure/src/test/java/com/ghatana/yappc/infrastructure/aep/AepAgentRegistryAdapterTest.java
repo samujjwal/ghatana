@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Technologies // GH-90000
+ * Copyright (c) 2025 Ghatana Technologies 
  * YAPPC Infrastructure — AEP Adapter Tests
  */
 package com.ghatana.yappc.infrastructure.aep;
@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * AEP directly; the adapter is the single integration point.
  */
 @DisplayName("AepAgentRegistryAdapter — delegation contract")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AepAgentRegistryAdapterTest {
 
     @Mock
@@ -43,99 +43,99 @@ class AepAgentRegistryAdapterTest {
 
     private static final TenantId TENANT = TenantId.of("test-tenant");
 
-    private static AgentManifestProto manifest(String id) { // GH-90000
-        return AgentManifestProto.newBuilder() // GH-90000
-                .setMetadata(MetadataProto.newBuilder().setId(id).setName(id).build()) // GH-90000
-                .build(); // GH-90000
+    private static AgentManifestProto manifest(String id) { 
+        return AgentManifestProto.newBuilder() 
+                .setMetadata(MetadataProto.newBuilder().setId(id).setName(id).build()) 
+                .build(); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        adapter = new AepAgentRegistryAdapter(delegate); // GH-90000
+    void setUp() { 
+        adapter = new AepAgentRegistryAdapter(delegate); 
     }
 
     @Test
     @DisplayName("register delegates to AgentRegistryService")
-    void register_delegatesToService() { // GH-90000
+    void register_delegatesToService() { 
         AgentManifestProto m = manifest("agent-1");
-        when(delegate.register(TENANT, m)).thenReturn(Promise.of(m)); // GH-90000
+        when(delegate.register(TENANT, m)).thenReturn(Promise.of(m)); 
 
-        Promise<AgentManifestProto> result = adapter.register(TENANT, m); // GH-90000
+        Promise<AgentManifestProto> result = adapter.register(TENANT, m); 
 
-        verify(delegate).register(TENANT, m); // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        verify(delegate).register(TENANT, m); 
+        assertThat(result).isNotNull(); 
     }
 
     @Test
     @DisplayName("getById delegates to AgentRegistryService")
-    void getById_delegatesToService() { // GH-90000
+    void getById_delegatesToService() { 
         AgentManifestProto m = manifest("agent-1");
-        when(delegate.getById(TENANT, "agent-1")).thenReturn(Promise.of(m)); // GH-90000
+        when(delegate.getById(TENANT, "agent-1")).thenReturn(Promise.of(m)); 
 
-        Promise<AgentManifestProto> result = adapter.getById(TENANT, "agent-1"); // GH-90000
+        Promise<AgentManifestProto> result = adapter.getById(TENANT, "agent-1"); 
 
-        verify(delegate).getById(TENANT, "agent-1"); // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        verify(delegate).getById(TENANT, "agent-1"); 
+        assertThat(result).isNotNull(); 
     }
 
     @Test
     @DisplayName("listAll delegates to AgentRegistryService")
-    void listAll_delegatesToService() { // GH-90000
+    void listAll_delegatesToService() { 
         List<AgentManifestProto> list = List.of(manifest("a1"), manifest("a2"));
-        when(delegate.listAll(TENANT)).thenReturn(Promise.of(list)); // GH-90000
+        when(delegate.listAll(TENANT)).thenReturn(Promise.of(list)); 
 
-        Promise<List<AgentManifestProto>> result = adapter.listAll(TENANT); // GH-90000
+        Promise<List<AgentManifestProto>> result = adapter.listAll(TENANT); 
 
-        verify(delegate).listAll(TENANT); // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        verify(delegate).listAll(TENANT); 
+        assertThat(result).isNotNull(); 
     }
 
     @Test
     @DisplayName("findByCapabilities delegates to AgentRegistryService")
-    void findByCapabilities_delegatesToService() { // GH-90000
+    void findByCapabilities_delegatesToService() { 
         Set<String> caps = Set.of("code-gen");
-        when(delegate.findByCapabilities(TENANT, caps)).thenReturn(Promise.of(List.of())); // GH-90000
+        when(delegate.findByCapabilities(TENANT, caps)).thenReturn(Promise.of(List.of())); 
 
-        adapter.findByCapabilities(TENANT, caps); // GH-90000
+        adapter.findByCapabilities(TENANT, caps); 
 
-        verify(delegate).findByCapabilities(TENANT, caps); // GH-90000
+        verify(delegate).findByCapabilities(TENANT, caps); 
     }
 
     @Test
     @DisplayName("findByEventType delegates to AgentRegistryService")
-    void findByEventType_delegatesToService() { // GH-90000
-        when(delegate.findByEventType(TENANT, "code.review")).thenReturn(Promise.of(List.of())); // GH-90000
+    void findByEventType_delegatesToService() { 
+        when(delegate.findByEventType(TENANT, "code.review")).thenReturn(Promise.of(List.of())); 
 
-        adapter.findByEventType(TENANT, "code.review"); // GH-90000
+        adapter.findByEventType(TENANT, "code.review"); 
 
-        verify(delegate).findByEventType(TENANT, "code.review"); // GH-90000
+        verify(delegate).findByEventType(TENANT, "code.review"); 
     }
 
     @Test
     @DisplayName("update delegates to AgentRegistryService")
-    void update_delegatesToService() { // GH-90000
+    void update_delegatesToService() { 
         AgentManifestProto m = manifest("agent-1");
-        when(delegate.update(TENANT, "agent-1", m)).thenReturn(Promise.of(m)); // GH-90000
+        when(delegate.update(TENANT, "agent-1", m)).thenReturn(Promise.of(m)); 
 
-        adapter.update(TENANT, "agent-1", m); // GH-90000
+        adapter.update(TENANT, "agent-1", m); 
 
-        verify(delegate).update(TENANT, "agent-1", m); // GH-90000
+        verify(delegate).update(TENANT, "agent-1", m); 
     }
 
     @Test
     @DisplayName("delete delegates to AgentRegistryService with hardDelete flag")
-    void delete_delegatesToService_withHardDeleteFlag() { // GH-90000
-        when(delegate.delete(TENANT, "agent-1", true)).thenReturn(Promise.of(true)); // GH-90000
+    void delete_delegatesToService_withHardDeleteFlag() { 
+        when(delegate.delete(TENANT, "agent-1", true)).thenReturn(Promise.of(true)); 
 
-        adapter.delete(TENANT, "agent-1", true); // GH-90000
+        adapter.delete(TENANT, "agent-1", true); 
 
-        verify(delegate).delete(TENANT, "agent-1", true); // GH-90000
+        verify(delegate).delete(TENANT, "agent-1", true); 
     }
 
     @Test
     @DisplayName("constructor rejects null delegate")
-    void constructor_rejectsNullDelegate() { // GH-90000
-        assertThatThrownBy(() -> new AepAgentRegistryAdapter(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void constructor_rejectsNullDelegate() { 
+        assertThatThrownBy(() -> new AepAgentRegistryAdapter(null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 }

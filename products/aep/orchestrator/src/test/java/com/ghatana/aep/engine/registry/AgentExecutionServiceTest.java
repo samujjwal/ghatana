@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AgentExecutionService")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AgentExecutionServiceTest extends EventloopTestBase {
 
     @Mock
@@ -62,131 +62,131 @@ class AgentExecutionServiceTest extends EventloopTestBase {
     private AgentExecutionService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new AgentExecutionService(agentRegistry, llmGateway, historyStore, memoryClient); // GH-90000
-        lenient().when(historyStore.append(any(), any())).thenReturn(Promise.complete()); // GH-90000
-        lenient().when(memoryClient.recordExecution(any(), any(), any(), any(), anyLong())).thenReturn(Promise.complete()); // GH-90000
+    void setUp() { 
+        service = new AgentExecutionService(agentRegistry, llmGateway, historyStore, memoryClient); 
+        lenient().when(historyStore.append(any(), any())).thenReturn(Promise.complete()); 
+        lenient().when(memoryClient.recordExecution(any(), any(), any(), any(), anyLong())).thenReturn(Promise.complete()); 
     }
 
     @Test
     @DisplayName("execute records history and memory after a successful completion")
-    void executeRecordsHistoryAndMemory() { // GH-90000
+    void executeRecordsHistoryAndMemory() { 
         when(agentRegistry.resolve("agent-1"))
             .thenReturn(Promise.of(Optional.of(new TestAgent("agent-1"))));
-        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
-            .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+        when(llmGateway.complete(any(CompletionRequest.class))) 
+            .thenReturn(Promise.of(CompletionResult.builder() 
                 .text("result-text")
-                .tokensUsed(42) // GH-90000
-                .build())); // GH-90000
+                .tokensUsed(42) 
+                .build())); 
 
         AgentExecutionService.ExecutionResult result =
-            runPromise(() -> service.execute("agent-1", Map.of("message", "hello"))); // GH-90000
+            runPromise(() -> service.execute("agent-1", Map.of("message", "hello"))); 
 
         assertThat(result.status()).isEqualTo("success");
         assertThat(result.output()).isEqualTo("result-text");
 
         ArgumentCaptor<AgentExecutionService.ExecutionRecord> recordCaptor =
-            ArgumentCaptor.forClass(AgentExecutionService.ExecutionRecord.class); // GH-90000
+            ArgumentCaptor.forClass(AgentExecutionService.ExecutionRecord.class); 
         verify(historyStore).append(eq("agent-1"), recordCaptor.capture());
         verify(memoryClient).recordExecution(eq("agent-1"), eq(result.executionId()),
             eq(Map.of("message", "hello")), eq("result-text"), eq(result.durationMs()));
 
-        AgentExecutionService.ExecutionRecord record = recordCaptor.getValue(); // GH-90000
+        AgentExecutionService.ExecutionRecord record = recordCaptor.getValue(); 
         assertThat(record.status()).isEqualTo("success");
         assertThat(record.output()).isEqualTo("result-text");
     }
 
     @Test
     @DisplayName("getHistory delegates to the configured history store")
-    void getHistoryDelegates() { // GH-90000
-        List<AgentExecutionService.ExecutionRecord> records = List.of( // GH-90000
-            new AgentExecutionService.ExecutionRecord("exec-1", "success", "in", "out", 12L, "2026-04-15T00:00:00Z")); // GH-90000
-        when(historyStore.getHistory("agent-9", 25)).thenReturn(Promise.of(records)); // GH-90000
+    void getHistoryDelegates() { 
+        List<AgentExecutionService.ExecutionRecord> records = List.of( 
+            new AgentExecutionService.ExecutionRecord("exec-1", "success", "in", "out", 12L, "2026-04-15T00:00:00Z")); 
+        when(historyStore.getHistory("agent-9", 25)).thenReturn(Promise.of(records)); 
 
         List<AgentExecutionService.ExecutionRecord> result =
-            runPromise(() -> service.getHistory("agent-9", 25)); // GH-90000
+            runPromise(() -> service.getHistory("agent-9", 25)); 
 
-        assertThat(result).containsExactlyElementsOf(records); // GH-90000
+        assertThat(result).containsExactlyElementsOf(records); 
     }
 
     @Test
     @DisplayName("getMemory delegates to the configured memory client")
-    void getMemoryDelegates() { // GH-90000
-        AgentExecutionService.AgentMemory memory = new AgentExecutionService.AgentMemory( // GH-90000
-            List.of(Map.of("id", "ep-1")), // GH-90000
-            Map.of("count", 1), // GH-90000
-            Map.of("count", 0), // GH-90000
+    void getMemoryDelegates() { 
+        AgentExecutionService.AgentMemory memory = new AgentExecutionService.AgentMemory( 
+            List.of(Map.of("id", "ep-1")), 
+            Map.of("count", 1), 
+            Map.of("count", 0), 
             "2026-04-15T00:00:00Z");
         when(memoryClient.getMemory("agent-9")).thenReturn(Promise.of(memory));
 
         AgentExecutionService.AgentMemory result =
             runPromise(() -> service.getMemory("agent-9"));
 
-        assertThat(result).isEqualTo(memory); // GH-90000
+        assertThat(result).isEqualTo(memory); 
     }
 
     @Test
     @DisplayName("execute rejects registry entries marked as discovery-only")
-    void executeRejectsDiscoveryOnlyAgents() { // GH-90000
+    void executeRejectsDiscoveryOnlyAgents() { 
         when(agentRegistry.resolve("agent-placeholder"))
-            .thenReturn(Promise.of(Optional.of(new TestAgent( // GH-90000
-                AgentDescriptor.builder() // GH-90000
+            .thenReturn(Promise.of(Optional.of(new TestAgent( 
+                AgentDescriptor.builder() 
                     .agentId("agent-placeholder")
                     .name("Placeholder Agent")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .metadata(Map.of( // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .metadata(Map.of( 
                         "executable", false,
                         "registrationMode", "manifest-only"
                     ))
-                    .build() // GH-90000
+                    .build() 
             ))));
 
-        assertThatThrownBy(() -> runPromise(() -> service.execute("agent-placeholder", Map.of("message", "hello")))) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> service.execute("agent-placeholder", Map.of("message", "hello")))) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("cannot be executed");
 
-        verify(llmGateway, never()).complete(any(CompletionRequest.class)); // GH-90000
+        verify(llmGateway, never()).complete(any(CompletionRequest.class)); 
     }
 
     private static final class TestAgent implements TypedAgent<Object, Object> {
 
         private final AgentDescriptor descriptor;
 
-        private TestAgent(String agentId) { // GH-90000
-            this(AgentDescriptor.builder() // GH-90000
-                .agentId(agentId) // GH-90000
+        private TestAgent(String agentId) { 
+            this(AgentDescriptor.builder() 
+                .agentId(agentId) 
                 .name("Test Agent")
-                .type(AgentType.PROBABILISTIC) // GH-90000
-                .build()); // GH-90000
+                .type(AgentType.PROBABILISTIC) 
+                .build()); 
         }
 
-        private TestAgent(AgentDescriptor descriptor) { // GH-90000
+        private TestAgent(AgentDescriptor descriptor) { 
             this.descriptor = descriptor;
         }
 
         @Override
-        public @NotNull AgentDescriptor descriptor() { // GH-90000
+        public @NotNull AgentDescriptor descriptor() { 
             return descriptor;
         }
 
         @Override
-        public @NotNull Promise<Void> initialize(@NotNull com.ghatana.agent.AgentConfig config) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public @NotNull Promise<Void> initialize(@NotNull com.ghatana.agent.AgentConfig config) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public @NotNull Promise<Void> shutdown() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public @NotNull Promise<Void> shutdown() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public @NotNull Promise<HealthStatus> healthCheck() { // GH-90000
+        public @NotNull Promise<HealthStatus> healthCheck() { 
             return Promise.of(HealthStatus.healthy("ok"));
         }
 
         @Override
-        public @NotNull Promise<AgentResult<Object>> process(@NotNull AgentContext ctx, @NotNull Object input) { // GH-90000
-            return Promise.of(AgentResult.success(input, descriptor.getAgentId(), java.time.Duration.ZERO)); // GH-90000
+        public @NotNull Promise<AgentResult<Object>> process(@NotNull AgentContext ctx, @NotNull Object input) { 
+            return Promise.of(AgentResult.success(input, descriptor.getAgentId(), java.time.Duration.ZERO)); 
         }
     }
 }

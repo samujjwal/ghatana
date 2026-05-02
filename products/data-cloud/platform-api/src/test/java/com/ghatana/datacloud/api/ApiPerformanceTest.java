@@ -21,43 +21,43 @@ class ApiPerformanceTest {
 
     @Test
     @DisplayName("Should measure API latency")
-    void shouldMeasureApiLatency() { // GH-90000
+    void shouldMeasureApiLatency() { 
         long latency = 100;
-        assertThat(latency).isPositive(); // GH-90000
+        assertThat(latency).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle API throughput")
-    void shouldHandleApiThroughput() { // GH-90000
+    void shouldHandleApiThroughput() { 
         int requests = 1000;
-        assertThat(requests).isPositive(); // GH-90000
+        assertThat(requests).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle concurrent requests")
-    void shouldHandleConcurrentRequests() { // GH-90000
+    void shouldHandleConcurrentRequests() { 
         int threads = 10;
-        assertThat(threads).isPositive(); // GH-90000
+        assertThat(threads).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle resource optimization")
-    void shouldHandleResourceOptimization() { // GH-90000
+    void shouldHandleResourceOptimization() { 
         String resource = "memory";
-        assertThat(resource).isNotNull(); // GH-90000
+        assertThat(resource).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle performance degradation")
-    void shouldHandlePerformanceDegradation() { // GH-90000
+    void shouldHandlePerformanceDegradation() { 
         boolean degraded = false;
-        assertThat(degraded).isFalse(); // GH-90000
+        assertThat(degraded).isFalse(); 
     }
 
     @Test
     @DisplayName("Should handle performance monitoring")
-    void shouldHandlePerformanceMonitoring() { // GH-90000
+    void shouldHandlePerformanceMonitoring() { 
         String metric = "response_time";
-        assertThat(metric).isNotNull(); // GH-90000
+        assertThat(metric).isNotNull(); 
     }
 }

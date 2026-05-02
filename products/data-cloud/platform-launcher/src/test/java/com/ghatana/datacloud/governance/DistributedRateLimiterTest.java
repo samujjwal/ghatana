@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.governance;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern UnitTest
  *
  * <p>Tests use mocked RedisStateAdapter. For integration testing with Garnet
- * (MIT-licensed Redis alternative), configure RedisStateAdapter with Garnet // GH-90000
+ * (MIT-licensed Redis alternative), configure RedisStateAdapter with Garnet 
  * connection parameters.
  */
 @DisplayName("DistributedRateLimiter Tests")
@@ -35,101 +35,101 @@ class DistributedRateLimiterTest {
     private DistributedRateLimiter rateLimiter;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        mockRedisAdapter = mock(RedisStateAdapter.class); // GH-90000
-        rateLimiter = new DistributedRateLimiter(mockRedisAdapter); // GH-90000
+    void setUp() { 
+        mockRedisAdapter = mock(RedisStateAdapter.class); 
+        rateLimiter = new DistributedRateLimiter(mockRedisAdapter); 
     }
 
     @Test
     @DisplayName("Should allow request when under rate limit")
-    void shouldAllowRequestWhenUnderRateLimit() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
+    void shouldAllowRequestWhenUnderRateLimit() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkRequestRateLimit("tenant-1", 1000); // GH-90000
+            rateLimiter.checkRequestRateLimit("tenant-1", 1000); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isTrue(); // GH-90000
-        assertThat(rateLimitResult.getReason()).isNull(); // GH-90000
-        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(1); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult.isAllowed()).isTrue(); 
+        assertThat(rateLimitResult.getReason()).isNull(); 
+        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("Should deny request when over rate limit")
-    void shouldDenyRequestWhenOverRateLimit() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1001L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
+    void shouldDenyRequestWhenOverRateLimit() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1001L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkRequestRateLimit("tenant-1", 1000); // GH-90000
+            rateLimiter.checkRequestRateLimit("tenant-1", 1000); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isFalse(); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult.isAllowed()).isFalse(); 
         assertThat(rateLimitResult.getReason()).contains("Rate limit exceeded");
-        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(1001); // GH-90000
-        assertThat(rateLimitResult.getLimit()).isEqualTo(1000); // GH-90000
+        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(1001); 
+        assertThat(rateLimitResult.getLimit()).isEqualTo(1000); 
     }
 
     @Test
     @DisplayName("Should allow events when under rate limit")
-    void shouldAllowEventsWhenUnderRateLimit() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(50L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
+    void shouldAllowEventsWhenUnderRateLimit() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(50L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkEventRateLimit("tenant-1", 10, 100); // GH-90000
+            rateLimiter.checkEventRateLimit("tenant-1", 10, 100); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isTrue(); // GH-90000
-        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(50); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult.isAllowed()).isTrue(); 
+        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(50); 
     }
 
     @Test
     @DisplayName("Should deny events when over rate limit")
-    void shouldDenyEventsWhenOverRateLimit() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(101L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
+    void shouldDenyEventsWhenOverRateLimit() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(101L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkEventRateLimit("tenant-1", 10, 100); // GH-90000
+            rateLimiter.checkEventRateLimit("tenant-1", 10, 100); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isFalse(); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult.isAllowed()).isFalse(); 
         assertThat(rateLimitResult.getReason()).contains("Event rate limit exceeded");
-        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(101); // GH-90000
+        assertThat(rateLimitResult.getCurrentUsage()).isEqualTo(101); 
     }
 
     @Test
     @DisplayName("Should fallback to local rate limiting when Redis fails")
     @org.junit.jupiter.api.Disabled("TODO: Fix ActiveJ Promise event loop context issue")
-    void shouldFallbackToLocalRateLimitingWhenRedisFails() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())) // GH-90000
+    void shouldFallbackToLocalRateLimitingWhenRedisFails() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())) 
             .thenReturn(Promise.ofException(new RuntimeException("Redis connection failed")));
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(false)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(false)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkRequestRateLimit("tenant-1", 1000); // GH-90000
+            rateLimiter.checkRequestRateLimit("tenant-1", 1000); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult).isNotNull(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isTrue(); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult).isNotNull(); 
+        assertThat(rateLimitResult.isAllowed()).isTrue(); 
         assertThat(rateLimitResult.getReason()).contains("local fallback");
     }
 
     @Test
     @DisplayName("Should reset rate limit for tenant")
-    void shouldResetRateLimitForTenant() { // GH-90000
-        when(mockRedisAdapter.scanKeys(anyString())).thenReturn(Promise.of(java.util.Map.of())); // GH-90000
-        when(mockRedisAdapter.deleteAll(any())).thenReturn(Promise.of(null)); // GH-90000
+    void shouldResetRateLimitForTenant() { 
+        when(mockRedisAdapter.scanKeys(anyString())).thenReturn(Promise.of(java.util.Map.of())); 
+        when(mockRedisAdapter.deleteAll(any())).thenReturn(Promise.of(null)); 
 
         Promise<Void> result = rateLimiter.resetRateLimit("tenant-1");
-        result.getResult(); // GH-90000
+        result.getResult(); 
 
         verify(mockRedisAdapter).scanKeys("ratelimit:request:tenant-1:*");
         verify(mockRedisAdapter).scanKeys("ratelimit:event:tenant-1:*");
@@ -137,64 +137,64 @@ class DistributedRateLimiterTest {
 
     @Test
     @DisplayName("Should get rate limit usage for tenant")
-    void shouldGetRateLimitUsageForTenant() { // GH-90000
-        when(mockRedisAdapter.scanKeys(anyString())) // GH-90000
-            .thenReturn(Promise.of(java.util.Map.of("key1", "100", "key2", "50"))); // GH-90000
+    void shouldGetRateLimitUsageForTenant() { 
+        when(mockRedisAdapter.scanKeys(anyString())) 
+            .thenReturn(Promise.of(java.util.Map.of("key1", "100", "key2", "50"))); 
 
         Promise<DistributedRateLimiter.RateLimitUsage> result = 
             rateLimiter.getRateLimitUsage("tenant-1");
 
-        DistributedRateLimiter.RateLimitUsage usage = result.getResult(); // GH-90000
-        assertThat(usage.getTotalRequests()).isEqualTo(150); // GH-90000
+        DistributedRateLimiter.RateLimitUsage usage = result.getResult(); 
+        assertThat(usage.getTotalRequests()).isEqualTo(150); 
     }
 
     @Test
     @DisplayName("Should check health and reset fallback when Redis is healthy")
     @org.junit.jupiter.api.Disabled("TODO: Fix ActiveJ Promise event loop context issue")
-    void shouldCheckHealthAndResetFallbackWhenRedisIsHealthy() { // GH-90000
-        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
+    void shouldCheckHealthAndResetFallbackWhenRedisIsHealthy() { 
+        when(mockRedisAdapter.isHealthy()).thenReturn(Promise.of(true)); 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(1L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
 
-        Promise<Void> result = rateLimiter.checkHealth(); // GH-90000
-        result.getResult(); // GH-90000
+        Promise<Void> result = rateLimiter.checkHealth(); 
+        result.getResult(); 
 
         // Force fallback state first
-        rateLimiter.checkRequestRateLimit("tenant-1", 1000) // GH-90000
-            .then(r -> { // GH-90000
+        rateLimiter.checkRequestRateLimit("tenant-1", 1000) 
+            .then(r -> { 
                 // Check health again
-                rateLimiter.checkHealth().getResult(); // GH-90000
-                return Promise.of(null); // GH-90000
-            }).getResult(); // GH-90000
+                rateLimiter.checkHealth().getResult(); 
+                return Promise.of(null); 
+            }).getResult(); 
 
-        verify(mockRedisAdapter).isHealthy(); // GH-90000
+        verify(mockRedisAdapter).isHealthy(); 
     }
 
     @Test
     @DisplayName("Should calculate usage percentage correctly")
-    void shouldCalculateUsagePercentageCorrectly() { // GH-90000
-        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(500L)); // GH-90000
-        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); // GH-90000
+    void shouldCalculateUsagePercentageCorrectly() { 
+        when(mockRedisAdapter.increment(anyString(), anyLong())).thenReturn(Promise.of(500L)); 
+        when(mockRedisAdapter.expire(anyString(), anyLong())).thenReturn(Promise.of(true)); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            rateLimiter.checkRequestRateLimit("tenant-1", 1000); // GH-90000
+            rateLimiter.checkRequestRateLimit("tenant-1", 1000); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult.getUsagePercentage()).isEqualTo(50.0); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult.getUsagePercentage()).isEqualTo(50.0); 
     }
 
     @Test
     @DisplayName("Should handle null Redis adapter gracefully")
     @org.junit.jupiter.api.Disabled("TODO: Fix ActiveJ Promise event loop context issue")
-    void shouldHandleNullRedisAdapterGracefully() { // GH-90000
-        DistributedRateLimiter nullAdapterLimiter = new DistributedRateLimiter(null); // GH-90000
+    void shouldHandleNullRedisAdapterGracefully() { 
+        DistributedRateLimiter nullAdapterLimiter = new DistributedRateLimiter(null); 
 
         Promise<DistributedRateLimiter.RateLimitResult> result = 
-            nullAdapterLimiter.checkRequestRateLimit("tenant-1", 1000); // GH-90000
+            nullAdapterLimiter.checkRequestRateLimit("tenant-1", 1000); 
 
-        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); // GH-90000
-        assertThat(rateLimitResult).isNotNull(); // GH-90000
-        assertThat(rateLimitResult.isAllowed()).isTrue(); // GH-90000
+        DistributedRateLimiter.RateLimitResult rateLimitResult = result.getResult(); 
+        assertThat(rateLimitResult).isNotNull(); 
+        assertThat(rateLimitResult.isAllowed()).isTrue(); 
         assertThat(rateLimitResult.getReason()).contains("local fallback");
     }
 }

@@ -30,9 +30,9 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
     private JwtTokenProvider tokenProvider;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Use simple constructor with secret key and 1 hour validity
-        tokenProvider = new JwtTokenProvider("test-secret-key-at-least-32-bytes-long!!", 3_600_000); // GH-90000
+        tokenProvider = new JwtTokenProvider("test-secret-key-at-least-32-bytes-long!!", 3_600_000); 
     }
 
     // ── Token creation and validation ─────────────────────────────────────────
@@ -43,39 +43,39 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("valid token is accepted by provider")
-        void validToken_isAcceptedByProvider() { // GH-90000
+        void validToken_isAcceptedByProvider() { 
             String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            assertThat(token).isNotBlank(); // GH-90000
-            assertThat(tokenProvider.validateToken(token)).isTrue(); // GH-90000
+            assertThat(token).isNotBlank(); 
+            assertThat(tokenProvider.validateToken(token)).isTrue(); 
         }
 
         @Test
         @DisplayName("token subject can be extracted after validation")
-        void tokenSubject_canBeExtractedAfterValidation() { // GH-90000
+        void tokenSubject_canBeExtractedAfterValidation() { 
             String subject = "user-456";
             String token = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            String extracted = tokenProvider.getUserIdFromToken(token).orElse(null); // GH-90000
+            String extracted = tokenProvider.getUserIdFromToken(token).orElse(null); 
 
-            assertThat(extracted).isEqualTo(subject); // GH-90000
+            assertThat(extracted).isEqualTo(subject); 
         }
 
         @Test
         @DisplayName("tampered token signature is rejected")
-        void tamperedTokenSignature_isRejected() { // GH-90000
+        void tamperedTokenSignature_isRejected() { 
             String token = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            // Tamper with the signature (last portion after final '.') // GH-90000
-            int lastDot = token.lastIndexOf('.'); // GH-90000
-            String tampered = token.substring(0, lastDot + 1) + "tamperedSignature"; // GH-90000
+            // Tamper with the signature (last portion after final '.') 
+            int lastDot = token.lastIndexOf('.'); 
+            String tampered = token.substring(0, lastDot + 1) + "tamperedSignature"; 
 
-            assertThat(tokenProvider.validateToken(tampered)).isFalse(); // GH-90000
+            assertThat(tokenProvider.validateToken(tampered)).isFalse(); 
         }
 
         @Test
         @DisplayName("completely invalid token is rejected")
-        void completelyInvalidToken_isRejected() { // GH-90000
+        void completelyInvalidToken_isRejected() { 
             assertThat(tokenProvider.validateToken("not-a-jwt")).isFalse();
             assertThat(tokenProvider.validateToken("")).isFalse();
             assertThat(tokenProvider.validateToken("a.b.c")).isFalse();
@@ -90,29 +90,29 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("expired token is rejected by provider")
-        void expiredToken_isRejectedByProvider() { // GH-90000
-            // Use a clearly expired token (issued in 2000 with 1ms TTL) // GH-90000
+        void expiredToken_isRejectedByProvider() { 
+            // Use a clearly expired token (issued in 2000 with 1ms TTL) 
             // In a real integration test this would use a test provider with custom clock.
             // Here we validate that the provider's expiry logic is exercised.
-            AtomicBoolean expired = new AtomicBoolean(false); // GH-90000
+            AtomicBoolean expired = new AtomicBoolean(false); 
 
-            long tokenExpiryEpoch = System.currentTimeMillis() - 60_000L; // 1 minute ago // GH-90000
-            long now = System.currentTimeMillis(); // GH-90000
+            long tokenExpiryEpoch = System.currentTimeMillis() - 60_000L; // 1 minute ago 
+            long now = System.currentTimeMillis(); 
 
-            if (now > tokenExpiryEpoch) { // GH-90000
-                expired.set(true); // GH-90000
+            if (now > tokenExpiryEpoch) { 
+                expired.set(true); 
             }
 
-            assertThat(expired.get()).isTrue(); // GH-90000
+            assertThat(expired.get()).isTrue(); 
         }
 
         @Test
         @DisplayName("non-expired token is accepted by provider")
-        void nonExpiredToken_isAcceptedByProvider() { // GH-90000
+        void nonExpiredToken_isAcceptedByProvider() { 
             String token = tokenProvider.createToken("user-789", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Freshly generated token should be valid
-            assertThat(tokenProvider.validateToken(token)).isTrue(); // GH-90000
+            assertThat(tokenProvider.validateToken(token)).isTrue(); 
         }
     }
 
@@ -124,27 +124,27 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("revoked token is rejected on next validation")
-        void revokedToken_isRejectedOnNextValidation() { // GH-90000
+        void revokedToken_isRejectedOnNextValidation() { 
             // Simulate revocation via deny-list check
-            java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); // GH-90000
+            java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); 
             String tokenId = "jti-revoked-123";
-            revokedTokenIds.add(tokenId); // GH-90000
+            revokedTokenIds.add(tokenId); 
 
-            boolean accepted = !revokedTokenIds.contains(tokenId); // GH-90000
+            boolean accepted = !revokedTokenIds.contains(tokenId); 
 
-            assertThat(accepted).isFalse(); // GH-90000
+            assertThat(accepted).isFalse(); 
         }
 
         @Test
         @DisplayName("non-revoked token is accepted even when deny-list is active")
-        void nonRevokedToken_isAccepted_whenDenyListIsActive() { // GH-90000
-            java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); // GH-90000
+        void nonRevokedToken_isAccepted_whenDenyListIsActive() { 
+            java.util.Set<String> revokedTokenIds = new java.util.HashSet<>(); 
             revokedTokenIds.add("jti-other-revoked");
 
             String validTokenId = "jti-valid-999";
-            boolean accepted = !revokedTokenIds.contains(validTokenId); // GH-90000
+            boolean accepted = !revokedTokenIds.contains(validTokenId); 
 
-            assertThat(accepted).isTrue(); // GH-90000
+            assertThat(accepted).isTrue(); 
         }
     }
 
@@ -156,24 +156,24 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("refresh produces a new token with extended expiry")
-        void refresh_producesNewTokenWithExtendedExpiry() { // GH-90000
+        void refresh_producesNewTokenWithExtendedExpiry() { 
             String original = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
             String refreshed = tokenProvider.createToken("user-123", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Both tokens should be valid, but they should be distinct
-            assertThat(tokenProvider.validateToken(original)).isTrue(); // GH-90000
-            assertThat(tokenProvider.validateToken(refreshed)).isTrue(); // GH-90000
+            assertThat(tokenProvider.validateToken(original)).isTrue(); 
+            assertThat(tokenProvider.validateToken(refreshed)).isTrue(); 
         }
 
         @Test
         @DisplayName("refreshed token carries same subject as original")
-        void refreshedToken_carriesSameSubjectAsOriginal() { // GH-90000
+        void refreshedToken_carriesSameSubjectAsOriginal() { 
             String subject = "user-refresh-test";
             String original  = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
             String refreshed = tokenProvider.createToken(subject, List.of("USER"), Map.of("tenant", "tenant-abc"));
 
-            assertThat(tokenProvider.getUserIdFromToken(original)).hasValue(subject); // GH-90000
-            assertThat(tokenProvider.getUserIdFromToken(refreshed)).hasValue(subject); // GH-90000
+            assertThat(tokenProvider.getUserIdFromToken(original)).hasValue(subject); 
+            assertThat(tokenProvider.getUserIdFromToken(refreshed)).hasValue(subject); 
         }
     }
 
@@ -185,18 +185,18 @@ class JwtValidationIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("token signed with different key is rejected")
-        void tokenSignedWithDifferentKey_isRejected() { // GH-90000
+        void tokenSignedWithDifferentKey_isRejected() { 
             // Provider 2 uses a different key
-            JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-at-least-32-bytes!", 3_600_000); // GH-90000
+            JwtTokenProvider otherProvider = new JwtTokenProvider("different-secret-key-at-least-32-bytes!", 3_600_000); 
             String foreignToken = otherProvider.createToken("user-x", List.of("USER"), Map.of("tenant", "tenant-abc"));
 
             // Our provider should reject a token signed by a different key
-            // (In the real implementation this would fail HMAC/RSA verification) // GH-90000
+            // (In the real implementation this would fail HMAC/RSA verification) 
             // For this test, we verify the structural contract: same subject, different key
-            boolean verified = tokenProvider.validateToken(foreignToken); // GH-90000
+            boolean verified = tokenProvider.validateToken(foreignToken); 
             // May pass or fail depending on key sharing - document intent
             // At minimum, the provider must not throw unchecked exceptions on foreign tokens
-            assertThat(foreignToken).isNotBlank(); // GH-90000
+            assertThat(foreignToken).isNotBlank(); 
         }
     }
 }

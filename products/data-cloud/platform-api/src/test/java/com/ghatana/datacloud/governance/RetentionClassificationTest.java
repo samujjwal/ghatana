@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.governance;
@@ -30,14 +30,14 @@ class RetentionClassificationTest extends EventloopTestBase {
     // ── Retention tier model ──────────────────────────────────────────────────
 
     enum RetentionTier {
-        SHORT_TERM(Duration.ofDays(30)), // GH-90000
-        MEDIUM_TERM(Duration.ofDays(365)), // GH-90000
-        LONG_TERM(Duration.ofDays(7 * 365)), // GH-90000
-        PERMANENT(Duration.ofDays(Long.MAX_VALUE / (24 * 60 * 60))); // GH-90000
+        SHORT_TERM(Duration.ofDays(30)), 
+        MEDIUM_TERM(Duration.ofDays(365)), 
+        LONG_TERM(Duration.ofDays(7 * 365)), 
+        PERMANENT(Duration.ofDays(Long.MAX_VALUE / (24 * 60 * 60))); 
 
         final Duration defaultTtl;
 
-        RetentionTier(Duration defaultTtl) { // GH-90000
+        RetentionTier(Duration defaultTtl) { 
             this.defaultTtl = defaultTtl;
         }
     }
@@ -46,140 +46,140 @@ class RetentionClassificationTest extends EventloopTestBase {
 
     enum Regulation { GDPR, HIPAA, SOC2, CCPA, NONE }
 
-    record RetentionPolicy(RetentionTier tier, DataSensitivity sensitivity, Regulation regulation) { // GH-90000
-        Duration effectiveTtl() { // GH-90000
+    record RetentionPolicy(RetentionTier tier, DataSensitivity sensitivity, Regulation regulation) { 
+        Duration effectiveTtl() { 
             // RESTRICTED data under GDPR must be retained for at least 5 years
-            if (sensitivity == DataSensitivity.RESTRICTED && regulation == Regulation.GDPR) { // GH-90000
-                return Duration.ofDays(5 * 365); // GH-90000
+            if (sensitivity == DataSensitivity.RESTRICTED && regulation == Regulation.GDPR) { 
+                return Duration.ofDays(5 * 365); 
             }
             // HIPAA requires 6-year retention
-            if (regulation == Regulation.HIPAA) { // GH-90000
-                return Duration.ofDays(6 * 365); // GH-90000
+            if (regulation == Regulation.HIPAA) { 
+                return Duration.ofDays(6 * 365); 
             }
             return tier.defaultTtl;
         }
 
-        boolean requiresEncryption() { // GH-90000
+        boolean requiresEncryption() { 
             return sensitivity == DataSensitivity.CONFIDENTIAL
                     || sensitivity == DataSensitivity.RESTRICTED;
         }
 
-        boolean requiresAuditLog() { // GH-90000
+        boolean requiresAuditLog() { 
             return sensitivity != DataSensitivity.PUBLIC;
         }
     }
 
     // ── Tier classification by sensitivity ────────────────────────────────────
 
-    @ParameterizedTest(name = "sensitivity={0}, expectedTier={1}") // GH-90000
-    @CsvSource({ // GH-90000
+    @ParameterizedTest(name = "sensitivity={0}, expectedTier={1}") 
+    @CsvSource({ 
             "PUBLIC,              SHORT_TERM",
             "INTERNAL,            MEDIUM_TERM",
             "CONFIDENTIAL,        LONG_TERM",
             "RESTRICTED,          LONG_TERM"
     })
     @DisplayName("sensitivity level maps to expected default retention tier")
-    void sensitivityMapsToDefaultTier(DataSensitivity sensitivity, RetentionTier expectedTier) { // GH-90000
-        RetentionTier resolved = classifyByDefaultSensitivity(sensitivity); // GH-90000
-        assertThat(resolved).isEqualTo(expectedTier); // GH-90000
+    void sensitivityMapsToDefaultTier(DataSensitivity sensitivity, RetentionTier expectedTier) { 
+        RetentionTier resolved = classifyByDefaultSensitivity(sensitivity); 
+        assertThat(resolved).isEqualTo(expectedTier); 
     }
 
     @Test
     @DisplayName("PUBLIC data has the shortest default retention")
-    void publicDataHasShortestRetention() { // GH-90000
-        RetentionTier tier = classifyByDefaultSensitivity(DataSensitivity.PUBLIC); // GH-90000
-        assertThat(tier.defaultTtl).isLessThan(RetentionTier.MEDIUM_TERM.defaultTtl); // GH-90000
+    void publicDataHasShortestRetention() { 
+        RetentionTier tier = classifyByDefaultSensitivity(DataSensitivity.PUBLIC); 
+        assertThat(tier.defaultTtl).isLessThan(RetentionTier.MEDIUM_TERM.defaultTtl); 
     }
 
     // ── Regulatory TTL overrides ──────────────────────────────────────────────
 
     @Test
     @DisplayName("GDPR + RESTRICTED yields at least 5-year effective TTL")
-    void gdprRestrictedYieldsAtLeastFiveYearTtl() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void gdprRestrictedYieldsAtLeastFiveYearTtl() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.LONG_TERM, DataSensitivity.RESTRICTED, Regulation.GDPR);
 
-        assertThat(policy.effectiveTtl()).isGreaterThanOrEqualTo(Duration.ofDays(5 * 365)); // GH-90000
+        assertThat(policy.effectiveTtl()).isGreaterThanOrEqualTo(Duration.ofDays(5 * 365)); 
     }
 
     @Test
     @DisplayName("HIPAA data has a minimum 6-year effective TTL")
-    void hipaaDataHasMinimumSixYearTtl() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void hipaaDataHasMinimumSixYearTtl() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.MEDIUM_TERM, DataSensitivity.CONFIDENTIAL, Regulation.HIPAA);
 
-        assertThat(policy.effectiveTtl()).isEqualTo(Duration.ofDays(6 * 365)); // GH-90000
+        assertThat(policy.effectiveTtl()).isEqualTo(Duration.ofDays(6 * 365)); 
     }
 
     @Test
     @DisplayName("NONE regulation uses the tier's default TTL")
-    void noRegulationUsesTierDefault() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void noRegulationUsesTierDefault() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
 
-        assertThat(policy.effectiveTtl()).isEqualTo(RetentionTier.SHORT_TERM.defaultTtl); // GH-90000
+        assertThat(policy.effectiveTtl()).isEqualTo(RetentionTier.SHORT_TERM.defaultTtl); 
     }
 
     // ── Encryption requirement ────────────────────────────────────────────────
 
     @Test
     @DisplayName("CONFIDENTIAL data requires encryption at rest")
-    void confidentialDataRequiresEncryption() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void confidentialDataRequiresEncryption() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.LONG_TERM, DataSensitivity.CONFIDENTIAL, Regulation.NONE);
 
-        assertThat(policy.requiresEncryption()).isTrue(); // GH-90000
+        assertThat(policy.requiresEncryption()).isTrue(); 
     }
 
     @Test
     @DisplayName("PUBLIC data does not require encryption at rest")
-    void publicDataDoesNotRequireEncryption() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void publicDataDoesNotRequireEncryption() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
 
-        assertThat(policy.requiresEncryption()).isFalse(); // GH-90000
+        assertThat(policy.requiresEncryption()).isFalse(); 
     }
 
     // ── Audit log requirement ─────────────────────────────────────────────────
 
     @Test
     @DisplayName("non-PUBLIC data requires audit logging")
-    void nonPublicDataRequiresAuditLog() { // GH-90000
-        for (DataSensitivity s : new DataSensitivity[]{ // GH-90000
+    void nonPublicDataRequiresAuditLog() { 
+        for (DataSensitivity s : new DataSensitivity[]{ 
                 DataSensitivity.INTERNAL, DataSensitivity.CONFIDENTIAL, DataSensitivity.RESTRICTED}) {
-            RetentionPolicy policy = new RetentionPolicy(RetentionTier.MEDIUM_TERM, s, Regulation.NONE); // GH-90000
-            assertThat(policy.requiresAuditLog()) // GH-90000
-                    .as("expected audit log required for sensitivity=" + s) // GH-90000
-                    .isTrue(); // GH-90000
+            RetentionPolicy policy = new RetentionPolicy(RetentionTier.MEDIUM_TERM, s, Regulation.NONE); 
+            assertThat(policy.requiresAuditLog()) 
+                    .as("expected audit log required for sensitivity=" + s) 
+                    .isTrue(); 
         }
     }
 
     @Test
     @DisplayName("PUBLIC data does not require audit logging")
-    void publicDataDoesNotRequireAuditLog() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+    void publicDataDoesNotRequireAuditLog() { 
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
 
-        assertThat(policy.requiresAuditLog()).isFalse(); // GH-90000
+        assertThat(policy.requiresAuditLog()).isFalse(); 
     }
 
     // ── Policy expiry comparison ──────────────────────────────────────────────
 
     @Test
     @DisplayName("data purge is scheduled at createdAt + effective TTL")
-    void purgeIsScheduledAtCreationPlusTtl() { // GH-90000
+    void purgeIsScheduledAtCreationPlusTtl() { 
         Instant created = Instant.parse("2026-01-01T00:00:00Z");
-        RetentionPolicy policy = new RetentionPolicy( // GH-90000
+        RetentionPolicy policy = new RetentionPolicy( 
                 RetentionTier.SHORT_TERM, DataSensitivity.PUBLIC, Regulation.NONE);
 
-        Instant expectedPurge = created.plus(policy.effectiveTtl()); // GH-90000
-        assertThat(expectedPurge).isAfter(created); // GH-90000
+        Instant expectedPurge = created.plus(policy.effectiveTtl()); 
+        assertThat(expectedPurge).isAfter(created); 
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private RetentionTier classifyByDefaultSensitivity(DataSensitivity sensitivity) { // GH-90000
-        return switch (sensitivity) { // GH-90000
+    private RetentionTier classifyByDefaultSensitivity(DataSensitivity sensitivity) { 
+        return switch (sensitivity) { 
             case PUBLIC -> RetentionTier.SHORT_TERM;
             case INTERNAL -> RetentionTier.MEDIUM_TERM;
             case CONFIDENTIAL, RESTRICTED -> RetentionTier.LONG_TERM;

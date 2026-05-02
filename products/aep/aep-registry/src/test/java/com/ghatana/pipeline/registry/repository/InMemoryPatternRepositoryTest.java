@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.pipeline.registry.repository;
@@ -35,8 +35,8 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     private static final TenantId TENANT_B = TenantId.of("tenant-beta");
 
     @BeforeEach
-    void setUp() { // GH-90000
-        repository = new InMemoryPatternRepository(); // GH-90000
+    void setUp() { 
+        repository = new InMemoryPatternRepository(); 
     }
 
     // =========================================================================
@@ -49,47 +49,47 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("saved pattern can be found by id and tenant")
-        void savedPatternIsFound() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "fraud_pattern", "SEQ(A,B)", "DRAFT"); // GH-90000
+        void savedPatternIsFound() { 
+            Pattern pattern = buildPattern(TENANT_A, "fraud_pattern", "SEQ(A,B)", "DRAFT"); 
 
-            runPromise(() -> repository.save(pattern)); // GH-90000
+            runPromise(() -> repository.save(pattern)); 
 
-            Optional<Pattern> result = runPromise(() -> // GH-90000
-                    repository.findByIdAndTenant(pattern.getId(), TENANT_A)); // GH-90000
+            Optional<Pattern> result = runPromise(() -> 
+                    repository.findByIdAndTenant(pattern.getId(), TENANT_A)); 
 
-            assertThat(result).isPresent(); // GH-90000
+            assertThat(result).isPresent(); 
             assertThat(result.get().getName()).isEqualTo("fraud_pattern");
         }
 
         @Test
         @DisplayName("findByIdAndTenant returns empty for wrong tenant")
-        void wrongTenantReturnsEmpty() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "tenant_a_pattern", "SEQ(A)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(pattern)); // GH-90000
+        void wrongTenantReturnsEmpty() { 
+            Pattern pattern = buildPattern(TENANT_A, "tenant_a_pattern", "SEQ(A)", "DRAFT"); 
+            runPromise(() -> repository.save(pattern)); 
 
-            Optional<Pattern> result = runPromise(() -> // GH-90000
-                    repository.findByIdAndTenant(pattern.getId(), TENANT_B)); // GH-90000
+            Optional<Pattern> result = runPromise(() -> 
+                    repository.findByIdAndTenant(pattern.getId(), TENANT_B)); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("findByIdAndTenant returns empty for unknown id")
-        void unknownIdReturnsEmpty() { // GH-90000
-            Optional<Pattern> result = runPromise(() -> // GH-90000
-                    repository.findByIdAndTenant("no-such-id", TENANT_A)); // GH-90000
+        void unknownIdReturnsEmpty() { 
+            Optional<Pattern> result = runPromise(() -> 
+                    repository.findByIdAndTenant("no-such-id", TENANT_A)); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("save returns the saved pattern")
-        void saveReturnsSavedPattern() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "my_pattern", "SEQ(X)", "DRAFT"); // GH-90000
+        void saveReturnsSavedPattern() { 
+            Pattern pattern = buildPattern(TENANT_A, "my_pattern", "SEQ(X)", "DRAFT"); 
 
-            Pattern returned = runPromise(() -> repository.save(pattern)); // GH-90000
+            Pattern returned = runPromise(() -> repository.save(pattern)); 
 
-            assertThat(returned.getId()).isEqualTo(pattern.getId()); // GH-90000
+            assertThat(returned.getId()).isEqualTo(pattern.getId()); 
             assertThat(returned.getName()).isEqualTo("my_pattern");
         }
     }
@@ -104,78 +104,78 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("update replaces existing entry")
-        void updateReplacesEntry() { // GH-90000
-            Pattern original = buildPattern(TENANT_A, "original_name", "SEQ(A)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(original)); // GH-90000
+        void updateReplacesEntry() { 
+            Pattern original = buildPattern(TENANT_A, "original_name", "SEQ(A)", "DRAFT"); 
+            runPromise(() -> repository.save(original)); 
 
-            Pattern updated = Pattern.builder() // GH-90000
-                    .id(original.getId()) // GH-90000
-                    .tenantId(TENANT_A) // GH-90000
+            Pattern updated = Pattern.builder() 
+                    .id(original.getId()) 
+                    .tenantId(TENANT_A) 
                     .name("updated_name")
                     .specification("SEQ(A,B)")
                     .status("COMPILED")
-                    .build(); // GH-90000
+                    .build(); 
 
-            runPromise(() -> repository.update(updated)); // GH-90000
+            runPromise(() -> repository.update(updated)); 
 
-            Optional<Pattern> found = runPromise(() -> // GH-90000
-                    repository.findByIdAndTenant(original.getId(), TENANT_A)); // GH-90000
+            Optional<Pattern> found = runPromise(() -> 
+                    repository.findByIdAndTenant(original.getId(), TENANT_A)); 
 
-            assertThat(found).isPresent(); // GH-90000
+            assertThat(found).isPresent(); 
             assertThat(found.get().getName()).isEqualTo("updated_name");
             assertThat(found.get().getStatus()).isEqualTo("COMPILED");
         }
 
         @Test
         @DisplayName("update changes the status index")
-        void updateChangesStatusIndex() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(pattern)); // GH-90000
+        void updateChangesStatusIndex() { 
+            Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); 
+            runPromise(() -> repository.save(pattern)); 
 
             // Assert it's in DRAFT
-            List<Pattern> drafts = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); // GH-90000
-            assertThat(drafts).hasSize(1); // GH-90000
+            List<Pattern> drafts = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); 
+            assertThat(drafts).hasSize(1); 
 
             // Update to COMPILED
-            Pattern compiled = Pattern.builder() // GH-90000
-                    .id(pattern.getId()) // GH-90000
-                    .tenantId(TENANT_A) // GH-90000
-                    .name(pattern.getName()) // GH-90000
-                    .specification(pattern.getSpecification()) // GH-90000
+            Pattern compiled = Pattern.builder() 
+                    .id(pattern.getId()) 
+                    .tenantId(TENANT_A) 
+                    .name(pattern.getName()) 
+                    .specification(pattern.getSpecification()) 
                     .status("COMPILED")
-                    .build(); // GH-90000
-            runPromise(() -> repository.update(compiled)); // GH-90000
+                    .build(); 
+            runPromise(() -> repository.update(compiled)); 
 
             // Now COMPILED list should have it, DRAFT should not
-            List<Pattern> compiledPatterns = runPromise(() -> repository.findByTenant(TENANT_A, "COMPILED")); // GH-90000
-            List<Pattern> draftPatterns = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); // GH-90000
+            List<Pattern> compiledPatterns = runPromise(() -> repository.findByTenant(TENANT_A, "COMPILED")); 
+            List<Pattern> draftPatterns = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); 
 
-            assertThat(compiledPatterns).hasSize(1); // GH-90000
-            assertThat(draftPatterns).isEmpty(); // GH-90000
+            assertThat(compiledPatterns).hasSize(1); 
+            assertThat(draftPatterns).isEmpty(); 
         }
 
         @Test
         @DisplayName("update returns the updated pattern")
-        void updateReturnUpdatedPattern() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(pattern)); // GH-90000
+        void updateReturnUpdatedPattern() { 
+            Pattern pattern = buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"); 
+            runPromise(() -> repository.save(pattern)); 
 
-            Pattern changed = Pattern.builder() // GH-90000
-                    .id(pattern.getId()) // GH-90000
-                    .tenantId(TENANT_A) // GH-90000
+            Pattern changed = Pattern.builder() 
+                    .id(pattern.getId()) 
+                    .tenantId(TENANT_A) 
                     .name("changed")
                     .specification("SEQ(A,B,C)")
                     .status("DRAFT")
-                    .build(); // GH-90000
+                    .build(); 
 
-            Pattern returned = runPromise(() -> repository.update(changed)); // GH-90000
+            Pattern returned = runPromise(() -> repository.update(changed)); 
 
             assertThat(returned.getName()).isEqualTo("changed");
         }
     }
 
     // =========================================================================
-    // findByTenant (with status filter) // GH-90000
+    // findByTenant (with status filter) 
     // =========================================================================
 
     @Nested
@@ -184,47 +184,47 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null status returns all patterns for tenant")
-        void nullStatusReturnsAll() { // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "c1", "SEQ(B)", "COMPILED"))); // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_B, "d_b", "SEQ(C)", "DRAFT"))); // GH-90000
+        void nullStatusReturnsAll() { 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "c1", "SEQ(B)", "COMPILED"))); 
+            runPromise(() -> repository.save(buildPattern(TENANT_B, "d_b", "SEQ(C)", "DRAFT"))); 
 
-            List<Pattern> all = runPromise(() -> repository.findByTenant(TENANT_A, null)); // GH-90000
+            List<Pattern> all = runPromise(() -> repository.findByTenant(TENANT_A, null)); 
 
-            assertThat(all).hasSize(2); // GH-90000
+            assertThat(all).hasSize(2); 
         }
 
         @Test
         @DisplayName("status filter narrows results")
-        void statusFilterNarrows() { // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "d2", "SEQ(B)", "DRAFT"))); // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "c1", "SEQ(C)", "COMPILED"))); // GH-90000
+        void statusFilterNarrows() { 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "d1", "SEQ(A)", "DRAFT"))); 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "d2", "SEQ(B)", "DRAFT"))); 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "c1", "SEQ(C)", "COMPILED"))); 
 
-            List<Pattern> drafts = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); // GH-90000
+            List<Pattern> drafts = runPromise(() -> repository.findByTenant(TENANT_A, "DRAFT")); 
 
-            assertThat(drafts).hasSize(2); // GH-90000
-            assertThat(drafts).allMatch(p -> "DRAFT".equals(p.getStatus())); // GH-90000
+            assertThat(drafts).hasSize(2); 
+            assertThat(drafts).allMatch(p -> "DRAFT".equals(p.getStatus())); 
         }
 
         @Test
         @DisplayName("returns empty for unknown status")
-        void emptyForUnknownStatus() { // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"))); // GH-90000
+        void emptyForUnknownStatus() { 
+            runPromise(() -> repository.save(buildPattern(TENANT_A, "p", "SEQ(A)", "DRAFT"))); 
 
-            List<Pattern> result = runPromise(() -> repository.findByTenant(TENANT_A, "BOGUS_STATUS")); // GH-90000
+            List<Pattern> result = runPromise(() -> repository.findByTenant(TENANT_A, "BOGUS_STATUS")); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("tenant isolation: does not return other tenants patterns")
-        void tenantIsolation() { // GH-90000
-            runPromise(() -> repository.save(buildPattern(TENANT_B, "b_pattern", "SEQ(B)", "ACTIVE"))); // GH-90000
+        void tenantIsolation() { 
+            runPromise(() -> repository.save(buildPattern(TENANT_B, "b_pattern", "SEQ(B)", "ACTIVE"))); 
 
-            List<Pattern> result = runPromise(() -> repository.findByTenant(TENANT_A, null)); // GH-90000
+            List<Pattern> result = runPromise(() -> repository.findByTenant(TENANT_A, null)); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -238,37 +238,37 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deleted pattern is no longer findable")
-        void deletedPatternIsGone() { // GH-90000
-            Pattern pattern = buildPattern(TENANT_A, "to_delete", "SEQ(X)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(pattern)); // GH-90000
+        void deletedPatternIsGone() { 
+            Pattern pattern = buildPattern(TENANT_A, "to_delete", "SEQ(X)", "DRAFT"); 
+            runPromise(() -> repository.save(pattern)); 
 
-            runPromise(() -> repository.delete(pattern.getId())); // GH-90000
+            runPromise(() -> repository.delete(pattern.getId())); 
 
-            Optional<Pattern> result = runPromise(() -> // GH-90000
-                    repository.findByIdAndTenant(pattern.getId(), TENANT_A)); // GH-90000
+            Optional<Pattern> result = runPromise(() -> 
+                    repository.findByIdAndTenant(pattern.getId(), TENANT_A)); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("delete removes pattern from find results")
-        void deletedPatternNotInList() { // GH-90000
-            Pattern p1 = buildPattern(TENANT_A, "keep", "SEQ(A)", "DRAFT"); // GH-90000
-            Pattern p2 = buildPattern(TENANT_A, "remove", "SEQ(B)", "DRAFT"); // GH-90000
-            runPromise(() -> repository.save(p1)); // GH-90000
-            runPromise(() -> repository.save(p2)); // GH-90000
+        void deletedPatternNotInList() { 
+            Pattern p1 = buildPattern(TENANT_A, "keep", "SEQ(A)", "DRAFT"); 
+            Pattern p2 = buildPattern(TENANT_A, "remove", "SEQ(B)", "DRAFT"); 
+            runPromise(() -> repository.save(p1)); 
+            runPromise(() -> repository.save(p2)); 
 
-            runPromise(() -> repository.delete(p2.getId())); // GH-90000
+            runPromise(() -> repository.delete(p2.getId())); 
 
-            List<Pattern> remaining = runPromise(() -> repository.findByTenant(TENANT_A, null)); // GH-90000
+            List<Pattern> remaining = runPromise(() -> repository.findByTenant(TENANT_A, null)); 
 
-            assertThat(remaining).hasSize(1); // GH-90000
+            assertThat(remaining).hasSize(1); 
             assertThat(remaining.get(0).getName()).isEqualTo("keep");
         }
 
         @Test
         @DisplayName("delete unknown id is no-op")
-        void deleteUnknownIdIsNoOp() { // GH-90000
+        void deleteUnknownIdIsNoOp() { 
             // Must not throw
             runPromise(() -> repository.delete("ghost-id"));
         }
@@ -278,14 +278,14 @@ class InMemoryPatternRepositoryTest extends EventloopTestBase {
     // helpers
     // =========================================================================
 
-    private Pattern buildPattern(TenantId tenantId, String name, String spec, String status) { // GH-90000
-        return Pattern.builder() // GH-90000
-                .id(UUID.randomUUID().toString()) // GH-90000
-                .tenantId(tenantId) // GH-90000
-                .name(name) // GH-90000
-                .specification(spec) // GH-90000
-                .status(status) // GH-90000
-                .confidence(0) // GH-90000
-                .build(); // GH-90000
+    private Pattern buildPattern(TenantId tenantId, String name, String spec, String status) { 
+        return Pattern.builder() 
+                .id(UUID.randomUUID().toString()) 
+                .tenantId(tenantId) 
+                .name(name) 
+                .specification(spec) 
+                .status(status) 
+                .confidence(0) 
+                .build(); 
     }
 }

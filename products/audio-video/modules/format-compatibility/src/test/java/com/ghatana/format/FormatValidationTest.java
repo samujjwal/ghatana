@@ -23,65 +23,65 @@ class FormatValidationTest {
 
     @Test
     @DisplayName("Should validate audio formats")
-    void shouldValidateAudioFormats() { // GH-90000
-        Set<String> audioFormats = Set.of("MP3", "AAC", "FLAC", "WAV", "OPUS"); // GH-90000
+    void shouldValidateAudioFormats() { 
+        Set<String> audioFormats = Set.of("MP3", "AAC", "FLAC", "WAV", "OPUS"); 
         String format = "MP3";
         
-        assertThat(audioFormats).contains(format); // GH-90000
-        assertThat(audioFormats).isNotEmpty(); // GH-90000
+        assertThat(audioFormats).contains(format); 
+        assertThat(audioFormats).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Should validate video formats")
-    void shouldValidateVideoFormats() { // GH-90000
-        Set<String> videoFormats = Set.of("MP4", "MKV", "WEBM", "AVI"); // GH-90000
+    void shouldValidateVideoFormats() { 
+        Set<String> videoFormats = Set.of("MP4", "MKV", "WEBM", "AVI"); 
         String format = "MP4";
         
-        assertThat(videoFormats).contains(format); // GH-90000
-        assertThat(videoFormats).isNotEmpty(); // GH-90000
+        assertThat(videoFormats).contains(format); 
+        assertThat(videoFormats).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Should check format compatibility")
-    void shouldCheckFormatCompatibility() { // GH-90000
+    void shouldCheckFormatCompatibility() { 
         String sourceFormat = "WAV";
         String targetFormat = "MP3";
         boolean compatible = true;
         
-        assertThat(sourceFormat).isNotNull(); // GH-90000
-        assertThat(targetFormat).isNotNull(); // GH-90000
-        assertThat(compatible).isTrue(); // GH-90000
+        assertThat(sourceFormat).isNotNull(); 
+        assertThat(targetFormat).isNotNull(); 
+        assertThat(compatible).isTrue(); 
     }
 
     @Test
     @DisplayName("Should validate media containers")
-    void shouldValidateMediaContainers() { // GH-90000
-        Set<String> containers = Set.of("MP4", "MKV", "WEBM"); // GH-90000
+    void shouldValidateMediaContainers() { 
+        Set<String> containers = Set.of("MP4", "MKV", "WEBM"); 
         String container = "MP4";
         
-        assertThat(containers).contains(container); // GH-90000
-        assertThat(containers).isNotEmpty(); // GH-90000
+        assertThat(containers).contains(container); 
+        assertThat(containers).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Should handle format conversion validation")
-    void shouldHandleFormatConversionValidation() { // GH-90000
+    void shouldHandleFormatConversionValidation() { 
         String fromFormat = "WAV";
         String toFormat = "MP3";
         boolean valid = true;
         
-        assertThat(fromFormat).isNotNull(); // GH-90000
-        assertThat(toFormat).isNotNull(); // GH-90000
-        assertThat(valid).isTrue(); // GH-90000
+        assertThat(fromFormat).isNotNull(); 
+        assertThat(toFormat).isNotNull(); 
+        assertThat(valid).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle invalid formats")
-    void shouldHandleInvalidFormats() { // GH-90000
+    void shouldHandleInvalidFormats() { 
         String invalidFormat = "INVALID_FORMAT";
         boolean valid = false;
         
-        assertThat(invalidFormat).isNotNull(); // GH-90000
-        assertThat(valid).isFalse(); // GH-90000
+        assertThat(invalidFormat).isNotNull(); 
+        assertThat(valid).isFalse(); 
     }
 }

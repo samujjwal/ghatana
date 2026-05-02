@@ -141,6 +141,9 @@ abstract class CheckDataCloudOpenApiRouterSync : DefaultTask() {
     @get:InputFile
     abstract val routerSource: RegularFileProperty
 
+    @get:Internal
+    val rootDir = project.rootDir
+
     @TaskAction
     fun check() {
         val specPaths = extractSpecPaths(openapiSpec.get().asFile)
@@ -177,8 +180,8 @@ abstract class CheckDataCloudOpenApiRouterSync : DefaultTask() {
                 appendLine("║  → Add these paths to openapi.yaml or remove from the router.       ║")
             }
             appendLine("╠══════════════════════════════════════════════════════════════════════╣")
-            appendLine("║  Spec: ${openapiSpec.get().asFile.relativeTo(project.rootDir)}")
-            appendLine("║  Router: ${routerSource.get().asFile.relativeTo(project.rootDir)}")
+            appendLine("║  Spec: ${openapiSpec.get().asFile.relativeTo(rootDir)}")
+            appendLine("║  Router: ${routerSource.get().asFile.relativeTo(rootDir)}")
             appendLine("╚══════════════════════════════════════════════════════════════════════╝")
         }
         throw GradleException(report)

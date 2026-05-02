@@ -15,26 +15,26 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Integration tests for PHR-Finance cross-product workflows. */
-@DisplayName("PHR-Finance Integration Tests")
+/** Integration tests for cross-product module dependency resolution. */
+@DisplayName("Cross-Domain Module Integration Tests")
 class PhrFinanceIntegrationTest {
 
     @Test
-    @DisplayName("D-6: kernel resolves dependencies across product-owned module IDs")
-    void shouldResolveCrossProductModuleDependenciesByContract() {
+    @DisplayName("D-6: kernel resolves dependencies across domain-module IDs")
+    void shouldResolveCrossModuleDependenciesByContract() {
         KernelRegistryImpl registry = new KernelRegistryImpl();
 
-        KernelModule financeModule = module("finance-kernel", Set.of());
-        KernelModule phrModule = module(
-            "phr-kernel",
-            Set.of(new KernelDependency("finance-kernel", "1.0.0", KernelDependency.DependencyType.MODULE, false))
+        KernelModule moduleA = module("domain-a-kernel", Set.of());
+        KernelModule moduleB = module(
+            "domain-b-kernel",
+            Set.of(new KernelDependency("domain-a-kernel", "1.0.0", KernelDependency.DependencyType.MODULE, false))
         );
 
-        registry.registerModule(financeModule);
-        registry.registerModule(phrModule);
+        registry.registerModule(moduleA);
+        registry.registerModule(moduleB);
 
-        List<KernelModule> resolved = registry.resolveDependencies(phrModule);
-        assertThat(resolved).extracting(KernelModule::getModuleId).containsExactly("finance-kernel");
+        List<KernelModule> resolved = registry.resolveDependencies(moduleB);
+        assertThat(resolved).extracting(KernelModule::getModuleId).containsExactly("domain-a-kernel");
     }
 
     private static KernelModule module(String moduleId, Set<KernelDependency> dependencies) {

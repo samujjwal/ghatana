@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Tests for {@link ArchiveMigrationScheduler}.
  *
- * <p>Tests cover lifecycle management (start/stop/close) and stats retrieval. // GH-90000
- * The {@code migrateStream()} method requires real {@link StoragePlugin} and // GH-90000
+ * <p>Tests cover lifecycle management (start/stop/close) and stats retrieval. 
+ * The {@code migrateStream()} method requires real {@link StoragePlugin} and 
  * {@link ColdTierArchivePlugin} instances; lifecycle tests use a minimal builder
  * without those to validate core orchestration logic.
  *
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer product
  */
 @DisplayName("ArchiveMigrationScheduler Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class ArchiveMigrationSchedulerTest {
 
     @Mock
@@ -42,22 +42,22 @@ class ArchiveMigrationSchedulerTest {
     private ArchiveMigrationScheduler scheduler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        meterRegistry = new SimpleMeterRegistry(); // GH-90000
-        scheduler = ArchiveMigrationScheduler.builder() // GH-90000
-                .sourcePlugin(sourcePlugin) // GH-90000
-                .targetPlugin(targetPlugin) // GH-90000
-                .meterRegistry(meterRegistry) // GH-90000
-                .retentionThreshold(Duration.ofDays(365)) // GH-90000
-                .batchSize(1000) // GH-90000
-                .dryRunMode(true) // GH-90000
-                .build(); // GH-90000
+    void setUp() { 
+        meterRegistry = new SimpleMeterRegistry(); 
+        scheduler = ArchiveMigrationScheduler.builder() 
+                .sourcePlugin(sourcePlugin) 
+                .targetPlugin(targetPlugin) 
+                .meterRegistry(meterRegistry) 
+                .retentionThreshold(Duration.ofDays(365)) 
+                .batchSize(1000) 
+                .dryRunMode(true) 
+                .build(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (scheduler != null) { // GH-90000
-            scheduler.close(); // GH-90000
+    void tearDown() { 
+        if (scheduler != null) { 
+            scheduler.close(); 
         }
     }
 
@@ -71,19 +71,19 @@ class ArchiveMigrationSchedulerTest {
 
         @Test
         @DisplayName("should build scheduler without errors")
-        void shouldBuildScheduler() { // GH-90000
-            assertThatCode(() -> ArchiveMigrationScheduler.builder() // GH-90000
-                    .sourcePlugin(sourcePlugin) // GH-90000
-                    .targetPlugin(targetPlugin) // GH-90000
-                    .meterRegistry(new SimpleMeterRegistry()) // GH-90000
-                    .build()).doesNotThrowAnyException(); // GH-90000
+        void shouldBuildScheduler() { 
+            assertThatCode(() -> ArchiveMigrationScheduler.builder() 
+                    .sourcePlugin(sourcePlugin) 
+                    .targetPlugin(targetPlugin) 
+                    .meterRegistry(new SimpleMeterRegistry()) 
+                    .build()).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("should not be running by default")
-        void shouldNotBeRunningByDefault() { // GH-90000
-            MigrationStats stats = scheduler.getStats(); // GH-90000
-            assertThat(stats.running()).isFalse(); // GH-90000
+        void shouldNotBeRunningByDefault() { 
+            MigrationStats stats = scheduler.getStats(); 
+            assertThat(stats.running()).isFalse(); 
         }
     }
 
@@ -97,41 +97,41 @@ class ArchiveMigrationSchedulerTest {
 
         @Test
         @DisplayName("should start successfully")
-        void shouldStartSuccessfully() { // GH-90000
-            assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); // GH-90000
+        void shouldStartSuccessfully() { 
+            assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); 
 
-            MigrationStats stats = scheduler.getStats(); // GH-90000
-            assertThat(stats.running()).isTrue(); // GH-90000
+            MigrationStats stats = scheduler.getStats(); 
+            assertThat(stats.running()).isTrue(); 
         }
 
         @Test
         @DisplayName("should stop successfully after start")
-        void shouldStopSuccessfully() { // GH-90000
-            scheduler.start(); // GH-90000
-            assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); // GH-90000
+        void shouldStopSuccessfully() { 
+            scheduler.start(); 
+            assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); 
 
-            MigrationStats stats = scheduler.getStats(); // GH-90000
-            assertThat(stats.running()).isFalse(); // GH-90000
+            MigrationStats stats = scheduler.getStats(); 
+            assertThat(stats.running()).isFalse(); 
         }
 
         @Test
         @DisplayName("start should be idempotent (no error when started twice)")
-        void startShouldBeIdempotent() { // GH-90000
-            scheduler.start(); // GH-90000
-            assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); // GH-90000
+        void startShouldBeIdempotent() { 
+            scheduler.start(); 
+            assertThatCode(() -> scheduler.start()).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("stop should be safe when not running")
-        void stopShouldBeSafeWhenNotRunning() { // GH-90000
-            assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); // GH-90000
+        void stopShouldBeSafeWhenNotRunning() { 
+            assertThatCode(() -> scheduler.stop()).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("close should stop the scheduler")
-        void closeShouldStopScheduler() { // GH-90000
-            scheduler.start(); // GH-90000
-            assertThatCode(() -> scheduler.close()).doesNotThrowAnyException(); // GH-90000
+        void closeShouldStopScheduler() { 
+            scheduler.start(); 
+            assertThatCode(() -> scheduler.close()).doesNotThrowAnyException(); 
         }
     }
 
@@ -145,23 +145,23 @@ class ArchiveMigrationSchedulerTest {
 
         @Test
         @DisplayName("should return stats with zero counts when no migration has occurred")
-        void shouldReturnZeroStatsInitially() { // GH-90000
-            MigrationStats stats = scheduler.getStats(); // GH-90000
+        void shouldReturnZeroStatsInitially() { 
+            MigrationStats stats = scheduler.getStats(); 
 
-            assertThat(stats).isNotNull(); // GH-90000
-            assertThat(stats.totalEventsMigrated()).isZero(); // GH-90000
-            assertThat(stats.totalBatchesMigrated()).isZero(); // GH-90000
-            assertThat(stats.migrationInProgress()).isFalse(); // GH-90000
+            assertThat(stats).isNotNull(); 
+            assertThat(stats.totalEventsMigrated()).isZero(); 
+            assertThat(stats.totalBatchesMigrated()).isZero(); 
+            assertThat(stats.migrationInProgress()).isFalse(); 
         }
 
         @Test
         @DisplayName("should reflect running state in stats")
-        void shouldReflectRunningStateInStats() { // GH-90000
-            scheduler.start(); // GH-90000
-            assertThat(scheduler.getStats().running()).isTrue(); // GH-90000
+        void shouldReflectRunningStateInStats() { 
+            scheduler.start(); 
+            assertThat(scheduler.getStats().running()).isTrue(); 
 
-            scheduler.stop(); // GH-90000
-            assertThat(scheduler.getStats().running()).isFalse(); // GH-90000
+            scheduler.stop(); 
+            assertThat(scheduler.getStats().running()).isFalse(); 
         }
     }
 
@@ -175,32 +175,32 @@ class ArchiveMigrationSchedulerTest {
 
         @Test
         @DisplayName("should accept dry-run mode")
-        void shouldAcceptDryRunMode() { // GH-90000
-            ArchiveMigrationScheduler dryRunScheduler = ArchiveMigrationScheduler.builder() // GH-90000
-                    .sourcePlugin(sourcePlugin) // GH-90000
-                    .targetPlugin(targetPlugin) // GH-90000
-                    .meterRegistry(new SimpleMeterRegistry()) // GH-90000
-                    .dryRunMode(true) // GH-90000
-                    .build(); // GH-90000
+        void shouldAcceptDryRunMode() { 
+            ArchiveMigrationScheduler dryRunScheduler = ArchiveMigrationScheduler.builder() 
+                    .sourcePlugin(sourcePlugin) 
+                    .targetPlugin(targetPlugin) 
+                    .meterRegistry(new SimpleMeterRegistry()) 
+                    .dryRunMode(true) 
+                    .build(); 
 
-            assertThat(dryRunScheduler.getStats()).isNotNull(); // GH-90000
-            dryRunScheduler.close(); // GH-90000
+            assertThat(dryRunScheduler.getStats()).isNotNull(); 
+            dryRunScheduler.close(); 
         }
 
         @Test
         @DisplayName("should accept custom retention threshold")
-        void shouldAcceptCustomRetentionThreshold() { // GH-90000
-            ArchiveMigrationScheduler customScheduler = ArchiveMigrationScheduler.builder() // GH-90000
-                    .sourcePlugin(sourcePlugin) // GH-90000
-                    .targetPlugin(targetPlugin) // GH-90000
-                    .meterRegistry(new SimpleMeterRegistry()) // GH-90000
-                    .retentionThreshold(Duration.ofDays(30)) // GH-90000
-                    .batchSize(500) // GH-90000
-                    .parallelStreams(2) // GH-90000
-                    .build(); // GH-90000
+        void shouldAcceptCustomRetentionThreshold() { 
+            ArchiveMigrationScheduler customScheduler = ArchiveMigrationScheduler.builder() 
+                    .sourcePlugin(sourcePlugin) 
+                    .targetPlugin(targetPlugin) 
+                    .meterRegistry(new SimpleMeterRegistry()) 
+                    .retentionThreshold(Duration.ofDays(30)) 
+                    .batchSize(500) 
+                    .parallelStreams(2) 
+                    .build(); 
 
-            assertThat(customScheduler.getStats()).isNotNull(); // GH-90000
-            customScheduler.close(); // GH-90000
+            assertThat(customScheduler.getStats()).isNotNull(); 
+            customScheduler.close(); 
         }
     }
 }

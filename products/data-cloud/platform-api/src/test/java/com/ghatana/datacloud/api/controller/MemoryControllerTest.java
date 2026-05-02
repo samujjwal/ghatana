@@ -19,29 +19,29 @@ class MemoryControllerTest {
 
     @Test
     @DisplayName("returns routed entries ordered by tier priority")
-    void returnsRoutedEntriesOrderedByTierPriority() { // GH-90000
-        DefaultMemoryTierRouter<EntityRecord> router = new DefaultMemoryTierRouter<>(); // GH-90000
-        MemoryController controller = new MemoryController(router); // GH-90000
+    void returnsRoutedEntriesOrderedByTierPriority() { 
+        DefaultMemoryTierRouter<EntityRecord> router = new DefaultMemoryTierRouter<>(); 
+        MemoryController controller = new MemoryController(router); 
 
-        router.route(record("tenant-hot", "hot-record"), SalienceScore.of(0.95)).getResult(); // GH-90000
-        router.route(record("tenant-cold", "cold-record"), SalienceScore.of(0.25)).getResult(); // GH-90000
+        router.route(record("tenant-hot", "hot-record"), SalienceScore.of(0.95)).getResult(); 
+        router.route(record("tenant-cold", "cold-record"), SalienceScore.of(0.25)).getResult(); 
 
-        List<TierEntry> entries = controller.getEntries().getResult(); // GH-90000
+        List<TierEntry> entries = controller.getEntries().getResult(); 
 
-        assertThat(entries).hasSize(2); // GH-90000
-        assertThat(entries).extracting(TierEntry::getCurrentTier) // GH-90000
-                .containsExactly(MemoryTier.HOT, MemoryTier.COLD); // GH-90000
-        assertThat(entries).extracting(TierEntry::getTenantId) // GH-90000
-                .containsExactly("tenant-hot", "tenant-cold"); // GH-90000
+        assertThat(entries).hasSize(2); 
+        assertThat(entries).extracting(TierEntry::getCurrentTier) 
+                .containsExactly(MemoryTier.HOT, MemoryTier.COLD); 
+        assertThat(entries).extracting(TierEntry::getTenantId) 
+                .containsExactly("tenant-hot", "tenant-cold"); 
     }
 
-    private static EntityRecord record(String tenantId, String recordId) { // GH-90000
-        return EntityRecord.builder() // GH-90000
-                .id(UUID.nameUUIDFromBytes(recordId.getBytes())) // GH-90000
-                .tenantId(tenantId) // GH-90000
+    private static EntityRecord record(String tenantId, String recordId) { 
+        return EntityRecord.builder() 
+                .id(UUID.nameUUIDFromBytes(recordId.getBytes())) 
+                .tenantId(tenantId) 
                 .collectionName("memory-test")
-                .metadata(Map.of("tenantId", tenantId + "-metadata")) // GH-90000
+                .metadata(Map.of("tenantId", tenantId + "-metadata")) 
                 .createdBy("test")
-                .build(); // GH-90000
+                .build(); 
     }
 }

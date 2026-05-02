@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.toolruntime.mcp;
@@ -44,54 +44,54 @@ class McpToolAdapterTest extends EventloopTestBase {
     private static WireMockServer wireMock;
     private static String baseUrl;
 
-    /** Blocking executor shared across all tests (pools HTTP calls off the event loop). */ // GH-90000
-    private static final Executor HTTP_EXECUTOR = Executors.newCachedThreadPool(); // GH-90000
-    private static final HttpClient HTTP_CLIENT  = HttpClient.newHttpClient(); // GH-90000
+    /** Blocking executor shared across all tests (pools HTTP calls off the event loop). */ 
+    private static final Executor HTTP_EXECUTOR = Executors.newCachedThreadPool(); 
+    private static final HttpClient HTTP_CLIENT  = HttpClient.newHttpClient(); 
 
     @BeforeAll
-    static void startWireMock() { // GH-90000
-        wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort()); // GH-90000
-        wireMock.start(); // GH-90000
-        baseUrl = "http://localhost:" + wireMock.port(); // GH-90000
+    static void startWireMock() { 
+        wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort()); 
+        wireMock.start(); 
+        baseUrl = "http://localhost:" + wireMock.port(); 
     }
 
     @AfterAll
-    static void stopWireMock() { // GH-90000
-        if (wireMock != null) { // GH-90000
-            wireMock.stop(); // GH-90000
+    static void stopWireMock() { 
+        if (wireMock != null) { 
+            wireMock.stop(); 
         }
     }
 
     @BeforeEach
-    void reset() { // GH-90000
-        wireMock.resetAll(); // GH-90000
+    void reset() { 
+        wireMock.resetAll(); 
     }
 
     /** Creates a transport that makes real HTTP calls to the WireMock server. */
-    private static McpHttpTransport realTransport() { // GH-90000
-        return (url, body, headers) -> Promise.ofBlocking(HTTP_EXECUTOR, () -> { // GH-90000
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                    .uri(URI.create(url)) // GH-90000
-                    .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-                    .header("Content-Type", "application/json") // GH-90000
-                    .build(); // GH-90000
-            return HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body(); // GH-90000
+    private static McpHttpTransport realTransport() { 
+        return (url, body, headers) -> Promise.ofBlocking(HTTP_EXECUTOR, () -> { 
+            HttpRequest req = HttpRequest.newBuilder() 
+                    .uri(URI.create(url)) 
+                    .POST(HttpRequest.BodyPublishers.ofString(body)) 
+                    .header("Content-Type", "application/json") 
+                    .build(); 
+            return HTTP_CLIENT.send(req, HttpResponse.BodyHandlers.ofString()).body(); 
         });
     }
 
-    private static ToolExecutionEnvelope envelope(String toolId) { // GH-90000
-        return ToolExecutionEnvelope.of(toolId, "1.0.0", "agent-x", null, "tenant-1", // GH-90000
-                ActionClass.CALL_EXTERNAL, "1.0", Map.of("query", "hello")); // GH-90000
+    private static ToolExecutionEnvelope envelope(String toolId) { 
+        return ToolExecutionEnvelope.of(toolId, "1.0.0", "agent-x", null, "tenant-1", 
+                ActionClass.CALL_EXTERNAL, "1.0", Map.of("query", "hello")); 
     }
 
-    private static ToolContract contract(String toolName, String endpoint) { // GH-90000
-        return new ToolContractBuilder() // GH-90000
-                .toolId(toolName) // GH-90000
-                .name(toolName) // GH-90000
-                .actionClass(ActionClass.CALL_EXTERNAL) // GH-90000
-                .transport(ToolTransport.MCP) // GH-90000
-                .remoteEndpoint(endpoint) // GH-90000
-                .build(); // GH-90000
+    private static ToolContract contract(String toolName, String endpoint) { 
+        return new ToolContractBuilder() 
+                .toolId(toolName) 
+                .name(toolName) 
+                .actionClass(ActionClass.CALL_EXTERNAL) 
+                .transport(ToolTransport.MCP) 
+                .remoteEndpoint(endpoint) 
+                .build(); 
     }
 
     // ─── Success scenario ──────────────────────────────────────────────────
@@ -102,21 +102,21 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns SUCCESS status with tool output text")
-        void successfulToolResponse() { // GH-90000
+        void successfulToolResponse() { 
             wireMock.stubFor(post(urlEqualTo("/mcp"))
-                    .willReturn(aResponse() // GH-90000
-                            .withStatus(200) // GH-90000
-                            .withHeader("Content-Type", "application/json") // GH-90000
-                            .withBody("{\"jsonrpc\":\"2.0\",\"id\":\"req-1\"," // GH-90000
+                    .willReturn(aResponse() 
+                            .withStatus(200) 
+                            .withHeader("Content-Type", "application/json") 
+                            .withBody("{\"jsonrpc\":\"2.0\",\"id\":\"req-1\"," 
                                     + "\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Hello from MCP\"}]}}")));
 
-            McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
+            McpToolAdapter adapter = new McpToolAdapter(realTransport()); 
             ToolExecutionEnvelope e = envelope("web-search");
-            ToolContract c = contract("web-search", baseUrl + "/mcp"); // GH-90000
+            ToolContract c = contract("web-search", baseUrl + "/mcp"); 
 
-            ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); // GH-90000
+            ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); 
 
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); // GH-90000
+            assertThat(result.status()).isEqualTo(ToolExecutionStatus.SUCCESS); 
             assertThat(result.output()).isEqualTo("Hello from MCP");
         }
     }
@@ -129,21 +129,21 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns FAILED status with error message on MCP error response")
-        void mcpErrorResponse() { // GH-90000
+        void mcpErrorResponse() { 
             wireMock.stubFor(post(urlEqualTo("/mcp"))
-                    .willReturn(aResponse() // GH-90000
-                            .withStatus(200) // GH-90000
-                            .withHeader("Content-Type", "application/json") // GH-90000
-                            .withBody("{\"jsonrpc\":\"2.0\",\"id\":\"req-1\"," // GH-90000
+                    .willReturn(aResponse() 
+                            .withStatus(200) 
+                            .withHeader("Content-Type", "application/json") 
+                            .withBody("{\"jsonrpc\":\"2.0\",\"id\":\"req-1\"," 
                                     + "\"error\":{\"code\":-32601,\"message\":\"Tool not found\"}}")));
 
-            McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
-            ToolContract c = contract("bad-tool", baseUrl + "/mcp"); // GH-90000
+            McpToolAdapter adapter = new McpToolAdapter(realTransport()); 
+            ToolContract c = contract("bad-tool", baseUrl + "/mcp"); 
 
             ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("bad-tool"), c));
 
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
-            assertThat(result.errorMessage()) // GH-90000
+            assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); 
+            assertThat(result.errorMessage()) 
                     .contains("-32601")
                     .contains("Tool not found");
         }
@@ -157,33 +157,33 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns FAILED status when transport promise fails with a connection error")
-        void transportException_producesFailedResult() { // GH-90000
+        void transportException_producesFailedResult() { 
             // Use a transport that always fails
             McpHttpTransport failingTransport =
                     (url, body, headers) -> Promise.ofException(new RuntimeException("connection refused"));
 
-            McpToolAdapter adapter = new McpToolAdapter(failingTransport); // GH-90000
-            ToolContract c = contract("any-tool", baseUrl + "/mcp"); // GH-90000
+            McpToolAdapter adapter = new McpToolAdapter(failingTransport); 
+            ToolContract c = contract("any-tool", baseUrl + "/mcp"); 
             ToolExecutionEnvelope e = envelope("any-tool");
 
-            ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); // GH-90000
+            ToolExecutionResult result = runPromise(() -> adapter.handle(e, c)); 
 
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); // GH-90000
+            assertThat(result.status()).isEqualTo(ToolExecutionStatus.FAILED); 
             assertThat(result.errorMessage()).contains("connection refused");
         }
 
         @Test
         @DisplayName("returns TIMEOUT status when transport promise fails with a timeout error")
-        void transportTimeout_producesTimeoutResult() { // GH-90000
+        void transportTimeout_producesTimeoutResult() { 
             McpHttpTransport timeoutTransport =
                     (url, body, headers) -> Promise.ofException(new RuntimeException("Read timed out"));
 
-            McpToolAdapter adapter = new McpToolAdapter(timeoutTransport); // GH-90000
-            ToolContract c = contract("slow-tool", baseUrl + "/mcp"); // GH-90000
+            McpToolAdapter adapter = new McpToolAdapter(timeoutTransport); 
+            ToolContract c = contract("slow-tool", baseUrl + "/mcp"); 
 
             ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("slow-tool"), c));
 
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.TIMEOUT); // GH-90000
+            assertThat(result.status()).isEqualTo(ToolExecutionStatus.TIMEOUT); 
         }
     }
 
@@ -195,18 +195,18 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns DENIED when ToolContract has no remoteEndpoint")
-        void noEndpointReturnsDenied() { // GH-90000
-            McpToolAdapter adapter = new McpToolAdapter(realTransport()); // GH-90000
-            ToolContract c = new ToolContractBuilder() // GH-90000
+        void noEndpointReturnsDenied() { 
+            McpToolAdapter adapter = new McpToolAdapter(realTransport()); 
+            ToolContract c = new ToolContractBuilder() 
                     .toolId("no-endpoint-tool").name("no-endpoint-tool")
-                    .actionClass(ActionClass.CALL_EXTERNAL) // GH-90000
-                    .transport(ToolTransport.MCP) // GH-90000
+                    .actionClass(ActionClass.CALL_EXTERNAL) 
+                    .transport(ToolTransport.MCP) 
                     // remoteEndpoint intentionally not set
-                    .build(); // GH-90000
+                    .build(); 
 
             ToolExecutionResult result = runPromise(() -> adapter.handle(envelope("no-endpoint-tool"), c));
 
-            assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); // GH-90000
+            assertThat(result.status()).isEqualTo(ToolExecutionStatus.DENIED); 
             assertThat(result.errorMessage()).contains("remoteEndpoint");
         }
     }
@@ -219,23 +219,23 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("toJson produces JSON-RPC 2.0 payload")
-        void toJsonFormat() { // GH-90000
-            McpToolRequest req = McpToolRequest.of("id-1", "web-search", Map.of("query", "test")); // GH-90000
-            String json = req.toJson(); // GH-90000
+        void toJsonFormat() { 
+            McpToolRequest req = McpToolRequest.of("id-1", "web-search", Map.of("query", "test")); 
+            String json = req.toJson(); 
 
-            assertThat(json).contains("\"jsonrpc\":\"2.0\""); // GH-90000
-            assertThat(json).contains("\"id\":\"id-1\""); // GH-90000
-            assertThat(json).contains("\"method\":\"tools/call\""); // GH-90000
-            assertThat(json).contains("\"name\":\"web-search\""); // GH-90000
-            assertThat(json).contains("\"query\":\"test\""); // GH-90000
+            assertThat(json).contains("\"jsonrpc\":\"2.0\""); 
+            assertThat(json).contains("\"id\":\"id-1\""); 
+            assertThat(json).contains("\"method\":\"tools/call\""); 
+            assertThat(json).contains("\"name\":\"web-search\""); 
+            assertThat(json).contains("\"query\":\"test\""); 
         }
 
         @Test
         @DisplayName("blank toolName throws IllegalArgumentException")
-        void blankToolNameThrows() { // GH-90000
-            org.assertj.core.api.Assertions.assertThatThrownBy( // GH-90000
-                    () -> McpToolRequest.of("id-1", "  ", Map.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void blankToolNameThrows() { 
+            org.assertj.core.api.Assertions.assertThatThrownBy( 
+                    () -> McpToolRequest.of("id-1", "  ", Map.of())) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -245,31 +245,31 @@ class McpToolAdapterTest extends EventloopTestBase {
 
         @Test
         @DisplayName("parse extracts text content from MCP success response")
-        void parseSuccessResponse() { // GH-90000
+        void parseSuccessResponse() { 
             String json = "{\"jsonrpc\":\"2.0\",\"id\":\"r1\","
                     + "\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"output\"}]}}";
-            McpToolResponse resp = McpToolResponse.parse("r1", json); // GH-90000
-            assertThat(resp.success()).isTrue(); // GH-90000
+            McpToolResponse resp = McpToolResponse.parse("r1", json); 
+            assertThat(resp.success()).isTrue(); 
             assertThat(resp.content()).isEqualTo("output");
         }
 
         @Test
         @DisplayName("parse extracts code and message from MCP error response")
-        void parseErrorResponse() { // GH-90000
+        void parseErrorResponse() { 
             String json = "{\"jsonrpc\":\"2.0\",\"id\":\"r2\","
                     + "\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}";
-            McpToolResponse resp = McpToolResponse.parse("r2", json); // GH-90000
-            assertThat(resp.success()).isFalse(); // GH-90000
-            assertThat(resp.errorCode()).isEqualTo(-32601); // GH-90000
+            McpToolResponse resp = McpToolResponse.parse("r2", json); 
+            assertThat(resp.success()).isFalse(); 
+            assertThat(resp.errorCode()).isEqualTo(-32601); 
             assertThat(resp.errorMessage()).isEqualTo("Method not found");
         }
 
         @Test
         @DisplayName("parse handles empty response string")
-        void parseEmptyResponse() { // GH-90000
-            McpToolResponse resp = McpToolResponse.parse("r3", ""); // GH-90000
-            assertThat(resp.success()).isFalse(); // GH-90000
-            assertThat(resp.errorCode()).isEqualTo(-32700); // GH-90000
+        void parseEmptyResponse() { 
+            McpToolResponse resp = McpToolResponse.parse("r3", ""); 
+            assertThat(resp.success()).isFalse(); 
+            assertThat(resp.errorCode()).isEqualTo(-32700); 
         }
     }
 }

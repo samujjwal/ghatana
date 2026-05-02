@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.ai.llm;
@@ -34,86 +34,86 @@ class PolicyGuardRailTest {
 
     @Test
     @DisplayName("should allow LLM call when policy permits")
-    void shouldAllowLlmCallWhenPolicyPermits() { // GH-90000
-        LLMGateway delegate = mock(LLMGateway.class); // GH-90000
-        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); // GH-90000
-        CompletionRequest request = CompletionRequest.builder() // GH-90000
+    void shouldAllowLlmCallWhenPolicyPermits() { 
+        LLMGateway delegate = mock(LLMGateway.class); 
+        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); 
+        CompletionRequest request = CompletionRequest.builder() 
                 .prompt("test prompt")
-                .build(); // GH-90000
-        CompletionResult result = CompletionResult.builder() // GH-90000
+                .build(); 
+        CompletionResult result = CompletionResult.builder() 
                 .text("response")
-                .build(); // GH-90000
+                .build(); 
 
-        when(policyEngine.evaluate(anyString(), anyString(), any())) // GH-90000
+        when(policyEngine.evaluate(anyString(), anyString(), any())) 
                 .thenReturn(Promise.of(PolicyEvalResult.allow("llm.guard")));
-        when(delegate.complete(any())) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+        when(delegate.complete(any())) 
+                .thenReturn(Promise.of(result)); 
 
-        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); // GH-90000
-        Promise<CompletionResult> actual = guardRail.complete(request); // GH-90000
+        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); 
+        Promise<CompletionResult> actual = guardRail.complete(request); 
 
-        assertThat(actual.getResult()).isEqualTo(result); // GH-90000
+        assertThat(actual.getResult()).isEqualTo(result); 
     }
 
     @Test
     @DisplayName("should deny LLM call when policy denies")
-    void shouldDenyLlmCallWhenPolicyDenies() { // GH-90000
-        LLMGateway delegate = mock(LLMGateway.class); // GH-90000
-        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); // GH-90000
-        CompletionRequest request = CompletionRequest.builder() // GH-90000
+    void shouldDenyLlmCallWhenPolicyDenies() { 
+        LLMGateway delegate = mock(LLMGateway.class); 
+        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); 
+        CompletionRequest request = CompletionRequest.builder() 
                 .prompt("test prompt")
-                .build(); // GH-90000
+                .build(); 
 
-        when(policyEngine.evaluate(anyString(), anyString(), any())) // GH-90000
+        when(policyEngine.evaluate(anyString(), anyString(), any())) 
                 .thenReturn(Promise.of(PolicyEvalResult.deny("llm.guard", List.of("blocked content"), 50)));
 
-        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); // GH-90000
-        Promise<CompletionResult> actual = guardRail.complete(request); // GH-90000
+        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); 
+        Promise<CompletionResult> actual = guardRail.complete(request); 
 
-        assertThat(actual.isException()).isTrue(); // GH-90000
+        assertThat(actual.isException()).isTrue(); 
         // The promise is in exception state, which is sufficient for this test
         // The actual exception type is verified by the policy engine mock returning deny
     }
 
     @Test
     @DisplayName("should use custom policy path from metadata")
-    void shouldUseCustomPolicyPathFromMetadata() { // GH-90000
-        LLMGateway delegate = mock(LLMGateway.class); // GH-90000
-        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); // GH-90000
-        CompletionRequest request = CompletionRequest.builder() // GH-90000
+    void shouldUseCustomPolicyPathFromMetadata() { 
+        LLMGateway delegate = mock(LLMGateway.class); 
+        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); 
+        CompletionRequest request = CompletionRequest.builder() 
                 .prompt("test prompt")
-                .metadata(Map.of("policyPath", "custom.policy")) // GH-90000
-                .build(); // GH-90000
-        CompletionResult result = CompletionResult.builder() // GH-90000
+                .metadata(Map.of("policyPath", "custom.policy")) 
+                .build(); 
+        CompletionResult result = CompletionResult.builder() 
                 .text("response")
-                .build(); // GH-90000
+                .build(); 
 
-        when(policyEngine.evaluate(anyString(), anyString(), any())) // GH-90000
+        when(policyEngine.evaluate(anyString(), anyString(), any())) 
                 .thenReturn(Promise.of(PolicyEvalResult.allow("custom.policy")));
-        when(delegate.complete(any())) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+        when(delegate.complete(any())) 
+                .thenReturn(Promise.of(result)); 
 
-        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); // GH-90000
-        guardRail.complete(request).getResult(); // GH-90000
+        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); 
+        guardRail.complete(request).getResult(); 
 
         // Verify policy engine was called with custom path
-        // (in real test, use ArgumentCaptor to verify exact call) // GH-90000
+        // (in real test, use ArgumentCaptor to verify exact call) 
     }
 
     @Test
     @DisplayName("should allow embedding requests without policy check")
-    void shouldAllowEmbeddingRequestsWithoutPolicyCheck() { // GH-90000
-        LLMGateway delegate = mock(LLMGateway.class); // GH-90000
-        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); // GH-90000
-        EmbeddingResult result = new EmbeddingResult("test text", new float[1536], "test-model"); // GH-90000
+    void shouldAllowEmbeddingRequestsWithoutPolicyCheck() { 
+        LLMGateway delegate = mock(LLMGateway.class); 
+        PolicyAsCodeEngine policyEngine = mock(PolicyAsCodeEngine.class); 
+        EmbeddingResult result = new EmbeddingResult("test text", new float[1536], "test-model"); 
 
-        when(delegate.embed(anyString())) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+        when(delegate.embed(anyString())) 
+                .thenReturn(Promise.of(result)); 
 
-        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); // GH-90000
+        PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); 
         Promise<EmbeddingResult> actual = guardRail.embed("test text");
 
-        assertThat(actual.getResult()).isEqualTo(result); // GH-90000
+        assertThat(actual.getResult()).isEqualTo(result); 
         // Policy engine should not be called for embeddings
     }
 }

@@ -25,31 +25,31 @@ class ProcessRunnerTest {
     @TempDir
     Path tempDir;
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(); // GH-90000
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(); 
 
     @AfterEach
-    void tearDown() { // GH-90000
-        executor.shutdownNow(); // GH-90000
+    void tearDown() { 
+        executor.shutdownNow(); 
     }
 
     @Test
-    void wrapsIoFailuresInRefactorerOperationException() { // GH-90000
-        ProcessRunner runner = new ProcessRunner(createContext(tempDir)); // GH-90000
+    void wrapsIoFailuresInRefactorerOperationException() { 
+        ProcessRunner runner = new ProcessRunner(createContext(tempDir)); 
 
-        assertThatThrownBy(() -> runner.execute("command-that-does-not-exist-123", List.of(), tempDir, true)) // GH-90000
-                .isInstanceOf(RefactorerOperationException.class) // GH-90000
+        assertThatThrownBy(() -> runner.execute("command-that-does-not-exist-123", List.of(), tempDir, true)) 
+                .isInstanceOf(RefactorerOperationException.class) 
                 .hasMessageContaining("Failed to execute process")
                 .hasMessageContaining("command-that-does-not-exist-123")
-                .hasCauseInstanceOf(java.io.IOException.class); // GH-90000
+                .hasCauseInstanceOf(java.io.IOException.class); 
     }
 
-    private PolyfixProjectContext createContext(Path root) { // GH-90000
-        PolyfixConfig config = new PolyfixConfig( // GH-90000
+    private PolyfixProjectContext createContext(Path root) { 
+        PolyfixConfig config = new PolyfixConfig( 
                 List.of("java"),
                 List.of("schemas"),
-                new PolyfixConfig.Budgets(3, 20), // GH-90000
-                new PolyfixConfig.Policies(true, true, true, false), // GH-90000
-                new PolyfixConfig.Tools( // GH-90000
+                new PolyfixConfig.Budgets(3, 20), 
+                new PolyfixConfig.Policies(true, true, true, false), 
+                new PolyfixConfig.Tools( 
                         "node",
                         "eslint",
                         "tsc",
@@ -62,11 +62,11 @@ class ProcessRunnerTest {
                         "cargo",
                         "rustfmt",
                         "semgrep"));
-        return new PolyfixProjectContext( // GH-90000
+        return new PolyfixProjectContext( 
                 root,
                 config,
-                List.of(), // GH-90000
+                List.of(), 
                 executor,
-                LogManager.getLogger(ProcessRunnerTest.class)); // GH-90000
+                LogManager.getLogger(ProcessRunnerTest.class)); 
     }
 }

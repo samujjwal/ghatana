@@ -42,26 +42,26 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
     private User testUser;
     private static final String BASE_URL = "http://localhost:8082";
 
-    private static String url(String path) { // GH-90000
+    private static String url(String path) { 
         return BASE_URL + path;
     }
 
     @BeforeAll
-    static void skipUntilProjectControllerReady() { // GH-90000
-        Assumptions.assumeTrue(false, "Project controller integration is not yet wired to backing services"); // GH-90000
+    static void skipUntilProjectControllerReady() { 
+        Assumptions.assumeTrue(false, "Project controller integration is not yet wired to backing services"); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
 
-        testUser = User.builder() // GH-90000
+        testUser = User.builder() 
             .userId("user-123")
             .email("test@example.com")
             .username("Test User")
             .roles(Set.of("USER"))
-            .permissions(Set.of("PROJECT_CREATE", "PROJECT_READ")) // GH-90000
-            .build(); // GH-90000
+            .permissions(Set.of("PROJECT_CREATE", "PROJECT_READ")) 
+            .build(); 
     }
 
     @Nested
@@ -70,9 +70,9 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should create project in workspace")
-        void shouldCreateProject() throws Exception { // GH-90000
+        void shouldCreateProject() throws Exception { 
             // Given
-            CreateProjectRequest request = new CreateProjectRequest( // GH-90000
+            CreateProjectRequest request = new CreateProjectRequest( 
                 "ws-123",
                 "Mobile App",
                 "iOS and Android app",
@@ -80,26 +80,26 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
             );
 
             HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects"))
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When - Will fail without actual service setup, but tests the flow
-            HttpResponse response = runPromise(() -> { // GH-90000
-                // controller.createProject(httpRequest) // GH-90000
+            HttpResponse response = runPromise(() -> { 
+                // controller.createProject(httpRequest) 
                 // Placeholder - would need controller instance
                 return null;
             });
 
             // Then - Tests the pattern
-            // assertThat(response.getCode()).isEqualTo(201); // GH-90000
+            // assertThat(response.getCode()).isEqualTo(201); 
         }
 
         @Test
         @DisplayName("Should reject project creation with invalid workspace")
-        void shouldRejectInvalidWorkspace() throws Exception { // GH-90000
+        void shouldRejectInvalidWorkspace() throws Exception { 
             // Given
-            CreateProjectRequest request = new CreateProjectRequest( // GH-90000
+            CreateProjectRequest request = new CreateProjectRequest( 
                 "invalid-ws",
                 "Project",
                 "Description",
@@ -107,9 +107,9 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
             );
 
             HttpRequest httpRequest = HttpRequest.post(url("/api/v1/projects"))
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then - Tests authorization flow
             // Response would be 400 or 404 for invalid workspace
@@ -122,11 +122,11 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should get project by ID")
-        void shouldGetProject() { // GH-90000
+        void shouldGetProject() { 
             // Given
             String projectId = "proj-123";
-            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/projects/" + projectId)).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/projects/" + projectId)).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then
             // Tests the retrieval flow
@@ -134,11 +134,11 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should list projects in workspace")
-        void shouldListProjects() { // GH-90000
+        void shouldListProjects() { 
             // Given
             String workspaceId = "ws-123";
-            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId + "/projects")).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId + "/projects")).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then
             // Tests listing flow
@@ -151,19 +151,19 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should update project details")
-        void shouldUpdateProject() throws Exception { // GH-90000
+        void shouldUpdateProject() throws Exception { 
             // Given
             String projectId = "proj-123";
-            UpdateProjectRequest request = new UpdateProjectRequest( // GH-90000
+            UpdateProjectRequest request = new UpdateProjectRequest( 
                 "Updated Name",
                 "Updated Description",
                 ProjectStatus.ACTIVE
             );
 
-            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/projects/" + projectId)) // GH-90000
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/projects/" + projectId)) 
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then
             // Tests update flow
@@ -171,19 +171,19 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should transition project status")
-        void shouldTransitionStatus() throws Exception { // GH-90000
+        void shouldTransitionStatus() throws Exception { 
             // Given
             String projectId = "proj-123";
-            UpdateProjectRequest request = new UpdateProjectRequest( // GH-90000
+            UpdateProjectRequest request = new UpdateProjectRequest( 
                 null,
                 null,
                 ProjectStatus.COMPLETED
             );
 
-            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/projects/" + projectId)) // GH-90000
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/projects/" + projectId)) 
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then
             // Tests status transition
@@ -196,19 +196,19 @@ class ProjectControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should archive project")
-        void shouldArchiveProject() { // GH-90000
+        void shouldArchiveProject() { 
             // Given
             String projectId = "proj-123";
-            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, url("/api/v1/projects/" + projectId)).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, url("/api/v1/projects/" + projectId)).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When/Then
-            // Tests archival flow (soft delete) // GH-90000
+            // Tests archival flow (soft delete) 
         }
 
         @Test
         @DisplayName("Should prevent operations on archived project")
-        void shouldPreventOperationsOnArchived() { // GH-90000
+        void shouldPreventOperationsOnArchived() { 
             // Given - archived project
             String projectId = "archived-proj";
 

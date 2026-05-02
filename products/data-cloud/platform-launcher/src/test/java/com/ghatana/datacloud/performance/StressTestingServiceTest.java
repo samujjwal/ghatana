@@ -26,10 +26,10 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern StressTestingService
  *
- * Requirement: DC-F-022 (Stress Testing) // GH-90000
+ * Requirement: DC-F-022 (Stress Testing) 
  * Focus: Peak load handling, resource exhaustion, cascading failures, extended stress
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("StressTestingService - DC-F-022")
 class StressTestingServiceTest {
 
@@ -40,8 +40,8 @@ class StressTestingServiceTest {
     private StressTestingService stressTestingService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        stressTestingService = new StressTestingService(resourceMonitor, failureInjector, exhaustionTester); // GH-90000
+    void setUp() { 
+        stressTestingService = new StressTestingService(resourceMonitor, failureInjector, exhaustionTester); 
     }
 
     @Nested
@@ -50,76 +50,76 @@ class StressTestingServiceTest {
 
         @Test
         @DisplayName("shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds")
-        void shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds() { // GH-90000
+        void shouldHandleSuddenTrafficSpike_when10xNormalLoadArrives_thenSystemResponds() { 
             long normalLoad = 1000L;
             long spikeLoad = 10_000L;
-            when(resourceMonitor.measureLatencyUnderLoad(spikeLoad)).thenReturn(1500L); // GH-90000
+            when(resourceMonitor.measureLatencyUnderLoad(spikeLoad)).thenReturn(1500L); 
 
-            long latency = resourceMonitor.measureLatencyUnderLoad(spikeLoad); // GH-90000
+            long latency = resourceMonitor.measureLatencyUnderLoad(spikeLoad); 
 
-            assertTrue(latency > 0); // GH-90000
-            verify(resourceMonitor).measureLatencyUnderLoad(spikeLoad); // GH-90000
+            assertTrue(latency > 0); 
+            verify(resourceMonitor).measureLatencyUnderLoad(spikeLoad); 
         }
 
         @Test
         @DisplayName("shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption")
-        void shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption() { // GH-90000
-            when(resourceMonitor.getQueueDepth()).thenReturn(5000L); // GH-90000
+        void shouldPreserveDataConsistency_whenConcurrentLimitReached_thenQueueAbsorption() { 
+            when(resourceMonitor.getQueueDepth()).thenReturn(5000L); 
 
-            long queueDepth = resourceMonitor.getQueueDepth(); // GH-90000
+            long queueDepth = resourceMonitor.getQueueDepth(); 
 
-            assertTrue(queueDepth > 0); // GH-90000
-            verify(resourceMonitor).getQueueDepth(); // GH-90000
+            assertTrue(queueDepth > 0); 
+            verify(resourceMonitor).getQueueDepth(); 
         }
 
         @Test
         @DisplayName("shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued")
-        void shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued() { // GH-90000
-            when(resourceMonitor.isBackpressureActive()).thenReturn(true); // GH-90000
+        void shouldImplementBackpressure_whenSystemSaturated_thenRequestsQueued() { 
+            when(resourceMonitor.isBackpressureActive()).thenReturn(true); 
 
-            boolean isActive = resourceMonitor.isBackpressureActive(); // GH-90000
+            boolean isActive = resourceMonitor.isBackpressureActive(); 
 
-            assertTrue(isActive); // GH-90000
+            assertTrue(isActive); 
         }
 
         @Test
         @DisplayName("shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint")
-        void shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint() { // GH-90000
-            when(exhaustionTester.detectSaturationPoint()).thenReturn(15_000L); // GH-90000
+        void shouldDetectSystemSaturation_whenLoadExceedsCapacity_thenSaturationPoint() { 
+            when(exhaustionTester.detectSaturationPoint()).thenReturn(15_000L); 
 
-            long saturation = exhaustionTester.detectSaturationPoint(); // GH-90000
+            long saturation = exhaustionTester.detectSaturationPoint(); 
 
-            assertEquals(15_000L, saturation); // GH-90000
+            assertEquals(15_000L, saturation); 
         }
 
         @Test
         @DisplayName("shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates")
-        void shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates() { // GH-90000
-            when(resourceMonitor.getRateLimitRejectionCount()).thenReturn(250L); // GH-90000
+        void shouldRejectRequestsGracefully_whenQueueFull_thenRateLimitingActivates() { 
+            when(resourceMonitor.getRateLimitRejectionCount()).thenReturn(250L); 
 
-            long rejections = resourceMonitor.getRateLimitRejectionCount(); // GH-90000
+            long rejections = resourceMonitor.getRateLimitRejectionCount(); 
 
-            assertTrue(rejections >= 0); // GH-90000
+            assertTrue(rejections >= 0); 
         }
 
         @Test
         @DisplayName("shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates")
-        void shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates() { // GH-90000
-            when(resourceMonitor.getRecoveryTimeMs()).thenReturn(3000L); // GH-90000
+        void shouldRecoverAfterSpike_whenLoadReturnsToNormal_thenSystemRecalibrates() { 
+            when(resourceMonitor.getRecoveryTimeMs()).thenReturn(3000L); 
 
-            long recoveryTime = resourceMonitor.getRecoveryTimeMs(); // GH-90000
+            long recoveryTime = resourceMonitor.getRecoveryTimeMs(); 
 
-            assertTrue(recoveryTime < 10_000); // GH-90000
+            assertTrue(recoveryTime < 10_000); 
         }
 
         @Test
         @DisplayName("shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert")
-        void shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert() { // GH-90000
-            when(resourceMonitor.computeP99Latency()).thenReturn(5000L); // GH-90000
+        void shouldMaintainSLAsUnderSpike_whereFeatureUnusuallyMissed_thenAlert() { 
+            when(resourceMonitor.computeP99Latency()).thenReturn(5000L); 
 
-            long p99 = resourceMonitor.computeP99Latency(); // GH-90000
+            long p99 = resourceMonitor.computeP99Latency(); 
 
-            assertTrue(p99 > 0); // GH-90000
+            assertTrue(p99 > 0); 
         }
     }
 
@@ -129,75 +129,75 @@ class StressTestingServiceTest {
 
         @Test
         @DisplayName("shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins")
-        void shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins() { // GH-90000
-            when(exhaustionTester.getActiveThreads()).thenReturn(1024); // GH-90000
+        void shouldDetectThreadPoolExhaustion_whenMaxThreadsReached_thenQueuingBegins() { 
+            when(exhaustionTester.getActiveThreads()).thenReturn(1024); 
 
-            int active = exhaustionTester.getActiveThreads(); // GH-90000
+            int active = exhaustionTester.getActiveThreads(); 
 
-            assertEquals(1024, active); // GH-90000
+            assertEquals(1024, active); 
         }
 
         @Test
         @DisplayName("shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins")
-        void shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins() { // GH-90000
-            when(exhaustionTester.getConnectionPoolSize()).thenReturn(500); // GH-90000
-            when(exhaustionTester.getActiveConnections()).thenReturn(500); // GH-90000
+        void shouldDetectConnectionPoolExhaustion_whenAllConnectionsInUse_thenWaitingBegins() { 
+            when(exhaustionTester.getConnectionPoolSize()).thenReturn(500); 
+            when(exhaustionTester.getActiveConnections()).thenReturn(500); 
 
-            int active = exhaustionTester.getActiveConnections(); // GH-90000
-            int poolSize = exhaustionTester.getConnectionPoolSize(); // GH-90000
+            int active = exhaustionTester.getActiveConnections(); 
+            int poolSize = exhaustionTester.getConnectionPoolSize(); 
 
-            assertEquals(poolSize, active); // GH-90000
+            assertEquals(poolSize, active); 
         }
 
         @Test
         @DisplayName("shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay")
-        void shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay() { // GH-90000
-            when(resourceMonitor.getHeapUsagePercent()).thenReturn(95.0); // GH-90000
+        void shouldDetectMemoryBoundary_whenHeapNearMax_thenGCDelay() { 
+            when(resourceMonitor.getHeapUsagePercent()).thenReturn(95.0); 
 
-            double usage = resourceMonitor.getHeapUsagePercent(); // GH-90000
+            double usage = resourceMonitor.getHeapUsagePercent(); 
 
-            assertTrue(usage > 90); // GH-90000
-            verify(resourceMonitor).getHeapUsagePercent(); // GH-90000
+            assertTrue(usage > 90); 
+            verify(resourceMonitor).getHeapUsagePercent(); 
         }
 
         @Test
         @DisplayName("shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes")
-        void shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes() { // GH-90000
-            when(exhaustionTester.measureDiskBandwidth()).thenReturn(500_000_000L); // GH-90000
+        void shouldDetectDiskBandwidthLimit_whenIOMaxReached_thenLatencySpikes() { 
+            when(exhaustionTester.measureDiskBandwidth()).thenReturn(500_000_000L); 
 
-            long bandwidth = exhaustionTester.measureDiskBandwidth(); // GH-90000
+            long bandwidth = exhaustionTester.measureDiskBandwidth(); 
 
-            assertTrue(bandwidth > 0); // GH-90000
+            assertTrue(bandwidth > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss")
-        void shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss() { // GH-90000
-            when(exhaustionTester.measureNetworkBandwidth()).thenReturn(10_000_000_000L); // GH-90000
+        void shouldDetectNetworkBandwidthLimit_whenNetworkSaturated_thenPacketLoss() { 
+            when(exhaustionTester.measureNetworkBandwidth()).thenReturn(10_000_000_000L); 
 
-            long bandwidth = exhaustionTester.measureNetworkBandwidth(); // GH-90000
+            long bandwidth = exhaustionTester.measureNetworkBandwidth(); 
 
-            assertTrue(bandwidth > 0); // GH-90000
+            assertTrue(bandwidth > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate")
-        void shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate() { // GH-90000
-            when(resourceMonitor.getCacheEvictionRate()).thenReturn(0.15); // GH-90000
+        void shouldDetectCacheCapacityLimit_whenCacheFull_thenEvictionRate() { 
+            when(resourceMonitor.getCacheEvictionRate()).thenReturn(0.15); 
 
-            double evictionRate = resourceMonitor.getCacheEvictionRate(); // GH-90000
+            double evictionRate = resourceMonitor.getCacheEvictionRate(); 
 
-            assertTrue(evictionRate >= 0.1); // GH-90000
+            assertTrue(evictionRate >= 0.1); 
         }
 
         @Test
         @DisplayName("shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases")
-        void shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases() { // GH-90000
-            when(resourceMonitor.getCPUUtilization()).thenReturn(99.5); // GH-90000
+        void shouldDetectCPUThrottling_whenCPUUtilizationMaxed_thenLatencyIncreases() { 
+            when(resourceMonitor.getCPUUtilization()).thenReturn(99.5); 
 
-            double cpuUsage = resourceMonitor.getCPUUtilization(); // GH-90000
+            double cpuUsage = resourceMonitor.getCPUUtilization(); 
 
-            assertTrue(cpuUsage > 95); // GH-90000
+            assertTrue(cpuUsage > 95); 
         }
     }
 
@@ -207,70 +207,70 @@ class StressTestingServiceTest {
 
         @Test
         @DisplayName("shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens")
-        void shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens() { // GH-90000
-            when(failureInjector.injectDownstreamFailure()).thenReturn(true); // GH-90000
-            when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(true); // GH-90000
+        void shouldHandleDownstreamServiceFailure_whenDependencyBecomesUnavailable_thenCircuitOpens() { 
+            when(failureInjector.injectDownstreamFailure()).thenReturn(true); 
+            when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(true); 
 
-            failureInjector.injectDownstreamFailure(); // GH-90000
-            boolean circuitOpen = resourceMonitor.isCircuitBreakerOpen(); // GH-90000
+            failureInjector.injectDownstreamFailure(); 
+            boolean circuitOpen = resourceMonitor.isCircuitBreakerOpen(); 
 
-            assertTrue(circuitOpen); // GH-90000
+            assertTrue(circuitOpen); 
         }
 
         @Test
         @DisplayName("shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected")
-        void shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected() { // GH-90000
+        void shouldPreventCascadeFailure_whenOneServiceSlows_thenOthersNotAffected() { 
             when(resourceMonitor.getServiceHealthStatus("ServiceA")).thenReturn("DEGRADED");
             when(resourceMonitor.getServiceHealthStatus("ServiceB")).thenReturn("HEALTHY");
 
             String statusA = resourceMonitor.getServiceHealthStatus("ServiceA");
             String statusB = resourceMonitor.getServiceHealthStatus("ServiceB");
 
-            assertEquals("DEGRADED", statusA); // GH-90000
-            assertEquals("HEALTHY", statusB); // GH-90000
+            assertEquals("DEGRADED", statusA); 
+            assertEquals("HEALTHY", statusB); 
         }
 
         @Test
         @DisplayName("shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds")
-        void shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds() { // GH-90000
-            AtomicLong failureCount = new AtomicLong(0); // GH-90000
-            when(resourceMonitor.getFailureCount()).thenAnswer(inv -> failureCount.get()); // GH-90000
+        void shouldLimitFailurePropagation_whenMultipleServicesSlowdown_thenIsolationHolds() { 
+            AtomicLong failureCount = new AtomicLong(0); 
+            when(resourceMonitor.getFailureCount()).thenAnswer(inv -> failureCount.get()); 
 
-            long failures = resourceMonitor.getFailureCount(); // GH-90000
+            long failures = resourceMonitor.getFailureCount(); 
 
-            assertTrue(failures == 0); // GH-90000
+            assertTrue(failures == 0); 
         }
 
         @Test
         @DisplayName("shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses")
-        void shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses() { // GH-90000
-            when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(false); // GH-90000
+        void shouldRecoverFromCascade_whenDownstreamRecovered_thenCircuitCloses() { 
+            when(resourceMonitor.isCircuitBreakerOpen()).thenReturn(false); 
 
-            boolean circuitOpen = resourceMonitor.isCircuitBreakerOpen(); // GH-90000
+            boolean circuitOpen = resourceMonitor.isCircuitBreakerOpen(); 
 
-            assertFalse(circuitOpen); // GH-90000
+            assertFalse(circuitOpen); 
         }
 
         @Test
         @DisplayName("shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled")
-        void shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled() { // GH-90000
-            when(resourceMonitor.getLastHealthCheckTime()).thenReturn(System.currentTimeMillis()); // GH-90000
+        void shouldMaintainHeartbeats_DuringFailure_thenHealthChecksEnabled() { 
+            when(resourceMonitor.getLastHealthCheckTime()).thenReturn(System.currentTimeMillis()); 
 
-            long lastCheck = resourceMonitor.getLastHealthCheckTime(); // GH-90000
+            long lastCheck = resourceMonitor.getLastHealthCheckTime(); 
 
-            assertTrue(lastCheck > 0); // GH-90000
+            assertTrue(lastCheck > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained")
-        void shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained() { // GH-90000
-            when(resourceMonitor.getHealthyNodeCount()).thenReturn(3); // GH-90000
-            when(resourceMonitor.getTotalNodeCount()).thenReturn(5); // GH-90000
+        void shouldDetectPartialFailure_whenSubsetOfNodesDown_thenQuorumMaintained() { 
+            when(resourceMonitor.getHealthyNodeCount()).thenReturn(3); 
+            when(resourceMonitor.getTotalNodeCount()).thenReturn(5); 
 
-            int healthy = resourceMonitor.getHealthyNodeCount(); // GH-90000
-            int total = resourceMonitor.getTotalNodeCount(); // GH-90000
+            int healthy = resourceMonitor.getHealthyNodeCount(); 
+            int total = resourceMonitor.getTotalNodeCount(); 
 
-            assertTrue(healthy >= total / 2 + 1); // GH-90000
+            assertTrue(healthy >= total / 2 + 1); 
         }
     }
 
@@ -280,74 +280,74 @@ class StressTestingServiceTest {
 
         @Test
         @DisplayName("shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak")
-        void shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak() { // GH-90000
+        void shouldMaintainStabilityUnder24hStress_whenLoadRuns_thenNoMemoryLeak() { 
             long memoryStart = 500_000_000L;
             long memoryEnd = 520_000_000L;
-            long growthMB = (memoryEnd - memoryStart) / (1024L * 1024); // GH-90000
+            long growthMB = (memoryEnd - memoryStart) / (1024L * 1024); 
 
-            assertTrue(growthMB < 200); // GH-90000
+            assertTrue(growthMB < 200); 
         }
 
         @Test
         @DisplayName("shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid")
-        void shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid() { // GH-90000
-            when(resourceMonitor.getRecordedMeasurementCount()).thenReturn(86_400_000L); // GH-90000
+        void shouldMaintainAccuracyOfMeasurements_when24hStressCompletes_thenDataValid() { 
+            when(resourceMonitor.getRecordedMeasurementCount()).thenReturn(86_400_000L); 
 
-            long measurements = resourceMonitor.getRecordedMeasurementCount(); // GH-90000
+            long measurements = resourceMonitor.getRecordedMeasurementCount(); 
 
-            assertTrue(measurements > 0); // GH-90000
+            assertTrue(measurements > 0); 
         }
 
         @Test
         @DisplayName("shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted")
-        void shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted() { // GH-90000
-            when(resourceMonitor.getDiskUsagePercent()).thenReturn(45.0); // GH-90000
+        void shouldRotateLogs_duringExtendedStress_thenDiskNotExhausted() { 
+            when(resourceMonitor.getDiskUsagePercent()).thenReturn(45.0); 
 
-            double diskUsage = resourceMonitor.getDiskUsagePercent(); // GH-90000
+            double diskUsage = resourceMonitor.getDiskUsagePercent(); 
 
-            assertTrue(diskUsage < 90); // GH-90000
+            assertTrue(diskUsage < 90); 
         }
 
         @Test
         @DisplayName("shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean")
-        void shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean() { // GH-90000
-            when(resourceMonitor.getConnectionLeakCount()).thenReturn(0L); // GH-90000
+        void shouldManageLongRunningConnections_whileStressedFor24h_thenConnectionsClean() { 
+            when(resourceMonitor.getConnectionLeakCount()).thenReturn(0L); 
 
-            long leaks = resourceMonitor.getConnectionLeakCount(); // GH-90000
+            long leaks = resourceMonitor.getConnectionLeakCount(); 
 
-            assertEquals(0, leaks); // GH-90000
+            assertEquals(0, leaks); 
         }
 
         @Test
         @DisplayName("shouldDetectSlowDegradation_overExtendedStress_thenSLADrift")
-        void shouldDetectSlowDegradation_overExtendedStress_thenSLADrift() { // GH-90000
-            List<Long> p95Measurements = new ArrayList<>(); // GH-90000
-            p95Measurements.add(500L); // GH-90000
-            p95Measurements.add(510L); // GH-90000
-            p95Measurements.add(520L); // GH-90000
+        void shouldDetectSlowDegradation_overExtendedStress_thenSLADrift() { 
+            List<Long> p95Measurements = new ArrayList<>(); 
+            p95Measurements.add(500L); 
+            p95Measurements.add(510L); 
+            p95Measurements.add(520L); 
 
-            boolean degrading = p95Measurements.get(2) > p95Measurements.get(0); // GH-90000
-            assertTrue(degrading); // GH-90000
+            boolean degrading = p95Measurements.get(2) > p95Measurements.get(0); 
+            assertTrue(degrading); 
         }
 
         @Test
         @DisplayName("shouldValidateFairnessUnder ExtendedStress_thenRandomQueuePositionHeld")
-        void shouldValidateFairnessUnderExtendedStress_thenRandomQueuePositionHeld() { // GH-90000
-            when(resourceMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
+        void shouldValidateFairnessUnderExtendedStress_thenRandomQueuePositionHeld() { 
+            when(resourceMonitor.validateQueueFairness()).thenReturn(true); 
 
-            boolean fair = resourceMonitor.validateQueueFairness(); // GH-90000
+            boolean fair = resourceMonitor.validateQueueFairness(); 
 
-            assertTrue(fair); // GH-90000
+            assertTrue(fair); 
         }
 
         @Test
         @DisplayName("shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed")
-        void shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed() { // GH-90000
+        void shouldDetectLeaksInExtendedRun_whenStressContinues_thenGrowthTrendAnalyzed() { 
             when(resourceMonitor.analyzeMemoryGrowthTrend()).thenReturn("STABLE");
 
-            String trend = resourceMonitor.analyzeMemoryGrowthTrend(); // GH-90000
+            String trend = resourceMonitor.analyzeMemoryGrowthTrend(); 
 
-            assertTrue(trend.length() > 0); // GH-90000
+            assertTrue(trend.length() > 0); 
         }
     }
 
@@ -357,7 +357,7 @@ class StressTestingServiceTest {
         private final FailureInjector failureInjector;
         private final ExhaustionTester exhaustionTester;
 
-        StressTestingService(ResourceMonitor monitor, FailureInjector injector, ExhaustionTester tester) { // GH-90000
+        StressTestingService(ResourceMonitor monitor, FailureInjector injector, ExhaustionTester tester) { 
             this.resourceMonitor = monitor;
             this.failureInjector = injector;
             this.exhaustionTester = tester;
@@ -365,40 +365,40 @@ class StressTestingServiceTest {
     }
 
     static class ResourceMonitor {
-        long measureLatencyUnderLoad(long load) { return 1500L; } // GH-90000
-        long getQueueDepth() { return 5000L; } // GH-90000
-        boolean isBackpressureActive() { return true; } // GH-90000
-        long getRateLimitRejectionCount() { return 250L; } // GH-90000
-        long getRecoveryTimeMs() { return 3000L; } // GH-90000
-        long computeP99Latency() { return 5000L; } // GH-90000
-        double getHeapUsagePercent() { return 95.0; } // GH-90000
-        double getCacheEvictionRate() { return 0.15; } // GH-90000
-        double getCPUUtilization() { return 99.5; } // GH-90000
-        boolean isCircuitBreakerOpen() { return false; } // GH-90000
-        String getServiceHealthStatus(String service) { return "HEALTHY"; } // GH-90000
-        long getFailureCount() { return 0L; } // GH-90000
-        long getLastHealthCheckTime() { return System.currentTimeMillis(); } // GH-90000
-        int getHealthyNodeCount() { return 3; } // GH-90000
-        int getTotalNodeCount() { return 5; } // GH-90000
-        long getRecordedMeasurementCount() { return 86_400_000L; } // GH-90000
-        double getDiskUsagePercent() { return 45.0; } // GH-90000
-        long getConnectionLeakCount() { return 0L; } // GH-90000
-        boolean validateQueueFairness() { return true; } // GH-90000
-        String analyzeMemoryGrowthTrend() { return "STABLE"; } // GH-90000
+        long measureLatencyUnderLoad(long load) { return 1500L; } 
+        long getQueueDepth() { return 5000L; } 
+        boolean isBackpressureActive() { return true; } 
+        long getRateLimitRejectionCount() { return 250L; } 
+        long getRecoveryTimeMs() { return 3000L; } 
+        long computeP99Latency() { return 5000L; } 
+        double getHeapUsagePercent() { return 95.0; } 
+        double getCacheEvictionRate() { return 0.15; } 
+        double getCPUUtilization() { return 99.5; } 
+        boolean isCircuitBreakerOpen() { return false; } 
+        String getServiceHealthStatus(String service) { return "HEALTHY"; } 
+        long getFailureCount() { return 0L; } 
+        long getLastHealthCheckTime() { return System.currentTimeMillis(); } 
+        int getHealthyNodeCount() { return 3; } 
+        int getTotalNodeCount() { return 5; } 
+        long getRecordedMeasurementCount() { return 86_400_000L; } 
+        double getDiskUsagePercent() { return 45.0; } 
+        long getConnectionLeakCount() { return 0L; } 
+        boolean validateQueueFairness() { return true; } 
+        String analyzeMemoryGrowthTrend() { return "STABLE"; } 
     }
 
     static class FailureInjector {
-        boolean injectDownstreamFailure() { return true; } // GH-90000
+        boolean injectDownstreamFailure() { return true; } 
     }
 
     static class ExhaustionTester {
-        long detectSaturationPoint() { return 15_000L; } // GH-90000
-        int getThreadPoolSize() { return 1024; } // GH-90000
-        int getActiveThreads() { return 1024; } // GH-90000
-        int getConnectionPoolSize() { return 500; } // GH-90000
-        int getActiveConnections() { return 500; } // GH-90000
-        long measureDiskBandwidth() { return 500_000_000L; } // GH-90000
-        long measureNetworkBandwidth() { return 10_000_000_000L; } // GH-90000
+        long detectSaturationPoint() { return 15_000L; } 
+        int getThreadPoolSize() { return 1024; } 
+        int getActiveThreads() { return 1024; } 
+        int getConnectionPoolSize() { return 500; } 
+        int getActiveConnections() { return 500; } 
+        long measureDiskBandwidth() { return 500_000_000L; } 
+        long measureNetworkBandwidth() { return 10_000_000_000L; } 
     }
 
     // Custom Exceptions

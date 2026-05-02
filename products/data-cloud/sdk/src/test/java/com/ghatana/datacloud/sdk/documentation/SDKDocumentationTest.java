@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.sdk.documentation;
@@ -30,12 +30,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("documentation")
 class SDKDocumentationTest {
 
-    private final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
+    private final ObjectMapper objectMapper = new ObjectMapper(); 
 
     @Test
     @DisplayName("generated Java SDK has complete Javadoc comments")
-    void generatedJavaSdkHasCompleteJavadocComments() throws Exception { // GH-90000
-        String javaSource = Files.readString(generatedRoot() // GH-90000
+    void generatedJavaSdkHasCompleteJavadocComments() throws Exception { 
+        String javaSource = Files.readString(generatedRoot() 
             .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
         
         // Verify class-level documentation
@@ -79,7 +79,7 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("generated TypeScript SDK has complete TSDoc comments")
-    void generatedTypeScriptSdkHasCompleteTSDocComments() throws Exception { // GH-90000
+    void generatedTypeScriptSdkHasCompleteTSDocComments() throws Exception { 
         String tsSource = Files.readString(generatedRoot().resolve("typescript/src/index.ts"));
         
         // Verify class-level documentation
@@ -123,42 +123,42 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("generated Python SDK has complete docstrings")
-    void generatedPythonSdkHasCompleteDocstrings() throws Exception { // GH-90000
+    void generatedPythonSdkHasCompleteDocstrings() throws Exception { 
         String pythonSource = Files.readString(generatedRoot().resolve("python/datacloud_sdk/client.py"));
         
         // Verify class-level documentation
-        assertThat(pythonSource).contains("\"\"\""); // GH-90000
+        assertThat(pythonSource).contains("\"\"\""); 
         assertThat(pythonSource).contains("Data Cloud Python SDK");
         
         // Verify method documentation
         assertThat(pythonSource).contains("def health(self)");
-        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+        assertThat(pythonSource).contains("\"\"\"") 
             .contains("Health check endpoint")
             .contains(":return");
         
         assertThat(pythonSource).contains("def create_entity");
-        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+        assertThat(pythonSource).contains("\"\"\"") 
             .contains("Create a new entity")
             .contains(":param collection")
             .contains(":param payload")
             .contains(":return");
         
         assertThat(pythonSource).contains("def get_entity");
-        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+        assertThat(pythonSource).contains("\"\"\"") 
             .contains("Get an entity by ID")
             .contains(":param collection")
             .contains(":param id")
             .contains(":return");
         
         assertThat(pythonSource).contains("def query_entities");
-        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+        assertThat(pythonSource).contains("\"\"\"") 
             .contains("Query entities in a collection")
             .contains(":param collection")
             .contains(":param limit")
             .contains(":return");
         
         assertThat(pythonSource).contains("def delete_entity");
-        assertThat(pythonSource).contains("\"\"\"") // GH-90000
+        assertThat(pythonSource).contains("\"\"\"") 
             .contains("Delete an entity by ID")
             .contains(":param collection")
             .contains(":param id")
@@ -167,16 +167,16 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("metadata includes documentation for all documented endpoints")
-    void metadataIncludesDocumentationForAllDocumentedEndpoints() throws Exception { // GH-90000
-        Map<String, Object> metadata = objectMapper.readValue( // GH-90000
+    void metadataIncludesDocumentationForAllDocumentedEndpoints() throws Exception { 
+        Map<String, Object> metadata = objectMapper.readValue( 
             Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { } // GH-90000
+            new TypeReference<>() { } 
         );
         
         Object documentedPaths = metadata.get("documentedPaths");
-        assertThat(documentedPaths).isInstanceOf(List.class); // GH-90000
+        assertThat(documentedPaths).isInstanceOf(List.class); 
         
-        List<String> paths = asStringList(documentedPaths); // GH-90000
+        List<String> paths = asStringList(documentedPaths); 
         
         // Verify core endpoints are documented
         assertThat(paths).contains("/health");
@@ -186,10 +186,10 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("metadata includes SDK version and compatibility information")
-    void metadataIncludesSdkVersionAndCompatibilityInformation() throws Exception { // GH-90000
-        Map<String, Object> metadata = objectMapper.readValue( // GH-90000
+    void metadataIncludesSdkVersionAndCompatibilityInformation() throws Exception { 
+        Map<String, Object> metadata = objectMapper.readValue( 
             Files.readString(generatedRoot().resolve("metadata.json")),
-            new TypeReference<>() { } // GH-90000
+            new TypeReference<>() { } 
         );
         
         assertThat(metadata).containsKey("title");
@@ -202,31 +202,31 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("generated SDKs include README or usage documentation")
-    void generatedSdksIncludeReadmeOrUsageDocumentation() throws Exception { // GH-90000
+    void generatedSdksIncludeReadmeOrUsageDocumentation() throws Exception { 
         // Check for README files
         boolean hasJavaReadme = Files.exists(generatedRoot().resolve("java/README.md"));
         boolean hasTsReadme = Files.exists(generatedRoot().resolve("typescript/README.md"));
         boolean hasPythonReadme = Files.exists(generatedRoot().resolve("python/README.md"));
         
         // At least one README should exist
-        assertThat(hasJavaReadme || hasTsReadme || hasPythonReadme).isTrue(); // GH-90000
+        assertThat(hasJavaReadme || hasTsReadme || hasPythonReadme).isTrue(); 
         
         // If README exists, verify it contains usage examples
-        if (hasJavaReadme) { // GH-90000
+        if (hasJavaReadme) { 
             String javaReadme = Files.readString(generatedRoot().resolve("java/README.md"));
             assertThat(javaReadme).contains("Usage")
                 .contains("DataCloudJavaSdk")
                 .contains("health()");
         }
         
-        if (hasTsReadme) { // GH-90000
+        if (hasTsReadme) { 
             String tsReadme = Files.readString(generatedRoot().resolve("typescript/README.md"));
             assertThat(tsReadme).contains("Usage")
                 .contains("DataCloudTypeScriptSdk")
                 .contains("health()");
         }
         
-        if (hasPythonReadme) { // GH-90000
+        if (hasPythonReadme) { 
             String pythonReadme = Files.readString(generatedRoot().resolve("python/README.md"));
             assertThat(pythonReadme).contains("Usage")
                 .contains("DataCloudPythonSdk")
@@ -236,17 +236,17 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("generated SDKs include example code snippets")
-    void generatedSdksIncludeExampleCodeSnippets() throws Exception { // GH-90000
+    void generatedSdksIncludeExampleCodeSnippets() throws Exception { 
         // Check for example files
         boolean hasJavaExamples = Files.exists(generatedRoot().resolve("java/examples/Example.java"));
         boolean hasTsExamples = Files.exists(generatedRoot().resolve("typescript/examples/example.ts"));
         boolean hasPythonExamples = Files.exists(generatedRoot().resolve("python/examples/example.py"));
         
         // At least one example should exist
-        assertThat(hasJavaExamples || hasTsExamples || hasPythonExamples).isTrue(); // GH-90000
+        assertThat(hasJavaExamples || hasTsExamples || hasPythonExamples).isTrue(); 
         
         // If example exists, verify it demonstrates SDK usage
-        if (hasJavaExamples) { // GH-90000
+        if (hasJavaExamples) { 
             String javaExample = Files.readString(generatedRoot().resolve("java/examples/Example.java"));
             assertThat(javaExample).contains("DataCloudJavaSdk")
                 .contains(".health()")
@@ -254,7 +254,7 @@ class SDKDocumentationTest {
                 .contains(".getEntity");
         }
         
-        if (hasTsExamples) { // GH-90000
+        if (hasTsExamples) { 
             String tsExample = Files.readString(generatedRoot().resolve("typescript/examples/example.ts"));
             assertThat(tsExample).contains("DataCloudTypeScriptSdk")
                 .contains(".health()")
@@ -262,7 +262,7 @@ class SDKDocumentationTest {
                 .contains(".getEntity");
         }
         
-        if (hasPythonExamples) { // GH-90000
+        if (hasPythonExamples) { 
             String pythonExample = Files.readString(generatedRoot().resolve("python/examples/example.py"));
             assertThat(pythonExample).contains("DataCloudPythonSdk")
                 .contains(".health()")
@@ -273,8 +273,8 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("documentation includes error handling examples")
-    void documentationIncludesErrorHandlingExamples() throws Exception { // GH-90000
-        String javaSource = Files.readString(generatedRoot() // GH-90000
+    void documentationIncludesErrorHandlingExamples() throws Exception { 
+        String javaSource = Files.readString(generatedRoot() 
             .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
         
         // Verify error handling is documented
@@ -285,8 +285,8 @@ class SDKDocumentationTest {
 
     @Test
     @DisplayName("documentation includes authentication and tenant information")
-    void documentationIncludesAuthenticationAndTenantInformation() throws Exception { // GH-90000
-        String javaSource = Files.readString(generatedRoot() // GH-90000
+    void documentationIncludesAuthenticationAndTenantInformation() throws Exception { 
+        String javaSource = Files.readString(generatedRoot() 
             .resolve("java/src/main/java/com/ghatana/datacloud/sdk/generated/DataCloudJavaSdk.java"));
         
         // Verify constructor documents authentication parameters
@@ -295,12 +295,12 @@ class SDKDocumentationTest {
             .contains("tenantId");
     }
 
-    private Path generatedRoot() { // GH-90000
+    private Path generatedRoot() { 
         return Path.of(System.getProperty("datacloud.sdk.generatedRoot"));
     }
 
     @SuppressWarnings("unchecked")
-    private List<String> asStringList(Object value) { // GH-90000
-        return (List<String>) value; // GH-90000
+    private List<String> asStringList(Object value) { 
+        return (List<String>) value; 
     }
 }

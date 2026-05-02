@@ -38,22 +38,22 @@ class AepHttpServerPatternTest {
     private AepHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        httpClient = HttpClient.newBuilder().build(); // GH-90000
-        server = new AepHttpServer(engine, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+    void setUp() throws Exception { 
+        engine = Aep.forTesting(); 
+        port = findFreePort(); 
+        httpClient = HttpClient.newBuilder().build(); 
+        server = new AepHttpServer(engine, port); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
-        if (engine != null) engine.close(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
+        if (engine != null) engine.close(); 
     }
 
     // ==================== GET /api/v1/patterns ====================
@@ -64,11 +64,11 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 200 with empty list when no patterns registered")
-        void listPatterns_whenEmpty_returns200WithEmptyList() throws Exception { // GH-90000
+        void listPatterns_whenEmpty_returns200WithEmptyList() throws Exception { 
             HttpResponse<String> resp = get("/api/v1/patterns");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("count")).isEqualTo(0);
             assertThat((List<?>) body.get("patterns")).isEmpty();
             assertThat(body.get("timestamp")).isNotNull();
@@ -76,31 +76,31 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 200 with patterns after registration")
-        void listPatterns_afterRegistration_returns200WithPatterns() throws Exception { // GH-90000
+        void listPatterns_afterRegistration_returns200WithPatterns() throws Exception { 
             // Register a pattern first
-            String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
+            String reqBody = mapper.writeValueAsString(Map.of( 
                 "name", "TestPattern",
                 "description", "A test anomaly pattern",
                 "type", "CUSTOM",
                 "tenantId", "test-tenant"
             ));
-            post("/api/v1/patterns", reqBody); // GH-90000
+            post("/api/v1/patterns", reqBody); 
 
             HttpResponse<String> resp = get("/api/v1/patterns?tenantId=test-tenant");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             int count = ((Number) body.get("count")).intValue();
-            assertThat(count).isGreaterThanOrEqualTo(1); // GH-90000
+            assertThat(count).isGreaterThanOrEqualTo(1); 
         }
 
         @Test
         @DisplayName("uses default tenant when tenantId not specified")
-        void listPatterns_withoutTenantId_usesDefault() throws Exception { // GH-90000
+        void listPatterns_withoutTenantId_usesDefault() throws Exception { 
             HttpResponse<String> resp = get("/api/v1/patterns");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("timestamp")).isNotNull();
         }
     }
@@ -113,19 +113,19 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 200 with pattern details on valid registration")
-        void registerPattern_withValidData_returns200() throws Exception { // GH-90000
-            String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
+        void registerPattern_withValidData_returns200() throws Exception { 
+            String reqBody = mapper.writeValueAsString(Map.of( 
                 "name", "HighCpuAnomaly",
                 "description", "Detects high CPU usage patterns",
                 "type", "CUSTOM",
                 "tenantId", "t1",
-                "config", Map.of("threshold", 90) // GH-90000
+                "config", Map.of("threshold", 90) 
             ));
 
-            HttpResponse<String> resp = post("/api/v1/patterns", reqBody); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/patterns", reqBody); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             Map<?, ?> pattern = (Map<?, ?>) body.get("pattern");
             assertThat(pattern.get("name")).isEqualTo("HighCpuAnomaly");
             assertThat(pattern.get("id")).isNotNull();
@@ -134,24 +134,24 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 400 on malformed JSON body")
-        void registerPattern_withMalformedJson_returns400() throws Exception { // GH-90000
-            HttpResponse<String> resp = post("/api/v1/patterns", "{not valid json"); // GH-90000
+        void registerPattern_withMalformedJson_returns400() throws Exception { 
+            HttpResponse<String> resp = post("/api/v1/patterns", "{not valid json"); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("returns 400 on invalid pattern type")
-        void registerPattern_withInvalidType_returns400() throws Exception { // GH-90000
-            String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
+        void registerPattern_withInvalidType_returns400() throws Exception { 
+            String reqBody = mapper.writeValueAsString(Map.of( 
                 "name", "BadType",
                 "type", "NONEXISTENT_TYPE"
             ));
 
-            HttpResponse<String> resp = post("/api/v1/patterns", reqBody); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/patterns", reqBody); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("message")).isNotNull();
         }
     }
@@ -164,21 +164,21 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 200 with pattern detail when found")
-        void getPattern_whenFound_returns200() throws Exception { // GH-90000
+        void getPattern_whenFound_returns200() throws Exception { 
             // Register a pattern first
-            String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
+            String reqBody = mapper.writeValueAsString(Map.of( 
                 "name", "FindMe",
                 "type", "CUSTOM",
                 "tenantId", "t1"
             ));
-            HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); // GH-90000
-            Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); // GH-90000
+            HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); 
+            Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); 
             String patternId = (String) ((Map<?, ?>) created.get("pattern")).get("id");
 
-            HttpResponse<String> resp = get("/api/v1/patterns/" + patternId + "?tenantId=t1"); // GH-90000
+            HttpResponse<String> resp = get("/api/v1/patterns/" + patternId + "?tenantId=t1"); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             Map<?, ?> pattern = (Map<?, ?>) body.get("pattern");
             assertThat(pattern.get("id")).isEqualTo(patternId);
             assertThat(pattern.get("name")).isEqualTo("FindMe");
@@ -186,11 +186,11 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 404 when pattern not found")
-        void getPattern_whenNotFound_returns404() throws Exception { // GH-90000
+        void getPattern_whenNotFound_returns404() throws Exception { 
             HttpResponse<String> resp = get("/api/v1/patterns/nonexistent-id?tenantId=t1");
 
-            assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(404); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("message").toString()).contains("not found");
         }
     }
@@ -203,21 +203,21 @@ class AepHttpServerPatternTest {
 
         @Test
         @DisplayName("returns 200 with deleted=true on successful deletion")
-        void deletePattern_returnsDeletedTrue() throws Exception { // GH-90000
+        void deletePattern_returnsDeletedTrue() throws Exception { 
             // Register a pattern first
-            String reqBody = mapper.writeValueAsString(Map.of( // GH-90000
+            String reqBody = mapper.writeValueAsString(Map.of( 
                 "name", "DeleteMe",
                 "type", "CUSTOM",
                 "tenantId", "t1"
             ));
-            HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); // GH-90000
-            Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); // GH-90000
+            HttpResponse<String> createResp = post("/api/v1/patterns", reqBody); 
+            Map<?, ?> created = mapper.readValue(createResp.body(), Map.class); 
             String patternId = (String) ((Map<?, ?>) created.get("pattern")).get("id");
 
-            HttpResponse<String> resp = delete("/api/v1/patterns/" + patternId + "?tenantId=t1"); // GH-90000
+            HttpResponse<String> resp = delete("/api/v1/patterns/" + patternId + "?tenantId=t1"); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("deleted")).isEqualTo(true);
             assertThat(body.get("patternId")).isEqualTo(patternId);
         }
@@ -225,47 +225,47 @@ class AepHttpServerPatternTest {
 
     // ==================== Helpers ====================
 
-    private HttpResponse<String> get(String path) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .GET() // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> get(String path) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .GET() 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .header("Content-Type", "application/json") // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> post(String path, String body) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .POST(HttpRequest.BodyPublishers.ofString(body)) 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("Content-Type", "application/json") 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> delete(String path) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .DELETE() // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> delete(String path) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .DELETE() 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); 
     }
 }

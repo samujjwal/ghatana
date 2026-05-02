@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AiModelHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AiModelHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -50,64 +50,64 @@ class AiModelHandlerTest extends EventloopTestBase {
     private AiModelHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new AiModelHandler(aiModelManager, featureStoreService, http); // GH-90000
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
-        lenient().when(http.objectMapper()).thenReturn(objectMapper); // GH-90000
+    void setUp() { 
+        handler = new AiModelHandler(aiModelManager, featureStoreService, http); 
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.objectMapper()).thenReturn(objectMapper); 
     }
 
     @Test
     @DisplayName("list models rejects missing tenant before manager access")
-    void listModelsRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void listModelsRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleListAiModels(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleListAiModels(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
         verify(aiModelManager, never()).getAllModels("default");
     }
 
     @Test
     @DisplayName("register model rejects missing tenant before loading body")
-    void registerModelRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void registerModelRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleRegisterAiModel(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleRegisterAiModel(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 
     @Test
     @DisplayName("promote model rejects missing tenant before loading body")
-    void promoteModelRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void promoteModelRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handlePromoteAiModel(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handlePromoteAiModel(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 
     @Test
     @DisplayName("ingest feature rejects missing tenant before loading body")
-    void ingestFeatureRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void ingestFeatureRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleIngestFeature(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleIngestFeature(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 
     @Test
     @DisplayName("get features rejects missing tenant before feature lookup")
-    void getFeaturesRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void getFeaturesRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleGetFeatures(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleGetFeatures(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(featureStoreService, never()).getFeatures("default", "default", java.util.List.of()); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(featureStoreService, never()).getFeatures("default", "default", java.util.List.of()); 
     }
 }

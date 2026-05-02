@@ -20,20 +20,20 @@ class InMemoryKgServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("wraps invalid pattern submission metadata in typed operation exception")
-    void wrapsInvalidPatternSubmissionMetadataInTypedOperationException() { // GH-90000
-        InMemoryKgService service = new InMemoryKgService(); // GH-90000
+    void wrapsInvalidPatternSubmissionMetadataInTypedOperationException() { 
+        InMemoryKgService service = new InMemoryKgService(); 
 
         RefactorerOperationException exception =
-                assertThrows( // GH-90000
+                assertThrows( 
                         RefactorerOperationException.class,
-                        () -> runPromise(() -> // GH-90000
-                                service.submitPattern( // GH-90000
+                        () -> runPromise(() -> 
+                                service.submitPattern( 
                                         "tenant-1",
                                         "pattern-name",
-                                        "SEQ(login,logout)", // GH-90000
-                                        Map.of("confidence", "not-a-number")))); // GH-90000
+                                        "SEQ(login,logout)", 
+                                        Map.of("confidence", "not-a-number")))); 
 
         assertThat(exception.getMessage()).contains("not-a-number");
-        assertThat(exception.getCause()).isInstanceOf(NumberFormatException.class); // GH-90000
+        assertThat(exception.getCause()).isInstanceOf(NumberFormatException.class); 
     }
 }

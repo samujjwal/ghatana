@@ -37,121 +37,121 @@ class ApiSecurityTest {
 
     @Test
     @DisplayName("Should enforce authentication - missing tenant ID returns 400")
-    void shouldEnforceAuthentication() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldEnforceAuthentication() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections").build();
-        Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
+        Promise<io.activej.http.HttpResponse> response = controller.handle(request); 
 
-        response.whenResult(httpResponse -> { // GH-90000
-            assertThat(httpResponse.getCode()).isEqualTo(400); // GH-90000
+        response.whenResult(httpResponse -> { 
+            assertThat(httpResponse.getCode()).isEqualTo(400); 
         });
     }
 
     @Test
     @DisplayName("Should enforce authorization - valid tenant ID allows access")
-    void shouldEnforceAuthorization() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldEnforceAuthorization() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        when(collectionService.getCollection(anyString(), anyString())) // GH-90000
-            .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        when(collectionService.getCollection(anyString(), anyString())) 
+            .thenReturn(Promise.of(Optional.empty())); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
-            .build(); // GH-90000
-        Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
+            .build(); 
+        Promise<io.activej.http.HttpResponse> response = controller.handle(request); 
 
-        response.whenResult(httpResponse -> { // GH-90000
-            assertThat(httpResponse.getCode()).isNotEqualTo(401); // GH-90000
+        response.whenResult(httpResponse -> { 
+            assertThat(httpResponse.getCode()).isNotEqualTo(401); 
         });
     }
 
     @Test
     @DisplayName("Should enforce rate limiting")
-    void shouldEnforceRateLimiting() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldEnforceRateLimiting() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
-        assertThat(controller).isNotNull(); // GH-90000
+        assertThat(controller).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should prevent injection attacks")
-    void shouldPreventInjectionAttacks() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldPreventInjectionAttacks() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        when(collectionService.createCollection(anyString(), any(MetaCollection.class), anyString())) // GH-90000
-            .thenReturn(Promise.of(mock(MetaCollection.class))); // GH-90000
+        when(collectionService.createCollection(anyString(), any(MetaCollection.class), anyString())) 
+            .thenReturn(Promise.of(mock(MetaCollection.class))); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
         String maliciousJson = "{\"name\":\"test'; DROP TABLE users; --\"}";
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
-            .withBody(maliciousJson.getBytes(StandardCharsets.UTF_8)) // GH-90000
+            .withBody(maliciousJson.getBytes(StandardCharsets.UTF_8)) 
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
+        Promise<io.activej.http.HttpResponse> response = controller.handle(request); 
 
-        response.whenResult(httpResponse -> { // GH-90000
-            assertThat(httpResponse.getCode()).isNotEqualTo(500); // GH-90000
+        response.whenResult(httpResponse -> { 
+            assertThat(httpResponse.getCode()).isNotEqualTo(500); 
         });
     }
 
     @Test
     @DisplayName("Should handle secure headers")
-    void shouldHandleSecureHeaders() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldHandleSecureHeaders() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
             .withHeader(HttpHeaders.of("X-User-ID"), "user-123")
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
+        Promise<io.activej.http.HttpResponse> response = controller.handle(request); 
 
-        assertThat(response).isNotNull(); // GH-90000
+        assertThat(response).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle CORS policies")
-    void shouldHandleCorsPolicies() { // GH-90000
-        CollectionService collectionService = mock(CollectionService.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        ObjectMapper mapper = new ObjectMapper(); // GH-90000
-        DtoMapper dtoMapper = mock(DtoMapper.class); // GH-90000
+    void shouldHandleCorsPolicies() { 
+        CollectionService collectionService = mock(CollectionService.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        ObjectMapper mapper = new ObjectMapper(); 
+        DtoMapper dtoMapper = mock(DtoMapper.class); 
 
-        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); // GH-90000
+        CollectionController controller = new CollectionController(collectionService, metrics, mapper, dtoMapper); 
 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/collections")
             .withHeader(HttpHeaders.of("Origin"), "https://example.com")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-123")
-            .build(); // GH-90000
+            .build(); 
 
-        Promise<io.activej.http.HttpResponse> response = controller.handle(request); // GH-90000
+        Promise<io.activej.http.HttpResponse> response = controller.handle(request); 
 
-        assertThat(response).isNotNull(); // GH-90000
+        assertThat(response).isNotNull(); 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link DataCloudBackedEventCloud}.
  */
 @DisplayName("DataCloudBackedEventCloud")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DataCloudBackedEventCloudTest extends EventloopTestBase {
 
     @Mock
@@ -46,94 +46,94 @@ class DataCloudBackedEventCloudTest extends EventloopTestBase {
     private DataCloudBackedEventCloud eventCloud;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventCloud = new DataCloudBackedEventCloud(eventLogStore); // GH-90000
+    void setUp() { 
+        eventCloud = new DataCloudBackedEventCloud(eventLogStore); 
     }
 
     @Test
-    void shouldAppendEventToEventLogStore() { // GH-90000
+    void shouldAppendEventToEventLogStore() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
-        byte[] payload = "{\"key\":\"value\"}".getBytes(StandardCharsets.UTF_8); // GH-90000
+        byte[] payload = "{\"key\":\"value\"}".getBytes(StandardCharsets.UTF_8); 
 
         // WHEN
-        String eventId = eventCloud.append("tenant-1", "order.created", payload); // GH-90000
+        String eventId = eventCloud.append("tenant-1", "order.created", payload); 
 
         // THEN
-        assertThat(eventId).isNotNull().isNotBlank(); // GH-90000
-        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
+        assertThat(eventId).isNotNull().isNotBlank(); 
+        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); 
 
-        TenantContext capturedTenant = tenantCaptor.getValue(); // GH-90000
+        TenantContext capturedTenant = tenantCaptor.getValue(); 
         assertThat(capturedTenant.tenantId()).isEqualTo("tenant-1");
 
-        EventEntry capturedEntry = entryCaptor.getValue(); // GH-90000
+        EventEntry capturedEntry = entryCaptor.getValue(); 
         assertThat(capturedEntry.eventType()).isEqualTo("order.created");
-        assertThat(capturedEntry.eventId()).isNotNull(); // GH-90000
+        assertThat(capturedEntry.eventId()).isNotNull(); 
     }
 
     @Test
-    void shouldReturnEventIdOnAppend() { // GH-90000
+    void shouldReturnEventIdOnAppend() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("42")));
 
         // WHEN
-        String eventId = eventCloud.append("t1", "test.event", new byte[]{1, 2, 3}); // GH-90000
+        String eventId = eventCloud.append("t1", "test.event", new byte[]{1, 2, 3}); 
 
         // THEN
-        assertThat(eventId).isNotBlank(); // GH-90000
+        assertThat(eventId).isNotBlank(); 
         // UUID format
-        assertThat(eventId).matches( // GH-90000
+        assertThat(eventId).matches( 
             "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
     }
 
     @Test
-    void shouldCreateSubscriptionWithTenantIsolation() { // GH-90000
+    void shouldCreateSubscriptionWithTenantIsolation() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.zero())); // GH-90000
-        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) // GH-90000
-            .thenReturn(Promise.of(new EventLogStore.Subscription() { // GH-90000
-                @Override public void cancel() {} // GH-90000
-                @Override public boolean isCancelled() { return false; } // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
+            .thenReturn(Promise.of(Offset.zero())); 
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
+                @Override public void cancel() {} 
+                @Override public boolean isCancelled() { return false; } 
             }));
 
         // WHEN
-        EventCloud.Subscription sub = eventCloud.subscribe( // GH-90000
+        EventCloud.Subscription sub = eventCloud.subscribe( 
             "tenant-1", "order.created",
-            (eventId, eventType, payload) -> {}); // GH-90000
+            (eventId, eventType, payload) -> {}); 
 
         // THEN
-        assertThat(sub).isNotNull(); // GH-90000
-        assertThat(sub.isCancelled()).isFalse(); // GH-90000
+        assertThat(sub).isNotNull(); 
+        assertThat(sub.isCancelled()).isFalse(); 
 
         // Verify tenant isolation
-        verify(eventLogStore).getLatestOffset(tenantCaptor.capture()); // GH-90000
+        verify(eventLogStore).getLatestOffset(tenantCaptor.capture()); 
         assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("tenant-1");
     }
 
     @Test
-    void shouldCancelSubscription() { // GH-90000
+    void shouldCancelSubscription() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.zero())); // GH-90000
-        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) // GH-90000
-            .thenReturn(Promise.of(new EventLogStore.Subscription() { // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
+            .thenReturn(Promise.of(Offset.zero())); 
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
                 private boolean cancelled = false;
-                @Override public void cancel() { cancelled = true; } // GH-90000
-                @Override public boolean isCancelled() { return cancelled; } // GH-90000
+                @Override public void cancel() { cancelled = true; } 
+                @Override public boolean isCancelled() { return cancelled; } 
             }));
 
-        EventCloud.Subscription sub = eventCloud.subscribe( // GH-90000
+        EventCloud.Subscription sub = eventCloud.subscribe( 
             "tenant-1", "test.event",
-            (eventId, eventType, payload) -> {}); // GH-90000
+            (eventId, eventType, payload) -> {}); 
 
         // WHEN
-        sub.cancel(); // GH-90000
+        sub.cancel(); 
 
         // THEN
-        assertThat(sub.isCancelled()).isTrue(); // GH-90000
+        assertThat(sub.isCancelled()).isTrue(); 
     }
 }

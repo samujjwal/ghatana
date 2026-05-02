@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("CanaryAnalyzer Tests")
 class CanaryAnalyzerTest extends EventloopTestBase {
 
@@ -25,200 +25,200 @@ class CanaryAnalyzerTest extends EventloopTestBase {
 
   @Test
   @DisplayName("evaluate holds when the sample size is too small")
-  void evaluateHoldsWhenSampleSizeIsTooSmall() { // GH-90000
-    RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
-    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
-    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 120, 0.99, 5), controller, publisher); // GH-90000
+  void evaluateHoldsWhenSampleSizeIsTooSmall() { 
+    RecordingDeploymentController controller = new RecordingDeploymentController(); 
+    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); 
+    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 120, 0.99, 5), controller, publisher); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-1", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-1", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
-    assertThat(publisher.decisions).containsExactly(decision); // GH-90000
-    assertThat(controller.actions).isEmpty(); // GH-90000
-    verifyNoInteractions(aiService); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
+    assertThat(publisher.decisions).containsExactly(decision); 
+    assertThat(controller.actions).isEmpty(); 
+    verifyNoInteractions(aiService); 
   }
 
   @Test
   @DisplayName("evaluate rolls back when error rate exceeds threshold")
-  void evaluateRollsBackWhenErrorRateExceedsThreshold() { // GH-90000
-    RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
-    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
-    CanaryAnalyzer analyzer = analyzer(metrics(0.08, 120, 0.95, 120), controller, publisher); // GH-90000
+  void evaluateRollsBackWhenErrorRateExceedsThreshold() { 
+    RecordingDeploymentController controller = new RecordingDeploymentController(); 
+    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); 
+    CanaryAnalyzer analyzer = analyzer(metrics(0.08, 120, 0.95, 120), controller, publisher); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-1", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-1", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); 
     assertThat(controller.actions).containsExactly("rollback:deploy-1:v1.0.0");
-    assertThat(decision.aiGenerated()).isFalse(); // GH-90000
+    assertThat(decision.aiGenerated()).isFalse(); 
   }
 
   @Test
   @DisplayName("evaluate rolls back when latency exceeds threshold")
-  void evaluateRollsBackWhenLatencyExceedsThreshold() { // GH-90000
-    RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
-    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 900, 0.95, 120), controller, new RecordingDecisionPublisher()); // GH-90000
+  void evaluateRollsBackWhenLatencyExceedsThreshold() { 
+    RecordingDeploymentController controller = new RecordingDeploymentController(); 
+    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 900, 0.95, 120), controller, new RecordingDecisionPublisher()); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-2", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-2", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); 
     assertThat(controller.actions).containsExactly("rollback:deploy-2:v1.0.0");
   }
 
   @Test
   @DisplayName("evaluate rolls back when success rate drops below threshold")
-  void evaluateRollsBackWhenSuccessRateDropsBelowThreshold() { // GH-90000
-    RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
-    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 150, 0.85, 120), controller, new RecordingDecisionPublisher()); // GH-90000
+  void evaluateRollsBackWhenSuccessRateDropsBelowThreshold() { 
+    RecordingDeploymentController controller = new RecordingDeploymentController(); 
+    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 150, 0.85, 120), controller, new RecordingDecisionPublisher()); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-3", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-3", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.ROLLBACK); 
     assertThat(controller.actions).containsExactly("rollback:deploy-3:v1.0.0");
   }
 
   @Test
   @DisplayName("evaluate promotes when AI recommends promotion")
-  void evaluatePromotesWhenAiRecommendsPromotion() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("{\"decision\":\"PROMOTE\",\"rationale\":\"Metrics are stable\",\"confidence\":0.91}")); // GH-90000
+  void evaluatePromotesWhenAiRecommendsPromotion() { 
+    when(aiService.reason(anyString(), anyMap())) 
+        .thenReturn(Promise.of("{\"decision\":\"PROMOTE\",\"rationale\":\"Metrics are stable\",\"confidence\":0.91}")); 
 
-    RecordingDeploymentController controller = new RecordingDeploymentController(); // GH-90000
-    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); // GH-90000
-    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 120, 0.99, 120), controller, publisher); // GH-90000
+    RecordingDeploymentController controller = new RecordingDeploymentController(); 
+    RecordingDecisionPublisher publisher = new RecordingDecisionPublisher(); 
+    CanaryAnalyzer analyzer = analyzer(metrics(0.01, 120, 0.99, 120), controller, publisher); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-4", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-4", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.PROMOTE); // GH-90000
-    assertThat(decision.aiGenerated()).isTrue(); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.PROMOTE); 
+    assertThat(decision.aiGenerated()).isTrue(); 
     assertThat(controller.actions).containsExactly("promote:deploy-4:production");
-    assertThat(publisher.decisions).containsExactly(decision); // GH-90000
+    assertThat(publisher.decisions).containsExactly(decision); 
   }
 
   @Test
   @DisplayName("evaluate holds when AI response is blank or null")
-  void evaluateHoldsWhenAiResponseIsBlankOrNull() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
+  void evaluateHoldsWhenAiResponseIsBlankOrNull() { 
+    when(aiService.reason(anyString(), anyMap())) 
       .thenReturn(Promise.of(" "))
-      .thenReturn(Promise.of(null)); // GH-90000
+      .thenReturn(Promise.of(null)); 
 
     CanaryAnalyzer analyzer =
-        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); // GH-90000
+        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); 
 
-    assertThat(runPromise(() -> analyzer.evaluate("deploy-5", config())).type()) // GH-90000
-        .isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
-    assertThat(runPromise(() -> analyzer.evaluate("deploy-6", config())).type()) // GH-90000
-        .isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
+    assertThat(runPromise(() -> analyzer.evaluate("deploy-5", config())).type()) 
+        .isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
+    assertThat(runPromise(() -> analyzer.evaluate("deploy-6", config())).type()) 
+        .isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
   }
 
   @Test
   @DisplayName("evaluate holds when AI response is malformed")
-  void evaluateHoldsWhenAiResponseIsMalformed() { // GH-90000
+  void evaluateHoldsWhenAiResponseIsMalformed() { 
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     CanaryAnalyzer analyzer =
-        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); // GH-90000
+        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-7", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-7", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
-    assertThat(decision.aiGenerated()).isFalse(); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
+    assertThat(decision.aiGenerated()).isFalse(); 
   }
 
   @Test
   @DisplayName("evaluate defaults blank AI decision fields to hold with generated rationale")
-  void evaluateDefaultsBlankAiDecisionFieldsToHoldWithGeneratedRationale() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("{\"decision\":\"\",\"rationale\":\"\",\"confidence\":0.4}")); // GH-90000
+  void evaluateDefaultsBlankAiDecisionFieldsToHoldWithGeneratedRationale() { 
+    when(aiService.reason(anyString(), anyMap())) 
+        .thenReturn(Promise.of("{\"decision\":\"\",\"rationale\":\"\",\"confidence\":0.4}")); 
 
     CanaryAnalyzer analyzer =
-        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); // GH-90000
+        analyzer(metrics(0.01, 120, 0.99, 120), new RecordingDeploymentController(), new RecordingDecisionPublisher()); 
 
     CanaryAnalyzer.CanaryDecision decision =
-        runPromise(() -> analyzer.evaluate("deploy-8", config())); // GH-90000
+        runPromise(() -> analyzer.evaluate("deploy-8", config())); 
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
     assertThat(decision.rationale()).isEqualTo("AI generated canary recommendation.");
-    assertThat(decision.aiGenerated()).isTrue(); // GH-90000
+    assertThat(decision.aiGenerated()).isTrue(); 
   }
 
   @Test
   @DisplayName("canary records normalize invalid values")
-  void canaryRecordsNormalizeInvalidValues() { // GH-90000
+  void canaryRecordsNormalizeInvalidValues() { 
     CanaryAnalyzer.CanaryConfig config =
-        new CanaryAnalyzer.CanaryConfig(-1.0, -5, 2.0, -2, null, null); // GH-90000
-    CanaryAnalyzer.CanaryMetrics metrics = new CanaryAnalyzer.CanaryMetrics(-1.0, -10, 2.0, -4); // GH-90000
-    CanaryAnalyzer.CanaryDecision decision = new CanaryAnalyzer.CanaryDecision(null, null, 2.0, true); // GH-90000
+        new CanaryAnalyzer.CanaryConfig(-1.0, -5, 2.0, -2, null, null); 
+    CanaryAnalyzer.CanaryMetrics metrics = new CanaryAnalyzer.CanaryMetrics(-1.0, -10, 2.0, -4); 
+    CanaryAnalyzer.CanaryDecision decision = new CanaryAnalyzer.CanaryDecision(null, null, 2.0, true); 
 
-    assertThat(config.errorRateThreshold()).isZero(); // GH-90000
-    assertThat(config.latencyP99ThresholdMillis()).isEqualTo(1); // GH-90000
-    assertThat(config.minimumSuccessRate()).isEqualTo(1.0); // GH-90000
-    assertThat(config.minimumSampleSize()).isEqualTo(1); // GH-90000
+    assertThat(config.errorRateThreshold()).isZero(); 
+    assertThat(config.latencyP99ThresholdMillis()).isEqualTo(1); 
+    assertThat(config.minimumSuccessRate()).isEqualTo(1.0); 
+    assertThat(config.minimumSampleSize()).isEqualTo(1); 
     assertThat(config.targetEnvironment()).isEqualTo("production");
 
-    assertThat(metrics.errorRate()).isZero(); // GH-90000
-    assertThat(metrics.latencyP99Millis()).isZero(); // GH-90000
-    assertThat(metrics.successRate()).isEqualTo(1.0); // GH-90000
-    assertThat(metrics.sampleSize()).isZero(); // GH-90000
+    assertThat(metrics.errorRate()).isZero(); 
+    assertThat(metrics.latencyP99Millis()).isZero(); 
+    assertThat(metrics.successRate()).isEqualTo(1.0); 
+    assertThat(metrics.sampleSize()).isZero(); 
     assertThat(metrics.summary()).contains("sampleSize=0");
 
-    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); // GH-90000
-    assertThat(decision.rationale()).isEmpty(); // GH-90000
-    assertThat(decision.confidence()).isEqualTo(1.0); // GH-90000
+    assertThat(decision.type()).isEqualTo(CanaryAnalyzer.CanaryDecisionType.HOLD); 
+    assertThat(decision.rationale()).isEmpty(); 
+    assertThat(decision.confidence()).isEqualTo(1.0); 
   }
 
-  private CanaryAnalyzer analyzer( // GH-90000
+  private CanaryAnalyzer analyzer( 
       CanaryAnalyzer.CanaryMetrics metrics,
       RecordingDeploymentController controller,
       RecordingDecisionPublisher publisher) {
-    return new CanaryAnalyzer( // GH-90000
+    return new CanaryAnalyzer( 
         aiService,
-        deploymentId -> Promise.of(metrics), // GH-90000
+        deploymentId -> Promise.of(metrics), 
         controller,
         publisher);
   }
 
-  private CanaryAnalyzer.CanaryMetrics metrics( // GH-90000
+  private CanaryAnalyzer.CanaryMetrics metrics( 
       double errorRate, long latencyP99Millis, double successRate, int sampleSize) {
-    return new CanaryAnalyzer.CanaryMetrics(errorRate, latencyP99Millis, successRate, sampleSize); // GH-90000
+    return new CanaryAnalyzer.CanaryMetrics(errorRate, latencyP99Millis, successRate, sampleSize); 
   }
 
-  private CanaryAnalyzer.CanaryConfig config() { // GH-90000
-    return new CanaryAnalyzer.CanaryConfig(0.05, 500, 0.9, 25, "production", "v1.0.0"); // GH-90000
+  private CanaryAnalyzer.CanaryConfig config() { 
+    return new CanaryAnalyzer.CanaryConfig(0.05, 500, 0.9, 25, "production", "v1.0.0"); 
   }
 
   private static final class RecordingDeploymentController
       implements CanaryAnalyzer.DeploymentController {
-    private final List<String> actions = new ArrayList<>(); // GH-90000
+    private final List<String> actions = new ArrayList<>(); 
 
     @Override
-    public Promise<Void> promote(String deploymentId, String targetEnvironment) { // GH-90000
-      actions.add("promote:" + deploymentId + ":" + targetEnvironment); // GH-90000
-      return Promise.complete(); // GH-90000
+    public Promise<Void> promote(String deploymentId, String targetEnvironment) { 
+      actions.add("promote:" + deploymentId + ":" + targetEnvironment); 
+      return Promise.complete(); 
     }
 
     @Override
-    public Promise<Void> rollback(String deploymentId, String rollbackVersion, String rationale) { // GH-90000
-      actions.add("rollback:" + deploymentId + ":" + rollbackVersion); // GH-90000
-      return Promise.complete(); // GH-90000
+    public Promise<Void> rollback(String deploymentId, String rollbackVersion, String rationale) { 
+      actions.add("rollback:" + deploymentId + ":" + rollbackVersion); 
+      return Promise.complete(); 
     }
   }
 
   private static final class RecordingDecisionPublisher implements CanaryAnalyzer.DecisionPublisher {
-    private final List<CanaryAnalyzer.CanaryDecision> decisions = new ArrayList<>(); // GH-90000
+    private final List<CanaryAnalyzer.CanaryDecision> decisions = new ArrayList<>(); 
 
     @Override
-    public Promise<Void> publish( // GH-90000
+    public Promise<Void> publish( 
         String deploymentId,
         CanaryAnalyzer.CanaryDecision decision,
         CanaryAnalyzer.CanaryMetrics metrics) {
-      decisions.add(decision); // GH-90000
-      return Promise.complete(); // GH-90000
+      decisions.add(decision); 
+      return Promise.complete(); 
     }
   }
 }

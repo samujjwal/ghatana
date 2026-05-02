@@ -6,18 +6,21 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Consent Plugin - Universal consent management framework.
+ * Consent Plugin - Platform-level consent and authorization lifecycle framework.
  *
- * <p>Supports multiple consent types:</p>
+ * <p>Manages the full consent lifecycle in a product-agnostic manner:</p>
  * <ul>
- *   <li>Healthcare data consent (PHR/HIPAA)</li>
- *   <li>Financial data sharing (Finance/GDPR)</li>
- *   <li>Marketing consent (general)</li>
- *   <li>Terms acceptance (general)</li>
+ *   <li>Consent grant and delegation</li>
+ *   <li>Consent revocation and expiry</li>
+ *   <li>Purpose-bound access authorization</li>
+ *   <li>Consent audit and traceability</li>
  * </ul>
  *
+ * <p>Products register domain-specific purpose vocabularies via configuration;
+ * no product terms appear in this interface.</p>
+ *
  * @doc.type interface
- * @doc.purpose Consent management plugin interface
+ * @doc.purpose Platform consent, delegation, revocation, and purpose-bound access lifecycle
  * @doc.layer platform
  * @doc.pattern Plugin
  * @since 1.0.0
@@ -69,7 +72,7 @@ public interface ConsentPlugin extends Plugin {
     Promise<ConsentStatus> getCurrentConsent(String subjectId, String purpose);
 
     /**
-     * Hard-deletes all consent records for a subject (GDPR right-to-erasure).
+     * Hard-deletes all consent records for a subject (right-to-erasure lifecycle).
      *
      * <p>Once this method completes, {@link #verifyConsent} must return {@code false}
      * and {@link #getConsentHistory} must return an empty list for the given subject.

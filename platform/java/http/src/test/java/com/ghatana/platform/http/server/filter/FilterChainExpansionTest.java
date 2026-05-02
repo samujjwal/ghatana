@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.http.server.filter;
@@ -31,16 +31,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("FilterChain - Phase 3 Expansion")
 class FilterChainExpansionTest extends EventloopTestBase {
 
-    private static HttpRequest getRequest() { // GH-90000
+    private static HttpRequest getRequest() { 
         return HttpRequest.get("http://localhost/test").build();
     }
 
-    private static AsyncServlet okServlet() { // GH-90000
-        return request -> Promise.of(HttpResponse.ok200().build()); // GH-90000
+    private static AsyncServlet okServlet() { 
+        return request -> Promise.of(HttpResponse.ok200().build()); 
     }
 
     // ============================================
-    // LARGE FILTER CHAINS (2 tests) // GH-90000
+    // LARGE FILTER CHAINS (2 tests) 
     // ============================================
 
     @Nested
@@ -49,53 +49,53 @@ class FilterChainExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Builds and executes chain with 50 filters")
-        void largeFilterChain() { // GH-90000
-            FilterChain chain = FilterChain.create(); // GH-90000
+        void largeFilterChain() { 
+            FilterChain chain = FilterChain.create(); 
 
             // Add 50 filters
-            for (int i = 0; i < 50; i++) { // GH-90000
+            for (int i = 0; i < 50; i++) { 
                 final int index = i;
-                chain.addFilter((req, next) -> { // GH-90000
+                chain.addFilter((req, next) -> { 
                     // Each filter can trace/modify request
-                    return next.serve(req); // GH-90000
+                    return next.serve(req); 
                 });
             }
 
-            assertThat(chain.getFilterCount()).isEqualTo(50); // GH-90000
+            assertThat(chain.getFilterCount()).isEqualTo(50); 
 
             // Build and execute
-            AsyncServlet servlet = chain.build(okServlet()); // GH-90000
-            HttpResponse response = runPromise(() -> servlet.serve(getRequest())); // GH-90000
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            AsyncServlet servlet = chain.build(okServlet()); 
+            HttpResponse response = runPromise(() -> servlet.serve(getRequest())); 
+            assertThat(response.getCode()).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("Maintains filter order through large chain")
-        void filterOrderPreservation() { // GH-90000
-            AtomicInteger executionOrder = new AtomicInteger(0); // GH-90000
-            List<Integer> executionSequence = new ArrayList<>(); // GH-90000
+        void filterOrderPreservation() { 
+            AtomicInteger executionOrder = new AtomicInteger(0); 
+            List<Integer> executionSequence = new ArrayList<>(); 
 
-            FilterChain chain = FilterChain.create(); // GH-90000
+            FilterChain chain = FilterChain.create(); 
 
             // Add filters with order tracking
-            for (int i = 0; i < 25; i++) { // GH-90000
+            for (int i = 0; i < 25; i++) { 
                 final int index = i;
-                chain.addFilter((req, next) -> { // GH-90000
-                    executionSequence.add(index); // GH-90000
-                    return next.serve(req); // GH-90000
+                chain.addFilter((req, next) -> { 
+                    executionSequence.add(index); 
+                    return next.serve(req); 
                 });
             }
 
-            AsyncServlet servlet = chain.build(okServlet()); // GH-90000
-            runPromise(() -> servlet.serve(getRequest())); // GH-90000
+            AsyncServlet servlet = chain.build(okServlet()); 
+            runPromise(() -> servlet.serve(getRequest())); 
 
-            // Verify no filters executed yet (would need to run actual servlet) // GH-90000
-            assertThat(chain.getFilterCount()).isEqualTo(25); // GH-90000
+            // Verify no filters executed yet (would need to run actual servlet) 
+            assertThat(chain.getFilterCount()).isEqualTo(25); 
         }
     }
 
     // ============================================
-    // FILTER EXCEPTION HANDLING (2 tests) // GH-90000
+    // FILTER EXCEPTION HANDLING (2 tests) 
     // ============================================
 
     @Nested
@@ -104,47 +104,47 @@ class FilterChainExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Chain with error-handling filter catches exceptions")
-        void errorHandlingFilter() { // GH-90000
-            FilterChain chain = FilterChain.create(); // GH-90000
+        void errorHandlingFilter() { 
+            FilterChain chain = FilterChain.create(); 
 
             // Add error handling filter first
-            chain.addFilter((req, next) -> { // GH-90000
+            chain.addFilter((req, next) -> { 
                 try {
-                    return next.serve(req); // GH-90000
-                } catch (Exception ex) { // GH-90000
-                    return Promise.of(HttpResponse.ofCode(500).build()); // GH-90000
+                    return next.serve(req); 
+                } catch (Exception ex) { 
+                    return Promise.of(HttpResponse.ofCode(500).build()); 
                 }
             });
 
             // Add normal filter
-            chain.addFilter((req, next) -> next.serve(req)); // GH-90000
+            chain.addFilter((req, next) -> next.serve(req)); 
 
-            assertThat(chain.getFilterCount()).isEqualTo(2); // GH-90000
+            assertThat(chain.getFilterCount()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Multiple exception handlers layer correctly")
-        void layeredErrorHandling() { // GH-90000
-            FilterChain chain = FilterChain.create(); // GH-90000
+        void layeredErrorHandling() { 
+            FilterChain chain = FilterChain.create(); 
 
             // Stack of error handlers
-            for (int i = 0; i < 3; i++) { // GH-90000
+            for (int i = 0; i < 3; i++) { 
                 final int level = i;
-                chain.addFilter((req, next) -> { // GH-90000
+                chain.addFilter((req, next) -> { 
                     try {
-                        return next.serve(req); // GH-90000
-                    } catch (Exception ex) { // GH-90000
-                        return Promise.of(HttpResponse.ofCode(500 + level).build()); // GH-90000
+                        return next.serve(req); 
+                    } catch (Exception ex) { 
+                        return Promise.of(HttpResponse.ofCode(500 + level).build()); 
                     }
                 });
             }
 
-            assertThat(chain.getFilterCount()).isEqualTo(3); // GH-90000
+            assertThat(chain.getFilterCount()).isEqualTo(3); 
         }
     }
 
     // ============================================
-    // FILTER SHORT-CIRCUITING (2 tests) // GH-90000
+    // FILTER SHORT-CIRCUITING (2 tests) 
     // ============================================
 
     @Nested
@@ -153,38 +153,38 @@ class FilterChainExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Filter can short-circuit chain and return early")
-        void shortCircuitResponse() { // GH-90000
-            FilterChain chain = FilterChain.create(); // GH-90000
+        void shortCircuitResponse() { 
+            FilterChain chain = FilterChain.create(); 
 
             // Auth filter that might return 401
-            chain.addFilter((req, next) -> { // GH-90000
+            chain.addFilter((req, next) -> { 
                 // Could short-circuit here
-                return next.serve(req); // GH-90000
+                return next.serve(req); 
             });
 
             // Normal filter
-            chain.addFilter((req, next) -> next.serve(req)); // GH-90000
+            chain.addFilter((req, next) -> next.serve(req)); 
 
-            AsyncServlet servlet = chain.build(okServlet()); // GH-90000
-            assertThat(servlet).isNotNull(); // GH-90000
+            AsyncServlet servlet = chain.build(okServlet()); 
+            assertThat(servlet).isNotNull(); 
         }
 
         @Test
         @DisplayName("Rate limiting filter can reject requests")
-        void rateLimitingShortCircuit() { // GH-90000
-            FilterChain chain = FilterChain.create(); // GH-90000
-            AtomicInteger requestCount = new AtomicInteger(0); // GH-90000
+        void rateLimitingShortCircuit() { 
+            FilterChain chain = FilterChain.create(); 
+            AtomicInteger requestCount = new AtomicInteger(0); 
 
             // Rate limiting filter
-            chain.addFilter((req, next) -> { // GH-90000
-                int count = requestCount.incrementAndGet(); // GH-90000
-                if (count > 100) { // GH-90000
-                    return Promise.of(HttpResponse.ofCode(429).build()); // Too Many Requests // GH-90000
+            chain.addFilter((req, next) -> { 
+                int count = requestCount.incrementAndGet(); 
+                if (count > 100) { 
+                    return Promise.of(HttpResponse.ofCode(429).build()); // Too Many Requests 
                 }
-                return next.serve(req); // GH-90000
+                return next.serve(req); 
             });
 
-            assertThat(chain.getFilterCount()).isEqualTo(1); // GH-90000
+            assertThat(chain.getFilterCount()).isEqualTo(1); 
         }
     }
 }

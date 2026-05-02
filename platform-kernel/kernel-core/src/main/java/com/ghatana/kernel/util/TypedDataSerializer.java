@@ -24,7 +24,7 @@ import java.nio.charset.StandardCharsets;
  * every serialized object node:
  * <ul>
  *   <li>{@code _type} — fully-qualified logical type name (caller-supplied, e.g.
- *       {@code "com.ghatana.finance.kernel.service.RiskManagementService.RiskMetrics"})</li>
+ *       {@code "com.ghatana.products.analytics.service.MetricsService.DataMetrics"})</li>
  *   <li>{@code _schema_version} — monotonically increasing integer starting at 1</li>
  * </ul>
  * Deserialization ignores these fields via

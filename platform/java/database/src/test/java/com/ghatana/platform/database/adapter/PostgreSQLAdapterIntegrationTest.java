@@ -38,65 +38,65 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("pool initializes with configured minimum connections")
-        void pool_initializesWithConfiguredMinimumConnections() { // GH-90000
+        void pool_initializesWithConfiguredMinimumConnections() { 
             int minConnections = 5;
-            AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
+            AtomicInteger activeConnections = new AtomicInteger(0); 
 
-            for (int i = 0; i < minConnections; i++) { // GH-90000
-                activeConnections.incrementAndGet(); // GH-90000
+            for (int i = 0; i < minConnections; i++) { 
+                activeConnections.incrementAndGet(); 
             }
 
-            assertThat(activeConnections.get()).isEqualTo(minConnections); // GH-90000
+            assertThat(activeConnections.get()).isEqualTo(minConnections); 
         }
 
         @Test
         @DisplayName("pool does not exceed maximum size under concurrent load")
-        void pool_doesNotExceedMaximumSizeUnderLoad() { // GH-90000
+        void pool_doesNotExceedMaximumSizeUnderLoad() { 
             int maxConnections = 10;
-            AtomicInteger currentConnections = new AtomicInteger(0); // GH-90000
+            AtomicInteger currentConnections = new AtomicInteger(0); 
 
-            List<Thread> threads = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 20; i++) { // GH-90000
-                threads.add(new Thread(() -> { // GH-90000
-                    int current = currentConnections.incrementAndGet(); // GH-90000
-                    assertThat(current).isLessThanOrEqualTo(maxConnections); // GH-90000
-                    currentConnections.decrementAndGet(); // GH-90000
+            List<Thread> threads = new ArrayList<>(); 
+            for (int i = 0; i < 20; i++) { 
+                threads.add(new Thread(() -> { 
+                    int current = currentConnections.incrementAndGet(); 
+                    assertThat(current).isLessThanOrEqualTo(maxConnections); 
+                    currentConnections.decrementAndGet(); 
                 }));
             }
 
             // Verify the invariant is maintained during concurrent access
-            assertThat(currentConnections.get()).isLessThanOrEqualTo(maxConnections); // GH-90000
+            assertThat(currentConnections.get()).isLessThanOrEqualTo(maxConnections); 
         }
 
         @Test
         @DisplayName("connection returns to pool after use")
-        void connection_returnsToPoolAfterUse() { // GH-90000
-            AtomicInteger poolSize = new AtomicInteger(10); // GH-90000
-            AtomicInteger acquired = new AtomicInteger(0); // GH-90000
+        void connection_returnsToPoolAfterUse() { 
+            AtomicInteger poolSize = new AtomicInteger(10); 
+            AtomicInteger acquired = new AtomicInteger(0); 
 
             // Acquire
-            acquired.incrementAndGet(); // GH-90000
-            poolSize.decrementAndGet(); // GH-90000
-            assertThat(poolSize.get()).isEqualTo(9); // GH-90000
+            acquired.incrementAndGet(); 
+            poolSize.decrementAndGet(); 
+            assertThat(poolSize.get()).isEqualTo(9); 
 
             // Release
-            acquired.decrementAndGet(); // GH-90000
-            poolSize.incrementAndGet(); // GH-90000
-            assertThat(poolSize.get()).isEqualTo(10); // GH-90000
+            acquired.decrementAndGet(); 
+            poolSize.incrementAndGet(); 
+            assertThat(poolSize.get()).isEqualTo(10); 
         }
 
         @Test
         @DisplayName("pool handles acquisition timeout gracefully")
-        void pool_handlesAcquisitionTimeoutGracefully() { // GH-90000
-            AtomicBoolean timedOut = new AtomicBoolean(false); // GH-90000
+        void pool_handlesAcquisitionTimeoutGracefully() { 
+            AtomicBoolean timedOut = new AtomicBoolean(false); 
             int poolSize = 0; // exhausted
 
-            if (poolSize == 0) { // GH-90000
+            if (poolSize == 0) { 
                 // Simulate timeout behavior
-                timedOut.set(true); // GH-90000
+                timedOut.set(true); 
             }
 
-            assertThat(timedOut.get()).isTrue(); // GH-90000
+            assertThat(timedOut.get()).isTrue(); 
         }
     }
 
@@ -108,15 +108,15 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("SELECT with filter returns matching rows only")
-        void select_withFilter_returnsMatchingRowsOnly() { // GH-90000
+        void select_withFilter_returnsMatchingRowsOnly() { 
             // Arrange: data set with two records
-            List<String> allRows = List.of("alice", "bob", "alice"); // GH-90000
+            List<String> allRows = List.of("alice", "bob", "alice"); 
             String filter = "alice";
 
             // Act: apply filter
-            List<String> filtered = allRows.stream() // GH-90000
-                    .filter(row -> row.equals(filter)) // GH-90000
-                    .toList(); // GH-90000
+            List<String> filtered = allRows.stream() 
+                    .filter(row -> row.equals(filter)) 
+                    .toList(); 
 
             // Assert
             assertThat(filtered).hasSize(2).containsOnly("alice");
@@ -124,34 +124,34 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("query with LIMIT constrains result set")
-        void query_withLimit_constrainsResultSet() { // GH-90000
-            List<Integer> data = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10); // GH-90000
+        void query_withLimit_constrainsResultSet() { 
+            List<Integer> data = List.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10); 
             int limit = 3;
 
-            List<Integer> limited = data.stream().limit(limit).toList(); // GH-90000
+            List<Integer> limited = data.stream().limit(limit).toList(); 
 
-            assertThat(limited).hasSize(limit); // GH-90000
+            assertThat(limited).hasSize(limit); 
         }
 
         @Test
         @DisplayName("query with OFFSET skips expected rows")
-        void query_withOffset_skipsExpectedRows() { // GH-90000
-            List<Integer> data = List.of(1, 2, 3, 4, 5); // GH-90000
+        void query_withOffset_skipsExpectedRows() { 
+            List<Integer> data = List.of(1, 2, 3, 4, 5); 
             int offset = 2;
 
-            List<Integer> paged = data.stream().skip(offset).toList(); // GH-90000
+            List<Integer> paged = data.stream().skip(offset).toList(); 
 
-            assertThat(paged).containsExactly(3, 4, 5); // GH-90000
+            assertThat(paged).containsExactly(3, 4, 5); 
         }
 
         @Test
         @DisplayName("aggregate COUNT returns correct total")
-        void aggregate_count_returnsCorrectTotal() { // GH-90000
-            List<String> rows = List.of("a", "b", "c", "d"); // GH-90000
+        void aggregate_count_returnsCorrectTotal() { 
+            List<String> rows = List.of("a", "b", "c", "d"); 
 
-            long count = rows.size(); // GH-90000
+            long count = rows.size(); 
 
-            assertThat(count).isEqualTo(4); // GH-90000
+            assertThat(count).isEqualTo(4); 
         }
     }
 
@@ -163,45 +163,45 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("successful transaction commits all changes")
-        void successfulTransaction_commitsAllChanges() { // GH-90000
-            AtomicBoolean committed = new AtomicBoolean(false); // GH-90000
-            List<String> log = new ArrayList<>(); // GH-90000
+        void successfulTransaction_commitsAllChanges() { 
+            AtomicBoolean committed = new AtomicBoolean(false); 
+            List<String> log = new ArrayList<>(); 
 
-            assertThatCode(() -> { // GH-90000
+            assertThatCode(() -> { 
                 log.add("begin");
                 log.add("insert row 1");
                 log.add("insert row 2");
-                committed.set(true); // GH-90000
+                committed.set(true); 
                 log.add("commit");
-            }).doesNotThrowAnyException(); // GH-90000
+            }).doesNotThrowAnyException(); 
 
-            assertThat(committed.get()).isTrue(); // GH-90000
-            assertThat(log).containsExactly("begin", "insert row 1", "insert row 2", "commit"); // GH-90000
+            assertThat(committed.get()).isTrue(); 
+            assertThat(log).containsExactly("begin", "insert row 1", "insert row 2", "commit"); 
         }
 
         @Test
         @DisplayName("failed transaction rolls back all changes")
-        void failedTransaction_rollsBackAllChanges() { // GH-90000
-            AtomicBoolean rolledBack = new AtomicBoolean(false); // GH-90000
-            List<String> log = new ArrayList<>(); // GH-90000
+        void failedTransaction_rollsBackAllChanges() { 
+            AtomicBoolean rolledBack = new AtomicBoolean(false); 
+            List<String> log = new ArrayList<>(); 
 
             try {
                 log.add("begin");
                 log.add("insert row 1");
                 throw new RuntimeException("constraint violation");
-            } catch (RuntimeException e) { // GH-90000
-                rolledBack.set(true); // GH-90000
+            } catch (RuntimeException e) { 
+                rolledBack.set(true); 
                 log.add("rollback");
             }
 
-            assertThat(rolledBack.get()).isTrue(); // GH-90000
-            assertThat(log).containsExactly("begin", "insert row 1", "rollback"); // GH-90000
+            assertThat(rolledBack.get()).isTrue(); 
+            assertThat(log).containsExactly("begin", "insert row 1", "rollback"); 
         }
 
         @Test
         @DisplayName("nested transaction uses savepoint mechanics")
-        void nestedTransaction_usesSavepointMechanics() { // GH-90000
-            List<String> log = new ArrayList<>(); // GH-90000
+        void nestedTransaction_usesSavepointMechanics() { 
+            List<String> log = new ArrayList<>(); 
 
             log.add("begin outer");
             log.add("savepoint sp1");
@@ -209,12 +209,12 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
             // Rollback inner to savepoint
             int savepointIndex = log.indexOf("savepoint sp1");
-            log = log.subList(0, savepointIndex + 1); // GH-90000
-            log = new ArrayList<>(log); // GH-90000
+            log = log.subList(0, savepointIndex + 1); 
+            log = new ArrayList<>(log); 
             log.add("rollback to sp1");
             log.add("commit outer");
 
-            assertThat(log).containsExactly("begin outer", "savepoint sp1", "rollback to sp1", "commit outer"); // GH-90000
+            assertThat(log).containsExactly("begin outer", "savepoint sp1", "rollback to sp1", "commit outer"); 
         }
     }
 
@@ -226,7 +226,7 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("connection error surfaces with descriptive message")
-        void connectionError_surfacesWithDescriptiveMessage() { // GH-90000
+        void connectionError_surfacesWithDescriptiveMessage() { 
             // Simulate connection failure
             RuntimeException ex = new RuntimeException("Connection refused: localhost:5432");
             assertThat(ex.getMessage()).contains("Connection refused");
@@ -234,17 +234,17 @@ class PostgreSQLAdapterIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("query timeout surfaced as detectable error")
-        void queryTimeout_surfacedAsDetectableError() { // GH-90000
-            AtomicBoolean timedOut = new AtomicBoolean(false); // GH-90000
+        void queryTimeout_surfacedAsDetectableError() { 
+            AtomicBoolean timedOut = new AtomicBoolean(false); 
 
             // Simulate timeout detection
             long elapsedMs = 31_000L;
             long thresholdMs = 30_000L;
-            if (elapsedMs > thresholdMs) { // GH-90000
-                timedOut.set(true); // GH-90000
+            if (elapsedMs > thresholdMs) { 
+                timedOut.set(true); 
             }
 
-            assertThat(timedOut.get()).isTrue(); // GH-90000
+            assertThat(timedOut.get()).isTrue(); 
         }
     }
 }

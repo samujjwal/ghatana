@@ -1,0 +1,41 @@
+{
+  "pluginId": "com.ghatana.plugin.audit",
+  "version": "1.0.0",
+  "description": "Immutable append-only audit trail with hash-chain tamper evidence. Records every domain event across all product scopes.",
+  "tier": "T1",
+  "capabilities": [
+    "audit:record",
+    "audit:query",
+    "audit:export",
+    "audit:verify-chain"
+  ],
+  "dependencies": [],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 256,
+    "maxCpuPercent": 10,
+    "maxThreads": 4
+  },
+  "configSchema": {
+    "retentionYears": {
+      "type": "number",
+      "required": false,
+      "description": "Number of years to retain audit entries. Defaults to 7. Products override via binding manifest."
+    },
+    "encryptAtRest": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether audit entries are encrypted at rest. Defaults to false."
+    },
+    "sinkType": {
+      "type": "string",
+      "required": false,
+      "description": "Storage sink type: APPEND_ONLY_LOG, JDBC, or IN_MEMORY. Defaults to IN_MEMORY (use JDBC in production)."
+    },
+    "hashAlgorithm": {
+      "type": "string",
+      "required": false,
+      "description": "Hash algorithm for chain integrity: SHA-256 (default) or SHA-512."
+    }
+  }
+}

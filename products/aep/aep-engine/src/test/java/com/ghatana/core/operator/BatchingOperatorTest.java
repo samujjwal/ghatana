@@ -28,52 +28,52 @@ class BatchingOperatorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("process() keeps promise pending until scheduled flush executes")
-    void shouldResolvePromiseOnTimedFlush() { // GH-90000
-        UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
-        Event event = mock(Event.class); // GH-90000
-        when(delegate.process(event)).thenReturn(Promise.of(OperatorResult.empty())); // GH-90000
+    void shouldResolvePromiseOnTimedFlush() { 
+        UnifiedOperator delegate = mock(UnifiedOperator.class); 
+        Event event = mock(Event.class); 
+        when(delegate.process(event)).thenReturn(Promise.of(OperatorResult.empty())); 
 
-        BatchingOperator batchingOperator = BatchingOperator.builder() // GH-90000
-            .operator(delegate) // GH-90000
-            .batchSize(10) // GH-90000
-            .maxWaitTime(Duration.ofMillis(50)) // GH-90000
-            .build(); // GH-90000
+        BatchingOperator batchingOperator = BatchingOperator.builder() 
+            .operator(delegate) 
+            .batchSize(10) 
+            .maxWaitTime(Duration.ofMillis(50)) 
+            .build(); 
 
-        Promise<OperatorResult> promise = batchingOperator.process(event); // GH-90000
-        assertThat(promise.isComplete()).isFalse(); // GH-90000
+        Promise<OperatorResult> promise = batchingOperator.process(event); 
+        assertThat(promise.isComplete()).isFalse(); 
 
-        OperatorResult result = runPromise(() -> promise); // GH-90000
+        OperatorResult result = runPromise(() -> promise); 
 
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(promise.isComplete()).isTrue(); // GH-90000
-        verify(delegate).process(event); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
+        assertThat(promise.isComplete()).isTrue(); 
+        verify(delegate).process(event); 
     }
 
     @Test
     @DisplayName("process() resolves all queued promises when batch size threshold is reached")
-    void shouldResolveQueuedPromisesOnSizeFlush() { // GH-90000
-        UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
-        Event first = mock(Event.class); // GH-90000
-        Event second = mock(Event.class); // GH-90000
-        when(delegate.process(any(Event.class))).thenReturn(Promise.of(OperatorResult.empty())); // GH-90000
+    void shouldResolveQueuedPromisesOnSizeFlush() { 
+        UnifiedOperator delegate = mock(UnifiedOperator.class); 
+        Event first = mock(Event.class); 
+        Event second = mock(Event.class); 
+        when(delegate.process(any(Event.class))).thenReturn(Promise.of(OperatorResult.empty())); 
 
-        BatchingOperator batchingOperator = BatchingOperator.builder() // GH-90000
-            .operator(delegate) // GH-90000
-            .batchSize(2) // GH-90000
-            .maxWaitTime(Duration.ofSeconds(1)) // GH-90000
-            .build(); // GH-90000
+        BatchingOperator batchingOperator = BatchingOperator.builder() 
+            .operator(delegate) 
+            .batchSize(2) 
+            .maxWaitTime(Duration.ofSeconds(1)) 
+            .build(); 
 
-        Promise<OperatorResult> firstPromise = batchingOperator.process(first); // GH-90000
-        assertThat(firstPromise.isComplete()).isFalse(); // GH-90000
+        Promise<OperatorResult> firstPromise = batchingOperator.process(first); 
+        assertThat(firstPromise.isComplete()).isFalse(); 
 
-        Promise<OperatorResult> secondPromise = batchingOperator.process(second); // GH-90000
+        Promise<OperatorResult> secondPromise = batchingOperator.process(second); 
 
-        OperatorResult secondResult = runPromise(() -> secondPromise); // GH-90000
-        OperatorResult firstResult = runPromise(() -> firstPromise); // GH-90000
+        OperatorResult secondResult = runPromise(() -> secondPromise); 
+        OperatorResult firstResult = runPromise(() -> firstPromise); 
 
-        assertThat(firstResult.isSuccess()).isTrue(); // GH-90000
-        assertThat(secondResult.isSuccess()).isTrue(); // GH-90000
-        assertThat(firstPromise.isComplete()).isTrue(); // GH-90000
-        verify(delegate, times(2)).process(any(Event.class)); // GH-90000
+        assertThat(firstResult.isSuccess()).isTrue(); 
+        assertThat(secondResult.isSuccess()).isTrue(); 
+        assertThat(firstPromise.isComplete()).isTrue(); 
+        verify(delegate, times(2)).process(any(Event.class)); 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  * Phase 4 — Task 4.1: Gap-filling tests for ProbabilisticAgent.
  */
 
@@ -23,12 +23,12 @@ import static org.mockito.Mockito.mock;
  *
  * <p>Fills gaps identified in Phase 4 audit:
  * <ul>
- *   <li>Model inference timeout (simulated via exception)</li> // GH-90000
- *   <li>Batch inference (processBatch from AbstractTypedAgent)</li> // GH-90000
+ *   <li>Model inference timeout (simulated via exception)</li> 
+ *   <li>Batch inference (processBatch from AbstractTypedAgent)</li> 
  *   <li>Fallback chain exhaustion with 2+ fallbacks</li>
  *   <li>Shadow mode records metrics but returns SKIPPED</li>
  *   <li>No model set → failure</li>
- *   <li>Calibration edge cases (extreme raw values)</li> // GH-90000
+ *   <li>Calibration edge cases (extreme raw values)</li> 
  * </ul>
  */
 @DisplayName("Probabilistic Agent — Gap Tests")
@@ -37,63 +37,63 @@ class ProbabilisticAgentGapTest {
     private AgentContext ctx;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        ctx = AgentContext.builder() // GH-90000
+    void setUp() { 
+        ctx = AgentContext.builder() 
                 .turnId("turn-1")
                 .agentId("prob-gap-test")
                 .tenantId("test-tenant")
-                .memoryStore(mock(MemoryStore.class)) // GH-90000
-                .build(); // GH-90000
+                .memoryStore(mock(MemoryStore.class)) 
+                .build(); 
     }
 
-    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
-        AtomicReference<T> result = new AtomicReference<>(); // GH-90000
-        AtomicReference<Exception> err = new AtomicReference<>(); // GH-90000
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
-        eventloop.post(() -> supplier.get() // GH-90000
-                .whenResult(result::set) // GH-90000
-                .whenException(err::set)); // GH-90000
-        eventloop.run(); // GH-90000
-        if (err.get() != null) throw new RuntimeException(err.get()); // GH-90000
-        return result.get(); // GH-90000
+    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { 
+        AtomicReference<T> result = new AtomicReference<>(); 
+        AtomicReference<Exception> err = new AtomicReference<>(); 
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); 
+        eventloop.post(() -> supplier.get() 
+                .whenResult(result::set) 
+                .whenException(err::set)); 
+        eventloop.run(); 
+        if (err.get() != null) throw new RuntimeException(err.get()); 
+        return result.get(); 
     }
 
     // ── Mock helpers ────────────────────────────────────────────────────────
 
-    private ModelInference mockModel(String id, Map<String, Object> output, double confidence) { // GH-90000
-        return new ModelInference() { // GH-90000
+    private ModelInference mockModel(String id, Map<String, Object> output, double confidence) { 
+        return new ModelInference() { 
             @Override
-            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( // GH-90000
+            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( 
                     @org.jetbrains.annotations.NotNull Map<String, Object> input) {
-                return Promise.of(new InferenceResult(output, confidence, id, 10)); // GH-90000
+                return Promise.of(new InferenceResult(output, confidence, id, 10)); 
             }
             @Override
-            public @org.jetbrains.annotations.NotNull String modelId() { return id; } // GH-90000
+            public @org.jetbrains.annotations.NotNull String modelId() { return id; } 
         };
     }
 
-    private ModelInference failingModel(String id) { // GH-90000
-        return new ModelInference() { // GH-90000
+    private ModelInference failingModel(String id) { 
+        return new ModelInference() { 
             @Override
-            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( // GH-90000
+            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( 
                     @org.jetbrains.annotations.NotNull Map<String, Object> input) {
-                return Promise.ofException(new RuntimeException("Model " + id + " failed")); // GH-90000
+                return Promise.ofException(new RuntimeException("Model " + id + " failed")); 
             }
             @Override
-            public @org.jetbrains.annotations.NotNull String modelId() { return id; } // GH-90000
+            public @org.jetbrains.annotations.NotNull String modelId() { return id; } 
         };
     }
 
-    private ModelInference timeoutModel(String id) { // GH-90000
-        return new ModelInference() { // GH-90000
+    private ModelInference timeoutModel(String id) { 
+        return new ModelInference() { 
             @Override
-            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( // GH-90000
+            public @org.jetbrains.annotations.NotNull Promise<InferenceResult> infer( 
                     @org.jetbrains.annotations.NotNull Map<String, Object> input) {
-                return Promise.ofException(new java.util.concurrent.TimeoutException( // GH-90000
+                return Promise.ofException(new java.util.concurrent.TimeoutException( 
                         "Model " + id + " timed out after 500ms"));
             }
             @Override
-            public @org.jetbrains.annotations.NotNull String modelId() { return id; } // GH-90000
+            public @org.jetbrains.annotations.NotNull String modelId() { return id; } 
         };
     }
 
@@ -106,64 +106,64 @@ class ProbabilisticAgentGapTest {
     class TimeoutTests {
 
         @Test
-        void timeoutFallsToFallbackModel() { // GH-90000
+        void timeoutFallsToFallbackModel() { 
             ModelInference primary = timeoutModel("slow-primary");
-            ModelInference fallback = mockModel("fast-fallback", Map.of("label", "ok"), 0.85); // GH-90000
+            ModelInference fallback = mockModel("fast-fallback", Map.of("label", "ok"), 0.85); 
 
-            ProbabilisticAgent agent = new ProbabilisticAgent("timeout-fb", primary); // GH-90000
-            agent.setFallbackModels(List.of(fallback)); // GH-90000
+            ProbabilisticAgent agent = new ProbabilisticAgent("timeout-fb", primary); 
+            agent.setFallbackModels(List.of(fallback)); 
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("timeout-fb")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .confidenceThreshold(0.5) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .confidenceThreshold(0.5) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); 
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).containsEntry("label", "ok"); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
+            assertThat(result.getOutput()).containsEntry("label", "ok"); 
         }
 
         @Test
-        void timeoutWithNoFallbackReturnsFailed() { // GH-90000
+        void timeoutWithNoFallbackReturnsFailed() { 
             ModelInference primary = timeoutModel("slow-only");
 
-            ProbabilisticAgent agent = new ProbabilisticAgent("timeout-no-fb", primary); // GH-90000
+            ProbabilisticAgent agent = new ProbabilisticAgent("timeout-no-fb", primary); 
             // No fallback models set
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("timeout-no-fb")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); 
 
-            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.isFailed()).isTrue(); 
         }
 
         @Test
-        void timeoutChainsThroughMultipleFallbacks() { // GH-90000
+        void timeoutChainsThroughMultipleFallbacks() { 
             ModelInference primary = timeoutModel("primary");
             ModelInference fb1 = failingModel("fallback-1");
-            ModelInference fb2 = mockModel("fallback-2", Map.of("recovered", true), 0.75); // GH-90000
+            ModelInference fb2 = mockModel("fallback-2", Map.of("recovered", true), 0.75); 
 
-            ProbabilisticAgent agent = new ProbabilisticAgent("chain-fb", primary); // GH-90000
-            agent.setFallbackModels(List.of(fb1, fb2)); // GH-90000
+            ProbabilisticAgent agent = new ProbabilisticAgent("chain-fb", primary); 
+            agent.setFallbackModels(List.of(fb1, fb2)); 
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("chain-fb")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .confidenceThreshold(0.5) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .confidenceThreshold(0.5) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); 
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).containsEntry("recovered", true); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
+            assertThat(result.getOutput()).containsEntry("recovered", true); 
         }
     }
 
@@ -176,50 +176,50 @@ class ProbabilisticAgentGapTest {
     class BatchInferenceTests {
 
         @Test
-        void processBatchExecutesForEachInput() { // GH-90000
-            ModelInference model = mockModel("batch-model", Map.of("label", "pos"), 0.9); // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("batch-test", model); // GH-90000
+        void processBatchExecutesForEachInput() { 
+            ModelInference model = mockModel("batch-model", Map.of("label", "pos"), 0.9); 
+            ProbabilisticAgent agent = new ProbabilisticAgent("batch-test", model); 
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("batch-test")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .confidenceThreshold(0.5) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .confidenceThreshold(0.5) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
 
-            List<Map<String, Object>> inputs = List.of( // GH-90000
-                    Map.of("text", "good"), // GH-90000
-                    Map.of("text", "great"), // GH-90000
-                    Map.of("text", "excellent")); // GH-90000
+            List<Map<String, Object>> inputs = List.of( 
+                    Map.of("text", "good"), 
+                    Map.of("text", "great"), 
+                    Map.of("text", "excellent")); 
 
             List<AgentResult<Map<String, Object>>> results =
-                    runOnEventloop(() -> agent.processBatch(ctx, inputs)); // GH-90000
+                    runOnEventloop(() -> agent.processBatch(ctx, inputs)); 
 
-            assertThat(results).hasSize(3); // GH-90000
-            for (AgentResult<Map<String, Object>> r : results) { // GH-90000
-                assertThat(r.isSuccess()).isTrue(); // GH-90000
-                assertThat(r.getOutput()).containsEntry("label", "pos"); // GH-90000
+            assertThat(results).hasSize(3); 
+            for (AgentResult<Map<String, Object>> r : results) { 
+                assertThat(r.isSuccess()).isTrue(); 
+                assertThat(r.getOutput()).containsEntry("label", "pos"); 
             }
         }
 
         @Test
-        void processBatchWithEmptyListReturnsEmpty() { // GH-90000
-            ModelInference model = mockModel("batch-empty", Map.of("ok", true), 0.9); // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("batch-empty", model); // GH-90000
+        void processBatchWithEmptyListReturnsEmpty() { 
+            ModelInference model = mockModel("batch-empty", Map.of("ok", true), 0.9); 
+            ProbabilisticAgent agent = new ProbabilisticAgent("batch-empty", model); 
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("batch-empty")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .confidenceThreshold(0.5) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .confidenceThreshold(0.5) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
 
             List<AgentResult<Map<String, Object>>> results =
-                    runOnEventloop(() -> agent.processBatch(ctx, List.of())); // GH-90000
+                    runOnEventloop(() -> agent.processBatch(ctx, List.of())); 
 
-            assertThat(results).isEmpty(); // GH-90000
+            assertThat(results).isEmpty(); 
         }
     }
 
@@ -232,22 +232,22 @@ class ProbabilisticAgentGapTest {
     class ShadowModeEnrichedTests {
 
         @Test
-        void shadowModeOutputContainsModelMetadata() { // GH-90000
-            ModelInference model = mockModel("shadow-model", Map.of("label", "A"), 0.92); // GH-90000
-            ProbabilisticAgent agent = new ProbabilisticAgent("shadow-enrich", model); // GH-90000
+        void shadowModeOutputContainsModelMetadata() { 
+            ModelInference model = mockModel("shadow-model", Map.of("label", "A"), 0.92); 
+            ProbabilisticAgent agent = new ProbabilisticAgent("shadow-enrich", model); 
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("shadow-enrich")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .shadowMode(true) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .shadowMode(true) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SKIPPED); 
             // Even in shadow, output should contain model metadata
-            assertThat(result.getOutput()).containsEntry("_model.id", "shadow-model"); // GH-90000
+            assertThat(result.getOutput()).containsEntry("_model.id", "shadow-model"); 
             assertThat(result.getOutput()).containsKey("_model.calibratedConfidence");
         }
     }
@@ -261,18 +261,18 @@ class ProbabilisticAgentGapTest {
     class NoModelTests {
 
         @Test
-        void processWithoutPrimaryModelReturnsFailed() { // GH-90000
+        void processWithoutPrimaryModelReturnsFailed() { 
             ProbabilisticAgent agent = new ProbabilisticAgent("no-model");
 
-            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() // GH-90000
+            ProbabilisticAgentConfig config = ProbabilisticAgentConfig.builder() 
                     .agentId("no-model")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .build(); 
 
-            runOnEventloop(() -> agent.initialize(config)); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); // GH-90000
+            runOnEventloop(() -> agent.initialize(config)); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of("x", 1))); 
 
-            assertThat(result.isFailed()).isTrue(); // GH-90000
+            assertThat(result.isFailed()).isTrue(); 
         }
     }
 
@@ -285,39 +285,39 @@ class ProbabilisticAgentGapTest {
     class CalibrationEdgeCases {
 
         @Test
-        void extremelyHighRawConfidenceClampedToOne() { // GH-90000
-            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() // GH-90000
-                    .method(ConfidenceCalibrator.Method.IDENTITY).build(); // GH-90000
-            assertThat(cal.calibrate(100.0)).isCloseTo(1.0, within(1e-9)); // GH-90000
+        void extremelyHighRawConfidenceClampedToOne() { 
+            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() 
+                    .method(ConfidenceCalibrator.Method.IDENTITY).build(); 
+            assertThat(cal.calibrate(100.0)).isCloseTo(1.0, within(1e-9)); 
         }
 
         @Test
-        void negativeRawConfidenceClampedToZero() { // GH-90000
-            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() // GH-90000
-                    .method(ConfidenceCalibrator.Method.IDENTITY).build(); // GH-90000
-            assertThat(cal.calibrate(-50.0)).isCloseTo(0.0, within(1e-9)); // GH-90000
+        void negativeRawConfidenceClampedToZero() { 
+            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() 
+                    .method(ConfidenceCalibrator.Method.IDENTITY).build(); 
+            assertThat(cal.calibrate(-50.0)).isCloseTo(0.0, within(1e-9)); 
         }
 
         @Test
-        void temperatureScalingWithVeryHighTemperatureCompresses() { // GH-90000
-            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() // GH-90000
-                    .method(ConfidenceCalibrator.Method.TEMPERATURE) // GH-90000
-                    .temperature(100.0) // GH-90000
-                    .build(); // GH-90000
-            double result = cal.calibrate(0.99); // GH-90000
+        void temperatureScalingWithVeryHighTemperatureCompresses() { 
+            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() 
+                    .method(ConfidenceCalibrator.Method.TEMPERATURE) 
+                    .temperature(100.0) 
+                    .build(); 
+            double result = cal.calibrate(0.99); 
             // Very high temperature compresses confidence toward zero
-            assertThat(result).isBetween(0.0, 0.1); // GH-90000
+            assertThat(result).isBetween(0.0, 0.1); 
         }
 
         @Test
-        void temperatureScalingWithVeryLowTemperaturePolarizes() { // GH-90000
-            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() // GH-90000
-                    .method(ConfidenceCalibrator.Method.TEMPERATURE) // GH-90000
-                    .temperature(0.01) // GH-90000
-                    .build(); // GH-90000
+        void temperatureScalingWithVeryLowTemperaturePolarizes() { 
+            ConfidenceCalibrator cal = ConfidenceCalibrator.builder() 
+                    .method(ConfidenceCalibrator.Method.TEMPERATURE) 
+                    .temperature(0.01) 
+                    .build(); 
             // 0.99 → logit is very positive → dividing by 0.01 makes it huge → sigmoid ≈ 1.0
-            double result = cal.calibrate(0.99); // GH-90000
-            assertThat(result).isGreaterThan(0.99); // GH-90000
+            double result = cal.calibrate(0.99); 
+            assertThat(result).isGreaterThan(0.99); 
         }
     }
 }

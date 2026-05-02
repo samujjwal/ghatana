@@ -30,65 +30,65 @@ class DeriveRequirementsStepTest extends EventloopTestBase {
   private DeriveRequirementsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new DeriveRequirementsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new DeriveRequirementsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("requirements.deriverequirements");
   }
 
   @Test
   @DisplayName("Should derive structured requirements from normalized content")
-  void shouldDeriveStructuredRequirements() { // GH-90000
+  void shouldDeriveStructuredRequirements() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("requirementId", "req-001"); // GH-90000
-    context.put("normalizedContent", "User login with email and password"); // GH-90000
-    context.put("category", "functional"); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("requirementId", "req-001"); 
+    context.put("normalizedContent", "User login with email and password"); 
+    context.put("category", "functional"); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("requirementId")).isEqualTo("req-001");
     assertThat(result.get("persisted")).isEqualTo(true);
   }
 
   @Test
   @DisplayName("Should fail when requirementId is missing")
-  void shouldFailWhenRequirementIdMissing() { // GH-90000
+  void shouldFailWhenRequirementIdMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("normalizedContent", "Some content"); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("normalizedContent", "Some content"); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("requirementId");
   }
 
   @Test
   @DisplayName("Should fail when normalizedContent is missing")
-  void shouldFailWhenNormalizedContentMissing() { // GH-90000
+  void shouldFailWhenNormalizedContentMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("requirementId", "req-001"); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("requirementId", "req-001"); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("normalizedContent");
   }
 }

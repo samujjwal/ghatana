@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.plugin;
@@ -37,9 +37,9 @@ class PluginRegistryImplTest extends EventloopTestBase {
     private PluginRegistryImpl registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        registry = new PluginRegistryImpl(metrics); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        registry = new PluginRegistryImpl(metrics); 
     }
 
     @Nested
@@ -48,47 +48,47 @@ class PluginRegistryImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[TEST-011]: register_successfully_registers_plugin")
-        void registerSuccessfully() { // GH-90000
+        void registerSuccessfully() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test Plugin", "Description", "1.0.0",
                 "tenant-alpha", PluginRegistry.PluginType.CUSTOM,
                 PluginRegistry.PluginStatus.REGISTERED,
                 List.of("hook1"), List.of(),
-                Map.of(), Instant.now(), null, "user-1" // GH-90000
+                Map.of(), Instant.now(), null, "user-1" 
             );
 
             // When
-            PluginRegistry.PluginMetadata result = runPromise(() -> registry.register(plugin)); // GH-90000
+            PluginRegistry.PluginMetadata result = runPromise(() -> registry.register(plugin)); 
 
             // Then
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.id()).isEqualTo("plugin-1");
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED); // GH-90000
-            assertThat(result.isActive()).isFalse(); // GH-90000
-            verify(metrics).incrementCounter("plugin.register.success", "tenant", "tenant-alpha", "type", "CUSTOM"); // GH-90000
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.REGISTERED); 
+            assertThat(result.isActive()).isFalse(); 
+            verify(metrics).incrementCounter("plugin.register.success", "tenant", "tenant-alpha", "type", "CUSTOM"); 
         }
 
         @Test
         @DisplayName("[TEST-011]: register_throws_for_duplicate_id")
-        void registerDuplicate() { // GH-90000
+        void registerDuplicate() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
-                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" // GH-90000
+                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" 
             );
 
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
             // When/Then
-            clearFatalError(); // GH-90000
+            clearFatalError(); 
             try {
-                runPromise(() -> registry.register(plugin)); // GH-90000
-            } catch (Exception e) { // GH-90000
+                runPromise(() -> registry.register(plugin)); 
+            } catch (Exception e) { 
                 // Expected
             }
-            verify(metrics).incrementCounter("plugin.register.conflict", "plugin", "plugin-1"); // GH-90000
+            verify(metrics).incrementCounter("plugin.register.conflict", "plugin", "plugin-1"); 
         }
     }
 
@@ -98,56 +98,56 @@ class PluginRegistryImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[TEST-012]: activate_successfully_activates_plugin")
-        void activateSuccessfully() { // GH-90000
+        void activateSuccessfully() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
-                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" // GH-90000
+                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
             // When
             PluginRegistry.PluginMetadata result = runPromise(() -> registry.activate("plugin-1"));
 
             // Then
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.ACTIVE); // GH-90000
-            assertThat(result.isActive()).isTrue(); // GH-90000
-            assertThat(result.activatedAt()).isNotNull(); // GH-90000
-            verify(metrics).incrementCounter("plugin.activate.success", "plugin", "plugin-1"); // GH-90000
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.ACTIVE); 
+            assertThat(result.isActive()).isTrue(); 
+            assertThat(result.activatedAt()).isNotNull(); 
+            verify(metrics).incrementCounter("plugin.activate.success", "plugin", "plugin-1"); 
         }
 
         @Test
         @DisplayName("[TEST-012]: activate_throws_for_missing_plugin")
-        void activateMissing() { // GH-90000
+        void activateMissing() { 
             // When
-            clearFatalError(); // GH-90000
+            clearFatalError(); 
             try {
                 runPromise(() -> registry.activate("missing-plugin"));
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 // Expected
             }
-            verify(metrics).incrementCounter("plugin.activate.error", "plugin", "missing-plugin", "reason", "not_found"); // GH-90000
+            verify(metrics).incrementCounter("plugin.activate.error", "plugin", "missing-plugin", "reason", "not_found"); 
         }
 
         @Test
         @DisplayName("[TEST-013]: deactivate_successfully_deactivates_plugin")
-        void deactivateSuccessfully() { // GH-90000
+        void deactivateSuccessfully() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.ACTIVE,
-                List.of(), List.of(), Map.of(), Instant.now(), Instant.now(), "user-1" // GH-90000
+                List.of(), List.of(), Map.of(), Instant.now(), Instant.now(), "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
             // When
             PluginRegistry.PluginMetadata result = runPromise(() -> registry.deactivate("plugin-1"));
 
             // Then
-            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.INACTIVE); // GH-90000
-            assertThat(result.isActive()).isFalse(); // GH-90000
-            verify(metrics).incrementCounter("plugin.deactivate.success", "plugin", "plugin-1"); // GH-90000
+            assertThat(result.status()).isEqualTo(PluginRegistry.PluginStatus.INACTIVE); 
+            assertThat(result.isActive()).isFalse(); 
+            verify(metrics).incrementCounter("plugin.deactivate.success", "plugin", "plugin-1"); 
         }
     }
 
@@ -157,67 +157,67 @@ class PluginRegistryImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[TEST-014]: executeHook_successfully_executes_active_plugin_hook")
-        void executeHookSuccess() { // GH-90000
+        void executeHookSuccess() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.ACTIVE,
                 List.of("processData"), List.of(), Map.of(),
-                Instant.now(), Instant.now(), "user-1" // GH-90000
+                Instant.now(), Instant.now(), "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
             runPromise(() -> registry.activate("plugin-1"));
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> // GH-90000
-                registry.executeHook("plugin-1", "processData", Map.of("key", "value"))); // GH-90000
+            PluginRegistry.HookResult result = runPromise(() -> 
+                registry.executeHook("plugin-1", "processData", Map.of("key", "value"))); 
 
             // Then
-            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.success()).isTrue(); 
             assertThat(result.pluginId()).isEqualTo("plugin-1");
             assertThat(result.hookName()).isEqualTo("processData");
-            verify(metrics).incrementCounter("plugin.hook.success", "plugin", "plugin-1", "hook", "processData"); // GH-90000
+            verify(metrics).incrementCounter("plugin.hook.success", "plugin", "plugin-1", "hook", "processData"); 
         }
 
         @Test
         @DisplayName("[TEST-014]: executeHook_fails_for_inactive_plugin")
-        void executeHookInactive() { // GH-90000
+        void executeHookInactive() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.INACTIVE,
                 List.of("processData"), List.of(), Map.of(),
-                Instant.now(), null, "user-1" // GH-90000
+                Instant.now(), null, "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> // GH-90000
-                registry.executeHook("plugin-1", "processData", Map.of())); // GH-90000
+            PluginRegistry.HookResult result = runPromise(() -> 
+                registry.executeHook("plugin-1", "processData", Map.of())); 
 
             // Then
-            assertThat(result.success()).isFalse(); // GH-90000
+            assertThat(result.success()).isFalse(); 
             assertThat(result.errorMessage()).contains("not active");
         }
 
         @Test
         @DisplayName("[TEST-014]: executeHook_fails_for_missing_hook")
-        void executeHookMissing() { // GH-90000
+        void executeHookMissing() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.ACTIVE,
                 List.of("processData"), List.of(), Map.of(),
-                Instant.now(), Instant.now(), "user-1" // GH-90000
+                Instant.now(), Instant.now(), "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
             // When
-            PluginRegistry.HookResult result = runPromise(() -> // GH-90000
-                registry.executeHook("plugin-1", "missingHook", Map.of())); // GH-90000
+            PluginRegistry.HookResult result = runPromise(() -> 
+                registry.executeHook("plugin-1", "missingHook", Map.of())); 
 
             // Then
-            assertThat(result.success()).isFalse(); // GH-90000
+            assertThat(result.success()).isFalse(); 
             assertThat(result.errorMessage()).contains("Hook not available");
         }
     }
@@ -228,27 +228,27 @@ class PluginRegistryImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[TEST-015]: updateConfiguration_successfully_updates_config")
-        void updateConfiguration() { // GH-90000
+        void updateConfiguration() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
-                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" // GH-90000
+                List.of(), List.of(), Map.of(), Instant.now(), null, "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
 
-            Map<String, Object> config = Map.of("endpoint", "https://api.example.com", "timeout", 5000); // GH-90000
+            Map<String, Object> config = Map.of("endpoint", "https://api.example.com", "timeout", 5000); 
 
             // When
-            Map<String, Object> result = runPromise(() -> registry.updateConfiguration("plugin-1", config)); // GH-90000
+            Map<String, Object> result = runPromise(() -> registry.updateConfiguration("plugin-1", config)); 
 
             // Then
-            assertThat(result).isEqualTo(config); // GH-90000
+            assertThat(result).isEqualTo(config); 
 
             // Verify get returns same config
             Map<String, Object> retrieved = runPromise(() -> registry.getConfiguration("plugin-1"));
-            assertThat(retrieved).isEqualTo(config); // GH-90000
-            verify(metrics).incrementCounter("plugin.config.update", "plugin", "plugin-1"); // GH-90000
+            assertThat(retrieved).isEqualTo(config); 
+            verify(metrics).incrementCounter("plugin.config.update", "plugin", "plugin-1"); 
         }
     }
 
@@ -258,33 +258,33 @@ class PluginRegistryImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[TEST-016]: getHealth_returns_healthy_for_active_plugin")
-        void getHealthHealthy() { // GH-90000
+        void getHealthHealthy() { 
             // Given
-            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( // GH-90000
+            PluginRegistry.PluginMetadata plugin = new PluginRegistry.PluginMetadata( 
                 "plugin-1", "Test", "Desc", "1.0", "tenant-alpha",
                 PluginRegistry.PluginType.CUSTOM, PluginRegistry.PluginStatus.REGISTERED,
-                List.of(), List.of(), Map.of(), Instant.now(), Instant.now(), "user-1" // GH-90000
+                List.of(), List.of(), Map.of(), Instant.now(), Instant.now(), "user-1" 
             );
-            runPromise(() -> registry.register(plugin)); // GH-90000
+            runPromise(() -> registry.register(plugin)); 
             runPromise(() -> registry.activate("plugin-1"));
 
             // When
             PluginRegistry.PluginHealth health = runPromise(() -> registry.getHealth("plugin-1"));
 
             // Then
-            assertThat(health.healthy()).isTrue(); // GH-90000
+            assertThat(health.healthy()).isTrue(); 
             assertThat(health.status()).isEqualTo("HEALTHY");
-            assertThat(health.issues()).isEmpty(); // GH-90000
+            assertThat(health.issues()).isEmpty(); 
         }
 
         @Test
         @DisplayName("[TEST-016]: getHealth_returns_unhealthy_for_missing_plugin")
-        void getHealthMissing() { // GH-90000
+        void getHealthMissing() { 
             // When
             PluginRegistry.PluginHealth health = runPromise(() -> registry.getHealth("missing"));
 
             // Then
-            assertThat(health.healthy()).isFalse(); // GH-90000
+            assertThat(health.healthy()).isFalse(); 
             assertThat(health.status()).isEqualTo("NOT_FOUND");
         }
     }

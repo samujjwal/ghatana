@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("GenerationApiController")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class GenerationApiControllerTest extends EventloopTestBase {
 
     @Mock
@@ -49,58 +49,58 @@ class GenerationApiControllerTest extends EventloopTestBase {
     private GenerationApiController controller;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        controller = new GenerationApiController(generationService, artifactRepository); // GH-90000
+    void setUp() { 
+        controller = new GenerationApiController(generationService, artifactRepository); 
     }
 
     @Test
     @DisplayName("generate rejects specs that have not passed validation")
-    void generateRejectsUnvalidatedSpec() throws Exception { // GH-90000
-        ValidatedSpec invalidSpec = ValidatedSpec.of( // GH-90000
+    void generateRejectsUnvalidatedSpec() throws Exception { 
+        ValidatedSpec invalidSpec = ValidatedSpec.of( 
             ShapeSpec.builder().id("shape-1").build(),
-            LifecycleValidationResult.builder().passed(false).build() // GH-90000
+            LifecycleValidationResult.builder().passed(false).build() 
         );
 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate")
-            .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(invalidSpec).getBytes(StandardCharsets.UTF_8))) // GH-90000
-            .build(); // GH-90000
+            .withBody(ByteBuf.wrapForReading(JsonMapper.toJson(invalidSpec).getBytes(StandardCharsets.UTF_8))) 
+            .build(); 
 
-        HttpResponse response = runPromise(() -> controller.generateArtifacts(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.generateArtifacts(request)); 
 
-        assertThat(response.getCode()).isEqualTo(400); // GH-90000
-        verify(generationService, never()).generate(any()); // GH-90000
+        assertThat(response.getCode()).isEqualTo(400); 
+        verify(generationService, never()).generate(any()); 
     }
 
     @Test
     @DisplayName("regenerate with diff requires validatedSpec and existingArtifacts envelope")
-    void regenerateWithDiffUsesExplicitEnvelope() throws Exception { // GH-90000
-        ValidatedSpec validSpec = ValidatedSpec.of( // GH-90000
+    void regenerateWithDiffUsesExplicitEnvelope() throws Exception { 
+        ValidatedSpec validSpec = ValidatedSpec.of( 
             ShapeSpec.builder().id("shape-1").build(),
-            LifecycleValidationResult.builder().passed(true).build() // GH-90000
+            LifecycleValidationResult.builder().passed(true).build() 
         );
-        GeneratedArtifacts existingArtifacts = GeneratedArtifacts.builder() // GH-90000
+        GeneratedArtifacts existingArtifacts = GeneratedArtifacts.builder() 
             .id("artifacts-1")
             .specRef("shape-1")
             .artifacts(List.of(Artifact.builder().id("artifact-1").name("README").type("doc").build()))
-            .build(); // GH-90000
-        DiffResult diffResult = DiffResult.builder() // GH-90000
-            .newArtifacts(existingArtifacts) // GH-90000
-            .oldArtifacts(existingArtifacts) // GH-90000
-            .diffs(List.of()) // GH-90000
-            .build(); // GH-90000
-        when(generationService.regenerateWithDiff(any(), any())).thenReturn(Promise.of(diffResult)); // GH-90000
+            .build(); 
+        DiffResult diffResult = DiffResult.builder() 
+            .newArtifacts(existingArtifacts) 
+            .oldArtifacts(existingArtifacts) 
+            .diffs(List.of()) 
+            .build(); 
+        when(generationService.regenerateWithDiff(any(), any())).thenReturn(Promise.of(diffResult)); 
 
-        String requestJson = JsonMapper.toJson(new DiffEnvelope(validSpec, existingArtifacts)); // GH-90000
+        String requestJson = JsonMapper.toJson(new DiffEnvelope(validSpec, existingArtifacts)); 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/generate/diff")
-            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) // GH-90000
-            .build(); // GH-90000
+            .withBody(ByteBuf.wrapForReading(requestJson.getBytes(StandardCharsets.UTF_8))) 
+            .build(); 
 
-        HttpResponse response = runPromise(() -> controller.regenerateWithDiff(request)); // GH-90000
+        HttpResponse response = runPromise(() -> controller.regenerateWithDiff(request)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
-        verify(generationService).regenerateWithDiff(any(), any()); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
+        verify(generationService).regenerateWithDiff(any(), any()); 
     }
 
-    private record DiffEnvelope(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) { // GH-90000
+    private record DiffEnvelope(ValidatedSpec validatedSpec, GeneratedArtifacts existingArtifacts) { 
     }
 }

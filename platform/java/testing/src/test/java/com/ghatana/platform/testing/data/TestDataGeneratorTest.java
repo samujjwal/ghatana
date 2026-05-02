@@ -17,77 +17,77 @@ class TestDataGeneratorTest {
 
     @Test
     @DisplayName("should generate random string")
-    void shouldGenerateRandomString() { // GH-90000
+    void shouldGenerateRandomString() { 
         // When
-        String result = TestDataGenerator.randomString(); // GH-90000
+        String result = TestDataGenerator.randomString(); 
 
         // Then
-        assertThat(result) // GH-90000
-            .isNotBlank() // GH-90000
-            .hasSize(36); // UUID length // GH-90000
+        assertThat(result) 
+            .isNotBlank() 
+            .hasSize(36); // UUID length 
     }
 
-    @RepeatedTest(5) // GH-90000
+    @RepeatedTest(5) 
     @DisplayName("should generate random email")
-    void shouldGenerateRandomEmail() { // GH-90000
+    void shouldGenerateRandomEmail() { 
         // When
-        String email = TestDataGenerator.randomEmail(); // GH-90000
+        String email = TestDataGenerator.randomEmail(); 
 
         // Then
-        assertThat(email) // GH-90000
-            .isNotBlank() // GH-90000
+        assertThat(email) 
+            .isNotBlank() 
             .contains("@")
             .contains(".");
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1, 10, 100}) // GH-90000
+    @ValueSource(ints = {1, 10, 100}) 
     @DisplayName("should generate random int within range")
-    void shouldGenerateRandomInt(int max) { // GH-90000
+    void shouldGenerateRandomInt(int max) { 
         // When
-        int result = TestDataGenerator.randomInt(0, max); // GH-90000
+        int result = TestDataGenerator.randomInt(0, max); 
 
         // Then
-        assertThat(result) // GH-90000
-            .isGreaterThanOrEqualTo(0) // GH-90000
-            .isLessThanOrEqualTo(max); // GH-90000
+        assertThat(result) 
+            .isGreaterThanOrEqualTo(0) 
+            .isLessThanOrEqualTo(max); 
     }
 
     @Test
     @DisplayName("should generate random date")
-    void shouldGenerateRandomDate() { // GH-90000
+    void shouldGenerateRandomDate() { 
         // When
-        LocalDate date = TestDataGenerator.randomDate(); // GH-90000
-        LocalDate now = LocalDate.now(); // GH-90000
-        LocalDate oneYearAgo = now.minusYears(1); // GH-90000
+        LocalDate date = TestDataGenerator.randomDate(); 
+        LocalDate now = LocalDate.now(); 
+        LocalDate oneYearAgo = now.minusYears(1); 
 
         // Then
-        assertThat(date) // GH-90000
-            .isAfterOrEqualTo(oneYearAgo) // GH-90000
-            .isBeforeOrEqualTo(now); // GH-90000
+        assertThat(date) 
+            .isAfterOrEqualTo(oneYearAgo) 
+            .isBeforeOrEqualTo(now); 
     }
 
     @Test
     @DisplayName("should generate random name")
-    void shouldGenerateRandomName() { // GH-90000
+    void shouldGenerateRandomName() { 
         // When
-        String name = TestDataGenerator.randomName(); // GH-90000
+        String name = TestDataGenerator.randomName(); 
 
         // Then
-        assertThat(name) // GH-90000
-            .isNotBlank() // GH-90000
+        assertThat(name) 
+            .isNotBlank() 
             .contains(" "); // At least first and last name
     }
 
     @Test
     @DisplayName("should generate random sentence")
-    void shouldGenerateRandomSentence() { // GH-90000
+    void shouldGenerateRandomSentence() { 
         // When
-        String sentence = TestDataGenerator.randomSentence(); // GH-90000
+        String sentence = TestDataGenerator.randomSentence(); 
 
         // Then
-        assertThat(sentence) // GH-90000
-            .isNotBlank() // GH-90000
+        assertThat(sentence) 
+            .isNotBlank() 
             .endsWith(".");
     }
 }

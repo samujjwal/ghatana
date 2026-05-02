@@ -26,25 +26,25 @@ import org.junit.jupiter.api.condition.OS;
 class ProcessExecTest {
 
     @Test
-    @EnabledOnOs({OS.MAC, OS.LINUX}) // GH-90000
-    void run_echo_success() throws Exception { // GH-90000
+    @EnabledOnOs({OS.MAC, OS.LINUX}) 
+    void run_echo_success() throws Exception { 
         Path tmp = Files.createTempDirectory("pexec");
         var res =
-                ProcessExec.run( // GH-90000
-                        tmp, Duration.ofSeconds(5), List.of("sh", "-lc", "echo hello"), Map.of()); // GH-90000
-        assertThat(res.exitCode()).isZero(); // GH-90000
+                ProcessExec.run( 
+                        tmp, Duration.ofSeconds(5), List.of("sh", "-lc", "echo hello"), Map.of()); 
+        assertThat(res.exitCode()).isZero(); 
         assertThat(res.out().trim()).isEqualTo("hello");
-        assertThat(res.err()).isEmpty(); // GH-90000
+        assertThat(res.err()).isEmpty(); 
     }
 
     @Test
-    @EnabledOnOs({OS.MAC, OS.LINUX}) // GH-90000
-    void run_timeout() throws Exception { // GH-90000
+    @EnabledOnOs({OS.MAC, OS.LINUX}) 
+    void run_timeout() throws Exception { 
         Path tmp = Files.createTempDirectory("pexec");
         var res =
-                ProcessExec.run( // GH-90000
-                        tmp, Duration.ofMillis(100), List.of("sh", "-lc", "sleep 2"), Map.of()); // GH-90000
-        assertThat(res.exitCode()).isEqualTo(-1); // GH-90000
+                ProcessExec.run( 
+                        tmp, Duration.ofMillis(100), List.of("sh", "-lc", "sleep 2"), Map.of()); 
+        assertThat(res.exitCode()).isEqualTo(-1); 
         assertThat(res.err()).contains("Timed out");
     }
 }

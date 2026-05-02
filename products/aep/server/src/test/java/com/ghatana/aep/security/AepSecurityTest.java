@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.security;
@@ -45,21 +45,21 @@ class AepSecurityTest {
     private HttpClient httpClient;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        server = new AepHttpServer(engine, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
-        httpClient = HttpClient.newBuilder() // GH-90000
-                .followRedirects(HttpClient.Redirect.NEVER) // GH-90000
-                .build(); // GH-90000
+    void setUp() throws Exception { 
+        engine = Aep.forTesting(); 
+        port = findFreePort(); 
+        server = new AepHttpServer(engine, port); 
+        server.start(); 
+        waitForServerReady(port); 
+        httpClient = HttpClient.newBuilder() 
+                .followRedirects(HttpClient.Redirect.NEVER) 
+                .build(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
-        if (engine != null) engine.close(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
+        if (engine != null) engine.close(); 
     }
 
     // =========================================================================
@@ -72,7 +72,7 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("GET /health includes X-Content-Type-Options: nosniff")
-        void get_health_hasNoSniff() throws Exception { // GH-90000
+        void get_health_hasNoSniff() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("X-Content-Type-Options"))
                     .hasValue("nosniff");
@@ -80,7 +80,7 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("GET /health includes X-Frame-Options: DENY")
-        void get_health_hasXFrameOptionsDeny() throws Exception { // GH-90000
+        void get_health_hasXFrameOptionsDeny() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("X-Frame-Options"))
                     .hasValue("DENY");
@@ -88,36 +88,36 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("GET /health includes Strict-Transport-Security header")
-        void get_health_hasHsts() throws Exception { // GH-90000
+        void get_health_hasHsts() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("Strict-Transport-Security"))
-                    .isPresent() // GH-90000
+                    .isPresent() 
                     .hasValueSatisfying(v -> assertThat(v).contains("max-age=31536000"));
         }
 
         @Test
         @DisplayName("GET /health includes Content-Security-Policy with frame-ancestors none")
-        void get_health_hasCsp() throws Exception { // GH-90000
+        void get_health_hasCsp() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("Content-Security-Policy"))
-                    .isPresent() // GH-90000
+                    .isPresent() 
                     .hasValueSatisfying(v -> assertThat(v).contains("frame-ancestors 'none'"));
         }
 
         @Test
         @DisplayName("GET /health includes Referrer-Policy header")
-        void get_health_hasReferrerPolicy() throws Exception { // GH-90000
+        void get_health_hasReferrerPolicy() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("Referrer-Policy"))
-                    .isPresent(); // GH-90000
+                    .isPresent(); 
         }
 
         @Test
         @DisplayName("GET /health includes X-Request-Id header")
-        void get_health_hasXRequestId() throws Exception { // GH-90000
+        void get_health_hasXRequestId() throws Exception { 
             HttpResponse<String> resp = get("/health");
             assertThat(resp.headers().firstValue("X-Request-Id"))
-                    .isPresent(); // GH-90000
+                    .isPresent(); 
         }
     }
 
@@ -131,30 +131,30 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("POST with oversized payload → 413 Payload Too Large")
-        void post_oversizedPayload_returns413() throws Exception { // GH-90000
+        void post_oversizedPayload_returns413() throws Exception { 
             // Send a body that is 1 byte over the enforced 16 MiB limit
-            // (AepInputValidator.MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024). // GH-90000
-            // The security filter loads up to (MAX+1) bytes and rejects the request // GH-90000
-            // with 413 when the returned buffer equals MAX+1 (body ≥ limit+1). // GH-90000
+            // (AepInputValidator.MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024). 
+            // The security filter loads up to (MAX+1) bytes and rejects the request 
+            // with 413 when the returned buffer equals MAX+1 (body ≥ limit+1). 
             byte[] oversized = new byte[16 * 1024 * 1024 + 1]; // 16 MiB + 1 byte
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                    .uri(URI.create("http://localhost:" + port + "/api/v1/events")) // GH-90000
-                    .header("Content-Type", "application/octet-stream") // GH-90000
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(oversized)) // GH-90000
-                    .build(); // GH-90000
+            HttpRequest req = HttpRequest.newBuilder() 
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/events")) 
+                    .header("Content-Type", "application/octet-stream") 
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(oversized)) 
+                    .build(); 
 
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-            assertThat(resp.statusCode()).isEqualTo(413); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(413); 
         }
 
         @Test
         @DisplayName("POST with valid-size payload is forwarded to router")
-        void post_validPayload_isForwarded() throws Exception { // GH-90000
+        void post_validPayload_isForwarded() throws Exception { 
             String body = "{\"tenantId\":\"t1\",\"type\":\"click\",\"payload\":{\"k\":\"v\"}}";
-            HttpResponse<String> resp = post("/api/v1/events", body); // GH-90000
-            // Any response other than 413 is acceptable here (could be 200 or 400) // GH-90000
-            assertThat(resp.statusCode()).isNotEqualTo(413); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/events", body); 
+            // Any response other than 413 is acceptable here (could be 200 or 400) 
+            assertThat(resp.statusCode()).isNotEqualTo(413); 
         }
     }
 
@@ -168,24 +168,24 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("OPTIONS preflight returns 204 with CORS headers")
-        void options_preflight_returns204WithCorsHeaders() throws Exception { // GH-90000
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                    .uri(URI.create("http://localhost:" + port + "/api/v1/events")) // GH-90000
-                    .method("OPTIONS", HttpRequest.BodyPublishers.noBody()) // GH-90000
-                    .header("Origin", "http://localhost:3000") // GH-90000
-                    .header("Access-Control-Request-Method", "POST") // GH-90000
-                    .build(); // GH-90000
+        void options_preflight_returns204WithCorsHeaders() throws Exception { 
+            HttpRequest req = HttpRequest.newBuilder() 
+                    .uri(URI.create("http://localhost:" + port + "/api/v1/events")) 
+                    .method("OPTIONS", HttpRequest.BodyPublishers.noBody()) 
+                    .header("Origin", "http://localhost:3000") 
+                    .header("Access-Control-Request-Method", "POST") 
+                    .build(); 
 
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-            assertThat(resp.statusCode()).isEqualTo(204); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(204); 
             assertThat(resp.headers().firstValue("Access-Control-Allow-Methods"))
-                    .isPresent(); // GH-90000
+                    .isPresent(); 
         }
     }
 
     // =========================================================================
-    // Input Validation (delegated to AepInputValidator) // GH-90000
+    // Input Validation (delegated to AepInputValidator) 
     // =========================================================================
 
     @Nested
@@ -194,25 +194,25 @@ class AepSecurityTest {
 
         @Test
         @DisplayName("POST /api/v1/events with injection payload → 400")
-        void post_withInjectionPayload_returns400() throws Exception { // GH-90000
+        void post_withInjectionPayload_returns400() throws Exception { 
             // payload with script-injection pattern — validator should reject
             String malicious = "{\"tenantId\":\"t1\",\"type\":\"click\",\"payload\":"
-                    + "{\"data\":\"<script>alert(1)</script>\"}}"; // GH-90000
-            HttpResponse<String> resp = post("/api/v1/events", malicious); // GH-90000
+                    + "{\"data\":\"<script>alert(1)</script>\"}}"; 
+            HttpResponse<String> resp = post("/api/v1/events", malicious); 
 
             // The security filter + input validator will reject invalid payloads
-            // (exact code depends on validation path; 400 or 422 expected) // GH-90000
-            assertThat(resp.statusCode()).isIn(400, 422); // GH-90000
+            // (exact code depends on validation path; 400 or 422 expected) 
+            assertThat(resp.statusCode()).isIn(400, 422); 
         }
 
         @Test
         @DisplayName("POST /api/v1/events with valid payload → 200")
-        void post_withValidPayload_returns200() throws Exception { // GH-90000
+        void post_withValidPayload_returns200() throws Exception { 
             String valid = "{\"tenantId\":\"tenant-123\",\"type\":\"user-click\","
                     + "\"payload\":{\"itemId\":\"abc123\",\"screen\":\"home\"}}";
-            HttpResponse<String> resp = post("/api/v1/events", valid); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/events", valid); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
         }
     }
 
@@ -220,38 +220,38 @@ class AepSecurityTest {
     // Helpers
     // =========================================================================
 
-    private HttpResponse<String> get(String path) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                .uri(URI.create("http://localhost:" + port + path)) // GH-90000
-                .GET() // GH-90000
-                .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> get(String path) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+                .uri(URI.create("http://localhost:" + port + path)) 
+                .GET() 
+                .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                .uri(URI.create("http://localhost:" + port + path)) // GH-90000
-                .header("Content-Type", "application/json") // GH-90000
-                .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-                .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> post(String path, String body) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+                .uri(URI.create("http://localhost:" + port + path)) 
+                .header("Content-Type", "application/json") 
+                .POST(HttpRequest.BodyPublishers.ofString(body)) 
+                .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket s = new ServerSocket(0)) { // GH-90000
-            return s.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket s = new ServerSocket(0)) { 
+            return s.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
-            try (var socket = new java.net.Socket("localhost", port)) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
+            try (var socket = new java.net.Socket("localhost", port)) { 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new RuntimeException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new RuntimeException("Server did not start on port " + port + " within 5 s"); 
     }
 }

@@ -44,7 +44,7 @@ jobs:
         run: |
           ./gradlew \
             :platform-plugins:plugin-audit-trail:test \
-            :platform-plugins:plugin-billing-ledger:test \
+            :platform-plugins:plugin-ledger:test \
             :platform-plugins:plugin-compliance:test \
             :platform-plugins:plugin-consent:test \
             :platform-plugins:plugin-fraud-detection:test \

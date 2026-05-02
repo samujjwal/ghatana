@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -45,14 +45,14 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
     private VoiceGatewayHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        mockClient = mock(DataCloudClient.class); // GH-90000
-        handler = new VoiceGatewayHandler( // GH-90000
+    void setUp() { 
+        mockClient = mock(DataCloudClient.class); 
+        handler = new VoiceGatewayHandler( 
             mockClient,
             null,
             null,
-            new ObjectMapper(), // GH-90000
-            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"), // GH-90000
+            new ObjectMapper(), 
+            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"), 
             Runnable::run,
             NopVoiceSttAdapter.INSTANCE,
             NopVoiceTtsAdapter.INSTANCE
@@ -65,20 +65,20 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("catalog exposes registered intents for voice UI discovery")
-        void catalogExposesRegisteredIntents() { // GH-90000
-            assertThat(VoiceIntentCatalog.ALL).hasSizeGreaterThanOrEqualTo(20); // GH-90000
-            assertThat(VoiceIntentCatalog.ALL) // GH-90000
-                .extracting(VoiceIntentCatalog.VoiceIntent::name) // GH-90000
-                .contains("query_entities", "list_pipelines", "query_events"); // GH-90000
+        void catalogExposesRegisteredIntents() { 
+            assertThat(VoiceIntentCatalog.ALL).hasSizeGreaterThanOrEqualTo(20); 
+            assertThat(VoiceIntentCatalog.ALL) 
+                .extracting(VoiceIntentCatalog.VoiceIntent::name) 
+                .contains("query_entities", "list_pipelines", "query_events"); 
         }
 
         @Test
         @DisplayName("exact intent name resolves directly from the catalog")
-        void exactIntentNameResolvesDirectly() { // GH-90000
+        void exactIntentNameResolvesDirectly() { 
             assertThat(VoiceIntentCatalog.findByName("query_entities"))
-                .isPresent() // GH-90000
-                .get() // GH-90000
-                .extracting(VoiceIntentCatalog.VoiceIntent::pathTemplate) // GH-90000
+                .isPresent() 
+                .get() 
+                .extracting(VoiceIntentCatalog.VoiceIntent::pathTemplate) 
                 .isEqualTo("/api/v1/entities/:collection");
         }
     }
@@ -89,17 +89,17 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("heuristic classification prefers the strongest pipeline match")
-        void heuristicClassificationPrefersStrongestMatch() { // GH-90000
+        void heuristicClassificationPrefersStrongestMatch() { 
             assertThat(VoiceIntentCatalog.findCandidates("show me the pipeline status for daily etl"))
-                .isNotEmpty() // GH-90000
-                .first() // GH-90000
-                .extracting(VoiceIntentCatalog.VoiceIntent::name) // GH-90000
+                .isNotEmpty() 
+                .first() 
+                .extracting(VoiceIntentCatalog.VoiceIntent::name) 
                 .isEqualTo("get_pipeline_status");
         }
 
         @Test
         @DisplayName("unknown utterances do not match any catalog intent")
-        void unknownUtterancesDoNotMatchCatalogIntent() { // GH-90000
+        void unknownUtterancesDoNotMatchCatalogIntent() { 
             assertThat(VoiceIntentCatalog.findCandidates("xyzzy frobulate the wumpus")).isEmpty();
         }
     }
@@ -110,10 +110,10 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("exact list_pipelines execution returns a resolved action payload")
-        void listPipelinesExecutionReturnsResolvedActionPayload() { // GH-90000
-            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( // GH-90000
+        void listPipelinesExecutionReturnsResolvedActionPayload() { 
+            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( 
                 VoiceIntentCatalog.findByName("list_pipelines").orElseThrow(),
-                Map.of(), // GH-90000
+                Map.of(), 
                 TestConstants.TENANT_DEFAULT,
                 "en"));
 
@@ -125,22 +125,22 @@ class VoiceGatewayHandlerTest extends EventloopTestBase {
         @Test
         @DisplayName("query_entities execution returns real entity results from the data client")
         @SuppressWarnings("unchecked")
-        void queryEntitiesExecutionReturnsRealEntityResults() { // GH-90000
+        void queryEntitiesExecutionReturnsRealEntityResults() { 
             when(mockClient.query(eq(TestConstants.TENANT_DEFAULT), eq("orders"), any(DataCloudClient.Query.class)))
-                .thenReturn(Promise.of(List.of( // GH-90000
-                    new DataCloudClient.Entity( // GH-90000
+                .thenReturn(Promise.of(List.of( 
+                    new DataCloudClient.Entity( 
                         "order-1",
                         "orders",
-                        Map.of("status", "open"), // GH-90000
+                        Map.of("status", "open"), 
                         Instant.parse("2026-04-17T00:00:00Z"),
                         Instant.parse("2026-04-17T00:00:00Z"),
                         1L
                     )
                 )));
 
-            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( // GH-90000
+            Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( 
                 VoiceIntentCatalog.findByName("query_entities").orElseThrow(),
-                Map.of("collection", "orders", "limit", "10"), // GH-90000
+                Map.of("collection", "orders", "limit", "10"), 
                 TestConstants.TENANT_DEFAULT,
                 "en"));
 

@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("TranscriptionJobConsumer Tests")
 class TranscriptionJobConsumerTest {
 
@@ -37,74 +37,74 @@ class TranscriptionJobConsumerTest {
 
     @Test
     @DisplayName("start fails when job processor is missing")
-    void startFailsWithoutProcessor() { // GH-90000
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
+    void startFailsWithoutProcessor() { 
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); 
 
-        var promise = consumer.start(); // GH-90000
+        var promise = consumer.start(); 
 
-        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
+        assertThat(promise.getException()).isInstanceOf(IllegalStateException.class); 
         assertThat(promise.getException()).hasMessageContaining("Job processor not set");
     }
 
     @Test
     @DisplayName("start and stop delegate lifecycle to strategy")
-    void startAndStopDelegateLifecycle() { // GH-90000
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
-        consumer.setJobProcessor(job -> Promise.complete()); // GH-90000
+    void startAndStopDelegateLifecycle() { 
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); 
+        consumer.setJobProcessor(job -> Promise.complete()); 
 
-        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
-        when(consumerStrategy.stop()).thenReturn(Promise.complete()); // GH-90000
-        when(consumerStrategy.isRunning()).thenReturn(true, false); // GH-90000
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); 
+        when(consumerStrategy.stop()).thenReturn(Promise.complete()); 
+        when(consumerStrategy.isRunning()).thenReturn(true, false); 
 
-        consumer.start().getResult(); // GH-90000
-        assertThat(consumer.isHealthy()).isTrue(); // GH-90000
+        consumer.start().getResult(); 
+        assertThat(consumer.isHealthy()).isTrue(); 
 
-        consumer.stop().getResult(); // GH-90000
-        assertThat(consumer.isHealthy()).isFalse(); // GH-90000
+        consumer.stop().getResult(); 
+        assertThat(consumer.isHealthy()).isFalse(); 
 
-        verify(consumerStrategy).start(); // GH-90000
-        verify(consumerStrategy).stop(); // GH-90000
-        verify(metricsCollector).incrementCounter("av.messaging.consumer.start", "queue", "av.jobs"); // GH-90000
-        verify(metricsCollector).incrementCounter("av.messaging.consumer.stop", "queue", "av.jobs"); // GH-90000
+        verify(consumerStrategy).start(); 
+        verify(consumerStrategy).stop(); 
+        verify(metricsCollector).incrementCounter("av.messaging.consumer.start", "queue", "av.jobs"); 
+        verify(metricsCollector).incrementCounter("av.messaging.consumer.stop", "queue", "av.jobs"); 
     }
 
     @Test
     @DisplayName("start without processor does not move consumer to STARTED")
-    void startWithoutProcessorDoesNotChangeState() { // GH-90000
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
+    void startWithoutProcessorDoesNotChangeState() { 
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); 
 
-        Promise<Void> firstStart = consumer.start(); // GH-90000
-        assertThat(firstStart.getException()).isInstanceOf(IllegalStateException.class); // GH-90000
+        Promise<Void> firstStart = consumer.start(); 
+        assertThat(firstStart.getException()).isInstanceOf(IllegalStateException.class); 
 
-        consumer.setJobProcessor(job -> Promise.complete()); // GH-90000
-        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
+        consumer.setJobProcessor(job -> Promise.complete()); 
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); 
 
-        consumer.start().getResult(); // GH-90000
+        consumer.start().getResult(); 
 
-        verify(consumerStrategy).start(); // GH-90000
+        verify(consumerStrategy).start(); 
     }
 
     @Test
     @DisplayName("message handler rethrows processor failure for strategy nack/retry")
-    void messageHandlerRethrowsProcessorFailure() { // GH-90000
-        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); // GH-90000
+    void messageHandlerRethrowsProcessorFailure() { 
+        TranscriptionJobConsumer consumer = new TranscriptionJobConsumer("av.jobs", consumerStrategy, metricsCollector); 
         consumer.setJobProcessor(job -> Promise.ofException(new RuntimeException("simulated failure")));
 
-        when(consumerStrategy.start()).thenReturn(Promise.complete()); // GH-90000
+        when(consumerStrategy.start()).thenReturn(Promise.complete()); 
 
-        consumer.start().getResult(); // GH-90000
+        consumer.start().getResult(); 
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<Consumer<String>> handlerCaptor =
-            (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class); // GH-90000
-        verify(consumerStrategy).setMessageHandler(handlerCaptor.capture()); // GH-90000
+            (ArgumentCaptor<Consumer<String>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Consumer.class); 
+        verify(consumerStrategy).setMessageHandler(handlerCaptor.capture()); 
 
-        String payload = "{\"jobId\":\"" + UUID.randomUUID() + // GH-90000
-            "\",\"tenantId\":\"tenant-1\",\"audioFileId\":\"" + UUID.randomUUID() + // GH-90000
-            "\",\"language\":\"en\",\"modelId\":\"m1\",\"submittedAt\":\"" + Instant.now() + "\"}"; // GH-90000
+        String payload = "{\"jobId\":\"" + UUID.randomUUID() + 
+            "\",\"tenantId\":\"tenant-1\",\"audioFileId\":\"" + UUID.randomUUID() + 
+            "\",\"language\":\"en\",\"modelId\":\"m1\",\"submittedAt\":\"" + Instant.now() + "\"}"; 
 
-        assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload)) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> handlerCaptor.getValue().accept(payload)) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("simulated failure");
     }
 }

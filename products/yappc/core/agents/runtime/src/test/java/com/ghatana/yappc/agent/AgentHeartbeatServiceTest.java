@@ -21,69 +21,69 @@ class AgentHeartbeatServiceTest {
 
   @Test
   @DisplayName("should create service with default interval")
-  void shouldCreateWithDefaultInterval() { // GH-90000
-    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
-    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
+  void shouldCreateWithDefaultInterval() { 
+    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); 
+    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); 
 
-    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); // GH-90000
+    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); 
 
-    assertThat(service).isNotNull(); // GH-90000
-    assertThat(service.isRunning()).isFalse(); // GH-90000
-    assertThat(service.getLastHeartbeat()).isNull(); // GH-90000
+    assertThat(service).isNotNull(); 
+    assertThat(service.isRunning()).isFalse(); 
+    assertThat(service.getLastHeartbeat()).isNull(); 
   }
 
   @Test
   @DisplayName("should create service with custom interval")
-  void shouldCreateWithCustomInterval() { // GH-90000
-    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
-    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
+  void shouldCreateWithCustomInterval() { 
+    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); 
+    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); 
 
-    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop, 5000L); // GH-90000
+    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop, 5000L); 
 
-    assertThat(service).isNotNull(); // GH-90000
-    assertThat(service.isRunning()).isFalse(); // GH-90000
+    assertThat(service).isNotNull(); 
+    assertThat(service.isRunning()).isFalse(); 
   }
 
   @Test
   @DisplayName("should reject non-positive interval")
-  void shouldRejectNonPositiveInterval() { // GH-90000
-    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
-    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
+  void shouldRejectNonPositiveInterval() { 
+    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); 
+    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); 
 
-    assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, 0L)) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, 0L)) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("heartbeatIntervalMs must be positive");
 
-    assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, -100L)) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> new AgentHeartbeatService(mockProvider, mockEventloop, -100L)) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("heartbeatIntervalMs must be positive");
   }
 
   @Test
   @DisplayName("should have correct default interval constant")
-  void shouldHaveCorrectDefaultInterval() { // GH-90000
-    assertThat(AgentHeartbeatService.DEFAULT_INTERVAL_MS).isEqualTo(30_000L); // GH-90000
+  void shouldHaveCorrectDefaultInterval() { 
+    assertThat(AgentHeartbeatService.DEFAULT_INTERVAL_MS).isEqualTo(30_000L); 
   }
 
   @Test
   @DisplayName("should return running state")
-  void shouldReturnRunningState() { // GH-90000
-    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
-    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
+  void shouldReturnRunningState() { 
+    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); 
+    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); 
 
-    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); // GH-90000
+    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); 
 
-    assertThat(service.isRunning()).isFalse(); // GH-90000
+    assertThat(service.isRunning()).isFalse(); 
   }
 
   @Test
   @DisplayName("should return null lastHeartbeat before start")
-  void shouldReturnNullLastHeartbeatBeforeStart() { // GH-90000
-    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); // GH-90000
-    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); // GH-90000
+  void shouldReturnNullLastHeartbeatBeforeStart() { 
+    AgentHealthProvider mockProvider = mock(AgentHealthProvider.class); 
+    io.activej.eventloop.Eventloop mockEventloop = mock(io.activej.eventloop.Eventloop.class); 
 
-    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); // GH-90000
+    AgentHeartbeatService service = new AgentHeartbeatService(mockProvider, mockEventloop); 
 
-    assertThat(service.getLastHeartbeat()).isNull(); // GH-90000
+    assertThat(service.getLastHeartbeat()).isNull(); 
   }
 }

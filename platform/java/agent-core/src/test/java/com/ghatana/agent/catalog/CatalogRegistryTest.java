@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  */
 
 package com.ghatana.agent.catalog;
@@ -31,24 +31,24 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should start with zero catalogs")
-        void shouldBeEmpty() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            assertThat(registry.getCatalogIds()).isEmpty(); // GH-90000
-            assertThat(registry.size()).isZero(); // GH-90000
-            assertThat(registry.allDefinitions()).isEmpty(); // GH-90000
+        void shouldBeEmpty() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            assertThat(registry.getCatalogIds()).isEmpty(); 
+            assertThat(registry.size()).isZero(); 
+            assertThat(registry.allDefinitions()).isEmpty(); 
         }
 
         @Test
         @DisplayName("findById on empty registry returns empty")
-        void findByIdOnEmptyRegistryReturnsEmpty() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
+        void findByIdOnEmptyRegistryReturnsEmpty() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
             assertThat(registry.findById("any-id")).isEmpty();
         }
 
         @Test
         @DisplayName("findByCapability on empty registry returns empty list")
-        void findByCapabilityOnEmptyRegistryReturnsEmpty() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
+        void findByCapabilityOnEmptyRegistryReturnsEmpty() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
             assertThat(registry.findByCapability("code-generation")).isEmpty();
         }
     }
@@ -63,41 +63,41 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should register a catalog and index its definitions")
-        void shouldRegisterCatalog() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(buildCatalog("platform", 100, // GH-90000
-                    entry("sentinel", "monitoring"), // GH-90000
-                    entry("data-ingestor", "data-processing"))); // GH-90000
+        void shouldRegisterCatalog() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(buildCatalog("platform", 100, 
+                    entry("sentinel", "monitoring"), 
+                    entry("data-ingestor", "data-processing"))); 
 
             assertThat(registry.getCatalogIds()).containsExactly("platform");
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+            assertThat(registry.size()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("should allow multiple catalogs")
-        void shouldAllowMultipleCatalogs() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(buildCatalog("platform", 100, entry("agent-a", "domain-a"))); // GH-90000
-            registry.register(buildCatalog("yappc", 200, entry("agent-b", "domain-b"))); // GH-90000
+        void shouldAllowMultipleCatalogs() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(buildCatalog("platform", 100, entry("agent-a", "domain-a"))); 
+            registry.register(buildCatalog("yappc", 200, entry("agent-b", "domain-b"))); 
 
-            assertThat(registry.getCatalogIds()).containsExactlyInAnyOrder("platform", "yappc"); // GH-90000
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+            assertThat(registry.getCatalogIds()).containsExactlyInAnyOrder("platform", "yappc"); 
+            assertThat(registry.size()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("null catalog should throw NullPointerException")
-        void shouldThrowOnNullCatalog() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            assertThatThrownBy(() -> registry.register(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowOnNullCatalog() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            assertThatThrownBy(() -> registry.register(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("replacing catalog with same id rebuilds index")
-        void replacingCatalogRetainsOnlyNewDefinitions() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(buildCatalog("platform", 100, entry("v1-agent", "domain"))); // GH-90000
-            registry.register(buildCatalog("platform", 100, entry("v2-agent", "domain"))); // GH-90000
+        void replacingCatalogRetainsOnlyNewDefinitions() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(buildCatalog("platform", 100, entry("v1-agent", "domain"))); 
+            registry.register(buildCatalog("platform", 100, entry("v2-agent", "domain"))); 
 
             // Index rebuilt from re-registered catalog; v1-agent gone, v2-agent present
             assertThat(registry.findById("v2-agent")).isPresent();
@@ -114,54 +114,54 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("lower numeric priority wins when two catalogs define same agent id")
-        void lowerPriorityWins() { // GH-90000
-            CatalogAgentEntry platformVersion = CatalogAgentEntry.builder() // GH-90000
+        void lowerPriorityWins() { 
+            CatalogAgentEntry platformVersion = CatalogAgentEntry.builder() 
                     .id("shared-agent")
                     .name("Platform Version")
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogAgentEntry yappcVersion = CatalogAgentEntry.builder() // GH-90000
+            CatalogAgentEntry yappcVersion = CatalogAgentEntry.builder() 
                     .id("shared-agent")
                     .name("YAPPC Override")
                     .catalogId("yappc")
-                    .build(); // GH-90000
+                    .build(); 
 
-            AgentCatalog platformCatalog = stubCatalog("platform", 100, List.of(platformVersion)); // GH-90000
-            AgentCatalog yappcCatalog = stubCatalog("yappc", 200, List.of(yappcVersion)); // GH-90000
+            AgentCatalog platformCatalog = stubCatalog("platform", 100, List.of(platformVersion)); 
+            AgentCatalog yappcCatalog = stubCatalog("yappc", 200, List.of(yappcVersion)); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(yappcCatalog); // GH-90000
-            registry.register(platformCatalog); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(yappcCatalog); 
+            registry.register(platformCatalog); 
 
-            // platform has priority 100 (lower) — wins // GH-90000
+            // platform has priority 100 (lower) — wins 
             Optional<CatalogAgentEntry> resolved = registry.findById("shared-agent");
-            assertThat(resolved).isPresent(); // GH-90000
+            assertThat(resolved).isPresent(); 
             assertThat(resolved.get().getName()).isEqualTo("Platform Version");
         }
 
         @Test
         @DisplayName("higher numeric priority catalog is shadowed by lower numeric priority")
-        void higherNumericPriorityIsShadowed() { // GH-90000
-            CatalogAgentEntry base = CatalogAgentEntry.builder() // GH-90000
+        void higherNumericPriorityIsShadowed() { 
+            CatalogAgentEntry base = CatalogAgentEntry.builder() 
                     .id("conflict-agent")
                     .name("Base")
                     .catalogId("base")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogAgentEntry override = CatalogAgentEntry.builder() // GH-90000
+            CatalogAgentEntry override = CatalogAgentEntry.builder() 
                     .id("conflict-agent")
                     .name("Override")
                     .catalogId("product")
-                    .build(); // GH-90000
+                    .build(); 
 
             // base priority=50 wins over product priority=999
-            AgentCatalog baseCatalog = stubCatalog("base", 50, List.of(base)); // GH-90000
-            AgentCatalog productCatalog = stubCatalog("product", 999, List.of(override)); // GH-90000
+            AgentCatalog baseCatalog = stubCatalog("base", 50, List.of(base)); 
+            AgentCatalog productCatalog = stubCatalog("product", 999, List.of(override)); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(productCatalog); // GH-90000
-            registry.register(baseCatalog); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(productCatalog); 
+            registry.register(baseCatalog); 
 
             assertThat(registry.findById("conflict-agent").get().getName()).isEqualTo("Base");
         }
@@ -177,23 +177,23 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should find agent by id")
-        void shouldFindById() { // GH-90000
-            CatalogRegistry registry = populatedRegistry(); // GH-90000
+        void shouldFindById() { 
+            CatalogRegistry registry = populatedRegistry(); 
             assertThat(registry.findById("sentinel")).isPresent();
             assertThat(registry.findById("sentinel").get().getName()).isEqualTo("Sentinel");
         }
 
         @Test
         @DisplayName("should return empty for unknown id")
-        void shouldReturnEmptyForUnknownId() { // GH-90000
-            CatalogRegistry registry = populatedRegistry(); // GH-90000
+        void shouldReturnEmptyForUnknownId() { 
+            CatalogRegistry registry = populatedRegistry(); 
             assertThat(registry.findById("does-not-exist")).isEmpty();
         }
 
         @Test
         @DisplayName("unknown id returns empty")
-        void shouldReturnEmptyForMissingId() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
+        void shouldReturnEmptyForMissingId() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
             assertThat(registry.findById("unknown-id-xyz")).isEmpty();
         }
     }
@@ -208,49 +208,49 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should return agents with requested capability")
-        void shouldFindByCapability() { // GH-90000
-            CatalogAgentEntry a1 = CatalogAgentEntry.builder() // GH-90000
+        void shouldFindByCapability() { 
+            CatalogAgentEntry a1 = CatalogAgentEntry.builder() 
                     .id("agent-a")
-                    .capabilities(Set.of("monitoring", "alerting")) // GH-90000
+                    .capabilities(Set.of("monitoring", "alerting")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
-            CatalogAgentEntry a2 = CatalogAgentEntry.builder() // GH-90000
+                    .build(); 
+            CatalogAgentEntry a2 = CatalogAgentEntry.builder() 
                     .id("agent-b")
                     .capabilities(Set.of("data-transformation"))
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(stubCatalog("platform", 100, List.of(a1, a2))); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(stubCatalog("platform", 100, List.of(a1, a2))); 
 
             List<CatalogAgentEntry> monitoringAgents = registry.findByCapability("monitoring");
-            assertThat(monitoringAgents).hasSize(1); // GH-90000
+            assertThat(monitoringAgents).hasSize(1); 
             assertThat(monitoringAgents.get(0).getId()).isEqualTo("agent-a");
         }
 
         @Test
         @DisplayName("should return empty list when no agent has requested capability")
-        void shouldReturnEmptyForUnknownCapability() { // GH-90000
-            CatalogRegistry registry = populatedRegistry(); // GH-90000
+        void shouldReturnEmptyForUnknownCapability() { 
+            CatalogRegistry registry = populatedRegistry(); 
             assertThat(registry.findByCapability("unknown-capability")).isEmpty();
         }
 
         @Test
         @DisplayName("should return multiple agents sharing a capability")
-        void shouldReturnMultipleAgentsWithSharedCapability() { // GH-90000
-            CatalogAgentEntry a1 = CatalogAgentEntry.builder() // GH-90000
+        void shouldReturnMultipleAgentsWithSharedCapability() { 
+            CatalogAgentEntry a1 = CatalogAgentEntry.builder() 
                     .id("agent-1")
                     .capabilities(Set.of("shared-cap"))
                     .catalogId("c1")
-                    .build(); // GH-90000
-            CatalogAgentEntry a2 = CatalogAgentEntry.builder() // GH-90000
+                    .build(); 
+            CatalogAgentEntry a2 = CatalogAgentEntry.builder() 
                     .id("agent-2")
-                    .capabilities(Set.of("shared-cap", "extra-cap")) // GH-90000
+                    .capabilities(Set.of("shared-cap", "extra-cap")) 
                     .catalogId("c1")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(stubCatalog("c1", 100, List.of(a1, a2))); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(stubCatalog("c1", 100, List.of(a1, a2))); 
 
             assertThat(registry.findByCapability("shared-cap")).hasSize(2);
         }
@@ -266,20 +266,20 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should find agents by level (case-insensitive)")
-        void shouldFindByLevel() { // GH-90000
-            CatalogAgentEntry strategic = CatalogAgentEntry.builder() // GH-90000
+        void shouldFindByLevel() { 
+            CatalogAgentEntry strategic = CatalogAgentEntry.builder() 
                     .id("strategic-agent")
-                    .metadata(java.util.Map.of("level", "strategic")) // GH-90000
+                    .metadata(java.util.Map.of("level", "strategic")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
-            CatalogAgentEntry worker = CatalogAgentEntry.builder() // GH-90000
+                    .build(); 
+            CatalogAgentEntry worker = CatalogAgentEntry.builder() 
                     .id("worker-agent")
-                    .metadata(java.util.Map.of("level", "worker")) // GH-90000
+                    .metadata(java.util.Map.of("level", "worker")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(stubCatalog("platform", 100, List.of(strategic, worker))); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(stubCatalog("platform", 100, List.of(strategic, worker))); 
 
             assertThat(registry.findByLevel("strategic")).hasSize(1);
             assertThat(registry.findByLevel("STRATEGIC")).hasSize(1); // case-insensitive
@@ -288,20 +288,20 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should find agents by domain (case-insensitive)")
-        void shouldFindByDomain() { // GH-90000
-            CatalogAgentEntry dataAgent = CatalogAgentEntry.builder() // GH-90000
+        void shouldFindByDomain() { 
+            CatalogAgentEntry dataAgent = CatalogAgentEntry.builder() 
                     .id("data-agent")
-                    .metadata(java.util.Map.of("domain", "data-processing")) // GH-90000
+                    .metadata(java.util.Map.of("domain", "data-processing")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
-            CatalogAgentEntry secAgent = CatalogAgentEntry.builder() // GH-90000
+                    .build(); 
+            CatalogAgentEntry secAgent = CatalogAgentEntry.builder() 
                     .id("security-agent")
-                    .metadata(java.util.Map.of("domain", "security")) // GH-90000
+                    .metadata(java.util.Map.of("domain", "security")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(stubCatalog("platform", 100, List.of(dataAgent, secAgent))); // GH-90000
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(stubCatalog("platform", 100, List.of(dataAgent, secAgent))); 
 
             assertThat(registry.findByDomain("data-processing")).hasSize(1);
             assertThat(registry.findByDomain("DATA-PROCESSING")).hasSize(1); // case-insensitive
@@ -320,12 +320,12 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should unregister catalog and remove its definitions from index")
-        void shouldUnregisterAndRebuildIndex() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(buildCatalog("platform", 100, entry("platform-agent", "domain"))); // GH-90000
-            registry.register(buildCatalog("yappc", 200, entry("yappc-agent", "domain"))); // GH-90000
+        void shouldUnregisterAndRebuildIndex() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(buildCatalog("platform", 100, entry("platform-agent", "domain"))); 
+            registry.register(buildCatalog("yappc", 200, entry("yappc-agent", "domain"))); 
 
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+            assertThat(registry.size()).isEqualTo(2); 
 
             registry.unregister("platform");
 
@@ -336,13 +336,13 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("unregistering unknown catalog id is a no-op")
-        void shouldIgnoreUnknownId() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(buildCatalog("platform", 100, entry("agent", "domain"))); // GH-90000
+        void shouldIgnoreUnknownId() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(buildCatalog("platform", 100, entry("agent", "domain"))); 
 
             registry.unregister("non-existent");
 
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
+            assertThat(registry.size()).isEqualTo(1); 
         }
     }
 
@@ -356,11 +356,11 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should return catalog by id")
-        void shouldReturnCatalogById() { // GH-90000
-            AgentCatalog catalog = buildCatalog("platform", 100, // GH-90000
-                    entry("agent-a", "domain")); // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-            registry.register(catalog); // GH-90000
+        void shouldReturnCatalogById() { 
+            AgentCatalog catalog = buildCatalog("platform", 100, 
+                    entry("agent-a", "domain")); 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
+            registry.register(catalog); 
 
             assertThat(registry.getCatalog("platform")).isPresent();
             assertThat(registry.getCatalog("platform").get().getCatalogId()).isEqualTo("platform");
@@ -368,8 +368,8 @@ class CatalogRegistryTest {
 
         @Test
         @DisplayName("should return empty for unknown catalog id")
-        void shouldReturnEmptyForUnknownCatalog() { // GH-90000
-            CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
+        void shouldReturnEmptyForUnknownCatalog() { 
+            CatalogRegistry registry = CatalogRegistry.empty(); 
             assertThat(registry.getCatalog("does-not-exist")).isEmpty();
         }
     }
@@ -378,85 +378,85 @@ class CatalogRegistryTest {
     // Helpers
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private CatalogRegistry populatedRegistry() { // GH-90000
-        CatalogRegistry registry = CatalogRegistry.empty(); // GH-90000
-        registry.register(buildCatalog("platform", 100, // GH-90000
-                CatalogAgentEntry.builder() // GH-90000
+    private CatalogRegistry populatedRegistry() { 
+        CatalogRegistry registry = CatalogRegistry.empty(); 
+        registry.register(buildCatalog("platform", 100, 
+                CatalogAgentEntry.builder() 
                         .id("sentinel")
                         .name("Sentinel")
-                        .capabilities(Set.of("monitoring", "alerting")) // GH-90000
-                        .metadata(java.util.Map.of("domain", "monitoring")) // GH-90000
+                        .capabilities(Set.of("monitoring", "alerting")) 
+                        .metadata(java.util.Map.of("domain", "monitoring")) 
                         .catalogId("platform")
-                        .build(), // GH-90000
-                CatalogAgentEntry.builder() // GH-90000
+                        .build(), 
+                CatalogAgentEntry.builder() 
                         .id("data-transformer")
                         .name("Data Transformer")
                         .capabilities(Set.of("data-transformation"))
-                        .metadata(java.util.Map.of("domain", "data-processing")) // GH-90000
+                        .metadata(java.util.Map.of("domain", "data-processing")) 
                         .catalogId("platform")
-                        .build())); // GH-90000
+                        .build())); 
         return registry;
     }
 
-    private AgentCatalog buildCatalog(String catalogId, int priority, CatalogAgentEntry... entries) { // GH-90000
-        return stubCatalog(catalogId, priority, List.of(entries)); // GH-90000
+    private AgentCatalog buildCatalog(String catalogId, int priority, CatalogAgentEntry... entries) { 
+        return stubCatalog(catalogId, priority, List.of(entries)); 
     }
 
-    private AgentCatalog stubCatalog(String catalogId, int prio, List<CatalogAgentEntry> entries) { // GH-90000
-        return new AgentCatalog() { // GH-90000
+    private AgentCatalog stubCatalog(String catalogId, int prio, List<CatalogAgentEntry> entries) { 
+        return new AgentCatalog() { 
             @Override
-            public String getCatalogId() { return catalogId; } // GH-90000
+            public String getCatalogId() { return catalogId; } 
 
             @Override
-            public String getDisplayName() { return catalogId + " catalog"; } // GH-90000
+            public String getDisplayName() { return catalogId + " catalog"; } 
 
             @Override
-            public List<CatalogAgentEntry> getDefinitions() { return entries; } // GH-90000
+            public List<CatalogAgentEntry> getDefinitions() { return entries; } 
 
             @Override
-            public Optional<CatalogAgentEntry> findById(String agentId) { // GH-90000
-                return entries.stream().filter(e -> e.getId().equals(agentId)).findFirst(); // GH-90000
+            public Optional<CatalogAgentEntry> findById(String agentId) { 
+                return entries.stream().filter(e -> e.getId().equals(agentId)).findFirst(); 
             }
 
             @Override
-            public List<CatalogAgentEntry> findByCapability(String capability) { // GH-90000
-                return entries.stream() // GH-90000
-                        .filter(e -> e.getCapabilities().contains(capability)) // GH-90000
-                        .toList(); // GH-90000
+            public List<CatalogAgentEntry> findByCapability(String capability) { 
+                return entries.stream() 
+                        .filter(e -> e.getCapabilities().contains(capability)) 
+                        .toList(); 
             }
 
             @Override
-            public List<CatalogAgentEntry> findByLevel(String level) { // GH-90000
-                return entries.stream() // GH-90000
-                        .filter(e -> level.equalsIgnoreCase(e.getLevel())) // GH-90000
-                        .toList(); // GH-90000
+            public List<CatalogAgentEntry> findByLevel(String level) { 
+                return entries.stream() 
+                        .filter(e -> level.equalsIgnoreCase(e.getLevel())) 
+                        .toList(); 
             }
 
             @Override
-            public List<CatalogAgentEntry> findByDomain(String domain) { // GH-90000
-                return entries.stream() // GH-90000
-                        .filter(e -> domain.equalsIgnoreCase(e.getDomain())) // GH-90000
-                        .toList(); // GH-90000
+            public List<CatalogAgentEntry> findByDomain(String domain) { 
+                return entries.stream() 
+                        .filter(e -> domain.equalsIgnoreCase(e.getDomain())) 
+                        .toList(); 
             }
 
             @Override
-            public Set<String> getAllCapabilities() { // GH-90000
-                java.util.HashSet<String> caps = new java.util.HashSet<>(); // GH-90000
-                entries.forEach(e -> caps.addAll(e.getCapabilities())); // GH-90000
+            public Set<String> getAllCapabilities() { 
+                java.util.HashSet<String> caps = new java.util.HashSet<>(); 
+                entries.forEach(e -> caps.addAll(e.getCapabilities())); 
                 return caps;
             }
 
             @Override
-            public int priority() { return prio; } // GH-90000
+            public int priority() { return prio; } 
         };
     }
 
-    private CatalogAgentEntry entry(String id, String domain) { // GH-90000
-        return CatalogAgentEntry.builder() // GH-90000
-                .id(id) // GH-90000
-                .name(id) // GH-90000
-                .metadata(java.util.Map.of("domain", domain)) // GH-90000
+    private CatalogAgentEntry entry(String id, String domain) { 
+        return CatalogAgentEntry.builder() 
+                .id(id) 
+                .name(id) 
+                .metadata(java.util.Map.of("domain", domain)) 
                 .catalogId("platform")
-                .build(); // GH-90000
+                .build(); 
     }
 }

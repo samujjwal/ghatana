@@ -55,14 +55,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("Broker-backed connector strategies")
 class BrokerConnectorIntegrationTest extends EventloopTestBase {
 
     @Container
     static final KafkaContainer KAFKA = new KafkaContainer(
         DockerImageName.parse("apache/kafka-native:3.8.0"))
-        .withStartupTimeout(Duration.ofMinutes(2)); // GH-90000
+        .withStartupTimeout(Duration.ofMinutes(2)); 
 
     @Container
     static final GenericContainer<?> RABBITMQ = new GenericContainer<>(
@@ -74,71 +74,71 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
     @Container
     static final GenericContainer<?> LOCALSTACK = new GenericContainer<>(
         DockerImageName.parse("localstack/localstack:3.8"))
-        .withEnv("SERVICES", "sqs") // GH-90000
-        .withExposedPorts(4566) // GH-90000
+        .withEnv("SERVICES", "sqs") 
+        .withExposedPorts(4566) 
         .waitingFor(Wait.forHttp("/_localstack/health").forPort(4566).forStatusCode(200))
-        .withStartupTimeout(Duration.ofMinutes(2)); // GH-90000
+        .withStartupTimeout(Duration.ofMinutes(2)); 
 
     @Test
     @DisplayName("KafkaProducerStrategy sends records to Kafka")
-    void shouldSendKafkaRecords() { // GH-90000
-        String topic = "aep-producer-" + UUID.randomUUID(); // GH-90000
-        KafkaProducerStrategy strategy = new KafkaProducerStrategy(KafkaProducerConfig.builder() // GH-90000
-            .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
-            .topic(topic) // GH-90000
-            .retryConfig(RetryConfig.NO_RETRY) // GH-90000
-            .build()); // GH-90000
+    void shouldSendKafkaRecords() { 
+        String topic = "aep-producer-" + UUID.randomUUID(); 
+        KafkaProducerStrategy strategy = new KafkaProducerStrategy(KafkaProducerConfig.builder() 
+            .bootstrapServers(KAFKA.getBootstrapServers()) 
+            .topic(topic) 
+            .retryConfig(RetryConfig.NO_RETRY) 
+            .build()); 
 
-        runPromise(strategy::start); // GH-90000
+        runPromise(strategy::start); 
 
-        boolean sent = strategy.send(new QueueMessage("msg-1", "producer-payload", Map.of("x-test", "1"))); // GH-90000
+        boolean sent = strategy.send(new QueueMessage("msg-1", "producer-payload", Map.of("x-test", "1"))); 
 
-        assertThat(sent).isTrue(); // GH-90000
+        assertThat(sent).isTrue(); 
 
-        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(kafkaConsumerProps("verify-" + topic))) { // GH-90000
-            consumer.subscribe(List.of(topic)); // GH-90000
-            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10)); // GH-90000
-            assertThat(records.count()).isGreaterThan(0); // GH-90000
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(kafkaConsumerProps("verify-" + topic))) { 
+            consumer.subscribe(List.of(topic)); 
+            ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(10)); 
+            assertThat(records.count()).isGreaterThan(0); 
             assertThat(records.iterator().next().value()).isEqualTo("producer-payload");
         }
 
-        runPromise(strategy::stop); // GH-90000
+        runPromise(strategy::stop); 
     }
 
     @Test
     @DisplayName("KafkaConsumerStrategy consumes records from Kafka")
-    void shouldConsumeKafkaRecords() throws Exception { // GH-90000
-        String topic = "aep-consumer-" + UUID.randomUUID(); // GH-90000
-        CountDownLatch received = new CountDownLatch(1); // GH-90000
-        AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
-        KafkaConsumerStrategy strategy = new KafkaConsumerStrategy(KafkaConsumerConfig.builder() // GH-90000
-            .bootstrapServers(KAFKA.getBootstrapServers()) // GH-90000
-            .topic(topic) // GH-90000
-            .groupId("group-" + UUID.randomUUID()) // GH-90000
-            .pollTimeoutMs(200) // GH-90000
-            .retryConfig(RetryConfig.NO_RETRY) // GH-90000
-            .build(), body -> { // GH-90000
-                bodyRef.set(body); // GH-90000
-                received.countDown(); // GH-90000
+    void shouldConsumeKafkaRecords() throws Exception { 
+        String topic = "aep-consumer-" + UUID.randomUUID(); 
+        CountDownLatch received = new CountDownLatch(1); 
+        AtomicReference<String> bodyRef = new AtomicReference<>(); 
+        KafkaConsumerStrategy strategy = new KafkaConsumerStrategy(KafkaConsumerConfig.builder() 
+            .bootstrapServers(KAFKA.getBootstrapServers()) 
+            .topic(topic) 
+            .groupId("group-" + UUID.randomUUID()) 
+            .pollTimeoutMs(200) 
+            .retryConfig(RetryConfig.NO_RETRY) 
+            .build(), body -> { 
+                bodyRef.set(body); 
+                received.countDown(); 
             });
 
-        runPromise(strategy::start); // GH-90000
-        try (KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProducerProps())) { // GH-90000
-            producer.send(new ProducerRecord<>(topic, "key-1", "consumer-payload")).get(10, TimeUnit.SECONDS); // GH-90000
-            producer.flush(); // GH-90000
-        } catch (Exception e) { // GH-90000
-            throw new RuntimeException(e); // GH-90000
+        runPromise(strategy::start); 
+        try (KafkaProducer<String, String> producer = new KafkaProducer<>(kafkaProducerProps())) { 
+            producer.send(new ProducerRecord<>(topic, "key-1", "consumer-payload")).get(10, TimeUnit.SECONDS); 
+            producer.flush(); 
+        } catch (Exception e) { 
+            throw new RuntimeException(e); 
         }
 
-        assertThat(received.await(10, TimeUnit.SECONDS)).isTrue(); // GH-90000
+        assertThat(received.await(10, TimeUnit.SECONDS)).isTrue(); 
         assertThat(bodyRef.get()).isEqualTo("consumer-payload");
 
-        runPromise(strategy::stop); // GH-90000
+        runPromise(strategy::stop); 
     }
 
     @Test
     @DisplayName("D-7: RabbitMQConsumerStrategy consumes queued messages")
-    void shouldConsumeRabbitMqMessages() throws Exception { // GH-90000
+    void shouldConsumeRabbitMqMessages() throws Exception { 
         String queueName = "aep-rabbit-" + UUID.randomUUID();
         CountDownLatch received = new CountDownLatch(1);
         AtomicReference<String> bodyRef = new AtomicReference<>();
@@ -175,81 +175,81 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("SqsProducerStrategy sends messages to emulated SQS")
-    void shouldSendSqsMessages() { // GH-90000
-        String queueUrl = createQueue("aep-producer-queue-" + UUID.randomUUID()); // GH-90000
-        SqsProducerStrategy strategy = new SqsProducerStrategy(sqsConfig(queueUrl)); // GH-90000
+    void shouldSendSqsMessages() { 
+        String queueUrl = createQueue("aep-producer-queue-" + UUID.randomUUID()); 
+        SqsProducerStrategy strategy = new SqsProducerStrategy(sqsConfig(queueUrl)); 
 
-        runPromise(strategy::start); // GH-90000
+        runPromise(strategy::start); 
 
-        boolean sent = strategy.send(new QueueMessage("id-1", "sqs-producer-payload", Map.of("header", "value"))); // GH-90000
+        boolean sent = strategy.send(new QueueMessage("id-1", "sqs-producer-payload", Map.of("header", "value"))); 
 
-        assertThat(sent).isTrue(); // GH-90000
-        assertThat(sqsClient().receiveMessage(ReceiveMessageRequest.builder() // GH-90000
-                .queueUrl(queueUrl) // GH-90000
-                .maxNumberOfMessages(1) // GH-90000
-                .waitTimeSeconds(5) // GH-90000
+        assertThat(sent).isTrue(); 
+        assertThat(sqsClient().receiveMessage(ReceiveMessageRequest.builder() 
+                .queueUrl(queueUrl) 
+                .maxNumberOfMessages(1) 
+                .waitTimeSeconds(5) 
                 .messageAttributeNames("All")
-                .build()) // GH-90000
-            .messages()) // GH-90000
-            .singleElement() // GH-90000
+                .build()) 
+            .messages()) 
+            .singleElement() 
             .satisfies(message -> assertThat(message.body()).isEqualTo("sqs-producer-payload"));
 
-        runPromise(strategy::stop); // GH-90000
+        runPromise(strategy::stop); 
     }
 
     @Test
     @DisplayName("SqsConsumerStrategy consumes messages from emulated SQS")
-    void shouldConsumeSqsMessages() throws Exception { // GH-90000
-        String queueUrl = createQueue("aep-consumer-queue-" + UUID.randomUUID()); // GH-90000
-        CountDownLatch received = new CountDownLatch(1); // GH-90000
-        AtomicReference<String> bodyRef = new AtomicReference<>(); // GH-90000
-        SqsConsumerStrategy strategy = new SqsConsumerStrategy(sqsConfig(queueUrl), body -> { // GH-90000
-            bodyRef.set(body); // GH-90000
-            received.countDown(); // GH-90000
+    void shouldConsumeSqsMessages() throws Exception { 
+        String queueUrl = createQueue("aep-consumer-queue-" + UUID.randomUUID()); 
+        CountDownLatch received = new CountDownLatch(1); 
+        AtomicReference<String> bodyRef = new AtomicReference<>(); 
+        SqsConsumerStrategy strategy = new SqsConsumerStrategy(sqsConfig(queueUrl), body -> { 
+            bodyRef.set(body); 
+            received.countDown(); 
         });
 
-        runPromise(strategy::start); // GH-90000
-        sqsClient().sendMessage(SendMessageRequest.builder() // GH-90000
-            .queueUrl(queueUrl) // GH-90000
+        runPromise(strategy::start); 
+        sqsClient().sendMessage(SendMessageRequest.builder() 
+            .queueUrl(queueUrl) 
             .messageBody("sqs-consumer-payload")
-            .build()); // GH-90000
+            .build()); 
 
-        assertThat(received.await(10, TimeUnit.SECONDS)).isTrue(); // GH-90000
+        assertThat(received.await(10, TimeUnit.SECONDS)).isTrue(); 
         assertThat(bodyRef.get()).isEqualTo("sqs-consumer-payload");
 
-        runPromise(strategy::stop); // GH-90000
+        runPromise(strategy::stop); 
     }
 
-    private static Properties kafkaProducerProps() { // GH-90000
-        Properties props = new Properties(); // GH-90000
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()); // GH-90000
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); // GH-90000
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); // GH-90000
-        props.put(ProducerConfig.ACKS_CONFIG, "all"); // GH-90000
+    private static Properties kafkaProducerProps() { 
+        Properties props = new Properties(); 
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()); 
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); 
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); 
+        props.put(ProducerConfig.ACKS_CONFIG, "all"); 
         return props;
     }
 
-    private static Properties kafkaConsumerProps(String groupId) { // GH-90000
-        Properties props = new Properties(); // GH-90000
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()); // GH-90000
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId); // GH-90000
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); // GH-90000
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); // GH-90000
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); // GH-90000
+    private static Properties kafkaConsumerProps(String groupId) { 
+        Properties props = new Properties(); 
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers()); 
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId); 
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); 
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName()); 
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"); 
         return props;
     }
 
-    private static SqsConfig sqsConfig(String queueUrl) { // GH-90000
-        return SqsConfig.builder() // GH-90000
-            .queueUrl(queueUrl) // GH-90000
+    private static SqsConfig sqsConfig(String queueUrl) { 
+        return SqsConfig.builder() 
+            .queueUrl(queueUrl) 
             .region("us-east-1")
             .accessKey("test")
             .secretKey("test")
-            .endpointOverride(localstackEndpoint()) // GH-90000
-            .waitTimeSeconds(1) // GH-90000
-            .maxMessages(1) // GH-90000
-            .retryConfig(RetryConfig.NO_RETRY) // GH-90000
-            .build(); // GH-90000
+            .endpointOverride(localstackEndpoint()) 
+            .waitTimeSeconds(1) 
+            .maxMessages(1) 
+            .retryConfig(RetryConfig.NO_RETRY) 
+            .build(); 
     }
 
     private static RabbitMQConfig rabbitConfig(String queueName) {
@@ -263,19 +263,19 @@ class BrokerConnectorIntegrationTest extends EventloopTestBase {
             .build();
     }
 
-    private static String createQueue(String queueName) { // GH-90000
-        return sqsClient().createQueue(CreateQueueRequest.builder().queueName(queueName).build()).queueUrl(); // GH-90000
+    private static String createQueue(String queueName) { 
+        return sqsClient().createQueue(CreateQueueRequest.builder().queueName(queueName).build()).queueUrl(); 
     }
 
-    private static SqsClient sqsClient() { // GH-90000
-        return SqsClient.builder() // GH-90000
-            .endpointOverride(URI.create(localstackEndpoint())) // GH-90000
+    private static SqsClient sqsClient() { 
+        return SqsClient.builder() 
+            .endpointOverride(URI.create(localstackEndpoint())) 
             .region(Region.of("us-east-1"))
-            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"))) // GH-90000
-            .build(); // GH-90000
+            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test"))) 
+            .build(); 
     }
 
-    private static String localstackEndpoint() { // GH-90000
-        return "http://" + LOCALSTACK.getHost() + ":" + LOCALSTACK.getMappedPort(4566); // GH-90000
+    private static String localstackEndpoint() { 
+        return "http://" + LOCALSTACK.getHost() + ":" + LOCALSTACK.getMappedPort(4566); 
     }
 }

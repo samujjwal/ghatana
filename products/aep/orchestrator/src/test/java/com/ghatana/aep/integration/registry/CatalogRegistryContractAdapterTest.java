@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.integration.registry;
@@ -28,100 +28,100 @@ class CatalogRegistryContractAdapterTest extends EventloopTestBase {
     private CatalogRegistryContractAdapter adapter;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        catalogRegistry = CatalogRegistry.empty(); // GH-90000
-        adapter = new CatalogRegistryContractAdapter(catalogRegistry); // GH-90000
+    void setUp() { 
+        catalogRegistry = CatalogRegistry.empty(); 
+        adapter = new CatalogRegistryContractAdapter(catalogRegistry); 
     }
 
     @Test
     @DisplayName("listAgents returns empty list when catalog is empty")
-    void listAgentsEmptyCatalog() { // GH-90000
-        List<CatalogAgentEntry> result = runPromise(adapter::listAgents); // GH-90000
-        assertThat(result).isEmpty(); // GH-90000
+    void listAgentsEmptyCatalog() { 
+        List<CatalogAgentEntry> result = runPromise(adapter::listAgents); 
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("listAgents returns all definitions from registered catalog")
-    void listAgentsWithCatalog() { // GH-90000
-        catalogRegistry.register(buildCatalog("cat1", "agent-alpha", "agent-beta")); // GH-90000
+    void listAgentsWithCatalog() { 
+        catalogRegistry.register(buildCatalog("cat1", "agent-alpha", "agent-beta")); 
 
-        List<CatalogAgentEntry> result = runPromise(adapter::listAgents); // GH-90000
+        List<CatalogAgentEntry> result = runPromise(adapter::listAgents); 
 
-        assertThat(result).hasSize(2); // GH-90000
-        assertThat(result).extracting(CatalogAgentEntry::getId).containsExactlyInAnyOrder("agent-alpha", "agent-beta"); // GH-90000
+        assertThat(result).hasSize(2); 
+        assertThat(result).extracting(CatalogAgentEntry::getId).containsExactlyInAnyOrder("agent-alpha", "agent-beta"); 
     }
 
     @Test
     @DisplayName("getAgent returns present optional when agent exists")
-    void getAgentFound() { // GH-90000
-        catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); // GH-90000
+    void getAgentFound() { 
+        catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); 
 
         Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("agent-alpha"));
 
-        assertThat(result).isPresent(); // GH-90000
+        assertThat(result).isPresent(); 
         assertThat(result.get().getId()).isEqualTo("agent-alpha");
     }
 
     @Test
     @DisplayName("getAgent returns empty optional when agent is not found")
-    void getAgentNotFound() { // GH-90000
+    void getAgentNotFound() { 
         Optional<CatalogAgentEntry> result = runPromise(() -> adapter.getAgent("no-such-agent"));
 
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("findByCapability returns matching agents")
-    void findByCapabilityMatches() { // GH-90000
-        catalogRegistry.register(buildCatalogWithCapability("cat1", "agent-cap", "text-generation")); // GH-90000
-        catalogRegistry.register(buildCatalog("cat1b", "agent-other")); // no capability // GH-90000
+    void findByCapabilityMatches() { 
+        catalogRegistry.register(buildCatalogWithCapability("cat1", "agent-cap", "text-generation")); 
+        catalogRegistry.register(buildCatalog("cat1b", "agent-other")); // no capability 
 
         List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("text-generation"));
 
-        assertThat(result).hasSize(1); // GH-90000
+        assertThat(result).hasSize(1); 
         assertThat(result.get(0).getId()).isEqualTo("agent-cap");
     }
 
     @Test
     @DisplayName("findByCapability returns empty list when no agents match")
-    void findByCapabilityNoMatch() { // GH-90000
-        catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); // GH-90000
+    void findByCapabilityNoMatch() { 
+        catalogRegistry.register(buildCatalog("cat1", "agent-alpha")); 
 
         List<CatalogAgentEntry> result = runPromise(() -> adapter.findByCapability("nonexistent-capability"));
 
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("rejects null catalogRegistry in constructor")
-    void rejectsNullRegistry() { // GH-90000
-        assertThatThrownBy(() -> new CatalogRegistryContractAdapter(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+    void rejectsNullRegistry() { 
+        assertThatThrownBy(() -> new CatalogRegistryContractAdapter(null)) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("catalogRegistry");
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
-    private AgentCatalog buildCatalog(String catalogId, String... agentIds) { // GH-90000
-        List<CatalogAgentEntry> entries = java.util.Arrays.stream(agentIds) // GH-90000
-                .map(id -> CatalogAgentEntry.builder() // GH-90000
-                        .id(id) // GH-90000
-                        .name(id) // GH-90000
-                        .catalogId(catalogId) // GH-90000
-                        .capabilities(java.util.Set.of()) // GH-90000
-                        .build()) // GH-90000
-                .toList(); // GH-90000
-        return new StubCatalog(catalogId, entries); // GH-90000
+    private AgentCatalog buildCatalog(String catalogId, String... agentIds) { 
+        List<CatalogAgentEntry> entries = java.util.Arrays.stream(agentIds) 
+                .map(id -> CatalogAgentEntry.builder() 
+                        .id(id) 
+                        .name(id) 
+                        .catalogId(catalogId) 
+                        .capabilities(java.util.Set.of()) 
+                        .build()) 
+                .toList(); 
+        return new StubCatalog(catalogId, entries); 
     }
 
-    private AgentCatalog buildCatalogWithCapability(String catalogId, String agentId, String capability) { // GH-90000
-        CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
-                .id(agentId) // GH-90000
-                .name(agentId) // GH-90000
-                .catalogId(catalogId) // GH-90000
-                .capabilities(java.util.Set.of(capability)) // GH-90000
-                .build(); // GH-90000
-        return new StubCatalog(catalogId, List.of(entry)); // GH-90000
+    private AgentCatalog buildCatalogWithCapability(String catalogId, String agentId, String capability) { 
+        CatalogAgentEntry entry = CatalogAgentEntry.builder() 
+                .id(agentId) 
+                .name(agentId) 
+                .catalogId(catalogId) 
+                .capabilities(java.util.Set.of(capability)) 
+                .build(); 
+        return new StubCatalog(catalogId, List.of(entry)); 
     }
 
     /** Minimal AgentCatalog implementation for test purposes only. */
@@ -129,58 +129,58 @@ class CatalogRegistryContractAdapterTest extends EventloopTestBase {
         private final String id;
         private final List<CatalogAgentEntry> defs;
 
-        StubCatalog(String id, List<CatalogAgentEntry> defs) { // GH-90000
+        StubCatalog(String id, List<CatalogAgentEntry> defs) { 
             this.id = id;
             this.defs = defs;
         }
 
         @Override
-        public String getCatalogId() { // GH-90000
+        public String getCatalogId() { 
             return id;
         }
 
         @Override
-        public String getDisplayName() { // GH-90000
+        public String getDisplayName() { 
             return id;
         }
 
         @Override
-        public int priority() { // GH-90000
+        public int priority() { 
             return 0;
         }
 
         @Override
-        public List<CatalogAgentEntry> getDefinitions() { // GH-90000
+        public List<CatalogAgentEntry> getDefinitions() { 
             return defs;
         }
 
         @Override
-        public Optional<CatalogAgentEntry> findById(String agentId) { // GH-90000
-            return defs.stream().filter(e -> e.getId().equals(agentId)).findFirst(); // GH-90000
+        public Optional<CatalogAgentEntry> findById(String agentId) { 
+            return defs.stream().filter(e -> e.getId().equals(agentId)).findFirst(); 
         }
 
         @Override
-        public List<CatalogAgentEntry> findByCapability(String capability) { // GH-90000
-            return defs.stream() // GH-90000
-                    .filter(e -> e.getCapabilities().contains(capability)) // GH-90000
-                    .toList(); // GH-90000
+        public List<CatalogAgentEntry> findByCapability(String capability) { 
+            return defs.stream() 
+                    .filter(e -> e.getCapabilities().contains(capability)) 
+                    .toList(); 
         }
 
         @Override
-        public List<CatalogAgentEntry> findByLevel(String level) { // GH-90000
-            return List.of(); // GH-90000
+        public List<CatalogAgentEntry> findByLevel(String level) { 
+            return List.of(); 
         }
 
         @Override
-        public List<CatalogAgentEntry> findByDomain(String domain) { // GH-90000
-            return List.of(); // GH-90000
+        public List<CatalogAgentEntry> findByDomain(String domain) { 
+            return List.of(); 
         }
 
         @Override
-        public java.util.Set<String> getAllCapabilities() { // GH-90000
-            return defs.stream() // GH-90000
-                    .flatMap(e -> e.getCapabilities().stream()) // GH-90000
-                    .collect(java.util.stream.Collectors.toSet()); // GH-90000
+        public java.util.Set<String> getAllCapabilities() { 
+            return defs.stream() 
+                    .flatMap(e -> e.getCapabilities().stream()) 
+                    .collect(java.util.stream.Collectors.toSet()); 
         }
     }
 }

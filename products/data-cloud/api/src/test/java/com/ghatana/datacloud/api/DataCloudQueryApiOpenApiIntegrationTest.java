@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.*;
  *
  * Validates:
  * - OpenAPI spec conformance for query execution
- * - Asynchronous query execution (202 Accepted) // GH-90000
+ * - Asynchronous query execution (202 Accepted) 
  * - Query result pagination
- * - Authentication (Bearer token + API Key) // GH-90000
- * - Error responses (syntax, timeout, unauthorized) // GH-90000
+ * - Authentication (Bearer token + API Key) 
+ * - Error responses (syntax, timeout, unauthorized) 
  * - Dataset metadata retrieval
  * - Aggregation operations
  * - Result streaming support
@@ -39,9 +39,9 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
     private MockQueryApiClient apiClient;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        apiClient = new MockQueryApiClient(objectMapper); // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
+        apiClient = new MockQueryApiClient(objectMapper); 
     }
 
     @Nested
@@ -50,57 +50,57 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should list datasets with pagination")
-        void shouldListDatasets() { // GH-90000
-            ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
+        void shouldListDatasets() { 
+            ApiResponse<DatasetListResponse> response = apiClient.get( 
                 "/datasets?limit=20&offset=0",
                 DatasetListResponse.class,
                 "Bearer token123"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.items).isNotEmpty(); // GH-90000
-            assertThat(response.body.pagination.limit).isEqualTo(20); // GH-90000
-            assertThat(response.body.pagination.total).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            assertThat(response.body.items).isNotEmpty(); 
+            assertThat(response.body.pagination.limit).isEqualTo(20); 
+            assertThat(response.body.pagination.total).isGreaterThanOrEqualTo(0); 
         }
 
         @Test
         @DisplayName("should enforce maximum limit of 100")
-        void shouldEnforceMaximumLimit() { // GH-90000
-            ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
+        void shouldEnforceMaximumLimit() { 
+            ApiResponse<ErrorPayload> response = apiClient.get( 
                 "/datasets?limit=101",
                 ErrorPayload.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(400); // GH-90000
+            assertThat(response.statusCode).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("should search datasets by name")
-        void shouldSearchDatasets() { // GH-90000
-            ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
+        void shouldSearchDatasets() { 
+            ApiResponse<DatasetListResponse> response = apiClient.get( 
                 "/datasets?search=sales",
                 DatasetListResponse.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
             // All returned items should contain "sales" in name
-            response.body.items.forEach(ds -> // GH-90000
+            response.body.items.forEach(ds -> 
                 assertThat(ds.name.toLowerCase()).contains("sales")
             );
         }
 
         @Test
         @DisplayName("should require authentication")
-        void shouldRequireAuth() { // GH-90000
-            ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
+        void shouldRequireAuth() { 
+            ApiResponse<ErrorPayload> response = apiClient.get( 
                 "/datasets",
                 ErrorPayload.class,
                 null  // No auth
             );
 
-            assertThat(response.statusCode).isEqualTo(401); // GH-90000
+            assertThat(response.statusCode).isEqualTo(401); 
             assertThat(response.body.code).isEqualTo("UNAUTHORIZED");
         }
     }
@@ -111,32 +111,32 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should retrieve dataset metadata")
-        void shouldGetDatasetMetadata() { // GH-90000
-            ApiResponse<DatasetMetadata> response = apiClient.get( // GH-90000
+        void shouldGetDatasetMetadata() { 
+            ApiResponse<DatasetMetadata> response = apiClient.get( 
                 "/datasets/dataset-123",
                 DatasetMetadata.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
             assertThat(response.body.datasetId).isEqualTo("dataset-123");
-            assertThat(response.body.recordCount).isGreaterThanOrEqualTo(0); // GH-90000
-            assertThat(response.body.columns).isNotEmpty(); // GH-90000
+            assertThat(response.body.recordCount).isGreaterThanOrEqualTo(0); 
+            assertThat(response.body.columns).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should include column schemas with types")
-        void shouldIncludeColumnSchemas() { // GH-90000
-            ApiResponse<DatasetMetadata> response = apiClient.get( // GH-90000
+        void shouldIncludeColumnSchemas() { 
+            ApiResponse<DatasetMetadata> response = apiClient.get( 
                 "/datasets/dataset-123",
                 DatasetMetadata.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            response.body.columns.forEach(col -> { // GH-90000
-                assertThat(col.name).isNotBlank(); // GH-90000
-                assertThat(col.type).isIn( // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            response.body.columns.forEach(col -> { 
+                assertThat(col.name).isNotBlank(); 
+                assertThat(col.type).isIn( 
                     "STRING", "INTEGER", "BIGINT", "DOUBLE", "DECIMAL",
                     "BOOLEAN", "DATE", "TIMESTAMP", "ARRAY", "MAP"
                 );
@@ -145,14 +145,14 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should return 404 for non-existent dataset")
-        void shouldReturn404ForMissingDataset() { // GH-90000
-            ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
+        void shouldReturn404ForMissingDataset() { 
+            ApiResponse<ErrorPayload> response = apiClient.get( 
                 "/datasets/nonexistent",
                 ErrorPayload.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(404); // GH-90000
+            assertThat(response.statusCode).isEqualTo(404); 
         }
     }
 
@@ -162,99 +162,99 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should accept query and return 202 Accepted")
-        void shouldAcceptQuery() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldAcceptQuery() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "dataset-123",
                 "queryText", "SELECT * FROM users WHERE status = 'active' LIMIT 100"
             );
 
-            ApiResponse<QueryOperation> response = apiClient.post( // GH-90000
+            ApiResponse<QueryOperation> response = apiClient.post( 
                 "/queries",
                 request,
                 QueryOperation.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(202); // GH-90000
-            assertThat(response.body.operationId).isNotBlank(); // GH-90000
+            assertThat(response.statusCode).isEqualTo(202); 
+            assertThat(response.body.operationId).isNotBlank(); 
             assertThat(response.body.status).isEqualTo("QUEUED");
             assertThat(response.headers.get("Location")).containsPattern("/queries/.*");
         }
 
         @Test
         @DisplayName("should validate query syntax")
-        void shouldValidateQuerySyntax() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldValidateQuerySyntax() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "dataset-123",
                 "queryText", "INVALID SQL SYNTAX !!!"
             );
 
-            ApiResponse<QueryError> response = apiClient.post( // GH-90000
+            ApiResponse<QueryError> response = apiClient.post( 
                 "/queries",
                 request,
                 QueryError.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(400); // GH-90000
+            assertThat(response.statusCode).isEqualTo(400); 
             assertThat(response.body.code).isEqualTo("SYNTAX_ERROR");
         }
 
         @Test
         @DisplayName("should reject INSERT/UPDATE queries (SELECT only)")
-        void shouldRejectNonSelectQueries() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldRejectNonSelectQueries() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "dataset-123",
-                "queryText", "INSERT INTO users VALUES ('John', 'Doe')" // GH-90000
+                "queryText", "INSERT INTO users VALUES ('John', 'Doe')" 
             );
 
-            ApiResponse<QueryError> response = apiClient.post( // GH-90000
+            ApiResponse<QueryError> response = apiClient.post( 
                 "/queries",
                 request,
                 QueryError.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(400); // GH-90000
-            assertThat(response.body.code).isIn("SYNTAX_ERROR", "INVALID_OPERATION"); // GH-90000
+            assertThat(response.statusCode).isEqualTo(400); 
+            assertThat(response.body.code).isIn("SYNTAX_ERROR", "INVALID_OPERATION"); 
         }
 
         @Test
         @DisplayName("should support custom timeout (max 3600s)")
-        void shouldSupportCustomTimeout() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldSupportCustomTimeout() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "dataset-123",
                 "queryText", "SELECT * FROM large_table",
                 "queryTimeoutSeconds", 600
             );
 
-            ApiResponse<QueryOperation> response = apiClient.post( // GH-90000
+            ApiResponse<QueryOperation> response = apiClient.post( 
                 "/queries",
                 request,
                 QueryOperation.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(202); // GH-90000
+            assertThat(response.statusCode).isEqualTo(202); 
         }
 
         @Test
         @DisplayName("should reject timeout > 3600 seconds")
-        void shouldRejectExcessiveTimeout() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldRejectExcessiveTimeout() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "dataset-123",
                 "queryText", "SELECT * FROM table",
                 "queryTimeoutSeconds", 3601
             );
 
-            ApiResponse<QueryError> response = apiClient.post( // GH-90000
+            ApiResponse<QueryError> response = apiClient.post( 
                 "/queries",
                 request,
                 QueryError.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(400); // GH-90000
+            assertThat(response.statusCode).isEqualTo(400); 
         }
     }
 
@@ -264,30 +264,30 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should retrieve query operation status")
-        void shouldGetQueryStatus() { // GH-90000
-            String operationId = UUID.randomUUID().toString(); // GH-90000
+        void shouldGetQueryStatus() { 
+            String operationId = UUID.randomUUID().toString(); 
 
-            ApiResponse<QueryOperation> response = apiClient.get( // GH-90000
+            ApiResponse<QueryOperation> response = apiClient.get( 
                 "/queries/" + operationId,
                 QueryOperation.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.operationId).isEqualTo(operationId); // GH-90000
-            assertThat(response.body.status).isIn("QUEUED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            assertThat(response.body.operationId).isEqualTo(operationId); 
+            assertThat(response.body.status).isIn("QUEUED", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"); 
         }
 
         @Test
         @DisplayName("should return 404 for non-existent operation")
-        void shouldReturn404ForMissingOperation() { // GH-90000
-            ApiResponse<QueryError> response = apiClient.get( // GH-90000
+        void shouldReturn404ForMissingOperation() { 
+            ApiResponse<QueryError> response = apiClient.get( 
                 "/queries/nonexistent-operation",
                 QueryError.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(404); // GH-90000
+            assertThat(response.statusCode).isEqualTo(404); 
         }
     }
 
@@ -297,65 +297,65 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should retrieve completed query results")
-        void shouldGetResults() { // GH-90000
-            String operationId = UUID.randomUUID().toString(); // GH-90000
+        void shouldGetResults() { 
+            String operationId = UUID.randomUUID().toString(); 
 
-            ApiResponse<QueryResult> response = apiClient.get( // GH-90000
+            ApiResponse<QueryResult> response = apiClient.get( 
                 "/queries/" + operationId + "/results?limit=1000&offset=0",
                 QueryResult.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.operationId).isEqualTo(operationId); // GH-90000
-            assertThat(response.body.columnNames).isNotEmpty(); // GH-90000
-            assertThat(response.body.rows).isNotNull(); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            assertThat(response.body.operationId).isEqualTo(operationId); 
+            assertThat(response.body.columnNames).isNotEmpty(); 
+            assertThat(response.body.rows).isNotNull(); 
             assertThat(response.headers.get("X-Total-Rows")).matches("\\d+");
             assertThat(response.headers.get("X-Returned-Rows")).matches("\\d+");
         }
 
         @Test
         @DisplayName("should support pagination with limit and offset")
-        void shouldSupportPagination() { // GH-90000
-            String operationId = UUID.randomUUID().toString(); // GH-90000
+        void shouldSupportPagination() { 
+            String operationId = UUID.randomUUID().toString(); 
 
-            ApiResponse<QueryResult> response = apiClient.get( // GH-90000
+            ApiResponse<QueryResult> response = apiClient.get( 
                 "/queries/" + operationId + "/results?limit=100&offset=500",
                 QueryResult.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.rows).hasSizeLessThanOrEqualTo(100); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            assertThat(response.body.rows).hasSizeLessThanOrEqualTo(100); 
         }
 
         @Test
         @DisplayName("should return 202 if query still executing")
-        void shouldReturn202IfStillRunning() { // GH-90000
-            String operationId = UUID.randomUUID().toString(); // GH-90000
+        void shouldReturn202IfStillRunning() { 
+            String operationId = UUID.randomUUID().toString(); 
 
-            ApiResponse<QueryOperation> response = apiClient.get( // GH-90000
+            ApiResponse<QueryOperation> response = apiClient.get( 
                 "/queries/" + operationId + "/results",
                 QueryOperation.class,
                 "Bearer token"
             );
 
             // Depending on execution status, could be 200 or 202
-            assertThat(response.statusCode).isIn(200, 202); // GH-90000
+            assertThat(response.statusCode).isIn(200, 202); 
         }
 
         @Test
         @DisplayName("should enforce maximum limit of 10000")
-        void shouldEnforceMaximumResultLimit() { // GH-90000
-            String operationId = UUID.randomUUID().toString(); // GH-90000
+        void shouldEnforceMaximumResultLimit() { 
+            String operationId = UUID.randomUUID().toString(); 
 
-            ApiResponse<QueryError> response = apiClient.get( // GH-90000
+            ApiResponse<QueryError> response = apiClient.get( 
                 "/queries/" + operationId + "/results?limit=10001",
                 QueryError.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(400); // GH-90000
+            assertThat(response.statusCode).isEqualTo(400); 
         }
     }
 
@@ -365,89 +365,89 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should compute SUM aggregation")
-        void shouldComputeSum() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldComputeSum() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "sales",
                 "aggregationType", "SUM",
                 "column", "amount",
-                "groupBy", Arrays.asList("region", "product") // GH-90000
+                "groupBy", Arrays.asList("region", "product") 
             );
 
-            ApiResponse<AggregationResult> response = apiClient.post( // GH-90000
+            ApiResponse<AggregationResult> response = apiClient.post( 
                 "/analytics/aggregate",
                 request,
                 AggregationResult.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
             assertThat(response.body.aggregationType).isEqualTo("SUM");
-            assertThat(response.body.result).isNotNull(); // GH-90000
+            assertThat(response.body.result).isNotNull(); 
         }
 
         @Test
         @DisplayName("should compute COUNT aggregation")
-        void shouldComputeCount() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldComputeCount() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "users",
                 "aggregationType", "COUNT",
                 "column", "*"
             );
 
-            ApiResponse<AggregationResult> response = apiClient.post( // GH-90000
+            ApiResponse<AggregationResult> response = apiClient.post( 
                 "/analytics/aggregate",
                 request,
                 AggregationResult.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
-            assertThat(response.body.result).isInstanceOf(Number.class); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
+            assertThat(response.body.result).isInstanceOf(Number.class); 
         }
 
         @Test
         @DisplayName("should support WHERE clause filters")
-        void shouldSupportWhereClause() { // GH-90000
-            Map<String, Object> request = Map.of( // GH-90000
+        void shouldSupportWhereClause() { 
+            Map<String, Object> request = Map.of( 
                 "datasetId", "transactions",
                 "aggregationType", "SUM",
                 "column", "amount",
                 "whereClause", "status = 'completed'"
             );
 
-            ApiResponse<AggregationResult> response = apiClient.post( // GH-90000
+            ApiResponse<AggregationResult> response = apiClient.post( 
                 "/analytics/aggregate",
                 request,
                 AggregationResult.class,
                 "Bearer token"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("should support all aggregation types")
-        void shouldSupportAllTypes() { // GH-90000
+        void shouldSupportAllTypes() { 
             String[] types = {
                 "COUNT", "SUM", "AVG", "MIN", "MAX", "STDDEV",
                 "PERCENTILE_25", "PERCENTILE_50", "PERCENTILE_75", "PERCENTILE_99"
             };
 
-            for (String type : types) { // GH-90000
-                Map<String, Object> request = Map.of( // GH-90000
+            for (String type : types) { 
+                Map<String, Object> request = Map.of( 
                     "datasetId", "data",
                     "aggregationType", type,
                     "column", "value"
                 );
 
-                ApiResponse<AggregationResult> response = apiClient.post( // GH-90000
+                ApiResponse<AggregationResult> response = apiClient.post( 
                     "/analytics/aggregate",
                     request,
                     AggregationResult.class,
                     "Bearer token"
                 );
 
-                assertThat(response.statusCode).isEqualTo(200); // GH-90000
+                assertThat(response.statusCode).isEqualTo(200); 
             }
         }
     }
@@ -458,40 +458,40 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
 
         @Test
         @DisplayName("should accept Bearer token authentication")
-        void shouldAcceptBearerToken() { // GH-90000
-            ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
+        void shouldAcceptBearerToken() { 
+            ApiResponse<DatasetListResponse> response = apiClient.get( 
                 "/datasets",
                 DatasetListResponse.class,
                 "Bearer jwt.token.here"
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("should accept API Key authentication")
-        void shouldAcceptApiKey() { // GH-90000
+        void shouldAcceptApiKey() { 
             apiClient.setApiKey("secret-api-key-123");
-            ApiResponse<DatasetListResponse> response = apiClient.get( // GH-90000
+            ApiResponse<DatasetListResponse> response = apiClient.get( 
                 "/datasets",
                 DatasetListResponse.class,
                 null  // No bearer token, use API key
             );
 
-            assertThat(response.statusCode).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("should require either Bearer or API Key")
-        void shouldRequireAuth() { // GH-90000
-            apiClient.setApiKey(null); // GH-90000
-            ApiResponse<ErrorPayload> response = apiClient.get( // GH-90000
+        void shouldRequireAuth() { 
+            apiClient.setApiKey(null); 
+            ApiResponse<ErrorPayload> response = apiClient.get( 
                 "/datasets",
                 ErrorPayload.class,
                 null  // No auth at all
             );
 
-            assertThat(response.statusCode).isEqualTo(401); // GH-90000
+            assertThat(response.statusCode).isEqualTo(401); 
         }
     }
 
@@ -571,13 +571,13 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         private final ObjectMapper mapper;
         private String apiKey;
 
-        MockQueryApiClient(ObjectMapper mapper) { // GH-90000
+        MockQueryApiClient(ObjectMapper mapper) { 
             this.mapper = mapper;
         }
 
-        void setApiKey(String key) { this.apiKey = key; } // GH-90000
+        void setApiKey(String key) { this.apiKey = key; } 
 
-        <T> ApiResponse<T> get(String path, Class<T> responseType, String authToken) { // GH-90000
+        <T> ApiResponse<T> get(String path, Class<T> responseType, String authToken) { 
             // Check authentication
             boolean isAuthenticated = (authToken != null && authToken.startsWith("Bearer ")) || this.apiKey != null;
             if (!isAuthenticated) {
@@ -608,10 +608,10 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
                 }
             }
 
-            return mockResponse(404, null, responseType); // GH-90000
+            return mockResponse(404, null, responseType); 
         }
 
-        <T> ApiResponse<T> post(String path, Object body, Class<T> responseType, String authToken) { // GH-90000
+        <T> ApiResponse<T> post(String path, Object body, Class<T> responseType, String authToken) { 
             // Check authentication
             boolean isAuthenticated = (authToken != null && authToken.startsWith("Bearer ")) || this.apiKey != null;
             if (!isAuthenticated) {
@@ -627,7 +627,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
                 return handleAggregation(body, responseType);
             }
 
-            return mockResponse(404, null, responseType); // GH-90000
+            return mockResponse(404, null, responseType); 
         }
 
         private <T> ApiResponse<T> handleDatasetList(Class<T> responseType, Map<String, String> queryParams) {
@@ -863,12 +863,12 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
             return params;
         }
 
-        private <T> ApiResponse<T> mockResponse(int statusCode, Object body, Class<T> type) { // GH-90000
-            Map<String, String> headers = new HashMap<>(); // GH-90000
-            headers.put("Location", "/queries/op-id"); // GH-90000
-            headers.put("X-Total-Rows", "1000"); // GH-90000
-            headers.put("X-Returned-Rows", "100"); // GH-90000
-            return new ApiResponse<>(statusCode, (T) body, headers); // GH-90000
+        private <T> ApiResponse<T> mockResponse(int statusCode, Object body, Class<T> type) { 
+            Map<String, String> headers = new HashMap<>(); 
+            headers.put("Location", "/queries/op-id"); 
+            headers.put("X-Total-Rows", "1000"); 
+            headers.put("X-Returned-Rows", "100"); 
+            return new ApiResponse<>(statusCode, (T) body, headers); 
         }
     }
 
@@ -877,7 +877,7 @@ class DataCloudQueryApiOpenApiIntegrationTest extends BaseIntegrationTest {
         T body;
         Map<String, String> headers;
 
-        ApiResponse(int statusCode, T body, Map<String, String> headers) { // GH-90000
+        ApiResponse(int statusCode, T body, Map<String, String> headers) { 
             this.statusCode = statusCode;
             this.body = body;
             this.headers = headers;

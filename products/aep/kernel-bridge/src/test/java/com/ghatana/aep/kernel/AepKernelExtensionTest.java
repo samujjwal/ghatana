@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
  * @doc.layer adapter
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AepKernelExtension")
 class AepKernelExtensionTest extends EventloopTestBase {
 
@@ -49,28 +49,28 @@ class AepKernelExtensionTest extends EventloopTestBase {
     private AepKernelExtension extension;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        stubClient = new StubAepClient(); // GH-90000
-        extension = new AepKernelExtension(stubClient); // GH-90000
+    void setUp() { 
+        stubClient = new StubAepClient(); 
+        extension = new AepKernelExtension(stubClient); 
     }
 
     // ==================== Identity ====================
 
     @Test
     @DisplayName("extension ID is 'aep-kernel-bridge'")
-    void extensionIdIsCorrect() { // GH-90000
+    void extensionIdIsCorrect() { 
         assertThat(extension.getExtensionId()).isEqualTo("aep-kernel-bridge");
     }
 
     @Test
     @DisplayName("extension name is human-readable")
-    void extensionNameIsHumanReadable() { // GH-90000
+    void extensionNameIsHumanReadable() { 
         assertThat(extension.getName()).isEqualTo("AEP Kernel Bridge");
     }
 
     @Test
     @DisplayName("extension version follows semver")
-    void extensionVersionIsSemver() { // GH-90000
+    void extensionVersionIsSemver() { 
         assertThat(extension.getVersion()).matches("\\d+\\.\\d+\\.\\d+.*");
     }
 
@@ -78,44 +78,44 @@ class AepKernelExtensionTest extends EventloopTestBase {
 
     @Test
     @DisplayName("descriptor type is EXTENSION")
-    void descriptorTypeIsExtension() { // GH-90000
-        KernelDescriptor descriptor = extension.getDescriptor(); // GH-90000
-        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); // GH-90000
+    void descriptorTypeIsExtension() { 
+        KernelDescriptor descriptor = extension.getDescriptor(); 
+        assertThat(descriptor.getType()).isEqualTo(KernelDescriptor.DescriptorType.EXTENSION); 
     }
 
     @Test
     @DisplayName("descriptor ID matches extension ID")
-    void descriptorIdMatchesExtensionId() { // GH-90000
-        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); // GH-90000
+    void descriptorIdMatchesExtensionId() { 
+        assertThat(extension.getDescriptor().getDescriptorId()).isEqualTo(extension.getExtensionId()); 
     }
 
     // ==================== Capabilities ====================
 
     @Test
     @DisplayName("contributes three AEP capabilities")
-    void contributesThreeCapabilities() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
-        assertThat(caps).hasSize(3); // GH-90000
+    void contributesThreeCapabilities() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
+        assertThat(caps).hasSize(3); 
     }
 
     @Test
     @DisplayName("contributes aep.event-streaming capability")
-    void contributesEventStreamingCapability() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+    void contributesEventStreamingCapability() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
         assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.event-streaming"));
     }
 
     @Test
     @DisplayName("contributes aep.agent-runtime capability")
-    void contributesAgentRuntimeCapability() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+    void contributesAgentRuntimeCapability() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
         assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.agent-runtime"));
     }
 
     @Test
     @DisplayName("contributes aep.pipeline-orchestration capability")
-    void contributesPipelineCapability() { // GH-90000
-        Set<KernelCapability> caps = extension.getContributedCapabilities(); // GH-90000
+    void contributesPipelineCapability() { 
+        Set<KernelCapability> caps = extension.getContributedCapabilities(); 
         assertThat(caps).anyMatch(c -> c.getCapabilityId().equals("aep.pipeline-orchestration"));
     }
 
@@ -123,50 +123,50 @@ class AepKernelExtensionTest extends EventloopTestBase {
 
     @Test
     @DisplayName("is compatible with any non-null module")
-    void isCompatibleWithAnyModule() { // GH-90000
-        assertThat(extension.isCompatible(hostModule)).isTrue(); // GH-90000
+    void isCompatibleWithAnyModule() { 
+        assertThat(extension.isCompatible(hostModule)).isTrue(); 
     }
 
     @Test
     @DisplayName("returns false for null host module")
-    void returnsFalseForNullModule() { // GH-90000
-        assertThat(extension.isCompatible(null)).isFalse(); // GH-90000
+    void returnsFalseForNullModule() { 
+        assertThat(extension.isCompatible(null)).isFalse(); 
     }
 
     // ==================== Lifecycle ====================
 
     @Test
     @DisplayName("onModuleInitialized registers AepKernelAdapter into context")
-    void onModuleInitializedRegistersAdapter() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
+    void onModuleInitializedRegistersAdapter() { 
+        extension.onModuleInitialized(context); 
 
-        verify(context).registerService(eq(AepKernelAdapter.class), any(AepKernelAdapter.class)); // GH-90000
+        verify(context).registerService(eq(AepKernelAdapter.class), any(AepKernelAdapter.class)); 
     }
 
     @Test
     @DisplayName("onModuleInitialized is idempotent — second call is no-op")
-    void onModuleInitializedIsIdempotent() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
+    void onModuleInitializedIsIdempotent() { 
+        extension.onModuleInitialized(context); 
+        extension.onModuleInitialized(context); 
 
-        verify(context).registerService(eq(AepKernelAdapter.class), any(AepKernelAdapter.class)); // GH-90000
+        verify(context).registerService(eq(AepKernelAdapter.class), any(AepKernelAdapter.class)); 
     }
 
     @Test
     @DisplayName("full lifecycle runs without error")
-    void fullLifecycleRunsWithoutError() { // GH-90000
-        extension.onModuleInitialized(context); // GH-90000
-        extension.onModuleStarted(context); // GH-90000
-        extension.onModuleStopped(context); // GH-90000
+    void fullLifecycleRunsWithoutError() { 
+        extension.onModuleInitialized(context); 
+        extension.onModuleStarted(context); 
+        extension.onModuleStopped(context); 
     }
 
     // ==================== Construction guard ====================
 
     @Test
     @DisplayName("null client is rejected at construction")
-    void nullClientIsRejected() { // GH-90000
-        assertThatThrownBy(() -> new AepKernelExtension(null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void nullClientIsRejected() { 
+        assertThatThrownBy(() -> new AepKernelExtension(null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     // ==================== Helpers ====================
@@ -174,88 +174,88 @@ class AepKernelExtensionTest extends EventloopTestBase {
     private static class StubAepClient implements AepKernelAdapterImpl.AepClient {
 
         @Override
-        public CompletableFuture<Void> publishEvent(String streamId, String eventId, String eventType, // GH-90000
+        public CompletableFuture<Void> publishEvent(String streamId, String eventId, String eventType, 
                                                      byte[] payload, Map<String, String> headers, long timestamp) {
-            return CompletableFuture.completedFuture(null); // GH-90000
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<AepKernelAdapterImpl.InnerSubscription> subscribe( // GH-90000
+        public CompletableFuture<AepKernelAdapterImpl.InnerSubscription> subscribe( 
                 String streamId, AepKernelAdapterImpl.InnerEventHandler handler) {
-            return CompletableFuture.completedFuture(new AepKernelAdapterImpl.InnerSubscription() { // GH-90000
+            return CompletableFuture.completedFuture(new AepKernelAdapterImpl.InnerSubscription() { 
                 @Override
-                public String getId() { return "stub-sub"; } // GH-90000
+                public String getId() { return "stub-sub"; } 
 
                 @Override
-                public CompletableFuture<Void> unsubscribe() { // GH-90000
-                    return CompletableFuture.completedFuture(null); // GH-90000
+                public CompletableFuture<Void> unsubscribe() { 
+                    return CompletableFuture.completedFuture(null); 
                 }
             });
         }
 
         @Override
-        public CompletableFuture<Void> createStream(String streamId, String streamType, // GH-90000
+        public CompletableFuture<Void> createStream(String streamId, String streamType, 
                                                      Map<String, String> config, int partitionCount,
                                                      Duration retention) {
-            return CompletableFuture.completedFuture(null); // GH-90000
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<Void> deleteStream(String streamId) { // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+        public CompletableFuture<Void> deleteStream(String streamId) { 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<AepKernelAdapterImpl.DeployResult> deployAgent( // GH-90000
+        public CompletableFuture<AepKernelAdapterImpl.DeployResult> deployAgent( 
                 String agentId, String agentType, String version,
                 Map<String, Object> config, int instanceCount) {
             return CompletableFuture.completedFuture(new AepKernelAdapterImpl.DeployResult("stub-endpoint"));
         }
 
         @Override
-        public CompletableFuture<Void> undeployAgent(String agentId) { // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+        public CompletableFuture<Void> undeployAgent(String agentId) { 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<AepKernelAdapterImpl.InnerAgentStatus> getAgentStatus(String agentId) { // GH-90000
-            return CompletableFuture.completedFuture( // GH-90000
-                new AepKernelAdapterImpl.InnerAgentStatus("RUNNING", 1, 0L, Map.of())); // GH-90000
+        public CompletableFuture<AepKernelAdapterImpl.InnerAgentStatus> getAgentStatus(String agentId) { 
+            return CompletableFuture.completedFuture( 
+                new AepKernelAdapterImpl.InnerAgentStatus("RUNNING", 1, 0L, Map.of())); 
         }
 
         @Override
-        public CompletableFuture<List<AepKernelAdapter.AgentDeployment>> listAgents() { // GH-90000
-            return CompletableFuture.completedFuture(List.of()); // GH-90000
+        public CompletableFuture<List<AepKernelAdapter.AgentDeployment>> listAgents() { 
+            return CompletableFuture.completedFuture(List.of()); 
         }
 
         @Override
-        public CompletableFuture<AepKernelAdapterImpl.InnerCommandResult> sendCommand( // GH-90000
+        public CompletableFuture<AepKernelAdapterImpl.InnerCommandResult> sendCommand( 
                 String agentId, String commandId, String commandType, Map<String, Object> parameters) {
-            return CompletableFuture.completedFuture( // GH-90000
-                new AepKernelAdapterImpl.InnerCommandResult(true, "ok", Map.of())); // GH-90000
+            return CompletableFuture.completedFuture( 
+                new AepKernelAdapterImpl.InnerCommandResult(true, "ok", Map.of())); 
         }
 
         @Override
-        public CompletableFuture<Object> createPipeline(String pipelineId, String pipelineType, // GH-90000
+        public CompletableFuture<Object> createPipeline(String pipelineId, String pipelineType, 
                                                          List<AepKernelAdapter.PipelineStage> stages,
                                                          Map<String, String> config) {
             return CompletableFuture.completedFuture("stub-pipeline");
         }
 
         @Override
-        public CompletableFuture<Void> startPipeline(Object pipeline) { // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+        public CompletableFuture<Void> startPipeline(Object pipeline) { 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<Void> stopPipeline(Object pipeline) { // GH-90000
-            return CompletableFuture.completedFuture(null); // GH-90000
+        public CompletableFuture<Void> stopPipeline(Object pipeline) { 
+            return CompletableFuture.completedFuture(null); 
         }
 
         @Override
-        public CompletableFuture<AepKernelAdapterImpl.InnerPipelineStatus> getPipelineStatus(Object pipeline) { // GH-90000
-            return CompletableFuture.completedFuture( // GH-90000
-                new AepKernelAdapterImpl.InnerPipelineStatus("RUNNING", 0L, 0L, Map.of())); // GH-90000
+        public CompletableFuture<AepKernelAdapterImpl.InnerPipelineStatus> getPipelineStatus(Object pipeline) { 
+            return CompletableFuture.completedFuture( 
+                new AepKernelAdapterImpl.InnerPipelineStatus("RUNNING", 0L, 0L, Map.of())); 
         }
     }
 }

@@ -30,97 +30,97 @@ import org.junit.jupiter.api.Assertions;
 
 final class FakeProcessRunner extends ProcessRunner {
 
-    private final Map<CommandKey, Deque<CommandResponse>> scriptedResponses = new HashMap<>(); // GH-90000
+    private final Map<CommandKey, Deque<CommandResponse>> scriptedResponses = new HashMap<>(); 
 
-    FakeProcessRunner(PolyfixProjectContext context) { // GH-90000
-        super(context); // GH-90000
+    FakeProcessRunner(PolyfixProjectContext context) { 
+        super(context); 
     }
 
-    static CommandResponse response(ProcessResult result) { // GH-90000
-        return new CommandResponse(result, null); // GH-90000
+    static CommandResponse response(ProcessResult result) { 
+        return new CommandResponse(result, null); 
     }
 
-    static CommandResponse response(ProcessResult result, CommandEffect effect) { // GH-90000
-        return new CommandResponse(result, effect); // GH-90000
+    static CommandResponse response(ProcessResult result, CommandEffect effect) { 
+        return new CommandResponse(result, effect); 
     }
 
-    void when(String command, List<String> args, CommandResponse... responses) { // GH-90000
-        Objects.requireNonNull(command, "command"); // GH-90000
-        Objects.requireNonNull(args, "args"); // GH-90000
-        Objects.requireNonNull(responses, "responses"); // GH-90000
+    void when(String command, List<String> args, CommandResponse... responses) { 
+        Objects.requireNonNull(command, "command"); 
+        Objects.requireNonNull(args, "args"); 
+        Objects.requireNonNull(responses, "responses"); 
         scriptedResponses
-                .computeIfAbsent( // GH-90000
-                        new CommandKey(command, List.copyOf(args)), k -> new ArrayDeque<>()) // GH-90000
-                .addAll(Arrays.asList(responses)); // GH-90000
+                .computeIfAbsent( 
+                        new CommandKey(command, List.copyOf(args)), k -> new ArrayDeque<>()) 
+                .addAll(Arrays.asList(responses)); 
     }
 
     @Override
-    public ProcessResult execute( // GH-90000
+    public ProcessResult execute( 
             String command, List<String> args, Path workingDir, boolean captureOutput) {
-        return invoke(command, args, workingDir); // GH-90000
+        return invoke(command, args, workingDir); 
     }
 
     @Override
-    public ProcessResult execute( // GH-90000
+    public ProcessResult execute( 
             Map<String, String> env,
             String command,
             List<String> args,
             Path workingDir,
             boolean captureOutput) {
-        return invoke(command, args, workingDir); // GH-90000
+        return invoke(command, args, workingDir); 
     }
 
     @Override
-    public String executeAndGetOutput(String[] command, Path workingDir) // GH-90000
+    public String executeAndGetOutput(String[] command, Path workingDir) 
             throws IOException, InterruptedException {
         ProcessResult result =
-                invoke( // GH-90000
+                invoke( 
                         command[0],
-                        Arrays.asList(Arrays.copyOfRange(command, 1, command.length)), // GH-90000
+                        Arrays.asList(Arrays.copyOfRange(command, 1, command.length)), 
                         workingDir);
-        if (!result.isSuccess()) { // GH-90000
-            throw new IOException( // GH-90000
+        if (!result.isSuccess()) { 
+            throw new IOException( 
                     "Fake process returned non-zero exit code "
-                            + result.exitCode() // GH-90000
+                            + result.exitCode() 
                             + ": "
-                            + result.error()); // GH-90000
+                            + result.error()); 
         }
-        return result.output(); // GH-90000
+        return result.output(); 
     }
 
-    private ProcessResult invoke(String command, List<String> args, Path workingDir) { // GH-90000
-        CommandKey key = new CommandKey(command, List.copyOf(args)); // GH-90000
-        Deque<CommandResponse> queue = scriptedResponses.get(key); // GH-90000
-        if (queue == null || queue.isEmpty()) { // GH-90000
-            Assertions.fail( // GH-90000
+    private ProcessResult invoke(String command, List<String> args, Path workingDir) { 
+        CommandKey key = new CommandKey(command, List.copyOf(args)); 
+        Deque<CommandResponse> queue = scriptedResponses.get(key); 
+        if (queue == null || queue.isEmpty()) { 
+            Assertions.fail( 
                     "No fake process response configured for command: "
-                            + commandLine(command, args)); // GH-90000
+                            + commandLine(command, args)); 
         }
-        CommandResponse response = queue.removeFirst(); // GH-90000
-        if (response.effect() != null) { // GH-90000
-            response.effect().accept(workingDir, fullCommand(command, args)); // GH-90000
+        CommandResponse response = queue.removeFirst(); 
+        if (response.effect() != null) { 
+            response.effect().accept(workingDir, fullCommand(command, args)); 
         }
-        return response.result(); // GH-90000
+        return response.result(); 
     }
 
-    private static List<String> fullCommand(String command, List<String> args) { // GH-90000
-        List<String> full = new ArrayList<>(args.size() + 1); // GH-90000
-        full.add(command); // GH-90000
-        full.addAll(args); // GH-90000
+    private static List<String> fullCommand(String command, List<String> args) { 
+        List<String> full = new ArrayList<>(args.size() + 1); 
+        full.add(command); 
+        full.addAll(args); 
         return full;
     }
 
-    private static String commandLine(String command, List<String> args) { // GH-90000
-        return String.join(" ", fullCommand(command, args)); // GH-90000
+    private static String commandLine(String command, List<String> args) { 
+        return String.join(" ", fullCommand(command, args)); 
     }
 
-    record CommandResponse(ProcessResult result, CommandEffect effect) { // GH-90000
+    record CommandResponse(ProcessResult result, CommandEffect effect) { 
         CommandResponse {
-            Objects.requireNonNull(result, "result"); // GH-90000
+            Objects.requireNonNull(result, "result"); 
         }
     }
 
-    record CommandKey(String command, List<String> args) {} // GH-90000
+    record CommandKey(String command, List<String> args) {} 
 
     @FunctionalInterface
     interface CommandEffect extends BiConsumer<Path, List<String>> {}

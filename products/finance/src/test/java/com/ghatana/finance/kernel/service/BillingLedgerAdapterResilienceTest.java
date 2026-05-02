@@ -1,7 +1,7 @@
 package com.ghatana.finance.kernel.service;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import io.activej.promise.Promise;
@@ -130,15 +130,15 @@ class BillingLedgerAdapterResilienceTest extends EventloopTestBase {
         assertEquals(CircuitBreaker.State.CLOSED, breaker.getState());
     }
 
-    private static BillingTransaction tx(String id) {
-        return BillingTransaction.builder()
+    private static LedgerTransaction tx(String id) {
+        return LedgerTransaction.builder()
             .transactionId(id)
-            .sourceProductId("phr")
+            .sourceId("phr")
             .debitAccount("PHR:AR:p1")
             .creditAccount("PHR:REVENUE:prov1")
             .amount(new BigDecimal("100.00"))
             .currency("NPR")
-            .type(BillingTransaction.TransactionType.CHARGE)
+            .type(LedgerTransaction.TransactionType.CHARGE)
             .description("test tx")
             .externalReferenceId("enc-1")
             .tenantId("tenant-1")

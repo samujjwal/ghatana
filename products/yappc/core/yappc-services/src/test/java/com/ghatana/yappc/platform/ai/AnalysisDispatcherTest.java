@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AnalysisDispatcher Tests")
 class AnalysisDispatcherTest extends EventloopTestBase {
 
@@ -38,49 +38,49 @@ class AnalysisDispatcherTest extends EventloopTestBase {
 
   @Test
   @DisplayName("dispatch fans out code events across code, security, test, and performance analyzers")
-  void dispatchFansOutCodeEventsAcrossCodeSecurityTestAndPerformanceAnalyzers() { // GH-90000
+  void dispatchFansOutCodeEventsAcrossCodeSecurityTestAndPerformanceAnalyzers() { 
     CodeChangedEvent event =
-        new CodeChangedEvent("tenant-a", "project-a", "src/App.ts", "+const answer = 42;"); // GH-90000
+        new CodeChangedEvent("tenant-a", "project-a", "src/App.ts", "+const answer = 42;"); 
     when(codeQualityAnalyzer.analyze(event)).thenReturn(Promise.of(List.of(insight("code"))));
     when(securityPatternDetector.analyze(event)).thenReturn(Promise.of(List.of(insight("security"))));
     when(testGapAnalyzer.analyze(event)).thenReturn(Promise.of(List.of(insight("tests"))));
     when(performanceAdvisor.analyze(event)).thenReturn(Promise.of(List.of(insight("performance"))));
 
-    AnalysisDispatcher dispatcher = buildDispatcher(); // GH-90000
-    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); // GH-90000
+    AnalysisDispatcher dispatcher = buildDispatcher(); 
+    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); 
 
-    assertThat(insights) // GH-90000
-      .extracting(AIInsight::title) // GH-90000
-      .containsExactlyInAnyOrder("code", "security", "tests", "performance"); // GH-90000
-    verify(codeQualityAnalyzer).analyze(event); // GH-90000
-    verify(securityPatternDetector).analyze(event); // GH-90000
-    verify(testGapAnalyzer).analyze(event); // GH-90000
-    verify(performanceAdvisor).analyze(event); // GH-90000
-    verifyNoInteractions(requirementsConsistencyChecker, architectureAdvisor); // GH-90000
+    assertThat(insights) 
+      .extracting(AIInsight::title) 
+      .containsExactlyInAnyOrder("code", "security", "tests", "performance"); 
+    verify(codeQualityAnalyzer).analyze(event); 
+    verify(securityPatternDetector).analyze(event); 
+    verify(testGapAnalyzer).analyze(event); 
+    verify(performanceAdvisor).analyze(event); 
+    verifyNoInteractions(requirementsConsistencyChecker, architectureAdvisor); 
     assertThat(event.correlationKey()).isEqualTo("tenant-a:project-a:src/App.ts");
     assertThat(event.sourceRef()).isEqualTo("src/App.ts");
   }
 
   @Test
   @DisplayName("dispatch routes requirement events to consistency checker")
-  void dispatchRoutesRequirementEventsToConsistencyChecker() { // GH-90000
+  void dispatchRoutesRequirementEventsToConsistencyChecker() { 
     RequirementChangedEvent event =
-        new RequirementChangedEvent( // GH-90000
+        new RequirementChangedEvent( 
             "tenant-b",
             "project-b",
             "REQ-42",
             "Offline mode",
             "The platform must support offline editing with sync recovery and acceptance criteria.",
             List.of("Legacy requirement"));
-    when(requirementsConsistencyChecker.analyze(event)) // GH-90000
+    when(requirementsConsistencyChecker.analyze(event)) 
         .thenReturn(Promise.of(List.of(insight("requirement"))));
 
-    AnalysisDispatcher dispatcher = buildDispatcher(); // GH-90000
-    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); // GH-90000
+    AnalysisDispatcher dispatcher = buildDispatcher(); 
+    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); 
 
     assertThat(insights).singleElement().satisfies(insight -> assertThat(insight.title()).isEqualTo("requirement"));
-    verify(requirementsConsistencyChecker).analyze(event); // GH-90000
-    verifyNoInteractions( // GH-90000
+    verify(requirementsConsistencyChecker).analyze(event); 
+    verifyNoInteractions( 
       codeQualityAnalyzer, securityPatternDetector, testGapAnalyzer, performanceAdvisor, architectureAdvisor);
     assertThat(event.correlationKey()).isEqualTo("tenant-b:project-b:requirement:REQ-42");
     assertThat(event.sourceRef()).isEqualTo("REQ-42");
@@ -88,17 +88,17 @@ class AnalysisDispatcherTest extends EventloopTestBase {
 
   @Test
   @DisplayName("dispatch routes architecture events to architecture advisor and normalizes null values")
-  void dispatchRoutesArchitectureEventsToArchitectureAdvisorAndNormalizesNullValues() { // GH-90000
+  void dispatchRoutesArchitectureEventsToArchitectureAdvisorAndNormalizesNullValues() { 
     ArchitectureChangedEvent event =
-        new ArchitectureChangedEvent(null, null, null, null, null, true); // GH-90000
+        new ArchitectureChangedEvent(null, null, null, null, null, true); 
     when(architectureAdvisor.analyze(event)).thenReturn(Promise.of(List.of(insight("architecture"))));
 
-    AnalysisDispatcher dispatcher = buildDispatcher(); // GH-90000
-    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); // GH-90000
+    AnalysisDispatcher dispatcher = buildDispatcher(); 
+    List<AIInsight> insights = runPromise(() -> dispatcher.dispatch(event)); 
 
     assertThat(insights).singleElement().satisfies(insight -> assertThat(insight.title()).isEqualTo("architecture"));
-    verify(architectureAdvisor).analyze(event); // GH-90000
-    verifyNoInteractions( // GH-90000
+    verify(architectureAdvisor).analyze(event); 
+    verifyNoInteractions( 
       codeQualityAnalyzer,
       securityPatternDetector,
       testGapAnalyzer,
@@ -107,14 +107,14 @@ class AnalysisDispatcherTest extends EventloopTestBase {
     assertThat(event.tenantId()).isEqualTo("unknown-tenant");
     assertThat(event.projectId()).isEqualTo("unknown-project");
     assertThat(event.componentName()).isEqualTo("unknown-component");
-    assertThat(event.changeSummary()).isEmpty(); // GH-90000
-    assertThat(event.affectedModules()).isEmpty(); // GH-90000
+    assertThat(event.changeSummary()).isEmpty(); 
+    assertThat(event.affectedModules()).isEmpty(); 
     assertThat(event.correlationKey()).isEqualTo("unknown-tenant:unknown-project:architecture:unknown-component");
     assertThat(event.sourceRef()).isEqualTo("unknown-component");
   }
 
-  private AnalysisDispatcher buildDispatcher() { // GH-90000
-    return new AnalysisDispatcher( // GH-90000
+  private AnalysisDispatcher buildDispatcher() { 
+    return new AnalysisDispatcher( 
         codeQualityAnalyzer,
         securityPatternDetector,
         testGapAnalyzer,
@@ -123,8 +123,8 @@ class AnalysisDispatcherTest extends EventloopTestBase {
         architectureAdvisor);
   }
 
-  private AIInsight insight(String title) { // GH-90000
-    return new AIInsight( // GH-90000
+  private AIInsight insight(String title) { 
+    return new AIInsight( 
         title + "-id",
         "tenant-a",
         "project-a",

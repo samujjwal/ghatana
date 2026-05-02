@@ -19,7 +19,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles java language service test operations
@@ -37,115 +37,115 @@ class JavaLanguageServiceTest extends EventloopTestBase {
     @Mock private ExecutorService mockExecutor;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new JavaLanguageService(eventloop()); // GH-90000
-        logger = LogManager.getLogger(JavaLanguageServiceTest.class); // GH-90000
+    void setUp() { 
+        service = new JavaLanguageService(eventloop()); 
+        logger = LogManager.getLogger(JavaLanguageServiceTest.class); 
         context =
-                new PolyfixProjectContext( // GH-90000
+                new PolyfixProjectContext( 
                         tempDir,
                         null, // config
-                        List.of(), // languages // GH-90000
+                        List.of(), // languages 
                         mockExecutor,
                         logger);
     }
 
     @Test
-    void testSupportsJavaFiles() { // GH-90000
-        assertThat(service.supports(Path.of(TEST_JAVA))).isTrue(); // GH-90000
-        assertThat(service.supports(Path.of("path/to/" + TEST_JAVA))).isTrue(); // GH-90000
+    void testSupportsJavaFiles() { 
+        assertThat(service.supports(Path.of(TEST_JAVA))).isTrue(); 
+        assertThat(service.supports(Path.of("path/to/" + TEST_JAVA))).isTrue(); 
         assertThat(service.supports(Path.of("Test.JAVA"))).isTrue();
         assertThat(service.supports(Path.of("Test.txt"))).isFalse();
-        assertThat(service.supports(null)).isFalse(); // GH-90000
+        assertThat(service.supports(null)).isFalse(); 
     }
 
     @Test
-    void testGetSupportedFileExtensions() { // GH-90000
+    void testGetSupportedFileExtensions() { 
         assertThat(service.getSupportedFileExtensions()).containsExactly(".java");
     }
 
     @Test
-    void testDiagnoseWithNullFiles() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, null)); // GH-90000
-        assertThat(diagnostics).hasSize(1); // GH-90000
+    void testDiagnoseWithNullFiles() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, null)); 
+        assertThat(diagnostics).hasSize(1); 
         assertThat(diagnostics.get(0).message()).contains("files");
     }
 
     @Test
-    void testDiagnoseWithEmptyFiles() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of())); // GH-90000
-        assertThat(diagnostics).isEmpty(); // GH-90000
+    void testDiagnoseWithEmptyFiles() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of())); 
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithNonJavaFile() throws IOException { // GH-90000
+    void testDiagnoseWithNonJavaFile() throws IOException { 
         Path nonJavaFile = tempDir.resolve("test.txt");
-        Files.writeString(nonJavaFile, "This is not a Java file"); // GH-90000
+        Files.writeString(nonJavaFile, "This is not a Java file"); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonJavaFile))); // GH-90000
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonJavaFile))); 
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithValidJavaFile() throws IOException { // GH-90000
+    void testDiagnoseWithValidJavaFile() throws IOException { 
         String validJava =
                 """
             package com.example;
 
             public class Test {
-                public static void main(String[] args) { // GH-90000
+                public static void main(String[] args) { 
                     System.out.println("Hello, World!");
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, validJava); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, validJava); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithCompilationError() throws IOException { // GH-90000
+    void testDiagnoseWithCompilationError() throws IOException { 
         String invalidJava =
                 """
             package com.example;
 
             public class Test {
-                public static void main(String[] args) { // GH-90000
+                public static void main(String[] args) { 
                     // Missing semicolon
                     System.out.println("Hello, World!")
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, invalidJava); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, invalidJava); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics) // GH-90000
-                .hasSize(1) // GH-90000
-                .allSatisfy( // GH-90000
+        assertThat(diagnostics) 
+                .hasSize(1) 
+                .allSatisfy( 
                         d -> {
                             assertThat(d.tool()).isEqualTo("java-compiler");
                             assertThat(d.ruleId()).isEqualTo("compilation-error");
                             assertThat(d.message()).contains("missing ';'");
-                            assertThat(d.file()).endsWith(TEST_JAVA); // GH-90000
-                            assertThat(d.line()).isGreaterThan(0); // GH-90000
-                            assertThat(d.column()).isGreaterThan(0); // GH-90000
+                            assertThat(d.file()).endsWith(TEST_JAVA); 
+                            assertThat(d.line()).isGreaterThan(0); 
+                            assertThat(d.column()).isGreaterThan(0); 
                         });
     }
 
     @Test
-    void testDiagnoseWithMultipleFiles() throws IOException { // GH-90000
+    void testDiagnoseWithMultipleFiles() throws IOException { 
         // Valid Java file
         String validJava =
                 """
             package com.example;
 
             public class Test1 {
-                public void test() {} // GH-90000
+                public void test() {} 
             }
             """;
 
@@ -155,7 +155,7 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             package com.example;
 
             public class Test2 {
-                public void test() { // GH-90000
+                public void test() { 
                     return "missing return type";
                 }
             }
@@ -164,57 +164,57 @@ class JavaLanguageServiceTest extends EventloopTestBase {
         Path validFile = tempDir.resolve("Test1.java");
         Path invalidFile = tempDir.resolve("Test2.java");
 
-        Files.writeString(validFile, validJava); // GH-90000
-        Files.writeString(invalidFile, invalidJava); // GH-90000
+        Files.writeString(validFile, validJava); 
+        Files.writeString(invalidFile, invalidJava); 
 
         List<UnifiedDiagnostic> diagnostics =
-                runPromise(() -> service.diagnose(context, List.of(validFile, invalidFile))); // GH-90000
+                runPromise(() -> service.diagnose(context, List.of(validFile, invalidFile))); 
 
         // Should only report errors from the invalid file
-        assertThat(diagnostics) // GH-90000
-                .hasSize(1) // GH-90000
+        assertThat(diagnostics) 
+                .hasSize(1) 
                 .allSatisfy(d -> assertThat(d.file()).endsWith("Test2.java"));
     }
 
     @Test
-    void testDiagnoseWithNonExistentFile() { // GH-90000
+    void testDiagnoseWithNonExistentFile() { 
         Path nonExistentFile = tempDir.resolve("NonExistent.java");
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonExistentFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(nonExistentFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithNullContext() { // GH-90000
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
+    void testDiagnoseWithNullContext() { 
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(null, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(null, List.of(javaFile))); 
 
-        assertThat(diagnostics).hasSize(1); // GH-90000
+        assertThat(diagnostics).hasSize(1); 
         assertThat(diagnostics.get(0).message()).contains("context");
     }
 
     @Test
-    void testDiagnoseWithTypeError() throws IOException { // GH-90000
+    void testDiagnoseWithTypeError() throws IOException { 
         String javaWithTypeError =
                 """
             package com.example;
 
             public class Test {
-                public void test() { // GH-90000
+                public void test() { 
                     UnknownType variable = "string value";
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, javaWithTypeError); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, javaWithTypeError); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics) // GH-90000
-                .hasSize(1) // GH-90000
-                .anySatisfy( // GH-90000
+        assertThat(diagnostics) 
+                .hasSize(1) 
+                .anySatisfy( 
                         d -> {
                             assertThat(d.ruleId()).isEqualTo("type-error");
                             assertThat(d.message()).contains("Cannot resolve type for variable");
@@ -222,35 +222,35 @@ class JavaLanguageServiceTest extends EventloopTestBase {
     }
 
     @Test
-    void testDiagnoseWithMethodReturnTypeError() throws IOException { // GH-90000
+    void testDiagnoseWithMethodReturnTypeError() throws IOException { 
         String javaWithReturnTypeError =
                 """
             package com.example;
 
             public class Test {
-                public UnknownType test() { // GH-90000
+                public UnknownType test() { 
                     return "string value";
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, javaWithReturnTypeError); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, javaWithReturnTypeError); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics) // GH-90000
-                .hasSize(1) // GH-90000
-                .allSatisfy( // GH-90000
+        assertThat(diagnostics) 
+                .hasSize(1) 
+                .allSatisfy( 
                         d -> {
                             assertThat(d.ruleId()).isEqualTo("type-error");
-                            assertThat(d.message()) // GH-90000
+                            assertThat(d.message()) 
                                     .contains("Cannot resolve type for variable: UnknownType");
                         });
     }
 
     @Test
-    void testDiagnoseWithValidTypes() throws IOException { // GH-90000
+    void testDiagnoseWithValidTypes() throws IOException { 
         String validJava =
                 """
             package com.example;
@@ -258,22 +258,22 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             public class Test {
                 private String field;
 
-                public String method(String param) { // GH-90000
+                public String method(String param) { 
                     return param;
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, validJava); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, validJava); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithGenerics() throws IOException { // GH-90000
+    void testDiagnoseWithGenerics() throws IOException { 
         String javaWithGenerics =
                 """
             package com.example;
@@ -284,75 +284,75 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                 private List<String> strings;
                 private T genericField;
 
-                public <U> U genericMethod(U param) { // GH-90000
+                public <U> U genericMethod(U param) { 
                     return param;
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, javaWithGenerics); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, javaWithGenerics); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithInheritance() throws IOException { // GH-90000
+    void testDiagnoseWithInheritance() throws IOException { 
         Path parentFile = tempDir.resolve("Parent.java");
         Path childFile = tempDir.resolve("Child.java");
-        Files.writeString(parentFile, "package com.example;\npublic class Parent {}"); // GH-90000
-        Files.writeString( // GH-90000
+        Files.writeString(parentFile, "package com.example;\npublic class Parent {}"); 
+        Files.writeString( 
                 childFile,
                 "package com.example;\n"
                         + "public class Child extends Parent {\n"
-                        + "    public Parent getParent() {\n" // GH-90000
-                        + "        return new Parent();\n" // GH-90000
+                        + "    public Parent getParent() {\n" 
+                        + "        return new Parent();\n" 
                         + "    }\n"
                         + "}\n");
 
         List<UnifiedDiagnostic> diagnostics =
-                runPromise(() -> service.diagnose(context, List.of(parentFile, childFile))); // GH-90000
+                runPromise(() -> service.diagnose(context, List.of(parentFile, childFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithInterface() throws IOException { // GH-90000
+    void testDiagnoseWithInterface() throws IOException { 
         String javaWithInterface =
                 """
             package com.example;
 
             public interface TestInterface {
-                void method(); // GH-90000
+                void method(); 
             }
 
             public class TestImpl implements TestInterface {
-                public void method() {} // GH-90000
+                public void method() {} 
             }
             """;
 
         Path interfaceFile = tempDir.resolve("TestInterface.java");
         Path implFile = tempDir.resolve("TestImpl.java");
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 interfaceFile,
-                "package com.example;\npublic interface TestInterface {\n    void method();\n}"); // GH-90000
-        Files.writeString( // GH-90000
+                "package com.example;\npublic interface TestInterface {\n    void method();\n}"); 
+        Files.writeString( 
                 implFile,
                 "package com.example;\n"
                         + "public class TestImpl implements TestInterface {\n"
-                        + "    public void method() {}\n" // GH-90000
+                        + "    public void method() {}\n" 
                         + "}");
 
         List<UnifiedDiagnostic> diagnostics =
-                runPromise(() -> service.diagnose(context, List.of(interfaceFile, implFile))); // GH-90000
+                runPromise(() -> service.diagnose(context, List.of(interfaceFile, implFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithArrays() throws IOException { // GH-90000
+    void testDiagnoseWithArrays() throws IOException { 
         String javaWithArrays =
                 """
             package com.example;
@@ -361,22 +361,22 @@ class JavaLanguageServiceTest extends EventloopTestBase {
                 private int[] numbers;
                 private String[][] strings;
 
-                public int[] getNumbers() { // GH-90000
+                public int[] getNumbers() { 
                     return numbers;
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, javaWithArrays); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, javaWithArrays); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics).isEmpty(); // GH-90000
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void testDiagnoseWithUnresolvedDependencies() throws IOException { // GH-90000
+    void testDiagnoseWithUnresolvedDependencies() throws IOException { 
         String javaWithUnresolved =
                 """
             package com.example;
@@ -384,19 +384,19 @@ class JavaLanguageServiceTest extends EventloopTestBase {
             public class Test {
                 private MissingType field;
 
-                public MissingType method() { // GH-90000
+                public MissingType method() { 
                     return null;
                 }
             }
             """;
 
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString(javaFile, javaWithUnresolved); // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString(javaFile, javaWithUnresolved); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise(() -> service.diagnose(context, List.of(javaFile))); 
 
-        assertThat(diagnostics) // GH-90000
-                .hasSize(2) // GH-90000
+        assertThat(diagnostics) 
+                .hasSize(2) 
                 .allSatisfy(d -> assertThat(d.ruleId()).isEqualTo("type-error"));
     }
 }

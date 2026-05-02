@@ -31,50 +31,50 @@ class JwtAuthFilterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("returns unauthorized without calling next when bearer token is missing")
-    void returnsUnauthorizedWhenBearerTokenMissing() throws Exception { // GH-90000
-        AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build()); // GH-90000
-        JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
-        JwtAuthFilter filter = new JwtAuthFilter( // GH-90000
+    void returnsUnauthorizedWhenBearerTokenMissing() throws Exception { 
+        AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build()); 
+        JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); 
+        JwtAuthFilter filter = new JwtAuthFilter( 
                 delegate,
-                new AccessPolicy(new ServerConfig.TenancyConfig(2, 20, true)), // GH-90000
+                new AccessPolicy(new ServerConfig.TenancyConfig(2, 20, true)), 
                 tokenProvider);
-        AsyncServlet next = mock(AsyncServlet.class); // GH-90000
+        AsyncServlet next = mock(AsyncServlet.class); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs").build();
 
-        HttpResponse response = runPromise(() -> filter.filter(request, next)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.filter(request, next)); 
 
-        assertThat(response.getCode()).isEqualTo(401); // GH-90000
-        verify(next, never()).serve(request); // GH-90000
+        assertThat(response.getCode()).isEqualTo(401); 
+        verify(next, never()).serve(request); 
     }
 
     @Test
     @DisplayName("attaches tenant context and delegates to next when token is valid")
-    void attachesTenantContextAndDelegatesToNext() throws Exception { // GH-90000
-        AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build()); // GH-90000
-        JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); // GH-90000
+    void attachesTenantContextAndDelegatesToNext() throws Exception { 
+        AsyncServlet delegate = request -> Promise.of(HttpResponse.ok200().build()); 
+        JwtTokenProvider tokenProvider = mock(JwtTokenProvider.class); 
         when(tokenProvider.validateToken("valid-token")).thenReturn(true);
         when(tokenProvider.extractClaims("valid-token"))
-                .thenReturn(Optional.of(Map.of("tenantId", "tenant-1", "region", "us-east-1"))); // GH-90000
+                .thenReturn(Optional.of(Map.of("tenantId", "tenant-1", "region", "us-east-1"))); 
         when(tokenProvider.getUserIdFromToken("valid-token")).thenReturn(Optional.of("user-1"));
         when(tokenProvider.getRolesFromToken("valid-token")).thenReturn(List.of("admin"));
 
-        JwtAuthFilter filter = new JwtAuthFilter( // GH-90000
+        JwtAuthFilter filter = new JwtAuthFilter( 
                 delegate,
-                new AccessPolicy(new ServerConfig.TenancyConfig(2, 20, true)), // GH-90000
+                new AccessPolicy(new ServerConfig.TenancyConfig(2, 20, true)), 
                 tokenProvider);
         AsyncServlet next = request -> {
-            TenantContext tenantContext = TenantResolver.require(request); // GH-90000
+            TenantContext tenantContext = TenantResolver.require(request); 
             assertThat(tenantContext.tenantId()).isEqualTo("tenant-1");
             assertThat(tenantContext.subject()).isEqualTo("user-1");
             assertThat(tenantContext.roles()).containsExactly("admin");
-            return Promise.of(HttpResponse.ok200().build()); // GH-90000
+            return Promise.of(HttpResponse.ok200().build()); 
         };
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs")
-                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token") // GH-90000
-                .build(); // GH-90000
+                .withHeader(HttpHeaders.AUTHORIZATION, "Bearer valid-token") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> filter.filter(request, next)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.filter(request, next)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
     }
 }

@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
  * Tests for SecurityServiceAdapter.
  */
 @DisplayName("SecurityServiceAdapter Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles security service adapter test operations
@@ -36,25 +36,25 @@ class SecurityServiceAdapterTest extends EventloopTestBase {
     private SecurityServiceAdapter securityServiceAdapter;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         lenient().when(mockScanner.scan(any())).thenReturn(Promise.of(SecurityReport.clean("test-scanner")));
-        securityServiceAdapter = new SecurityServiceAdapter(mockScanner); // GH-90000
+        securityServiceAdapter = new SecurityServiceAdapter(mockScanner); 
     }
 
     @Test
     @DisplayName("Should scan project for vulnerabilities")
-    void shouldScanProject() { // GH-90000
+    void shouldScanProject() { 
         Path projectPath = Paths.get("/project");
-        Map<String, Object> result = runPromise(() -> securityServiceAdapter.scanProject(projectPath)); // GH-90000
+        Map<String, Object> result = runPromise(() -> securityServiceAdapter.scanProject(projectPath)); 
         assertThat(result).containsKey("status");
     }
 
     @Test
     @DisplayName("generateSbom returns valid CycloneDX stub — bomFormat and specVersion present")
-    void shouldGenerateSbomWithCycloneDxFields() { // GH-90000
+    void shouldGenerateSbomWithCycloneDxFields() { 
         Path projectPath = Paths.get("/project");
-        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); 
+        assertThat(result).isNotNull(); 
         assertThat(result).contains("\"bomFormat\":\"CycloneDX\"");
         assertThat(result).contains("\"specVersion\":\"1.4\"");
         assertThat(result).contains("\"components\"");
@@ -62,17 +62,17 @@ class SecurityServiceAdapterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generateSbom includes project name in metadata component")
-    void shouldGenerateSbomWithProjectName() { // GH-90000
+    void shouldGenerateSbomWithProjectName() { 
         Path projectPath = Paths.get("/my-project");
-        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); // GH-90000
+        String result = runPromise(() -> securityServiceAdapter.generateSbom(projectPath)); 
         assertThat(result).contains("my-project");
     }
 
     @Test
     @DisplayName("Should check dependencies")
-    void shouldCheckDependencies() { // GH-90000
+    void shouldCheckDependencies() { 
         Path projectPath = Paths.get("/project");
-        Map<String, Object> result = runPromise(() -> securityServiceAdapter.checkDependencies(projectPath)); // GH-90000
+        Map<String, Object> result = runPromise(() -> securityServiceAdapter.checkDependencies(projectPath)); 
         assertThat(result).containsKey("status");
     }
 }

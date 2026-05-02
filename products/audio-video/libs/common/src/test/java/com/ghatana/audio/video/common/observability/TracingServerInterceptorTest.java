@@ -39,58 +39,58 @@ class TracingServerInterceptorTest {
 
     @Test
     @DisplayName("Should propagate incoming trace id in response headers")
-    void shouldPropagateIncomingTraceId() { // GH-90000
-        TracingServerInterceptor interceptor = new TracingServerInterceptor(); // GH-90000
-        Metadata headers = new Metadata(); // GH-90000
-        headers.put(TRACE_ID_KEY, "trace-incoming-123"); // GH-90000
+    void shouldPropagateIncomingTraceId() { 
+        TracingServerInterceptor interceptor = new TracingServerInterceptor(); 
+        Metadata headers = new Metadata(); 
+        headers.put(TRACE_ID_KEY, "trace-incoming-123"); 
 
         @SuppressWarnings("unchecked")
-        ServerCall<String, String> call = createServerCall("audio.Video/Transcribe"); // GH-90000
+        ServerCall<String, String> call = createServerCall("audio.Video/Transcribe"); 
         @SuppressWarnings("unchecked")
-        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
-        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
+        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); 
+        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); 
 
-        interceptor.interceptCall(call, headers, next); // GH-90000
+        interceptor.interceptCall(call, headers, next); 
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); // GH-90000
-        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); // GH-90000
+        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); 
+        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); 
 
-        Metadata responseMetadata = new Metadata(); // GH-90000
-        wrappedCallCaptor.getValue().sendHeaders(responseMetadata); // GH-90000
+        Metadata responseMetadata = new Metadata(); 
+        wrappedCallCaptor.getValue().sendHeaders(responseMetadata); 
 
-        ArgumentCaptor<Metadata> sentHeadersCaptor = ArgumentCaptor.forClass(Metadata.class); // GH-90000
-        verify(call).sendHeaders(sentHeadersCaptor.capture()); // GH-90000
+        ArgumentCaptor<Metadata> sentHeadersCaptor = ArgumentCaptor.forClass(Metadata.class); 
+        verify(call).sendHeaders(sentHeadersCaptor.capture()); 
 
-        Metadata sentHeaders = sentHeadersCaptor.getValue(); // GH-90000
+        Metadata sentHeaders = sentHeadersCaptor.getValue(); 
         assertThat(sentHeaders.get(TRACE_ID_KEY)).isEqualTo("trace-incoming-123");
         assertThat(sentHeaders.get(SPAN_ID_KEY)).isNotBlank();
     }
 
     @Test
     @DisplayName("Should generate trace id when request does not include one")
-    void shouldGenerateTraceIdWhenMissing() { // GH-90000
-        TracingServerInterceptor interceptor = new TracingServerInterceptor(); // GH-90000
-        Metadata headers = new Metadata(); // GH-90000
+    void shouldGenerateTraceIdWhenMissing() { 
+        TracingServerInterceptor interceptor = new TracingServerInterceptor(); 
+        Metadata headers = new Metadata(); 
 
         @SuppressWarnings("unchecked")
-        ServerCall<String, String> call = createServerCall("audio.Video/HealthCheck"); // GH-90000
+        ServerCall<String, String> call = createServerCall("audio.Video/HealthCheck"); 
         @SuppressWarnings("unchecked")
-        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
-        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
+        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); 
+        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); 
 
-        interceptor.interceptCall(call, headers, next); // GH-90000
+        interceptor.interceptCall(call, headers, next); 
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); // GH-90000
-        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); // GH-90000
+        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); 
+        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); 
 
-        wrappedCallCaptor.getValue().sendHeaders(new Metadata()); // GH-90000
+        wrappedCallCaptor.getValue().sendHeaders(new Metadata()); 
 
-        ArgumentCaptor<Metadata> sentHeadersCaptor = ArgumentCaptor.forClass(Metadata.class); // GH-90000
-        verify(call).sendHeaders(sentHeadersCaptor.capture()); // GH-90000
+        ArgumentCaptor<Metadata> sentHeadersCaptor = ArgumentCaptor.forClass(Metadata.class); 
+        verify(call).sendHeaders(sentHeadersCaptor.capture()); 
 
-        Metadata sentHeaders = sentHeadersCaptor.getValue(); // GH-90000
+        Metadata sentHeaders = sentHeadersCaptor.getValue(); 
         assertThat(sentHeaders.get(TRACE_ID_KEY)).isNotBlank();
         assertThat(sentHeaders.get(TRACE_ID_KEY)).hasSize(32);
         assertThat(sentHeaders.get(SPAN_ID_KEY)).isNotBlank();
@@ -99,17 +99,17 @@ class TracingServerInterceptorTest {
 
     @Test
     @DisplayName("Should clear MDC context when gRPC call closes")
-    void shouldClearMdcWhenCallCloses() { // GH-90000
-        TracingServerInterceptor interceptor = new TracingServerInterceptor(); // GH-90000
-        Metadata headers = new Metadata(); // GH-90000
+    void shouldClearMdcWhenCallCloses() { 
+        TracingServerInterceptor interceptor = new TracingServerInterceptor(); 
+        Metadata headers = new Metadata(); 
 
         @SuppressWarnings("unchecked")
-        ServerCall<String, String> call = createServerCall("audio.Video/Analyze"); // GH-90000
+        ServerCall<String, String> call = createServerCall("audio.Video/Analyze"); 
         @SuppressWarnings("unchecked")
-        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); // GH-90000
-        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); // GH-90000
+        ServerCallHandler<String, String> next = mock(ServerCallHandler.class); 
+        when(next.startCall(any(), eq(headers))).thenReturn(new ServerCall.Listener<>() {}); 
 
-        interceptor.interceptCall(call, headers, next); // GH-90000
+        interceptor.interceptCall(call, headers, next); 
 
         assertThat(MDC.get("traceId")).isNotBlank();
         assertThat(MDC.get("spanId")).isNotBlank();
@@ -117,10 +117,10 @@ class TracingServerInterceptorTest {
         assertThat(MDC.get("grpcMethod")).isEqualTo("Analyze");
 
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); // GH-90000
-        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); // GH-90000
+        ArgumentCaptor<ServerCall<String, String>> wrappedCallCaptor = ArgumentCaptor.forClass(ServerCall.class); 
+        verify(next).startCall(wrappedCallCaptor.capture(), eq(headers)); 
 
-        wrappedCallCaptor.getValue().close(Status.OK, new Metadata()); // GH-90000
+        wrappedCallCaptor.getValue().close(Status.OK, new Metadata()); 
 
         assertThat(MDC.get("traceId")).isNull();
         assertThat(MDC.get("spanId")).isNull();
@@ -129,29 +129,29 @@ class TracingServerInterceptorTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static ServerCall<String, String> createServerCall(String fullMethodName) { // GH-90000
-        ServerCall<String, String> call = mock(ServerCall.class); // GH-90000
-        when(call.getMethodDescriptor()).thenReturn(MethodDescriptor.<String, String>newBuilder() // GH-90000
-                .setType(MethodDescriptor.MethodType.UNARY) // GH-90000
-                .setFullMethodName(fullMethodName) // GH-90000
-                .setRequestMarshaller(new StringMarshaller()) // GH-90000
-                .setResponseMarshaller(new StringMarshaller()) // GH-90000
-                .build()); // GH-90000
+    private static ServerCall<String, String> createServerCall(String fullMethodName) { 
+        ServerCall<String, String> call = mock(ServerCall.class); 
+        when(call.getMethodDescriptor()).thenReturn(MethodDescriptor.<String, String>newBuilder() 
+                .setType(MethodDescriptor.MethodType.UNARY) 
+                .setFullMethodName(fullMethodName) 
+                .setRequestMarshaller(new StringMarshaller()) 
+                .setResponseMarshaller(new StringMarshaller()) 
+                .build()); 
         return call;
     }
 
     private static final class StringMarshaller implements MethodDescriptor.Marshaller<String> {
         @Override
-        public InputStream stream(String value) { // GH-90000
-            return new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8)); // GH-90000
+        public InputStream stream(String value) { 
+            return new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8)); 
         }
 
         @Override
-        public String parse(InputStream stream) { // GH-90000
+        public String parse(InputStream stream) { 
             try {
-                return new String(stream.readAllBytes(), StandardCharsets.UTF_8); // GH-90000
-            } catch (java.io.IOException exception) { // GH-90000
-                throw new IllegalStateException("Failed to parse gRPC payload", exception); // GH-90000
+                return new String(stream.readAllBytes(), StandardCharsets.UTF_8); 
+            } catch (java.io.IOException exception) { 
+                throw new IllegalStateException("Failed to parse gRPC payload", exception); 
             }
         }
     }

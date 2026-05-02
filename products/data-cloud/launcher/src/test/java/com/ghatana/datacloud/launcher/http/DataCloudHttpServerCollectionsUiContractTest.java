@@ -34,11 +34,11 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
     private DataCloudClient.Entity customersCollection;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        client = mock(DataCloudClient.class); // GH-90000
-        port = findFreePort(); // GH-90000
+    void setUp() throws Exception { 
+        client = mock(DataCloudClient.class); 
+        port = findFreePort(); 
 
-        ordersCollection = collectionEntity( // GH-90000
+        ordersCollection = collectionEntity( 
                 "orders",
                 "Orders",
                 "Order collection",
@@ -46,7 +46,7 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
                 "active",
                 Instant.parse("2026-04-17T08:00:00Z"),
                 Instant.parse("2026-04-17T09:00:00Z"));
-        customersCollection = collectionEntity( // GH-90000
+        customersCollection = collectionEntity( 
                 "customers",
                 "Customers",
                 "Customer master data",
@@ -57,10 +57,10 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
     }
 
     @Override
-    protected void startServer() throws Exception { // GH-90000
-        server = new DataCloudHttpServer(client, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); // GH-90000
+    protected void startServer() throws Exception { 
+        server = new DataCloudHttpServer(client, port); 
+        server.start(); 
+        waitForServerReady(TestConstants.TIMEOUT_SERVER_START_MS); 
     }
 
     @Nested
@@ -69,43 +69,43 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
 
         @Test
         @DisplayName("returns backend entity list shape expected by collectionsApi.list")
-        void returnsBackendEntityListShapeExpectedByCollectionsApi() throws Exception { // GH-90000
+        void returnsBackendEntityListShapeExpectedByCollectionsApi() throws Exception { 
             when(client.query(anyString(), eq("dc_collections"), any()))
-                    .thenReturn(Promise.of(List.of(ordersCollection, customersCollection))); // GH-90000
+                    .thenReturn(Promise.of(List.of(ordersCollection, customersCollection))); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
-            HttpResponse<String> response = getWithHeader( // GH-90000
+            HttpResponse<String> response = getWithHeader( 
                     "/api/v1/entities/dc_collections?limit=50&offset=0",
                     "X-Tenant-Id",
                     TestConstants.TENANT_DEFAULT);
 
-            assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body).containsKeys("entities", "count"); // GH-90000
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
+            assertThat(body).containsKeys("entities", "count"); 
             assertThat(body.get("count")).isEqualTo(2);
 
             List<?> entities = (List<?>) body.get("entities");
-            assertThat(entities).hasSize(2); // GH-90000
+            assertThat(entities).hasSize(2); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> firstEntity = (Map<String, Object>) entities.get(0); // GH-90000
-            assertThat(firstEntity) // GH-90000
-                    .containsEntry("id", "orders") // GH-90000
-                    .containsEntry("collection", "dc_collections") // GH-90000
+            Map<String, Object> firstEntity = (Map<String, Object>) entities.get(0); 
+            assertThat(firstEntity) 
+                    .containsEntry("id", "orders") 
+                    .containsEntry("collection", "dc_collections") 
                     .containsKey("data")
-                    .containsEntry("createdAt", "2026-04-17T08:00:00Z") // GH-90000
-                    .containsEntry("updatedAt", "2026-04-17T09:00:00Z"); // GH-90000
+                    .containsEntry("createdAt", "2026-04-17T08:00:00Z") 
+                    .containsEntry("updatedAt", "2026-04-17T09:00:00Z"); 
             @SuppressWarnings("unchecked")
             Map<String, Object> firstEntityData = (Map<String, Object>) firstEntity.get("data");
-            assertThat(firstEntityData) // GH-90000
-                    .containsEntry("name", "Orders") // GH-90000
-                    .containsEntry("description", "Order collection") // GH-90000
-                    .containsEntry("schemaType", "entity") // GH-90000
-                    .containsEntry("status", "active") // GH-90000
-                    .containsEntry("isActive", true) // GH-90000
-                    .containsEntry("entityCount", 42) // GH-90000
-                    .containsEntry("createdBy", "integration-test"); // GH-90000
+            assertThat(firstEntityData) 
+                    .containsEntry("name", "Orders") 
+                    .containsEntry("description", "Order collection") 
+                    .containsEntry("schemaType", "entity") 
+                    .containsEntry("status", "active") 
+                    .containsEntry("isActive", true) 
+                    .containsEntry("entityCount", 42) 
+                    .containsEntry("createdBy", "integration-test"); 
         }
     }
 
@@ -115,36 +115,36 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
 
         @Test
         @DisplayName("returns backend entity detail shape expected by collectionsApi.get")
-        void returnsBackendEntityDetailShapeExpectedByCollectionsApi() throws Exception { // GH-90000
+        void returnsBackendEntityDetailShapeExpectedByCollectionsApi() throws Exception { 
             when(client.findById(anyString(), eq("dc_collections"), eq("orders")))
-                    .thenReturn(Promise.of(Optional.of(ordersCollection))); // GH-90000
+                    .thenReturn(Promise.of(Optional.of(ordersCollection))); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
-            HttpResponse<String> response = getWithHeader( // GH-90000
+            HttpResponse<String> response = getWithHeader( 
                     "/api/v1/entities/dc_collections/orders",
                     "X-Tenant-Id",
                     TestConstants.TENANT_DEFAULT);
 
-            assertThat(response.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(response.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(response.body(), Map.class); // GH-90000
-            assertThat(body) // GH-90000
-                    .containsEntry("id", "orders") // GH-90000
-                    .containsEntry("collection", "dc_collections") // GH-90000
-                    .containsEntry("createdAt", "2026-04-17T08:00:00Z") // GH-90000
-                    .containsEntry("updatedAt", "2026-04-17T09:00:00Z"); // GH-90000
+            Map<String, Object> body = mapper.readValue(response.body(), Map.class); 
+            assertThat(body) 
+                    .containsEntry("id", "orders") 
+                    .containsEntry("collection", "dc_collections") 
+                    .containsEntry("createdAt", "2026-04-17T08:00:00Z") 
+                    .containsEntry("updatedAt", "2026-04-17T09:00:00Z"); 
             @SuppressWarnings("unchecked")
             Map<String, Object> entityData = (Map<String, Object>) body.get("data");
-            assertThat(entityData) // GH-90000
-                    .containsEntry("name", "Orders") // GH-90000
-                    .containsEntry("description", "Order collection") // GH-90000
-                    .containsEntry("status", "active") // GH-90000
-                    .containsEntry("entityCount", 42); // GH-90000
+            assertThat(entityData) 
+                    .containsEntry("name", "Orders") 
+                    .containsEntry("description", "Order collection") 
+                    .containsEntry("status", "active") 
+                    .containsEntry("entityCount", 42); 
         }
     }
 
-    private static DataCloudClient.Entity collectionEntity( // GH-90000
+    private static DataCloudClient.Entity collectionEntity( 
             String id,
             String name,
             String description,
@@ -152,20 +152,20 @@ class DataCloudHttpServerCollectionsUiContractTest extends DataCloudHttpServerTe
             String status,
             Instant createdAt,
             Instant updatedAt) {
-        return new DataCloudClient.Entity( // GH-90000
+        return new DataCloudClient.Entity( 
                 id,
                 "dc_collections",
-                Map.of( // GH-90000
+                Map.of( 
                         "name", name,
                         "description", description,
                         "schemaType", "entity",
                         "status", status,
-                        "isActive", "active".equals(status), // GH-90000
+                        "isActive", "active".equals(status), 
                         "entityCount", entityCount,
-                        "schema", Map.of( // GH-90000
-                                "fields", List.of( // GH-90000
-                                        Map.of("name", "id", "type", "string", "required", true), // GH-90000
-                                        Map.of("name", "tenantId", "type", "string", "required", true))), // GH-90000
+                        "schema", Map.of( 
+                                "fields", List.of( 
+                                        Map.of("name", "id", "type", "string", "required", true), 
+                                        Map.of("name", "tenantId", "type", "string", "required", true))), 
                         "tags", List.of("core"),
                         "createdBy", "integration-test"),
                 createdAt,

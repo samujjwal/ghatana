@@ -32,28 +32,28 @@ class HttpClientBenchmark {
      */
     @Test
     @DisplayName("Benchmark: HttpClientFactory adapter creation")
-    void benchmarkAdapterCreation() { // GH-90000
+    void benchmarkAdapterCreation() { 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); // GH-90000
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { 
+            HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); 
         }
 
         // Benchmark
-        long startTime = System.nanoTime(); // GH-90000
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            var adapter = HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); // GH-90000
-            assertThat(adapter).isNotNull(); // GH-90000
+        long startTime = System.nanoTime(); 
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { 
+            var adapter = HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); 
+            assertThat(adapter).isNotNull(); 
         }
-        long endTime = System.nanoTime(); // GH-90000
+        long endTime = System.nanoTime(); 
 
-        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
+        long durationMs = (endTime - startTime) / 1_000_000; 
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; 
 
-        System.out.printf("Adapter creation: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
+        System.out.printf("Adapter creation: %d iterations in %d ms (avg %.3f ms/operation)%n", 
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
         // Performance assertion: should complete in reasonable time
-        assertThat(durationMs).isLessThan(5000); // < 5 seconds for 100 iterations // GH-90000
+        assertThat(durationMs).isLessThan(5000); // < 5 seconds for 100 iterations 
     }
 
     /**
@@ -61,33 +61,33 @@ class HttpClientBenchmark {
      */
     @Test
     @DisplayName("Benchmark: HttpClientConfig builder")
-    void benchmarkConfigCreation() { // GH-90000
+    void benchmarkConfigCreation() { 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            HttpClientConfig.builder() // GH-90000
-                    .callTimeout(java.time.Duration.ofSeconds(30)) // GH-90000
-                    .connectTimeout(java.time.Duration.ofSeconds(10)) // GH-90000
-                    .build(); // GH-90000
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { 
+            HttpClientConfig.builder() 
+                    .callTimeout(java.time.Duration.ofSeconds(30)) 
+                    .connectTimeout(java.time.Duration.ofSeconds(10)) 
+                    .build(); 
         }
 
         // Benchmark
-        long startTime = System.nanoTime(); // GH-90000
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            var config = HttpClientConfig.builder() // GH-90000
-                    .callTimeout(java.time.Duration.ofSeconds(30)) // GH-90000
-                    .connectTimeout(java.time.Duration.ofSeconds(10)) // GH-90000
-                    .build(); // GH-90000
-            assertThat(config).isNotNull(); // GH-90000
+        long startTime = System.nanoTime(); 
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { 
+            var config = HttpClientConfig.builder() 
+                    .callTimeout(java.time.Duration.ofSeconds(30)) 
+                    .connectTimeout(java.time.Duration.ofSeconds(10)) 
+                    .build(); 
+            assertThat(config).isNotNull(); 
         }
-        long endTime = System.nanoTime(); // GH-90000
+        long endTime = System.nanoTime(); 
 
-        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
+        long durationMs = (endTime - startTime) / 1_000_000; 
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; 
 
-        System.out.printf("Config creation: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
+        System.out.printf("Config creation: %d iterations in %d ms (avg %.3f ms/operation)%n", 
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(3000); // < 3 seconds for 100 iterations on shared CI runners // GH-90000
+        assertThat(durationMs).isLessThan(3000); // < 3 seconds for 100 iterations on shared CI runners 
     }
 
     /**
@@ -95,26 +95,26 @@ class HttpClientBenchmark {
      */
     @Test
     @DisplayName("Benchmark: Rate limiter cache operations")
-    void benchmarkRateLimiterCache() { // GH-90000
+    void benchmarkRateLimiterCache() { 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); // GH-90000
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { 
+            HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); 
         }
 
         // Benchmark
-        long startTime = System.nanoTime(); // GH-90000
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            var adapter = HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); // GH-90000
-            assertThat(adapter).isNotNull(); // GH-90000
+        long startTime = System.nanoTime(); 
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { 
+            var adapter = HttpClientFactory.createDefaultAdapter(new NoopMetricsCollector()); 
+            assertThat(adapter).isNotNull(); 
         }
-        long endTime = System.nanoTime(); // GH-90000
+        long endTime = System.nanoTime(); 
 
-        long durationMs = (endTime - startTime) / 1_000_000; // GH-90000
-        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; // GH-90000
+        long durationMs = (endTime - startTime) / 1_000_000; 
+        double avgPerOpMs = (double) durationMs / BENCHMARK_ITERATIONS; 
 
-        System.out.printf("Rate limiter cache: %d iterations in %d ms (avg %.3f ms/operation)%n", // GH-90000
+        System.out.printf("Rate limiter cache: %d iterations in %d ms (avg %.3f ms/operation)%n", 
                 BENCHMARK_ITERATIONS, durationMs, avgPerOpMs);
 
-        assertThat(durationMs).isLessThan(5000); // GH-90000
+        assertThat(durationMs).isLessThan(5000); 
     }
 }

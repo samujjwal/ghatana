@@ -20,7 +20,7 @@ public final class DebugTestUtils {
     private static final Path TEST_RESOURCES = Paths.get("src/test/resources");
     private static final Path FIXTURES_DIR = TEST_RESOURCES.resolve("fixtures");
 
-    private DebugTestUtils() {} // GH-90000
+    private DebugTestUtils() {} 
 
     /**
      * Loads test fixture content from the fixtures directory.
@@ -29,8 +29,8 @@ public final class DebugTestUtils {
      * @return file content as string
      * @throws IOException if the file cannot be read
      */
-    public static String loadFixture(String filename) throws IOException { // GH-90000
-        return Files.readString(FIXTURES_DIR.resolve(filename)); // GH-90000
+    public static String loadFixture(String filename) throws IOException { 
+        return Files.readString(FIXTURES_DIR.resolve(filename)); 
     }
 
     /**
@@ -40,12 +40,12 @@ public final class DebugTestUtils {
      * @param expectedFile expected file name
      * @param expectedLine expected line number
      */
-    public static void assertFrameMatches( // GH-90000
+    public static void assertFrameMatches( 
             List<StackTraceParser.TraceFrame> frames, String expectedFile, int expectedLine) {
-        assertFalse(frames.isEmpty(), "No frames to check"); // GH-90000
-        var frame = frames.get(0); // GH-90000
-        assertEquals(expectedFile, frame.file(), "Unexpected file"); // GH-90000
-        assertEquals(expectedLine, frame.line(), "Unexpected line number"); // GH-90000
+        assertFalse(frames.isEmpty(), "No frames to check"); 
+        var frame = frames.get(0); 
+        assertEquals(expectedFile, frame.file(), "Unexpected file"); 
+        assertEquals(expectedLine, frame.line(), "Unexpected line number"); 
     }
 
     /**
@@ -54,16 +54,16 @@ public final class DebugTestUtils {
      * @param frames list of frames to check
      * @param expectedFunction expected function name
      */
-    public static void assertFrameFunctionMatches( // GH-90000
+    public static void assertFrameFunctionMatches( 
             List<StackTraceParser.TraceFrame> frames, String expectedFunction) {
-        assertFalse(frames.isEmpty(), "No frames to check"); // GH-90000
-        var frame = frames.get(0); // GH-90000
-        assertEquals(expectedFunction, frame.function(), "Unexpected function name"); // GH-90000
+        assertFalse(frames.isEmpty(), "No frames to check"); 
+        var frame = frames.get(0); 
+        assertEquals(expectedFunction, frame.function(), "Unexpected function name"); 
     }
 
-    public static Path createTempFile(String content) throws IOException { // GH-90000
-        Path tempFile = Files.createTempFile("polyfix", ".tmp"); // GH-90000
-        Files.writeString(tempFile, content); // GH-90000
+    public static Path createTempFile(String content) throws IOException { 
+        Path tempFile = Files.createTempFile("polyfix", ".tmp"); 
+        Files.writeString(tempFile, content); 
         return tempFile;
     }
 }

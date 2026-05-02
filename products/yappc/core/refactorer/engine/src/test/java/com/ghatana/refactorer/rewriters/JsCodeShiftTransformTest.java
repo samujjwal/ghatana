@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
  * transforms. Tests assume jscodeshift is either installed locally or can be installed into the
  * workspace on demand.
  */
-@ExtendWith(JsCodeShiftTransformTest.JsCodeShiftExtension.class) // GH-90000
-@Timeout(value = 45, unit = TimeUnit.SECONDS) // GH-90000
+@ExtendWith(JsCodeShiftTransformTest.JsCodeShiftExtension.class) 
+@Timeout(value = 45, unit = TimeUnit.SECONDS) 
 @Tag("integration")
 /**
  * @doc.type class
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @doc.pattern Test
  */
 class JsCodeShiftTransformTest {
-    private static final Logger log = LoggerFactory.getLogger(JsCodeShiftTransformTest.class); // GH-90000
+    private static final Logger log = LoggerFactory.getLogger(JsCodeShiftTransformTest.class); 
     private static final long TIMEOUT_MS = 60_000;
 
     private JsCodeShiftBridge bridge;
@@ -52,95 +52,95 @@ class JsCodeShiftTransformTest {
     private Path transformsDir;
 
     @BeforeEach
-    void setUp(@TempDir Path tempDir) throws IOException { // GH-90000
+    void setUp(@TempDir Path tempDir) throws IOException { 
         this.tempDir = tempDir;
         this.bridge =
-                JsCodeShiftBridge.builder() // GH-90000
-                        .withJscodeshiftCommand(JsCodeShiftExtension.getJsCodeShiftCommand()) // GH-90000
-                        .withTimeoutMs(TIMEOUT_MS) // GH-90000
-                        .withDependencyInstallation(false) // GH-90000
-                        .withTypeScript(true) // GH-90000
-                        .build(); // GH-90000
+                JsCodeShiftBridge.builder() 
+                        .withJscodeshiftCommand(JsCodeShiftExtension.getJsCodeShiftCommand()) 
+                        .withTimeoutMs(TIMEOUT_MS) 
+                        .withDependencyInstallation(false) 
+                        .withTypeScript(true) 
+                        .build(); 
 
         this.srcDir = tempDir.resolve("src");
         this.transformsDir = tempDir.resolve("transforms");
-        Files.createDirectories(srcDir); // GH-90000
-        Files.createDirectories(transformsDir); // GH-90000
+        Files.createDirectories(srcDir); 
+        Files.createDirectories(transformsDir); 
 
         this.srcFile = srcDir.resolve("test.js");
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 srcFile,
                 "// Test file\n"
-                        + "function test() {\n" // GH-90000
+                        + "function test() {\n" 
                         + "  // This is a test\n"
-                        + "  console.log('Hello, world!');\n" // GH-90000
+                        + "  console.log('Hello, world!');\n" 
                         + "  return 42;\n"
                         + "}\n");
 
         this.transformFile = transformsDir.resolve("test-transform.js");
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 transformFile,
                 "// Simple transform that adds a comment\n"
-                        + "module.exports = function(file, api) {\n" // GH-90000
+                        + "module.exports = function(file, api) {\n" 
                         + "  const j = api.jscodeshift;\n"
-                        + "  const root = j(file.source);\n" // GH-90000
-                        + "  const firstNode = root.find(j.Program).get('body', 0).node;\n" // GH-90000
+                        + "  const root = j(file.source);\n" 
+                        + "  const firstNode = root.find(j.Program).get('body', 0).node;\n" 
                         + "  firstNode.comments = [\n"
-                        + "    j.commentLine(' Added by test transform '),\n" // GH-90000
-                        + "    ...(firstNode.comments || [])\n" // GH-90000
+                        + "    j.commentLine(' Added by test transform '),\n" 
+                        + "    ...(firstNode.comments || [])\n" 
                         + "  ];\n"
-                        + "  return root.toSource();\n" // GH-90000
+                        + "  return root.toSource();\n" 
                         + "};\n");
     }
 
     @Test
     @DisplayName("Applies transform to a single file")
-    void appliesTransformToSingleFile() throws IOException { // GH-90000
-        String before = Files.readString(srcFile); // GH-90000
+    void appliesTransformToSingleFile() throws IOException { 
+        String before = Files.readString(srcFile); 
 
-        ProcessExec.Result result = bridge.transform(tempDir, transformFile, List.of(srcFile)); // GH-90000
+        ProcessExec.Result result = bridge.transform(tempDir, transformFile, List.of(srcFile)); 
 
-        assertSuccessfulResult(result); // GH-90000
+        assertSuccessfulResult(result); 
 
-        String after = Files.readString(srcFile); // GH-90000
-        assertNotEquals(before, after, "File content should change after transform"); // GH-90000
+        String after = Files.readString(srcFile); 
+        assertNotEquals(before, after, "File content should change after transform"); 
         assertTrue(after.contains("Added by test transform"), "Transform should add a comment");
     }
 
     @Test
     @DisplayName("Honours --dry option without mutating files")
-    void respectsDryRunOption() throws IOException { // GH-90000
-        String before = Files.readString(srcFile); // GH-90000
+    void respectsDryRunOption() throws IOException { 
+        String before = Files.readString(srcFile); 
 
         ProcessExec.Result dryRunResult =
-                bridge.transform( // GH-90000
+                bridge.transform( 
                         tempDir,
                         transformFile,
-                        List.of(srcFile), // GH-90000
-                        Map.of( // GH-90000
+                        List.of(srcFile), 
+                        Map.of( 
                                 "dry", "",
                                 "print", ""));
 
-        assertSuccessfulResult(dryRunResult); // GH-90000
-        assertEquals(before, Files.readString(srcFile), "Dry run should not mutate file"); // GH-90000
+        assertSuccessfulResult(dryRunResult); 
+        assertEquals(before, Files.readString(srcFile), "Dry run should not mutate file"); 
 
         ProcessExec.Result realRunResult =
-                bridge.transform(tempDir, transformFile, List.of(srcFile)); // GH-90000
-        assertSuccessfulResult(realRunResult); // GH-90000
-        assertNotEquals(before, Files.readString(srcFile), "Real run should mutate file"); // GH-90000
+                bridge.transform(tempDir, transformFile, List.of(srcFile)); 
+        assertSuccessfulResult(realRunResult); 
+        assertNotEquals(before, Files.readString(srcFile), "Real run should mutate file"); 
     }
 
     @Test
     @DisplayName("Surfacing transform failures with invalid code")
-    void surfacesTransformErrors() throws IOException { // GH-90000
+    void surfacesTransformErrors() throws IOException { 
         Path invalidTransform = transformsDir.resolve("invalid-transform.js");
-        Files.writeString(invalidTransform, "module.exports = () => { invalid }"); // GH-90000
+        Files.writeString(invalidTransform, "module.exports = () => { invalid }"); 
 
-        ProcessExec.Result result = bridge.transform(tempDir, invalidTransform, List.of(srcFile)); // GH-90000
+        ProcessExec.Result result = bridge.transform(tempDir, invalidTransform, List.of(srcFile)); 
 
-        assertNotEquals(0, result.exitCode(), "Invalid transform should exit non-zero"); // GH-90000
-        String combinedOutput = result.out() + "\n" + result.err(); // GH-90000
-        assertTrue( // GH-90000
+        assertNotEquals(0, result.exitCode(), "Invalid transform should exit non-zero"); 
+        String combinedOutput = result.out() + "\n" + result.err(); 
+        assertTrue( 
                 combinedOutput.contains("SyntaxError")
                         || combinedOutput.contains("Error")
                         || combinedOutput.contains("error"),
@@ -149,13 +149,13 @@ class JsCodeShiftTransformTest {
 
     @Test
     @DisplayName("Gracefully handles missing input files")
-    void handlesMissingFiles() { // GH-90000
+    void handlesMissingFiles() { 
         Path missing = srcDir.resolve("missing.js");
 
-        ProcessExec.Result result = bridge.transform(tempDir, transformFile, List.of(missing)); // GH-90000
+        ProcessExec.Result result = bridge.transform(tempDir, transformFile, List.of(missing)); 
 
-        String combinedOutput = result.out() + "\n" + result.err(); // GH-90000
-        if (result.exitCode() == 0) { // GH-90000
+        String combinedOutput = result.out() + "\n" + result.err(); 
+        if (result.exitCode() == 0) { 
             log.warn("jscodeshift succeeded despite missing file");
             boolean warned =
                     combinedOutput.contains("no such file")
@@ -163,9 +163,9 @@ class JsCodeShiftTransformTest {
                             || combinedOutput.contains("does not exist")
                             || combinedOutput.contains("ENOENT")
                             || combinedOutput.contains("No files processed");
-            assertTrue(warned, "Expected warning about missing file in output"); // GH-90000
+            assertTrue(warned, "Expected warning about missing file in output"); 
         } else {
-            assertTrue( // GH-90000
+            assertTrue( 
                     combinedOutput.contains("no such file")
                             || combinedOutput.contains("not found")
                             || combinedOutput.contains("does not exist")
@@ -174,71 +174,71 @@ class JsCodeShiftTransformTest {
         }
     }
 
-    private void assertSuccessfulResult(ProcessExec.Result result) { // GH-90000
-        if (result.exitCode() != 0) { // GH-90000
-            fail( // GH-90000
-                    String.format( // GH-90000
+    private void assertSuccessfulResult(ProcessExec.Result result) { 
+        if (result.exitCode() != 0) { 
+            fail( 
+                    String.format( 
                             "Transform failed with exit code %d\nSTDOUT:\n%s\nSTDERR:\n%s",
-                            result.exitCode(), result.out(), result.err())); // GH-90000
+                            result.exitCode(), result.out(), result.err())); 
         }
     }
 
     /** JUnit 5 extension that installs jscodeshift locally when required. */
     public static class JsCodeShiftExtension implements BeforeAllCallback {
-        private static final Logger log = LoggerFactory.getLogger(JsCodeShiftExtension.class); // GH-90000
+        private static final Logger log = LoggerFactory.getLogger(JsCodeShiftExtension.class); 
         private static final long INSTALL_TIMEOUT_SECONDS = 300;
         private static boolean isInstalled = false;
         private static Path installedBinary;
 
         @Override
-        public void beforeAll(ExtensionContext context) throws Exception { // GH-90000
-            if (isInstalled) { // GH-90000
+        public void beforeAll(ExtensionContext context) throws Exception { 
+            if (isInstalled) { 
                 return;
             }
 
-            if (!isJsCodeShiftAvailable()) { // GH-90000
+            if (!isJsCodeShiftAvailable()) { 
                 log.info("jscodeshift not found, attempting local install...");
-                boolean installed = installJsCodeShiftLocally(); // GH-90000
-                if (!installed || !isJsCodeShiftAvailable()) { // GH-90000
-                    log.warn( // GH-90000
+                boolean installed = installJsCodeShiftLocally(); 
+                if (!installed || !isJsCodeShiftAvailable()) { 
+                    log.warn( 
                             "jscodeshift remains unavailable after attempted install; skipping"
                                     + " tests.");
-                    Assumptions.assumeTrue(false, "jscodeshift could not be provisioned locally"); // GH-90000
+                    Assumptions.assumeTrue(false, "jscodeshift could not be provisioned locally"); 
                 }
             }
 
-            installedBinary = findLocalJsCodeShiftBinary(); // GH-90000
+            installedBinary = findLocalJsCodeShiftBinary(); 
             isInstalled = true;
         }
 
-        private static boolean isJsCodeShiftAvailable() { // GH-90000
+        private static boolean isJsCodeShiftAvailable() { 
             try {
                 Process process =
-                        new ProcessBuilder() // GH-90000
+                        new ProcessBuilder() 
                                 .command(getJsCodeShiftCommand("--version"))
-                                .redirectErrorStream(true) // GH-90000
-                                .start(); // GH-90000
+                                .redirectErrorStream(true) 
+                                .start(); 
 
-                boolean finished = process.waitFor(10, TimeUnit.SECONDS); // GH-90000
-                if (!finished) { // GH-90000
-                    process.destroyForcibly(); // GH-90000
+                boolean finished = process.waitFor(10, TimeUnit.SECONDS); 
+                if (!finished) { 
+                    process.destroyForcibly(); 
                     return false;
                 }
-                return process.exitValue() == 0; // GH-90000
-            } catch (Exception e) { // GH-90000
-                log.debug("jscodeshift availability check failed", e); // GH-90000
+                return process.exitValue() == 0; 
+            } catch (Exception e) { 
+                log.debug("jscodeshift availability check failed", e); 
                 return false;
             }
         }
 
-        private static boolean installJsCodeShiftLocally() { // GH-90000
+        private static boolean installJsCodeShiftLocally() { 
             Path projectRoot = Paths.get("").toAbsolutePath();
 
             try {
-                log.info("Installing jscodeshift locally in {}", projectRoot); // GH-90000
+                log.info("Installing jscodeshift locally in {}", projectRoot); 
 
                 List<String> command =
-                        List.of( // GH-90000
+                        List.of( 
                                 "npm",
                                 "install",
                                 "--no-package-lock",
@@ -248,66 +248,66 @@ class JsCodeShiftTransformTest {
                                 "jscodeshift@latest");
 
                 Map<String, String> envOverrides =
-                        Map.ofEntries( // GH-90000
-                                Map.entry("npm_config_audit", "false"), // GH-90000
-                                Map.entry("npm_config_fund", "false"), // GH-90000
-                                Map.entry("npm_config_progress", "false"), // GH-90000
-                                Map.entry("npm_config_registry", "https://registry.npmjs.org"), // GH-90000
-                                Map.entry("npm_config_proxy", ""), // GH-90000
-                                Map.entry("npm_config_https_proxy", "")); // GH-90000
+                        Map.ofEntries( 
+                                Map.entry("npm_config_audit", "false"), 
+                                Map.entry("npm_config_fund", "false"), 
+                                Map.entry("npm_config_progress", "false"), 
+                                Map.entry("npm_config_registry", "https://registry.npmjs.org"), 
+                                Map.entry("npm_config_proxy", ""), 
+                                Map.entry("npm_config_https_proxy", "")); 
 
                 ProcessExec.Result result =
-                        ProcessExec.run( // GH-90000
+                        ProcessExec.run( 
                                 projectRoot,
-                                Duration.ofSeconds(INSTALL_TIMEOUT_SECONDS), // GH-90000
+                                Duration.ofSeconds(INSTALL_TIMEOUT_SECONDS), 
                                 command,
                                 envOverrides);
 
-                if (result.exitCode() != 0) { // GH-90000
-                    log.error( // GH-90000
+                if (result.exitCode() != 0) { 
+                    log.error( 
                             "npm install jscodeshift failed with exit code {}\n"
                                     + "stdout:\n"
                                     + "{}\n"
                                     + "stderr:\n"
                                     + "{}",
-                            result.exitCode(), // GH-90000
-                            result.out(), // GH-90000
-                            result.err()); // GH-90000
+                            result.exitCode(), 
+                            result.out(), 
+                            result.err()); 
                     return false;
                 }
 
                 log.info("Successfully installed jscodeshift locally");
-                installedBinary = findLocalJsCodeShiftBinary(); // GH-90000
+                installedBinary = findLocalJsCodeShiftBinary(); 
                 return installedBinary != null;
-            } catch (Exception e) { // GH-90000
-                log.error("Error installing jscodeshift locally", e); // GH-90000
+            } catch (Exception e) { 
+                log.error("Error installing jscodeshift locally", e); 
                 return false;
             }
         }
 
-        public static List<String> getJsCodeShiftCommand(String... args) { // GH-90000
-            Path binary = installedBinary != null ? installedBinary : findLocalJsCodeShiftBinary(); // GH-90000
-            List<String> command = new ArrayList<>(); // GH-90000
-            if (binary != null) { // GH-90000
-                command.add(binary.toAbsolutePath().toString()); // GH-90000
+        public static List<String> getJsCodeShiftCommand(String... args) { 
+            Path binary = installedBinary != null ? installedBinary : findLocalJsCodeShiftBinary(); 
+            List<String> command = new ArrayList<>(); 
+            if (binary != null) { 
+                command.add(binary.toAbsolutePath().toString()); 
             } else {
                 command.add("npx");
                 command.add("--no-install");
                 command.add("--quiet");
                 command.add("jscodeshift");
             }
-            command.addAll(Arrays.asList(args)); // GH-90000
+            command.addAll(Arrays.asList(args)); 
             return command;
         }
 
-        private static Path findLocalJsCodeShiftBinary() { // GH-90000
+        private static Path findLocalJsCodeShiftBinary() { 
             Path candidate =
                     Paths.get("")
-                            .toAbsolutePath() // GH-90000
+                            .toAbsolutePath() 
                             .resolve("node_modules")
                             .resolve(".bin")
                             .resolve("jscodeshift");
-            if (Files.isRegularFile(candidate) && candidate.toFile().canExecute()) { // GH-90000
+            if (Files.isRegularFile(candidate) && candidate.toFile().canExecute()) { 
                 return candidate;
             }
             return null;

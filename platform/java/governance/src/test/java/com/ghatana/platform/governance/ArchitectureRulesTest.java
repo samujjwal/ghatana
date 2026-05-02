@@ -22,11 +22,11 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  *
  * <h2>Covered rules</h2>
  * <ul>
- *   <li>Dependency flow: products → libs → core (never the reverse)</li> // GH-90000
+ *   <li>Dependency flow: products → libs → core (never the reverse)</li> 
  *   <li>No Spring Reactor / WebFlux in the platform layer</li>
- *   <li>No raw {@code CompletableFuture} in product modules (use ActiveJ Promise)</li> // GH-90000
+ *   <li>No raw {@code CompletableFuture} in product modules (use ActiveJ Promise)</li> 
  *   <li>All async tests must extend {@code EventloopTestBase}</li>
- *   <li>No direct SLF4J binding imports (must use abstraction)</li> // GH-90000
+ *   <li>No direct SLF4J binding imports (must use abstraction)</li> 
  *   <li>No {@code System.out.println} in production code</li>
  *   <li>Platform security classes must be in {@code platform.security} packages</li>
  * </ul>
@@ -46,21 +46,21 @@ class ArchitectureRulesTest {
     private static JavaClasses ALL_CLASSES;
 
     @BeforeAll
-    static void importClasses() { // GH-90000
-        PLATFORM_CLASSES = new ClassFileImporter() // GH-90000
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
+    static void importClasses() { 
+        PLATFORM_CLASSES = new ClassFileImporter() 
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) 
                 .importPackages("com.ghatana.platform");
 
-        PRODUCT_CLASSES = new ClassFileImporter() // GH-90000
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
-                .importPackages("com.ghatana.appplatform", // GH-90000
+        PRODUCT_CLASSES = new ClassFileImporter() 
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) 
+                .importPackages("com.ghatana.appplatform", 
                                 "com.ghatana.yappc",
                                 "com.ghatana.datacloud",
                                 "com.ghatana.agent",
                                 "com.ghatana.refactorer");
 
-        ALL_CLASSES = new ClassFileImporter() // GH-90000
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
+        ALL_CLASSES = new ClassFileImporter() 
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) 
                 .importPackages("com.ghatana");
     }
 
@@ -72,28 +72,28 @@ class ArchitectureRulesTest {
 
         @Test
         @DisplayName("Platform libs must not depend on product code")
-        void platformMustNotDependOnProducts() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void platformMustNotDependOnProducts() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.platform..")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage( 
                             "com.ghatana.appplatform..",
                             "com.ghatana.yappc..",
                             "com.ghatana.datacloud..",
                             "com.ghatana.refactorer..")
                     .because("Platform libs must be product-independent");
-            rule.check(PLATFORM_CLASSES); // GH-90000
+            rule.check(PLATFORM_CLASSES); 
         }
 
         @Test
         @DisplayName("Core platform must not depend on agent or product packages")
-        void coreMustNotDependOnAgents() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void coreMustNotDependOnAgents() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.platform.core..")
-                    .should().dependOnClassesThat() // GH-90000
+                    .should().dependOnClassesThat() 
                     .resideInAPackage("com.ghatana.agent..")
                     .because("Core platform must not have upward dependencies on agent framework");
-            rule.check(PLATFORM_CLASSES); // GH-90000
+            rule.check(PLATFORM_CLASSES); 
         }
     }
 
@@ -105,40 +105,40 @@ class ArchitectureRulesTest {
 
         @Test
         @DisplayName("Platform code must not use Spring Reactor / WebFlux")
-        void noSpringReactorInPlatform() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noSpringReactorInPlatform() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.platform..")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage( 
                             "reactor.core..",
                             "org.springframework.web.reactive..",
                             "reactor.netty..")
                     .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden");
-            rule.check(PLATFORM_CLASSES); // GH-90000
+            rule.check(PLATFORM_CLASSES); 
         }
 
         @Test
         @DisplayName("Product code must not use Spring Reactor / WebFlux")
-        void noSpringReactorInProducts() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noSpringReactorInProducts() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana..")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage( 
                             "reactor.core..",
                             "org.springframework.web.reactive..")
                     .because("ActiveJ is the canonical async framework; Spring Reactor is forbidden");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
 
         @Test
         @DisplayName("Production code must not use System.out / System.err for logging")
-        void noSystemOutInProductionCode() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noSystemOutInProductionCode() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana..")
-                    .should().callMethod(System.class, "out") // GH-90000
-                    .orShould().callMethod(System.class, "err") // GH-90000
+                    .should().callMethod(System.class, "out") 
+                    .orShould().callMethod(System.class, "err") 
                     .because("Use SLF4J loggers instead of System.out/err");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
     }
 
@@ -150,27 +150,27 @@ class ArchitectureRulesTest {
 
         @Test
         @DisplayName("JWT validation must reside in security packages")
-        void jwtValidationInSecurityPackages() { // GH-90000
-            ArchRule rule = classes() // GH-90000
+        void jwtValidationInSecurityPackages() { 
+            ArchRule rule = classes() 
                     .that().haveSimpleNameEndingWith("JwtValidationFilter")
                     .or().haveSimpleNameEndingWith("JwtTokenProvider")
-                    .should().resideInAnyPackage( // GH-90000
+                    .should().resideInAnyPackage( 
                             "com.ghatana.platform.security..",
                             "com.ghatana.appplatform.gateway..",
                             "com.ghatana.services.auth..")
                     .because("JWT handling must live in dedicated security packages");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
 
         @Test
         @DisplayName("Credential stores must implement CredentialStore interface")
-        void credentialStoresMustImplementInterface() { // GH-90000
-            ArchRule rule = classes() // GH-90000
+        void credentialStoresMustImplementInterface() { 
+            ArchRule rule = classes() 
                     .that().haveSimpleNameEndingWith("CredentialStore")
                     .and().doNotHaveSimpleName("CredentialStore") // exclude the interface itself
-                    .should().implement(com.ghatana.services.auth.CredentialStore.class) // GH-90000
+                    .should().implement(com.ghatana.services.auth.CredentialStore.class) 
                     .because("All credential store implementations must fulfil the CredentialStore contract");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
     }
 
@@ -182,25 +182,25 @@ class ArchitectureRulesTest {
 
         @Test
         @DisplayName("Filter classes must end in 'Filter'")
-        void filterClassesMustEndWithFilter() { // GH-90000
-            ArchRule rule = classes() // GH-90000
-                    .that().implement( // GH-90000
+        void filterClassesMustEndWithFilter() { 
+            ArchRule rule = classes() 
+                    .that().implement( 
                             com.ghatana.platform.http.server.filter.FilterChain.Filter.class)
                     .should().haveSimpleNameEndingWith("Filter")
                     .because("FilterChain.Filter implementations must be named *Filter for discoverability");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
 
         @Test
         @DisplayName("Repository implementations must end in 'Store' or 'Repository'")
-        void repositoriesNamingConvention() { // GH-90000
-            ArchRule rule = classes() // GH-90000
-                    .that().implement( // GH-90000
+        void repositoriesNamingConvention() { 
+            ArchRule rule = classes() 
+                    .that().implement( 
                             com.ghatana.agent.framework.memory.MemoryStore.class)
                     .and().doNotHaveSimpleName("MemoryStore")
                     .should().haveSimpleNameEndingWith("MemoryStore")
                     .because("MemoryStore implementations must follow the *MemoryStore naming pattern");
-            rule.check(ALL_CLASSES); // GH-90000
+            rule.check(ALL_CLASSES); 
         }
     }
 
@@ -212,12 +212,12 @@ class ArchitectureRulesTest {
 
         @Test
         @DisplayName("Platform sub-packages must not have circular dependencies")
-        void noPlatformCircularDependencies() { // GH-90000
-            ArchRule rule = slices() // GH-90000
+        void noPlatformCircularDependencies() { 
+            ArchRule rule = slices() 
                     .matching("com.ghatana.platform.(*)..")
-                    .should().beFreeOfCycles() // GH-90000
+                    .should().beFreeOfCycles() 
                     .because("Platform packages must not have circular dependencies");
-            rule.check(PLATFORM_CLASSES); // GH-90000
+            rule.check(PLATFORM_CLASSES); 
         }
     }
 }

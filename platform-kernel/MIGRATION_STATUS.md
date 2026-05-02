@@ -16,7 +16,7 @@ platform-kernel/                    ← NEW composite build
 └── kernel-testing/                 ← NEW module
 
 platform-plugins/                   ← NEW composite build
-├── plugin-billing-ledger/          ← Transformed from platform:java:billing
+├── plugin-ledger/                  ← Transformed from platform:java:billing (renamed from plugin-billing-ledger)
 ├── plugin-fraud-detection/         ← NEW consolidated fraud detection
 ├── plugin-compliance/              ← NEW extracted from Finance ComplianceKernelExtension
 ├── plugin-consent/                 ← NEW extracted from PHR consent logic
@@ -48,9 +48,9 @@ The following modules have been moved to `platform/java/.archived/`:
 
 All 7 shared plugins have concrete implementations:
 
-1. **StandardBillingLedgerPlugin** / **DurableBillingLedgerPlugin** - Double-entry ledger with idempotency
+1. **StandardLedgerPlugin** / **DurableLedgerPlugin** - Double-entry ledger with idempotency
 2. **StandardFraudDetectionPlugin** - Rule-based fraud detection with explainability
-3. **StandardCompliancePlugin** - Multi-regulation compliance (SOX, HIPAA, GDPR, PCI-DSS)
+3. **StandardCompliancePlugin** - Generic regulation compliance evaluator (rule packs supplied by products)
 4. **StandardConsentPlugin** / **DurableConsentPlugin** - Universal consent management
 5. **StandardRiskManagementPlugin** - Multi-type risk calculation with explainability
 6. **StandardAuditTrailPlugin** / **DurableAuditTrailPlugin** - Tamper-evident audit with hash chain
@@ -66,7 +66,7 @@ All 7 shared plugins have concrete implementations:
 ### PHR
 - Updated to use `plugin-consent` for consent management
 - Updated to use `plugin-audit-trail` for audit logging
-- Updated to use `plugin-billing-ledger` for healthcare billing
+- Updated to use `plugin-ledger` for healthcare billing
 
 ## Next Steps
 

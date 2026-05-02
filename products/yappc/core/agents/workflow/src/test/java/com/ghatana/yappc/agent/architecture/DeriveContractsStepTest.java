@@ -31,50 +31,50 @@ class DeriveContractsStepTest extends EventloopTestBase {
   private DeriveContractsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new DeriveContractsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new DeriveContractsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("architecture.derivecontracts");
   }
 
   @Test
   @DisplayName("Should derive API contracts from architecture")
-  void shouldDeriveAPIContracts() { // GH-90000
+  void shouldDeriveAPIContracts() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("architectureId", "arch-001"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("architectureId", "arch-001"); 
+    context.put( 
         "functionalRequirements",
-        List.of("User management", "Order processing", "Inventory tracking")); // GH-90000
+        List.of("User management", "Order processing", "Inventory tracking")); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("architectureId")).isEqualTo("arch-001");
   }
 
   @Test
   @DisplayName("Should fail when architectureId is missing")
-  void shouldFailWhenArchitectureIdMissing() { // GH-90000
+  void shouldFailWhenArchitectureIdMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("architectureId");
   }
 }

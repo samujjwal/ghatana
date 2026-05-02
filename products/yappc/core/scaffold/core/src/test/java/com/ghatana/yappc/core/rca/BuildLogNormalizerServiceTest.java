@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 class BuildLogNormalizerServiceTest {
 
     @Test
-    void testGradleBuildLogDetection() throws IOException { // GH-90000
+    void testGradleBuildLogDetection() throws IOException { 
         String gradleLog =
                 """
             > Task :core:compileJava
@@ -39,51 +39,51 @@ class BuildLogNormalizerServiceTest {
             BUILD SUCCESSFUL in 5s
             """;
 
-        BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
-        NormalizedBuildLog normalized = service.normalize(gradleLog); // GH-90000
+        BuildLogNormalizerService service = new BuildLogNormalizerService(); 
+        NormalizedBuildLog normalized = service.normalize(gradleLog); 
 
-        assertEquals(NormalizedBuildLog.BuildTool.GRADLE, normalized.getTool()); // GH-90000
-        assertEquals(NormalizedBuildLog.BuildStatus.SUCCESS, normalized.getStatus()); // GH-90000
-        assertFalse(normalized.getTasks().isEmpty()); // GH-90000
+        assertEquals(NormalizedBuildLog.BuildTool.GRADLE, normalized.getTool()); 
+        assertEquals(NormalizedBuildLog.BuildStatus.SUCCESS, normalized.getStatus()); 
+        assertFalse(normalized.getTasks().isEmpty()); 
     }
 
     @Test
-    void testNxBuildLogDetection() throws IOException { // GH-90000
+    void testNxBuildLogDetection() throws IOException { 
         String nxLog =
                 """
             > nx run webapp:build
             Successfully ran target build for project webapp
             """;
 
-        BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
-        NormalizedBuildLog normalized = service.normalize(nxLog); // GH-90000
+        BuildLogNormalizerService service = new BuildLogNormalizerService(); 
+        NormalizedBuildLog normalized = service.normalize(nxLog); 
 
-        assertEquals(NormalizedBuildLog.BuildTool.NX, normalized.getTool()); // GH-90000
-        assertEquals(NormalizedBuildLog.BuildStatus.SUCCESS, normalized.getStatus()); // GH-90000
+        assertEquals(NormalizedBuildLog.BuildTool.NX, normalized.getTool()); 
+        assertEquals(NormalizedBuildLog.BuildStatus.SUCCESS, normalized.getStatus()); 
     }
 
     @Test
-    void testSupportedTools() { // GH-90000
-        BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
-        List<NormalizedBuildLog.BuildTool> supportedTools = service.getSupportedTools(); // GH-90000
+    void testSupportedTools() { 
+        BuildLogNormalizerService service = new BuildLogNormalizerService(); 
+        List<NormalizedBuildLog.BuildTool> supportedTools = service.getSupportedTools(); 
 
-        assertTrue(supportedTools.contains(NormalizedBuildLog.BuildTool.GRADLE)); // GH-90000
-        assertTrue(supportedTools.contains(NormalizedBuildLog.BuildTool.NX)); // GH-90000
+        assertTrue(supportedTools.contains(NormalizedBuildLog.BuildTool.GRADLE)); 
+        assertTrue(supportedTools.contains(NormalizedBuildLog.BuildTool.NX)); 
     }
 
     @Test
-    void testUnsupportedLogThrowsException() { // GH-90000
+    void testUnsupportedLogThrowsException() { 
         String unknownLog = "This is not a recognized build log format";
-        BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
+        BuildLogNormalizerService service = new BuildLogNormalizerService(); 
 
-        assertThrows(IOException.class, () -> service.normalize(unknownLog)); // GH-90000
+        assertThrows(IOException.class, () -> service.normalize(unknownLog)); 
     }
 
     @Test
-    void testEmptyLogThrowsException() { // GH-90000
-        BuildLogNormalizerService service = new BuildLogNormalizerService(); // GH-90000
+    void testEmptyLogThrowsException() { 
+        BuildLogNormalizerService service = new BuildLogNormalizerService(); 
 
         assertThrows(IOException.class, () -> service.normalize(""));
-        assertThrows(IOException.class, () -> service.normalize((String) null)); // GH-90000
+        assertThrows(IOException.class, () -> service.normalize((String) null)); 
     }
 }

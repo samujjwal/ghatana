@@ -30,11 +30,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @DisplayName("Persistence Integration Tests")
 @Testcontainers
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) 
 class PersistenceIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>( // GH-90000
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>( 
         DockerImageName.parse("postgres:16-alpine")
     )
     .withDatabaseName("audio_video_test")
@@ -47,294 +47,294 @@ class PersistenceIntegrationTest {
     private JpaTranscriptionRepository transcriptionRepository;
 
     @BeforeAll
-    void setUpClass() { // GH-90000
-        try (var connection = DriverManager.getConnection( // GH-90000
-            postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()); // GH-90000
-             var statement = connection.createStatement()) { // GH-90000
+    void setUpClass() { 
+        try (var connection = DriverManager.getConnection( 
+            postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()); 
+             var statement = connection.createStatement()) { 
             statement.execute("CREATE SCHEMA IF NOT EXISTS audio_video");
-        } catch (Exception e) { // GH-90000
-            throw new RuntimeException("Failed to create test schema audio_video", e); // GH-90000
+        } catch (Exception e) { 
+            throw new RuntimeException("Failed to create test schema audio_video", e); 
         }
 
         // Configure persistence unit with Testcontainer database
-        Map<String, String> properties = new HashMap<>(); // GH-90000
-        properties.put("jakarta.persistence.jdbc.url", postgres.getJdbcUrl()); // GH-90000
-        properties.put("jakarta.persistence.jdbc.user", postgres.getUsername()); // GH-90000
-        properties.put("jakarta.persistence.jdbc.password", postgres.getPassword()); // GH-90000
-        properties.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver"); // GH-90000
-        properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect"); // GH-90000
-        properties.put("hibernate.hbm2ddl.auto", "create-drop"); // GH-90000
-        properties.put("hibernate.default_schema", "audio_video"); // GH-90000
-        properties.put("hibernate.show_sql", "true"); // GH-90000
+        Map<String, String> properties = new HashMap<>(); 
+        properties.put("jakarta.persistence.jdbc.url", postgres.getJdbcUrl()); 
+        properties.put("jakarta.persistence.jdbc.user", postgres.getUsername()); 
+        properties.put("jakarta.persistence.jdbc.password", postgres.getPassword()); 
+        properties.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver"); 
+        properties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect"); 
+        properties.put("hibernate.hbm2ddl.auto", "create-drop"); 
+        properties.put("hibernate.default_schema", "audio_video"); 
+        properties.put("hibernate.show_sql", "true"); 
 
-        emf = Persistence.createEntityManagerFactory("audio-video-test", properties); // GH-90000
+        emf = Persistence.createEntityManagerFactory("audio-video-test", properties); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        entityManager = emf.createEntityManager(); // GH-90000
-        audioFileRepository = new JpaAudioFileRepository(entityManager); // GH-90000
-        transcriptionRepository = new JpaTranscriptionRepository(entityManager); // GH-90000
+    void setUp() { 
+        entityManager = emf.createEntityManager(); 
+        audioFileRepository = new JpaAudioFileRepository(entityManager); 
+        transcriptionRepository = new JpaTranscriptionRepository(entityManager); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (entityManager != null && entityManager.isOpen()) { // GH-90000
-            entityManager.close(); // GH-90000
+    void tearDown() { 
+        if (entityManager != null && entityManager.isOpen()) { 
+            entityManager.close(); 
         }
     }
 
     @AfterAll
-    void tearDownClass() { // GH-90000
-        if (emf != null && emf.isOpen()) { // GH-90000
-            emf.close(); // GH-90000
+    void tearDownClass() { 
+        if (emf != null && emf.isOpen()) { 
+            emf.close(); 
         }
     }
 
     @Test
     @DisplayName("GIVEN audio file WHEN saved THEN can be retrieved from PostgreSQL")
-    void testAudioFilePersistence() { // GH-90000
+    void testAudioFilePersistence() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity audioFile = new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        AudioFileEntity audioFile = new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             "test-recording.wav",
             "/storage/recordings/test.wav",
             "wav"
         );
-        audioFile.setDurationSeconds(120); // GH-90000
-        audioFile.setFileSizeBytes(1024L * 1024L); // GH-90000
+        audioFile.setDurationSeconds(120); 
+        audioFile.setFileSizeBytes(1024L * 1024L); 
 
         // WHEN
-        AudioFileEntity saved = audioFileRepository.save(tenantId, audioFile); // GH-90000
-        entityManager.clear(); // Clear cache to force DB read // GH-90000
+        AudioFileEntity saved = audioFileRepository.save(tenantId, audioFile); 
+        entityManager.clear(); // Clear cache to force DB read 
 
         // THEN
-        var retrieved = audioFileRepository.findById(tenantId, saved.getId()); // GH-90000
-        assertThat(retrieved).isPresent(); // GH-90000
+        var retrieved = audioFileRepository.findById(tenantId, saved.getId()); 
+        assertThat(retrieved).isPresent(); 
         assertThat(retrieved.get().getFileName()).isEqualTo("test-recording.wav");
-        assertThat(retrieved.get().getDurationSeconds()).isEqualTo(120); // GH-90000
+        assertThat(retrieved.get().getDurationSeconds()).isEqualTo(120); 
     }
 
     @Test
     @DisplayName("GIVEN transcription linked to audio file WHEN saved THEN relationship is persisted")
-    void testTranscriptionRelationship() { // GH-90000
+    void testTranscriptionRelationship() { 
         // GIVEN
         String tenantId = "tenant-123";
 
         // Create and save audio file
-        AudioFileEntity audioFile = new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        AudioFileEntity audioFile = new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             "interview.mp3",
             "/storage/interviews/interview.mp3",
             "mp3"
         );
-        audioFile = audioFileRepository.save(tenantId, audioFile); // GH-90000
+        audioFile = audioFileRepository.save(tenantId, audioFile); 
 
         // Create transcription
-        TranscriptionEntity transcription = new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        TranscriptionEntity transcription = new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            audioFile.getId(), // GH-90000
-            UUID.randomUUID(), // GH-90000
+            audioFile.getId(), 
+            UUID.randomUUID(), 
             "This is a test transcription of the interview.",
             "en"
         );
-        transcription.setConfidence(0.95f); // GH-90000
-        transcription.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); // GH-90000
+        transcription.setConfidence(0.95f); 
+        transcription.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); 
 
         // WHEN
-        TranscriptionEntity saved = transcriptionRepository.save(tenantId, transcription); // GH-90000
-        entityManager.clear(); // GH-90000
+        TranscriptionEntity saved = transcriptionRepository.save(tenantId, transcription); 
+        entityManager.clear(); 
 
         // THEN
-        var retrieved = transcriptionRepository.findById(tenantId, saved.getId()); // GH-90000
-        assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().getAudioFileId()).isEqualTo(audioFile.getId()); // GH-90000
+        var retrieved = transcriptionRepository.findById(tenantId, saved.getId()); 
+        assertThat(retrieved).isPresent(); 
+        assertThat(retrieved.get().getAudioFileId()).isEqualTo(audioFile.getId()); 
         assertThat(retrieved.get().getText()).contains("test transcription");
-        assertThat(retrieved.get().getConfidence()).isEqualTo(0.95f); // GH-90000
+        assertThat(retrieved.get().getConfidence()).isEqualTo(0.95f); 
     }
 
     @Test
     @DisplayName("GIVEN soft deleted audio file WHEN queried THEN not returned in results")
-    void testSoftDeleteExclusion() { // GH-90000
+    void testSoftDeleteExclusion() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity audioFile1 = createAudioFile(tenantId, "file1.mp3"); // GH-90000
-        AudioFileEntity audioFile2 = createAudioFile(tenantId, "file2.mp3"); // GH-90000
+        AudioFileEntity audioFile1 = createAudioFile(tenantId, "file1.mp3"); 
+        AudioFileEntity audioFile2 = createAudioFile(tenantId, "file2.mp3"); 
 
-        audioFileRepository.save(tenantId, audioFile1); // GH-90000
-        audioFileRepository.save(tenantId, audioFile2); // GH-90000
+        audioFileRepository.save(tenantId, audioFile1); 
+        audioFileRepository.save(tenantId, audioFile2); 
 
         // WHEN - soft delete first file
-        boolean deleted = audioFileRepository.softDelete(tenantId, audioFile1.getId()); // GH-90000
-        entityManager.clear(); // GH-90000
+        boolean deleted = audioFileRepository.softDelete(tenantId, audioFile1.getId()); 
+        entityManager.clear(); 
 
         // THEN
-        assertThat(deleted).isTrue(); // GH-90000
+        assertThat(deleted).isTrue(); 
 
         // Should not be found by findById
-        var found = audioFileRepository.findById(tenantId, audioFile1.getId()); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+        var found = audioFileRepository.findById(tenantId, audioFile1.getId()); 
+        assertThat(found).isEmpty(); 
 
         // Count should exclude deleted
-        long count = audioFileRepository.countByTenantId(tenantId); // GH-90000
-        assertThat(count).isEqualTo(1L); // GH-90000
+        long count = audioFileRepository.countByTenantId(tenantId); 
+        assertThat(count).isEqualTo(1L); 
 
         // findByTenantId should exclude deleted
-        var allFiles = audioFileRepository.findByTenantId(tenantId); // GH-90000
-        assertThat(allFiles).hasSize(1); // GH-90000
+        var allFiles = audioFileRepository.findByTenantId(tenantId); 
+        assertThat(allFiles).hasSize(1); 
         assertThat(allFiles.get(0).getFileName()).isEqualTo("file2.mp3");
     }
 
     @Test
     @DisplayName("GIVEN soft deleted file WHEN hard deleted THEN permanently removed")
-    void testHardDeleteAfterSoftDelete() { // GH-90000
+    void testHardDeleteAfterSoftDelete() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity audioFile = createAudioFile(tenantId, "delete-me.mp3"); // GH-90000
-        audioFileRepository.save(tenantId, audioFile); // GH-90000
+        AudioFileEntity audioFile = createAudioFile(tenantId, "delete-me.mp3"); 
+        audioFileRepository.save(tenantId, audioFile); 
 
         // Soft delete first
-        audioFileRepository.softDelete(tenantId, audioFile.getId()); // GH-90000
+        audioFileRepository.softDelete(tenantId, audioFile.getId()); 
 
         // WHEN - hard delete
-        boolean hardDeleted = audioFileRepository.hardDelete(tenantId, audioFile.getId()); // GH-90000
+        boolean hardDeleted = audioFileRepository.hardDelete(tenantId, audioFile.getId()); 
 
         // THEN
-        assertThat(hardDeleted).isTrue(); // GH-90000
+        assertThat(hardDeleted).isTrue(); 
 
-        // Count in all files (including deleted) should be 0 // GH-90000
-        var allFiles = audioFileRepository.findAllByTenantIdIncludingDeleted(tenantId); // GH-90000
-        assertThat(allFiles).isEmpty(); // GH-90000
+        // Count in all files (including deleted) should be 0 
+        var allFiles = audioFileRepository.findAllByTenantIdIncludingDeleted(tenantId); 
+        assertThat(allFiles).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN multiple tenants WHEN data saved THEN tenant isolation enforced")
-    void testTenantIsolation() { // GH-90000
+    void testTenantIsolation() { 
         // GIVEN
         String tenant1 = "tenant-alpha";
         String tenant2 = "tenant-beta";
 
-        AudioFileEntity file1 = createAudioFile(tenant1, "alpha-file.mp3"); // GH-90000
-        AudioFileEntity file2 = createAudioFile(tenant2, "beta-file.mp3"); // GH-90000
+        AudioFileEntity file1 = createAudioFile(tenant1, "alpha-file.mp3"); 
+        AudioFileEntity file2 = createAudioFile(tenant2, "beta-file.mp3"); 
 
-        audioFileRepository.save(tenant1, file1); // GH-90000
-        audioFileRepository.save(tenant2, file2); // GH-90000
+        audioFileRepository.save(tenant1, file1); 
+        audioFileRepository.save(tenant2, file2); 
 
         // WHEN & THEN
         // Tenant 1 should only see their file
-        var tenant1Files = audioFileRepository.findByTenantId(tenant1); // GH-90000
-        assertThat(tenant1Files).hasSize(1); // GH-90000
+        var tenant1Files = audioFileRepository.findByTenantId(tenant1); 
+        assertThat(tenant1Files).hasSize(1); 
         assertThat(tenant1Files.get(0).getFileName()).isEqualTo("alpha-file.mp3");
 
         // Tenant 2 should only see their file
-        var tenant2Files = audioFileRepository.findByTenantId(tenant2); // GH-90000
-        assertThat(tenant2Files).hasSize(1); // GH-90000
+        var tenant2Files = audioFileRepository.findByTenantId(tenant2); 
+        assertThat(tenant2Files).hasSize(1); 
         assertThat(tenant2Files.get(0).getFileName()).isEqualTo("beta-file.mp3");
 
         // Cross-tenant access should fail
-        var crossAccess = audioFileRepository.findById(tenant1, file2.getId()); // GH-90000
-        assertThat(crossAccess).isEmpty(); // GH-90000
+        var crossAccess = audioFileRepository.findById(tenant1, file2.getId()); 
+        assertThat(crossAccess).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN transcription with status WHEN findByStatus THEN returns matching")
-    void testFindByStatus() { // GH-90000
+    void testFindByStatus() { 
         // GIVEN
         String tenantId = "tenant-123";
 
-        TranscriptionEntity completed = createTranscription(tenantId, "Completed text"); // GH-90000
-        completed.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); // GH-90000
+        TranscriptionEntity completed = createTranscription(tenantId, "Completed text"); 
+        completed.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); 
 
-        TranscriptionEntity pending = createTranscription(tenantId, "Pending text"); // GH-90000
-        pending.setStatus(TranscriptionEntity.TranscriptionStatus.PENDING); // GH-90000
+        TranscriptionEntity pending = createTranscription(tenantId, "Pending text"); 
+        pending.setStatus(TranscriptionEntity.TranscriptionStatus.PENDING); 
 
-        transcriptionRepository.save(tenantId, completed); // GH-90000
-        transcriptionRepository.save(tenantId, pending); // GH-90000
+        transcriptionRepository.save(tenantId, completed); 
+        transcriptionRepository.save(tenantId, pending); 
 
         // WHEN
-        var completedTranscriptions = transcriptionRepository.findByStatus( // GH-90000
+        var completedTranscriptions = transcriptionRepository.findByStatus( 
             tenantId,
             TranscriptionEntity.TranscriptionStatus.COMPLETED
         );
 
         // THEN
-        assertThat(completedTranscriptions).hasSize(1); // GH-90000
-        assertThat(completedTranscriptions.get(0).getStatus()).isEqualTo( // GH-90000
+        assertThat(completedTranscriptions).hasSize(1); 
+        assertThat(completedTranscriptions.get(0).getStatus()).isEqualTo( 
             TranscriptionEntity.TranscriptionStatus.COMPLETED
         );
     }
 
     @Test
     @DisplayName("GIVEN concurrent updates WHEN committing stale entity THEN optimistic lock prevents overwrite")
-    void testOptimisticLockingOnConcurrentUpdate() { // GH-90000
+    void testOptimisticLockingOnConcurrentUpdate() { 
         String tenantId = "tenant-lock";
-        AudioFileEntity base = createAudioFile(tenantId, "lock.mp3"); // GH-90000
-        AudioFileEntity saved = audioFileRepository.save(tenantId, base); // GH-90000
+        AudioFileEntity base = createAudioFile(tenantId, "lock.mp3"); 
+        AudioFileEntity saved = audioFileRepository.save(tenantId, base); 
 
-        EntityManager em1 = emf.createEntityManager(); // GH-90000
-        EntityManager em2 = emf.createEntityManager(); // GH-90000
+        EntityManager em1 = emf.createEntityManager(); 
+        EntityManager em2 = emf.createEntityManager(); 
         try {
-            AudioFileEntity tx1Entity = em1.find(AudioFileEntity.class, saved.getId()); // GH-90000
-            AudioFileEntity tx2Entity = em2.find(AudioFileEntity.class, saved.getId()); // GH-90000
+            AudioFileEntity tx1Entity = em1.find(AudioFileEntity.class, saved.getId()); 
+            AudioFileEntity tx2Entity = em2.find(AudioFileEntity.class, saved.getId()); 
 
-            em1.getTransaction().begin(); // GH-90000
+            em1.getTransaction().begin(); 
             tx1Entity.setFileName("lock-v1.mp3");
-            em1.getTransaction().commit(); // GH-90000
+            em1.getTransaction().commit(); 
 
-            em2.getTransaction().begin(); // GH-90000
+            em2.getTransaction().begin(); 
             tx2Entity.setFileName("lock-v2.mp3");
-            assertThatThrownBy(() -> em2.getTransaction().commit()) // GH-90000
-                .isInstanceOf(RollbackException.class); // GH-90000
+            assertThatThrownBy(() -> em2.getTransaction().commit()) 
+                .isInstanceOf(RollbackException.class); 
         } finally {
-            if (em1.getTransaction().isActive()) em1.getTransaction().rollback(); // GH-90000
-            if (em2.getTransaction().isActive()) em2.getTransaction().rollback(); // GH-90000
-            em1.close(); // GH-90000
-            em2.close(); // GH-90000
+            if (em1.getTransaction().isActive()) em1.getTransaction().rollback(); 
+            if (em2.getTransaction().isActive()) em2.getTransaction().rollback(); 
+            em1.close(); 
+            em2.close(); 
         }
     }
 
     @Test
     @DisplayName("GIVEN invalid entity WHEN save fails THEN transaction is rolled back")
-    void testSaveRollbackOnConstraintViolation() { // GH-90000
+    void testSaveRollbackOnConstraintViolation() { 
         String tenantId = "tenant-rollback";
-        long before = audioFileRepository.countByTenantId(tenantId); // GH-90000
+        long before = audioFileRepository.countByTenantId(tenantId); 
 
-        AudioFileEntity invalid = createAudioFile(tenantId, "bad.mp3"); // GH-90000
-        invalid.setFileName(null); // file_name is NOT NULL // GH-90000
+        AudioFileEntity invalid = createAudioFile(tenantId, "bad.mp3"); 
+        invalid.setFileName(null); // file_name is NOT NULL 
 
-        assertThatThrownBy(() -> audioFileRepository.save(tenantId, invalid)) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> audioFileRepository.save(tenantId, invalid)) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("Failed to save AudioFile");
 
-        long after = audioFileRepository.countByTenantId(tenantId); // GH-90000
-        assertThat(after).isEqualTo(before); // GH-90000
+        long after = audioFileRepository.countByTenantId(tenantId); 
+        assertThat(after).isEqualTo(before); 
     }
 
     // Helper methods
 
-    private AudioFileEntity createAudioFile(String tenantId, String fileName) { // GH-90000
-        return new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+    private AudioFileEntity createAudioFile(String tenantId, String fileName) { 
+        return new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             fileName,
             "/storage/" + fileName,
-            fileName.substring(fileName.lastIndexOf('.') + 1) // GH-90000
+            fileName.substring(fileName.lastIndexOf('.') + 1) 
         );
     }
 
-    private TranscriptionEntity createTranscription(String tenantId, String text) { // GH-90000
-        return new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+    private TranscriptionEntity createTranscription(String tenantId, String text) { 
+        return new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
+            UUID.randomUUID(), 
             text,
             "en"
         );

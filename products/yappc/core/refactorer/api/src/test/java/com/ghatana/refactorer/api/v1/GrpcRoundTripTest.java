@@ -14,31 +14,31 @@ import org.junit.jupiter.api.Test;
 class GrpcRoundTripTest {
 
     @Test
-    void testDiagnoseRequestRoundTrip() // GH-90000
+    void testDiagnoseRequestRoundTrip() 
             throws com.google.protobuf.InvalidProtocolBufferException, Exception {
-        DiagnoseRequest original = GrpcProtoFactory.sampleDiagnoseRequest(); // GH-90000
+        DiagnoseRequest original = GrpcProtoFactory.sampleDiagnoseRequest(); 
 
         // Serialize to bytes and back
-        byte[] serialized = original.toByteArray(); // GH-90000
-        DiagnoseRequest deserialized = DiagnoseRequest.parseFrom(serialized); // GH-90000
+        byte[] serialized = original.toByteArray(); 
+        DiagnoseRequest deserialized = DiagnoseRequest.parseFrom(serialized); 
 
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getRepoRoot()).isEqualTo("/tmp/test-repo");
-        assertThat(deserialized.getIncludeGlobsList()).hasSize(2); // GH-90000
-        assertThat(deserialized.getLanguagesList()).hasSize(2); // GH-90000
+        assertThat(deserialized.getIncludeGlobsList()).hasSize(2); 
+        assertThat(deserialized.getLanguagesList()).hasSize(2); 
         assertThat(deserialized.getTenantId()).isEqualTo("test-tenant");
     }
 
     @Test
-    void testUnifiedDiagnosticRoundTrip() // GH-90000
+    void testUnifiedDiagnosticRoundTrip() 
             throws com.google.protobuf.InvalidProtocolBufferException, Exception {
-        UnifiedDiagnostic original = GrpcProtoFactory.sampleDiagnostic(); // GH-90000
+        UnifiedDiagnostic original = GrpcProtoFactory.sampleDiagnostic(); 
 
         // Serialize to bytes and back
-        byte[] serialized = original.toByteArray(); // GH-90000
-        UnifiedDiagnostic deserialized = UnifiedDiagnostic.parseFrom(serialized); // GH-90000
+        byte[] serialized = original.toByteArray(); 
+        UnifiedDiagnostic deserialized = UnifiedDiagnostic.parseFrom(serialized); 
 
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getTool()).isEqualTo("javac");
         assertThat(deserialized.getRule()).isEqualTo("missing-import");
         assertThat(deserialized.getSeverity()).isEqualTo("ERROR");
@@ -46,91 +46,91 @@ class GrpcRoundTripTest {
     }
 
     @Test
-    void testRunRequestRoundTrip() // GH-90000
+    void testRunRequestRoundTrip() 
             throws com.google.protobuf.InvalidProtocolBufferException, Exception {
-        RunRequest original = GrpcProtoFactory.sampleRunRequest(); // GH-90000
+        RunRequest original = GrpcProtoFactory.sampleRunRequest(); 
 
         // Serialize to bytes and back
-        byte[] serialized = original.toByteArray(); // GH-90000
-        RunRequest deserialized = RunRequest.parseFrom(serialized); // GH-90000
+        byte[] serialized = original.toByteArray(); 
+        RunRequest deserialized = RunRequest.parseFrom(serialized); 
 
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getIdempotencyKey()).isEqualTo("idem-key-123");
-        assertThat(deserialized.getDryRun()).isFalse(); // GH-90000
-        assertThat(deserialized.hasConfig()).isTrue(); // GH-90000
+        assertThat(deserialized.getDryRun()).isFalse(); 
+        assertThat(deserialized.hasConfig()).isTrue(); 
     }
 
     @Test
-    void testRunStatusRoundTrip() // GH-90000
+    void testRunStatusRoundTrip() 
             throws com.google.protobuf.InvalidProtocolBufferException, Exception {
-        RunStatus original = GrpcProtoFactory.sampleRunStatus(); // GH-90000
+        RunStatus original = GrpcProtoFactory.sampleRunStatus(); 
 
         // Serialize to bytes and back
-        byte[] serialized = original.toByteArray(); // GH-90000
-        RunStatus deserialized = RunStatus.parseFrom(serialized); // GH-90000
+        byte[] serialized = original.toByteArray(); 
+        RunStatus deserialized = RunStatus.parseFrom(serialized); 
 
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getJobId()).isEqualTo("job-123");
         assertThat(deserialized.getState()).isEqualTo("RUNNING");
-        assertThat(deserialized.getPass()).isEqualTo(1); // GH-90000
-        assertThat(deserialized.getToolVersionsMap()).containsEntry("javac", "21.0.1"); // GH-90000
+        assertThat(deserialized.getPass()).isEqualTo(1); 
+        assertThat(deserialized.getToolVersionsMap()).containsEntry("javac", "21.0.1"); 
     }
 
     @Test
-    void testProgressEventRoundTrip() // GH-90000
+    void testProgressEventRoundTrip() 
             throws com.google.protobuf.InvalidProtocolBufferException, Exception {
-        ProgressEvent original = GrpcProtoFactory.sampleProgressEvent(); // GH-90000
+        ProgressEvent original = GrpcProtoFactory.sampleProgressEvent(); 
 
         // Serialize to bytes and back
-        byte[] serialized = original.toByteArray(); // GH-90000
-        ProgressEvent deserialized = ProgressEvent.parseFrom(serialized); // GH-90000
+        byte[] serialized = original.toByteArray(); 
+        ProgressEvent deserialized = ProgressEvent.parseFrom(serialized); 
 
-        assertThat(deserialized).isEqualTo(original); // GH-90000
+        assertThat(deserialized).isEqualTo(original); 
         assertThat(deserialized.getJobId()).isEqualTo("job-123");
         assertThat(deserialized.getEventType()).isEqualTo("diagnostic");
-        assertThat(deserialized.getMessage()).isNotEmpty(); // GH-90000
-        assertThat(deserialized.getCurrentPass()).isEqualTo(1); // GH-90000
-        assertThat(deserialized.getTotalPasses()).isEqualTo(3); // GH-90000
+        assertThat(deserialized.getMessage()).isNotEmpty(); 
+        assertThat(deserialized.getCurrentPass()).isEqualTo(1); 
+        assertThat(deserialized.getTotalPasses()).isEqualTo(3); 
     }
 
     @Test
-    void testBuilderPatterns() { // GH-90000
+    void testBuilderPatterns() { 
         DiagnoseRequest request =
-                GrpcProtoFactory.diagnoseRequest() // GH-90000
+                GrpcProtoFactory.diagnoseRequest() 
                         .repoRoot("/custom/repo")
-                        .includeGlobs("**/*.java", "**/*.kt") // GH-90000
-                        .languages("java", "kotlin") // GH-90000
+                        .includeGlobs("**/*.java", "**/*.kt") 
+                        .languages("java", "kotlin") 
                         .tenantId("custom-tenant")
-                        .build(); // GH-90000
+                        .build(); 
 
         assertThat(request.getRepoRoot()).isEqualTo("/custom/repo");
-        assertThat(request.getIncludeGlobsList()).containsExactly("**/*.java", "**/*.kt"); // GH-90000
-        assertThat(request.getLanguagesList()) // GH-90000
-                .extracting(Language::getId) // GH-90000
-                .containsExactly("java", "kotlin"); // GH-90000
+        assertThat(request.getIncludeGlobsList()).containsExactly("**/*.java", "**/*.kt"); 
+        assertThat(request.getLanguagesList()) 
+                .extracting(Language::getId) 
+                .containsExactly("java", "kotlin"); 
         assertThat(request.getTenantId()).isEqualTo("custom-tenant");
     }
 
     @Test
-    void testDiagnosticBuilder() { // GH-90000
+    void testDiagnosticBuilder() { 
         UnifiedDiagnostic diagnostic =
-                GrpcProtoFactory.diagnostic() // GH-90000
+                GrpcProtoFactory.diagnostic() 
                         .tool("eslint")
                         .rule("no-unused-vars")
                         .message("Variable 'x' is defined but never used")
                         .file("/src/main.ts")
-                        .location(15, 8) // GH-90000
+                        .location(15, 8) 
                         .severity("WARN")
-                        .meta("variable", "x") // GH-90000
-                        .meta("suggestion", "Remove unused variable") // GH-90000
-                        .build(); // GH-90000
+                        .meta("variable", "x") 
+                        .meta("suggestion", "Remove unused variable") 
+                        .build(); 
 
         assertThat(diagnostic.getTool()).isEqualTo("eslint");
         assertThat(diagnostic.getRule()).isEqualTo("no-unused-vars");
-        assertThat(diagnostic.getLine()).isEqualTo(15); // GH-90000
-        assertThat(diagnostic.getColumn()).isEqualTo(8); // GH-90000
+        assertThat(diagnostic.getLine()).isEqualTo(15); 
+        assertThat(diagnostic.getColumn()).isEqualTo(8); 
         assertThat(diagnostic.getSeverity()).isEqualTo("WARN");
         assertThat(diagnostic.getSuggestion()).isEqualTo("Remove unused variable");
-        assertThat(diagnostic.getTimestamp()).isPositive(); // GH-90000
+        assertThat(diagnostic.getTimestamp()).isPositive(); 
     }
 }

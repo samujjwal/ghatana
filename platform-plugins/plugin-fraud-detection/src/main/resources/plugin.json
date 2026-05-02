@@ -1,0 +1,46 @@
+{
+  "pluginId": "com.ghatana.plugin.fraud-detection",
+  "version": "1.0.0",
+  "description": "Platform-level behavioral anomaly and fraud signal framework. Products register domain-specific scoring models and rules; no product terms are built in.",
+  "tier": "T2",
+  "capabilities": [
+    "fraud:assess",
+    "fraud:detect-patterns",
+    "fraud:train-model",
+    "fraud:get-metrics",
+    "fraud:register-rule"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 512,
+    "maxCpuPercent": 20,
+    "maxThreads": 8
+  },
+  "configSchema": {
+    "defaultThreshold": {
+      "type": "number",
+      "required": false,
+      "description": "Default fraud risk score threshold [0.0, 1.0] above which a transaction is flagged. Defaults to 0.75."
+    },
+    "modelInferenceFallbackEnabled": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether rule-based fallback is used when a remote inference model is unavailable. Defaults to true."
+    },
+    "remoteInferenceEndpoint": {
+      "type": "string",
+      "required": false,
+      "description": "URL of the remote ML inference endpoint. Must be an env reference when used in production, e.g. env:FRAUD_INFERENCE_ENDPOINT.",
+      "secret": false
+    },
+    "remoteInferenceApiKey": {
+      "type": "string",
+      "required": false,
+      "secret": true,
+      "description": "API key for the remote inference endpoint. Must be an env reference: env:FRAUD_INFERENCE_API_KEY."
+    }
+  }
+}

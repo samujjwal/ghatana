@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep;
@@ -36,27 +36,27 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
     private AtomicInteger invocationCount;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
-        invocationCount = new AtomicInteger(0); // GH-90000
+    void setUp() { 
+        engine = Aep.forTesting(); 
+        invocationCount = new AtomicInteger(0); 
         
         // Create a simple test detector that just counts invocations
-        testDetector = (tenantId, event, patterns) -> { // GH-90000
-            invocationCount.incrementAndGet(); // GH-90000
-            return Promise.of(List.of(new AepEngine.Detection( // GH-90000
+        testDetector = (tenantId, event, patterns) -> { 
+            invocationCount.incrementAndGet(); 
+            return Promise.of(List.of(new AepEngine.Detection( 
                 "test-pattern",
-                event.type(), // GH-90000
+                event.type(), 
                 0.9,
-                Map.of("detectedAt", Instant.now().toString()), // GH-90000
-                Instant.now() // GH-90000
+                Map.of("detectedAt", Instant.now().toString()), 
+                Instant.now() 
             )));
         };
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (engine != null) { // GH-90000
-            engine.close(); // GH-90000
+    void tearDown() { 
+        if (engine != null) { 
+            engine.close(); 
         }
     }
 
@@ -66,45 +66,45 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registers detector successfully")
-        void registersDetectorSuccessfully() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
+        void registersDetectorSuccessfully() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
             
             // Registration should not throw
-            assertThat(invocationCount.get()).isEqualTo(0); // GH-90000
+            assertThat(invocationCount.get()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("throws on null detector")
-        void throwsOnNullDetector() { // GH-90000
-            assertThatThrownBy(() -> engine.registerPatternDetector("tenant-1", null)) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+        void throwsOnNullDetector() { 
+            assertThatThrownBy(() -> engine.registerPatternDetector("tenant-1", null)) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("detector");
         }
 
         @Test
         @DisplayName("throws on null tenantId")
-        void throwsOnNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> engine.registerPatternDetector(null, testDetector)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void throwsOnNullTenantId() { 
+            assertThatThrownBy(() -> engine.registerPatternDetector(null, testDetector)) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("tenantId");
         }
 
         @Test
         @DisplayName("allows multiple detectors for same tenant")
-        void allowsMultipleDetectorsForSameTenant() { // GH-90000
-            AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> Promise.of(List.of()); // GH-90000
+        void allowsMultipleDetectorsForSameTenant() { 
+            AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> Promise.of(List.of()); 
             
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.registerPatternDetector("tenant-1", detector2); // GH-90000
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.registerPatternDetector("tenant-1", detector2); 
             
             // Should not throw
         }
 
         @Test
         @DisplayName("allows detectors for different tenants")
-        void allowsDetectorsForDifferentTenants() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.registerPatternDetector("tenant-2", testDetector); // GH-90000
+        void allowsDetectorsForDifferentTenants() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.registerPatternDetector("tenant-2", testDetector); 
             
             // Should not throw
         }
@@ -116,34 +116,34 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("removes registered detector")
-        void removesRegisteredDetector() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
+        void removesRegisteredDetector() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.unregisterPatternDetector("tenant-1", testDetector); 
             
             // Should not throw
         }
 
         @Test
         @DisplayName("throws on null detector")
-        void throwsOnNullDetector() { // GH-90000
-            assertThatThrownBy(() -> engine.unregisterPatternDetector("tenant-1", null)) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+        void throwsOnNullDetector() { 
+            assertThatThrownBy(() -> engine.unregisterPatternDetector("tenant-1", null)) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("detector");
         }
 
         @Test
         @DisplayName("throws on null tenantId")
-        void throwsOnNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> engine.unregisterPatternDetector(null, testDetector)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void throwsOnNullTenantId() { 
+            assertThatThrownBy(() -> engine.unregisterPatternDetector(null, testDetector)) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("tenantId");
         }
 
         @Test
         @DisplayName("handles unregister of non-existent detector gracefully")
-        void handlesUnregisterOfNonExistentDetector() { // GH-90000
+        void handlesUnregisterOfNonExistentDetector() { 
             // Should not throw even if detector was never registered
-            engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
+            engine.unregisterPatternDetector("tenant-1", testDetector); 
         }
     }
 
@@ -153,82 +153,82 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("registered detector is invoked during event processing")
-        void registeredDetectorIsInvokedDuringProcessing() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
+        void registeredDetectorIsInvokedDuringProcessing() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
             
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process("tenant-1", event)); // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process("tenant-1", event)); 
             
-            assertThat(result.success()).isTrue(); // GH-90000
-            assertThat(invocationCount.get()).isEqualTo(1); // GH-90000
+            assertThat(result.success()).isTrue(); 
+            assertThat(invocationCount.get()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("detector is not invoked for different tenant")
-        void detectorNotInvokedForDifferentTenant() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
+        void detectorNotInvokedForDifferentTenant() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
             
-            runPromise(() -> engine.process("tenant-2", event)); // GH-90000
+            runPromise(() -> engine.process("tenant-2", event)); 
             
-            assertThat(invocationCount.get()).isEqualTo(0); // GH-90000
+            assertThat(invocationCount.get()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("detector errors do not fail event processing")
-        void detectorErrorsDoNotFailEventProcessing() { // GH-90000
-            AepEngine.PatternDetector failingDetector = (tenantId, event, patterns) -> { // GH-90000
+        void detectorErrorsDoNotFailEventProcessing() { 
+            AepEngine.PatternDetector failingDetector = (tenantId, event, patterns) -> { 
                 throw new RuntimeException("Detector failed");
             };
             
-            engine.registerPatternDetector("tenant-1", failingDetector); // GH-90000
+            engine.registerPatternDetector("tenant-1", failingDetector); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
             
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process("tenant-1", event)); // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process("tenant-1", event)); 
             
             // Event processing should succeed even if detector fails
-            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.success()).isTrue(); 
         }
 
         @Test
         @DisplayName("unregistered detector is not invoked")
-        void unregisteredDetectorIsNotInvoked() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.unregisterPatternDetector("tenant-1", testDetector); // GH-90000
+        void unregisteredDetectorIsNotInvoked() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.unregisterPatternDetector("tenant-1", testDetector); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
             
-            runPromise(() -> engine.process("tenant-1", event)); // GH-90000
+            runPromise(() -> engine.process("tenant-1", event)); 
             
-            assertThat(invocationCount.get()).isEqualTo(0); // GH-90000
+            assertThat(invocationCount.get()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("multiple detectors are all invoked")
-        void multipleDetectorsAreAllInvoked() { // GH-90000
-            AtomicInteger count2 = new AtomicInteger(0); // GH-90000
-            AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> { // GH-90000
-                count2.incrementAndGet(); // GH-90000
-                return Promise.of(List.of()); // GH-90000
+        void multipleDetectorsAreAllInvoked() { 
+            AtomicInteger count2 = new AtomicInteger(0); 
+            AepEngine.PatternDetector detector2 = (tenantId, event, patterns) -> { 
+                count2.incrementAndGet(); 
+                return Promise.of(List.of()); 
             };
             
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.registerPatternDetector("tenant-1", detector2); // GH-90000
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.registerPatternDetector("tenant-1", detector2); 
             
-            AepEngine.Event event = new AepEngine.Event("test.event",  // GH-90000
-                Map.of("key", "value"), Map.of(), Instant.now()); // GH-90000
+            AepEngine.Event event = new AepEngine.Event("test.event",  
+                Map.of("key", "value"), Map.of(), Instant.now()); 
             
-            runPromise(() -> engine.process("tenant-1", event)); // GH-90000
+            runPromise(() -> engine.process("tenant-1", event)); 
             
-            assertThat(invocationCount.get()).isEqualTo(1); // GH-90000
-            assertThat(count2.get()).isEqualTo(1); // GH-90000
+            assertThat(invocationCount.get()).isEqualTo(1); 
+            assertThat(count2.get()).isEqualTo(1); 
         }
     }
 
@@ -238,21 +238,21 @@ class PatternDetectorRegistrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("cannot register detector after engine closed")
-        void cannotRegisterAfterClosed() { // GH-90000
-            engine.close(); // GH-90000
+        void cannotRegisterAfterClosed() { 
+            engine.close(); 
             
-            assertThatThrownBy(() -> engine.registerPatternDetector("tenant-1", testDetector)) // GH-90000
-                .isInstanceOf(IllegalStateException.class); // GH-90000
+            assertThatThrownBy(() -> engine.registerPatternDetector("tenant-1", testDetector)) 
+                .isInstanceOf(IllegalStateException.class); 
         }
 
         @Test
         @DisplayName("cannot unregister detector after engine closed")
-        void cannotUnregisterAfterClosed() { // GH-90000
-            engine.registerPatternDetector("tenant-1", testDetector); // GH-90000
-            engine.close(); // GH-90000
+        void cannotUnregisterAfterClosed() { 
+            engine.registerPatternDetector("tenant-1", testDetector); 
+            engine.close(); 
             
-            assertThatThrownBy(() -> engine.unregisterPatternDetector("tenant-1", testDetector)) // GH-90000
-                .isInstanceOf(IllegalStateException.class); // GH-90000
+            assertThatThrownBy(() -> engine.unregisterPatternDetector("tenant-1", testDetector)) 
+                .isInstanceOf(IllegalStateException.class); 
         }
     }
 }

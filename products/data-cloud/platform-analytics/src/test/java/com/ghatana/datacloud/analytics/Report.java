@@ -7,34 +7,34 @@ public final class Report {
     private String name;
     private String status;
 
-    public Report() { // GH-90000
-        this.id = "report-" + UUID.randomUUID(); // GH-90000
+    public Report() { 
+        this.id = "report-" + UUID.randomUUID(); 
         this.status = "PENDING";
     }
 
-    public String getId() { // GH-90000
+    public String getId() { 
         return id;
     }
 
-    public Report withId(String id) { // GH-90000
+    public Report withId(String id) { 
         this.id = id;
         return this;
     }
 
-    public String getName() { // GH-90000
+    public String getName() { 
         return name;
     }
 
-    public Report withName(String name) { // GH-90000
+    public Report withName(String name) { 
         this.name = name;
         return this;
     }
 
-    public String getStatus() { // GH-90000
+    public String getStatus() { 
         return status;
     }
 
-    public Report withStatus(String status) { // GH-90000
+    public Report withStatus(String status) { 
         this.status = status;
         return this;
     }

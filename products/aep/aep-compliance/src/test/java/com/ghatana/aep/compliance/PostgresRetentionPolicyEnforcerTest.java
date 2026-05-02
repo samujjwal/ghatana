@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.compliance;
@@ -48,91 +48,91 @@ class PostgresRetentionPolicyEnforcerTest extends EventloopTestBase {
     private PostgresRetentionPolicyEnforcer enforcer;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
-        config.setMaximumPoolSize(5); // GH-90000
-        dataSource = new HikariDataSource(config); // GH-90000
+    void setUp() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
+        config.setMaximumPoolSize(5); 
+        dataSource = new HikariDataSource(config); 
 
-        initSchema(); // GH-90000
-        enforcer = new PostgresRetentionPolicyEnforcer(dataSource); // GH-90000
+        initSchema(); 
+        enforcer = new PostgresRetentionPolicyEnforcer(dataSource); 
     }
 
     @AfterEach
-    void tearDown() throws Exception { // GH-90000
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+    void tearDown() throws Exception { 
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("DROP TABLE IF EXISTS retention_policies");
         }
-        dataSource.close(); // GH-90000
+        dataSource.close(); 
     }
 
     @Test
     @DisplayName("registerRetention then checkRetention within TTL succeeds")
-    void registerRetention_checkWithinTtl_passes() { // GH-90000
+    void registerRetention_checkWithinTtl_passes() { 
         String tenantId = "tenant-1";
         String dataId   = "data-object-1";
 
-        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofHours(1))); // GH-90000
+        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofHours(1))); 
 
         // Check within TTL — should not throw
-        assertThatCode(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("checkRetention for unknown data passes (open policy)")
-    void checkRetention_unknownData_passes() { // GH-90000
-        assertThatCode(() -> runPromise(() -> enforcer.checkRetention("tenant-x", "unknown-data"))) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void checkRetention_unknownData_passes() { 
+        assertThatCode(() -> runPromise(() -> enforcer.checkRetention("tenant-x", "unknown-data"))) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("registerRetention with zero TTL causes immediate expiry")
-    void registerRetention_zeroTtl_isExpiredImmediately() { // GH-90000
+    void registerRetention_zeroTtl_isExpiredImmediately() { 
         String tenantId = "tenant-2";
         String dataId   = "expired-data";
 
-        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ZERO)); // GH-90000
+        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ZERO)); 
 
         // Check after zero-duration TTL — should throw RetentionExpiredException
-        assertThatThrownBy(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) // GH-90000
-                .isInstanceOf(RetentionExpiredException.class); // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) 
+                .isInstanceOf(RetentionExpiredException.class); 
     }
 
     @Test
     @DisplayName("scheduleDeletion completes without error for registered data")
-    void scheduleDeletion_registeredData_completes() { // GH-90000
+    void scheduleDeletion_registeredData_completes() { 
         String tenantId = "tenant-3";
         String dataId   = "to-delete";
 
-        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofDays(30))); // GH-90000
-        assertThatCode(() -> runPromise(() -> enforcer.scheduleDeletion(tenantId, dataId))) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofDays(30))); 
+        assertThatCode(() -> runPromise(() -> enforcer.scheduleDeletion(tenantId, dataId))) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("re-registering with longer TTL extends the deadline (upsert semantics)")
-    void registerRetention_upsert_extendsDeadline() { // GH-90000
+    void registerRetention_upsert_extendsDeadline() { 
         String tenantId = "tenant-4";
         String dataId   = "updatable-data";
 
-        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ZERO)); // GH-90000
+        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ZERO)); 
         // Now overwrite with 1-hour TTL
-        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofHours(1))); // GH-90000
+        runPromise(() -> enforcer.registerRetention(tenantId, dataId, Duration.ofHours(1))); 
 
         // After upsert the record should be within TTL
-        assertThatCode(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> runPromise(() -> enforcer.checkRetention(tenantId, dataId))) 
+                .doesNotThrowAnyException(); 
     }
 
     // ---- Schema helpers ----------------------------------------------------
 
-    private void initSchema() throws Exception { // GH-90000
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+    private void initSchema() throws Exception { 
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS retention_policies (
                     tenant_id              TEXT        NOT NULL,

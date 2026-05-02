@@ -20,56 +20,56 @@ class InMemoryRolePermissionRegistryTest {
     private InMemoryRolePermissionRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new InMemoryRolePermissionRegistry(); // GH-90000
+    void setUp() { 
+        registry = new InMemoryRolePermissionRegistry(); 
     }
 
     // ── getPermissions ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("getPermissions returns null for unknown role")
-    void getPermissionsNullForUnknownRole() { // GH-90000
+    void getPermissionsNullForUnknownRole() { 
         assertThat(registry.getPermissions("UNKNOWN")).isNull();
     }
 
     @Test
     @DisplayName("getPermissions returns registered permissions for known role")
-    void getPermissionsReturnsRegisteredPermissions() { // GH-90000
-        registry.registerRole("ADMIN", Set.of("read", "write", "delete")); // GH-90000
+    void getPermissionsReturnsRegisteredPermissions() { 
+        registry.registerRole("ADMIN", Set.of("read", "write", "delete")); 
         Set<String> permissions = registry.getPermissions("ADMIN");
 
-        assertThat(permissions).containsExactlyInAnyOrder("read", "write", "delete"); // GH-90000
+        assertThat(permissions).containsExactlyInAnyOrder("read", "write", "delete"); 
     }
 
     // ── registerRole ──────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("registerRole null role throws IllegalArgumentException")
-    void registerRoleNullRoleThrows() { // GH-90000
+    void registerRoleNullRoleThrows() { 
         assertThatThrownBy(() -> registry.registerRole(null, Set.of("read")))
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("registerRole empty role throws IllegalArgumentException")
-    void registerRoleEmptyRoleThrows() { // GH-90000
+    void registerRoleEmptyRoleThrows() { 
         assertThatThrownBy(() -> registry.registerRole("", Set.of("read")))
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("registerRole null permissions throws IllegalArgumentException")
-    void registerRoleNullPermissionsThrows() { // GH-90000
-        assertThatThrownBy(() -> registry.registerRole("USER", null)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void registerRoleNullPermissionsThrows() { 
+        assertThatThrownBy(() -> registry.registerRole("USER", null)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("registerRole stores an immutable copy of permissions")
-    void registerRoleStoresImmutableCopy() { // GH-90000
-        Set<String> mutable = new java.util.HashSet<>(); // GH-90000
+    void registerRoleStoresImmutableCopy() { 
+        Set<String> mutable = new java.util.HashSet<>(); 
         mutable.add("read");
-        registry.registerRole("USER", mutable); // GH-90000
+        registry.registerRole("USER", mutable); 
 
         mutable.add("write"); // mutate original
 
@@ -79,9 +79,9 @@ class InMemoryRolePermissionRegistryTest {
 
     @Test
     @DisplayName("re-registering a role overwrites previous permissions")
-    void reRegisteringRoleOverwritesPrevious() { // GH-90000
+    void reRegisteringRoleOverwritesPrevious() { 
         registry.registerRole("EDITOR", Set.of("read"));
-        registry.registerRole("EDITOR", Set.of("read", "publish")); // GH-90000
+        registry.registerRole("EDITOR", Set.of("read", "publish")); 
 
         assertThat(registry.getPermissions("EDITOR")).containsExactlyInAnyOrder("read", "publish");
     }
@@ -90,30 +90,30 @@ class InMemoryRolePermissionRegistryTest {
 
     @Test
     @DisplayName("hasPermission returns true when role has the permission")
-    void hasPermissionReturnsTrueWhenPresent() { // GH-90000
-        registry.registerRole("MODERATOR", Set.of("read", "moderate")); // GH-90000
-        assertThat(registry.hasPermission("MODERATOR", "moderate")).isTrue(); // GH-90000
+    void hasPermissionReturnsTrueWhenPresent() { 
+        registry.registerRole("MODERATOR", Set.of("read", "moderate")); 
+        assertThat(registry.hasPermission("MODERATOR", "moderate")).isTrue(); 
     }
 
     @Test
     @DisplayName("hasPermission returns false when role lacks the permission")
-    void hasPermissionReturnsFalseWhenAbsent() { // GH-90000
+    void hasPermissionReturnsFalseWhenAbsent() { 
         registry.registerRole("VIEWER", Set.of("read"));
-        assertThat(registry.hasPermission("VIEWER", "delete")).isFalse(); // GH-90000
+        assertThat(registry.hasPermission("VIEWER", "delete")).isFalse(); 
     }
 
     @Test
     @DisplayName("hasPermission returns false for unknown role")
-    void hasPermissionReturnsFalseForUnknownRole() { // GH-90000
-        assertThat(registry.hasPermission("GHOST", "read")).isFalse(); // GH-90000
+    void hasPermissionReturnsFalseForUnknownRole() { 
+        assertThat(registry.hasPermission("GHOST", "read")).isFalse(); 
     }
 
     // ── Multiple roles ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("multiple roles can coexist with independent permissions")
-    void multipleRolesCoexistIndependently() { // GH-90000
-        registry.registerRole("ADMIN", Set.of("read", "write", "delete")); // GH-90000
+    void multipleRolesCoexistIndependently() { 
+        registry.registerRole("ADMIN", Set.of("read", "write", "delete")); 
         registry.registerRole("USER", Set.of("read"));
 
         assertThat(registry.getPermissions("ADMIN")).contains("delete");

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.*;
  *
  * <p>BfsTraversalEngine is synchronous and depends only on the
  * {@link GraphStorageAdapter} interface, which is mocked. Tests verify
- * lifecycle (including the strict initialize-before-start contract), // GH-90000
+ * lifecycle (including the strict initialize-before-start contract), 
  * neighbor discovery, shortest-path finding, and all-paths enumeration.
  *
  * @doc.type test
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  */
 @DisplayName("BfsTraversalEngine Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class BfsTraversalEngineTest {
 
     @Mock
@@ -46,48 +46,48 @@ class BfsTraversalEngineTest {
     private GraphEdge edgeBC;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = new BfsTraversalEngine(storageAdapter); // GH-90000
+    void setUp() { 
+        engine = new BfsTraversalEngine(storageAdapter); 
 
-        nodeA = GraphNode.builder() // GH-90000
+        nodeA = GraphNode.builder() 
                 .id("node-a")
                 .type("SERVICE")
-                .labels(Set.of()) // GH-90000
-                .properties(Map.of()) // GH-90000
+                .labels(Set.of()) 
+                .properties(Map.of()) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        nodeB = GraphNode.builder() // GH-90000
+        nodeB = GraphNode.builder() 
                 .id("node-b")
                 .type("SERVICE")
-                .labels(Set.of()) // GH-90000
-                .properties(Map.of()) // GH-90000
+                .labels(Set.of()) 
+                .properties(Map.of()) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        nodeC = GraphNode.builder() // GH-90000
+        nodeC = GraphNode.builder() 
                 .id("node-c")
                 .type("SERVICE")
-                .labels(Set.of()) // GH-90000
-                .properties(Map.of()) // GH-90000
+                .labels(Set.of()) 
+                .properties(Map.of()) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        edgeAB = GraphEdge.builder() // GH-90000
+        edgeAB = GraphEdge.builder() 
                 .id("edge-ab")
                 .sourceNodeId("node-a")
                 .targetNodeId("node-b")
                 .tenantId("tenant-1")
                 .relationshipType("CALLS")
-                .build(); // GH-90000
+                .build(); 
 
-        edgeBC = GraphEdge.builder() // GH-90000
+        edgeBC = GraphEdge.builder() 
                 .id("edge-bc")
                 .sourceNodeId("node-b")
                 .targetNodeId("node-c")
                 .tenantId("tenant-1")
                 .relationshipType("CALLS")
-                .build(); // GH-90000
+                .build(); 
     }
 
     // =========================================================================
@@ -100,38 +100,38 @@ class BfsTraversalEngineTest {
 
         @Test
         @DisplayName("should be healthy after initialize and start")
-        void shouldBeHealthyAfterInitializeAndStart() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
+        void shouldBeHealthyAfterInitializeAndStart() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
 
-            assertThat(engine.isHealthy()).isTrue(); // GH-90000
+            assertThat(engine.isHealthy()).isTrue(); 
         }
 
         @Test
         @DisplayName("start should throw IllegalStateException when not initialized")
-        void startShouldThrowWhenNotInitialized() { // GH-90000
-            assertThatThrownBy(() -> engine.start()) // GH-90000
-                    .isInstanceOf(IllegalStateException.class); // GH-90000
+        void startShouldThrowWhenNotInitialized() { 
+            assertThatThrownBy(() -> engine.start()) 
+                    .isInstanceOf(IllegalStateException.class); 
         }
 
         @Test
         @DisplayName("should not be healthy after stop")
-        void shouldNotBeHealthyAfterStop() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
-            engine.stop(); // GH-90000
+        void shouldNotBeHealthyAfterStop() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
+            engine.stop(); 
 
-            assertThat(engine.isHealthy()).isFalse(); // GH-90000
+            assertThat(engine.isHealthy()).isFalse(); 
         }
 
         @Test
         @DisplayName("should not be healthy after shutdown")
-        void shouldNotBeHealthyAfterShutdown() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
-            engine.shutdown(); // GH-90000
+        void shouldNotBeHealthyAfterShutdown() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
+            engine.shutdown(); 
 
-            assertThat(engine.isHealthy()).isFalse(); // GH-90000
+            assertThat(engine.isHealthy()).isFalse(); 
         }
     }
 
@@ -144,59 +144,59 @@ class BfsTraversalEngineTest {
     class GetNeighbors {
 
         @BeforeEach
-        void init() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
+        void init() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
         }
 
         @Test
         @DisplayName("should return direct neighbor at depth 1")
-        void shouldReturnDirectNeighbor() { // GH-90000
-            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeAB)); // GH-90000
-            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); // GH-90000
+        void shouldReturnDirectNeighbor() { 
+            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); 
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeAB)); 
+            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); 
 
-            List<GraphNode> neighbors = engine.getNeighbors("node-a", 1, "tenant-1"); // GH-90000
+            List<GraphNode> neighbors = engine.getNeighbors("node-a", 1, "tenant-1"); 
 
-            assertThat(neighbors).hasSize(1); // GH-90000
+            assertThat(neighbors).hasSize(1); 
             assertThat(neighbors.get(0).getId()).isEqualTo("node-b");
         }
 
         @Test
         @DisplayName("should return transitive neighbors at depth 2")
-        void shouldReturnTransitiveNeighborsAtDepth2() { // GH-90000
-            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeAB)); // GH-90000
-            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeBC)); // GH-90000
-            when(storageAdapter.getNode("node-c", "tenant-1")).thenReturn(nodeC); // GH-90000
+        void shouldReturnTransitiveNeighborsAtDepth2() { 
+            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); 
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeAB)); 
+            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); 
+            when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) 
+                    .thenReturn(List.of(edgeBC)); 
+            when(storageAdapter.getNode("node-c", "tenant-1")).thenReturn(nodeC); 
 
-            List<GraphNode> neighbors = engine.getNeighbors("node-a", 2, "tenant-1"); // GH-90000
+            List<GraphNode> neighbors = engine.getNeighbors("node-a", 2, "tenant-1"); 
 
-            assertThat(neighbors).extracting(GraphNode::getId) // GH-90000
-                    .containsExactlyInAnyOrder("node-b", "node-c"); // GH-90000
+            assertThat(neighbors).extracting(GraphNode::getId) 
+                    .containsExactlyInAnyOrder("node-b", "node-c"); 
         }
 
         @Test
         @DisplayName("should return empty list when start node does not exist")
-        void shouldReturnEmptyWhenStartNodeMissing() { // GH-90000
-            when(storageAdapter.getNode("missing", "tenant-1")).thenReturn(null); // GH-90000
+        void shouldReturnEmptyWhenStartNodeMissing() { 
+            when(storageAdapter.getNode("missing", "tenant-1")).thenReturn(null); 
 
-            List<GraphNode> neighbors = engine.getNeighbors("missing", 1, "tenant-1"); // GH-90000
-            assertThat(neighbors).isEmpty(); // GH-90000
+            List<GraphNode> neighbors = engine.getNeighbors("missing", 1, "tenant-1"); 
+            assertThat(neighbors).isEmpty(); 
         }
 
         @Test
         @DisplayName("should return empty list when node has no outgoing edges")
-        void shouldReturnEmptyWhenNoOutgoingEdges() { // GH-90000
-            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")).thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyWhenNoOutgoingEdges() { 
+            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); 
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")).thenReturn(List.of()); 
 
-            List<GraphNode> neighbors = engine.getNeighbors("node-a", 1, "tenant-1"); // GH-90000
-            assertThat(neighbors).isEmpty(); // GH-90000
+            List<GraphNode> neighbors = engine.getNeighbors("node-a", 1, "tenant-1"); 
+            assertThat(neighbors).isEmpty(); 
         }
     }
 
@@ -209,44 +209,44 @@ class BfsTraversalEngineTest {
     class FindShortestPath {
 
         @BeforeEach
-        void init() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
+        void init() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
         }
 
         @Test
         @DisplayName("should find direct shortest path between two connected nodes")
-        void shouldFindDirectShortestPath() { // GH-90000
+        void shouldFindDirectShortestPath() { 
             // findShortestPath uses getOutgoingEdges for BFS, getNode for path reconstruction
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeAB)); // GH-90000
-            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); // GH-90000
-            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); // GH-90000
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeAB)); 
+            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); 
+            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); 
 
-            List<GraphNode> path = engine.findShortestPath("node-a", "node-b", "tenant-1"); // GH-90000
+            List<GraphNode> path = engine.findShortestPath("node-a", "node-b", "tenant-1"); 
 
-            assertThat(path).isNotEmpty(); // GH-90000
+            assertThat(path).isNotEmpty(); 
             assertThat(path.get(0).getId()).isEqualTo("node-a");
             assertThat(path.get(path.size() - 1).getId()).isEqualTo("node-b");
         }
 
         @Test
         @DisplayName("should return empty list when source node has no outgoing edges and target unreachable")
-        void shouldReturnEmptyWhenSourceMissing() { // GH-90000
+        void shouldReturnEmptyWhenSourceMissing() { 
             // findShortestPath performs BFS using getOutgoingEdges; it doesn't getNode the source
-            when(storageAdapter.getOutgoingEdges("no-src", "tenant-1")).thenReturn(List.of()); // GH-90000
+            when(storageAdapter.getOutgoingEdges("no-src", "tenant-1")).thenReturn(List.of()); 
 
-            List<GraphNode> path = engine.findShortestPath("no-src", "node-b", "tenant-1"); // GH-90000
-            assertThat(path).isEmpty(); // GH-90000
+            List<GraphNode> path = engine.findShortestPath("no-src", "node-b", "tenant-1"); 
+            assertThat(path).isEmpty(); 
         }
 
         @Test
         @DisplayName("should return empty list when no path exists")
-        void shouldReturnEmptyWhenNoPath() { // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")).thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyWhenNoPath() { 
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")).thenReturn(List.of()); 
 
-            List<GraphNode> path = engine.findShortestPath("node-a", "node-c", "tenant-1"); // GH-90000
-            assertThat(path).isEmpty(); // GH-90000
+            List<GraphNode> path = engine.findShortestPath("node-a", "node-c", "tenant-1"); 
+            assertThat(path).isEmpty(); 
         }
     }
 
@@ -259,33 +259,33 @@ class BfsTraversalEngineTest {
     class FindAllPaths {
 
         @BeforeEach
-        void init() { // GH-90000
-            engine.initialize(Map.of()); // GH-90000
-            engine.start(); // GH-90000
+        void init() { 
+            engine.initialize(Map.of()); 
+            engine.start(); 
         }
 
         @Test
         @DisplayName("should find all paths up to maxLength")
-        void shouldFindAllPaths() { // GH-90000
-            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); // GH-90000
-            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeAB)); // GH-90000
-            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); // GH-90000
-            lenient().when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) // GH-90000
-                    .thenReturn(List.of()); // GH-90000
+        void shouldFindAllPaths() { 
+            when(storageAdapter.getNode("node-a", "tenant-1")).thenReturn(nodeA); 
+            when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeAB)); 
+            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); 
+            lenient().when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) 
+                    .thenReturn(List.of()); 
 
-            List<List<GraphNode>> paths = engine.findAllPaths("node-a", "node-b", 5, "tenant-1"); // GH-90000
+            List<List<GraphNode>> paths = engine.findAllPaths("node-a", "node-b", 5, "tenant-1"); 
 
-            assertThat(paths).isNotEmpty(); // GH-90000
+            assertThat(paths).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should return empty list when source node does not exist")
-        void shouldReturnEmptyWhenSourceMissing() { // GH-90000
-            when(storageAdapter.getNode("no-src", "tenant-1")).thenReturn(null); // GH-90000
+        void shouldReturnEmptyWhenSourceMissing() { 
+            when(storageAdapter.getNode("no-src", "tenant-1")).thenReturn(null); 
 
-            List<List<GraphNode>> paths = engine.findAllPaths("no-src", "node-b", 5, "tenant-1"); // GH-90000
-            assertThat(paths).isEmpty(); // GH-90000
+            List<List<GraphNode>> paths = engine.findAllPaths("no-src", "node-b", 5, "tenant-1"); 
+            assertThat(paths).isEmpty(); 
         }
     }
 }

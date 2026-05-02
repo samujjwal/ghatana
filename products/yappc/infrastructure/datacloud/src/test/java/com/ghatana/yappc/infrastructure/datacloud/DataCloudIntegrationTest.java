@@ -32,14 +32,14 @@ class DataCloudIntegrationTest {
     private YappcDataCloudRepository<TestEntity> repository;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
 
-        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        mapper = new YappcEntityMapper(objectMapper); // GH-90000
+        ObjectMapper objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        mapper = new YappcEntityMapper(objectMapper); 
 
-        repository = new YappcDataCloudRepository<>( // GH-90000
+        repository = new YappcDataCloudRepository<>( 
             client,
             mapper,
             "test_collection",
@@ -49,14 +49,14 @@ class DataCloudIntegrationTest {
 
     @Test
     @DisplayName("Should initialize data-cloud repository successfully")
-    void shouldInitializeRepository() { // GH-90000
+    void shouldInitializeRepository() { 
         // Given - repository is initialized in setUp
 
         // Then - no exceptions should be thrown
         assert repository != null;
     }
 
-    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { // GH-90000
-        @Override public UUID getId() { return id; } // GH-90000
+    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { 
+        @Override public UUID getId() { return id; } 
     }
 }

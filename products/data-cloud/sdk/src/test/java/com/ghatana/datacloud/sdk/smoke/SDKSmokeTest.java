@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.sdk.smoke;
@@ -39,74 +39,74 @@ class SDKSmokeTest {
     private int port;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        backendClient = DataCloud.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        server = new DataCloudHttpServer(backendClient, port); // GH-90000
-        server.start(); // GH-90000
-        sdk = new DataCloudJavaSdk("http://localhost:" + port, "smoke-tenant"); // GH-90000
+    void setUp() throws Exception { 
+        backendClient = DataCloud.forTesting(); 
+        port = findFreePort(); 
+        server = new DataCloudHttpServer(backendClient, port); 
+        server.start(); 
+        sdk = new DataCloudJavaSdk("http://localhost:" + port, "smoke-tenant"); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (sdk != null) { // GH-90000
-            sdk.close(); // GH-90000
+    void tearDown() { 
+        if (sdk != null) { 
+            sdk.close(); 
         }
-        if (server != null) { // GH-90000
-            server.stop(); // GH-90000
+        if (server != null) { 
+            server.stop(); 
         }
-        if (backendClient != null) { // GH-90000
-            backendClient.close(); // GH-90000
+        if (backendClient != null) { 
+            backendClient.close(); 
         }
     }
 
     @Test
     @DisplayName("generated SDK reports health from the running launcher")
-    void generatedSdkReportsHealth() { // GH-90000
-        Map<String, Object> response = sdk.health(); // GH-90000
+    void generatedSdkReportsHealth() { 
+        Map<String, Object> response = sdk.health(); 
 
-        assertThat(response).containsEntry("status", "UP"); // GH-90000
+        assertThat(response).containsEntry("status", "UP"); 
     }
 
     @Test
     @DisplayName("generated SDK performs entity CRUD round-trip against running launcher")
-    void generatedSdkPerformsEntityCrudRoundTrip() { // GH-90000
-        Map<String, Object> created = sdk.createEntity("sdk_smoke_entities", Map.of("name", "Ada", "role", "admin")); // GH-90000
+    void generatedSdkPerformsEntityCrudRoundTrip() { 
+        Map<String, Object> created = sdk.createEntity("sdk_smoke_entities", Map.of("name", "Ada", "role", "admin")); 
         String entityId = created.get("id").toString();
 
-        Map<String, Object> fetched = sdk.getEntity("sdk_smoke_entities", entityId); // GH-90000
-        Map<String, Object> queried = sdk.queryEntities("sdk_smoke_entities", 10); // GH-90000
-        Map<String, Object> deleted = sdk.deleteEntity("sdk_smoke_entities", entityId); // GH-90000
+        Map<String, Object> fetched = sdk.getEntity("sdk_smoke_entities", entityId); 
+        Map<String, Object> queried = sdk.queryEntities("sdk_smoke_entities", 10); 
+        Map<String, Object> deleted = sdk.deleteEntity("sdk_smoke_entities", entityId); 
         Object data = fetched.get("data");
         Object entities = queried.get("entities");
-        List<String> entityIds = asObjectList(entities).stream() // GH-90000
+        List<String> entityIds = asObjectList(entities).stream() 
             .map(item -> ((Map<?, ?>) item).get("id"))
-            .map(String::valueOf) // GH-90000
-            .toList(); // GH-90000
+            .map(String::valueOf) 
+            .toList(); 
 
-        assertThat(created).containsEntry("collection", "sdk_smoke_entities"); // GH-90000
-        assertThat(fetched).containsEntry("id", entityId); // GH-90000
-        assertThat(data).isInstanceOf(Map.class); // GH-90000
+        assertThat(created).containsEntry("collection", "sdk_smoke_entities"); 
+        assertThat(fetched).containsEntry("id", entityId); 
+        assertThat(data).isInstanceOf(Map.class); 
         assertThat(asObjectMap(data).get("name")).isEqualTo("Ada");
-        assertThat(queried).containsEntry("count", 1); // GH-90000
-        assertThat(entities).isInstanceOf(List.class); // GH-90000
-        assertThat(entityIds).contains(entityId); // GH-90000
-        assertThat(deleted).containsEntry("deleted", true); // GH-90000
+        assertThat(queried).containsEntry("count", 1); 
+        assertThat(entities).isInstanceOf(List.class); 
+        assertThat(entityIds).contains(entityId); 
+        assertThat(deleted).containsEntry("deleted", true); 
     }
 
-    private int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
-            return socket.getLocalPort(); // GH-90000
+    private int findFreePort() throws IOException { 
+        try (ServerSocket socket = new ServerSocket(0)) { 
+            return socket.getLocalPort(); 
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> asObjectMap(Object value) { // GH-90000
-        return (Map<String, Object>) value; // GH-90000
+    private Map<String, Object> asObjectMap(Object value) { 
+        return (Map<String, Object>) value; 
     }
 
     @SuppressWarnings("unchecked")
-    private List<Object> asObjectList(Object value) { // GH-90000
-        return (List<Object>) value; // GH-90000
+    private List<Object> asObjectList(Object value) { 
+        return (List<Object>) value; 
     }
 }

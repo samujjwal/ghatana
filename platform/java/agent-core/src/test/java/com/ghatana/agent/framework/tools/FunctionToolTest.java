@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  */
 
 package com.ghatana.agent.framework.tools;
@@ -26,20 +26,20 @@ class FunctionToolTest {
 
     @SuppressWarnings("unused")
     static class SampleService {
-        public String greet(String name) { // GH-90000
+        public String greet(String name) { 
             return "Hello, " + name + "!";
         }
 
-        public int add(int a, int b) { // GH-90000
+        public int add(int a, int b) { 
             return a + b;
         }
 
-        public double calculateScore(String category, double weight, boolean normalized) { // GH-90000
+        public double calculateScore(String category, double weight, boolean normalized) { 
             return normalized ? weight * 100 : weight;
         }
 
-        public void failMethod(String input) { // GH-90000
-            throw new IllegalStateException("Intentional failure: " + input); // GH-90000
+        public void failMethod(String input) { 
+            throw new IllegalStateException("Intentional failure: " + input); 
         }
     }
 
@@ -53,19 +53,19 @@ class FunctionToolTest {
 
         @Test
         @DisplayName("should create from class and method name")
-        void shouldCreateFromClassAndMethod() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); // GH-90000
+        void shouldCreateFromClassAndMethod() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); 
 
-            assertThat(tool.getTargetClass()).isEqualTo(SampleService.class); // GH-90000
+            assertThat(tool.getTargetClass()).isEqualTo(SampleService.class); 
             assertThat(tool.getMethodName()).isEqualTo("greet");
-            assertThat(tool.getResolvedMethod()).isNotNull(); // GH-90000
+            assertThat(tool.getResolvedMethod()).isNotNull(); 
             assertThat(tool.getDescription()).contains("SampleService.greet");
         }
 
         @Test
         @DisplayName("should allow custom description via withDescription")
-        void shouldAllowCustomDescription() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "greet") // GH-90000
+        void shouldAllowCustomDescription() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "greet") 
                     .withDescription("Greet a user by name");
 
             assertThat(tool.getDescription()).isEqualTo("Greet a user by name");
@@ -73,25 +73,25 @@ class FunctionToolTest {
 
         @Test
         @DisplayName("should introspect parameter schema")
-        void shouldIntrospectParameterSchema() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "calculateScore"); // GH-90000
+        void shouldIntrospectParameterSchema() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "calculateScore"); 
 
-            List<FunctionTool.ParameterInfo> params = tool.getParameterSchema(); // GH-90000
-            assertThat(params).hasSize(3); // GH-90000
+            List<FunctionTool.ParameterInfo> params = tool.getParameterSchema(); 
+            assertThat(params).hasSize(3); 
             assertThat(params.get(0).jsonType()).isEqualTo("string");
             assertThat(params.get(1).jsonType()).isEqualTo("number");
             assertThat(params.get(2).jsonType()).isEqualTo("boolean");
             // Primitives are always required
-            assertThat(params.get(1).required()).isTrue(); // GH-90000
-            assertThat(params.get(2).required()).isTrue(); // GH-90000
+            assertThat(params.get(1).required()).isTrue(); 
+            assertThat(params.get(2).required()).isTrue(); 
         }
 
         @Test
         @DisplayName("should generate JSON Schema compatible output")
-        void shouldGenerateJsonSchema() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); // GH-90000
+        void shouldGenerateJsonSchema() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); 
 
-            Map<String, Object> schema = tool.toJsonSchema(); // GH-90000
+            Map<String, Object> schema = tool.toJsonSchema(); 
             assertThat(schema).containsKey("name");
             assertThat(schema).containsKey("description");
             assertThat(schema).containsKey("parameters");
@@ -104,11 +104,11 @@ class FunctionToolTest {
 
         @Test
         @DisplayName("should handle non-existent method gracefully")
-        void shouldHandleNonExistentMethod() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "nonExistent"); // GH-90000
+        void shouldHandleNonExistentMethod() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "nonExistent"); 
 
-            assertThat(tool.getResolvedMethod()).isNull(); // GH-90000
-            assertThat(tool.getParameterSchema()).isEmpty(); // GH-90000
+            assertThat(tool.getResolvedMethod()).isNull(); 
+            assertThat(tool.getParameterSchema()).isEmpty(); 
         }
     }
 
@@ -122,30 +122,30 @@ class FunctionToolTest {
 
         @Test
         @DisplayName("should validate correct input")
-        void shouldValidateCorrectInput() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); // GH-90000
+        void shouldValidateCorrectInput() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); 
 
-            List<String> errors = tool.validateInput(Map.of("name", "Alice")); // GH-90000
-            assertThat(errors).isEmpty(); // GH-90000
+            List<String> errors = tool.validateInput(Map.of("name", "Alice")); 
+            assertThat(errors).isEmpty(); 
         }
 
         @Test
         @DisplayName("should detect missing required parameters")
-        void shouldDetectMissingRequiredParams() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); // GH-90000
+        void shouldDetectMissingRequiredParams() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); 
 
             // 'a' and 'b' are int → required
-            List<String> errors = tool.validateInput(Map.of()); // GH-90000
-            assertThat(errors).hasSizeGreaterThanOrEqualTo(2); // GH-90000
+            List<String> errors = tool.validateInput(Map.of()); 
+            assertThat(errors).hasSizeGreaterThanOrEqualTo(2); 
             assertThat(errors).anyMatch(e -> e.contains("Required parameter"));
         }
 
         @Test
         @DisplayName("should detect unknown parameters")
-        void shouldDetectUnknownParams() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); // GH-90000
+        void shouldDetectUnknownParams() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); 
 
-            List<String> errors = tool.validateInput(Map.of("name", "Alice", "unknown", "value")); // GH-90000
+            List<String> errors = tool.validateInput(Map.of("name", "Alice", "unknown", "value")); 
             assertThat(errors).anyMatch(e -> e.contains("Unknown parameter 'unknown'"));
         }
     }
@@ -160,53 +160,53 @@ class FunctionToolTest {
 
         @Test
         @DisplayName("should invoke method with correct arguments")
-        void shouldInvokeWithCorrectArgs() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); // GH-90000
-            SampleService target = new SampleService(); // GH-90000
+        void shouldInvokeWithCorrectArgs() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "greet"); 
+            SampleService target = new SampleService(); 
 
             // Method uses -parameters flag so name is available
-            String paramName = tool.getParameterSchema().get(0).name(); // GH-90000
-            Object result = tool.invoke(target, Map.of(paramName, "World")); // GH-90000
+            String paramName = tool.getParameterSchema().get(0).name(); 
+            Object result = tool.invoke(target, Map.of(paramName, "World")); 
             assertThat(result).isEqualTo("Hello, World!");
         }
 
         @Test
         @DisplayName("should coerce number types during invocation")
-        void shouldCoerceNumberTypes() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); // GH-90000
-            SampleService target = new SampleService(); // GH-90000
+        void shouldCoerceNumberTypes() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "add"); 
+            SampleService target = new SampleService(); 
 
-            List<FunctionTool.ParameterInfo> params = tool.getParameterSchema(); // GH-90000
+            List<FunctionTool.ParameterInfo> params = tool.getParameterSchema(); 
             // Long values should be coerced to int
-            Object result = tool.invoke(target, Map.of( // GH-90000
-                    params.get(0).name(), 10L, // GH-90000
-                    params.get(1).name(), 20L // GH-90000
+            Object result = tool.invoke(target, Map.of( 
+                    params.get(0).name(), 10L, 
+                    params.get(1).name(), 20L 
             ));
-            assertThat(result).isEqualTo(30); // GH-90000
+            assertThat(result).isEqualTo(30); 
         }
 
         @Test
         @DisplayName("should throw ToolInvocationException for unresolvable method")
-        void shouldThrowForUnresolvableMethod() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "nonExistent"); // GH-90000
-            SampleService target = new SampleService(); // GH-90000
+        void shouldThrowForUnresolvableMethod() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "nonExistent"); 
+            SampleService target = new SampleService(); 
 
-            assertThatThrownBy(() -> tool.invoke(target, Map.of())) // GH-90000
-                    .isInstanceOf(FunctionTool.ToolInvocationException.class) // GH-90000
+            assertThatThrownBy(() -> tool.invoke(target, Map.of())) 
+                    .isInstanceOf(FunctionTool.ToolInvocationException.class) 
                     .hasMessageContaining("could not be resolved");
         }
 
         @Test
         @DisplayName("should wrap method exceptions in ToolInvocationException")
-        void shouldWrapMethodExceptions() { // GH-90000
-            FunctionTool tool = FunctionTool.create(SampleService.class, "failMethod"); // GH-90000
-            SampleService target = new SampleService(); // GH-90000
+        void shouldWrapMethodExceptions() { 
+            FunctionTool tool = FunctionTool.create(SampleService.class, "failMethod"); 
+            SampleService target = new SampleService(); 
 
-            String paramName = tool.getParameterSchema().get(0).name(); // GH-90000
-            assertThatThrownBy(() -> tool.invoke(target, Map.of(paramName, "test"))) // GH-90000
-                    .isInstanceOf(FunctionTool.ToolInvocationException.class) // GH-90000
+            String paramName = tool.getParameterSchema().get(0).name(); 
+            assertThatThrownBy(() -> tool.invoke(target, Map.of(paramName, "test"))) 
+                    .isInstanceOf(FunctionTool.ToolInvocationException.class) 
                     .hasMessageContaining("threw exception")
-                    .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
+                    .hasCauseInstanceOf(IllegalStateException.class); 
         }
     }
 }

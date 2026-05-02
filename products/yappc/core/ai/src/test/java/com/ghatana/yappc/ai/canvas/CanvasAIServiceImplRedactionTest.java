@@ -44,6 +44,8 @@ class CanvasAIServiceImplRedactionTest {
         this.dataSource = h2Ds;
 
         try (Connection conn = dataSource.getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP TABLE IF EXISTS canvas_validation_history");
+            stmt.execute("DROP TABLE IF EXISTS canvas_generation_history");
             stmt.execute("CREATE TABLE canvas_validation_history (" +
                 "id BIGINT AUTO_INCREMENT PRIMARY KEY, " +
                 "canvas_id VARCHAR(255), " +

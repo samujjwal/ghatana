@@ -24,51 +24,51 @@ class SessionManagementTest {
 
     @Test
     @DisplayName("Should handle multi-user sessions")
-    void shouldHandleMultiUserSessions() { // GH-90000
-        BindableService mockService = mock(BindableService.class); // GH-90000
+    void shouldHandleMultiUserSessions() { 
+        BindableService mockService = mock(BindableService.class); 
         
-        assertThat(mockService).isNotNull(); // GH-90000
+        assertThat(mockService).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle multi-user session handling")
-    void shouldHandleMultiUserSessionHandling() { // GH-90000
+    void shouldHandleMultiUserSessionHandling() { 
         String user = "user-123";
-        assertThat(user).isNotNull(); // GH-90000
+        assertThat(user).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle concurrent access")
-    void shouldHandleConcurrentAccess() { // GH-90000
+    void shouldHandleConcurrentAccess() { 
         int sessions = 10;
-        assertThat(sessions).isPositive(); // GH-90000
+        assertThat(sessions).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle session cleanup")
-    void shouldHandleSessionCleanup() { // GH-90000
+    void shouldHandleSessionCleanup() { 
         boolean cleaned = true;
-        assertThat(cleaned).isTrue(); // GH-90000
+        assertThat(cleaned).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle session timeout")
-    void shouldHandleSessionTimeout() { // GH-90000
+    void shouldHandleSessionTimeout() { 
         long timeout = 3600000;
-        assertThat(timeout).isPositive(); // GH-90000
+        assertThat(timeout).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle session persistence")
-    void shouldHandleSessionPersistence() { // GH-90000
+    void shouldHandleSessionPersistence() { 
         boolean persisted = true;
-        assertThat(persisted).isTrue(); // GH-90000
+        assertThat(persisted).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle session migration")
-    void shouldHandleSessionMigration() { // GH-90000
+    void shouldHandleSessionMigration() { 
         boolean migrated = true;
-        assertThat(migrated).isTrue(); // GH-90000
+        assertThat(migrated).isTrue(); 
     }
 }

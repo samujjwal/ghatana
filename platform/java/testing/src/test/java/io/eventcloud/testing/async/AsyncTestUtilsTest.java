@@ -12,99 +12,99 @@ import org.junit.jupiter.api.Test;
 class AsyncTestUtilsTest {
 
     @Test
-    void await_shouldReturnFutureResult() { // GH-90000
+    void await_shouldReturnFutureResult() { 
         // Given
         CompletableFuture<String> future = CompletableFuture.completedFuture("test");
 
         // When
-        String result = AsyncTestUtils.await(future, Duration.ofSeconds(1)); // GH-90000
+        String result = AsyncTestUtils.await(future, Duration.ofSeconds(1)); 
 
         // Then
         assertThat(result).isEqualTo("test");
     }
 
     @Test
-    void await_shouldThrowOnTimeout() { // GH-90000
+    void await_shouldThrowOnTimeout() { 
         // Given
-        CompletableFuture<String> future = new CompletableFuture<>(); // GH-90000
+        CompletableFuture<String> future = new CompletableFuture<>(); 
 
         // When/Then
-        assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofMillis(100))) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofMillis(100))) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("Timed out");
     }
 
     @Test
-    void await_shouldThrowOnException() { // GH-90000
+    void await_shouldThrowOnException() { 
         // Given
         CompletableFuture<String> future = CompletableFuture.failedFuture(new RuntimeException("test error"));
 
         // When/Then
-        assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofSeconds(1))) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> AsyncTestUtils.await(future, Duration.ofSeconds(1))) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("test error");
     }
 
     @Test
-    void awaitCondition_shouldReturnWhenConditionIsMet() { // GH-90000
+    void awaitCondition_shouldReturnWhenConditionIsMet() { 
         // Given
-        AtomicBoolean condition = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean condition = new AtomicBoolean(false); 
 
         // When
-        new Thread(() -> { // GH-90000
+        new Thread(() -> { 
             try {
-                Thread.sleep(100); // GH-90000
-                condition.set(true); // GH-90000
-            } catch (InterruptedException e) { // GH-90000
-                Thread.currentThread().interrupt(); // GH-90000
+                Thread.sleep(100); 
+                condition.set(true); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
             }
-        }).start(); // GH-90000
+        }).start(); 
 
         // Then
-        assertDoesNotThrow(() -> // GH-90000
-            AsyncTestUtils.await(condition::get, Duration.ofSeconds(1), Duration.ofMillis(10)) // GH-90000
+        assertDoesNotThrow(() -> 
+            AsyncTestUtils.await(condition::get, Duration.ofSeconds(1), Duration.ofMillis(10)) 
         );
     }
 
     @Test
-    void awaitCondition_shouldThrowOnTimeout() { // GH-90000
+    void awaitCondition_shouldThrowOnTimeout() { 
         // Given
-        AtomicBoolean condition = new AtomicBoolean(false); // GH-90000
+        AtomicBoolean condition = new AtomicBoolean(false); 
 
         // When/Then
-        assertThatThrownBy(() -> // GH-90000
-            AsyncTestUtils.await(condition::get, Duration.ofMillis(100), Duration.ofMillis(10)) // GH-90000
-        ).isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> 
+            AsyncTestUtils.await(condition::get, Duration.ofMillis(100), Duration.ofMillis(10)) 
+        ).isInstanceOf(RuntimeException.class) 
          .hasMessageContaining("Condition not met");
     }
 
     @Test
-    void delayedFuture_shouldCompleteAfterDelay() { // GH-90000
+    void delayedFuture_shouldCompleteAfterDelay() { 
         // Given
-        long startTime = System.currentTimeMillis(); // GH-90000
-        CompletableFuture<String> future = AsyncTestUtils.delayedFuture("test", Duration.ofMillis(100)); // GH-90000
+        long startTime = System.currentTimeMillis(); 
+        CompletableFuture<String> future = AsyncTestUtils.delayedFuture("test", Duration.ofMillis(100)); 
 
         // When
-        String result = future.join(); // GH-90000
-        long duration = System.currentTimeMillis() - startTime; // GH-90000
+        String result = future.join(); 
+        long duration = System.currentTimeMillis() - startTime; 
 
         // Then
         assertThat(result).isEqualTo("test");
-        assertThat(duration).isGreaterThanOrEqualTo(100); // GH-90000
+        assertThat(duration).isGreaterThanOrEqualTo(100); 
     }
 
     @Test
-    void delayedFailure_shouldFailAfterDelay() { // GH-90000
+    void delayedFailure_shouldFailAfterDelay() { 
         // Given
-        CompletableFuture<String> future = AsyncTestUtils.delayedFailure( // GH-90000
+        CompletableFuture<String> future = AsyncTestUtils.delayedFailure( 
             new RuntimeException("test error"),
-            Duration.ofMillis(100) // GH-90000
+            Duration.ofMillis(100) 
         );
 
         // When/Then
-        assertThatThrownBy(future::join) // GH-90000
-            .isInstanceOf(CompletionException.class) // GH-90000
-            .hasCauseInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(future::join) 
+            .isInstanceOf(CompletionException.class) 
+            .hasCauseInstanceOf(RuntimeException.class) 
             .hasMessageContaining("test error");
     }
 }

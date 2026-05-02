@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.grpc;
@@ -50,8 +50,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.catchThrowableOfType;
  * which resolves Promises synchronously, allowing straightforward blocking assertions
  * without an ActiveJ eventloop.
  *
- * <p>Tests are ordered so that data written in earlier tests (ingest, batch) can be // GH-90000
- * read back in later tests (query, getEvent). // GH-90000
+ * <p>Tests are ordered so that data written in earlier tests (ingest, batch) can be 
+ * read back in later tests (query, getEvent). 
  *
  * @doc.type class
  * @doc.purpose gRPC integration tests for EventServiceGrpcService
@@ -60,7 +60,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.catchThrowableOfType;
  * @since 2.0.0
  */
 @DisplayName("EventService gRPC — in-process integration tests")
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class) // GH-90000
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class) 
 class EventServiceGrpcIntegrationTest {
 
     private static Server server;
@@ -70,250 +70,250 @@ class EventServiceGrpcIntegrationTest {
 
     /** Shared store so tests can assert on data written by previous tests. */
     private static final InMemoryEventLogStoreProvider eventLogStore =
-            new InMemoryEventLogStoreProvider(); // GH-90000
+            new InMemoryEventLogStoreProvider(); 
 
     /** Unique in-process name avoids collisions if tests run in parallel. */
     private static final String SERVER_NAME =
-            "event-grpc-test-" + UUID.randomUUID().toString().replace("-", ""); // GH-90000
+            "event-grpc-test-" + UUID.randomUUID().toString().replace("-", ""); 
 
     private static final String TENANT = "grpc-test-tenant";
 
-    /** UUID written in test #1, read back in test #4 (getEvent). */ // GH-90000
+    /** UUID written in test #1, read back in test #4 (getEvent). */ 
     private static UUID ingestedEventId;
 
     // ==================== Lifecycle ====================
 
     @BeforeAll
-    static void startServer() throws IOException { // GH-90000
-        server = InProcessServerBuilder.forName(SERVER_NAME) // GH-90000
-                .directExecutor() // GH-90000
-                .addService(new EventServiceGrpcService( // GH-90000
-                    EventLogStoreAdapters.toPlatformStore(eventLogStore))) // GH-90000
-                .build() // GH-90000
-                .start(); // GH-90000
+    static void startServer() throws IOException { 
+        server = InProcessServerBuilder.forName(SERVER_NAME) 
+                .directExecutor() 
+                .addService(new EventServiceGrpcService( 
+                    EventLogStoreAdapters.toPlatformStore(eventLogStore))) 
+                .build() 
+                .start(); 
 
-        channel = InProcessChannelBuilder.forName(SERVER_NAME) // GH-90000
-                .directExecutor() // GH-90000
-                .build(); // GH-90000
+        channel = InProcessChannelBuilder.forName(SERVER_NAME) 
+                .directExecutor() 
+                .build(); 
 
-        blockingStub = EventServiceGrpc.newBlockingStub(channel); // GH-90000
-        asyncStub    = EventServiceGrpc.newStub(channel); // GH-90000
+        blockingStub = EventServiceGrpc.newBlockingStub(channel); 
+        asyncStub    = EventServiceGrpc.newStub(channel); 
     }
 
     @AfterAll
-    static void stopServer() throws InterruptedException { // GH-90000
-        if (channel != null) { // GH-90000
-            channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+    static void stopServer() throws InterruptedException { 
+        if (channel != null) { 
+            channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS); 
         }
-        if (server != null) { // GH-90000
-            server.shutdownNow().awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+        if (server != null) { 
+            server.shutdownNow().awaitTermination(5, TimeUnit.SECONDS); 
         }
     }
 
     // ==================== Helper ====================
 
-    private static EventProto buildEvent(String type, String tenantId, String payloadJson) { // GH-90000
-        return EventProto.newBuilder() // GH-90000
-                .setType(type) // GH-90000
-                .setTenantId(tenantId) // GH-90000
+    private static EventProto buildEvent(String type, String tenantId, String payloadJson) { 
+        return EventProto.newBuilder() 
+                .setType(type) 
+                .setTenantId(tenantId) 
                 .setTypeVersion("1.0.0")
-                .setPayloadJson(payloadJson) // GH-90000
-                .build(); // GH-90000
+                .setPayloadJson(payloadJson) 
+                .build(); 
     }
 
     // ==================== Tests ====================
 
     @Test
-    @Order(1) // GH-90000
+    @Order(1) 
     @DisplayName("Ingest — single event is stored and echoed back")
-    void ingest_singleEvent_returnsStoredEvent() { // GH-90000
-        EventProto event = buildEvent("user.signed_up", TENANT, "{\"userId\":\"abc123\"}"); // GH-90000
-        IngestRequestProto request = IngestRequestProto.newBuilder() // GH-90000
-                .setEvent(event) // GH-90000
-                .build(); // GH-90000
+    void ingest_singleEvent_returnsStoredEvent() { 
+        EventProto event = buildEvent("user.signed_up", TENANT, "{\"userId\":\"abc123\"}"); 
+        IngestRequestProto request = IngestRequestProto.newBuilder() 
+                .setEvent(event) 
+                .build(); 
 
-        IngestResponseProto response = blockingStub.ingest(request); // GH-90000
+        IngestResponseProto response = blockingStub.ingest(request); 
 
-        assertThat(response.hasEvent()).isTrue(); // GH-90000
+        assertThat(response.hasEvent()).isTrue(); 
         assertThat(response.getEvent().getType()).isEqualTo("user.signed_up");
 
         // Capture the ID assigned by the mapper so test #4 can retrieve it
-        ingestedEventId = response.getEvent().hasId() // GH-90000
-                ? UUID.fromString(response.getEvent().getId().getValue()) // GH-90000
+        ingestedEventId = response.getEvent().hasId() 
+                ? UUID.fromString(response.getEvent().getId().getValue()) 
                 : null;
     }
 
     @Test
-    @Order(2) // GH-90000
+    @Order(2) 
     @DisplayName("Ingest — missing event field returns INVALID_ARGUMENT")
-    void ingest_missingEventField_returnsInvalidArgument() { // GH-90000
-        IngestRequestProto empty = IngestRequestProto.newBuilder().build(); // GH-90000
+    void ingest_missingEventField_returnsInvalidArgument() { 
+        IngestRequestProto empty = IngestRequestProto.newBuilder().build(); 
 
-        StatusRuntimeException ex = catchThrowableOfType( // GH-90000
-                () -> blockingStub.ingest(empty), // GH-90000
+        StatusRuntimeException ex = catchThrowableOfType( 
+                () -> blockingStub.ingest(empty), 
                 StatusRuntimeException.class);
 
-        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT); // GH-90000
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT); 
     }
 
     @Test
-    @Order(3) // GH-90000
+    @Order(3) 
     @DisplayName("IngestBatch — batch of 3 events is stored, counts returned correctly")
-    void ingestBatch_threeEvents_successCountThree() { // GH-90000
-        IngestBatchRequestProto request = IngestBatchRequestProto.newBuilder() // GH-90000
-                .addEvents(buildEvent("order.placed",    TENANT, "{\"orderId\":\"1\"}")) // GH-90000
-                .addEvents(buildEvent("order.placed",    TENANT, "{\"orderId\":\"2\"}")) // GH-90000
-                .addEvents(buildEvent("payment.received", TENANT, "{\"amount\":99}")) // GH-90000
-                .build(); // GH-90000
+    void ingestBatch_threeEvents_successCountThree() { 
+        IngestBatchRequestProto request = IngestBatchRequestProto.newBuilder() 
+                .addEvents(buildEvent("order.placed",    TENANT, "{\"orderId\":\"1\"}")) 
+                .addEvents(buildEvent("order.placed",    TENANT, "{\"orderId\":\"2\"}")) 
+                .addEvents(buildEvent("payment.received", TENANT, "{\"amount\":99}")) 
+                .build(); 
 
-        IngestBatchResponseProto response = blockingStub.ingestBatch(request); // GH-90000
+        IngestBatchResponseProto response = blockingStub.ingestBatch(request); 
 
-        assertThat(response.getSuccessCount()).isEqualTo(3); // GH-90000
-        assertThat(response.getErrorCount()).isZero(); // GH-90000
-        assertThat(response.getEventsCount()).isEqualTo(3); // GH-90000
+        assertThat(response.getSuccessCount()).isEqualTo(3); 
+        assertThat(response.getErrorCount()).isZero(); 
+        assertThat(response.getEventsCount()).isEqualTo(3); 
     }
 
     @Test
-    @Order(4) // GH-90000
+    @Order(4) 
     @DisplayName("IngestBatch — empty batch returns zero counts without error")
-    void ingestBatch_emptyBatch_returnsZeroCounts() { // GH-90000
-        IngestBatchRequestProto empty = IngestBatchRequestProto.newBuilder().build(); // GH-90000
+    void ingestBatch_emptyBatch_returnsZeroCounts() { 
+        IngestBatchRequestProto empty = IngestBatchRequestProto.newBuilder().build(); 
 
-        IngestBatchResponseProto response = blockingStub.ingestBatch(empty); // GH-90000
+        IngestBatchResponseProto response = blockingStub.ingestBatch(empty); 
 
-        assertThat(response.getSuccessCount()).isZero(); // GH-90000
-        assertThat(response.getErrorCount()).isZero(); // GH-90000
+        assertThat(response.getSuccessCount()).isZero(); 
+        assertThat(response.getErrorCount()).isZero(); 
     }
 
     @Test
-    @Order(5) // GH-90000
+    @Order(5) 
     @DisplayName("Query — scan by type returns matching events")
-    void query_byEventType_returnsMatchingEvents() { // GH-90000
-        // "order.placed" events were ingested in test #3 (2 events) // GH-90000
-        QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() // GH-90000
-                .setTenantId(TENANT) // GH-90000
+    void query_byEventType_returnsMatchingEvents() { 
+        // "order.placed" events were ingested in test #3 (2 events) 
+        QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() 
+                .setTenantId(TENANT) 
                 .setTypePrefix("order.placed")
-                .setLimit(10) // GH-90000
-                .build(); // GH-90000
+                .setLimit(10) 
+                .build(); 
 
-        List<QueryEventsResponseProto> responses = new ArrayList<>(); // GH-90000
-        blockingStub.query(request).forEachRemaining(responses::add); // GH-90000
+        List<QueryEventsResponseProto> responses = new ArrayList<>(); 
+        blockingStub.query(request).forEachRemaining(responses::add); 
 
         // Server streams one response per matched event
-        assertThat(responses).isNotEmpty(); // GH-90000
-        responses.forEach(resp -> // GH-90000
-                assertThat(resp.getEventsList()) // GH-90000
+        assertThat(responses).isNotEmpty(); 
+        responses.forEach(resp -> 
+                assertThat(resp.getEventsList()) 
                         .allSatisfy(e -> assertThat(e.getType()).isEqualTo("order.placed")));
     }
 
     @Test
-    @Order(6) // GH-90000
+    @Order(6) 
     @DisplayName("Query — full scan without type filter returns all ingested events")
-    void query_fullScan_returnsAllEvents() { // GH-90000
-        QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() // GH-90000
-                .setTenantId(TENANT) // GH-90000
-                .setLimit(50) // GH-90000
-                .build(); // GH-90000
+    void query_fullScan_returnsAllEvents() { 
+        QueryEventsRequestProto request = QueryEventsRequestProto.newBuilder() 
+                .setTenantId(TENANT) 
+                .setLimit(50) 
+                .build(); 
 
-        List<QueryEventsResponseProto> responses = new ArrayList<>(); // GH-90000
-        blockingStub.query(request).forEachRemaining(responses::add); // GH-90000
+        List<QueryEventsResponseProto> responses = new ArrayList<>(); 
+        blockingStub.query(request).forEachRemaining(responses::add); 
 
         // At least 4 events: 1 from test#1 + 3 from test#3
-        long total = responses.stream().mapToLong(QueryEventsResponseProto::getTotalCount).findFirst().orElse(0L); // GH-90000
-        assertThat(total).isGreaterThanOrEqualTo(4); // GH-90000
+        long total = responses.stream().mapToLong(QueryEventsResponseProto::getTotalCount).findFirst().orElse(0L); 
+        assertThat(total).isGreaterThanOrEqualTo(4); 
     }
 
     @Test
-    @Order(7) // GH-90000
+    @Order(7) 
     @DisplayName("GetEvent — retrieves the event ingested in test #1 by UUID")
-    void getEvent_existingId_returnsEvent() { // GH-90000
-        if (ingestedEventId == null) { // GH-90000
+    void getEvent_existingId_returnsEvent() { 
+        if (ingestedEventId == null) { 
             // Event proto had no id field set — skip lookup assertion
             return;
         }
-        GetEventRequestProto request = GetEventRequestProto.newBuilder() // GH-90000
-                .setEventId(ingestedEventId.toString()) // GH-90000
-                .setTenantId(TENANT) // GH-90000
-                .build(); // GH-90000
+        GetEventRequestProto request = GetEventRequestProto.newBuilder() 
+                .setEventId(ingestedEventId.toString()) 
+                .setTenantId(TENANT) 
+                .build(); 
 
-        GetEventResponseProto response = blockingStub.getEvent(request); // GH-90000
+        GetEventResponseProto response = blockingStub.getEvent(request); 
 
-        assertThat(response.hasEvent()).isTrue(); // GH-90000
+        assertThat(response.hasEvent()).isTrue(); 
         assertThat(response.getEvent().getType()).isEqualTo("user.signed_up");
     }
 
     @Test
-    @Order(8) // GH-90000
+    @Order(8) 
     @DisplayName("GetEvent — unrecognised UUID returns NOT_FOUND")
-    void getEvent_unknownId_returnsNotFound() { // GH-90000
-        GetEventRequestProto request = GetEventRequestProto.newBuilder() // GH-90000
-                .setEventId(UUID.randomUUID().toString()) // GH-90000
-                .setTenantId(TENANT) // GH-90000
-                .build(); // GH-90000
+    void getEvent_unknownId_returnsNotFound() { 
+        GetEventRequestProto request = GetEventRequestProto.newBuilder() 
+                .setEventId(UUID.randomUUID().toString()) 
+                .setTenantId(TENANT) 
+                .build(); 
 
-        StatusRuntimeException ex = catchThrowableOfType( // GH-90000
-                () -> blockingStub.getEvent(request), // GH-90000
+        StatusRuntimeException ex = catchThrowableOfType( 
+                () -> blockingStub.getEvent(request), 
                 StatusRuntimeException.class);
 
-        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.NOT_FOUND); // GH-90000
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.NOT_FOUND); 
     }
 
     @Test
-    @Order(9) // GH-90000
+    @Order(9) 
     @DisplayName("GetEvent \u2014 malformed UUID returns INVALID_ARGUMENT")
-    void getEvent_malformedUuid_returnsInvalidArgument() { // GH-90000
-        GetEventRequestProto request = GetEventRequestProto.newBuilder() // GH-90000
+    void getEvent_malformedUuid_returnsInvalidArgument() { 
+        GetEventRequestProto request = GetEventRequestProto.newBuilder() 
                 .setEventId("not-a-uuid")
-                .setTenantId(TENANT) // GH-90000
-                .build(); // GH-90000
+                .setTenantId(TENANT) 
+                .build(); 
 
-        StatusRuntimeException ex = catchThrowableOfType( // GH-90000
-                () -> blockingStub.getEvent(request), // GH-90000
+        StatusRuntimeException ex = catchThrowableOfType( 
+                () -> blockingStub.getEvent(request), 
                 StatusRuntimeException.class);
 
-        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT); // GH-90000
+        assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT); 
     }
 
     @Test
-    @Order(10) // GH-90000
+    @Order(10) 
     @DisplayName("IngestStream — bidirectional stream ingests events and receives echo responses")
-    void ingestStream_bidirectional_responsesReceivedForEachEvent() throws InterruptedException { // GH-90000
+    void ingestStream_bidirectional_responsesReceivedForEachEvent() throws InterruptedException { 
         int eventCount = 3;
-        CountDownLatch completedLatch = new CountDownLatch(1); // GH-90000
-        List<IngestResponseProto> received = new ArrayList<>(); // GH-90000
-        AtomicReference<Throwable> streamError = new AtomicReference<>(); // GH-90000
+        CountDownLatch completedLatch = new CountDownLatch(1); 
+        List<IngestResponseProto> received = new ArrayList<>(); 
+        AtomicReference<Throwable> streamError = new AtomicReference<>(); 
 
-        StreamObserver<IngestRequestProto> requestObserver = asyncStub.ingestStream( // GH-90000
-                new StreamObserver<>() { // GH-90000
+        StreamObserver<IngestRequestProto> requestObserver = asyncStub.ingestStream( 
+                new StreamObserver<>() { 
                     @Override
-                    public void onNext(IngestResponseProto value) { // GH-90000
-                        received.add(value); // GH-90000
+                    public void onNext(IngestResponseProto value) { 
+                        received.add(value); 
                     }
 
                     @Override
-                    public void onError(Throwable t) { // GH-90000
-                        streamError.set(t); // GH-90000
-                        completedLatch.countDown(); // GH-90000
+                    public void onError(Throwable t) { 
+                        streamError.set(t); 
+                        completedLatch.countDown(); 
                     }
 
                     @Override
-                    public void onCompleted() { // GH-90000
-                        completedLatch.countDown(); // GH-90000
+                    public void onCompleted() { 
+                        completedLatch.countDown(); 
                     }
                 });
 
-        for (int i = 0; i < eventCount; i++) { // GH-90000
-            requestObserver.onNext(IngestRequestProto.newBuilder() // GH-90000
-                    .setEvent(buildEvent("stream.event", TENANT, "{\"seq\":" + i + "}")) // GH-90000
-                    .build()); // GH-90000
+        for (int i = 0; i < eventCount; i++) { 
+            requestObserver.onNext(IngestRequestProto.newBuilder() 
+                    .setEvent(buildEvent("stream.event", TENANT, "{\"seq\":" + i + "}")) 
+                    .build()); 
         }
-        requestObserver.onCompleted(); // GH-90000
+        requestObserver.onCompleted(); 
 
-        boolean completed = completedLatch.await(10, TimeUnit.SECONDS); // GH-90000
+        boolean completed = completedLatch.await(10, TimeUnit.SECONDS); 
 
         assertThat(completed).as("Stream should complete within timeout").isTrue();
         assertThat(streamError.get()).as("No stream errors").isNull();
-        assertThat(received).hasSize(eventCount); // GH-90000
+        assertThat(received).hasSize(eventCount); 
         received.forEach(r -> assertThat(r.getEvent().getType()).isEqualTo("stream.event"));
     }
 }

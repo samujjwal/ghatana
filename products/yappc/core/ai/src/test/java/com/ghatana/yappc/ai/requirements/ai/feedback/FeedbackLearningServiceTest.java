@@ -29,8 +29,8 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
   private FeedbackLearningService service;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    service = new FeedbackLearningService(); // GH-90000
+  void setUp() { 
+    service = new FeedbackLearningService(); 
   }
 
   // ===== Feedback Processing Tests =====
@@ -41,73 +41,73 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should increase relevance score for HELPFUL feedback")
-    void shouldIncreaseRelevanceForHelpful() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldIncreaseRelevanceForHelpful() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.HELPFUL, "Great!", null, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(suggestion, feedback)); 
 
-      assertThat(updated.relevanceScore()).isGreaterThan(0.5f); // GH-90000
+      assertThat(updated.relevanceScore()).isGreaterThan(0.5f); 
     }
 
     @Test
     @DisplayName("Should decrease relevance score for NOT_HELPFUL feedback")
-    void shouldDecreaseRelevanceForNotHelpful() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldDecreaseRelevanceForNotHelpful() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.NOT_HELPFUL, "Not useful", null, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(suggestion, feedback)); 
 
-      assertThat(updated.relevanceScore()).isLessThan(0.5f); // GH-90000
+      assertThat(updated.relevanceScore()).isLessThan(0.5f); 
     }
 
     @Test
     @DisplayName("Should decrease relevance more for DUPLICATE feedback")
-    void shouldDecreaseRelevanceMoreForDuplicate() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
-      SuggestionFeedback duplicate = new SuggestionFeedback( // GH-90000
+    void shouldDecreaseRelevanceMoreForDuplicate() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
+      SuggestionFeedback duplicate = new SuggestionFeedback( 
           "sug-1", FeedbackType.DUPLICATE, "Already exists", null, "user-1");
-      SuggestionFeedback notHelpful = new SuggestionFeedback( // GH-90000
+      SuggestionFeedback notHelpful = new SuggestionFeedback( 
           "sug-1", FeedbackType.NOT_HELPFUL, "Nope", null, "user-1");
 
-      AISuggestion dupUpdated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, duplicate)); // GH-90000
-      AISuggestion nhUpdated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, notHelpful)); // GH-90000
+      AISuggestion dupUpdated = runPromise( 
+          () -> service.processFeedback(suggestion, duplicate)); 
+      AISuggestion nhUpdated = runPromise( 
+          () -> service.processFeedback(suggestion, notHelpful)); 
 
       // DUPLICATE should penalize more than NOT_HELPFUL
-      assertThat(dupUpdated.relevanceScore()).isLessThan(nhUpdated.relevanceScore()); // GH-90000
+      assertThat(dupUpdated.relevanceScore()).isLessThan(nhUpdated.relevanceScore()); 
     }
 
     @Test
     @DisplayName("Should clamp relevance score to [0, 1]")
-    void shouldClampRelevanceScore() { // GH-90000
+    void shouldClampRelevanceScore() { 
       // Start at 0.05 — INVALID feedback should reduce but not go below 0
-      AISuggestion lowScore = createSuggestion(0.05f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+      AISuggestion lowScore = createSuggestion(0.05f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.INVALID, "Wrong", null, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(lowScore, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(lowScore, feedback)); 
 
-      assertThat(updated.relevanceScore()).isGreaterThanOrEqualTo(0.0f); // GH-90000
+      assertThat(updated.relevanceScore()).isGreaterThanOrEqualTo(0.0f); 
     }
 
     @Test
     @DisplayName("Should clamp relevance score at upper bound")
-    void shouldClampRelevanceAtUpperBound() { // GH-90000
-      AISuggestion highScore = createSuggestion(0.98f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldClampRelevanceAtUpperBound() { 
+      AISuggestion highScore = createSuggestion(0.98f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.HELPFUL, "Perfect!", 5, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(highScore, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(highScore, feedback)); 
 
-      assertThat(updated.relevanceScore()).isLessThanOrEqualTo(1.0f); // GH-90000
+      assertThat(updated.relevanceScore()).isLessThanOrEqualTo(1.0f); 
     }
   }
 
@@ -119,28 +119,28 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should increase priority for positive feedback")
-    void shouldIncreasePriorityForPositive() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldIncreasePriorityForPositive() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.HELPFUL, "Useful", null, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(suggestion, feedback)); 
 
-      assertThat(updated.priorityScore()).isGreaterThan(0.5f); // GH-90000
+      assertThat(updated.priorityScore()).isGreaterThan(0.5f); 
     }
 
     @Test
     @DisplayName("Should decrease priority for negative feedback")
-    void shouldDecreasePriorityForNegative() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldDecreasePriorityForNegative() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.NOT_HELPFUL, "Bad", null, "user-1");
 
-      AISuggestion updated = runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, feedback)); // GH-90000
+      AISuggestion updated = runPromise( 
+          () -> service.processFeedback(suggestion, feedback)); 
 
-      assertThat(updated.priorityScore()).isLessThan(0.5f); // GH-90000
+      assertThat(updated.priorityScore()).isLessThan(0.5f); 
     }
   }
 
@@ -152,23 +152,23 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should reject null suggestion")
-    void shouldRejectNullSuggestion() { // GH-90000
-      SuggestionFeedback feedback = new SuggestionFeedback( // GH-90000
+    void shouldRejectNullSuggestion() { 
+      SuggestionFeedback feedback = new SuggestionFeedback( 
           "sug-1", FeedbackType.HELPFUL, "Good", null, "user-1");
 
-      assertThatThrownBy(() -> runPromise( // GH-90000
-          () -> service.processFeedback(null, feedback))) // GH-90000
-          .isInstanceOf(NullPointerException.class); // GH-90000
+      assertThatThrownBy(() -> runPromise( 
+          () -> service.processFeedback(null, feedback))) 
+          .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("Should reject null feedback")
-    void shouldRejectNullFeedback() { // GH-90000
-      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); // GH-90000
+    void shouldRejectNullFeedback() { 
+      AISuggestion suggestion = createSuggestion(0.5f, 0.5f); 
 
-      assertThatThrownBy(() -> runPromise( // GH-90000
-          () -> service.processFeedback(suggestion, null))) // GH-90000
-          .isInstanceOf(NullPointerException.class); // GH-90000
+      assertThatThrownBy(() -> runPromise( 
+          () -> service.processFeedback(suggestion, null))) 
+          .isInstanceOf(NullPointerException.class); 
     }
   }
 
@@ -180,11 +180,11 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should return learning metrics")
-    void shouldReturnMetrics() { // GH-90000
-      Map<String, Object> metrics = runPromise(service::getLearningMetrics); // GH-90000
+    void shouldReturnMetrics() { 
+      Map<String, Object> metrics = runPromise(service::getLearningMetrics); 
 
-      assertThat(metrics).isNotNull(); // GH-90000
-      assertThat(metrics).containsKeys("feedbackProcessed", "avgRelevanceAdjustment"); // GH-90000
+      assertThat(metrics).isNotNull(); 
+      assertThat(metrics).containsKeys("feedbackProcessed", "avgRelevanceAdjustment"); 
     }
   }
 
@@ -196,18 +196,18 @@ class FeedbackLearningServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should return persona performance analysis")
-    void shouldReturnPersonaAnalysis() { // GH-90000
-      var result = runPromise( // GH-90000
-          () -> service.analyzePersonaPerformance(List.of())); // GH-90000
+    void shouldReturnPersonaAnalysis() { 
+      var result = runPromise( 
+          () -> service.analyzePersonaPerformance(List.of())); 
 
-      assertThat(result).isNotNull(); // GH-90000
+      assertThat(result).isNotNull(); 
     }
   }
 
   // ===== Test Helpers =====
 
-  private AISuggestion createSuggestion(float relevance, float priority) { // GH-90000
-    return new AISuggestion( // GH-90000
+  private AISuggestion createSuggestion(float relevance, float priority) { 
+    return new AISuggestion( 
         "req-123",
         "Add OAuth2 authentication",
         Persona.DEVELOPER,

@@ -18,56 +18,56 @@ class BudgetTest {
 
   @Test
   @DisplayName("should create Budget with all fields")
-  void shouldCreateBudget() { // GH-90000
+  void shouldCreateBudget() { 
     long maxTokens = 1000L;
     double maxCostUsd = 5.0;
     long maxWallTimeMs = 60000L;
 
-    Budget budget = new Budget(maxTokens, maxCostUsd, maxWallTimeMs); // GH-90000
+    Budget budget = new Budget(maxTokens, maxCostUsd, maxWallTimeMs); 
 
-    assertThat(budget.maxTokens()).isEqualTo(maxTokens); // GH-90000
-    assertThat(budget.maxCostUsd()).isEqualTo(maxCostUsd); // GH-90000
-    assertThat(budget.maxWallTimeMs()).isEqualTo(maxWallTimeMs); // GH-90000
+    assertThat(budget.maxTokens()).isEqualTo(maxTokens); 
+    assertThat(budget.maxCostUsd()).isEqualTo(maxCostUsd); 
+    assertThat(budget.maxWallTimeMs()).isEqualTo(maxWallTimeMs); 
   }
 
   @Test
   @DisplayName("should handle zero values")
-  void shouldHandleZeroValues() { // GH-90000
-    Budget budget = new Budget(0L, 0.0, 0L); // GH-90000
+  void shouldHandleZeroValues() { 
+    Budget budget = new Budget(0L, 0.0, 0L); 
 
-    assertThat(budget.maxTokens()).isZero(); // GH-90000
-    assertThat(budget.maxCostUsd()).isZero(); // GH-90000
-    assertThat(budget.maxWallTimeMs()).isZero(); // GH-90000
+    assertThat(budget.maxTokens()).isZero(); 
+    assertThat(budget.maxCostUsd()).isZero(); 
+    assertThat(budget.maxWallTimeMs()).isZero(); 
   }
 
   @Test
   @DisplayName("should handle negative values")
-  void shouldHandleNegativeValues() { // GH-90000
-    Budget budget = new Budget(-1L, -1.0, -1L); // GH-90000
+  void shouldHandleNegativeValues() { 
+    Budget budget = new Budget(-1L, -1.0, -1L); 
 
-    assertThat(budget.maxTokens()).isNegative(); // GH-90000
-    assertThat(budget.maxCostUsd()).isNegative(); // GH-90000
-    assertThat(budget.maxWallTimeMs()).isNegative(); // GH-90000
+    assertThat(budget.maxTokens()).isNegative(); 
+    assertThat(budget.maxCostUsd()).isNegative(); 
+    assertThat(budget.maxWallTimeMs()).isNegative(); 
   }
 
   @Test
   @DisplayName("should implement equals and hashCode correctly")
-  void shouldImplementEqualsAndHashCode() { // GH-90000
-    Budget budget1 = new Budget(100L, 1.0, 1000L); // GH-90000
-    Budget budget2 = new Budget(100L, 1.0, 1000L); // GH-90000
-    Budget budget3 = new Budget(200L, 2.0, 2000L); // GH-90000
+  void shouldImplementEqualsAndHashCode() { 
+    Budget budget1 = new Budget(100L, 1.0, 1000L); 
+    Budget budget2 = new Budget(100L, 1.0, 1000L); 
+    Budget budget3 = new Budget(200L, 2.0, 2000L); 
 
-    assertThat(budget1).isEqualTo(budget2); // GH-90000
-    assertThat(budget1.hashCode()).isEqualTo(budget2.hashCode()); // GH-90000
-    assertThat(budget1).isNotEqualTo(budget3); // GH-90000
+    assertThat(budget1).isEqualTo(budget2); 
+    assertThat(budget1.hashCode()).isEqualTo(budget2.hashCode()); 
+    assertThat(budget1).isNotEqualTo(budget3); 
   }
 
   @Test
   @DisplayName("should have correct toString")
-  void shouldHaveCorrectToString() { // GH-90000
-    Budget budget = new Budget(100L, 1.0, 1000L); // GH-90000
+  void shouldHaveCorrectToString() { 
+    Budget budget = new Budget(100L, 1.0, 1000L); 
 
-    String str = budget.toString(); // GH-90000
+    String str = budget.toString(); 
 
     assertThat(str).contains("maxTokens=100");
     assertThat(str).contains("maxCostUsd=1.0");

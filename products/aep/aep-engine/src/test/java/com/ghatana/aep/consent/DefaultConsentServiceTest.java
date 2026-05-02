@@ -31,8 +31,8 @@ class DefaultConsentServiceTest extends EventloopTestBase {
     private DefaultConsentService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new DefaultConsentService(); // GH-90000
+    void setUp() { 
+        service = new DefaultConsentService(); 
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -45,20 +45,20 @@ class DefaultConsentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DENIED consent produces deny decision")
-        void shouldDenyWhenConsentDenied() { // GH-90000
-            AepEngine.Event event = eventWithStatus(AepEngine.ConsentStatus.DENIED); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isFalse(); // GH-90000
+        void shouldDenyWhenConsentDenied() { 
+            AepEngine.Event event = eventWithStatus(AepEngine.ConsentStatus.DENIED); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isFalse(); 
         }
 
         @Test
         @DisplayName("EXPIRED consent produces deny decision")
-        void shouldDenyWhenConsentExpired() { // GH-90000
-            AepEngine.Event event = eventWithStatus(AepEngine.ConsentStatus.EXPIRED); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isFalse(); // GH-90000
+        void shouldDenyWhenConsentExpired() { 
+            AepEngine.Event event = eventWithStatus(AepEngine.ConsentStatus.EXPIRED); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isFalse(); 
         }
     }
 
@@ -72,31 +72,31 @@ class DefaultConsentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("GRANTED with no allowed-purposes list allows processing")
-        void shouldAllowGrantedWithNoPurposes() { // GH-90000
-            AepEngine.Event event = eventWith(AepEngine.ConsentStatus.GRANTED, List.of()); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isTrue(); // GH-90000
+        void shouldAllowGrantedWithNoPurposes() { 
+            AepEngine.Event event = eventWith(AepEngine.ConsentStatus.GRANTED, List.of()); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("GRANTED with event_processing in allowed purposes allows processing")
-        void shouldAllowGrantedWithEventProcessingPurpose() { // GH-90000
-            AepEngine.Event event = eventWith( // GH-90000
-                AepEngine.ConsentStatus.GRANTED, List.of("event_processing", "analytics")); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isTrue(); // GH-90000
+        void shouldAllowGrantedWithEventProcessingPurpose() { 
+            AepEngine.Event event = eventWith( 
+                AepEngine.ConsentStatus.GRANTED, List.of("event_processing", "analytics")); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("GRANTED without event_processing in non-empty allowed purposes denies")
-        void shouldDenyGrantedWhenPurposeMissing() { // GH-90000
-            AepEngine.Event event = eventWith( // GH-90000
-                AepEngine.ConsentStatus.GRANTED, List.of("analytics", "reporting")); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isFalse(); // GH-90000
+        void shouldDenyGrantedWhenPurposeMissing() { 
+            AepEngine.Event event = eventWith( 
+                AepEngine.ConsentStatus.GRANTED, List.of("analytics", "reporting")); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isFalse(); 
             assertThat(decision.reason()).contains("purpose");
         }
     }
@@ -111,21 +111,21 @@ class DefaultConsentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("UNKNOWN with no allowed-purposes allows processing (permissive default)")
-        void shouldAllowUnknownWithNoPurposes() { // GH-90000
-            AepEngine.Event event = eventWith(AepEngine.ConsentStatus.UNKNOWN, List.of()); // GH-90000
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isTrue(); // GH-90000
+        void shouldAllowUnknownWithNoPurposes() { 
+            AepEngine.Event event = eventWith(AepEngine.ConsentStatus.UNKNOWN, List.of()); 
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("UNKNOWN with non-empty purposes list that includes event_processing allows")
-        void shouldAllowUnknownWithEventProcessingPurpose() { // GH-90000
-            AepEngine.Event event = eventWith( // GH-90000
+        void shouldAllowUnknownWithEventProcessingPurpose() { 
+            AepEngine.Event event = eventWith( 
                 AepEngine.ConsentStatus.UNKNOWN, List.of("event_processing"));
-            ConsentService.ConsentDecision decision = runPromise( // GH-90000
-                () -> service.evaluateConsent(TENANT, event)); // GH-90000
-            assertThat(decision.allowed()).isTrue(); // GH-90000
+            ConsentService.ConsentDecision decision = runPromise( 
+                () -> service.evaluateConsent(TENANT, event)); 
+            assertThat(decision.allowed()).isTrue(); 
         }
     }
 
@@ -139,26 +139,26 @@ class DefaultConsentServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("allow() produces an allowed decision with empty allowed-purposes")
-        void allowFactoryShouldBeAllowed() { // GH-90000
-            ConsentService.ConsentDecision d = ConsentService.ConsentDecision.allow(); // GH-90000
-            assertThat(d.allowed()).isTrue(); // GH-90000
-            assertThat(d.allowedPurposes()).isEmpty(); // GH-90000
+        void allowFactoryShouldBeAllowed() { 
+            ConsentService.ConsentDecision d = ConsentService.ConsentDecision.allow(); 
+            assertThat(d.allowed()).isTrue(); 
+            assertThat(d.allowedPurposes()).isEmpty(); 
         }
 
         @Test
         @DisplayName("allow(purposes) produces an allowed decision with purposes list")
-        void allowWithPurposesShouldBeAllowed() { // GH-90000
-            ConsentService.ConsentDecision d = ConsentService.ConsentDecision.allow( // GH-90000
-                List.of("analytics", "event_processing")); // GH-90000
-            assertThat(d.allowed()).isTrue(); // GH-90000
-            assertThat(d.allowedPurposes()).contains("analytics", "event_processing"); // GH-90000
+        void allowWithPurposesShouldBeAllowed() { 
+            ConsentService.ConsentDecision d = ConsentService.ConsentDecision.allow( 
+                List.of("analytics", "event_processing")); 
+            assertThat(d.allowed()).isTrue(); 
+            assertThat(d.allowedPurposes()).contains("analytics", "event_processing"); 
         }
 
         @Test
         @DisplayName("deny(reason) produces a denied decision with a reason")
-        void denyFactoryShouldBeDenied() { // GH-90000
+        void denyFactoryShouldBeDenied() { 
             ConsentService.ConsentDecision d = ConsentService.ConsentDecision.deny("GDPR opt-out");
-            assertThat(d.allowed()).isFalse(); // GH-90000
+            assertThat(d.allowed()).isFalse(); 
             assertThat(d.reason()).isEqualTo("GDPR opt-out");
         }
     }
@@ -167,21 +167,21 @@ class DefaultConsentServiceTest extends EventloopTestBase {
     // Helpers
     // ──────────────────────────────────────────────────────────────────────────
 
-    private static AepEngine.Event eventWithStatus(AepEngine.ConsentStatus status) { // GH-90000
-        return eventWith(status, List.of()); // GH-90000
+    private static AepEngine.Event eventWithStatus(AepEngine.ConsentStatus status) { 
+        return eventWith(status, List.of()); 
     }
 
-    private static AepEngine.Event eventWith(AepEngine.ConsentStatus status, // GH-90000
+    private static AepEngine.Event eventWith(AepEngine.ConsentStatus status, 
                                               List<String> allowedPurposes) {
-        return new AepEngine.Event( // GH-90000
+        return new AepEngine.Event( 
             "test.event",
-            Map.of(), // GH-90000
-            Map.of(), // GH-90000
-            java.time.Instant.now(), // GH-90000
-            AepEngine.IdentityContext.empty(), // GH-90000
-            new AepEngine.ConsentContext(status, AepEngine.RetentionPolicy.STANDARD, allowedPurposes), // GH-90000
+            Map.of(), 
+            Map.of(), 
+            java.time.Instant.now(), 
+            AepEngine.IdentityContext.empty(), 
+            new AepEngine.ConsentContext(status, AepEngine.RetentionPolicy.STANDARD, allowedPurposes), 
             AepEngine.Event.DEFAULT_VERSION,
-            Optional.empty() // GH-90000
+            Optional.empty() 
         );
     }
 }

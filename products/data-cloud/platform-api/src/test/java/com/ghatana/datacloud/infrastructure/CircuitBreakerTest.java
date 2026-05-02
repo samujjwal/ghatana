@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.infrastructure;
@@ -21,14 +21,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for circuit breaker logic (IE002). // GH-90000
+ * Tests for circuit breaker logic (IE002). 
  *
  * @doc.type class
  * @doc.purpose Circuit breaker logic tests
  * @doc.layer product
  * @doc.pattern Infrastructure Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("CircuitBreaker – Circuit Breaker Logic (IE002)")
 class CircuitBreakerTest extends EventloopTestBase {
 
@@ -41,57 +41,57 @@ class CircuitBreakerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE002]: circuit_closed_when_healthy")
-        void circuitClosedWhenHealthy() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(30)); // GH-90000
+        void circuitClosedWhenHealthy() { 
+            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(30)); 
 
             // All requests succeed when closed
-            when(externalService.call()) // GH-90000
+            when(externalService.call()) 
                 .thenReturn(Promise.of("success"));
 
-            String result = runPromise(() -> externalService.call()); // GH-90000
+            String result = runPromise(() -> externalService.call()); 
 
             assertThat(result).isEqualTo("success");
-            assertThat(breaker.getState()).isEqualTo(CircuitState.CLOSED); // GH-90000
+            assertThat(breaker.getState()).isEqualTo(CircuitState.CLOSED); 
         }
 
         @Test
         @DisplayName("[IE002]: circuit_opens_after_failures")
-        void circuitOpensAfterFailures() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); // GH-90000
-            breaker.recordFailure(); // GH-90000
-            breaker.recordFailure(); // GH-90000
-            breaker.recordFailure(); // GH-90000
+        void circuitOpensAfterFailures() { 
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); 
+            breaker.recordFailure(); 
+            breaker.recordFailure(); 
+            breaker.recordFailure(); 
 
             // After threshold failures, circuit should be OPEN
-            assertThat(breaker.getState()).isEqualTo(CircuitState.OPEN); // GH-90000
+            assertThat(breaker.getState()).isEqualTo(CircuitState.OPEN); 
         }
 
         @Test
         @DisplayName("[IE002]: circuit_half_open_after_timeout")
-        void circuitHalfOpenAfterTimeout() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofMillis(100)); // GH-90000
-            breaker.recordFailure(); // GH-90000
-            breaker.recordFailure(); // GH-90000
-            breaker.recordFailure(); // GH-90000
+        void circuitHalfOpenAfterTimeout() { 
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofMillis(100)); 
+            breaker.recordFailure(); 
+            breaker.recordFailure(); 
+            breaker.recordFailure(); 
 
             // Wait for timeout
             try {
-                Thread.sleep(150); // GH-90000
-            } catch (InterruptedException ignored) {} // GH-90000
+                Thread.sleep(150); 
+            } catch (InterruptedException ignored) {} 
 
             // Circuit should transition to HALF_OPEN
-            assertThat(breaker.getState()).isEqualTo(CircuitState.HALF_OPEN); // GH-90000
+            assertThat(breaker.getState()).isEqualTo(CircuitState.HALF_OPEN); 
         }
 
         @Test
         @DisplayName("[IE002]: circuit_closes_after_success_in_half_open")
-        void circuitClosesAfterSuccessInHalfOpen() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ZERO); // GH-90000
-            breaker.transitionTo(CircuitState.HALF_OPEN); // GH-90000
+        void circuitClosesAfterSuccessInHalfOpen() { 
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ZERO); 
+            breaker.transitionTo(CircuitState.HALF_OPEN); 
 
-            breaker.recordSuccess(); // GH-90000
+            breaker.recordSuccess(); 
 
-            assertThat(breaker.getState()).isEqualTo(CircuitState.CLOSED); // GH-90000
+            assertThat(breaker.getState()).isEqualTo(CircuitState.CLOSED); 
         }
     }
 
@@ -101,41 +101,41 @@ class CircuitBreakerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE002]: requests_fail_fast_when_open")
-        void requestsFailFastWhenOpen() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); // GH-90000
-            breaker.transitionTo(CircuitState.OPEN); // GH-90000
+        void requestsFailFastWhenOpen() { 
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); 
+            breaker.transitionTo(CircuitState.OPEN); 
 
-            long start = System.currentTimeMillis(); // GH-90000
-            breaker.call(() -> externalService.call()); // GH-90000
-            long duration = System.currentTimeMillis() - start; // GH-90000
+            long start = System.currentTimeMillis(); 
+            breaker.call(() -> externalService.call()); 
+            long duration = System.currentTimeMillis() - start; 
 
             // Should fail immediately without calling service
-            assertThat(duration).isLessThan(100); // GH-90000
+            assertThat(duration).isLessThan(100); 
         }
 
         @Test
         @DisplayName("[IE002]: failures_in_half_open_reopen_circuit")
-        void failuresInHalfOpenReopenCircuit() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); // GH-90000
-            breaker.transitionTo(CircuitState.HALF_OPEN); // GH-90000
+        void failuresInHalfOpenReopenCircuit() { 
+            CircuitBreaker breaker = new CircuitBreaker(3, Duration.ofSeconds(30)); 
+            breaker.transitionTo(CircuitState.HALF_OPEN); 
 
-            breaker.recordFailure(); // GH-90000
+            breaker.recordFailure(); 
 
-            assertThat(breaker.getState()).isEqualTo(CircuitState.OPEN); // GH-90000
+            assertThat(breaker.getState()).isEqualTo(CircuitState.OPEN); 
         }
 
         @Test
         @DisplayName("[IE002]: success_resets_failure_count")
-        void successResetsFailureCount() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(30)); // GH-90000
-            breaker.recordFailure(); // GH-90000
-            breaker.recordFailure(); // GH-90000
+        void successResetsFailureCount() { 
+            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(30)); 
+            breaker.recordFailure(); 
+            breaker.recordFailure(); 
 
-            assertThat(breaker.getFailureCount()).isEqualTo(2); // GH-90000
+            assertThat(breaker.getFailureCount()).isEqualTo(2); 
 
-            breaker.recordSuccess(); // GH-90000
+            breaker.recordSuccess(); 
 
-            assertThat(breaker.getFailureCount()).isZero(); // GH-90000
+            assertThat(breaker.getFailureCount()).isZero(); 
         }
     }
 
@@ -145,20 +145,20 @@ class CircuitBreakerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE002]: threshold_configurable")
-        void thresholdConfigurable() { // GH-90000
-            CircuitBreaker breaker5 = new CircuitBreaker(5, Duration.ofSeconds(30)); // GH-90000
-            CircuitBreaker breaker10 = new CircuitBreaker(10, Duration.ofSeconds(30)); // GH-90000
+        void thresholdConfigurable() { 
+            CircuitBreaker breaker5 = new CircuitBreaker(5, Duration.ofSeconds(30)); 
+            CircuitBreaker breaker10 = new CircuitBreaker(10, Duration.ofSeconds(30)); 
 
-            assertThat(breaker5.getThreshold()).isEqualTo(5); // GH-90000
-            assertThat(breaker10.getThreshold()).isEqualTo(10); // GH-90000
+            assertThat(breaker5.getThreshold()).isEqualTo(5); 
+            assertThat(breaker10.getThreshold()).isEqualTo(10); 
         }
 
         @Test
         @DisplayName("[IE002]: timeout_configurable")
-        void timeoutConfigurable() { // GH-90000
-            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(60)); // GH-90000
+        void timeoutConfigurable() { 
+            CircuitBreaker breaker = new CircuitBreaker(5, Duration.ofSeconds(60)); 
 
-            assertThat(breaker.getTimeout()).isEqualTo(Duration.ofSeconds(60)); // GH-90000
+            assertThat(breaker.getTimeout()).isEqualTo(Duration.ofSeconds(60)); 
         }
     }
 
@@ -170,53 +170,53 @@ class CircuitBreakerTest extends EventloopTestBase {
         private int failureCount = 0;
         private Instant lastFailureTime;
 
-        CircuitBreaker(int threshold, Duration timeout) { // GH-90000
+        CircuitBreaker(int threshold, Duration timeout) { 
             this.threshold = threshold;
             this.timeout = timeout;
         }
 
-        CircuitState getState() { // GH-90000
-            if (state == CircuitState.OPEN && // GH-90000
-                lastFailureTime.plus(timeout).isBefore(Instant.now())) { // GH-90000
+        CircuitState getState() { 
+            if (state == CircuitState.OPEN && 
+                lastFailureTime.plus(timeout).isBefore(Instant.now())) { 
                 state = CircuitState.HALF_OPEN;
             }
             return state;
         }
 
-        void recordFailure() { // GH-90000
+        void recordFailure() { 
             failureCount++;
-            lastFailureTime = Instant.now(); // GH-90000
-            if (state == CircuitState.HALF_OPEN || failureCount >= threshold) { // GH-90000
+            lastFailureTime = Instant.now(); 
+            if (state == CircuitState.HALF_OPEN || failureCount >= threshold) { 
                 state = CircuitState.OPEN;
             }
         }
 
-        void recordSuccess() { // GH-90000
+        void recordSuccess() { 
             failureCount = 0;
             state = CircuitState.CLOSED;
         }
 
-        void transitionTo(CircuitState newState) { // GH-90000
+        void transitionTo(CircuitState newState) { 
             this.state = newState;
         }
 
-        int getFailureCount() { // GH-90000
+        int getFailureCount() { 
             return failureCount;
         }
 
-        int getThreshold() { // GH-90000
+        int getThreshold() { 
             return threshold;
         }
 
-        Duration getTimeout() { // GH-90000
+        Duration getTimeout() { 
             return timeout;
         }
 
-        <T> Promise<T> call(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
-            if (state == CircuitState.OPEN) { // GH-90000
+        <T> Promise<T> call(java.util.function.Supplier<Promise<T>> supplier) { 
+            if (state == CircuitState.OPEN) { 
                 return Promise.ofException(new RuntimeException("Circuit breaker open"));
             }
-            return supplier.get(); // GH-90000
+            return supplier.get(); 
         }
     }
 
@@ -225,6 +225,6 @@ class CircuitBreakerTest extends EventloopTestBase {
     }
 
     interface ExternalService {
-        Promise<String> call(); // GH-90000
+        Promise<String> call(); 
     }
 }

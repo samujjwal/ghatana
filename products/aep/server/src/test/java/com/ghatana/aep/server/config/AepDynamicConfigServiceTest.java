@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.config;
@@ -31,12 +31,12 @@ class AepDynamicConfigServiceTest {
     AepDynamicConfigService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        EnvConfig base = EnvConfig.fromMap(Map.of( // GH-90000
+    void setUp() { 
+        EnvConfig base = EnvConfig.fromMap(Map.of( 
                 EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "kafka1:9092",
                 EnvConfig.REDIS_PORT, "6379"
         ));
-        service = new AepDynamicConfigService(base, new SimpleMeterRegistry()); // GH-90000
+        service = new AepDynamicConfigService(base, new SimpleMeterRegistry()); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -45,17 +45,17 @@ class AepDynamicConfigServiceTest {
 
     @Test
     @DisplayName("should reject null baseConfig")
-    void rejectsNullBaseConfig() { // GH-90000
-        assertThatThrownBy(() -> new AepDynamicConfigService(null, new SimpleMeterRegistry())) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void rejectsNullBaseConfig() { 
+        assertThatThrownBy(() -> new AepDynamicConfigService(null, new SimpleMeterRegistry())) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("should reject null MeterRegistry")
-    void rejectsNullRegistry() { // GH-90000
-        assertThatThrownBy(() -> new AepDynamicConfigService( // GH-90000
-                EnvConfig.fromMap(Map.of()), null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void rejectsNullRegistry() { 
+        assertThatThrownBy(() -> new AepDynamicConfigService( 
+                EnvConfig.fromMap(Map.of()), null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -68,30 +68,30 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should return base-config value when no overlay is set")
-        void returnsBaseValue() { // GH-90000
-            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) // GH-90000
+        void returnsBaseValue() { 
+            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) 
                     .isEqualTo("kafka1:9092");
         }
 
         @Test
         @DisplayName("should return default when key absent in all sources")
-        void returnsDefaultWhenAbsent() { // GH-90000
-            assertThat(service.get("NONEXISTENT_KEY", "my-default")) // GH-90000
+        void returnsDefaultWhenAbsent() { 
+            assertThat(service.get("NONEXISTENT_KEY", "my-default")) 
                     .isEqualTo("my-default");
         }
 
         @Test
         @DisplayName("overlay should override base-config value")
-        void overlayTakesPrecedenceOverBase() { // GH-90000
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker2:9092"); // GH-90000
-            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) // GH-90000
+        void overlayTakesPrecedenceOverBase() { 
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker2:9092"); 
+            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) 
                     .isEqualTo("broker2:9092");
         }
 
         @Test
         @DisplayName("overlay should override default when base is also missing")
-        void overlayTakesPrecedenceOverDefault() { // GH-90000
-            service.set("MY_KEY", "my-value"); // GH-90000
+        void overlayTakesPrecedenceOverDefault() { 
+            service.set("MY_KEY", "my-value"); 
             assertThat(service.get("MY_KEY", "default")).isEqualTo("my-value");
         }
     }
@@ -106,21 +106,21 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should return integer from base config")
-        void returnsBaseInt() { // GH-90000
-            assertThat(service.getInt(EnvConfig.REDIS_PORT, 0)).isEqualTo(6379); // GH-90000
+        void returnsBaseInt() { 
+            assertThat(service.getInt(EnvConfig.REDIS_PORT, 0)).isEqualTo(6379); 
         }
 
         @Test
         @DisplayName("should return integer from overlay")
-        void returnsOverlayInt() { // GH-90000
-            service.set(EnvConfig.REDIS_PORT, "9999"); // GH-90000
-            assertThat(service.getInt(EnvConfig.REDIS_PORT, 0)).isEqualTo(9999); // GH-90000
+        void returnsOverlayInt() { 
+            service.set(EnvConfig.REDIS_PORT, "9999"); 
+            assertThat(service.getInt(EnvConfig.REDIS_PORT, 0)).isEqualTo(9999); 
         }
 
         @Test
         @DisplayName("should return default when key is absent in all sources")
-        void returnsDefaultIntWhenAbsent() { // GH-90000
-            assertThat(service.getInt("NONEXISTENT_INT_KEY", 42)).isEqualTo(42); // GH-90000
+        void returnsDefaultIntWhenAbsent() { 
+            assertThat(service.getInt("NONEXISTENT_INT_KEY", 42)).isEqualTo(42); 
         }
     }
 
@@ -134,81 +134,81 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should reject null key")
-        void rejectsNullKey() { // GH-90000
-            assertThatThrownBy(() -> service.set(null, "value")) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullKey() { 
+            assertThatThrownBy(() -> service.set(null, "value")) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should reject blank key")
-        void rejectsBlankKey() { // GH-90000
-            assertThatThrownBy(() -> service.set("   ", "value")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void rejectsBlankKey() { 
+            assertThatThrownBy(() -> service.set("   ", "value")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("should reject blank value")
-        void rejectsBlankValue() { // GH-90000
-            assertThatThrownBy(() -> service.set("SOME_KEY", "   ")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void rejectsBlankValue() { 
+            assertThatThrownBy(() -> service.set("SOME_KEY", "   ")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("should reject non-integer value for known integer key")
-        void rejectsNonIntValueForIntKey() { // GH-90000
-            assertThatThrownBy(() -> service.set(EnvConfig.REDIS_PORT, "bad")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsNonIntValueForIntKey() { 
+            assertThatThrownBy(() -> service.set(EnvConfig.REDIS_PORT, "bad")) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("expects an integer");
         }
 
         @Test
         @DisplayName("should accept integer string for known integer key")
-        void acceptsIntValueForIntKey() { // GH-90000
-            assertThatCode(() -> service.set(EnvConfig.REDIS_PORT, "1234")) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+        void acceptsIntValueForIntKey() { 
+            assertThatCode(() -> service.set(EnvConfig.REDIS_PORT, "1234")) 
+                    .doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("should reject Kafka bootstrap servers without host-port pairs")
-        void rejectsInvalidKafkaBootstrapServers() { // GH-90000
-            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsInvalidKafkaBootstrapServers() { 
+            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("invalid broker address");
         }
 
         @Test
         @DisplayName("should reject Redis port outside valid range")
-        void rejectsOutOfRangeRedisPort() { // GH-90000
-            assertThatThrownBy(() -> service.set(EnvConfig.REDIS_PORT, "70000")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsOutOfRangeRedisPort() { 
+            assertThatThrownBy(() -> service.set(EnvConfig.REDIS_PORT, "70000")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("must be between 1 and 65535");
         }
 
         @Test
         @DisplayName("should reject consolidation interval lower than one hour")
-        void rejectsInvalidConsolidationInterval() { // GH-90000
-            assertThatThrownBy(() -> service.set(EnvConfig.AEP_CONSOLIDATION_INTERVAL_HOURS, "0")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsInvalidConsolidationInterval() { 
+            assertThatThrownBy(() -> service.set(EnvConfig.AEP_CONSOLIDATION_INTERVAL_HOURS, "0")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("must be between 1 and");
         }
 
         @Test
         @DisplayName("setAll should validate all entries before applying any")
-        void setAllValidatesBeforeApply() { // GH-90000
-            Map<String, String> overrides = Map.of( // GH-90000
+        void setAllValidatesBeforeApply() { 
+            Map<String, String> overrides = Map.of( 
                     "GOOD_KEY", "good-value",
                     EnvConfig.REDIS_PORT, "not-int"  // invalid
             );
-            assertThatThrownBy(() -> service.setAll(overrides)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
-            // GOOD_KEY must NOT have been written (fail-fast) // GH-90000
+            assertThatThrownBy(() -> service.setAll(overrides)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
+            // GOOD_KEY must NOT have been written (fail-fast) 
             assertThat(service.get("GOOD_KEY", "missing")).isEqualTo("missing");
         }
 
         @Test
         @DisplayName("setAll should apply all valid entries")
-        void setAllAppliesAllValid() { // GH-90000
-            service.setAll(Map.of( // GH-90000
+        void setAllAppliesAllValid() { 
+            service.setAll(Map.of( 
                     "FEATURE_A", "enabled",
                     "FEATURE_B", "disabled"
             ));
@@ -227,34 +227,34 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("clear should revert to base-config value")
-        void revertsToBaaseAfterClear() { // GH-90000
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "override-broker:9092"); // GH-90000
-            service.clear(EnvConfig.KAFKA_BOOTSTRAP_SERVERS); // GH-90000
-            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) // GH-90000
+        void revertsToBaaseAfterClear() { 
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "override-broker:9092"); 
+            service.clear(EnvConfig.KAFKA_BOOTSTRAP_SERVERS); 
+            assertThat(service.get(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "default")) 
                     .isEqualTo("kafka1:9092");
         }
 
         @Test
         @DisplayName("clear returns removed value")
-        void returnsRemovedValue() { // GH-90000
-            service.set("MY_KEY", "my-value"); // GH-90000
+        void returnsRemovedValue() { 
+            service.set("MY_KEY", "my-value"); 
             String removed = service.clear("MY_KEY");
             assertThat(removed).isEqualTo("my-value");
         }
 
         @Test
         @DisplayName("clear returns null when key was never set")
-        void returnsNullWhenNotSet() { // GH-90000
+        void returnsNullWhenNotSet() { 
             assertThat(service.clear("NONEXISTENT_KEY")).isNull();
         }
 
         @Test
         @DisplayName("clearAll should remove all overlays")
-        void clearAllRemovesAllOverlays() { // GH-90000
-            service.set("KEY_A", "value-a"); // GH-90000
-            service.set("KEY_B", "value-b"); // GH-90000
-            service.clearAll(); // GH-90000
-            assertThat(service.overlaySnapshot()).isEmpty(); // GH-90000
+        void clearAllRemovesAllOverlays() { 
+            service.set("KEY_A", "value-a"); 
+            service.set("KEY_B", "value-b"); 
+            service.clearAll(); 
+            assertThat(service.overlaySnapshot()).isEmpty(); 
         }
     }
 
@@ -268,36 +268,36 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should notify listener on set")
-        void notifiesOnSet() { // GH-90000
-            List<String> captured = new ArrayList<>(); // GH-90000
-            service.addChangeListener((key, oldVal, newVal) -> // GH-90000
-                    captured.add(key + ":" + oldVal + "->" + newVal)); // GH-90000
+        void notifiesOnSet() { 
+            List<String> captured = new ArrayList<>(); 
+            service.addChangeListener((key, oldVal, newVal) -> 
+                    captured.add(key + ":" + oldVal + "->" + newVal)); 
 
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092"); // GH-90000
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092"); 
 
-            assertThat(captured).hasSize(1); // GH-90000
+            assertThat(captured).hasSize(1); 
             assertThat(captured.get(0)).contains("KAFKA_BOOTSTRAP_SERVERS");
             assertThat(captured.get(0)).contains("new-broker:9092");
         }
 
         @Test
         @DisplayName("should notify listener with old value from base config on first override")
-        void notifiesWithBaaseOldValue() { // GH-90000
-            List<AepDynamicConfigService.ConfigChange> changes = new ArrayList<>(); // GH-90000
-            service.addChangeListener((key, oldVal, newVal) -> // GH-90000
-                    changes.add(new AepDynamicConfigService.ConfigChange(key, oldVal, newVal, null))); // GH-90000
+        void notifiesWithBaaseOldValue() { 
+            List<AepDynamicConfigService.ConfigChange> changes = new ArrayList<>(); 
+            service.addChangeListener((key, oldVal, newVal) -> 
+                    changes.add(new AepDynamicConfigService.ConfigChange(key, oldVal, newVal, null))); 
 
-            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092"); // GH-90000
+            service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "new-broker:9092"); 
 
             assertThat(changes.get(0).oldValue()).isEqualTo("kafka1:9092");
         }
 
         @Test
         @DisplayName("should notify listener on clear")
-        void notifiesOnClear() { // GH-90000
-            service.set("MY_KEY", "my-value"); // GH-90000
-            List<String> captured = new ArrayList<>(); // GH-90000
-            service.addChangeListener((key, oldVal, newVal) -> captured.add(key)); // GH-90000
+        void notifiesOnClear() { 
+            service.set("MY_KEY", "my-value"); 
+            List<String> captured = new ArrayList<>(); 
+            service.addChangeListener((key, oldVal, newVal) -> captured.add(key)); 
 
             service.clear("MY_KEY");
             assertThat(captured).containsExactly("MY_KEY");
@@ -305,13 +305,13 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should support multiple listeners")
-        void multipleListeners() { // GH-90000
-            List<String> eventsA = new ArrayList<>(); // GH-90000
-            List<String> eventsB = new ArrayList<>(); // GH-90000
-            service.addChangeListener((k, o, n) -> eventsA.add(k)); // GH-90000
-            service.addChangeListener((k, o, n) -> eventsB.add(k)); // GH-90000
+        void multipleListeners() { 
+            List<String> eventsA = new ArrayList<>(); 
+            List<String> eventsB = new ArrayList<>(); 
+            service.addChangeListener((k, o, n) -> eventsA.add(k)); 
+            service.addChangeListener((k, o, n) -> eventsB.add(k)); 
 
-            service.set("KEY", "value"); // GH-90000
+            service.set("KEY", "value"); 
 
             assertThat(eventsA).containsExactly("KEY");
             assertThat(eventsB).containsExactly("KEY");
@@ -319,15 +319,15 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should allow removing a listener")
-        void removeListener() { // GH-90000
-            List<String> events = new ArrayList<>(); // GH-90000
-            AepDynamicConfigService.ChangeListener listener = (k, o, n) -> events.add(k); // GH-90000
+        void removeListener() { 
+            List<String> events = new ArrayList<>(); 
+            AepDynamicConfigService.ChangeListener listener = (k, o, n) -> events.add(k); 
 
-            service.addChangeListener(listener); // GH-90000
-            service.set("KEY_A", "v1"); // GH-90000
+            service.addChangeListener(listener); 
+            service.set("KEY_A", "v1"); 
 
-            service.removeChangeListener(listener); // GH-90000
-            service.set("KEY_B", "v2"); // GH-90000
+            service.removeChangeListener(listener); 
+            service.set("KEY_B", "v2"); 
 
             // Only KEY_A was captured; KEY_B was set after removal
             assertThat(events).containsExactly("KEY_A");
@@ -335,31 +335,31 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should roll back override when a listener rejects the change")
-        void listenerExceptionRollsBackChange() { // GH-90000
+        void listenerExceptionRollsBackChange() { 
             service.addChangeListener((k, o, n) -> { throw new RuntimeException("bad listener"); });
 
-            assertThatThrownBy(() -> service.set("KEY", "value")) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> service.set("KEY", "value")) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("Failed to apply config change");
             assertThat(service.overlaySnapshot()).doesNotContainKey("KEY");
         }
 
         @Test
         @DisplayName("setAll should roll back all overrides when a listener rejects the batch")
-        void setAllRollsBackOnListenerFailure() { // GH-90000
-            service.addChangeListener((k, o, n) -> { // GH-90000
-                if ("FEATURE_B".equals(k)) { // GH-90000
+        void setAllRollsBackOnListenerFailure() { 
+            service.addChangeListener((k, o, n) -> { 
+                if ("FEATURE_B".equals(k)) { 
                     throw new RuntimeException("reject batch");
                 }
             });
 
-            assertThatThrownBy(() -> service.setAll(Map.of( // GH-90000
+            assertThatThrownBy(() -> service.setAll(Map.of( 
                     "FEATURE_A", "enabled",
                     "FEATURE_B", "disabled")))
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("FEATURE_B");
 
-            assertThat(service.overlaySnapshot()).isEmpty(); // GH-90000
+            assertThat(service.overlaySnapshot()).isEmpty(); 
         }
     }
 
@@ -373,12 +373,12 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should record changes in reverse chronological order")
-        void recordsHistory() { // GH-90000
-            service.set("KEY_A", "v1"); // GH-90000
-            service.set("KEY_B", "v2"); // GH-90000
+        void recordsHistory() { 
+            service.set("KEY_A", "v1"); 
+            service.set("KEY_B", "v2"); 
 
-            List<AepDynamicConfigService.ConfigChange> history = service.changeHistory(); // GH-90000
-            assertThat(history).hasSize(2); // GH-90000
+            List<AepDynamicConfigService.ConfigChange> history = service.changeHistory(); 
+            assertThat(history).hasSize(2); 
             // Newest first
             assertThat(history.get(0).key()).isEqualTo("KEY_B");
             assertThat(history.get(1).key()).isEqualTo("KEY_A");
@@ -386,9 +386,9 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("should include changedAt timestamp")
-        void includesTimestamp() { // GH-90000
-            service.set("KEY", "value"); // GH-90000
-            assertThat(service.changeHistory().get(0).changedAt()).isNotNull(); // GH-90000
+        void includesTimestamp() { 
+            service.set("KEY", "value"); 
+            assertThat(service.changeHistory().get(0).changedAt()).isNotNull(); 
         }
     }
 
@@ -398,27 +398,27 @@ class AepDynamicConfigServiceTest {
 
         @Test
         @DisplayName("records rejected writes in audit history")
-        void recordsRejectedWrites() { // GH-90000
-            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void recordsRejectedWrites() { 
+            assertThatThrownBy(() -> service.set(EnvConfig.KAFKA_BOOTSTRAP_SERVERS, "broker-without-port")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
 
-            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory(); // GH-90000
-            assertThat(auditHistory).hasSize(1); // GH-90000
-            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.REJECTED); // GH-90000
-            assertThat(auditHistory.get(0).key()).isEqualTo(EnvConfig.KAFKA_BOOTSTRAP_SERVERS); // GH-90000
+            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory(); 
+            assertThat(auditHistory).hasSize(1); 
+            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.REJECTED); 
+            assertThat(auditHistory.get(0).key()).isEqualTo(EnvConfig.KAFKA_BOOTSTRAP_SERVERS); 
         }
 
         @Test
         @DisplayName("records rolled back writes in audit history")
-        void recordsRolledBackWrites() { // GH-90000
+        void recordsRolledBackWrites() { 
             service.addChangeListener((k, o, n) -> { throw new RuntimeException("listener failed"); });
 
-            assertThatThrownBy(() -> service.set("FEATURE_FLAG", "enabled")) // GH-90000
-                    .isInstanceOf(IllegalStateException.class); // GH-90000
+            assertThatThrownBy(() -> service.set("FEATURE_FLAG", "enabled")) 
+                    .isInstanceOf(IllegalStateException.class); 
 
-            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory(); // GH-90000
-            assertThat(auditHistory).hasSize(1); // GH-90000
-            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.ROLLED_BACK); // GH-90000
+            List<AepDynamicConfigService.ConfigAuditEntry> auditHistory = service.auditHistory(); 
+            assertThat(auditHistory).hasSize(1); 
+            assertThat(auditHistory.get(0).status()).isEqualTo(AepDynamicConfigService.AuditStatus.ROLLED_BACK); 
             assertThat(auditHistory.get(0).key()).isEqualTo("FEATURE_FLAG");
             assertThat(auditHistory.get(0).detail()).contains("Failed to apply config change");
         }
@@ -430,29 +430,29 @@ class AepDynamicConfigServiceTest {
 
     @Test
     @DisplayName("isSet should return true for key present in base config")
-    void isSetBaseConfig() { // GH-90000
-        assertThat(service.isSet(EnvConfig.KAFKA_BOOTSTRAP_SERVERS)).isTrue(); // GH-90000
+    void isSetBaseConfig() { 
+        assertThat(service.isSet(EnvConfig.KAFKA_BOOTSTRAP_SERVERS)).isTrue(); 
     }
 
     @Test
     @DisplayName("isSet should return true for key present only in overlay")
-    void isSetOverlay() { // GH-90000
-        service.set("DYNAMIC_KEY", "value"); // GH-90000
+    void isSetOverlay() { 
+        service.set("DYNAMIC_KEY", "value"); 
         assertThat(service.isSet("DYNAMIC_KEY")).isTrue();
     }
 
     @Test
     @DisplayName("isSet should return false for completely unknown key")
-    void isSetUnknownKey() { // GH-90000
+    void isSetUnknownKey() { 
         assertThat(service.isSet("TOTALLY_UNKNOWN")).isFalse();
     }
 
     @Test
     @DisplayName("overlaySnapshot should reflect current overlay state")
-    void overlaySnapshot() { // GH-90000
-        service.set("A", "1"); // GH-90000
-        service.set("B", "2"); // GH-90000
-        Map<String, String> snapshot = service.overlaySnapshot(); // GH-90000
-        assertThat(snapshot).containsEntry("A", "1").containsEntry("B", "2"); // GH-90000
+    void overlaySnapshot() { 
+        service.set("A", "1"); 
+        service.set("B", "2"); 
+        Map<String, String> snapshot = service.overlaySnapshot(); 
+        assertThat(snapshot).containsEntry("A", "1").containsEntry("B", "2"); 
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -37,8 +37,8 @@ import static org.mockito.Mockito.when;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
-@Timeout(value = 15, unit = TimeUnit.SECONDS) // GH-90000
+@ExtendWith(MockitoExtension.class) 
+@Timeout(value = 15, unit = TimeUnit.SECONDS) 
 @DisplayName("DataCloudHttpServer – Reports Endpoints")
 class DataCloudHttpServerReportsTest extends DataCloudHttpServerTestBase {
 
@@ -49,17 +49,17 @@ class DataCloudHttpServerReportsTest extends DataCloudHttpServerTestBase {
     private ReportService reportService;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        port = findFreePort(); // GH-90000
-        startServer(); // GH-90000
+    void setUp() throws Exception { 
+        port = findFreePort(); 
+        startServer(); 
     }
 
     @Override
-    protected void startServer() throws Exception { // GH-90000
-        server = new DataCloudHttpServer(mockClient, port) // GH-90000
-            .withReportService(reportService); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(5000); // GH-90000
+    protected void startServer() throws Exception { 
+        server = new DataCloudHttpServer(mockClient, port) 
+            .withReportService(reportService); 
+        server.start(); 
+        waitForServerReady(5000); 
     }
 
     @Nested
@@ -68,44 +68,44 @@ class DataCloudHttpServerReportsTest extends DataCloudHttpServerTestBase {
 
         @Test
         @DisplayName("creates a report and returns generated metadata")
-        void createReportReturnsGeneratedMetadata() throws Exception { // GH-90000
-            ReportResult result = ReportResult.builder() // GH-90000
+        void createReportReturnsGeneratedMetadata() throws Exception { 
+            ReportResult result = ReportResult.builder() 
                 .reportId("report-001")
                 .reportName("Sales Report")
-                .format(ReportFormat.JSON) // GH-90000
-                .rows(java.util.List.of(Map.of("region", "North", "total", 10))) // GH-90000
-                .rowCount(1) // GH-90000
+                .format(ReportFormat.JSON) 
+                .rows(java.util.List.of(Map.of("region", "North", "total", 10))) 
+                .rowCount(1) 
                 .contentType("application/json")
                 .generatedAt(Instant.parse("2026-04-06T00:00:00Z"))
-                .executionTime(Duration.ofMillis(25)) // GH-90000
-                .build(); // GH-90000
+                .executionTime(Duration.ofMillis(25)) 
+                .build(); 
 
-            when(reportService.generate(anyString(), any(ReportDefinition.class))) // GH-90000
-                .thenReturn(Promise.of(result)); // GH-90000
+            when(reportService.generate(anyString(), any(ReportDefinition.class))) 
+                .thenReturn(Promise.of(result)); 
 
-            var response = postJson("/api/v1/reports", Map.of( // GH-90000
+            var response = postJson("/api/v1/reports", Map.of( 
                 "name", "Sales Report",
                 "type", "QUERY",
                 "query", "SELECT * FROM sales",
                 "format", "JSON"
             ), withTenant("tenant-alpha"));
 
-            assertStatusCode(response, 200); // GH-90000
-            Map<String, Object> body = parseJsonResponse(response); // GH-90000
-            assertThat(body).containsEntry("reportId", "report-001"); // GH-90000
-            assertThat(body).containsEntry("reportName", "Sales Report"); // GH-90000
-            assertThat(body).containsEntry("rowCount", 1); // GH-90000
+            assertStatusCode(response, 200); 
+            Map<String, Object> body = parseJsonResponse(response); 
+            assertThat(body).containsEntry("reportId", "report-001"); 
+            assertThat(body).containsEntry("reportName", "Sales Report"); 
+            assertThat(body).containsEntry("rowCount", 1); 
         }
 
         @Test
         @DisplayName("invalid request body returns 400")
-        void invalidRequestBodyReturns400() throws Exception { // GH-90000
-            var response = postJson("/api/v1/reports", Map.of( // GH-90000
+        void invalidRequestBodyReturns400() throws Exception { 
+            var response = postJson("/api/v1/reports", Map.of( 
                 "type", "QUERY",
                 "query", "SELECT * FROM sales"
             ), withTenant("tenant-alpha"));
 
-            assertStatusCode(response, 400); // GH-90000
+            assertStatusCode(response, 400); 
         }
     }
 
@@ -115,18 +115,18 @@ class DataCloudHttpServerReportsTest extends DataCloudHttpServerTestBase {
 
         @Test
         @DisplayName("lists cached reports")
-        void listCachedReportsReturnsSnapshot() throws Exception { // GH-90000
-            when(reportService.listCachedReports()).thenReturn(Map.of( // GH-90000
+        void listCachedReportsReturnsSnapshot() throws Exception { 
+            when(reportService.listCachedReports()).thenReturn(Map.of( 
                 "report-001", "Sales Report",
                 "report-002", "Inventory Report"
             ));
 
             var response = get("/api/v1/reports", withTenant("tenant-alpha"));
 
-            assertStatusCode(response, 200); // GH-90000
-            Map<String, Object> body = parseJsonResponse(response); // GH-90000
+            assertStatusCode(response, 200); 
+            Map<String, Object> body = parseJsonResponse(response); 
             assertThat(body).containsKey("reports");
-            assertThat(body).containsEntry("count", 2); // GH-90000
+            assertThat(body).containsEntry("count", 2); 
         }
     }
 
@@ -136,37 +136,37 @@ class DataCloudHttpServerReportsTest extends DataCloudHttpServerTestBase {
 
         @Test
         @DisplayName("returns cached report details when present")
-        void getCachedReportReturnsDetails() throws Exception { // GH-90000
-            ReportResult cached = ReportResult.builder() // GH-90000
+        void getCachedReportReturnsDetails() throws Exception { 
+            ReportResult cached = ReportResult.builder() 
                 .reportId("report-001")
                 .reportName("Sales Report")
-                .format(ReportFormat.CSV) // GH-90000
-                .rowCount(2) // GH-90000
+                .format(ReportFormat.CSV) 
+                .rowCount(2) 
                 .formattedBody("region,total\nNorth,10\nSouth,12\n")
                 .contentType("text/csv")
                 .generatedAt(Instant.parse("2026-04-06T00:00:00Z"))
-                .executionTime(Duration.ofMillis(40)) // GH-90000
-                .build(); // GH-90000
+                .executionTime(Duration.ofMillis(40)) 
+                .build(); 
 
             when(reportService.getResult("report-001")).thenReturn(cached);
 
             var response = get("/api/v1/reports/report-001", withTenant("tenant-alpha"));
 
-            assertStatusCode(response, 200); // GH-90000
-            Map<String, Object> body = parseJsonResponse(response); // GH-90000
-            assertThat(body).containsEntry("reportId", "report-001"); // GH-90000
-            assertThat(body).containsEntry("format", "CSV"); // GH-90000
-            assertThat(body).containsEntry("body", "region,total\nNorth,10\nSouth,12\n"); // GH-90000
+            assertStatusCode(response, 200); 
+            Map<String, Object> body = parseJsonResponse(response); 
+            assertThat(body).containsEntry("reportId", "report-001"); 
+            assertThat(body).containsEntry("format", "CSV"); 
+            assertThat(body).containsEntry("body", "region,total\nNorth,10\nSouth,12\n"); 
         }
 
         @Test
         @DisplayName("returns 404 when report is not cached")
-        void getMissingReportReturns404() throws Exception { // GH-90000
+        void getMissingReportReturns404() throws Exception { 
             when(reportService.getResult("missing-report")).thenReturn(null);
 
             var response = get("/api/v1/reports/missing-report", withTenant("tenant-alpha"));
 
-            assertStatusCode(response, 404); // GH-90000
+            assertStatusCode(response, 404); 
         }
     }
 }

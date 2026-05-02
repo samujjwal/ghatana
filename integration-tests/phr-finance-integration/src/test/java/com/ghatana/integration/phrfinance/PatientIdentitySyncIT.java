@@ -1,8 +1,8 @@
 package com.ghatana.integration.phrfinance;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -27,7 +27,7 @@ class PatientIdentitySyncIT extends EventloopTestBase {
 
     // Test-specific subclass that overrides serialize to avoid blocking
     private static class TestableBillingService extends BillingService {
-        public TestableBillingService(KernelContext context, BillingLedgerPlugin ledger, Executor executor) {
+        public TestableBillingService(KernelContext context, LedgerPlugin ledger, Executor executor) {
             super(context, ledger, executor);
         }
 
@@ -73,7 +73,7 @@ class PatientIdentitySyncIT extends EventloopTestBase {
         assertThat(ledger.validated).isTrue();
     }
 
-    private static final class IdentityAssertingLedgerAdapter implements BillingLedgerPlugin {
+    private static final class IdentityAssertingLedgerAdapter implements LedgerPlugin {
 
         private final String expectedPatientId;
         private boolean validated;
@@ -83,7 +83,7 @@ class PatientIdentitySyncIT extends EventloopTestBase {
         }
 
         @Override
-        public Promise<String> postTransaction(BillingTransaction transaction) {
+        public Promise<String> postTransaction(LedgerTransaction transaction) {
             assertThat(transaction.getDebitAccount()).isEqualTo("PHR:AR:" + expectedPatientId);
             assertThat(transaction.getExternalReferenceId()).isNotBlank();
             validated = true;
@@ -96,22 +96,22 @@ class PatientIdentitySyncIT extends EventloopTestBase {
         }
 
         @Override
-        public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
-            return Promise.of(validated ? BillingLedgerPlugin.PostingStatus.POSTED : BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        public Promise<LedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
+            return Promise.of(validated ? LedgerPlugin.PostingStatus.POSTED : LedgerPlugin.PostingStatus.NOT_FOUND);
         }
 
         @Override
-        public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+        public Promise<LedgerPlugin.LedgerAccount> createAccount(String accountId, LedgerPlugin.AccountType type) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+        public Promise<java.util.Optional<LedgerPlugin.LedgerEntry>> getEntry(String entryId) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+        public Promise<java.util.List<LedgerPlugin.LedgerEntry>> queryEntries(String accountId, LedgerPlugin.TimeRange range) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 

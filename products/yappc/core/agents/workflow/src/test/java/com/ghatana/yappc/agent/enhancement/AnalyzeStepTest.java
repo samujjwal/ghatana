@@ -33,65 +33,65 @@ class AnalyzeStepTest extends EventloopTestBase {
   private AnalyzeStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new AnalyzeStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new AnalyzeStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should analyze feedback and generate insights")
-  void shouldAnalyzeFeedback() { // GH-90000
+  void shouldAnalyzeFeedback() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("feedbackId", "feedback-001"); // GH-90000
-    context.put("runId", "run-001"); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("feedbackId", "feedback-001"); 
+    context.put("runId", "run-001"); 
 
     Map<String, Object> mockFeedback =
-        Map.of( // GH-90000
+        Map.of( 
             "_id",
             "feedback-001",
             "feedbackId",
             "feedback-001",
             "aggregated",
-            Map.of( // GH-90000
+            Map.of( 
                 "byFeature",
-                Map.of( // GH-90000
+                Map.of( 
                     "login",
-                    List.of( // GH-90000
-                        Map.of("type", "BUG_REPORT", "severity", "HIGH", "text", "Login is slow"), // GH-90000
-                        Map.of("type", "USER_SATISFACTION", "rating", 5, "text", "Not great")), // GH-90000
+                    List.of( 
+                        Map.of("type", "BUG_REPORT", "severity", "HIGH", "text", "Login is slow"), 
+                        Map.of("type", "USER_SATISFACTION", "rating", 5, "text", "Not great")), 
                     "dashboard",
-                    List.of( // GH-90000
-                        Map.of("type", "FEATURE_REQUEST", "rating", 4, "text", "Add charts"))))); // GH-90000
+                    List.of( 
+                        Map.of("type", "FEATURE_REQUEST", "rating", 4, "text", "Add charts"))))); 
 
-    when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
-        .thenReturn(Promise.of(List.of(mockFeedback))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.query(anyString(), any(), anyInt())) 
+        .thenReturn(Promise.of(List.of(mockFeedback))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("status")).isEqualTo("ANALYZED");
     assertThat(result.get("insightCount")).isNotNull();
   }
 
   @Test
   @DisplayName("Should fail when feedbackId is missing")
-  void shouldFailWhenFeedbackIdMissing() { // GH-90000
+  void shouldFailWhenFeedbackIdMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("runId", "run-001"); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("runId", "run-001"); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalStateException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalStateException.class) 
         .hasMessageContaining("feedbackId");
   }
 }

@@ -19,7 +19,7 @@ tasks.withPath(setOf(
         ":platform-kernel:kernel-plugin:test",
         ":platform-kernel:kernel-testing:test",
         ":platform-plugins:plugin-audit-trail:test",
-        ":platform-plugins:plugin-billing-ledger:test",
+        ":platform-plugins:plugin-ledger:test",
         ":platform-plugins:plugin-compliance:test",
         ":platform-plugins:plugin-consent:test",
         ":platform-plugins:plugin-fraud-detection:test",
@@ -68,7 +68,7 @@ val coverageRules = mapOf(
                 line = 0.85,
                 method = 0.80
         ),
-        ":platform-plugins:plugin-billing-ledger" to CoverageThreshold(
+        ":platform-plugins:plugin-ledger" to CoverageThreshold(
                 instruction = 0.80,
                 branch = 0.75,
                 line = 0.85,

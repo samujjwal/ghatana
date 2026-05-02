@@ -330,11 +330,11 @@ public class KernelPurityValidationTest {
     }
 
     @Test
-    @DisplayName("BoundaryPolicyResolver must exist for scope-driven boundary checks")
+    @DisplayName("BoundaryPolicyResolver must exist in canonical policy package for scope-driven boundary checks")
     void boundaryPolicyResolverMustExist() { 
         try {
-            Class.forName("com.ghatana.kernel.boundary.BoundaryPolicyResolver");
-            Class.forName("com.ghatana.kernel.boundary.DefaultBoundaryPolicyResolver");
+            Class.forName("com.ghatana.kernel.policy.BoundaryPolicyResolver");
+            Class.forName("com.ghatana.kernel.policy.DefaultBoundaryPolicyResolver");
         } catch (ClassNotFoundException e) { 
             fail("Missing boundary policy abstraction: " + e.getMessage()); 
         }

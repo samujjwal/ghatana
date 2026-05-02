@@ -50,7 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, ConformanceTest, IntegrationTest
  */
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("RedisHotTierPlugin conformance (real Redis)")
 class RedisHotTierPluginConformanceIT extends EventloopTestBase {
 
@@ -58,17 +58,17 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
 
     @Container
     @SuppressWarnings("resource")
-    static final GenericContainer<?> REDIS = // GH-90000
+    static final GenericContainer<?> REDIS = 
             new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
                     .withExposedPorts(REDIS_PORT);
 
     private RedisHotTierPlugin plugin;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
+    void setUp() throws Exception { 
         RedisStorageConfig config = RedisStorageConfig.builder()
-                .host(REDIS.getHost()) // GH-90000
-                .port(REDIS.getMappedPort(REDIS_PORT)) // GH-90000
+                .host(REDIS.getHost()) 
+                .port(REDIS.getMappedPort(REDIS_PORT)) 
                 .maxPoolSize(4)
                 .hotTierTtl(Duration.ofMinutes(5))
                 .flushBatchSize(100)
@@ -82,7 +82,7 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
+    void tearDown() { 
         if (plugin != null) {
             runPromise(() -> plugin.stop());
             runPromise(() -> plugin.shutdown());
@@ -91,33 +91,33 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
 
     @Test
     @DisplayName("plugin lifecycle: state is RUNNING after initialize+start")
-    void pluginStateIsRunningAfterStart() { // GH-90000
-        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
+    void pluginStateIsRunningAfterStart() { 
+        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); 
     }
 
     @Test
     @DisplayName("healthCheck returns HEALTHY after successful initialization")
-    void healthCheckReturnsHealthy() { // GH-90000
+    void healthCheckReturnsHealthy() { 
         HealthStatus health = runPromise(() -> plugin.healthCheck());
 
         assertThat(health).isNotNull();
-        assertThat(health.isHealthy()).isTrue(); // GH-90000
+        assertThat(health.isHealthy()).isTrue(); 
     }
 
     @Test
     @DisplayName("append returns a non-negative offset for a single event")
-    void appendReturnsPosOffsetForSingleEvent() { // GH-90000
+    void appendReturnsPosOffsetForSingleEvent() { 
         Event event = sampleEvent("tenant-redis-single", "stream-a", "order.created");
 
         Offset offset = runPromise(() -> plugin.append(event));
 
         assertThat(offset).isNotNull();
-        assertThat(offset.value()).isGreaterThanOrEqualTo(0L); // GH-90000
+        assertThat(offset.value()).isGreaterThanOrEqualTo(0L); 
     }
 
     @Test
     @DisplayName("appendBatch returns one offset per event with increasing values")
-    void appendBatchReturnsIncreasedOffsets() { // GH-90000
+    void appendBatchReturnsIncreasedOffsets() { 
         String tenantId = "tenant-redis-batch";
         String streamName = "stream-batch";
 
@@ -129,28 +129,28 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
 
         List<Offset> offsets = runPromise(() -> plugin.appendBatch(events));
 
-        assertThat(offsets).hasSize(3); // GH-90000
+        assertThat(offsets).hasSize(3); 
         for (int i = 1; i < offsets.size(); i++) {
-            assertThat(offsets.get(i).value()).isGreaterThan(offsets.get(i - 1).value()); // GH-90000
+            assertThat(offsets.get(i).value()).isGreaterThan(offsets.get(i - 1).value()); 
         }
     }
 
     @Test
     @DisplayName("readById returns the event that was appended")
-    void readByIdRoundTripsEvent() { // GH-90000
+    void readByIdRoundTripsEvent() { 
         Event event = sampleEvent("tenant-redis-read", "stream-read", "read.event");
 
         runPromise(() -> plugin.append(event));
         Optional<Event> found = runPromise(() -> plugin.readById(event.getTenantId(), event.getId().toString()));
 
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.orElseThrow().getId()).isEqualTo(event.getId()); // GH-90000
-        assertThat(found.orElseThrow().getEventTypeName()).isEqualTo("read.event"); // GH-90000
+        assertThat(found).isPresent(); 
+        assertThat(found.orElseThrow().getId()).isEqualTo(event.getId()); 
+        assertThat(found.orElseThrow().getEventTypeName()).isEqualTo("read.event"); 
     }
 
     @Test
     @DisplayName("duplicate idempotency key returns same offset on second append")
-    void idempotencyKeyPreventsDoubleWrite() { // GH-90000
+    void idempotencyKeyPreventsDoubleWrite() { 
         String idemKey = "idem-" + UUID.randomUUID();
         String tenantId = "tenant-redis-idem";
 
@@ -160,32 +160,32 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
         Offset o1 = runPromise(() -> plugin.append(first));
         Offset o2 = runPromise(() -> plugin.append(second));
 
-        assertThat(o2.value()).isEqualTo(o1.value()); // GH-90000 — same offset signals deduplication
+        assertThat(o2.value()).isEqualTo(o1.value());  — same offset signals deduplication
     }
 
     @Test
     @DisplayName("provider discovery creates a valid, non-null plugin via PluginProvider")
-    void providerCreatesValidPlugin() { // GH-90000
+    void providerCreatesValidPlugin() { 
         RedisHotTierPluginProvider provider = new RedisHotTierPluginProvider();
 
-        assertThat(provider.isEnabled()).isTrue(); // GH-90000
+        assertThat(provider.isEnabled()).isTrue(); 
         assertThat(provider.getMetadata()).isNotNull();
         assertThat(provider.getMetadata().id()).isNotEmpty();
 
         Plugin created = provider.createPlugin();
-        assertThat(created).isInstanceOf(RedisHotTierPlugin.class); // GH-90000
+        assertThat(created).isInstanceOf(RedisHotTierPlugin.class); 
     }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
-    private static Event sampleEvent(String tenantId, String streamName, String eventType) { // GH-90000
+    private static Event sampleEvent(String tenantId, String streamName, String eventType) { 
         return sampleEvent(tenantId, streamName, eventType, null);
     }
 
     private static Event sampleEvent(String tenantId, String streamName, String eventType,
-                                     @Nullable String idempotencyKey) { // GH-90000
+                                     @Nullable String idempotencyKey) { 
         return Event.builder()
                 .id(UUID.randomUUID())
                 .tenantId(tenantId)
@@ -202,7 +202,7 @@ class RedisHotTierPluginConformanceIT extends EventloopTestBase {
                 .build();
     }
 
-    private static PluginContext testPluginContext() { // GH-90000
+    private static PluginContext testPluginContext() { 
         return new PluginContext() {
             @Override
             public <T> @Nullable T getConfig(@NotNull Class<T> configType) {

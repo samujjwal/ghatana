@@ -19,8 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Covers:
  * <ul>
- *   <li>noOp() service no-op behaviour</li> // GH-90000
- *   <li>withDestinations() success path</li> // GH-90000
+ *   <li>noOp() service no-op behaviour</li> 
+ *   <li>withDestinations() success path</li> 
  *   <li>Partial delivery failure isolation</li>
  *   <li>DeliveryResult value type behaviour</li>
  * </ul>
@@ -34,12 +34,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EventDeliveryServiceTest extends EventloopTestBase {
 
     private static final String TENANT = "tenant-delivery";
-    private static final AepEngine.Event SAMPLE_EVENT = AepEngine.Event.of( // GH-90000
-        "order.placed", Map.of("amount", 100)); // GH-90000
-    private static final List<AepEngine.Detection> NO_DETECTIONS = List.of(); // GH-90000
+    private static final AepEngine.Event SAMPLE_EVENT = AepEngine.Event.of( 
+        "order.placed", Map.of("amount", 100)); 
+    private static final List<AepEngine.Detection> NO_DETECTIONS = List.of(); 
 
     // ──────────────────────────────────────────────────────────────────────────
-    // noOp() // GH-90000
+    // noOp() 
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -48,20 +48,20 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("noOp() returns a successful DeliveryResult with no delivered destinations")
-        void shouldReturnSuccessWithNoDeliveries() { // GH-90000
-            EventDeliveryService service = EventDeliveryService.noOp(); // GH-90000
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+        void shouldReturnSuccessWithNoDeliveries() { 
+            EventDeliveryService service = EventDeliveryService.noOp(); 
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
-            assertThat(result.isFullyDelivered()).isTrue(); // GH-90000
-            assertThat(result.hasFailures()).isFalse(); // GH-90000
-            assertThat(result.delivered()).isEmpty(); // GH-90000
-            assertThat(result.failed()).isEmpty(); // GH-90000
+            assertThat(result.isFullyDelivered()).isTrue(); 
+            assertThat(result.hasFailures()).isFalse(); 
+            assertThat(result.delivered()).isEmpty(); 
+            assertThat(result.failed()).isEmpty(); 
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // withDestinations() — success path // GH-90000
+    // withDestinations() — success path 
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -70,39 +70,39 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("all destinations are called and listed in delivered")
-        void shouldDeliverToAllDestinations() { // GH-90000
-            List<String> capturedA = new ArrayList<>(); // GH-90000
-            List<String> capturedB = new ArrayList<>(); // GH-90000
+        void shouldDeliverToAllDestinations() { 
+            List<String> capturedA = new ArrayList<>(); 
+            List<String> capturedB = new ArrayList<>(); 
 
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
-                new EventDeliveryService.EventDestination("dest-a", // GH-90000
-                    new CapturingProducer(capturedA)), // GH-90000
-                new EventDeliveryService.EventDestination("dest-b", // GH-90000
-                    new CapturingProducer(capturedB)) // GH-90000
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
+                new EventDeliveryService.EventDestination("dest-a", 
+                    new CapturingProducer(capturedA)), 
+                new EventDeliveryService.EventDestination("dest-b", 
+                    new CapturingProducer(capturedB)) 
             );
 
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
-            assertThat(result.delivered()).containsExactlyInAnyOrder("dest-a", "dest-b"); // GH-90000
-            assertThat(result.failed()).isEmpty(); // GH-90000
-            assertThat(capturedA).hasSize(1); // GH-90000
-            assertThat(capturedB).hasSize(1); // GH-90000
+            assertThat(result.delivered()).containsExactlyInAnyOrder("dest-a", "dest-b"); 
+            assertThat(result.failed()).isEmpty(); 
+            assertThat(capturedA).hasSize(1); 
+            assertThat(capturedB).hasSize(1); 
         }
 
         @Test
         @DisplayName("delivered payload contains event type")
-        void deliveredMessageShouldContainEventType() { // GH-90000
-            List<String> captured = new ArrayList<>(); // GH-90000
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
-                new EventDeliveryService.EventDestination("monitor", // GH-90000
-                    new CapturingProducer(captured)) // GH-90000
+        void deliveredMessageShouldContainEventType() { 
+            List<String> captured = new ArrayList<>(); 
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
+                new EventDeliveryService.EventDestination("monitor", 
+                    new CapturingProducer(captured)) 
             );
 
-            AepEngine.Event event = AepEngine.Event.of("payment.received", Map.of("amount", 200)); // GH-90000
-            runPromise(() -> service.deliver(TENANT, event, NO_DETECTIONS)); // GH-90000
+            AepEngine.Event event = AepEngine.Event.of("payment.received", Map.of("amount", 200)); 
+            runPromise(() -> service.deliver(TENANT, event, NO_DETECTIONS)); 
 
-            assertThat(captured).hasSize(1); // GH-90000
+            assertThat(captured).hasSize(1); 
             assertThat(captured.get(0)).contains("payment.received");
         }
     }
@@ -117,75 +117,75 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("failure in one destination does not block other destinations")
-        void shouldIsolateFailingDestination() { // GH-90000
-            List<String> capturedGood = new ArrayList<>(); // GH-90000
+        void shouldIsolateFailingDestination() { 
+            List<String> capturedGood = new ArrayList<>(); 
 
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
-                new EventDeliveryService.EventDestination("bad-dest", // GH-90000
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
+                new EventDeliveryService.EventDestination("bad-dest", 
                     new ThrowingProducer("connection refused")),
-                new EventDeliveryService.EventDestination("good-dest", // GH-90000
-                    new CapturingProducer(capturedGood)) // GH-90000
+                new EventDeliveryService.EventDestination("good-dest", 
+                    new CapturingProducer(capturedGood)) 
             );
 
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
             assertThat(result.failed()).containsExactly("bad-dest");
             assertThat(result.delivered()).containsExactly("good-dest");
-            assertThat(result.failureDetails()) // GH-90000
-                .containsEntry( // GH-90000
+            assertThat(result.failureDetails()) 
+                .containsEntry( 
                     "bad-dest",
-                    new EventDeliveryService.DeliveryFailure( // GH-90000
+                    new EventDeliveryService.DeliveryFailure( 
                         EventDeliveryService.DeliveryFailureCategory.UNKNOWN,
                         "connection refused"));
-            assertThat(capturedGood).hasSize(1); // GH-90000
+            assertThat(capturedGood).hasSize(1); 
         }
 
         @Test
         @DisplayName("all-fail scenario returns fully-failed DeliveryResult")
-        void allFailingShouldBeInFailedList() { // GH-90000
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
+        void allFailingShouldBeInFailedList() { 
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
                 new EventDeliveryService.EventDestination("d1", new ThrowingProducer("err1")),
                 new EventDeliveryService.EventDestination("d2", new ThrowingProducer("err2"))
             );
 
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
-            assertThat(result.isFullyDelivered()).isFalse(); // GH-90000
-            assertThat(result.hasFailures()).isTrue(); // GH-90000
-            assertThat(result.failed()).containsExactlyInAnyOrder("d1", "d2"); // GH-90000
-            assertThat(result.delivered()).isEmpty(); // GH-90000
+            assertThat(result.isFullyDelivered()).isFalse(); 
+            assertThat(result.hasFailures()).isTrue(); 
+            assertThat(result.failed()).containsExactlyInAnyOrder("d1", "d2"); 
+            assertThat(result.delivered()).isEmpty(); 
         }
 
         @Test
         @DisplayName("unchecked IO failures are marked retryable")
-        void shouldCategorizeUncheckedIoAsRetryable() { // GH-90000
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
-                new EventDeliveryService.EventDestination("io-dest", // GH-90000
+        void shouldCategorizeUncheckedIoAsRetryable() { 
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
+                new EventDeliveryService.EventDestination("io-dest", 
                     new UncheckedIoProducer("socket timeout"))
             );
 
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
             assertThat(result.failureDetails().get("io-dest").category())
-                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.RETRYABLE); // GH-90000
+                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.RETRYABLE); 
         }
 
         @Test
         @DisplayName("illegal argument failures are marked non-retryable")
-        void shouldCategorizeIllegalArgumentAsNonRetryable() { // GH-90000
-            EventDeliveryService service = EventDeliveryService.withDestinations( // GH-90000
-                new EventDeliveryService.EventDestination("invalid-dest", // GH-90000
+        void shouldCategorizeIllegalArgumentAsNonRetryable() { 
+            EventDeliveryService service = EventDeliveryService.withDestinations( 
+                new EventDeliveryService.EventDestination("invalid-dest", 
                     new InvalidPayloadProducer("bad payload"))
             );
 
-            EventDeliveryService.DeliveryResult result = runPromise( // GH-90000
-                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); // GH-90000
+            EventDeliveryService.DeliveryResult result = runPromise( 
+                () -> service.deliver(TENANT, SAMPLE_EVENT, NO_DETECTIONS)); 
 
             assertThat(result.failureDetails().get("invalid-dest").category())
-                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.NON_RETRYABLE); // GH-90000
+                .isEqualTo(EventDeliveryService.DeliveryFailureCategory.NON_RETRYABLE); 
         }
     }
 
@@ -199,19 +199,19 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("isFullyDelivered() is true when no failures")
-        void isFullyDeliveredTrueWhenNoFailures() { // GH-90000
+        void isFullyDeliveredTrueWhenNoFailures() { 
             var r = new EventDeliveryService.DeliveryResult(List.of("d1"), List.of());
-            assertThat(r.isFullyDelivered()).isTrue(); // GH-90000
-            assertThat(r.hasFailures()).isFalse(); // GH-90000
-            assertThat(r.failureDetails()).isEmpty(); // GH-90000
+            assertThat(r.isFullyDelivered()).isTrue(); 
+            assertThat(r.hasFailures()).isFalse(); 
+            assertThat(r.failureDetails()).isEmpty(); 
         }
 
         @Test
         @DisplayName("isFullyDelivered() is false when any failures present")
-        void isFullyDeliveredFalseWhenAnyFailure() { // GH-90000
+        void isFullyDeliveredFalseWhenAnyFailure() { 
             var r = new EventDeliveryService.DeliveryResult(List.of("d1"), List.of("d2"));
-            assertThat(r.isFullyDelivered()).isFalse(); // GH-90000
-            assertThat(r.hasFailures()).isTrue(); // GH-90000
+            assertThat(r.isFullyDelivered()).isFalse(); 
+            assertThat(r.hasFailures()).isTrue(); 
         }
     }
 
@@ -224,14 +224,14 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         private final List<String> captured;
 
-        CapturingProducer(List<String> captured) { // GH-90000
+        CapturingProducer(List<String> captured) { 
             this.captured = captured;
         }
 
         @Override
-        public boolean send(String tenantId, String eventType, String payloadJson, // GH-90000
+        public boolean send(String tenantId, String eventType, String payloadJson, 
                             Map<String, String> headers) {
-            captured.add(payloadJson); // GH-90000
+            captured.add(payloadJson); 
             return true;
         }
     }
@@ -241,14 +241,14 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         private final String errorMessage;
 
-        ThrowingProducer(String errorMessage) { // GH-90000
+        ThrowingProducer(String errorMessage) { 
             this.errorMessage = errorMessage;
         }
 
         @Override
-        public boolean send(String tenantId, String eventType, String payloadJson, // GH-90000
+        public boolean send(String tenantId, String eventType, String payloadJson, 
                             Map<String, String> headers) {
-            throw new RuntimeException(errorMessage); // GH-90000
+            throw new RuntimeException(errorMessage); 
         }
     }
 
@@ -256,14 +256,14 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         private final String errorMessage;
 
-        private UncheckedIoProducer(String errorMessage) { // GH-90000
+        private UncheckedIoProducer(String errorMessage) { 
             this.errorMessage = errorMessage;
         }
 
         @Override
-        public boolean send(String tenantId, String eventType, String payloadJson, // GH-90000
+        public boolean send(String tenantId, String eventType, String payloadJson, 
                             Map<String, String> headers) {
-            throw new UncheckedIOException(new IOException(errorMessage)); // GH-90000
+            throw new UncheckedIOException(new IOException(errorMessage)); 
         }
     }
 
@@ -271,14 +271,14 @@ class EventDeliveryServiceTest extends EventloopTestBase {
 
         private final String errorMessage;
 
-        private InvalidPayloadProducer(String errorMessage) { // GH-90000
+        private InvalidPayloadProducer(String errorMessage) { 
             this.errorMessage = errorMessage;
         }
 
         @Override
-        public boolean send(String tenantId, String eventType, String payloadJson, // GH-90000
+        public boolean send(String tenantId, String eventType, String payloadJson, 
                             Map<String, String> headers) {
-            throw new IllegalArgumentException(errorMessage); // GH-90000
+            throw new IllegalArgumentException(errorMessage); 
         }
     }
 }

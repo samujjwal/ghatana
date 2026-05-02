@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model;
@@ -27,22 +27,22 @@ class MemoryLinkTest {
 
         @Test
         @DisplayName("Default strength is 1.0 (full relationship strength)")
-        void defaultStrength_isOne() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void defaultStrength_isOne() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("item-A")
-                    .linkType(LinkType.RELATED) // GH-90000
-                    .build(); // GH-90000
-            assertThat(link.getStrength()).isEqualTo(1.0); // GH-90000
+                    .linkType(LinkType.RELATED) 
+                    .build(); 
+            assertThat(link.getStrength()).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("Default description is null")
-        void defaultDescription_isNull() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void defaultDescription_isNull() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("item-A")
-                    .linkType(LinkType.RELATED) // GH-90000
-                    .build(); // GH-90000
-            assertThat(link.getDescription()).isNull(); // GH-90000
+                    .linkType(LinkType.RELATED) 
+                    .build(); 
+            assertThat(link.getDescription()).isNull(); 
         }
     }
 
@@ -52,33 +52,33 @@ class MemoryLinkTest {
 
         @Test
         @DisplayName("TargetItemId is stored correctly")
-        void targetItemId_storedCorrectly() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void targetItemId_storedCorrectly() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("target-123")
-                    .linkType(LinkType.SUPPORTS) // GH-90000
-                    .build(); // GH-90000
+                    .linkType(LinkType.SUPPORTS) 
+                    .build(); 
             assertThat(link.getTargetItemId()).isEqualTo("target-123");
         }
 
         @Test
         @DisplayName("Custom strength in [0,1] is stored correctly")
-        void customStrength_storedCorrectly() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void customStrength_storedCorrectly() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("item-B")
-                    .linkType(LinkType.DERIVED_FROM) // GH-90000
-                    .strength(0.75) // GH-90000
-                    .build(); // GH-90000
-            assertThat(link.getStrength()).isEqualTo(0.75); // GH-90000
+                    .linkType(LinkType.DERIVED_FROM) 
+                    .strength(0.75) 
+                    .build(); 
+            assertThat(link.getStrength()).isEqualTo(0.75); 
         }
 
         @Test
         @DisplayName("Description is stored when provided")
-        void description_storedWhenProvided() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void description_storedWhenProvided() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("item-C")
-                    .linkType(LinkType.CONTRADICTS) // GH-90000
+                    .linkType(LinkType.CONTRADICTS) 
                     .description("Directly contradicts the previous fact")
-                    .build(); // GH-90000
+                    .build(); 
             assertThat(link.getDescription()).isEqualTo("Directly contradicts the previous fact");
         }
     }
@@ -89,8 +89,8 @@ class MemoryLinkTest {
 
         @Test
         @DisplayName("All five LinkType values are present")
-        void allLinkTypeValues_present() { // GH-90000
-            assertThat(LinkType.values()).containsExactlyInAnyOrder( // GH-90000
+        void allLinkTypeValues_present() { 
+            assertThat(LinkType.values()).containsExactlyInAnyOrder( 
                     LinkType.SUPPORTS,
                     LinkType.CONTRADICTS,
                     LinkType.DERIVED_FROM,
@@ -100,12 +100,12 @@ class MemoryLinkTest {
 
         @Test
         @DisplayName("SUPERSEDES link type can be set")
-        void supersedesLinkType_settable() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void supersedesLinkType_settable() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("old-item")
-                    .linkType(LinkType.SUPERSEDES) // GH-90000
-                    .build(); // GH-90000
-            assertThat(link.getLinkType()).isEqualTo(LinkType.SUPERSEDES); // GH-90000
+                    .linkType(LinkType.SUPERSEDES) 
+                    .build(); 
+            assertThat(link.getLinkType()).isEqualTo(LinkType.SUPERSEDES); 
         }
     }
 }

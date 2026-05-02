@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  *
  * Task 5.1 — Tests for Agent SPI discovery and registration.
  */
@@ -25,35 +25,35 @@ class AgentProviderRegistryTest {
     private AgentProviderRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = AgentProviderRegistry.create(); // GH-90000
+    void setUp() { 
+        registry = AgentProviderRegistry.create(); 
     }
 
     // =========================================================================
-    // Test Agent Provider Implementation (for use in tests) // GH-90000
+    // Test Agent Provider Implementation (for use in tests) 
     // =========================================================================
 
     static class StubAgent extends AbstractTypedAgent<String, String> {
         private final String agentId;
 
-        StubAgent(String agentId) { // GH-90000
+        StubAgent(String agentId) { 
             this.agentId = agentId;
         }
 
         @Override
-        public AgentDescriptor descriptor() { // GH-90000
-            return AgentDescriptor.builder() // GH-90000
-                    .agentId(agentId) // GH-90000
-                    .name("Stub Agent " + agentId) // GH-90000
-                    .type(AgentType.DETERMINISTIC) // GH-90000
+        public AgentDescriptor descriptor() { 
+            return AgentDescriptor.builder() 
+                    .agentId(agentId) 
+                    .name("Stub Agent " + agentId) 
+                    .type(AgentType.DETERMINISTIC) 
                     .version("1.0.0")
                     .capabilities(Set.of("stub"))
-                    .build(); // GH-90000
+                    .build(); 
         }
 
         @Override
-        public Promise<AgentResult<String>> doProcess(AgentContext ctx, String input) { // GH-90000
-            return Promise.of(AgentResult.success("processed:" + input, agentId, Duration.ofMillis(1))); // GH-90000
+        public Promise<AgentResult<String>> doProcess(AgentContext ctx, String input) { 
+            return Promise.of(AgentResult.success("processed:" + input, agentId, Duration.ofMillis(1))); 
         }
     }
 
@@ -61,129 +61,129 @@ class AgentProviderRegistryTest {
         private final int priorityVal;
         private final boolean enabled;
 
-        TestDeterministicProvider() { // GH-90000
-            this(1000, true); // GH-90000
+        TestDeterministicProvider() { 
+            this(1000, true); 
         }
 
-        TestDeterministicProvider(int priority, boolean enabled) { // GH-90000
+        TestDeterministicProvider(int priority, boolean enabled) { 
             this.priorityVal = priority;
             this.enabled = enabled;
         }
 
         @Override
-        public String getProviderId() { // GH-90000
+        public String getProviderId() { 
             return "test-deterministic";
         }
 
         @Override
-        public String getProviderName() { // GH-90000
+        public String getProviderName() { 
             return "Test Deterministic Provider";
         }
 
         @Override
-        public Set<AgentType> getSupportedTypes() { // GH-90000
-            return Set.of(AgentType.DETERMINISTIC); // GH-90000
+        public Set<AgentType> getSupportedTypes() { 
+            return Set.of(AgentType.DETERMINISTIC); 
         }
 
         @Override
-        public TypedAgent<?, ?> createAgent(AgentConfig config) { // GH-90000
-            return new StubAgent(config.getAgentId()); // GH-90000
+        public TypedAgent<?, ?> createAgent(AgentConfig config) { 
+            return new StubAgent(config.getAgentId()); 
         }
 
         @Override
-        public AgentDescriptor describe() { // GH-90000
-            return AgentDescriptor.builder() // GH-90000
+        public AgentDescriptor describe() { 
+            return AgentDescriptor.builder() 
                     .agentId("test-deterministic")
                     .name("Test Deterministic")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
                     .version("1.0.0")
                     .capabilities(Set.of("rule-matching"))
-                    .build(); // GH-90000
+                    .build(); 
         }
 
         @Override
-        public int priority() { // GH-90000
+        public int priority() { 
             return priorityVal;
         }
 
         @Override
-        public boolean isEnabled() { // GH-90000
+        public boolean isEnabled() { 
             return enabled;
         }
     }
 
     static class TestProbabilisticProvider implements AgentProvider {
         @Override
-        public String getProviderId() { // GH-90000
+        public String getProviderId() { 
             return "test-probabilistic";
         }
 
         @Override
-        public String getProviderName() { // GH-90000
+        public String getProviderName() { 
             return "Test Probabilistic Provider";
         }
 
         @Override
-        public Set<AgentType> getSupportedTypes() { // GH-90000
-            return Set.of(AgentType.PROBABILISTIC); // GH-90000
+        public Set<AgentType> getSupportedTypes() { 
+            return Set.of(AgentType.PROBABILISTIC); 
         }
 
         @Override
-        public TypedAgent<?, ?> createAgent(AgentConfig config) { // GH-90000
-            return new StubAgent(config.getAgentId()); // GH-90000
+        public TypedAgent<?, ?> createAgent(AgentConfig config) { 
+            return new StubAgent(config.getAgentId()); 
         }
 
         @Override
-        public AgentDescriptor describe() { // GH-90000
-            return AgentDescriptor.builder() // GH-90000
+        public AgentDescriptor describe() { 
+            return AgentDescriptor.builder() 
                     .agentId("test-probabilistic")
                     .name("Test Probabilistic")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .version("2.0.0")
                     .capabilities(Set.of("inference"))
-                    .build(); // GH-90000
+                    .build(); 
         }
 
         @Override
-        public String getVersion() { // GH-90000
+        public String getVersion() { 
             return "2.0.0";
         }
     }
 
     static class TestMultiTypeProvider implements AgentProvider {
         @Override
-        public String getProviderId() { // GH-90000
+        public String getProviderId() { 
             return "test-multi";
         }
 
         @Override
-        public String getProviderName() { // GH-90000
+        public String getProviderName() { 
             return "Test Multi-Type Provider";
         }
 
         @Override
-        public Set<AgentType> getSupportedTypes() { // GH-90000
-            return Set.of(AgentType.DETERMINISTIC, AgentType.PROBABILISTIC, AgentType.HYBRID); // GH-90000
+        public Set<AgentType> getSupportedTypes() { 
+            return Set.of(AgentType.DETERMINISTIC, AgentType.PROBABILISTIC, AgentType.HYBRID); 
         }
 
         @Override
-        public TypedAgent<?, ?> createAgent(AgentConfig config) { // GH-90000
-            return new StubAgent(config.getAgentId()); // GH-90000
+        public TypedAgent<?, ?> createAgent(AgentConfig config) { 
+            return new StubAgent(config.getAgentId()); 
         }
 
         @Override
-        public AgentDescriptor describe() { // GH-90000
-            return AgentDescriptor.builder() // GH-90000
+        public AgentDescriptor describe() { 
+            return AgentDescriptor.builder() 
                     .agentId("test-multi")
                     .name("Test Multi")
-                    .type(AgentType.HYBRID) // GH-90000
+                    .type(AgentType.HYBRID) 
                     .version("1.0.0")
                     .capabilities(Set.of("multi"))
-                    .build(); // GH-90000
+                    .build(); 
         }
 
         @Override
-        public int priority() { // GH-90000
+        public int priority() { 
             return 500; // Higher priority
         }
     }
@@ -198,38 +198,38 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Default supports() delegates to getSupportedTypes()")
-        void defaultSupports() { // GH-90000
-            TestDeterministicProvider provider = new TestDeterministicProvider(); // GH-90000
-            assertThat(provider.supports(AgentType.DETERMINISTIC)).isTrue(); // GH-90000
-            assertThat(provider.supports(AgentType.PROBABILISTIC)).isFalse(); // GH-90000
-            assertThat(provider.supports(AgentType.ADAPTIVE)).isFalse(); // GH-90000
+        void defaultSupports() { 
+            TestDeterministicProvider provider = new TestDeterministicProvider(); 
+            assertThat(provider.supports(AgentType.DETERMINISTIC)).isTrue(); 
+            assertThat(provider.supports(AgentType.PROBABILISTIC)).isFalse(); 
+            assertThat(provider.supports(AgentType.ADAPTIVE)).isFalse(); 
         }
 
         @Test
         @DisplayName("Default priority is 1000")
-        void defaultPriority() { // GH-90000
-            TestProbabilisticProvider provider = new TestProbabilisticProvider(); // GH-90000
-            assertThat(provider.priority()).isEqualTo(1000); // GH-90000
+        void defaultPriority() { 
+            TestProbabilisticProvider provider = new TestProbabilisticProvider(); 
+            assertThat(provider.priority()).isEqualTo(1000); 
         }
 
         @Test
         @DisplayName("Default isEnabled is true")
-        void defaultEnabled() { // GH-90000
-            TestProbabilisticProvider provider = new TestProbabilisticProvider(); // GH-90000
-            assertThat(provider.isEnabled()).isTrue(); // GH-90000
+        void defaultEnabled() { 
+            TestProbabilisticProvider provider = new TestProbabilisticProvider(); 
+            assertThat(provider.isEnabled()).isTrue(); 
         }
 
         @Test
         @DisplayName("Default version is 1.0.0")
-        void defaultVersion() { // GH-90000
-            TestDeterministicProvider provider = new TestDeterministicProvider(); // GH-90000
+        void defaultVersion() { 
+            TestDeterministicProvider provider = new TestDeterministicProvider(); 
             assertThat(provider.getVersion()).isEqualTo("1.0.0");
         }
 
         @Test
         @DisplayName("Custom version override")
-        void customVersion() { // GH-90000
-            TestProbabilisticProvider provider = new TestProbabilisticProvider(); // GH-90000
+        void customVersion() { 
+            TestProbabilisticProvider provider = new TestProbabilisticProvider(); 
             assertThat(provider.getVersion()).isEqualTo("2.0.0");
         }
     }
@@ -244,11 +244,11 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Register and retrieve provider")
-        void registerAndRetrieve() { // GH-90000
-            TestDeterministicProvider provider = new TestDeterministicProvider(); // GH-90000
-            registry.registerProvider(provider); // GH-90000
+        void registerAndRetrieve() { 
+            TestDeterministicProvider provider = new TestDeterministicProvider(); 
+            registry.registerProvider(provider); 
 
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
+            assertThat(registry.size()).isEqualTo(1); 
             assertThat(registry.contains("test-deterministic")).isTrue();
             assertThat(registry.getProvider("test-deterministic")).isPresent();
             assertThat(registry.getProvider("test-deterministic").get().getProviderName())
@@ -257,43 +257,43 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Duplicate registration throws")
-        void duplicateThrows() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
+        void duplicateThrows() { 
+            registry.registerProvider(new TestDeterministicProvider()); 
 
-            assertThatThrownBy(() -> registry.registerProvider(new TestDeterministicProvider())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> registry.registerProvider(new TestDeterministicProvider())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("already registered");
         }
 
         @Test
         @DisplayName("Unregister removes provider")
-        void unregister() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
+        void unregister() { 
+            registry.registerProvider(new TestDeterministicProvider()); 
+            assertThat(registry.size()).isEqualTo(1); 
 
             boolean removed = registry.unregisterProvider("test-deterministic");
-            assertThat(removed).isTrue(); // GH-90000
-            assertThat(registry.size()).isZero(); // GH-90000
+            assertThat(removed).isTrue(); 
+            assertThat(registry.size()).isZero(); 
             assertThat(registry.contains("test-deterministic")).isFalse();
         }
 
         @Test
         @DisplayName("Unregister nonexistent returns false")
-        void unregisterNonexistent() { // GH-90000
+        void unregisterNonexistent() { 
             assertThat(registry.unregisterProvider("ghost")).isFalse();
         }
 
         @Test
         @DisplayName("getProvider returns empty for unknown ID")
-        void getUnknown() { // GH-90000
+        void getUnknown() { 
             assertThat(registry.getProvider("unknown")).isEmpty();
         }
 
         @Test
         @DisplayName("Null provider rejected")
-        void nullRejected() { // GH-90000
-            assertThatThrownBy(() -> registry.registerProvider(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullRejected() { 
+            assertThatThrownBy(() -> registry.registerProvider(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -306,40 +306,40 @@ class AgentProviderRegistryTest {
     class TypeBasedDiscovery {
 
         @BeforeEach
-        void registerAll() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
-            registry.registerProvider(new TestProbabilisticProvider()); // GH-90000
-            registry.registerProvider(new TestMultiTypeProvider()); // GH-90000
+        void registerAll() { 
+            registry.registerProvider(new TestDeterministicProvider()); 
+            registry.registerProvider(new TestProbabilisticProvider()); 
+            registry.registerProvider(new TestMultiTypeProvider()); 
         }
 
         @Test
         @DisplayName("Find by DETERMINISTIC type returns matching providers")
-        void findDeterministic() { // GH-90000
-            List<AgentProvider> results = registry.findByType(AgentType.DETERMINISTIC); // GH-90000
-            assertThat(results).hasSize(2); // GH-90000
-            // Multi-type provider has priority 500 (higher), deterministic has 1000 // GH-90000
+        void findDeterministic() { 
+            List<AgentProvider> results = registry.findByType(AgentType.DETERMINISTIC); 
+            assertThat(results).hasSize(2); 
+            // Multi-type provider has priority 500 (higher), deterministic has 1000 
             assertThat(results.get(0).getProviderId()).isEqualTo("test-multi");
             assertThat(results.get(1).getProviderId()).isEqualTo("test-deterministic");
         }
 
         @Test
         @DisplayName("Find by PROBABILISTIC returns matching providers")
-        void findProbabilistic() { // GH-90000
-            List<AgentProvider> results = registry.findByType(AgentType.PROBABILISTIC); // GH-90000
-            assertThat(results).hasSize(2); // GH-90000
+        void findProbabilistic() { 
+            List<AgentProvider> results = registry.findByType(AgentType.PROBABILISTIC); 
+            assertThat(results).hasSize(2); 
         }
 
         @Test
         @DisplayName("Find by ADAPTIVE returns empty")
-        void findAdaptive() { // GH-90000
-            assertThat(registry.findByType(AgentType.ADAPTIVE)).isEmpty(); // GH-90000
+        void findAdaptive() { 
+            assertThat(registry.findByType(AgentType.ADAPTIVE)).isEmpty(); 
         }
 
         @Test
         @DisplayName("Find by HYBRID returns multi-type provider only")
-        void findHybrid() { // GH-90000
-            List<AgentProvider> results = registry.findByType(AgentType.HYBRID); // GH-90000
-            assertThat(results).hasSize(1); // GH-90000
+        void findHybrid() { 
+            List<AgentProvider> results = registry.findByType(AgentType.HYBRID); 
+            assertThat(results).hasSize(1); 
             assertThat(results.get(0).getProviderId()).isEqualTo("test-multi");
         }
     }
@@ -353,59 +353,59 @@ class AgentProviderRegistryTest {
     class AgentCreation {
 
         @BeforeEach
-        void registerAll() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
-            registry.registerProvider(new TestProbabilisticProvider()); // GH-90000
-            registry.registerProvider(new TestMultiTypeProvider()); // GH-90000
+        void registerAll() { 
+            registry.registerProvider(new TestDeterministicProvider()); 
+            registry.registerProvider(new TestProbabilisticProvider()); 
+            registry.registerProvider(new TestMultiTypeProvider()); 
         }
 
         @Test
         @DisplayName("Create agent by provider ID")
-        void createByProviderId() { // GH-90000
-            AgentConfig config = AgentConfig.builder() // GH-90000
+        void createByProviderId() { 
+            AgentConfig config = AgentConfig.builder() 
                     .agentId("my-agent")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .build(); 
 
-            TypedAgent<?, ?> agent = registry.createAgent("test-deterministic", config); // GH-90000
-            assertThat(agent).isNotNull(); // GH-90000
+            TypedAgent<?, ?> agent = registry.createAgent("test-deterministic", config); 
+            assertThat(agent).isNotNull(); 
             assertThat(agent.descriptor().getAgentId()).isEqualTo("my-agent");
         }
 
         @Test
         @DisplayName("Create agent by type selects highest-priority provider")
-        void createByType() { // GH-90000
-            AgentConfig config = AgentConfig.builder() // GH-90000
+        void createByType() { 
+            AgentConfig config = AgentConfig.builder() 
                     .agentId("det-agent")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .build(); 
 
-            TypedAgent<?, ?> agent = registry.createAgentByType(AgentType.DETERMINISTIC, config); // GH-90000
-            assertThat(agent).isNotNull(); // GH-90000
-            // Multi-type provider has higher priority (500) so it should be selected // GH-90000
+            TypedAgent<?, ?> agent = registry.createAgentByType(AgentType.DETERMINISTIC, config); 
+            assertThat(agent).isNotNull(); 
+            // Multi-type provider has higher priority (500) so it should be selected 
             assertThat(agent.descriptor().getAgentId()).isEqualTo("det-agent");
         }
 
         @Test
         @DisplayName("Create agent by unknown provider throws")
-        void createByUnknownProvider() { // GH-90000
-            AgentConfig config = AgentConfig.builder() // GH-90000
+        void createByUnknownProvider() { 
+            AgentConfig config = AgentConfig.builder() 
                     .agentId("x")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .build(); 
 
-            assertThatThrownBy(() -> registry.createAgent("unknown-provider", config)) // GH-90000
-                    .isInstanceOf(NoSuchElementException.class) // GH-90000
+            assertThatThrownBy(() -> registry.createAgent("unknown-provider", config)) 
+                    .isInstanceOf(NoSuchElementException.class) 
                     .hasMessageContaining("unknown-provider");
         }
 
         @Test
         @DisplayName("Create agent by unsupported type throws")
-        void createByUnsupportedType() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    registry.createAgentByType(AgentType.REACTIVE, AgentConfig.builder() // GH-90000
+        void createByUnsupportedType() { 
+            assertThatThrownBy(() -> 
+                    registry.createAgentByType(AgentType.REACTIVE, AgentConfig.builder() 
                             .agentId("x").type(AgentType.REACTIVE).build()))
-                    .isInstanceOf(NoSuchElementException.class) // GH-90000
+                    .isInstanceOf(NoSuchElementException.class) 
                     .hasMessageContaining("REACTIVE");
         }
     }
@@ -420,33 +420,33 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("listAll returns all providers sorted by priority")
-        void listAllSorted() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // priority 1000 // GH-90000
-            registry.registerProvider(new TestMultiTypeProvider());     // priority 500 // GH-90000
-            registry.registerProvider(new TestProbabilisticProvider()); // priority 1000 // GH-90000
+        void listAllSorted() { 
+            registry.registerProvider(new TestDeterministicProvider()); // priority 1000 
+            registry.registerProvider(new TestMultiTypeProvider());     // priority 500 
+            registry.registerProvider(new TestProbabilisticProvider()); // priority 1000 
 
-            List<AgentProvider> all = registry.listAll(); // GH-90000
-            assertThat(all).hasSize(3); // GH-90000
+            List<AgentProvider> all = registry.listAll(); 
+            assertThat(all).hasSize(3); 
             assertThat(all.get(0).getProviderId()).isEqualTo("test-multi"); // 500 first
         }
 
         @Test
         @DisplayName("Empty registry returns empty list")
-        void emptyList() { // GH-90000
-            assertThat(registry.listAll()).isEmpty(); // GH-90000
-            assertThat(registry.size()).isZero(); // GH-90000
+        void emptyList() { 
+            assertThat(registry.listAll()).isEmpty(); 
+            assertThat(registry.size()).isZero(); 
         }
 
         @Test
         @DisplayName("clear() removes all providers")
-        void clearAll() { // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
-            registry.registerProvider(new TestProbabilisticProvider()); // GH-90000
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
+        void clearAll() { 
+            registry.registerProvider(new TestDeterministicProvider()); 
+            registry.registerProvider(new TestProbabilisticProvider()); 
+            assertThat(registry.size()).isEqualTo(2); 
 
-            registry.clear(); // GH-90000
-            assertThat(registry.size()).isZero(); // GH-90000
-            assertThat(registry.listAll()).isEmpty(); // GH-90000
+            registry.clear(); 
+            assertThat(registry.size()).isZero(); 
+            assertThat(registry.listAll()).isEmpty(); 
         }
     }
 
@@ -460,14 +460,14 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Disabled provider is not registered via discoverProviders")
-        void disabledSkipped() { // GH-90000
+        void disabledSkipped() { 
             // We can't test ServiceLoader discovery directly without META-INF,
             // but we can test the disabled/enabled contract
-            TestDeterministicProvider disabled = new TestDeterministicProvider(1000, false); // GH-90000
-            assertThat(disabled.isEnabled()).isFalse(); // GH-90000
+            TestDeterministicProvider disabled = new TestDeterministicProvider(1000, false); 
+            assertThat(disabled.isEnabled()).isFalse(); 
 
-            TestDeterministicProvider enabled = new TestDeterministicProvider(1000, true); // GH-90000
-            assertThat(enabled.isEnabled()).isTrue(); // GH-90000
+            TestDeterministicProvider enabled = new TestDeterministicProvider(1000, true); 
+            assertThat(enabled.isEnabled()).isTrue(); 
         }
     }
 
@@ -481,26 +481,26 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Providers sorted by priority in findByType")
-        void prioritySorted() { // GH-90000
-            // Register multi (500), then deterministic (1000) // GH-90000
-            registry.registerProvider(new TestMultiTypeProvider()); // GH-90000
-            registry.registerProvider(new TestDeterministicProvider()); // GH-90000
+        void prioritySorted() { 
+            // Register multi (500), then deterministic (1000) 
+            registry.registerProvider(new TestMultiTypeProvider()); 
+            registry.registerProvider(new TestDeterministicProvider()); 
 
-            List<AgentProvider> results = registry.findByType(AgentType.DETERMINISTIC); // GH-90000
-            assertThat(results).hasSize(2); // GH-90000
-            assertThat(results.get(0).priority()).isLessThanOrEqualTo(results.get(1).priority()); // GH-90000
+            List<AgentProvider> results = registry.findByType(AgentType.DETERMINISTIC); 
+            assertThat(results).hasSize(2); 
+            assertThat(results.get(0).priority()).isLessThanOrEqualTo(results.get(1).priority()); 
         }
 
         @Test
         @DisplayName("Custom priority respected")
-        void customPriority() { // GH-90000
-            TestDeterministicProvider highPriority = new TestDeterministicProvider(100, true); // GH-90000
-            assertThat(highPriority.priority()).isEqualTo(100); // GH-90000
+        void customPriority() { 
+            TestDeterministicProvider highPriority = new TestDeterministicProvider(100, true); 
+            assertThat(highPriority.priority()).isEqualTo(100); 
         }
     }
 
     // =========================================================================
-    // 8. ServiceLoader Discovery (Integration) // GH-90000
+    // 8. ServiceLoader Discovery (Integration) 
     // =========================================================================
 
     @Nested
@@ -509,18 +509,18 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("discoverProviders with no META-INF returns 0")
-        void noMetaInf() { // GH-90000
-            int count = registry.discoverProviders(); // GH-90000
+        void noMetaInf() { 
+            int count = registry.discoverProviders(); 
             // No META-INF/services file in test → 0 discovered
-            assertThat(count).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(count).isGreaterThanOrEqualTo(0); 
         }
 
         @Test
         @DisplayName("Custom classloader accepted")
-        void customClassloader() { // GH-90000
-            AgentProviderRegistry custom = AgentProviderRegistry.create( // GH-90000
-                    getClass().getClassLoader()); // GH-90000
-            assertThat(custom.size()).isZero(); // GH-90000
+        void customClassloader() { 
+            AgentProviderRegistry custom = AgentProviderRegistry.create( 
+                    getClass().getClassLoader()); 
+            assertThat(custom.size()).isZero(); 
         }
     }
 
@@ -534,34 +534,34 @@ class AgentProviderRegistryTest {
 
         @Test
         @DisplayName("Concurrent registration is thread-safe")
-        void concurrentRegistration() throws Exception { // GH-90000
+        void concurrentRegistration() throws Exception { 
             int threads = 10;
-            var executor = java.util.concurrent.Executors.newFixedThreadPool(threads); // GH-90000
-            var latch = new java.util.concurrent.CountDownLatch(1); // GH-90000
-            var futures = new ArrayList<java.util.concurrent.Future<?>>(); // GH-90000
+            var executor = java.util.concurrent.Executors.newFixedThreadPool(threads); 
+            var latch = new java.util.concurrent.CountDownLatch(1); 
+            var futures = new ArrayList<java.util.concurrent.Future<?>>(); 
 
-            for (int i = 0; i < threads; i++) { // GH-90000
+            for (int i = 0; i < threads; i++) { 
                 final int idx = i;
-                futures.add(executor.submit(() -> { // GH-90000
+                futures.add(executor.submit(() -> { 
                     try {
-                        latch.await(); // GH-90000
-                    } catch (InterruptedException e) { // GH-90000
-                        Thread.currentThread().interrupt(); // GH-90000
+                        latch.await(); 
+                    } catch (InterruptedException e) { 
+                        Thread.currentThread().interrupt(); 
                         return;
                     }
                     // Each thread registers a unique provider
-                    registry.registerProvider(new AgentProvider() { // GH-90000
+                    registry.registerProvider(new AgentProvider() { 
                         @Override
-                        public String getProviderId() { return "concurrent-" + idx; } // GH-90000
+                        public String getProviderId() { return "concurrent-" + idx; } 
                         @Override
-                        public String getProviderName() { return "Concurrent " + idx; } // GH-90000
+                        public String getProviderName() { return "Concurrent " + idx; } 
                         @Override
-                        public Set<AgentType> getSupportedTypes() { return Set.of(AgentType.DETERMINISTIC); } // GH-90000
+                        public Set<AgentType> getSupportedTypes() { return Set.of(AgentType.DETERMINISTIC); } 
                         @Override
-                        public TypedAgent<?, ?> createAgent(AgentConfig config) { return new StubAgent(config.getAgentId()); } // GH-90000
+                        public TypedAgent<?, ?> createAgent(AgentConfig config) { return new StubAgent(config.getAgentId()); } 
                         @Override
-                        public AgentDescriptor describe() { // GH-90000
-                            return AgentDescriptor.builder().agentId("concurrent-" + idx) // GH-90000
+                        public AgentDescriptor describe() { 
+                            return AgentDescriptor.builder().agentId("concurrent-" + idx) 
                                     .name("Concurrent").type(AgentType.DETERMINISTIC)
                                     .version("1.0.0").capabilities(Set.of("test")).build();
                         }
@@ -569,13 +569,13 @@ class AgentProviderRegistryTest {
                 }));
             }
 
-            latch.countDown(); // GH-90000
-            for (var f : futures) { // GH-90000
-                f.get(5, java.util.concurrent.TimeUnit.SECONDS); // GH-90000
+            latch.countDown(); 
+            for (var f : futures) { 
+                f.get(5, java.util.concurrent.TimeUnit.SECONDS); 
             }
 
-            executor.shutdown(); // GH-90000
-            assertThat(registry.size()).isEqualTo(threads); // GH-90000
+            executor.shutdown(); 
+            assertThat(registry.size()).isEqualTo(threads); 
         }
     }
 }

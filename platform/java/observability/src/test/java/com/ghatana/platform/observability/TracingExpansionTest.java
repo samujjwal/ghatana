@@ -20,45 +20,45 @@ class TracingExpansionTest {
 
     @Test
     @DisplayName("Tracer available when tracing disabled returns no-op")
-    void tracerWhenDisabled() { // GH-90000
+    void tracerWhenDisabled() { 
         // Disable tracing explicitly
-        Tracing.init(false, null, null); // GH-90000
+        Tracing.init(false, null, null); 
 
-        // Tracer should still be available (no-op fallback) // GH-90000
-        Tracer tracer = Tracing.tracer(); // GH-90000
-        assertThat(tracer).isNotNull(); // GH-90000
+        // Tracer should still be available (no-op fallback) 
+        Tracer tracer = Tracing.tracer(); 
+        assertThat(tracer).isNotNull(); 
     }
 
     @Test
     @DisplayName("Tracer available when enabled with default values")
-    void tracerWhenEnabledDefault() { // GH-90000
+    void tracerWhenEnabledDefault() { 
         // Enable tracing with defaults
-        Tracing.init(true, null, null); // GH-90000
+        Tracing.init(true, null, null); 
 
         // Tracer should be available
-        Tracer tracer = Tracing.tracer(); // GH-90000
-        assertThat(tracer).isNotNull(); // GH-90000
+        Tracer tracer = Tracing.tracer(); 
+        assertThat(tracer).isNotNull(); 
     }
 
     @Test
     @DisplayName("Tracer available when enabled with custom endpoint")
-    void tracerWithCustomEndpoint() { // GH-90000
+    void tracerWithCustomEndpoint() { 
         // Enable with custom endpoint
-        Tracing.init(true, "http://localhost:4317", null); // GH-90000
+        Tracing.init(true, "http://localhost:4317", null); 
 
         // Tracer should be available
-        Tracer tracer = Tracing.tracer(); // GH-90000
-        assertThat(tracer).isNotNull(); // GH-90000
+        Tracer tracer = Tracing.tracer(); 
+        assertThat(tracer).isNotNull(); 
     }
 
     @Test
     @DisplayName("Tracer available when enabled with custom service name")
-    void tracerWithCustomService() { // GH-90000
+    void tracerWithCustomService() { 
         // Enable with custom service name
-        Tracing.init(true, null, "custom-service"); // GH-90000
+        Tracing.init(true, null, "custom-service"); 
 
         // Tracer should be available
-        Tracer tracer = Tracing.tracer(); // GH-90000
-        assertThat(tracer).isNotNull(); // GH-90000
+        Tracer tracer = Tracing.tracer(); 
+        assertThat(tracer).isNotNull(); 
     }
 }

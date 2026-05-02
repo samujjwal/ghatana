@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("YappcHttpServer auth routing")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class YappcHttpServerAuthTest extends EventloopTestBase {
 
     @Mock
@@ -66,10 +66,10 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
     private AsyncServlet servlet;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         YappcApiAuthFilter authFilter = new YappcApiAuthFilter(key -> Optional.of(new Principal("api-user", List.of("admin"), "tenant-alpha")));
-        Eventloop eventloop = eventloop(); // GH-90000
-        servlet = new YappcHttpServer().servlet( // GH-90000
+        Eventloop eventloop = eventloop(); 
+        servlet = new YappcHttpServer().servlet( 
             eventloop,
             authFilter,
             intentController,
@@ -87,62 +87,62 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
 
     @Test
     @DisplayName("health stays public")
-    void healthStaysPublic() { // GH-90000
+    void healthStaysPublic() { 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
 
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
     }
 
     @Test
     @DisplayName("protected routes return 401 without credentials")
-    void protectedRoutesReturn401WithoutCredentials() { // GH-90000
+    void protectedRoutesReturn401WithoutCredentials() { 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/intent/capture").build();
 
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(401); // GH-90000
-        verify(intentController, never()).captureIntent(any()); // GH-90000
+        assertThat(response.getCode()).isEqualTo(401); 
+        verify(intentController, never()).captureIntent(any()); 
     }
 
     @Test
     @DisplayName("full lifecycle endpoint stays protected")
-    void fullLifecycleEndpointRequiresCredentials() { // GH-90000
+    void fullLifecycleEndpointRequiresCredentials() { 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/lifecycle/execute").build();
 
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(401); // GH-90000
-        verify(lifecycleController, never()).executeFullLifecycle(any()); // GH-90000
+        assertThat(response.getCode()).isEqualTo(401); 
+        verify(lifecycleController, never()).executeFullLifecycle(any()); 
     }
 
     @Test
     @DisplayName("protected route rejects unsupported API version")
-    void protectedRouteRejectsUnsupportedApiVersion() { // GH-90000
+    void protectedRouteRejectsUnsupportedApiVersion() { 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/intent/capture")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-key")
             .withHeader(HttpHeaders.of("X-API-Version"), "v2")
-            .build(); // GH-90000
+            .build(); 
 
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(406); // GH-90000
-        verify(intentController, never()).captureIntent(any()); // GH-90000
+        assertThat(response.getCode()).isEqualTo(406); 
+        verify(intentController, never()).captureIntent(any()); 
     }
 
     @Test
     @DisplayName("protected routes delegate when credentials are valid")
-    void protectedRoutesDelegateWhenCredentialsAreValid() { // GH-90000
-        when(intentController.captureIntent(any())).thenReturn(HttpResponse.ok200().toPromise()); // GH-90000
+    void protectedRoutesDelegateWhenCredentialsAreValid() { 
+        when(intentController.captureIntent(any())).thenReturn(HttpResponse.ok200().toPromise()); 
         HttpRequest request = HttpRequest.post("http://localhost/api/v1/yappc/intent/capture")
             .withHeader(HttpHeaders.of("X-API-Key"), "valid-key")
-            .build(); // GH-90000
+            .build(); 
 
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
         assertThat(response.getHeader(HttpHeaders.of("X-API-Version"))).isEqualTo("v1");
-        verify(intentController).captureIntent(any()); // GH-90000
+        verify(intentController).captureIntent(any()); 
     }
 }

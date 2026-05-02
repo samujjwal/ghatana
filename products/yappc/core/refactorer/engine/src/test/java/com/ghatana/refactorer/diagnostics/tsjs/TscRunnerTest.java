@@ -31,41 +31,41 @@ class TscRunnerTest extends EventloopTestBase {
     private TscRunner tscRunner;
     private PolyfixProjectContext context;
     private static final org.apache.logging.log4j.Logger logger =
-            org.apache.logging.log4j.LogManager.getLogger(TscRunnerTest.class); // GH-90000
+            org.apache.logging.log4j.LogManager.getLogger(TscRunnerTest.class); 
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Enable debug logging for tests
-        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) { // GH-90000
-            Configuration config = ctx.getConfiguration(); // GH-90000
-            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG); // GH-90000
-            ctx.updateLoggers(config); // GH-90000
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) { 
+            Configuration config = ctx.getConfiguration(); 
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG); 
+            ctx.updateLoggers(config); 
         }
 
         this.context =
-                new PolyfixProjectContext( // GH-90000
-                        tempDir, null, List.of(), null, LogManager.getLogger(TscRunnerTest.class)); // GH-90000
-        this.tscRunner = new TscRunner(context); // GH-90000
+                new PolyfixProjectContext( 
+                        tempDir, null, List.of(), null, LogManager.getLogger(TscRunnerTest.class)); 
+        this.tscRunner = new TscRunner(context); 
     }
 
     @Test
-    void testIsAvailable() { // GH-90000
+    void testIsAvailable() { 
         // This test will pass if TypeScript is available, but won't fail if it's not
         // since we can't assume TypeScript is installed in the test environment
-        boolean isAvailable = tscRunner.isAvailable(); // GH-90000
-        logger.info("TypeScript is {}available in test environment", isAvailable ? "" : "not "); // GH-90000
+        boolean isAvailable = tscRunner.isAvailable(); 
+        logger.info("TypeScript is {}available in test environment", isAvailable ? "" : "not "); 
 
         // If TypeScript is not available, we'll skip the other tests
-        if (!isAvailable) { // GH-90000
-            logger.warn( // GH-90000
+        if (!isAvailable) { 
+            logger.warn( 
                     "Skipping TypeScript tests because TypeScript is not available in the test"
                             + " environment");
         }
     }
 
     @Test
-    void testRunWithValidCode() throws IOException { // GH-90000
-        if (!tscRunner.isAvailable()) { // GH-90000
+    void testRunWithValidCode() throws IOException { 
+        if (!tscRunner.isAvailable()) { 
             logger.warn("Skipping testRunWithValidCode: TypeScript is not available");
             return;
         }
@@ -73,31 +73,31 @@ class TscRunnerTest extends EventloopTestBase {
         try {
             // Copy test project to temp directory
             Path testProjectDir = tempDir.resolve("test-project");
-            copyTestProject(testProjectDir); // GH-90000
+            copyTestProject(testProjectDir); 
 
             // Run the linter on the valid file
             Path validFile = testProjectDir.resolve("src/valid.ts");
-            assertTrue(Files.exists(validFile), "Test file should exist: " + validFile); // GH-90000
+            assertTrue(Files.exists(validFile), "Test file should exist: " + validFile); 
 
-            List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); // GH-90000
+            List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); 
 
             // Should have no errors in valid code
             List<UnifiedDiagnostic> errors =
-                    diagnostics.stream() // GH-90000
-                            .filter(d -> d.severity() == Severity.ERROR) // GH-90000
-                            .collect(Collectors.toList()); // GH-90000
+                    diagnostics.stream() 
+                            .filter(d -> d.severity() == Severity.ERROR) 
+                            .collect(Collectors.toList()); 
 
-            assertEquals( // GH-90000
-                    0, errors.size(), "Expected no errors in valid code, but found: " + errors); // GH-90000
-        } catch (Exception e) { // GH-90000
-            logger.error("Error in testRunWithValidCode", e); // GH-90000
+            assertEquals( 
+                    0, errors.size(), "Expected no errors in valid code, but found: " + errors); 
+        } catch (Exception e) { 
+            logger.error("Error in testRunWithValidCode", e); 
             throw e;
         }
     }
 
     @Test
-    void testRunWithInvalidCode() throws IOException { // GH-90000
-        if (!tscRunner.isAvailable()) { // GH-90000
+    void testRunWithInvalidCode() throws IOException { 
+        if (!tscRunner.isAvailable()) { 
             logger.warn("Skipping testRunWithInvalidCode: TypeScript is not available");
             return;
         }
@@ -105,110 +105,110 @@ class TscRunnerTest extends EventloopTestBase {
         try {
             // Copy test project to temp directory
             Path testProjectDir = tempDir.resolve("test-project");
-            copyTestProject(testProjectDir); // GH-90000
+            copyTestProject(testProjectDir); 
 
             // Run the linter on the invalid file
             Path invalidFile = testProjectDir.resolve("src/invalid.ts");
-            assertTrue(Files.exists(invalidFile), "Test file should exist: " + invalidFile); // GH-90000
+            assertTrue(Files.exists(invalidFile), "Test file should exist: " + invalidFile); 
 
-            List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); // GH-90000
+            List<UnifiedDiagnostic> diagnostics = runPromise(() -> tscRunner.run(testProjectDir)); 
 
             // Should find errors in the invalid code
-            assertFalse(diagnostics.isEmpty(), "Expected to find errors in invalid code"); // GH-90000
+            assertFalse(diagnostics.isEmpty(), "Expected to find errors in invalid code"); 
 
             // Verify we found the expected errors
             List<String> errorMessages =
-                    diagnostics.stream() // GH-90000
-                            .map(UnifiedDiagnostic::message) // GH-90000
-                            .collect(Collectors.toList()); // GH-90000
+                    diagnostics.stream() 
+                            .map(UnifiedDiagnostic::message) 
+                            .collect(Collectors.toList()); 
 
-            logger.info("Found {} diagnostics: {}", diagnostics.size(), errorMessages); // GH-90000
+            logger.info("Found {} diagnostics: {}", diagnostics.size(), errorMessages); 
 
-            // Check for common error patterns (may vary based on TypeScript version) // GH-90000
+            // Check for common error patterns (may vary based on TypeScript version) 
             boolean hasTypeError =
-                    errorMessages.stream() // GH-90000
-                            .anyMatch( // GH-90000
+                    errorMessages.stream() 
+                            .anyMatch( 
                                     msg ->
                                             msg.contains("is not assignable")
                                                     || msg.contains("Type '")
                                                     || msg.contains("not assignable"));
 
             boolean hasUndefinedError =
-                    errorMessages.stream() // GH-90000
-                            .anyMatch( // GH-90000
+                    errorMessages.stream() 
+                            .anyMatch( 
                                     msg ->
                                             msg.contains("Cannot find name")
                                                     || msg.contains("is not defined"));
 
-            assertTrue(hasTypeError, "Expected type error not found in: " + errorMessages); // GH-90000
+            assertTrue(hasTypeError, "Expected type error not found in: " + errorMessages); 
 
-            assertTrue( // GH-90000
+            assertTrue( 
                     hasUndefinedError,
                     "Expected undefined variable error not found in: " + errorMessages);
-        } catch (Exception e) { // GH-90000
-            logger.error("Error in testRunWithInvalidCode", e); // GH-90000
+        } catch (Exception e) { 
+            logger.error("Error in testRunWithInvalidCode", e); 
             throw e;
         }
     }
 
-    private void copyTestProject(Path targetDir) throws IOException { // GH-90000
+    private void copyTestProject(Path targetDir) throws IOException { 
         // Copy the test project from resources to the temp directory
         Path sourceDir = Path.of("src/test/resources/ts-test-project");
 
         // Verify source directory exists
-        if (!Files.exists(sourceDir)) { // GH-90000
-            throw new IOException("Source directory not found: " + sourceDir.toAbsolutePath()); // GH-90000
+        if (!Files.exists(sourceDir)) { 
+            throw new IOException("Source directory not found: " + sourceDir.toAbsolutePath()); 
         }
 
-        logger.debug("Copying test project from {} to {}", sourceDir, targetDir); // GH-90000
+        logger.debug("Copying test project from {} to {}", sourceDir, targetDir); 
 
         // Create all directories first
-        try (var paths = Files.walk(sourceDir)) { // GH-90000
-            paths.filter(Files::isDirectory) // GH-90000
-                    .map(sourceDir::relativize) // GH-90000
-                    .forEach( // GH-90000
+        try (var paths = Files.walk(sourceDir)) { 
+            paths.filter(Files::isDirectory) 
+                    .map(sourceDir::relativize) 
+                    .forEach( 
                             relPath -> {
                                 try {
-                                    Path dir = targetDir.resolve(relPath); // GH-90000
-                                    if (!Files.exists(dir)) { // GH-90000
-                                        logger.trace("Creating directory: {}", dir); // GH-90000
-                                        Files.createDirectories(dir); // GH-90000
+                                    Path dir = targetDir.resolve(relPath); 
+                                    if (!Files.exists(dir)) { 
+                                        logger.trace("Creating directory: {}", dir); 
+                                        Files.createDirectories(dir); 
                                     }
-                                } catch (IOException e) { // GH-90000
-                                    throw new RuntimeException( // GH-90000
+                                } catch (IOException e) { 
+                                    throw new RuntimeException( 
                                             "Failed to create directory: " + relPath, e);
                                 }
                             });
         }
 
         // Copy all files with overwrite
-        try (var paths = Files.walk(sourceDir)) { // GH-90000
-            paths.filter(Files::isRegularFile) // GH-90000
-                    .forEach( // GH-90000
+        try (var paths = Files.walk(sourceDir)) { 
+            paths.filter(Files::isRegularFile) 
+                    .forEach( 
                             source -> {
                                 try {
-                                    Path relative = sourceDir.relativize(source); // GH-90000
-                                    Path target = targetDir.resolve(relative); // GH-90000
+                                    Path relative = sourceDir.relativize(source); 
+                                    Path target = targetDir.resolve(relative); 
 
-                                    logger.trace("Copying file: {} -> {}", source, target); // GH-90000
+                                    logger.trace("Copying file: {} -> {}", source, target); 
 
                                     // Create parent directories if they don't exist
-                                    if (target.getParent() != null // GH-90000
-                                            && !Files.exists(target.getParent())) { // GH-90000
-                                        Files.createDirectories(target.getParent()); // GH-90000
+                                    if (target.getParent() != null 
+                                            && !Files.exists(target.getParent())) { 
+                                        Files.createDirectories(target.getParent()); 
                                     }
 
                                     // Copy with overwrite
-                                    Files.copy( // GH-90000
+                                    Files.copy( 
                                             source,
                                             target,
                                             java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                                } catch (IOException e) { // GH-90000
-                                    throw new RuntimeException("Failed to copy file: " + source, e); // GH-90000
+                                } catch (IOException e) { 
+                                    throw new RuntimeException("Failed to copy file: " + source, e); 
                                 }
                             });
         }
 
-        logger.debug("Successfully copied test project to: {}", targetDir); // GH-90000
+        logger.debug("Successfully copied test project to: {}", targetDir); 
     }
 }

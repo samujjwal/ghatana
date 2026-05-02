@@ -41,24 +41,24 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
     private RegionConfig secondaryConfig;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        drManager = new DisasterRecoveryManager(); // GH-90000
+    void setUp() { 
+        drManager = new DisasterRecoveryManager(); 
 
-        primaryConfig = RegionConfig.builder() // GH-90000
+        primaryConfig = RegionConfig.builder() 
                 .regionId("us-east-1")
                 .displayName("US East")
-                .role(RegionRole.PRIMARY) // GH-90000
-                .status(RegionStatus.HEALTHY) // GH-90000
+                .role(RegionRole.PRIMARY) 
+                .status(RegionStatus.HEALTHY) 
                 .endpoint("https://us-east-1.example.com")
-                .build(); // GH-90000
+                .build(); 
 
-        secondaryConfig = RegionConfig.builder() // GH-90000
+        secondaryConfig = RegionConfig.builder() 
                 .regionId("eu-west-1")
                 .displayName("EU West")
-                .role(RegionRole.STANDBY) // GH-90000
-                .status(RegionStatus.HEALTHY) // GH-90000
+                .role(RegionRole.STANDBY) 
+                .status(RegionStatus.HEALTHY) 
                 .endpoint("https://eu-west-1.example.com")
-                .build(); // GH-90000
+                .build(); 
     }
 
     // =========================================================================
@@ -71,16 +71,16 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create manager without errors")
-        void shouldCreateManager() { // GH-90000
-            assertThatCode(() -> new DisasterRecoveryManager()).doesNotThrowAnyException(); // GH-90000
+        void shouldCreateManager() { 
+            assertThatCode(() -> new DisasterRecoveryManager()).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("should expose target SLA constants")
-        void shouldExposeTargetSLAConstants() { // GH-90000
-            assertThat(DisasterRecoveryManager.TARGET_RTO_MINUTES).isEqualTo(15); // GH-90000
-            assertThat(DisasterRecoveryManager.TARGET_RPO_MINUTES).isEqualTo(5); // GH-90000
-            assertThat(DisasterRecoveryManager.MAX_REPLICATION_LAG_SECONDS).isEqualTo(1); // GH-90000
+        void shouldExposeTargetSLAConstants() { 
+            assertThat(DisasterRecoveryManager.TARGET_RTO_MINUTES).isEqualTo(15); 
+            assertThat(DisasterRecoveryManager.TARGET_RPO_MINUTES).isEqualTo(5); 
+            assertThat(DisasterRecoveryManager.MAX_REPLICATION_LAG_SECONDS).isEqualTo(1); 
         }
     }
 
@@ -94,30 +94,30 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should register a region and return its config")
-        void shouldRegisterRegion() { // GH-90000
-            RegionConfig result = runPromise(() -> // GH-90000
-                    drManager.registerRegion("us-east-1", primaryConfig)); // GH-90000
+        void shouldRegisterRegion() { 
+            RegionConfig result = runPromise(() -> 
+                    drManager.registerRegion("us-east-1", primaryConfig)); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.getRegionId()).isEqualTo("us-east-1");
-            assertThat(result.getRole()).isEqualTo(RegionRole.PRIMARY); // GH-90000
+            assertThat(result.getRole()).isEqualTo(RegionRole.PRIMARY); 
         }
 
         @Test
         @DisplayName("should set primary region when it exists")
-        void shouldSetPrimaryRegion() { // GH-90000
-            runPromise(() -> drManager.registerRegion("us-east-1", primaryConfig)); // GH-90000
+        void shouldSetPrimaryRegion() { 
+            runPromise(() -> drManager.registerRegion("us-east-1", primaryConfig)); 
 
             Boolean success = runPromise(() -> drManager.setPrimaryRegion("us-east-1"));
-            assertThat(success).isTrue(); // GH-90000
+            assertThat(success).isTrue(); 
         }
 
         @Test
         @DisplayName("should fail to set primary region when region is not registered")
-        void shouldFailToSetPrimaryRegionWhenNotRegistered() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
+        void shouldFailToSetPrimaryRegionWhenNotRegistered() { 
+            assertThatThrownBy(() -> 
                     runPromise(() -> drManager.setPrimaryRegion("unknown-region")))
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -131,44 +131,44 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should start replication and return ACTIVE status")
-        void shouldStartReplication() { // GH-90000
-            ReplicationStatus status = runPromise(() -> // GH-90000
+        void shouldStartReplication() { 
+            ReplicationStatus status = runPromise(() -> 
                     drManager.startReplication("dataset-1", "us-east-1", List.of("eu-west-1")));
 
-            assertThat(status).isNotNull(); // GH-90000
+            assertThat(status).isNotNull(); 
             assertThat(status.getDatasetId()).isEqualTo("dataset-1");
-            assertThat(status.getState()).isEqualTo(ReplicationState.ACTIVE); // GH-90000
+            assertThat(status.getState()).isEqualTo(ReplicationState.ACTIVE); 
         }
 
         @Test
         @DisplayName("should return replication status for a started dataset")
-        void shouldReturnReplicationStatus() { // GH-90000
-            runPromise(() -> // GH-90000
+        void shouldReturnReplicationStatus() { 
+            runPromise(() -> 
                     drManager.startReplication("ds-abc", "us-east-1", List.of("eu-west-1")));
 
-            ReplicationStatus status = runPromise(() -> // GH-90000
+            ReplicationStatus status = runPromise(() -> 
                     drManager.getReplicationStatus("ds-abc"));
 
-            assertThat(status).isNotNull(); // GH-90000
+            assertThat(status).isNotNull(); 
             assertThat(status.getDatasetId()).isEqualTo("ds-abc");
         }
 
         @Test
         @DisplayName("should return null replication status for unknown dataset")
-        void shouldReturnNullStatusForUnknownDataset() { // GH-90000
-            ReplicationStatus status = runPromise(() -> // GH-90000
+        void shouldReturnNullStatusForUnknownDataset() { 
+            ReplicationStatus status = runPromise(() -> 
                     drManager.getReplicationStatus("does-not-exist"));
-            assertThat(status).isNull(); // GH-90000
+            assertThat(status).isNull(); 
         }
 
         @Test
         @DisplayName("should return replication health report")
-        void shouldReturnReplicationHealthReport() { // GH-90000
-            ReplicationHealthReport report = runPromise(() -> // GH-90000
-                    drManager.checkReplicationHealth()); // GH-90000
+        void shouldReturnReplicationHealthReport() { 
+            ReplicationHealthReport report = runPromise(() -> 
+                    drManager.checkReplicationHealth()); 
 
-            assertThat(report).isNotNull(); // GH-90000
-            assertThat(report.getOverallHealth()).isNotNull(); // GH-90000
+            assertThat(report).isNotNull(); 
+            assertThat(report.getOverallHealth()).isNotNull(); 
         }
     }
 
@@ -182,33 +182,33 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create a recovery point for a dataset")
-        void shouldCreateRecoveryPoint() { // GH-90000
-            RecoveryPoint point = runPromise(() -> // GH-90000
-                    drManager.createRecoveryPoint("dataset-1", "daily-snapshot")); // GH-90000
+        void shouldCreateRecoveryPoint() { 
+            RecoveryPoint point = runPromise(() -> 
+                    drManager.createRecoveryPoint("dataset-1", "daily-snapshot")); 
 
-            assertThat(point).isNotNull(); // GH-90000
-            assertThat(point.getPointId()).isNotBlank(); // GH-90000
+            assertThat(point).isNotNull(); 
+            assertThat(point.getPointId()).isNotBlank(); 
             assertThat(point.getDatasetId()).isEqualTo("dataset-1");
         }
 
         @Test
         @DisplayName("should list recovery points for a dataset")
-        void shouldListRecoveryPoints() { // GH-90000
-            runPromise(() -> drManager.createRecoveryPoint("ds-2", "label-1")); // GH-90000
-            runPromise(() -> drManager.createRecoveryPoint("ds-2", "label-2")); // GH-90000
+        void shouldListRecoveryPoints() { 
+            runPromise(() -> drManager.createRecoveryPoint("ds-2", "label-1")); 
+            runPromise(() -> drManager.createRecoveryPoint("ds-2", "label-2")); 
 
-            List<RecoveryPoint> points = runPromise(() -> // GH-90000
+            List<RecoveryPoint> points = runPromise(() -> 
                     drManager.listRecoveryPoints("ds-2"));
 
-            assertThat(points).hasSize(2); // GH-90000
+            assertThat(points).hasSize(2); 
         }
 
         @Test
         @DisplayName("should return empty list when no recovery points exist")
-        void shouldReturnEmptyListWhenNoPoints() { // GH-90000
-            List<RecoveryPoint> points = runPromise(() -> // GH-90000
+        void shouldReturnEmptyListWhenNoPoints() { 
+            List<RecoveryPoint> points = runPromise(() -> 
                     drManager.listRecoveryPoints("no-points-here"));
-            assertThat(points).isEmpty(); // GH-90000
+            assertThat(points).isEmpty(); 
         }
     }
 
@@ -222,26 +222,26 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return failure when no recovery point exists")
-        void shouldReturnFailureWhenNoRecoveryPoint() { // GH-90000
-            RecoveryResult result = runPromise(() -> // GH-90000
-                    drManager.performPITR("dataset-pitr", Instant.now(), "recovered-dataset")); // GH-90000
+        void shouldReturnFailureWhenNoRecoveryPoint() { 
+            RecoveryResult result = runPromise(() -> 
+                    drManager.performPITR("dataset-pitr", Instant.now(), "recovered-dataset")); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.isSuccess()).isFalse(); 
         }
 
         @Test
         @DisplayName("should perform PITR when recovery point exists")
-        void shouldPerformPITRWithExistingPoint() { // GH-90000
-            Instant before = Instant.now(); // GH-90000
-            runPromise(() -> drManager.createRecoveryPoint("dataset-pitr", "snap")); // GH-90000
+        void shouldPerformPITRWithExistingPoint() { 
+            Instant before = Instant.now(); 
+            runPromise(() -> drManager.createRecoveryPoint("dataset-pitr", "snap")); 
 
-            RecoveryResult result = runPromise(() -> // GH-90000
-                    drManager.performPITR("dataset-pitr", // GH-90000
-                            before.plusSeconds(60), "recovered-pitr")); // GH-90000
+            RecoveryResult result = runPromise(() -> 
+                    drManager.performPITR("dataset-pitr", 
+                            before.plusSeconds(60), "recovered-pitr")); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.isSuccess()).isTrue(); 
             assertThat(result.getSourceDatasetId()).isEqualTo("dataset-pitr");
         }
     }
@@ -256,26 +256,26 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should initiate failover to a target region")
-        void shouldInitiateFailover() { // GH-90000
-            runPromise(() -> drManager.registerRegion("us-east-1", primaryConfig)); // GH-90000
-            runPromise(() -> drManager.registerRegion("eu-west-1", secondaryConfig)); // GH-90000
+        void shouldInitiateFailover() { 
+            runPromise(() -> drManager.registerRegion("us-east-1", primaryConfig)); 
+            runPromise(() -> drManager.registerRegion("eu-west-1", secondaryConfig)); 
             runPromise(() -> drManager.setPrimaryRegion("us-east-1"));
 
-            FailoverResult result = runPromise(() -> // GH-90000
-                    drManager.initiateFailover("primary-failure", "eu-west-1")); // GH-90000
+            FailoverResult result = runPromise(() -> 
+                    drManager.initiateFailover("primary-failure", "eu-west-1")); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("should test failover without executing it")
-        void shouldTestFailover() { // GH-90000
-            runPromise(() -> drManager.registerRegion("eu-west-1", secondaryConfig)); // GH-90000
+        void shouldTestFailover() { 
+            runPromise(() -> drManager.registerRegion("eu-west-1", secondaryConfig)); 
 
-            FailoverTestResult testResult = runPromise(() -> // GH-90000
+            FailoverTestResult testResult = runPromise(() -> 
                     drManager.testFailover("eu-west-1"));
 
-            assertThat(testResult).isNotNull(); // GH-90000
+            assertThat(testResult).isNotNull(); 
             assertThat(testResult.getTargetRegion()).isEqualTo("eu-west-1");
         }
     }
@@ -290,27 +290,27 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should list all pre-loaded runbooks")
-        void shouldListRunbooks() { // GH-90000
-            List<Runbook> runbooks = runPromise(() -> drManager.listRunbooks()); // GH-90000
-            assertThat(runbooks).isNotEmpty(); // GH-90000
+        void shouldListRunbooks() { 
+            List<Runbook> runbooks = runPromise(() -> drManager.listRunbooks()); 
+            assertThat(runbooks).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should retrieve runbook by ID")
-        void shouldGetRunbookById() { // GH-90000
-            List<Runbook> runbooks = runPromise(() -> drManager.listRunbooks()); // GH-90000
-            String firstId = runbooks.get(0).getRunbookId(); // GH-90000
+        void shouldGetRunbookById() { 
+            List<Runbook> runbooks = runPromise(() -> drManager.listRunbooks()); 
+            String firstId = runbooks.get(0).getRunbookId(); 
 
-            Runbook runbook = runPromise(() -> drManager.getRunbook(firstId)); // GH-90000
-            assertThat(runbook).isNotNull(); // GH-90000
-            assertThat(runbook.getRunbookId()).isEqualTo(firstId); // GH-90000
+            Runbook runbook = runPromise(() -> drManager.getRunbook(firstId)); 
+            assertThat(runbook).isNotNull(); 
+            assertThat(runbook.getRunbookId()).isEqualTo(firstId); 
         }
 
         @Test
         @DisplayName("should return null for unknown runbook ID")
-        void shouldReturnNullForUnknownRunbook() { // GH-90000
+        void shouldReturnNullForUnknownRunbook() { 
             Runbook runbook = runPromise(() -> drManager.getRunbook("nonexistent-rb"));
-            assertThat(runbook).isNull(); // GH-90000
+            assertThat(runbook).isNull(); 
         }
     }
 
@@ -324,12 +324,12 @@ class DisasterRecoveryManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return DR metrics with target values")
-        void shouldReturnDRMetrics() { // GH-90000
-            DRMetrics metrics = runPromise(() -> drManager.getDRMetrics()); // GH-90000
+        void shouldReturnDRMetrics() { 
+            DRMetrics metrics = runPromise(() -> drManager.getDRMetrics()); 
 
-            assertThat(metrics).isNotNull(); // GH-90000
-            assertThat(metrics.getTargetRPOMinutes()).isEqualTo(DisasterRecoveryManager.TARGET_RPO_MINUTES); // GH-90000
-            assertThat(metrics.getTargetRTOMinutes()).isEqualTo(DisasterRecoveryManager.TARGET_RTO_MINUTES); // GH-90000
+            assertThat(metrics).isNotNull(); 
+            assertThat(metrics.getTargetRPOMinutes()).isEqualTo(DisasterRecoveryManager.TARGET_RPO_MINUTES); 
+            assertThat(metrics.getTargetRTOMinutes()).isEqualTo(DisasterRecoveryManager.TARGET_RTO_MINUTES); 
         }
     }
 }

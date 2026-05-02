@@ -26,43 +26,43 @@ class TtlExpirationTest {
     // ── Time-aware in-memory backend ──────────────────────────────────────────
 
     static class TimedInMemoryCacheBackend implements DistributedCacheService.CacheBackend {
-        record TimedEntry(String value, long expiresAtMs) {} // GH-90000
+        record TimedEntry(String value, long expiresAtMs) {} 
 
-        private final Map<String, TimedEntry> store = new HashMap<>(); // GH-90000
+        private final Map<String, TimedEntry> store = new HashMap<>(); 
         private long nowMs;
 
-        TimedInMemoryCacheBackend(long nowMs) { // GH-90000
+        TimedInMemoryCacheBackend(long nowMs) { 
             this.nowMs = nowMs;
         }
 
-        void advanceTimeMs(long ms) { // GH-90000
+        void advanceTimeMs(long ms) { 
             nowMs += ms;
         }
 
         @Override
-        public String getValue(String key) { // GH-90000
-            TimedEntry entry = store.get(key); // GH-90000
-            if (entry == null) return null; // GH-90000
-            if (entry.expiresAtMs() > 0 && nowMs >= entry.expiresAtMs()) { // GH-90000
-                store.remove(key); // GH-90000
+        public String getValue(String key) { 
+            TimedEntry entry = store.get(key); 
+            if (entry == null) return null; 
+            if (entry.expiresAtMs() > 0 && nowMs >= entry.expiresAtMs()) { 
+                store.remove(key); 
                 return null;
             }
-            return entry.value(); // GH-90000
+            return entry.value(); 
         }
 
         @Override
-        public void setValue(String key, String value, long ttlSeconds) { // GH-90000
+        public void setValue(String key, String value, long ttlSeconds) { 
             long expiry = ttlSeconds > 0 ? nowMs + ttlSeconds * 1000 : 0;
-            store.put(key, new TimedEntry(value, expiry)); // GH-90000
+            store.put(key, new TimedEntry(value, expiry)); 
         }
 
-        @Override public void deleteKey(String key) { store.remove(key); } // GH-90000
-        @Override public int deletePattern(String pattern) { return 0; } // GH-90000
-        @Override public long getKeyCount(String pattern) { return store.size(); } // GH-90000
-        @Override public long getCacheSize(String pattern) { return store.size(); } // GH-90000
-        @Override public <T> String serialize(T value) { return value == null ? null : value.toString(); } // GH-90000
+        @Override public void deleteKey(String key) { store.remove(key); } 
+        @Override public int deletePattern(String pattern) { return 0; } 
+        @Override public long getKeyCount(String pattern) { return store.size(); } 
+        @Override public long getCacheSize(String pattern) { return store.size(); } 
+        @Override public <T> String serialize(T value) { return value == null ? null : value.toString(); } 
         @SuppressWarnings("unchecked")
-        @Override public <T> T deserialize(String value, Class<T> type) { return (T) value; } // GH-90000
+        @Override public <T> T deserialize(String value, Class<T> type) { return (T) value; } 
     }
 
     // ── Time-based eviction ───────────────────────────────────────────────────
@@ -73,45 +73,45 @@ class TtlExpirationTest {
 
         @Test
         @DisplayName("key is accessible before TTL expiry")
-        void keyIsAccessible_beforeTtlExpiry() { // GH-90000
-            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
-            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
+        void keyIsAccessible_beforeTtlExpiry() { 
+            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); 
+            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); 
 
-            cache.put("session:a", "active", 60L);  // TTL=60s // GH-90000
-            backend.advanceTimeMs(30_000L);          // advance 30s // GH-90000
+            cache.put("session:a", "active", 60L);  // TTL=60s 
+            backend.advanceTimeMs(30_000L);          // advance 30s 
 
-            Optional<String> result = cache.get("session:a", String.class); // GH-90000
+            Optional<String> result = cache.get("session:a", String.class); 
 
-            assertThat(result).isPresent(); // GH-90000
+            assertThat(result).isPresent(); 
             assertThat(result.get()).isEqualTo("active");
         }
 
         @Test
         @DisplayName("key is evicted after TTL expiry")
-        void keyIsEvicted_afterTtlExpiry() { // GH-90000
-            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
-            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
+        void keyIsEvicted_afterTtlExpiry() { 
+            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); 
+            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); 
 
-            cache.put("session:b", "active", 10L);  // TTL=10s // GH-90000
-            backend.advanceTimeMs(11_000L);          // advance 11s // GH-90000
+            cache.put("session:b", "active", 10L);  // TTL=10s 
+            backend.advanceTimeMs(11_000L);          // advance 11s 
 
-            Optional<String> result = cache.get("session:b", String.class); // GH-90000
+            Optional<String> result = cache.get("session:b", String.class); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("key expires exactly at TTL boundary")
-        void keyExpires_exactlyAtTtlBoundary() { // GH-90000
-            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
-            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
+        void keyExpires_exactlyAtTtlBoundary() { 
+            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); 
+            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); 
 
-            cache.put("session:c", "active", 5L);  // TTL=5s = 5000ms // GH-90000
-            backend.advanceTimeMs(5001L);            // 1ms past expiry // GH-90000
+            cache.put("session:c", "active", 5L);  // TTL=5s = 5000ms 
+            backend.advanceTimeMs(5001L);            // 1ms past expiry 
 
-            Optional<String> result = cache.get("session:c", String.class); // GH-90000
+            Optional<String> result = cache.get("session:c", String.class); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -123,16 +123,16 @@ class TtlExpirationTest {
 
         @Test
         @DisplayName("key with TTL=0 never expires")
-        void keyWithTtl0_neverExpires() { // GH-90000
-            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
-            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
+        void keyWithTtl0_neverExpires() { 
+            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); 
+            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); 
 
-            cache.put("permanent", "forever", 0L);   // TTL=0 → no expiry // GH-90000
-            backend.advanceTimeMs(Long.MAX_VALUE / 2); // GH-90000
+            cache.put("permanent", "forever", 0L);   // TTL=0 → no expiry 
+            backend.advanceTimeMs(Long.MAX_VALUE / 2); 
 
-            Optional<String> result = cache.get("permanent", String.class); // GH-90000
+            Optional<String> result = cache.get("permanent", String.class); 
 
-            assertThat(result).isPresent(); // GH-90000
+            assertThat(result).isPresent(); 
         }
     }
 
@@ -144,17 +144,17 @@ class TtlExpirationTest {
 
         @Test
         @DisplayName("short-lived key expires while long-lived key stays")
-        void shortLivedKey_expires_whileLongLivedKeyStays() { // GH-90000
-            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); // GH-90000
-            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); // GH-90000
+        void shortLivedKey_expires_whileLongLivedKeyStays() { 
+            TimedInMemoryCacheBackend backend = new TimedInMemoryCacheBackend(0L); 
+            DistributedCacheService cache = new DistributedCacheService(backend, "tenant"); 
 
-            cache.put("short", "ephemeral", 5L);    // 5s // GH-90000
-            cache.put("long",  "durable",   300L);  // 300s // GH-90000
+            cache.put("short", "ephemeral", 5L);    // 5s 
+            cache.put("long",  "durable",   300L);  // 300s 
 
-            backend.advanceTimeMs(10_000L);  // advance 10s // GH-90000
+            backend.advanceTimeMs(10_000L);  // advance 10s 
 
-            assertThat(cache.get("short", String.class)).isEmpty(); // GH-90000
-            assertThat(cache.get("long", String.class)).isPresent(); // GH-90000
+            assertThat(cache.get("short", String.class)).isEmpty(); 
+            assertThat(cache.get("long", String.class)).isPresent(); 
         }
     }
 }

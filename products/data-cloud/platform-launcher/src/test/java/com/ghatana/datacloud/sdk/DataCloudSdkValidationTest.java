@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.sdk;
@@ -29,10 +29,10 @@ import static org.assertj.core.api.Assertions.*;
  * consumer.
  *
  * <p>All async assertions use {@link EventloopTestBase#runPromise} in accordance
- * with the repo convention — never call {@code Promise.getResult()} directly. // GH-90000
+ * with the repo convention — never call {@code Promise.getResult()} directly. 
  *
  * @doc.type class
- * @doc.purpose SDK contract validation and input-boundary tests (DC-003) // GH-90000
+ * @doc.purpose SDK contract validation and input-boundary tests (DC-003) 
  * @doc.layer product
  * @doc.pattern Unit Test
  */
@@ -45,8 +45,8 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
     private DataCloudClient client;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        client = DataCloud.forTesting(); // GH-90000
+    void setUp() { 
+        client = DataCloud.forTesting(); 
     }
 
     // =========================================================================
@@ -59,25 +59,25 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("save with minimal required fields succeeds")
-        void saveWithMinimalFields() { // GH-90000
-            Entity entity = runPromise(() -> client.save( // GH-90000
+        void saveWithMinimalFields() { 
+            Entity entity = runPromise(() -> client.save( 
                     TENANT, COLLECTION,
-                    Map.<String, Object>of("id", "min-1"))); // GH-90000
+                    Map.<String, Object>of("id", "min-1"))); 
 
-            assertThat(entity).isNotNull(); // GH-90000
+            assertThat(entity).isNotNull(); 
             assertThat(entity.id()).isEqualTo("min-1");
-            assertThat(entity.collection()).isEqualTo(COLLECTION); // GH-90000
+            assertThat(entity.collection()).isEqualTo(COLLECTION); 
         }
 
         @Test
         @DisplayName("save with rich nested payload is preserved faithfully")
-        void saveWithNestedPayloadPreservesStructure() { // GH-90000
-            Map<String, Object> data = Map.of( // GH-90000
+        void saveWithNestedPayloadPreservesStructure() { 
+            Map<String, Object> data = Map.of( 
                     "id", "rich-1",
-                    "tags", List.of("alpha", "beta"), // GH-90000
-                    "meta", Map.of("version", 3, "flags", Map.of("active", true))); // GH-90000
+                    "tags", List.of("alpha", "beta"), 
+                    "meta", Map.of("version", 3, "flags", Map.of("active", true))); 
 
-            Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, data)); // GH-90000
+            Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, data)); 
 
             assertThat(entity.data()).containsKey("tags");
             assertThat(entity.data()).containsKey("meta");
@@ -85,81 +85,81 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findById returns empty for unknown id")
-        void findByIdReturnEmptyForMissing() { // GH-90000
-            Optional<Entity> result = runPromise( // GH-90000
-                    () -> client.findById(TENANT, COLLECTION, "does-not-exist")); // GH-90000
+        void findByIdReturnEmptyForMissing() { 
+            Optional<Entity> result = runPromise( 
+                    () -> client.findById(TENANT, COLLECTION, "does-not-exist")); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("overwrite an entity retains the latest data")
-        void overwriteEntityRetainsLatestData() { // GH-90000
-            runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "ow-1", "v", "first"))); // GH-90000
+        void overwriteEntityRetainsLatestData() { 
+            runPromise(() -> client.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "ow-1", "v", "first"))); 
 
-            runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "ow-1", "v", "second"))); // GH-90000
+            runPromise(() -> client.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "ow-1", "v", "second"))); 
 
-            Optional<Entity> found = runPromise(() -> client.findById(TENANT, COLLECTION, "ow-1")); // GH-90000
-            assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().data()).containsEntry("v", "second"); // GH-90000
+            Optional<Entity> found = runPromise(() -> client.findById(TENANT, COLLECTION, "ow-1")); 
+            assertThat(found).isPresent(); 
+            assertThat(found.get().data()).containsEntry("v", "second"); 
         }
 
         @Test
         @DisplayName("delete removes the entity and subsequent find returns empty")
-        void deleteRemovesEntity() { // GH-90000
-            runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "del-1", "status", "alive"))); // GH-90000
+        void deleteRemovesEntity() { 
+            runPromise(() -> client.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "del-1", "status", "alive"))); 
 
-            runPromise(() -> client.delete(TENANT, COLLECTION, "del-1")); // GH-90000
+            runPromise(() -> client.delete(TENANT, COLLECTION, "del-1")); 
 
-            Optional<Entity> found = runPromise(() -> client.findById(TENANT, COLLECTION, "del-1")); // GH-90000
-            assertThat(found).isEmpty(); // GH-90000
+            Optional<Entity> found = runPromise(() -> client.findById(TENANT, COLLECTION, "del-1")); 
+            assertThat(found).isEmpty(); 
         }
 
         @Test
         @DisplayName("delete of non-existent entity does not throw")
-        void deleteNonExistentIsIdempotent() { // GH-90000
-            assertThatCode(() -> runPromise(() -> client.delete(TENANT, COLLECTION, "ghost-id"))) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+        void deleteNonExistentIsIdempotent() { 
+            assertThatCode(() -> runPromise(() -> client.delete(TENANT, COLLECTION, "ghost-id"))) 
+                    .doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("query returns only entities in the requested collection")
-        void queryIsScopedToCollection() { // GH-90000
-            runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "qc-1", "x", "1"))); // GH-90000
-            runPromise(() -> client.save(TENANT, "other-collection", // GH-90000
-                    Map.<String, Object>of("id", "qc-2", "x", "2"))); // GH-90000
+        void queryIsScopedToCollection() { 
+            runPromise(() -> client.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "qc-1", "x", "1"))); 
+            runPromise(() -> client.save(TENANT, "other-collection", 
+                    Map.<String, Object>of("id", "qc-2", "x", "2"))); 
 
-            List<Entity> results = runPromise(() -> client.query(TENANT, COLLECTION, Query.all())); // GH-90000
+            List<Entity> results = runPromise(() -> client.query(TENANT, COLLECTION, Query.all())); 
 
-            assertThat(results).isNotEmpty(); // GH-90000
-            assertThat(results).allMatch(e -> COLLECTION.equals(e.collection())); // GH-90000
+            assertThat(results).isNotEmpty(); 
+            assertThat(results).allMatch(e -> COLLECTION.equals(e.collection())); 
         }
 
         @Test
         @DisplayName("entity created time is set and not null")
-        void entityCreatedTimeIsSet() { // GH-90000
-            Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "time-1"))); // GH-90000
+        void entityCreatedTimeIsSet() { 
+            Entity entity = runPromise(() -> client.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "time-1"))); 
 
-            assertThat(entity.createdAt()).isNotNull(); // GH-90000
+            assertThat(entity.createdAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("large batch of entities is stored and queryable in full")
-        void largeBatchIsStoredAndQueryable() { // GH-90000
+        void largeBatchIsStoredAndQueryable() { 
             int batchSize = 100;
-            for (int i = 0; i < batchSize; i++) { // GH-90000
+            for (int i = 0; i < batchSize; i++) { 
                 int idx = i;
-                runPromise(() -> client.save(TENANT, "batch-coll", // GH-90000
-                        Map.<String, Object>of("id", "b-" + idx, "seq", idx))); // GH-90000
+                runPromise(() -> client.save(TENANT, "batch-coll", 
+                        Map.<String, Object>of("id", "b-" + idx, "seq", idx))); 
             }
 
-            List<Entity> results = runPromise(() -> client.query(TENANT, "batch-coll", Query.all())); // GH-90000
-            assertThat(results).hasSize(batchSize); // GH-90000
+            List<Entity> results = runPromise(() -> client.query(TENANT, "batch-coll", Query.all())); 
+            assertThat(results).hasSize(batchSize); 
         }
     }
 
@@ -173,26 +173,26 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity saved by tenant-A is invisible to tenant-B")
-        void tenantAEntityHiddenFromTenantB() { // GH-90000
-            runPromise(() -> client.save("tenant-alpha", COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "iso-1", "owner", "alpha"))); // GH-90000
+        void tenantAEntityHiddenFromTenantB() { 
+            runPromise(() -> client.save("tenant-alpha", COLLECTION, 
+                    Map.<String, Object>of("id", "iso-1", "owner", "alpha"))); 
 
-            Optional<Entity> fromB = runPromise( // GH-90000
-                    () -> client.findById("tenant-beta", COLLECTION, "iso-1")); // GH-90000
+            Optional<Entity> fromB = runPromise( 
+                    () -> client.findById("tenant-beta", COLLECTION, "iso-1")); 
 
-            assertThat(fromB).isEmpty(); // GH-90000
+            assertThat(fromB).isEmpty(); 
         }
 
         @Test
         @DisplayName("query by tenant-B returns no entities saved by tenant-A")
-        void queryIsScopedToTenant() { // GH-90000
-            runPromise(() -> client.save("tenant-alpha", COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "iso-q1"))); // GH-90000
+        void queryIsScopedToTenant() { 
+            runPromise(() -> client.save("tenant-alpha", COLLECTION, 
+                    Map.<String, Object>of("id", "iso-q1"))); 
 
-            List<Entity> results = runPromise( // GH-90000
-                    () -> client.query("tenant-beta", COLLECTION, Query.all())); // GH-90000
+            List<Entity> results = runPromise( 
+                    () -> client.query("tenant-beta", COLLECTION, Query.all())); 
 
-            assertThat(results).isEmpty(); // GH-90000
+            assertThat(results).isEmpty(); 
         }
     }
 
@@ -206,49 +206,49 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("appended event is retrievable via queryEvents")
-        void appendedEventIsRetrievable() { // GH-90000
-            runPromise(() -> client.appendEvent(TENANT, // GH-90000
-                    DataCloudClient.Event.of("item.created", // GH-90000
-                            Map.of("itemId", "item-sdk-1", "status", "NEW")))); // GH-90000
+        void appendedEventIsRetrievable() { 
+            runPromise(() -> client.appendEvent(TENANT, 
+                    DataCloudClient.Event.of("item.created", 
+                            Map.of("itemId", "item-sdk-1", "status", "NEW")))); 
 
-            List<DataCloudClient.Event> events = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT, // GH-90000
+            List<DataCloudClient.Event> events = runPromise( 
+                    () -> client.queryEvents(TENANT, 
                             DataCloudClient.EventQuery.byType("item.created")));
 
-            assertThat(events).isNotEmpty(); // GH-90000
+            assertThat(events).isNotEmpty(); 
             assertThat(events.get(0).type()).isEqualTo("item.created");
         }
 
         @Test
         @DisplayName("multiple events share the same type and are all returned")
-        void multipleEventsOfSameTypeAreAllReturned() { // GH-90000
+        void multipleEventsOfSameTypeAreAllReturned() { 
             int count = 5;
-            for (int i = 0; i < count; i++) { // GH-90000
+            for (int i = 0; i < count; i++) { 
                 int idx = i;
-                runPromise(() -> client.appendEvent(TENANT, // GH-90000
-                        DataCloudClient.Event.of("metric.reported", // GH-90000
-                                Map.of("index", (Object) idx)))); // GH-90000
+                runPromise(() -> client.appendEvent(TENANT, 
+                        DataCloudClient.Event.of("metric.reported", 
+                                Map.of("index", (Object) idx)))); 
             }
 
-            List<DataCloudClient.Event> events = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT, // GH-90000
+            List<DataCloudClient.Event> events = runPromise( 
+                    () -> client.queryEvents(TENANT, 
                             DataCloudClient.EventQuery.byType("metric.reported")));
 
-            assertThat(events).hasSize(count); // GH-90000
+            assertThat(events).hasSize(count); 
         }
 
         @Test
         @DisplayName("events from other tenants are not returned")
-        void eventsAreTenantScoped() { // GH-90000
-            runPromise(() -> client.appendEvent("other-tenant", // GH-90000
-                    DataCloudClient.Event.of("secret.event", // GH-90000
-                            Map.of("payload", "hidden")))); // GH-90000
+        void eventsAreTenantScoped() { 
+            runPromise(() -> client.appendEvent("other-tenant", 
+                    DataCloudClient.Event.of("secret.event", 
+                            Map.of("payload", "hidden")))); 
 
-            List<DataCloudClient.Event> events = runPromise( // GH-90000
-                    () -> client.queryEvents(TENANT, // GH-90000
+            List<DataCloudClient.Event> events = runPromise( 
+                    () -> client.queryEvents(TENANT, 
                             DataCloudClient.EventQuery.byType("secret.event")));
 
-            assertThat(events).isEmpty(); // GH-90000
+            assertThat(events).isEmpty(); 
         }
     }
 
@@ -262,27 +262,27 @@ class DataCloudSdkValidationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("two independent in-memory clients do not share state")
-        void twoClientsShareNoState() { // GH-90000
-            DataCloudClient clientA = DataCloud.forTesting(); // GH-90000
-            DataCloudClient clientB = DataCloud.forTesting(); // GH-90000
+        void twoClientsShareNoState() { 
+            DataCloudClient clientA = DataCloud.forTesting(); 
+            DataCloudClient clientB = DataCloud.forTesting(); 
 
-            runPromise(() -> clientA.save(TENANT, COLLECTION, // GH-90000
-                    Map.<String, Object>of("id", "lc-1"))); // GH-90000
+            runPromise(() -> clientA.save(TENANT, COLLECTION, 
+                    Map.<String, Object>of("id", "lc-1"))); 
 
-            Optional<Entity> fromB = runPromise( // GH-90000
-                    () -> clientB.findById(TENANT, COLLECTION, "lc-1")); // GH-90000
+            Optional<Entity> fromB = runPromise( 
+                    () -> clientB.findById(TENANT, COLLECTION, "lc-1")); 
 
-            assertThat(fromB).isEmpty(); // GH-90000
+            assertThat(fromB).isEmpty(); 
 
-            clientA.close(); // GH-90000
-            clientB.close(); // GH-90000
+            clientA.close(); 
+            clientB.close(); 
         }
 
         @Test
         @DisplayName("client may be closed without exception")
-        void closeIsIdempotent() { // GH-90000
-            DataCloudClient c = DataCloud.forTesting(); // GH-90000
-            assertThatCode(c::close).doesNotThrowAnyException(); // GH-90000
+        void closeIsIdempotent() { 
+            DataCloudClient c = DataCloud.forTesting(); 
+            assertThatCode(c::close).doesNotThrowAnyException(); 
         }
     }
 }

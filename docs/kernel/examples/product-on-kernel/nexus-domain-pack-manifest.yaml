@@ -1,0 +1,56 @@
+# Nexus Domain Pack Manifest
+# Fictional logistics platform — example of a product-on-kernel domain pack.
+# No platform kernel changes required to register this domain pack.
+
+pack:
+  id: nexus
+  name: "Nexus Logistics Domain Pack"
+  version: "1.0.0"
+  description: "Supply-chain and logistics domain pack for shipment tracking, carrier management, and customs compliance"
+
+  domain:
+    type: logistics
+    region: global
+    regulatory_frameworks:
+      - iata-dgr          # Dangerous goods regulations
+      - imo-imdg           # Maritime dangerous goods
+      - customs-harmonized # Harmonized customs tariff
+      - gdpr               # Personal data in shipment records
+
+  capabilities:
+    - id: nexus.shipment-tracking
+      name: "Shipment Tracking"
+      type: BUSINESS_LOGIC
+      description: "Real-time shipment tracking from origin to destination"
+      metadata:
+        carriers: air,ocean,road,rail
+        tracking: milestone-events
+
+    - id: nexus.carrier-management
+      name: "Carrier Management"
+      type: BUSINESS_LOGIC
+      description: "Carrier onboarding, rating, capacity, and contract management"
+      metadata:
+        rating: dynamic
+
+    - id: nexus.customs-compliance
+      name: "Customs Compliance"
+      type: COMPLIANCE
+      description: "Import/export customs declaration and compliance validation"
+      metadata:
+        regulations: iata-dgr,imo-imdg,customs-harmonized
+        declaration: automated
+
+    - id: nexus.manifest-processing
+      name: "Cargo Manifest Processing"
+      type: INTEGRATION
+      description: "Bill of lading, air waybill, and sea manifest processing"
+      metadata:
+        formats: edi-x12,edifact,json-ld
+
+    - id: nexus.audit-trail
+      name: "Shipment Audit Trail"
+      type: DATA_MANAGEMENT
+      description: "Immutable audit trail for all shipment state changes and access"
+      metadata:
+        retention_years: "7"

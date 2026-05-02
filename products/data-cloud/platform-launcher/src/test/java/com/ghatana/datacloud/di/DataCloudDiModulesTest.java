@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.di;
@@ -89,112 +89,112 @@ class DataCloudDiModulesTest {
     @DisplayName("DataCloudConfigModule")
     class DataCloudConfigModuleTests {
 
-        private Injector createConfigInjector() { // GH-90000
-            return Injector.of(configExternalStubModule(), new DataCloudConfigModule()); // GH-90000
+        private Injector createConfigInjector() { 
+            return Injector.of(configExternalStubModule(), new DataCloudConfigModule()); 
         }
 
         @Test
         @DisplayName("provides ConfigValidator")
-        void providesConfigValidator() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesConfigValidator() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigValidator validator = injector.getInstance(ConfigValidator.class); // GH-90000
+            ConfigValidator validator = injector.getInstance(ConfigValidator.class); 
 
-            assertThat(validator).isNotNull(); // GH-90000
+            assertThat(validator).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides all 4 config compilers")
-        void providesAllCompilers() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesAllCompilers() { 
+            Injector injector = createConfigInjector(); 
 
-            assertThat(injector.getInstance(CollectionConfigCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PluginConfigCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(StorageProfileCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PolicyConfigCompiler.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(CollectionConfigCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(PluginConfigCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(StorageProfileCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(PolicyConfigCompiler.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ConfigLoader with Eventloop and Executor")
-        void providesConfigLoader() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesConfigLoader() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigLoader loader = injector.getInstance(ConfigLoader.class); // GH-90000
+            ConfigLoader loader = injector.getInstance(ConfigLoader.class); 
 
-            assertThat(loader).isNotNull(); // GH-90000
+            assertThat(loader).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ConfigRegistry with all 7 dependencies wired")
-        void providesConfigRegistry() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesConfigRegistry() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigRegistry registry = injector.getInstance(ConfigRegistry.class); // GH-90000
+            ConfigRegistry registry = injector.getInstance(ConfigRegistry.class); 
 
-            assertThat(registry).isNotNull(); // GH-90000
+            assertThat(registry).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ConfigReloadManager")
-        void providesConfigReloadManager() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesConfigReloadManager() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigReloadManager manager = injector.getInstance(ConfigReloadManager.class); // GH-90000
+            ConfigReloadManager manager = injector.getInstance(ConfigReloadManager.class); 
 
-            assertThat(manager).isNotNull(); // GH-90000
+            assertThat(manager).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ConfigMetrics")
-        void providesConfigMetrics() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesConfigMetrics() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigMetrics metrics = injector.getInstance(ConfigMetrics.class); // GH-90000
+            ConfigMetrics metrics = injector.getInstance(ConfigMetrics.class); 
 
-            assertThat(metrics).isNotNull(); // GH-90000
+            assertThat(metrics).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides GracefulReloadManager")
-        void providesGracefulReloadManager() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void providesGracefulReloadManager() { 
+            Injector injector = createConfigInjector(); 
 
-            GracefulReloadManager manager = injector.getInstance(GracefulReloadManager.class); // GH-90000
+            GracefulReloadManager manager = injector.getInstance(GracefulReloadManager.class); 
 
-            assertThat(manager).isNotNull(); // GH-90000
+            assertThat(manager).isNotNull(); 
         }
 
         @Test
         @DisplayName("ConfigRegistry is singleton")
-        void configRegistryIsSingleton() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void configRegistryIsSingleton() { 
+            Injector injector = createConfigInjector(); 
 
-            ConfigRegistry r1 = injector.getInstance(ConfigRegistry.class); // GH-90000
-            ConfigRegistry r2 = injector.getInstance(ConfigRegistry.class); // GH-90000
+            ConfigRegistry r1 = injector.getInstance(ConfigRegistry.class); 
+            ConfigRegistry r2 = injector.getInstance(ConfigRegistry.class); 
 
-            assertThat(r1).isSameAs(r2); // GH-90000
+            assertThat(r1).isSameAs(r2); 
         }
 
         @Test
         @DisplayName("all 10 bindings are provided")
-        void allBindingsProvided() { // GH-90000
-            Injector injector = createConfigInjector(); // GH-90000
+        void allBindingsProvided() { 
+            Injector injector = createConfigInjector(); 
 
             // 5 compilers/validators
-            assertThat(injector.getInstance(ConfigValidator.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(CollectionConfigCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PluginConfigCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(StorageProfileCompiler.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PolicyConfigCompiler.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(ConfigValidator.class)).isNotNull(); 
+            assertThat(injector.getInstance(CollectionConfigCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(PluginConfigCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(StorageProfileCompiler.class)).isNotNull(); 
+            assertThat(injector.getInstance(PolicyConfigCompiler.class)).isNotNull(); 
 
             // Loader + registry
-            assertThat(injector.getInstance(ConfigLoader.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ConfigRegistry.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(ConfigLoader.class)).isNotNull(); 
+            assertThat(injector.getInstance(ConfigRegistry.class)).isNotNull(); 
 
             // Reload + metrics
-            assertThat(injector.getInstance(ConfigReloadManager.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ConfigMetrics.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(GracefulReloadManager.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(ConfigReloadManager.class)).isNotNull(); 
+            assertThat(injector.getInstance(ConfigMetrics.class)).isNotNull(); 
+            assertThat(injector.getInstance(GracefulReloadManager.class)).isNotNull(); 
         }
     }
 
@@ -208,51 +208,51 @@ class DataCloudDiModulesTest {
 
         @Test
         @DisplayName("provides DataCloudConfig with defaults")
-        void providesDataCloudConfig() { // GH-90000
-            Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
+        void providesDataCloudConfig() { 
+            Injector injector = Injector.of(new DataCloudCoreModule()); 
 
-            DataCloudConfig config = injector.getInstance(DataCloudConfig.class); // GH-90000
+            DataCloudConfig config = injector.getInstance(DataCloudConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
-            assertThat(config.profile()).isEqualTo(DataCloudProfile.LOCAL); // GH-90000
+            assertThat(config).isNotNull(); 
+            assertThat(config.profile()).isEqualTo(DataCloudProfile.LOCAL); 
         }
 
         @Test
         @DisplayName("provides DataCloudClient via factory")
-        void providesDataCloudClient() { // GH-90000
-            Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
+        void providesDataCloudClient() { 
+            Injector injector = Injector.of(new DataCloudCoreModule()); 
 
-            DataCloudClient client = injector.getInstance(DataCloudClient.class); // GH-90000
+            DataCloudClient client = injector.getInstance(DataCloudClient.class); 
 
-            assertThat(client).isNotNull(); // GH-90000
+            assertThat(client).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides StoragePluginRegistry singleton")
-        void providesStoragePluginRegistry() { // GH-90000
-            Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
+        void providesStoragePluginRegistry() { 
+            Injector injector = Injector.of(new DataCloudCoreModule()); 
 
-            StoragePluginRegistry registry = injector.getInstance(StoragePluginRegistry.class); // GH-90000
+            StoragePluginRegistry registry = injector.getInstance(StoragePluginRegistry.class); 
 
-            assertThat(registry).isNotNull(); // GH-90000
+            assertThat(registry).isNotNull(); 
         }
 
         @Test
         @DisplayName("DataCloudClient is singleton")
-        void dataCloudClientIsSingleton() { // GH-90000
-            Injector injector = Injector.of(new DataCloudCoreModule()); // GH-90000
+        void dataCloudClientIsSingleton() { 
+            Injector injector = Injector.of(new DataCloudCoreModule()); 
 
-            DataCloudClient c1 = injector.getInstance(DataCloudClient.class); // GH-90000
-            DataCloudClient c2 = injector.getInstance(DataCloudClient.class); // GH-90000
+            DataCloudClient c1 = injector.getInstance(DataCloudClient.class); 
+            DataCloudClient c2 = injector.getInstance(DataCloudClient.class); 
 
-            assertThat(c1).isSameAs(c2); // GH-90000
+            assertThat(c1).isSameAs(c2); 
         }
 
         @Test
         @DisplayName("is self-contained — no external deps required")
-        void selfContained() { // GH-90000
-            assertThatCode(() -> Injector.of(new DataCloudCoreModule())) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+        void selfContained() { 
+            assertThatCode(() -> Injector.of(new DataCloudCoreModule())) 
+                    .doesNotThrowAnyException(); 
         }
     }
 
@@ -266,98 +266,98 @@ class DataCloudDiModulesTest {
 
         @Test
         @DisplayName("provides RedisStorageConfig with defaults")
-        void providesRedisStorageConfig() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesRedisStorageConfig() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            RedisStorageConfig config = injector.getInstance(RedisStorageConfig.class); // GH-90000
+            RedisStorageConfig config = injector.getInstance(RedisStorageConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides RedisHotTierPlugin")
-        void providesRedisHotTierPlugin() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesRedisHotTierPlugin() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            RedisHotTierPlugin plugin = injector.getInstance(RedisHotTierPlugin.class); // GH-90000
+            RedisHotTierPlugin plugin = injector.getInstance(RedisHotTierPlugin.class); 
 
-            assertThat(plugin).isNotNull(); // GH-90000
+            assertThat(plugin).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides IcebergStorageConfig with defaults")
-        void providesIcebergStorageConfig() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesIcebergStorageConfig() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            IcebergStorageConfig config = injector.getInstance(IcebergStorageConfig.class); // GH-90000
+            IcebergStorageConfig config = injector.getInstance(IcebergStorageConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides CoolTierStoragePlugin")
-        void providesCoolTierStoragePlugin() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesCoolTierStoragePlugin() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            CoolTierStoragePlugin plugin = injector.getInstance(CoolTierStoragePlugin.class); // GH-90000
+            CoolTierStoragePlugin plugin = injector.getInstance(CoolTierStoragePlugin.class); 
 
-            assertThat(plugin).isNotNull(); // GH-90000
+            assertThat(plugin).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides S3ArchiveConfig with defaults")
-        void providesS3ArchiveConfig() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesS3ArchiveConfig() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            S3ArchiveConfig config = injector.getInstance(S3ArchiveConfig.class); // GH-90000
+            S3ArchiveConfig config = injector.getInstance(S3ArchiveConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ColdTierArchivePlugin")
-        void providesColdTierArchivePlugin() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void providesColdTierArchivePlugin() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
-            ColdTierArchivePlugin plugin = injector.getInstance(ColdTierArchivePlugin.class); // GH-90000
+            ColdTierArchivePlugin plugin = injector.getInstance(ColdTierArchivePlugin.class); 
 
-            assertThat(plugin).isNotNull(); // GH-90000
+            assertThat(plugin).isNotNull(); 
         }
 
         @Test
         @DisplayName("all 6 bindings (3 configs + 3 plugins) are provided")
-        void allBindingsProvided() { // GH-90000
-            Injector injector = Injector.of(new DataCloudStorageModule()); // GH-90000
+        void allBindingsProvided() { 
+            Injector injector = Injector.of(new DataCloudStorageModule()); 
 
             // 3 configs
-            assertThat(injector.getInstance(RedisStorageConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(IcebergStorageConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(S3ArchiveConfig.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(RedisStorageConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(IcebergStorageConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(S3ArchiveConfig.class)).isNotNull(); 
 
             // 3 plugins
-            assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(CoolTierStoragePlugin.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ColdTierArchivePlugin.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); 
+            assertThat(injector.getInstance(CoolTierStoragePlugin.class)).isNotNull(); 
+            assertThat(injector.getInstance(ColdTierArchivePlugin.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("warm-tier DataSource applies bounded idle and validation defaults")
-        void warmTierDataSourceAppliesBoundedIdleAndValidationDefaults() { // GH-90000
-            DataCloudStorageModule module = new DataCloudStorageModule(); // GH-90000
+        void warmTierDataSourceAppliesBoundedIdleAndValidationDefaults() { 
+            DataCloudStorageModule module = new DataCloudStorageModule(); 
 
-            HikariDataSource dataSource = (HikariDataSource) module.warmTierDataSource(); // GH-90000
-            try (HikariDataSource ignored = dataSource) { // GH-90000
-                assertThat(dataSource.getMaximumPoolSize()).isEqualTo(10); // GH-90000
-                assertThat(dataSource.getMinimumIdle()).isEqualTo(2); // GH-90000
-                assertThat(dataSource.getValidationTimeout()).isEqualTo(5_000L); // GH-90000
+            HikariDataSource dataSource = (HikariDataSource) module.warmTierDataSource(); 
+            try (HikariDataSource ignored = dataSource) { 
+                assertThat(dataSource.getMaximumPoolSize()).isEqualTo(10); 
+                assertThat(dataSource.getMinimumIdle()).isEqualTo(2); 
+                assertThat(dataSource.getValidationTimeout()).isEqualTo(5_000L); 
             }
         }
 
         @Test
         @DisplayName("is self-contained — no external deps required")
-        void selfContained() { // GH-90000
-            assertThatCode(() -> Injector.of(new DataCloudStorageModule())) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+        void selfContained() { 
+            assertThatCode(() -> Injector.of(new DataCloudStorageModule())) 
+                    .doesNotThrowAnyException(); 
         }
     }
 
@@ -369,70 +369,70 @@ class DataCloudDiModulesTest {
     @DisplayName("DataCloudStreamingModule")
     class DataCloudStreamingModuleTests {
 
-        private Injector createStreamingInjector() { // GH-90000
-            return Injector.of(streamingExternalStubModule(), new DataCloudStreamingModule()); // GH-90000
+        private Injector createStreamingInjector() { 
+            return Injector.of(streamingExternalStubModule(), new DataCloudStreamingModule()); 
         }
 
         @Test
         @DisplayName("provides KafkaStreamingConfig with defaults")
-        void providesKafkaStreamingConfig() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void providesKafkaStreamingConfig() { 
+            Injector injector = createStreamingInjector(); 
 
-            KafkaStreamingConfig config = injector.getInstance(KafkaStreamingConfig.class); // GH-90000
+            KafkaStreamingConfig config = injector.getInstance(KafkaStreamingConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides KafkaStreamingPlugin with Eventloop and MeterRegistry")
-        void providesKafkaStreamingPlugin() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void providesKafkaStreamingPlugin() { 
+            Injector injector = createStreamingInjector(); 
 
-            KafkaStreamingPlugin plugin = injector.getInstance(KafkaStreamingPlugin.class); // GH-90000
+            KafkaStreamingPlugin plugin = injector.getInstance(KafkaStreamingPlugin.class); 
 
-            assertThat(plugin).isNotNull(); // GH-90000
+            assertThat(plugin).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides EventSerializer")
-        void providesEventSerializer() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void providesEventSerializer() { 
+            Injector injector = createStreamingInjector(); 
 
-            EventSerializer serializer = injector.getInstance(EventSerializer.class); // GH-90000
+            EventSerializer serializer = injector.getInstance(EventSerializer.class); 
 
-            assertThat(serializer).isNotNull(); // GH-90000
+            assertThat(serializer).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides RedisStateAdapter")
-        void providesRedisStateAdapter() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void providesRedisStateAdapter() { 
+            Injector injector = createStreamingInjector(); 
 
-            RedisStateAdapter adapter = injector.getInstance(RedisStateAdapter.class); // GH-90000
+            RedisStateAdapter adapter = injector.getInstance(RedisStateAdapter.class); 
 
-            assertThat(adapter).isNotNull(); // GH-90000
+            assertThat(adapter).isNotNull(); 
         }
 
         @Test
         @DisplayName("all 4 bindings are provided")
-        void allBindingsProvided() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void allBindingsProvided() { 
+            Injector injector = createStreamingInjector(); 
 
-            assertThat(injector.getInstance(KafkaStreamingConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(EventSerializer.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(RedisStateAdapter.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(KafkaStreamingConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); 
+            assertThat(injector.getInstance(EventSerializer.class)).isNotNull(); 
+            assertThat(injector.getInstance(RedisStateAdapter.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("KafkaStreamingPlugin is singleton")
-        void kafkaPluginIsSingleton() { // GH-90000
-            Injector injector = createStreamingInjector(); // GH-90000
+        void kafkaPluginIsSingleton() { 
+            Injector injector = createStreamingInjector(); 
 
-            KafkaStreamingPlugin p1 = injector.getInstance(KafkaStreamingPlugin.class); // GH-90000
-            KafkaStreamingPlugin p2 = injector.getInstance(KafkaStreamingPlugin.class); // GH-90000
+            KafkaStreamingPlugin p1 = injector.getInstance(KafkaStreamingPlugin.class); 
+            KafkaStreamingPlugin p2 = injector.getInstance(KafkaStreamingPlugin.class); 
 
-            assertThat(p1).isSameAs(p2); // GH-90000
+            assertThat(p1).isSameAs(p2); 
         }
     }
 
@@ -444,120 +444,120 @@ class DataCloudDiModulesTest {
     @DisplayName("DataCloudBrainModule")
     class DataCloudBrainModuleTests {
 
-        private Injector createBrainInjector() { // GH-90000
-            return Injector.of(brainExternalStubModule(), new DataCloudBrainModule()); // GH-90000
+        private Injector createBrainInjector() { 
+            return Injector.of(brainExternalStubModule(), new DataCloudBrainModule()); 
         }
 
         @Test
         @DisplayName("provides BrainConfig with defaults")
-        void providesBrainConfig() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesBrainConfig() { 
+            Injector injector = createBrainInjector(); 
 
-            BrainConfig config = injector.getInstance(BrainConfig.class); // GH-90000
+            BrainConfig config = injector.getInstance(BrainConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ReflexEngine bound to DefaultReflexEngine")
-        void providesReflexEngine() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesReflexEngine() { 
+            Injector injector = createBrainInjector(); 
 
-            ReflexEngine engine = injector.getInstance(ReflexEngine.class); // GH-90000
+            ReflexEngine engine = injector.getInstance(ReflexEngine.class); 
 
-            assertThat(engine).isNotNull(); // GH-90000
-            assertThat(engine).isInstanceOf(DefaultReflexEngine.class); // GH-90000
+            assertThat(engine).isNotNull(); 
+            assertThat(engine).isInstanceOf(DefaultReflexEngine.class); 
         }
 
         @Test
         @DisplayName("provides PatternCatalog bound to DefaultPatternCatalog")
-        void providesPatternCatalog() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesPatternCatalog() { 
+            Injector injector = createBrainInjector(); 
 
-            PatternCatalog catalog = injector.getInstance(PatternCatalog.class); // GH-90000
+            PatternCatalog catalog = injector.getInstance(PatternCatalog.class); 
 
-            assertThat(catalog).isNotNull(); // GH-90000
-            assertThat(catalog).isInstanceOf(DefaultPatternCatalog.class); // GH-90000
+            assertThat(catalog).isNotNull(); 
+            assertThat(catalog).isInstanceOf(DefaultPatternCatalog.class); 
         }
 
         @Test
         @DisplayName("provides MemoryTierRouter bound to DefaultMemoryTierRouter")
-        void providesMemoryTierRouter() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesMemoryTierRouter() { 
+            Injector injector = createBrainInjector(); 
 
             MemoryTierRouter<DataRecord> router =
-                    injector.getInstance(new Key<>(){}); // GH-90000
+                    injector.getInstance(new Key<>(){}); 
 
-            assertThat(router).isNotNull(); // GH-90000
-            assertThat(router).isInstanceOf(DefaultMemoryTierRouter.class); // GH-90000
+            assertThat(router).isNotNull(); 
+            assertThat(router).isInstanceOf(DefaultMemoryTierRouter.class); 
         }
 
         @Test
         @DisplayName("provides SalienceScorer bound to DefaultSalienceScorer")
-        void providesSalienceScorer() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesSalienceScorer() { 
+            Injector injector = createBrainInjector(); 
 
-            SalienceScorer scorer = injector.getInstance(SalienceScorer.class); // GH-90000
+            SalienceScorer scorer = injector.getInstance(SalienceScorer.class); 
 
-            assertThat(scorer).isNotNull(); // GH-90000
-            assertThat(scorer).isInstanceOf(DefaultSalienceScorer.class); // GH-90000
+            assertThat(scorer).isNotNull(); 
+            assertThat(scorer).isInstanceOf(DefaultSalienceScorer.class); 
         }
 
         @Test
         @DisplayName("provides GlobalWorkspace with defaults")
-        void providesGlobalWorkspace() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesGlobalWorkspace() { 
+            Injector injector = createBrainInjector(); 
 
-            GlobalWorkspace workspace = injector.getInstance(GlobalWorkspace.class); // GH-90000
+            GlobalWorkspace workspace = injector.getInstance(GlobalWorkspace.class); 
 
-            assertThat(workspace).isNotNull(); // GH-90000
+            assertThat(workspace).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides AttentionManager")
-        void providesAttentionManager() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesAttentionManager() { 
+            Injector injector = createBrainInjector(); 
 
-            AttentionManager manager = injector.getInstance(AttentionManager.class); // GH-90000
+            AttentionManager manager = injector.getInstance(AttentionManager.class); 
 
-            assertThat(manager).isNotNull(); // GH-90000
+            assertThat(manager).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides DataCloudBrain bound to DefaultDataCloudBrain")
-        void providesDataCloudBrain() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void providesDataCloudBrain() { 
+            Injector injector = createBrainInjector(); 
 
-            DataCloudBrain brain = injector.getInstance(DataCloudBrain.class); // GH-90000
+            DataCloudBrain brain = injector.getInstance(DataCloudBrain.class); 
 
-            assertThat(brain).isNotNull(); // GH-90000
-            assertThat(brain).isInstanceOf(DefaultDataCloudBrain.class); // GH-90000
+            assertThat(brain).isNotNull(); 
+            assertThat(brain).isInstanceOf(DefaultDataCloudBrain.class); 
         }
 
         @Test
         @DisplayName("all 8 bindings are provided")
-        void allBindingsProvided() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void allBindingsProvided() { 
+            Injector injector = createBrainInjector(); 
 
-            assertThat(injector.getInstance(BrainConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ReflexEngine.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PatternCatalog.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(new Key<MemoryTierRouter<DataRecord>>(){})).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(SalienceScorer.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(GlobalWorkspace.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(AttentionManager.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(BrainConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(ReflexEngine.class)).isNotNull(); 
+            assertThat(injector.getInstance(PatternCatalog.class)).isNotNull(); 
+            assertThat(injector.getInstance(new Key<MemoryTierRouter<DataRecord>>(){})).isNotNull(); 
+            assertThat(injector.getInstance(SalienceScorer.class)).isNotNull(); 
+            assertThat(injector.getInstance(GlobalWorkspace.class)).isNotNull(); 
+            assertThat(injector.getInstance(AttentionManager.class)).isNotNull(); 
+            assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("DataCloudBrain is singleton")
-        void brainIsSingleton() { // GH-90000
-            Injector injector = createBrainInjector(); // GH-90000
+        void brainIsSingleton() { 
+            Injector injector = createBrainInjector(); 
 
-            DataCloudBrain b1 = injector.getInstance(DataCloudBrain.class); // GH-90000
-            DataCloudBrain b2 = injector.getInstance(DataCloudBrain.class); // GH-90000
+            DataCloudBrain b1 = injector.getInstance(DataCloudBrain.class); 
+            DataCloudBrain b2 = injector.getInstance(DataCloudBrain.class); 
 
-            assertThat(b1).isSameAs(b2); // GH-90000
+            assertThat(b1).isSameAs(b2); 
         }
     }
 
@@ -571,77 +571,77 @@ class DataCloudDiModulesTest {
 
         @Test
         @DisplayName("DataCloudCoreModule + DataCloudStorageModule compose correctly")
-        void coreAndStorageCompose() { // GH-90000
-            Injector injector = Injector.of( // GH-90000
-                    new DataCloudCoreModule(), // GH-90000
-                    new DataCloudStorageModule() // GH-90000
+        void coreAndStorageCompose() { 
+            Injector injector = Injector.of( 
+                    new DataCloudCoreModule(), 
+                    new DataCloudStorageModule() 
             );
 
-            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(CoolTierStoragePlugin.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ColdTierArchivePlugin.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); 
+            assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); 
+            assertThat(injector.getInstance(CoolTierStoragePlugin.class)).isNotNull(); 
+            assertThat(injector.getInstance(ColdTierArchivePlugin.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("DataCloudCoreModule + DataCloudStreamingModule compose correctly")
-        void coreAndStreamingCompose() { // GH-90000
-            Injector injector = Injector.of( // GH-90000
-                    new DataCloudCoreModule(), // GH-90000
-                    streamingExternalStubModule(), // GH-90000
-                    new DataCloudStreamingModule() // GH-90000
+        void coreAndStreamingCompose() { 
+            Injector injector = Injector.of( 
+                    new DataCloudCoreModule(), 
+                    streamingExternalStubModule(), 
+                    new DataCloudStreamingModule() 
             );
 
-            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); 
+            assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("DataCloudCoreModule + DataCloudBrainModule compose correctly")
-        void coreAndBrainCompose() { // GH-90000
-            Injector injector = Injector.of( // GH-90000
-                    new DataCloudCoreModule(), // GH-90000
-                    brainExternalStubModule(), // GH-90000
-                    new DataCloudBrainModule() // GH-90000
+        void coreAndBrainCompose() { 
+            Injector injector = Injector.of( 
+                    new DataCloudCoreModule(), 
+                    brainExternalStubModule(), 
+                    new DataCloudBrainModule() 
             );
 
-            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); 
+            assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); 
         }
 
         @Test
         @DisplayName("full module stack creates valid injector")
-        void fullModuleStack() { // GH-90000
-            // External stubs for streaming (Eventloop, MeterRegistry) // GH-90000
-            // and brain (AI SPIs, MetricsCollector) — MetricsCollector from ObservabilityModule // GH-90000
-            Module externalStubs = ModuleBuilder.create() // GH-90000
-                    .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                    .bind(AnomalyDetectionCapability.class).toInstance(mock(AnomalyDetectionCapability.class)) // GH-90000
-                    .bind(PredictionCapability.class).toInstance(mock(PredictionCapability.class)) // GH-90000
-                    .bind(LearningSignalStore.class).toInstance(mock(LearningSignalStore.class)) // GH-90000
-                    .bind(ExecutorService.class).toInstance(Executors.newSingleThreadExecutor()) // GH-90000
-                    .build(); // GH-90000
+        void fullModuleStack() { 
+            // External stubs for streaming (Eventloop, MeterRegistry) 
+            // and brain (AI SPIs, MetricsCollector) — MetricsCollector from ObservabilityModule 
+            Module externalStubs = ModuleBuilder.create() 
+                    .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) 
+                    .bind(AnomalyDetectionCapability.class).toInstance(mock(AnomalyDetectionCapability.class)) 
+                    .bind(PredictionCapability.class).toInstance(mock(PredictionCapability.class)) 
+                    .bind(LearningSignalStore.class).toInstance(mock(LearningSignalStore.class)) 
+                    .bind(ExecutorService.class).toInstance(Executors.newSingleThreadExecutor()) 
+                    .build(); 
 
-            assertThatCode(() -> { // GH-90000
-                Injector injector = Injector.of( // GH-90000
-                        new ObservabilityModule(), // GH-90000
-                        new DataCloudCoreModule(), // GH-90000
-                        new DataCloudStorageModule(), // GH-90000
+            assertThatCode(() -> { 
+                Injector injector = Injector.of( 
+                        new ObservabilityModule(), 
+                        new DataCloudCoreModule(), 
+                        new DataCloudStorageModule(), 
                         externalStubs,
-                        new DataCloudStreamingModule(), // GH-90000
-                        new DataCloudConfigModule(), // GH-90000
-                        new DataCloudBrainModule() // GH-90000
+                        new DataCloudStreamingModule(), 
+                        new DataCloudConfigModule(), 
+                        new DataCloudBrainModule() 
                 );
 
                 // Cross-module verification
-                assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); // GH-90000
-                assertThat(injector.getInstance(ConfigRegistry.class)).isNotNull(); // GH-90000
-                assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); // GH-90000
-                assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); // GH-90000
-                assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); // GH-90000
+                assertThat(injector.getInstance(DataCloudClient.class)).isNotNull(); 
+                assertThat(injector.getInstance(ConfigRegistry.class)).isNotNull(); 
+                assertThat(injector.getInstance(DataCloudBrain.class)).isNotNull(); 
+                assertThat(injector.getInstance(KafkaStreamingPlugin.class)).isNotNull(); 
+                assertThat(injector.getInstance(RedisHotTierPlugin.class)).isNotNull(); 
 
-                injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            }).doesNotThrowAnyException(); // GH-90000
+                injector.getInstance(ExecutorService.class).shutdown(); 
+            }).doesNotThrowAnyException(); 
         }
     }
 
@@ -655,54 +655,54 @@ class DataCloudDiModulesTest {
 
         @Test
         @DisplayName("modules can be instantiated multiple times")
-        void multipleInstances() { // GH-90000
-            Injector i1 = Injector.of(new DataCloudCoreModule()); // GH-90000
-            Injector i2 = Injector.of(new DataCloudCoreModule()); // GH-90000
+        void multipleInstances() { 
+            Injector i1 = Injector.of(new DataCloudCoreModule()); 
+            Injector i2 = Injector.of(new DataCloudCoreModule()); 
 
-            DataCloudClient c1 = i1.getInstance(DataCloudClient.class); // GH-90000
-            DataCloudClient c2 = i2.getInstance(DataCloudClient.class); // GH-90000
+            DataCloudClient c1 = i1.getInstance(DataCloudClient.class); 
+            DataCloudClient c2 = i2.getInstance(DataCloudClient.class); 
 
-            assertThat(c1).isNotNull(); // GH-90000
-            assertThat(c2).isNotNull(); // GH-90000
-            assertThat(c1).isNotSameAs(c2); // GH-90000
+            assertThat(c1).isNotNull(); 
+            assertThat(c2).isNotNull(); 
+            assertThat(c1).isNotSameAs(c2); 
         }
 
         @Test
         @DisplayName("storage config can be provided by custom module")
-        void storageConfigOverride() { // GH-90000
-            RedisStorageConfig custom = RedisStorageConfig.builder() // GH-90000
+        void storageConfigOverride() { 
+            RedisStorageConfig custom = RedisStorageConfig.builder() 
                     .host("redis.production.local")
-                    .port(6380) // GH-90000
-                    .build(); // GH-90000
+                    .port(6380) 
+                    .build(); 
 
-            Module customModule = ModuleBuilder.create() // GH-90000
-                    .bind(RedisStorageConfig.class).toInstance(custom) // GH-90000
-                    .build(); // GH-90000
+            Module customModule = ModuleBuilder.create() 
+                    .bind(RedisStorageConfig.class).toInstance(custom) 
+                    .build(); 
 
-            Injector injector = Injector.of(customModule); // GH-90000
+            Injector injector = Injector.of(customModule); 
 
-            RedisStorageConfig resolved = injector.getInstance(RedisStorageConfig.class); // GH-90000
+            RedisStorageConfig resolved = injector.getInstance(RedisStorageConfig.class); 
             assertThat(resolved.getHost()).isEqualTo("redis.production.local");
-            assertThat(resolved.getPort()).isEqualTo(6380); // GH-90000
+            assertThat(resolved.getPort()).isEqualTo(6380); 
         }
 
         @Test
         @DisplayName("brain sub-services are distinct singletons")
-        void brainSubServicesDistinct() { // GH-90000
-            Injector injector = Injector.of(brainExternalStubModule(), new DataCloudBrainModule()); // GH-90000
+        void brainSubServicesDistinct() { 
+            Injector injector = Injector.of(brainExternalStubModule(), new DataCloudBrainModule()); 
 
-            ReflexEngine reflex = injector.getInstance(ReflexEngine.class); // GH-90000
-            PatternCatalog catalog = injector.getInstance(PatternCatalog.class); // GH-90000
+            ReflexEngine reflex = injector.getInstance(ReflexEngine.class); 
+            PatternCatalog catalog = injector.getInstance(PatternCatalog.class); 
 
-            assertThat(reflex).isNotNull(); // GH-90000
-            assertThat(catalog).isNotNull(); // GH-90000
+            assertThat(reflex).isNotNull(); 
+            assertThat(catalog).isNotNull(); 
         }
 
         @Test
         @DisplayName("self-contained modules work without any external deps")
-        void selfContainedModules() { // GH-90000
-            assertThatCode(() -> Injector.of(new DataCloudCoreModule())).doesNotThrowAnyException(); // GH-90000
-            assertThatCode(() -> Injector.of(new DataCloudStorageModule())).doesNotThrowAnyException(); // GH-90000
+        void selfContainedModules() { 
+            assertThatCode(() -> Injector.of(new DataCloudCoreModule())).doesNotThrowAnyException(); 
+            assertThatCode(() -> Injector.of(new DataCloudStorageModule())).doesNotThrowAnyException(); 
         }
     }
 
@@ -713,33 +713,33 @@ class DataCloudDiModulesTest {
     /**
      * External deps for DataCloudConfigModule: Eventloop, ExecutorService, MetricsCollector.
      */
-    private static Module configExternalStubModule() { // GH-90000
-        return ModuleBuilder.create() // GH-90000
-                .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                .bind(ExecutorService.class).toInstance(Executors.newSingleThreadExecutor()) // GH-90000
-                .bind(MetricsCollector.class).toInstance(mock(MetricsCollector.class)) // GH-90000
-                .build(); // GH-90000
+    private static Module configExternalStubModule() { 
+        return ModuleBuilder.create() 
+                .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) 
+                .bind(ExecutorService.class).toInstance(Executors.newSingleThreadExecutor()) 
+                .bind(MetricsCollector.class).toInstance(mock(MetricsCollector.class)) 
+                .build(); 
     }
 
     /**
      * External deps for DataCloudStreamingModule: Eventloop, MeterRegistry.
      */
-    private static Module streamingExternalStubModule() { // GH-90000
-        return ModuleBuilder.create() // GH-90000
-                .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                .bind(MeterRegistry.class).toInstance(mock(MeterRegistry.class)) // GH-90000
-                .build(); // GH-90000
+    private static Module streamingExternalStubModule() { 
+        return ModuleBuilder.create() 
+                .bind(Eventloop.class).toInstance(Eventloop.builder().withCurrentThread().build()) 
+                .bind(MeterRegistry.class).toInstance(mock(MeterRegistry.class)) 
+                .build(); 
     }
 
     /**
      * External deps for DataCloudBrainModule: AI SPIs + MetricsCollector.
      */
-    private static Module brainExternalStubModule() { // GH-90000
-        return ModuleBuilder.create() // GH-90000
-                .bind(AnomalyDetectionCapability.class).toInstance(mock(AnomalyDetectionCapability.class)) // GH-90000
-                .bind(PredictionCapability.class).toInstance(mock(PredictionCapability.class)) // GH-90000
-                .bind(LearningSignalStore.class).toInstance(mock(LearningSignalStore.class)) // GH-90000
-                .bind(MetricsCollector.class).toInstance(mock(MetricsCollector.class)) // GH-90000
-                .build(); // GH-90000
+    private static Module brainExternalStubModule() { 
+        return ModuleBuilder.create() 
+                .bind(AnomalyDetectionCapability.class).toInstance(mock(AnomalyDetectionCapability.class)) 
+                .bind(PredictionCapability.class).toInstance(mock(PredictionCapability.class)) 
+                .bind(LearningSignalStore.class).toInstance(mock(LearningSignalStore.class)) 
+                .bind(MetricsCollector.class).toInstance(mock(MetricsCollector.class)) 
+                .build(); 
     }
 }

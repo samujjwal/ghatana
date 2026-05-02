@@ -6,34 +6,58 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Defines version compatibility for a plugin.
+ * Defines version compatibility for a plugin against the platform runtime.
  *
- * @param minDataCloudVersion Minimum supported Data-Cloud version
- * @param maxDataCloudVersion Maximum supported Data-Cloud version (optional)
+ * <p>The compatibility window is expressed as a semantic version range ({@code min} inclusive,
+ * {@code max} inclusive if specified). Products declare compatible plugin versions/ranges in
+ * their binding manifests rather than assuming a fixed version.</p>
+ *
+ * @param minPlatformVersion Minimum supported platform kernel version
+ * @param maxPlatformVersion Maximum supported platform kernel version (optional — {@code null} means unbounded)
  *
  * @doc.type record
- * @doc.purpose Version compatibility matrix
+ * @doc.purpose Generic platform version compatibility descriptor for plugins
  * @doc.layer core
  * @doc.pattern ValueObject
  */
 public record PluginCompatibility(
-    @NotNull String minDataCloudVersion,
-    String maxDataCloudVersion
+    @NotNull String minPlatformVersion,
+    String maxPlatformVersion
 ) {
     private static final Pattern NUMERIC_VERSION_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)*)");
 
-    public static PluginCompatibility dataCloudVersion(String min) {
+    /**
+     * Creates a compatibility descriptor with only a minimum platform version bound.
+     *
+     * @param min the minimum platform kernel version required
+     * @return a new {@link PluginCompatibility} with an unbounded upper version
+     */
+    public static PluginCompatibility atLeast(@NotNull String min) {
         return new PluginCompatibility(min, null);
     }
 
     /**
-     * Returns true when {@code platformVersion} is within this compatibility window.
+     * Creates a compatibility descriptor with both minimum and maximum platform version bounds.
+     *
+     * @param min the minimum platform kernel version required (inclusive)
+     * @param max the maximum platform kernel version supported (inclusive)
+     * @return a new {@link PluginCompatibility}
+     */
+    public static PluginCompatibility range(@NotNull String min, @NotNull String max) {
+        return new PluginCompatibility(min, max);
+    }
+
+    /**
+     * Returns {@code true} when {@code platformVersion} falls within this compatibility window.
+     *
+     * @param platformVersion the platform kernel version to check; must be non-null
+     * @return {@code true} if compatible
      */
     public boolean isCompatibleWith(@NotNull String platformVersion) {
-        if (compareVersions(platformVersion, minDataCloudVersion) < 0) {
+        if (compareVersions(platformVersion, minPlatformVersion) < 0) {
             return false;
         }
-        return maxDataCloudVersion == null || compareVersions(platformVersion, maxDataCloudVersion) <= 0;
+        return maxPlatformVersion == null || compareVersions(platformVersion, maxPlatformVersion) <= 0;
     }
 
     private static int compareVersions(@NotNull String left, @NotNull String right) {

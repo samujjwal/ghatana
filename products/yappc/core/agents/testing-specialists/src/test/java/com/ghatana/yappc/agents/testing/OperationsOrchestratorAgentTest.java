@@ -20,7 +20,7 @@ import com.ghatana.yappc.agents.architecture.*;
 
 /**
  * Tests for the OperationsOrchestratorAgent — L1 orchestrator
- * for runtime operations (monitoring, incidents, SLOs). // GH-90000
+ * for runtime operations (monitoring, incidents, SLOs). 
  *
  * @doc.type class
  * @doc.purpose Unit tests for OperationsOrchestratorAgent
@@ -34,11 +34,11 @@ class OperationsOrchestratorAgentTest extends EventloopTestBase {
   private OperationsOrchestratorAgent agent;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    memoryStore = new EventLogMemoryStore(); // GH-90000
-    agent = new OperationsOrchestratorAgent( // GH-90000
+  void setUp() { 
+    memoryStore = new EventLogMemoryStore(); 
+    agent = new OperationsOrchestratorAgent( 
         memoryStore,
-        new OperationsOrchestratorAgent.OperationsOrchestratorGenerator()); // GH-90000
+        new OperationsOrchestratorAgent.OperationsOrchestratorGenerator()); 
   }
 
   @Nested
@@ -47,27 +47,27 @@ class OperationsOrchestratorAgentTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should accept valid monitoring request")
-    void validMonitoring() { // GH-90000
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+    void validMonitoring() { 
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-1", "monitoring", "INFO", List.of("api-service"), Map.of());
-      assertThat(agent.validateInput(input).isValid()).isTrue(); // GH-90000
+      assertThat(agent.validateInput(input).isValid()).isTrue(); 
     }
 
     @Test
     @DisplayName("should accept incident type")
-    void validIncident() { // GH-90000
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+    void validIncident() { 
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-2", "incident", "CRITICAL", List.of("auth-service"), Map.of());
-      assertThat(agent.validateInput(input).isValid()).isTrue(); // GH-90000
+      assertThat(agent.validateInput(input).isValid()).isTrue(); 
     }
 
     @Test
     @DisplayName("should reject invalid operation type")
-    void invalidType() { // GH-90000
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
-          "ops-3", "invalid_type", "INFO", List.of(), Map.of()); // GH-90000
-      ValidationResult result = agent.validateInput(input); // GH-90000
-      assertThat(result.isValid()).isFalse(); // GH-90000
+    void invalidType() { 
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
+          "ops-3", "invalid_type", "INFO", List.of(), Map.of()); 
+      ValidationResult result = agent.validateInput(input); 
+      assertThat(result.isValid()).isFalse(); 
     }
   }
 
@@ -77,46 +77,46 @@ class OperationsOrchestratorAgentTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should create incident ID and page oncall")
-    void incidentCreation() { // GH-90000
+    void incidentCreation() { 
       OutputGenerator<StepRequest<OperationsOrchestratorInput>,
           StepResult<OperationsOrchestratorOutput>> generator =
-          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); // GH-90000
+          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); 
 
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-inc-1", "incident", "CRITICAL",
-          List.of("auth-service", "api-gateway"), Map.of()); // GH-90000
+          List.of("auth-service", "api-gateway"), Map.of()); 
 
-      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> // GH-90000
-          generator.generate( // GH-90000
-              StepRequest.of("orchestrator.operations", input), // GH-90000
-              AgentContext.empty())); // GH-90000
+      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> 
+          generator.generate( 
+              StepRequest.of("orchestrator.operations", input), 
+              AgentContext.empty())); 
 
-      assertThat(result.isSuccess()).isTrue(); // GH-90000
-      assertThat(result.output().status()) // GH-90000
-          .isEqualTo(OperationsOrchestratorOutput.STATUS_INCIDENT); // GH-90000
+      assertThat(result.isSuccess()).isTrue(); 
+      assertThat(result.output().status()) 
+          .isEqualTo(OperationsOrchestratorOutput.STATUS_INCIDENT); 
       assertThat(result.output().incidentId()).startsWith("INC-");
-      assertThat(result.output().notifications()) // GH-90000
+      assertThat(result.output().notifications()) 
           .anyMatch(n -> n.contains("oncall-paged"));
     }
 
     @Test
     @DisplayName("should escalate CRITICAL incidents to management")
-    void criticalEscalation() { // GH-90000
+    void criticalEscalation() { 
       OutputGenerator<StepRequest<OperationsOrchestratorInput>,
           StepResult<OperationsOrchestratorOutput>> generator =
-          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); // GH-90000
+          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); 
 
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-crit", "incident", "CRITICAL", List.of("payments"), Map.of());
 
-      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> // GH-90000
-          generator.generate( // GH-90000
-              StepRequest.of("orchestrator.operations", input), // GH-90000
-              AgentContext.empty())); // GH-90000
+      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> 
+          generator.generate( 
+              StepRequest.of("orchestrator.operations", input), 
+              AgentContext.empty())); 
 
-      assertThat(result.output().notifications()) // GH-90000
+      assertThat(result.output().notifications()) 
           .anyMatch(n -> n.contains("management-notified"));
-      assertThat(result.output().actionsExecuted()) // GH-90000
+      assertThat(result.output().actionsExecuted()) 
           .anyMatch(a -> a.contains("escalated"));
     }
   }
@@ -127,42 +127,42 @@ class OperationsOrchestratorAgentTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should report healthy when no SLO breach")
-    void healthyWhenNoBreech() { // GH-90000
+    void healthyWhenNoBreech() { 
       OutputGenerator<StepRequest<OperationsOrchestratorInput>,
           StepResult<OperationsOrchestratorOutput>> generator =
-          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); // GH-90000
+          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); 
 
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-slo-1", "slo_check", "INFO", List.of("api-service"), Map.of());
 
-      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> // GH-90000
-          generator.generate( // GH-90000
-              StepRequest.of("orchestrator.operations", input), // GH-90000
-              AgentContext.empty())); // GH-90000
+      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> 
+          generator.generate( 
+              StepRequest.of("orchestrator.operations", input), 
+              AgentContext.empty())); 
 
-      assertThat(result.output().status()) // GH-90000
-          .isEqualTo(OperationsOrchestratorOutput.STATUS_HEALTHY); // GH-90000
+      assertThat(result.output().status()) 
+          .isEqualTo(OperationsOrchestratorOutput.STATUS_HEALTHY); 
     }
 
     @Test
     @DisplayName("should report degraded when SLO breached")
-    void degradedOnBreech() { // GH-90000
+    void degradedOnBreech() { 
       OutputGenerator<StepRequest<OperationsOrchestratorInput>,
           StepResult<OperationsOrchestratorOutput>> generator =
-          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); // GH-90000
+          new OperationsOrchestratorAgent.OperationsOrchestratorGenerator(); 
 
-      OperationsOrchestratorInput input = new OperationsOrchestratorInput( // GH-90000
+      OperationsOrchestratorInput input = new OperationsOrchestratorInput( 
           "ops-slo-2", "slo_check", "WARNING",
           List.of("api-service"),
-          Map.of("sloBreached", true)); // GH-90000
+          Map.of("sloBreached", true)); 
 
-      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> // GH-90000
-          generator.generate( // GH-90000
-              StepRequest.of("orchestrator.operations", input), // GH-90000
-              AgentContext.empty())); // GH-90000
+      StepResult<OperationsOrchestratorOutput> result = runPromise(() -> 
+          generator.generate( 
+              StepRequest.of("orchestrator.operations", input), 
+              AgentContext.empty())); 
 
-      assertThat(result.output().status()) // GH-90000
-          .isEqualTo(OperationsOrchestratorOutput.STATUS_DEGRADED); // GH-90000
+      assertThat(result.output().status()) 
+          .isEqualTo(OperationsOrchestratorOutput.STATUS_DEGRADED); 
     }
   }
 
@@ -172,15 +172,15 @@ class OperationsOrchestratorAgentTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should have correct step name")
-    void stepName() { // GH-90000
+    void stepName() { 
       assertThat(agent.getStepName()).isEqualTo("orchestrator.operations");
     }
 
     @Test
     @DisplayName("should advertise monitoring and incident capabilities")
-    void capabilities() { // GH-90000
-      assertThat(agent.getStepContract().capabilities()) // GH-90000
-          .contains("monitoring", "incident-response"); // GH-90000
+    void capabilities() { 
+      assertThat(agent.getStepContract().capabilities()) 
+          .contains("monitoring", "incident-response"); 
     }
   }
 }

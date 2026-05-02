@@ -13,12 +13,12 @@ import java.nio.file.Path;
  */
 public final class NoOpPolyfixHook implements PostGenerationHook {
     @Override
-    public String name() { // GH-90000
+    public String name() { 
         return "polyfix-noop";
     }
 
     @Override
-    public void onGenerated(Path workspaceRoot, WorkspaceSpec workspaceSpec) { // GH-90000
+    public void onGenerated(Path workspaceRoot, WorkspaceSpec workspaceSpec) { 
         // In the real system this is where Polyfix codemods would run.
     }
 }

@@ -19,34 +19,34 @@ class AepMetricsCollectorTest {
 
     @Test
     @DisplayName("create uses the shared platform collector instead of a no-op collector")
-    void createShouldRecordIntoSharedRegistry() { // GH-90000
-        MeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
+    void createShouldRecordIntoSharedRegistry() { 
+        MeterRegistry registry = MetricsProvider.getRegistry(); 
         String tenantId = "aep-metrics-test-tenant";
-        double before = readCounter(registry, AepMetricsCollector.EVENTS_PROCESSED, tenantId); // GH-90000
+        double before = readCounter(registry, AepMetricsCollector.EVENTS_PROCESSED, tenantId); 
 
-        AepMetricsCollector.create().incrementEventsProcessed(tenantId); // GH-90000
+        AepMetricsCollector.create().incrementEventsProcessed(tenantId); 
 
-        assertThat(readCounter(registry, AepMetricsCollector.EVENTS_PROCESSED, tenantId)) // GH-90000
-            .isEqualTo(before + 1.0d); // GH-90000
+        assertThat(readCounter(registry, AepMetricsCollector.EVENTS_PROCESSED, tenantId)) 
+            .isEqualTo(before + 1.0d); 
     }
 
     @Test
     @DisplayName("noop does not emit metrics into the shared registry")
-    void noopShouldNotRecordIntoSharedRegistry() { // GH-90000
-        MeterRegistry registry = MetricsProvider.getRegistry(); // GH-90000
+    void noopShouldNotRecordIntoSharedRegistry() { 
+        MeterRegistry registry = MetricsProvider.getRegistry(); 
         String tenantId = "aep-noop-metrics-test-tenant";
-        double before = readCounter(registry, AepMetricsCollector.EVENTS_FAILED, tenantId); // GH-90000
+        double before = readCounter(registry, AepMetricsCollector.EVENTS_FAILED, tenantId); 
 
-        AepMetricsCollector.noop().incrementEventsFailed(tenantId); // GH-90000
+        AepMetricsCollector.noop().incrementEventsFailed(tenantId); 
 
-        assertThat(readCounter(registry, AepMetricsCollector.EVENTS_FAILED, tenantId)) // GH-90000
-            .isEqualTo(before); // GH-90000
+        assertThat(readCounter(registry, AepMetricsCollector.EVENTS_FAILED, tenantId)) 
+            .isEqualTo(before); 
     }
 
-    private static double readCounter(MeterRegistry registry, String metricName, String tenantId) { // GH-90000
-        Counter counter = registry.find(metricName) // GH-90000
-            .tag("tenantId", tenantId) // GH-90000
-            .counter(); // GH-90000
-        return counter != null ? counter.count() : 0.0d; // GH-90000
+    private static double readCounter(MeterRegistry registry, String metricName, String tenantId) { 
+        Counter counter = registry.find(metricName) 
+            .tag("tenantId", tenantId) 
+            .counter(); 
+        return counter != null ? counter.count() : 0.0d; 
     }
 }

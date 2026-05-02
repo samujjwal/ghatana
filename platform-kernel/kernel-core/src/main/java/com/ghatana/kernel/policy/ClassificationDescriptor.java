@@ -36,7 +36,7 @@ public final class ClassificationDescriptor {
      *
      * @param domain           the business domain (e.g., "healthcare", "regulatory", "general")
      * @param sensitivityLevel the data sensitivity level
-     * @param complianceTags   compliance/regulatory tags (e.g., "nepal-2081", "sebon", "gdpr")
+     * @param complianceTags   compliance/regulatory tags supplied by the product pack (e.g., "regulation-a", "standard-x")
      * @param metadata         additional policy metadata
      */
     public ClassificationDescriptor(String domain, SensitivityLevel sensitivityLevel,

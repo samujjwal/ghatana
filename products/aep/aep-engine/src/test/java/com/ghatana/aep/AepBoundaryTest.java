@@ -25,7 +25,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  * @doc.layer product
  * @doc.pattern TestSuite
  */
-@AnalyzeClasses( // GH-90000
+@AnalyzeClasses( 
         packages = "com.ghatana.aep",
         importOptions = ImportOption.DoNotIncludeTests.class
 )
@@ -37,9 +37,9 @@ class AepBoundaryTest {
      */
     @ArchTest
     static final ArchRule aep_must_not_depend_on_other_products =
-            noClasses() // GH-90000
+            noClasses() 
                     .that().resideInAPackage("com.ghatana.aep..")
-                    .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat().resideInAnyPackage( 
                             "com.ghatana.datacloud..",
                             "com.ghatana.tutorputor..",
                             "com.ghatana.yappc..",
@@ -49,8 +49,8 @@ class AepBoundaryTest {
                             "com.ghatana.softwareorg..",
                             "com.ghatana.finance.."
                     )
-                    .allowEmptyShould(true) // GH-90000
-                    .because("AEP must not depend on other product modules. " // GH-90000
+                    .allowEmptyShould(true) 
+                    .because("AEP must not depend on other product modules. " 
                             + "Cross-product integration belongs in platform contracts. "
                             + "See docs/MONOREPO_ARCHITECTURE.md §dependency-rules.");
 
@@ -60,11 +60,11 @@ class AepBoundaryTest {
      */
     @ArchTest
     static final ArchRule compliance_must_not_depend_on_engine_internals =
-            noClasses() // GH-90000
+            noClasses() 
                     .that().resideInAPackage("com.ghatana.aep.compliance..")
                     .should().dependOnClassesThat().resideInAPackage("com.ghatana.aep.engine.internal..")
-                    .allowEmptyShould(true) // GH-90000
-                    .because("AEP compliance must use the published engine API/SPI, " // GH-90000
+                    .allowEmptyShould(true) 
+                    .because("AEP compliance must use the published engine API/SPI, " 
                             + "not internal engine implementation classes.");
 
     /**
@@ -78,13 +78,13 @@ class AepBoundaryTest {
      */
     @ArchTest
     static final ArchRule engine_must_not_depend_on_server_launcher =
-            noClasses() // GH-90000
+            noClasses() 
                     .that().resideInAPackage("com.ghatana.aep.engine..")
-                    .should().dependOnClassesThat().resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat().resideInAnyPackage( 
                             "com.ghatana.aep.server.."
                     )
-                    .allowEmptyShould(true) // GH-90000
-                    .because("AEP engine must not depend on the HTTP server or launcher. " // GH-90000
-                            + "Transport (HTTP, SSE) is wired by AepLauncher; engine logic must stay transport-agnostic. " // GH-90000
+                    .allowEmptyShould(true) 
+                    .because("AEP engine must not depend on the HTTP server or launcher. " 
+                            + "Transport (HTTP, SSE) is wired by AepLauncher; engine logic must stay transport-agnostic. " 
                             + "See products/aep/docs/TOPOLOGY.md §API-Routing-Rules.");
 }

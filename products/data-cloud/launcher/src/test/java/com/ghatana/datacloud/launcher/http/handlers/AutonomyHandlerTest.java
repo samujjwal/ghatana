@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AutonomyHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AutonomyHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,41 +41,41 @@ class AutonomyHandlerTest extends EventloopTestBase {
     private AutonomyHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new AutonomyHandler(autonomyController, http); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new AutonomyHandler(autonomyController, http); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("set global level rejects missing tenant before loading body")
-    void setGlobalLevelRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void setGlobalLevelRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleSetGlobalLevel(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleSetGlobalLevel(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 
     @Test
     @DisplayName("get global level rejects missing tenant before controller access")
-    void getGlobalLevelRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void getGlobalLevelRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleGetGlobalLevel(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleGetGlobalLevel(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
         verify(autonomyController, never()).listAllStates("default");
     }
 
     @Test
     @DisplayName("list domains rejects missing tenant before controller access")
-    void listDomainsRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void listDomainsRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleListDomains(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleListDomains(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
         verify(autonomyController, never()).listAllStates("default");
     }
 }

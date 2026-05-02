@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.sdk.correctness;
@@ -42,82 +42,82 @@ class SDKCorrectnessTest {
     private int port;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        backendClient = DataCloud.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        server = new DataCloudHttpServer(backendClient, port); // GH-90000
-        server.start(); // GH-90000
-        sdk = new DataCloudJavaSdk("http://localhost:" + port, "tenant-1"); // GH-90000
-        sdkTenant2 = new DataCloudJavaSdk("http://localhost:" + port, "tenant-2"); // GH-90000
+    void setUp() throws Exception { 
+        backendClient = DataCloud.forTesting(); 
+        port = findFreePort(); 
+        server = new DataCloudHttpServer(backendClient, port); 
+        server.start(); 
+        sdk = new DataCloudJavaSdk("http://localhost:" + port, "tenant-1"); 
+        sdkTenant2 = new DataCloudJavaSdk("http://localhost:" + port, "tenant-2"); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (sdk != null) { // GH-90000
-            sdk.close(); // GH-90000
+    void tearDown() { 
+        if (sdk != null) { 
+            sdk.close(); 
         }
-        if (sdkTenant2 != null) { // GH-90000
-            sdkTenant2.close(); // GH-90000
+        if (sdkTenant2 != null) { 
+            sdkTenant2.close(); 
         }
-        if (server != null) { // GH-90000
-            server.stop(); // GH-90000
+        if (server != null) { 
+            server.stop(); 
         }
-        if (backendClient != null) { // GH-90000
-            backendClient.close(); // GH-90000
+        if (backendClient != null) { 
+            backendClient.close(); 
         }
     }
 
     @Test
     @DisplayName("SDK handles non-existent entity gracefully with proper error")
-    void sdkHandlesNonExistentEntityGracefully() { // GH-90000
-        assertThatThrownBy(() -> sdk.getEntity("nonexistent_collection", "nonexistent_id")) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+    void sdkHandlesNonExistentEntityGracefully() { 
+        assertThatThrownBy(() -> sdk.getEntity("nonexistent_collection", "nonexistent_id")) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("404");
     }
 
     @Test
     @DisplayName("SDK validates required fields in entity creation")
-    void sdkValidatesRequiredFieldsInEntityCreation() { // GH-90000
+    void sdkValidatesRequiredFieldsInEntityCreation() { 
         // Create entity with minimal valid data
-        Map<String, Object> validEntity = Map.of( // GH-90000
+        Map<String, Object> validEntity = Map.of( 
             "name", "Test Entity",
             "type", "test"
         );
         
-        Map<String, Object> created = sdk.createEntity("correctness_test_entities", validEntity); // GH-90000
+        Map<String, Object> created = sdk.createEntity("correctness_test_entities", validEntity); 
         
         assertThat(created).containsKey("id");
-        assertThat(created).containsEntry("collection", "correctness_test_entities"); // GH-90000
+        assertThat(created).containsEntry("collection", "correctness_test_entities"); 
         
         // Cleanup
         String entityId = created.get("id").toString();
-        sdk.deleteEntity("correctness_test_entities", entityId); // GH-90000
+        sdk.deleteEntity("correctness_test_entities", entityId); 
     }
 
     @Test
     @DisplayName("SDK handles empty query results correctly")
-    void sdkHandlesEmptyQueryResultsCorrectly() { // GH-90000
-        Map<String, Object> result = sdk.queryEntities("empty_test_collection", 10); // GH-90000
+    void sdkHandlesEmptyQueryResultsCorrectly() { 
+        Map<String, Object> result = sdk.queryEntities("empty_test_collection", 10); 
         
-        assertThat(result).containsEntry("count", 0); // GH-90000
+        assertThat(result).containsEntry("count", 0); 
         assertThat(result).containsKey("entities");
         assertThat(asObjectList(result.get("entities"))).isEmpty();
     }
 
     @Test
     @DisplayName("SDK preserves data types through round-trip")
-    void sdkPreservesDataTypesThroughRoundTrip() { // GH-90000
-        Map<String, Object> originalData = Map.of( // GH-90000
+    void sdkPreservesDataTypesThroughRoundTrip() { 
+        Map<String, Object> originalData = Map.of( 
             "stringField", "test-value",
             "numberField", 42,
             "booleanField", true,
             "nullField", null
         );
         
-        Map<String, Object> created = sdk.createEntity("type_test_entities", originalData); // GH-90000
+        Map<String, Object> created = sdk.createEntity("type_test_entities", originalData); 
         String entityId = created.get("id").toString();
         
-        Map<String, Object> fetched = sdk.getEntity("type_test_entities", entityId); // GH-90000
+        Map<String, Object> fetched = sdk.getEntity("type_test_entities", entityId); 
         Map<String, Object> data = asObjectMap(fetched.get("data"));
         
         assertThat(data.get("stringField")).isEqualTo("test-value");
@@ -126,66 +126,66 @@ class SDKCorrectnessTest {
         assertThat(data.get("nullField")).isNull();
         
         // Cleanup
-        sdk.deleteEntity("type_test_entities", entityId); // GH-90000
+        sdk.deleteEntity("type_test_entities", entityId); 
     }
 
     @Test
     @DisplayName("SDK enforces tenant isolation")
-    void sdkEnforcesTenantIsolation() { // GH-90000
+    void sdkEnforcesTenantIsolation() { 
         // Create entity in tenant-1
-        Map<String, Object> entity = Map.of("name", "Isolated Entity"); // GH-90000
-        Map<String, Object> created = sdk.createEntity("isolation_test_entities", entity); // GH-90000
+        Map<String, Object> entity = Map.of("name", "Isolated Entity"); 
+        Map<String, Object> created = sdk.createEntity("isolation_test_entities", entity); 
         String entityId = created.get("id").toString();
         
         // Verify tenant-1 can see it
-        Map<String, Object> fetched = sdk.getEntity("isolation_test_entities", entityId); // GH-90000
-        assertThat(fetched).containsEntry("id", entityId); // GH-90000
+        Map<String, Object> fetched = sdk.getEntity("isolation_test_entities", entityId); 
+        assertThat(fetched).containsEntry("id", entityId); 
         
         // Verify tenant-2 cannot see it
-        assertThatThrownBy(() -> sdkTenant2.getEntity("isolation_test_entities", entityId)) // GH-90000
-            .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> sdkTenant2.getEntity("isolation_test_entities", entityId)) 
+            .isInstanceOf(RuntimeException.class) 
             .hasMessageContaining("404");
         
         // Cleanup
-        sdk.deleteEntity("isolation_test_entities", entityId); // GH-90000
+        sdk.deleteEntity("isolation_test_entities", entityId); 
     }
 
     @Test
     @DisplayName("SDK handles pagination correctly")
-    void sdkHandlesPaginationCorrectly() { // GH-90000
+    void sdkHandlesPaginationCorrectly() { 
         // Create multiple entities
-        for (int i = 0; i < 15; i++) { // GH-90000
-            Map<String, Object> entity = Map.of("name", "Entity " + i, "index", i); // GH-90000
-            sdk.createEntity("pagination_test_entities", entity); // GH-90000
+        for (int i = 0; i < 15; i++) { 
+            Map<String, Object> entity = Map.of("name", "Entity " + i, "index", i); 
+            sdk.createEntity("pagination_test_entities", entity); 
         }
         
         // Query with page size of 10
-        Map<String, Object> page1 = sdk.queryEntities("pagination_test_entities", 10); // GH-90000
-        assertThat(page1).containsEntry("count", 15); // GH-90000
+        Map<String, Object> page1 = sdk.queryEntities("pagination_test_entities", 10); 
+        assertThat(page1).containsEntry("count", 15); 
         assertThat(asObjectList(page1.get("entities"))).hasSize(10);
         
         // Cleanup
-        Map<String, Object> allEntities = sdk.queryEntities("pagination_test_entities", 100); // GH-90000
+        Map<String, Object> allEntities = sdk.queryEntities("pagination_test_entities", 100); 
         for (Object entityObj : asObjectList(allEntities.get("entities"))) {
-            Map<String, Object> entity = asObjectMap(entityObj); // GH-90000
+            Map<String, Object> entity = asObjectMap(entityObj); 
             sdk.deleteEntity("pagination_test_entities", entity.get("id").toString());
         }
     }
 
     @Test
     @DisplayName("SDK handles special characters in entity data")
-    void sdkHandlesSpecialCharactersInEntityData() { // GH-90000
-        Map<String, Object> specialData = Map.of( // GH-90000
+    void sdkHandlesSpecialCharactersInEntityData() { 
+        Map<String, Object> specialData = Map.of( 
             "unicode", "Hello 世界 🌍",
             "quotes", "Text with \"quotes\" and 'apostrophes'",
             "newlines", "Line 1\nLine 2\nLine 3",
             "emoji", "😀🎉🚀"
         );
         
-        Map<String, Object> created = sdk.createEntity("special_chars_entities", specialData); // GH-90000
+        Map<String, Object> created = sdk.createEntity("special_chars_entities", specialData); 
         String entityId = created.get("id").toString();
         
-        Map<String, Object> fetched = sdk.getEntity("special_chars_entities", entityId); // GH-90000
+        Map<String, Object> fetched = sdk.getEntity("special_chars_entities", entityId); 
         Map<String, Object> data = asObjectMap(fetched.get("data"));
         
         assertThat(data.get("unicode")).isEqualTo("Hello 世界 🌍");
@@ -194,64 +194,64 @@ class SDKCorrectnessTest {
         assertThat(data.get("emoji")).isEqualTo("😀🎉🚀");
         
         // Cleanup
-        sdk.deleteEntity("special_chars_entities", entityId); // GH-90000
+        sdk.deleteEntity("special_chars_entities", entityId); 
     }
 
     @Test
     @DisplayName("SDK handles concurrent requests correctly")
-    void sdkHandlesConcurrentRequestsCorrectly() throws InterruptedException { // GH-90000
-        List<Thread> threads = List.of( // GH-90000
-            createEntityThread("concurrent_test_entities", "Thread-1"), // GH-90000
-            createEntityThread("concurrent_test_entities", "Thread-2"), // GH-90000
-            createEntityThread("concurrent_test_entities", "Thread-3") // GH-90000
+    void sdkHandlesConcurrentRequestsCorrectly() throws InterruptedException { 
+        List<Thread> threads = List.of( 
+            createEntityThread("concurrent_test_entities", "Thread-1"), 
+            createEntityThread("concurrent_test_entities", "Thread-2"), 
+            createEntityThread("concurrent_test_entities", "Thread-3") 
         );
         
-        threads.forEach(Thread::start); // GH-90000
-        for (Thread thread : threads) { // GH-90000
-            thread.join(); // GH-90000
+        threads.forEach(Thread::start); 
+        for (Thread thread : threads) { 
+            thread.join(); 
         }
         
         // Verify all entities were created
-        Map<String, Object> result = sdk.queryEntities("concurrent_test_entities", 10); // GH-90000
-        assertThat(result).containsEntry("count", 3); // GH-90000
+        Map<String, Object> result = sdk.queryEntities("concurrent_test_entities", 10); 
+        assertThat(result).containsEntry("count", 3); 
         
         // Cleanup
-        Map<String, Object> allEntities = sdk.queryEntities("concurrent_test_entities", 100); // GH-90000
+        Map<String, Object> allEntities = sdk.queryEntities("concurrent_test_entities", 100); 
         for (Object entityObj : asObjectList(allEntities.get("entities"))) {
-            Map<String, Object> entity = asObjectMap(entityObj); // GH-90000
+            Map<String, Object> entity = asObjectMap(entityObj); 
             sdk.deleteEntity("concurrent_test_entities", entity.get("id").toString());
         }
     }
 
     @Test
     @DisplayName("SDK handles large payload correctly")
-    void sdkHandlesLargePayloadCorrectly() { // GH-90000
-        StringBuilder largeString = new StringBuilder(); // GH-90000
-        for (int i = 0; i < 10000; i++) { // GH-90000
+    void sdkHandlesLargePayloadCorrectly() { 
+        StringBuilder largeString = new StringBuilder(); 
+        for (int i = 0; i < 10000; i++) { 
             largeString.append("data-");
         }
         
-        Map<String, Object> largePayload = Map.of( // GH-90000
-            "largeField", largeString.toString(), // GH-90000
-            "metadata", Map.of("size", largeString.length()) // GH-90000
+        Map<String, Object> largePayload = Map.of( 
+            "largeField", largeString.toString(), 
+            "metadata", Map.of("size", largeString.length()) 
         );
         
-        Map<String, Object> created = sdk.createEntity("large_payload_entities", largePayload); // GH-90000
+        Map<String, Object> created = sdk.createEntity("large_payload_entities", largePayload); 
         String entityId = created.get("id").toString();
         
-        Map<String, Object> fetched = sdk.getEntity("large_payload_entities", entityId); // GH-90000
+        Map<String, Object> fetched = sdk.getEntity("large_payload_entities", entityId); 
         Map<String, Object> data = asObjectMap(fetched.get("data"));
         
         assertThat(data.get("largeField")).isEqualTo(largeString.toString());
         
         // Cleanup
-        sdk.deleteEntity("large_payload_entities", entityId); // GH-90000
+        sdk.deleteEntity("large_payload_entities", entityId); 
     }
 
     @Test
     @DisplayName("SDK health check returns expected structure")
-    void sdkHealthCheckReturnsExpectedStructure() { // GH-90000
-        Map<String, Object> health = sdk.health(); // GH-90000
+    void sdkHealthCheckReturnsExpectedStructure() { 
+        Map<String, Object> health = sdk.health(); 
         
         assertThat(health).containsKey("status");
         assertThat(health).containsKey("timestamp");
@@ -259,30 +259,30 @@ class SDKCorrectnessTest {
         assertThat(health.get("timestamp")).isInstanceOf(Long.class);
     }
 
-    private int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket socket = new ServerSocket(0)) { // GH-90000
-            return socket.getLocalPort(); // GH-90000
+    private int findFreePort() throws IOException { 
+        try (ServerSocket socket = new ServerSocket(0)) { 
+            return socket.getLocalPort(); 
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> asObjectMap(Object value) { // GH-90000
-        return (Map<String, Object>) value; // GH-90000
+    private Map<String, Object> asObjectMap(Object value) { 
+        return (Map<String, Object>) value; 
     }
 
     @SuppressWarnings("unchecked")
-    private List<Object> asObjectList(Object value) { // GH-90000
-        return (List<Object>) value; // GH-90000
+    private List<Object> asObjectList(Object value) { 
+        return (List<Object>) value; 
     }
 
-    private Thread createEntityThread(String collection, String threadName) { // GH-90000
-        return new Thread(() -> { // GH-90000
+    private Thread createEntityThread(String collection, String threadName) { 
+        return new Thread(() -> { 
             try {
-                Map<String, Object> entity = Map.of("name", threadName, "thread", threadName); // GH-90000
-                sdk.createEntity(collection, entity); // GH-90000
-            } catch (Exception e) { // GH-90000
+                Map<String, Object> entity = Map.of("name", threadName, "thread", threadName); 
+                sdk.createEntity(collection, entity); 
+            } catch (Exception e) { 
                 // Log error but don't fail the test
-                System.err.println("Thread " + threadName + " failed: " + e.getMessage()); // GH-90000
+                System.err.println("Thread " + threadName + " failed: " + e.getMessage()); 
             }
         });
     }

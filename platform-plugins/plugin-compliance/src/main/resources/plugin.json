@@ -1,0 +1,38 @@
+{
+  "pluginId": "com.ghatana.plugin.compliance",
+  "version": "1.2.0",
+  "description": "Domain-agnostic compliance rule engine. Products register their own rule packs; the engine evaluates them without built-in regulatory assumptions.",
+  "tier": "T2",
+  "capabilities": [
+    "compliance:evaluate",
+    "compliance:audit",
+    "compliance:register-rule-set",
+    "compliance:query-violations"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 128,
+    "maxCpuPercent": 15,
+    "maxThreads": 4
+  },
+  "configSchema": {
+    "evaluationMode": {
+      "type": "string",
+      "required": false,
+      "description": "Rule evaluation mode: STRICT (fail on any violation), WARN_ON_VIOLATION, or AUDIT_ONLY. Defaults to STRICT."
+    },
+    "rulePack": {
+      "type": "string",
+      "required": false,
+      "description": "Identifier of the product-supplied compliance rule pack to activate at startup."
+    },
+    "maxViolationHistory": {
+      "type": "number",
+      "required": false,
+      "description": "Maximum number of violations to retain per rule set. Defaults to 1000."
+    }
+  }
+}

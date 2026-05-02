@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.release;
@@ -29,55 +29,55 @@ class AgentReleaseStateTest {
     class ValidTransitions {
 
         @Test
-        void draftToValidated() { assertTransition(AgentReleaseState.DRAFT, AgentReleaseState.VALIDATED); } // GH-90000
+        void draftToValidated() { assertTransition(AgentReleaseState.DRAFT, AgentReleaseState.VALIDATED); } 
 
         @Test
-        void draftToBlocked() { assertTransition(AgentReleaseState.DRAFT, AgentReleaseState.BLOCKED); } // GH-90000
+        void draftToBlocked() { assertTransition(AgentReleaseState.DRAFT, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void validatedToShadow() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.SHADOW); } // GH-90000
+        void validatedToShadow() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.SHADOW); } 
 
         @Test
-        void validatedToBlocked() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.BLOCKED); } // GH-90000
+        void validatedToBlocked() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void validatedToDraft() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.DRAFT); } // GH-90000
+        void validatedToDraft() { assertTransition(AgentReleaseState.VALIDATED, AgentReleaseState.DRAFT); } 
 
         @Test
-        void shadowToCanary() { assertTransition(AgentReleaseState.SHADOW, AgentReleaseState.CANARY); } // GH-90000
+        void shadowToCanary() { assertTransition(AgentReleaseState.SHADOW, AgentReleaseState.CANARY); } 
 
         @Test
-        void shadowToBlocked() { assertTransition(AgentReleaseState.SHADOW, AgentReleaseState.BLOCKED); } // GH-90000
+        void shadowToBlocked() { assertTransition(AgentReleaseState.SHADOW, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void canaryToActive() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.ACTIVE); } // GH-90000
+        void canaryToActive() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.ACTIVE); } 
 
         @Test
-        void canaryToDeprecated() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.DEPRECATED); } // GH-90000
+        void canaryToDeprecated() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.DEPRECATED); } 
 
         @Test
-        void canaryToBlocked() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.BLOCKED); } // GH-90000
+        void canaryToBlocked() { assertTransition(AgentReleaseState.CANARY, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void activeToDeprecated() { assertTransition(AgentReleaseState.ACTIVE, AgentReleaseState.DEPRECATED); } // GH-90000
+        void activeToDeprecated() { assertTransition(AgentReleaseState.ACTIVE, AgentReleaseState.DEPRECATED); } 
 
         @Test
-        void activeToBlocked() { assertTransition(AgentReleaseState.ACTIVE, AgentReleaseState.BLOCKED); } // GH-90000
+        void activeToBlocked() { assertTransition(AgentReleaseState.ACTIVE, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void deprecatedToRetired() { assertTransition(AgentReleaseState.DEPRECATED, AgentReleaseState.RETIRED); } // GH-90000
+        void deprecatedToRetired() { assertTransition(AgentReleaseState.DEPRECATED, AgentReleaseState.RETIRED); } 
 
         @Test
-        void deprecatedToBlocked() { assertTransition(AgentReleaseState.DEPRECATED, AgentReleaseState.BLOCKED); } // GH-90000
+        void deprecatedToBlocked() { assertTransition(AgentReleaseState.DEPRECATED, AgentReleaseState.BLOCKED); } 
 
         @Test
-        void blockedToActive() { assertTransition(AgentReleaseState.BLOCKED, AgentReleaseState.ACTIVE); } // GH-90000
+        void blockedToActive() { assertTransition(AgentReleaseState.BLOCKED, AgentReleaseState.ACTIVE); } 
 
         @Test
-        void blockedToValidated() { assertTransition(AgentReleaseState.BLOCKED, AgentReleaseState.VALIDATED); } // GH-90000
+        void blockedToValidated() { assertTransition(AgentReleaseState.BLOCKED, AgentReleaseState.VALIDATED); } 
 
-        private void assertTransition(AgentReleaseState from, AgentReleaseState to) { // GH-90000
-            assertThat(from.canTransitionTo(to)).isTrue(); // GH-90000
+        private void assertTransition(AgentReleaseState from, AgentReleaseState to) { 
+            assertThat(from.canTransitionTo(to)).isTrue(); 
         }
     }
 
@@ -86,33 +86,33 @@ class AgentReleaseStateTest {
     class InvalidTransitions {
 
         @Test
-        void draftToActive() { assertNoTransition(AgentReleaseState.DRAFT, AgentReleaseState.ACTIVE); } // GH-90000
+        void draftToActive() { assertNoTransition(AgentReleaseState.DRAFT, AgentReleaseState.ACTIVE); } 
 
         @Test
-        void draftToRetired() { assertNoTransition(AgentReleaseState.DRAFT, AgentReleaseState.RETIRED); } // GH-90000
+        void draftToRetired() { assertNoTransition(AgentReleaseState.DRAFT, AgentReleaseState.RETIRED); } 
 
         @Test
-        void retiredToAnything() { // GH-90000
-            for (AgentReleaseState target : AgentReleaseState.values()) { // GH-90000
-                if (target != AgentReleaseState.RETIRED) { // GH-90000
-                    assertNoTransition(AgentReleaseState.RETIRED, target); // GH-90000
+        void retiredToAnything() { 
+            for (AgentReleaseState target : AgentReleaseState.values()) { 
+                if (target != AgentReleaseState.RETIRED) { 
+                    assertNoTransition(AgentReleaseState.RETIRED, target); 
                 }
             }
         }
 
         @Test
-        void shadowToActive() { assertNoTransition(AgentReleaseState.SHADOW, AgentReleaseState.ACTIVE); } // GH-90000
+        void shadowToActive() { assertNoTransition(AgentReleaseState.SHADOW, AgentReleaseState.ACTIVE); } 
 
         @Test
-        void activeToShadow() { assertNoTransition(AgentReleaseState.ACTIVE, AgentReleaseState.SHADOW); } // GH-90000
+        void activeToShadow() { assertNoTransition(AgentReleaseState.ACTIVE, AgentReleaseState.SHADOW); } 
 
         @Test
-        void activeToRetired() { assertNoTransition(AgentReleaseState.ACTIVE, AgentReleaseState.RETIRED); } // GH-90000
+        void activeToRetired() { assertNoTransition(AgentReleaseState.ACTIVE, AgentReleaseState.RETIRED); } 
 
-        private void assertNoTransition(AgentReleaseState from, AgentReleaseState to) { // GH-90000
-            assertThat(from.canTransitionTo(to)) // GH-90000
-                    .as("Expected no valid transition from %s to %s", from, to) // GH-90000
-                    .isFalse(); // GH-90000
+        private void assertNoTransition(AgentReleaseState from, AgentReleaseState to) { 
+            assertThat(from.canTransitionTo(to)) 
+                    .as("Expected no valid transition from %s to %s", from, to) 
+                    .isFalse(); 
         }
     }
 
@@ -121,57 +121,57 @@ class AgentReleaseStateTest {
     class Dispatchability {
 
         @Test
-        void activeIsDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.ACTIVE.isDispatchable()).isTrue(); // GH-90000
+        void activeIsDispatchable() { 
+            assertThat(AgentReleaseState.ACTIVE.isDispatchable()).isTrue(); 
         }
 
         @Test
-        void canaryIsDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.CANARY.isDispatchable()).isTrue(); // GH-90000
+        void canaryIsDispatchable() { 
+            assertThat(AgentReleaseState.CANARY.isDispatchable()).isTrue(); 
         }
 
         @Test
-        void shadowIsDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.SHADOW.isDispatchable()).isTrue(); // GH-90000
+        void shadowIsDispatchable() { 
+            assertThat(AgentReleaseState.SHADOW.isDispatchable()).isTrue(); 
         }
 
         @Test
-        void draftIsNotDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.DRAFT.isDispatchable()).isFalse(); // GH-90000
+        void draftIsNotDispatchable() { 
+            assertThat(AgentReleaseState.DRAFT.isDispatchable()).isFalse(); 
         }
 
         @Test
-        void validatedIsNotDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.VALIDATED.isDispatchable()).isFalse(); // GH-90000
+        void validatedIsNotDispatchable() { 
+            assertThat(AgentReleaseState.VALIDATED.isDispatchable()).isFalse(); 
         }
 
         @Test
-        void blockedIsNotDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.BLOCKED.isDispatchable()).isFalse(); // GH-90000
+        void blockedIsNotDispatchable() { 
+            assertThat(AgentReleaseState.BLOCKED.isDispatchable()).isFalse(); 
         }
 
         @Test
-        void retiredIsNotDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.RETIRED.isDispatchable()).isFalse(); // GH-90000
+        void retiredIsNotDispatchable() { 
+            assertThat(AgentReleaseState.RETIRED.isDispatchable()).isFalse(); 
         }
 
         @Test
-        void deprecatedIsNotDispatchable() { // GH-90000
-            assertThat(AgentReleaseState.DEPRECATED.isDispatchable()).isFalse(); // GH-90000
+        void deprecatedIsNotDispatchable() { 
+            assertThat(AgentReleaseState.DEPRECATED.isDispatchable()).isFalse(); 
         }
     }
 
     @Test
     @DisplayName("allowedTransitions returns non-null for all states")
-    void allowedTransitionsNonNull() { // GH-90000
-        for (AgentReleaseState state : AgentReleaseState.values()) { // GH-90000
-            assertThat(state.allowedTransitions()).isNotNull(); // GH-90000
+    void allowedTransitionsNonNull() { 
+        for (AgentReleaseState state : AgentReleaseState.values()) { 
+            assertThat(state.allowedTransitions()).isNotNull(); 
         }
     }
 
     @Test
     @DisplayName("RETIRED has no allowed transitions")
-    void retiredHasNoTransitions() { // GH-90000
-        assertThat(AgentReleaseState.RETIRED.allowedTransitions()).isEmpty(); // GH-90000
+    void retiredHasNoTransitions() { 
+        assertThat(AgentReleaseState.RETIRED.allowedTransitions()).isEmpty(); 
     }
 }

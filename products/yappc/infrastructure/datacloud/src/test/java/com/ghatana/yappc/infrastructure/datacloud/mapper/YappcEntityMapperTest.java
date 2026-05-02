@@ -31,103 +31,103 @@ class YappcEntityMapperTest {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        mapper = new YappcEntityMapper(objectMapper); // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        mapper = new YappcEntityMapper(objectMapper); 
     }
 
     @Test
     @DisplayName("Should convert simple object to entity data map")
-    void shouldConvertToEntity() { // GH-90000
-        TestEntity source = new TestEntity(UUID.randomUUID(), "Test", 42); // GH-90000
+    void shouldConvertToEntity() { 
+        TestEntity source = new TestEntity(UUID.randomUUID(), "Test", 42); 
 
-        Map<String, Object> result = mapper.toEntityData(source); // GH-90000
+        Map<String, Object> result = mapper.toEntityData(source); 
 
-        assertThat(result).containsEntry("name", "Test"); // GH-90000
-        assertThat(result).containsEntry("value", 42); // GH-90000
+        assertThat(result).containsEntry("name", "Test"); 
+        assertThat(result).containsEntry("value", 42); 
     }
 
     @Test
     @DisplayName("Should convert Entity back to domain object")
-    void shouldConvertFromEntity() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
-            id.toString(), "test_collection", // GH-90000
-            Map.of("id", id.toString(), "name", "Test", "value", 42)); // GH-90000
+    void shouldConvertFromEntity() { 
+        UUID id = UUID.randomUUID(); 
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of( 
+            id.toString(), "test_collection", 
+            Map.of("id", id.toString(), "name", "Test", "value", 42)); 
 
-        TestEntity result = mapper.fromEntity(entity, TestEntity.class); // GH-90000
+        TestEntity result = mapper.fromEntity(entity, TestEntity.class); 
 
         assertThat(result.name()).isEqualTo("Test");
-        assertThat(result.value()).isEqualTo(42); // GH-90000
+        assertThat(result.value()).isEqualTo(42); 
     }
 
     @Test
     @DisplayName("Should encrypt and restore project environment variables")
-    void shouldEncryptAndRestoreProjectEnvironmentVariables() { // GH-90000
-        YappcEntityMapper encryptedMapper = new YappcEntityMapper(objectMapper, createEncryptionService()); // GH-90000
-        ProjectEntity project = new ProjectEntity("Encrypted Project", "Desc", "user-1"); // GH-90000
-        project.setEnvironmentVariables(Map.of( // GH-90000
+    void shouldEncryptAndRestoreProjectEnvironmentVariables() { 
+        YappcEntityMapper encryptedMapper = new YappcEntityMapper(objectMapper, createEncryptionService()); 
+        ProjectEntity project = new ProjectEntity("Encrypted Project", "Desc", "user-1"); 
+        project.setEnvironmentVariables(Map.of( 
             "OPENAI_API_KEY", "sk-test-secret",
             "DATABASE_URL", "jdbc:postgresql://localhost/yappc"
         ));
 
-        Map<String, Object> payload = encryptedMapper.toEntityData(project); // GH-90000
+        Map<String, Object> payload = encryptedMapper.toEntityData(project); 
         @SuppressWarnings("unchecked")
         Map<String, String> storedEnvironmentVariables =
             (Map<String, String>) payload.get("environmentVariables");
 
-        assertThat(storedEnvironmentVariables) // GH-90000
-            .containsKeys("OPENAI_API_KEY", "DATABASE_URL"); // GH-90000
+        assertThat(storedEnvironmentVariables) 
+            .containsKeys("OPENAI_API_KEY", "DATABASE_URL"); 
         assertThat(storedEnvironmentVariables.get("OPENAI_API_KEY"))
             .startsWith("enc::")
             .isNotEqualTo("sk-test-secret");
 
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
-            project.getId().toString(), // GH-90000
-            ProjectEntity.getCollectionName(), // GH-90000
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of( 
+            project.getId().toString(), 
+            ProjectEntity.getCollectionName(), 
             payload);
 
-        ProjectEntity restored = encryptedMapper.fromEntity(entity, ProjectEntity.class); // GH-90000
+        ProjectEntity restored = encryptedMapper.fromEntity(entity, ProjectEntity.class); 
 
-        assertThat(restored.getEnvironmentVariables()) // GH-90000
-            .containsEntry("OPENAI_API_KEY", "sk-test-secret") // GH-90000
-            .containsEntry("DATABASE_URL", "jdbc:postgresql://localhost/yappc"); // GH-90000
+        assertThat(restored.getEnvironmentVariables()) 
+            .containsEntry("OPENAI_API_KEY", "sk-test-secret") 
+            .containsEntry("DATABASE_URL", "jdbc:postgresql://localhost/yappc"); 
     }
 
     @Test
     @DisplayName("Should reject persisting project environment variables without encryption service")
-    void shouldRejectPersistingProjectEnvironmentVariablesWithoutEncryptionService() { // GH-90000
-        ProjectEntity project = new ProjectEntity("Missing Key", "Desc", "user-1"); // GH-90000
-        project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-test-secret")); // GH-90000
+    void shouldRejectPersistingProjectEnvironmentVariablesWithoutEncryptionService() { 
+        ProjectEntity project = new ProjectEntity("Missing Key", "Desc", "user-1"); 
+        project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-test-secret")); 
 
-        assertThatThrownBy(() -> mapper.toEntityData(project)) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> mapper.toEntityData(project)) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("secret manager");
     }
 
     @Test
     @DisplayName("Should continue reading legacy plaintext project environment variables")
-    void shouldContinueReadingLegacyPlaintextProjectEnvironmentVariables() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
-            id.toString(), // GH-90000
-            ProjectEntity.getCollectionName(), // GH-90000
-            Map.of( // GH-90000
-                "id", id.toString(), // GH-90000
+    void shouldContinueReadingLegacyPlaintextProjectEnvironmentVariables() { 
+        UUID id = UUID.randomUUID(); 
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of( 
+            id.toString(), 
+            ProjectEntity.getCollectionName(), 
+            Map.of( 
+                "id", id.toString(), 
                 "name", "Legacy Project",
-                "environmentVariables", Map.of("OPENAI_API_KEY", "legacy-secret") // GH-90000
+                "environmentVariables", Map.of("OPENAI_API_KEY", "legacy-secret") 
             ));
 
-        ProjectEntity restored = mapper.fromEntity(entity, ProjectEntity.class); // GH-90000
+        ProjectEntity restored = mapper.fromEntity(entity, ProjectEntity.class); 
 
-        assertThat(restored.getEnvironmentVariables()) // GH-90000
-            .containsEntry("OPENAI_API_KEY", "legacy-secret"); // GH-90000
+        assertThat(restored.getEnvironmentVariables()) 
+            .containsEntry("OPENAI_API_KEY", "legacy-secret"); 
     }
 
-    private EncryptionService createEncryptionService() { // GH-90000
-        return new EncryptionService(Base64.getDecoder().decode(EncryptionService.generateKey())); // GH-90000
+    private EncryptionService createEncryptionService() { 
+        return new EncryptionService(Base64.getDecoder().decode(EncryptionService.generateKey())); 
     }
 
-    record TestEntity(UUID id, String name, int value) {} // GH-90000
+    record TestEntity(UUID id, String name, int value) {} 
 }

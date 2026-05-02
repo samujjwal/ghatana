@@ -422,28 +422,15 @@ public final class DurableConsentPlugin implements ConsentPlugin {
     }
 
     private static String determineLegalBasis(String purpose) {
-        if (purpose == null) return "consent";
-        String lower = purpose.toLowerCase(Locale.ROOT);
-        if (lower.contains("health") || lower.contains("medical") || lower.contains("phr")) {
-            return "explicit-consent-hipaa";
-        }
-        if (lower.contains("finance") || lower.contains("payment") || lower.contains("transaction")) {
-            return "legitimate-interest-gdpr";
-        }
-        return "consent-gdpr";
+        // Legal basis is configurable per purpose via the plugin binding manifest.
+        // The platform does not know which regulatory framework applies — products
+        // register that mapping through configuration. Default is explicit-consent.
+        return "explicit-consent";
     }
 
     private static Instant calculateExpiry(String purpose, Instant from) {
-        if (purpose == null) return from.plusSeconds(365L * 24 * 3600); // 1 year default
-        String lower = purpose.toLowerCase(Locale.ROOT);
-        long seconds;
-        if (lower.contains("health") || lower.contains("medical") || lower.contains("phr")) {
-            seconds = 7L * 365 * 24 * 3600;  // 7 years — healthcare
-        } else if (lower.contains("finance") || lower.contains("payment")) {
-            seconds = 5L * 365 * 24 * 3600;  // 5 years — finance
-        } else {
-            seconds = 365L * 24 * 3600;       // 1 year — general
-        }
-        return from.plusSeconds(seconds);
+        // Default expiry is 1 year. Products configure purpose-specific expiry
+        // (purposeVocabulary.expiryDays) in their plugin binding manifest.
+        return from.plusSeconds(365L * 24 * 3600);
     }
 }

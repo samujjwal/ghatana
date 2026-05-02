@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.feature;
@@ -24,14 +24,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for feature flag service toggle logic (F001). // GH-90000
+ * Tests for feature flag service toggle logic (F001). 
  *
  * @doc.type class
  * @doc.purpose Feature flag toggle logic tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("FeatureFlagService – Toggle Logic (F001)")
 class FeatureFlagServiceTest extends EventloopTestBase {
 
@@ -44,55 +44,55 @@ class FeatureFlagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[F001]: is_enabled_returns_true_for_enabled_flag")
-        void isEnabledReturnsTrueForEnabledFlag() { // GH-90000
+        void isEnabledReturnsTrueForEnabledFlag() { 
             String featureKey = "new-dashboard";
-            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() 
                 .userId("user-001")
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.isEnabled(featureKey, context)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(featureFlagService.isEnabled(featureKey, context)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, context)); // GH-90000
+            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, context)); 
 
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("[F001]: is_enabled_returns_false_for_disabled_flag")
-        void isEnabledReturnsFalseForDisabledFlag() { // GH-90000
+        void isEnabledReturnsFalseForDisabledFlag() { 
             String featureKey = "beta-feature";
-            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() 
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.isEnabled(featureKey, context)) // GH-90000
-                .thenReturn(Promise.of(false)); // GH-90000
+            when(featureFlagService.isEnabled(featureKey, context)) 
+                .thenReturn(Promise.of(false)); 
 
-            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, context)); // GH-90000
+            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, context)); 
 
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
 
         @Test
         @DisplayName("[F001]: toggle_changes_flag_state")
-        void toggleChangesFlagState() { // GH-90000
+        void toggleChangesFlagState() { 
             String featureKey = "feature-001";
 
-            FeatureFlagService.FeatureFlag enabled = createFlag(featureKey, true); // GH-90000
-            FeatureFlagService.FeatureFlag disabled = createFlag(featureKey, false); // GH-90000
+            FeatureFlagService.FeatureFlag enabled = createFlag(featureKey, true); 
+            FeatureFlagService.FeatureFlag disabled = createFlag(featureKey, false); 
 
-            when(featureFlagService.toggle(featureKey, true)) // GH-90000
-                .thenReturn(Promise.of(enabled)); // GH-90000
-            when(featureFlagService.toggle(featureKey, false)) // GH-90000
-                .thenReturn(Promise.of(disabled)); // GH-90000
+            when(featureFlagService.toggle(featureKey, true)) 
+                .thenReturn(Promise.of(enabled)); 
+            when(featureFlagService.toggle(featureKey, false)) 
+                .thenReturn(Promise.of(disabled)); 
 
-            FeatureFlagService.FeatureFlag onResult = runPromise(() -> featureFlagService.toggle(featureKey, true)); // GH-90000
-            FeatureFlagService.FeatureFlag offResult = runPromise(() -> featureFlagService.toggle(featureKey, false)); // GH-90000
+            FeatureFlagService.FeatureFlag onResult = runPromise(() -> featureFlagService.toggle(featureKey, true)); 
+            FeatureFlagService.FeatureFlag offResult = runPromise(() -> featureFlagService.toggle(featureKey, false)); 
 
-            assertThat(onResult.enabled()).isTrue(); // GH-90000
-            assertThat(offResult.enabled()).isFalse(); // GH-90000
+            assertThat(onResult.enabled()).isTrue(); 
+            assertThat(offResult.enabled()).isFalse(); 
         }
     }
 
@@ -102,57 +102,57 @@ class FeatureFlagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[F001]: user_targeting_matches_specific_user")
-        void userTargetingMatchesSpecificUser() { // GH-90000
+        void userTargetingMatchesSpecificUser() { 
             String featureKey = "vip-feature";
-            FeatureFlagService.FeatureContext vipUser = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext vipUser = FeatureFlagService.FeatureContext.builder() 
                 .userId("vip-user-001")
                 .tenantId("tenant-alpha")
-                .attributes(Map.of("tier", "vip")) // GH-90000
-                .build(); // GH-90000
+                .attributes(Map.of("tier", "vip")) 
+                .build(); 
 
-            when(featureFlagService.isEnabled(featureKey, vipUser)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(featureFlagService.isEnabled(featureKey, vipUser)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, vipUser)); // GH-90000
+            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, vipUser)); 
 
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("[F001]: percentage_rollout_enabled_for_matching_users")
-        void percentageRolloutEnabledForMatchingUsers() { // GH-90000
+        void percentageRolloutEnabledForMatchingUsers() { 
             String featureKey = "gradual-rollout";
 
             // User ID hash determines if they're in the rollout percentage
-            FeatureFlagService.FeatureContext userInRollout = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext userInRollout = FeatureFlagService.FeatureContext.builder() 
                 .userId("user-in-rollout")
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.isEnabled(featureKey, userInRollout)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(featureFlagService.isEnabled(featureKey, userInRollout)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, userInRollout)); // GH-90000
+            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, userInRollout)); 
 
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("[F001]: percentage_rollout_disabled_for_non_matching_users")
-        void percentageRolloutDisabledForNonMatchingUsers() { // GH-90000
+        void percentageRolloutDisabledForNonMatchingUsers() { 
             String featureKey = "limited-rollout";
 
-            FeatureFlagService.FeatureContext userOutOfRollout = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext userOutOfRollout = FeatureFlagService.FeatureContext.builder() 
                 .userId("user-out-of-rollout")
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.isEnabled(featureKey, userOutOfRollout)) // GH-90000
-                .thenReturn(Promise.of(false)); // GH-90000
+            when(featureFlagService.isEnabled(featureKey, userOutOfRollout)) 
+                .thenReturn(Promise.of(false)); 
 
-            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, userOutOfRollout)); // GH-90000
+            Boolean result = runPromise(() -> featureFlagService.isEnabled(featureKey, userOutOfRollout)); 
 
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
     }
 
@@ -162,37 +162,37 @@ class FeatureFlagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[F001]: get_variant_returns_assigned_variant")
-        void getVariantReturnsAssignedVariant() { // GH-90000
+        void getVariantReturnsAssignedVariant() { 
             String featureKey = "ab-test-color";
-            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() 
                 .userId("user-001")
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.getVariant(featureKey, context)) // GH-90000
+            when(featureFlagService.getVariant(featureKey, context)) 
                 .thenReturn(Promise.of("blue"));
 
-            String variant = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
+            String variant = runPromise(() -> featureFlagService.getVariant(featureKey, context)); 
 
-            assertThat(variant).isIn("blue", "red", "green"); // GH-90000
+            assertThat(variant).isIn("blue", "red", "green"); 
         }
 
         @Test
         @DisplayName("[F001]: same_user_gets_same_variant")
-        void sameUserGetsSameVariant() { // GH-90000
+        void sameUserGetsSameVariant() { 
             String featureKey = "consistent-variant";
-            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() // GH-90000
+            FeatureFlagService.FeatureContext context = FeatureFlagService.FeatureContext.builder() 
                 .userId("user-001")
                 .tenantId("tenant-alpha")
-                .build(); // GH-90000
+                .build(); 
 
-            when(featureFlagService.getVariant(featureKey, context)) // GH-90000
+            when(featureFlagService.getVariant(featureKey, context)) 
                 .thenReturn(Promise.of("variant-a"));
 
-            String variant1 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
-            String variant2 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); // GH-90000
+            String variant1 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); 
+            String variant2 = runPromise(() -> featureFlagService.getVariant(featureKey, context)); 
 
-            assertThat(variant1).isEqualTo(variant2); // GH-90000
+            assertThat(variant1).isEqualTo(variant2); 
         }
     }
 
@@ -202,72 +202,72 @@ class FeatureFlagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[F001]: create_flag_creates_new_flag")
-        void createFlagCreatesNewFlag() { // GH-90000
-            FeatureFlagService.FeatureFlag newFlag = new FeatureFlagService.FeatureFlag( // GH-90000
+        void createFlagCreatesNewFlag() { 
+            FeatureFlagService.FeatureFlag newFlag = new FeatureFlagService.FeatureFlag( 
                 "new-feature", "New Feature", "Description", "tenant-alpha",
-                false, List.of(), 0, Set.of(), "", // GH-90000
-                Instant.now(), Instant.now(), "user-001" // GH-90000
+                false, List.of(), 0, Set.of(), "", 
+                Instant.now(), Instant.now(), "user-001" 
             );
 
-            when(featureFlagService.createFlag(any())) // GH-90000
-                .thenReturn(Promise.of(newFlag)); // GH-90000
+            when(featureFlagService.createFlag(any())) 
+                .thenReturn(Promise.of(newFlag)); 
 
-            FeatureFlagService.FeatureFlag result = runPromise(() -> // GH-90000
-                featureFlagService.createFlag(newFlag) // GH-90000
+            FeatureFlagService.FeatureFlag result = runPromise(() -> 
+                featureFlagService.createFlag(newFlag) 
             );
 
             assertThat(result.key()).isEqualTo("new-feature");
-            assertThat(result.enabled()).isFalse(); // GH-90000
+            assertThat(result.enabled()).isFalse(); 
         }
 
         @Test
         @DisplayName("[F001]: get_flag_returns_existing_flag")
-        void getFlagReturnsExistingFlag() { // GH-90000
+        void getFlagReturnsExistingFlag() { 
             String key = "existing-feature";
-            FeatureFlagService.FeatureFlag flag = createFlag(key, true); // GH-90000
+            FeatureFlagService.FeatureFlag flag = createFlag(key, true); 
 
-            when(featureFlagService.getFlag(key)) // GH-90000
-                .thenReturn(Promise.of(Optional.of(flag))); // GH-90000
+            when(featureFlagService.getFlag(key)) 
+                .thenReturn(Promise.of(Optional.of(flag))); 
 
-            Optional<FeatureFlagService.FeatureFlag> result = runPromise(() -> // GH-90000
-                featureFlagService.getFlag(key) // GH-90000
+            Optional<FeatureFlagService.FeatureFlag> result = runPromise(() -> 
+                featureFlagService.getFlag(key) 
             );
 
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().key()).isEqualTo(key); // GH-90000
+            assertThat(result).isPresent(); 
+            assertThat(result.get().key()).isEqualTo(key); 
         }
 
         @Test
         @DisplayName("[F001]: delete_flag_removes_flag")
-        void deleteFlagRemovesFlag() { // GH-90000
+        void deleteFlagRemovesFlag() { 
             String key = "obsolete-feature";
 
-            when(featureFlagService.deleteFlag(key)) // GH-90000
-                .thenReturn(Promise.of((Void) null)); // GH-90000
+            when(featureFlagService.deleteFlag(key)) 
+                .thenReturn(Promise.of((Void) null)); 
 
-            runPromise(() -> featureFlagService.deleteFlag(key)); // GH-90000
+            runPromise(() -> featureFlagService.deleteFlag(key)); 
 
-            verify(featureFlagService).deleteFlag(key); // GH-90000
+            verify(featureFlagService).deleteFlag(key); 
         }
 
         @Test
         @DisplayName("[F001]: list_flags_returns_all_flags_for_tenant")
-        void listFlagsReturnsAllFlagsForTenant() { // GH-90000
+        void listFlagsReturnsAllFlagsForTenant() { 
             String tenantId = "tenant-alpha";
-            List<FeatureFlagService.FeatureFlag> flags = List.of( // GH-90000
-                createFlag("feature-1", true), // GH-90000
-                createFlag("feature-2", false), // GH-90000
-                createFlag("feature-3", true) // GH-90000
+            List<FeatureFlagService.FeatureFlag> flags = List.of( 
+                createFlag("feature-1", true), 
+                createFlag("feature-2", false), 
+                createFlag("feature-3", true) 
             );
 
-            when(featureFlagService.listFlags(tenantId)) // GH-90000
-                .thenReturn(Promise.of(flags)); // GH-90000
+            when(featureFlagService.listFlags(tenantId)) 
+                .thenReturn(Promise.of(flags)); 
 
-            List<FeatureFlagService.FeatureFlag> result = runPromise(() -> // GH-90000
-                featureFlagService.listFlags(tenantId) // GH-90000
+            List<FeatureFlagService.FeatureFlag> result = runPromise(() -> 
+                featureFlagService.listFlags(tenantId) 
             );
 
-            assertThat(result).hasSize(3); // GH-90000
+            assertThat(result).hasSize(3); 
         }
     }
 
@@ -277,33 +277,33 @@ class FeatureFlagServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[F001]: get_metrics_returns_evaluation_stats")
-        void getMetricsReturnsEvaluationStats() { // GH-90000
+        void getMetricsReturnsEvaluationStats() { 
             String key = "measured-feature";
 
-            FeatureFlagService.FeatureMetrics metrics = new FeatureFlagService.FeatureMetrics( // GH-90000
+            FeatureFlagService.FeatureMetrics metrics = new FeatureFlagService.FeatureMetrics( 
                 key, 10000, 7500, 2500,
-                Map.of("variant-a", 5000L, "variant-b", 5000L), // GH-90000
-                0.15, Instant.now() // GH-90000
+                Map.of("variant-a", 5000L, "variant-b", 5000L), 
+                0.15, Instant.now() 
             );
 
-            when(featureFlagService.getMetrics(key)) // GH-90000
-                .thenReturn(Promise.of(metrics)); // GH-90000
+            when(featureFlagService.getMetrics(key)) 
+                .thenReturn(Promise.of(metrics)); 
 
-            FeatureFlagService.FeatureMetrics result = runPromise(() -> // GH-90000
-                featureFlagService.getMetrics(key) // GH-90000
+            FeatureFlagService.FeatureMetrics result = runPromise(() -> 
+                featureFlagService.getMetrics(key) 
             );
 
-            assertThat(result.totalEvaluations()).isEqualTo(10000); // GH-90000
-            assertThat(result.enabledCount()).isEqualTo(7500); // GH-90000
-            assertThat(result.conversionRate()).isEqualTo(0.15); // GH-90000
+            assertThat(result.totalEvaluations()).isEqualTo(10000); 
+            assertThat(result.enabledCount()).isEqualTo(7500); 
+            assertThat(result.conversionRate()).isEqualTo(0.15); 
         }
     }
 
-    private FeatureFlagService.FeatureFlag createFlag(String key, boolean enabled) { // GH-90000
-        return new FeatureFlagService.FeatureFlag( // GH-90000
+    private FeatureFlagService.FeatureFlag createFlag(String key, boolean enabled) { 
+        return new FeatureFlagService.FeatureFlag( 
             key, key, "", "tenant-alpha", enabled,
-            List.of(), 100, Set.of(), "", // GH-90000
-            Instant.now(), Instant.now(), "user" // GH-90000
+            List.of(), 100, Set.of(), "", 
+            Instant.now(), Instant.now(), "user" 
         );
     }
 }

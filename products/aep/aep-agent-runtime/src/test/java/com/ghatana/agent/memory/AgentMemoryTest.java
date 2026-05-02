@@ -22,42 +22,42 @@ class AgentMemoryTest {
 
     @Test
     @DisplayName("Should handle memory allocation")
-    void shouldHandleMemoryAllocation() { // GH-90000
-        assertThat(TraceGrade.class).isNotNull(); // GH-90000
+    void shouldHandleMemoryAllocation() { 
+        assertThat(TraceGrade.class).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle memory deallocation")
-    void shouldHandleMemoryDeallocation() { // GH-90000
+    void shouldHandleMemoryDeallocation() { 
         String memoryId = "mem-123";
-        assertThat(memoryId).isNotNull(); // GH-90000
+        assertThat(memoryId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should enforce memory governance")
-    void shouldEnforceMemoryGovernance() { // GH-90000
+    void shouldEnforceMemoryGovernance() { 
         long memoryLimit = 1024 * 1024; // 1MB
-        assertThat(memoryLimit).isPositive(); // GH-90000
+        assertThat(memoryLimit).isPositive(); 
     }
 
     @Test
     @DisplayName("Should secure memory access")
-    void shouldSecureMemoryAccess() { // GH-90000
+    void shouldSecureMemoryAccess() { 
         boolean accessGranted = true;
-        assertThat(accessGranted).isTrue(); // GH-90000
+        assertThat(accessGranted).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle memory persistence")
-    void shouldHandleMemoryPersistence() { // GH-90000
+    void shouldHandleMemoryPersistence() { 
         boolean persisted = true;
-        assertThat(persisted).isTrue(); // GH-90000
+        assertThat(persisted).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle memory sharing")
-    void shouldHandleMemorySharing() { // GH-90000
+    void shouldHandleMemorySharing() { 
         String sharedMemoryId = "shared-mem-456";
-        assertThat(sharedMemoryId).isNotNull(); // GH-90000
+        assertThat(sharedMemoryId).isNotNull(); 
     }
 }

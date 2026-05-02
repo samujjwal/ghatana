@@ -22,11 +22,11 @@ import static org.mockito.Mockito.*;
  * {@link DataCloudHttpMetrics} on success and error paths.
  *
  * @doc.type class
- * @doc.purpose Regression coverage for AnalyticsHandler metrics wiring (DC-010) // GH-90000
+ * @doc.purpose Regression coverage for AnalyticsHandler metrics wiring (DC-010) 
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AnalyticsHandler metrics wiring")
 class AnalyticsHandlerMetricsTest {
 
@@ -43,52 +43,52 @@ class AnalyticsHandlerMetricsTest {
     private DataCloudHttpMetrics metrics;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        metrics = new DataCloudHttpMetrics(metricsCollector); // GH-90000
-        handler = new AnalyticsHandler(analyticsEngine, httpSupport) // GH-90000
-                .withMetrics(metrics); // GH-90000
+    void setUp() { 
+        metrics = new DataCloudHttpMetrics(metricsCollector); 
+        handler = new AnalyticsHandler(analyticsEngine, httpSupport) 
+                .withMetrics(metrics); 
     }
 
     @Test
     @DisplayName("handleAnalyticsQuery emits request and latency metrics on success")
-    void handleAnalyticsQueryShouldEmitRequestAndLatencyMetricsOnSuccess() { // GH-90000
-        QueryResult queryResult = mock(QueryResult.class); // GH-90000
+    void handleAnalyticsQueryShouldEmitRequestAndLatencyMetricsOnSuccess() { 
+        QueryResult queryResult = mock(QueryResult.class); 
         when(queryResult.getQueryId()).thenReturn("q-1");
         when(queryResult.getQueryType()).thenReturn("SELECT");
-        when(queryResult.getRowCount()).thenReturn(5); // GH-90000
-        when(queryResult.getColumnCount()).thenReturn(3); // GH-90000
-        when(queryResult.getRows()).thenReturn(List.of()); // GH-90000
-        when(queryResult.getExecutionTimeMs()).thenReturn(10L); // GH-90000
-        when(queryResult.isOptimized()).thenReturn(false); // GH-90000
+        when(queryResult.getRowCount()).thenReturn(5); 
+        when(queryResult.getColumnCount()).thenReturn(3); 
+        when(queryResult.getRows()).thenReturn(List.of()); 
+        when(queryResult.getExecutionTimeMs()).thenReturn(10L); 
+        when(queryResult.isOptimized()).thenReturn(false); 
 
-        when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
-                .thenReturn(Promise.of(queryResult)); // GH-90000
+        when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) 
+                .thenReturn(Promise.of(queryResult)); 
         when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
-        when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); // GH-90000
-        io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class); // GH-90000
-        when(successResponse.getCode()).thenReturn(200); // GH-90000
-        when(httpSupport.jsonResponse(anyMap())).thenReturn(successResponse); // GH-90000
+        when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); 
+        io.activej.http.HttpResponse successResponse = mock(io.activej.http.HttpResponse.class); 
+        when(successResponse.getCode()).thenReturn(200); 
+        when(httpSupport.jsonResponse(anyMap())).thenReturn(successResponse); 
 
         // Simulate request with valid JSON body using mocked HttpRequest
-        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); // GH-90000
-        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
-                io.activej.bytebuf.ByteBuf.wrapForReading( // GH-90000
-                        "{\"query\":\"SELECT * FROM events\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8)))); // GH-90000
+        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); 
+        when(request.loadBody()).thenReturn(Promise.of( 
+                io.activej.bytebuf.ByteBuf.wrapForReading( 
+                        "{\"query\":\"SELECT * FROM events\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8)))); 
 
-        handler.handleAnalyticsQuery(request).getResult(); // GH-90000
+        handler.handleAnalyticsQuery(request).getResult(); 
 
         // Verify request metric emitted
-        verify(metricsCollector).incrementCounter( // GH-90000
-                eq(DataCloudHttpMetrics.METRIC_REQUESTS), // GH-90000
+        verify(metricsCollector).incrementCounter( 
+                eq(DataCloudHttpMetrics.METRIC_REQUESTS), 
                 eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
                 eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery"),
                 eq(DataCloudHttpMetrics.TAG_TENANT), eq("tenant-dc"),
                 eq(DataCloudHttpMetrics.TAG_STATUS), eq("200")
         );
         // Verify latency metric emitted
-        verify(metricsCollector).recordTimer( // GH-90000
-                eq(DataCloudHttpMetrics.METRIC_LATENCY), // GH-90000
-                anyLong(), // GH-90000
+        verify(metricsCollector).recordTimer( 
+                eq(DataCloudHttpMetrics.METRIC_LATENCY), 
+                anyLong(), 
                 eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
                 eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery")
         );
@@ -96,23 +96,23 @@ class AnalyticsHandlerMetricsTest {
 
     @Test
     @DisplayName("handleAnalyticsQuery emits error metric when engine fails")
-    void handleAnalyticsQueryShouldEmitErrorMetricWhenEngineFails() { // GH-90000
-        when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) // GH-90000
+    void handleAnalyticsQueryShouldEmitErrorMetricWhenEngineFails() { 
+        when(analyticsEngine.submitQuery(anyString(), anyString(), anyMap())) 
                 .thenReturn(Promise.ofException(new RuntimeException("engine down")));
         when(httpSupport.requireTenantIdOrFail(any())).thenReturn("tenant-dc");
-        when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); // GH-90000
-        when(httpSupport.errorResponse(anyInt(), anyString())) // GH-90000
-                .thenReturn(mock(io.activej.http.HttpResponse.class)); // GH-90000
+        when(httpSupport.objectMapper()).thenReturn(new com.fasterxml.jackson.databind.ObjectMapper()); 
+        when(httpSupport.errorResponse(anyInt(), anyString())) 
+                .thenReturn(mock(io.activej.http.HttpResponse.class)); 
 
-        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); // GH-90000
-        when(request.loadBody()).thenReturn(Promise.of( // GH-90000
-                io.activej.bytebuf.ByteBuf.wrapForReading( // GH-90000
-                        "{\"query\":\"SELECT 1\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8)))); // GH-90000
+        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); 
+        when(request.loadBody()).thenReturn(Promise.of( 
+                io.activej.bytebuf.ByteBuf.wrapForReading( 
+                        "{\"query\":\"SELECT 1\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8)))); 
 
-        handler.handleAnalyticsQuery(request).getResult(); // GH-90000
+        handler.handleAnalyticsQuery(request).getResult(); 
 
-        verify(metricsCollector).incrementCounter( // GH-90000
-                eq(DataCloudHttpMetrics.METRIC_ERRORS), // GH-90000
+        verify(metricsCollector).incrementCounter( 
+                eq(DataCloudHttpMetrics.METRIC_ERRORS), 
                 eq(DataCloudHttpMetrics.TAG_HANDLER), eq("AnalyticsHandler"),
                 eq(DataCloudHttpMetrics.TAG_OPERATION), eq("handleAnalyticsQuery"),
                 eq(DataCloudHttpMetrics.TAG_ERROR_TYPE), eq("RuntimeException")
@@ -121,32 +121,32 @@ class AnalyticsHandlerMetricsTest {
 
         @Test
         @DisplayName("handleAnalyticsQuery rejects missing tenant header")
-        void handleAnalyticsQueryRejectsMissingTenantHeader() { // GH-90000
-                io.activej.http.HttpResponse badRequest = mock(io.activej.http.HttpResponse.class); // GH-90000
-                when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null); // GH-90000
-                when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); // GH-90000
+        void handleAnalyticsQueryRejectsMissingTenantHeader() { 
+                io.activej.http.HttpResponse badRequest = mock(io.activej.http.HttpResponse.class); 
+                when(httpSupport.requireTenantIdOrFail(any())).thenReturn(null); 
+                when(httpSupport.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
 
-                io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); // GH-90000
+                io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); 
 
-                handler.handleAnalyticsQuery(request).getResult(); // GH-90000
+                handler.handleAnalyticsQuery(request).getResult(); 
 
-                verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required"); // GH-90000
-                verifyNoInteractions(metricsCollector); // GH-90000
-                verifyNoInteractions(analyticsEngine); // GH-90000
+                verify(httpSupport).errorResponse(400, "X-Tenant-Id header is required"); 
+                verifyNoInteractions(metricsCollector); 
+                verifyNoInteractions(analyticsEngine); 
         }
 
     @Test
     @DisplayName("withMetrics(noop) does not emit any metrics")
-    void withNoopMetricsShouldNotCallCollector() { // GH-90000
-        AnalyticsHandler noopHandler = new AnalyticsHandler(null, httpSupport) // GH-90000
-                .withMetrics(DataCloudHttpMetrics.noop()); // GH-90000
+    void withNoopMetricsShouldNotCallCollector() { 
+        AnalyticsHandler noopHandler = new AnalyticsHandler(null, httpSupport) 
+                .withMetrics(DataCloudHttpMetrics.noop()); 
 
-        when(httpSupport.errorResponse(anyInt(), anyString())) // GH-90000
-                .thenReturn(mock(io.activej.http.HttpResponse.class)); // GH-90000
+        when(httpSupport.errorResponse(anyInt(), anyString())) 
+                .thenReturn(mock(io.activej.http.HttpResponse.class)); 
 
-        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); // GH-90000
-        noopHandler.handleAnalyticsQuery(request).getResult(); // GH-90000
+        io.activej.http.HttpRequest request = mock(io.activej.http.HttpRequest.class); 
+        noopHandler.handleAnalyticsQuery(request).getResult(); 
 
-        verifyNoInteractions(metricsCollector); // GH-90000
+        verifyNoInteractions(metricsCollector); 
     }
 }

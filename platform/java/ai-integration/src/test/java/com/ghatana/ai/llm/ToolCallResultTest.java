@@ -21,22 +21,22 @@ class ToolCallResultTest {
 
         @Test
         @DisplayName("success() creates a successful result")
-        void successResult() { // GH-90000
-            ToolCallResult result = ToolCallResult.success("call-1", "search", "{\"count\":5}"); // GH-90000
+        void successResult() { 
+            ToolCallResult result = ToolCallResult.success("call-1", "search", "{\"count\":5}"); 
             assertThat(result.getToolCallId()).isEqualTo("call-1");
             assertThat(result.getToolName()).isEqualTo("search");
-            assertThat(result.getResult()).isEqualTo("{\"count\":5}"); // GH-90000
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.getResult()).isEqualTo("{\"count\":5}"); 
+            assertThat(result.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("failure() creates a failed result")
-        void failureResult() { // GH-90000
-            ToolCallResult result = ToolCallResult.failure("call-2", "api_call", "Connection timeout"); // GH-90000
+        void failureResult() { 
+            ToolCallResult result = ToolCallResult.failure("call-2", "api_call", "Connection timeout"); 
             assertThat(result.getToolCallId()).isEqualTo("call-2");
             assertThat(result.getToolName()).isEqualTo("api_call");
             assertThat(result.getResult()).isEqualTo("Connection timeout");
-            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.isSuccess()).isFalse(); 
         }
     }
 
@@ -46,25 +46,25 @@ class ToolCallResultTest {
 
         @Test
         @DisplayName("null toolCallId throws NullPointerException")
-        void nullToolCallId() { // GH-90000
-            assertThatThrownBy(() -> ToolCallResult.success(null, "tool", "result")) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullToolCallId() { 
+            assertThatThrownBy(() -> ToolCallResult.success(null, "tool", "result")) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("toolCallId");
         }
 
         @Test
         @DisplayName("null toolName throws NullPointerException")
-        void nullToolName() { // GH-90000
-            assertThatThrownBy(() -> ToolCallResult.success("id", null, "result")) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullToolName() { 
+            assertThatThrownBy(() -> ToolCallResult.success("id", null, "result")) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("toolName");
         }
 
         @Test
         @DisplayName("null result throws NullPointerException")
-        void nullResult() { // GH-90000
-            assertThatThrownBy(() -> ToolCallResult.success("id", "tool", null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullResult() { 
+            assertThatThrownBy(() -> ToolCallResult.success("id", "tool", null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("result");
         }
     }
@@ -75,29 +75,29 @@ class ToolCallResultTest {
 
         @Test
         @DisplayName("short result is not truncated")
-        void shortResult() { // GH-90000
-            ToolCallResult result = ToolCallResult.success("c1", "tool", "short"); // GH-90000
+        void shortResult() { 
+            ToolCallResult result = ToolCallResult.success("c1", "tool", "short"); 
             assertThat(result.toString()).contains("short").doesNotContain("...");
         }
 
         @Test
         @DisplayName("long result is truncated to 100 chars")
-        void longResultTruncated() { // GH-90000
-            String longText = "x".repeat(200); // GH-90000
-            ToolCallResult result = ToolCallResult.success("c1", "tool", longText); // GH-90000
-            String str = result.toString(); // GH-90000
+        void longResultTruncated() { 
+            String longText = "x".repeat(200); 
+            ToolCallResult result = ToolCallResult.success("c1", "tool", longText); 
+            String str = result.toString(); 
             assertThat(str).contains("...");
             // Should not contain the full 200-char string
-            assertThat(str).doesNotContain(longText); // GH-90000
+            assertThat(str).doesNotContain(longText); 
         }
 
         @Test
         @DisplayName("toString includes success flag")
-        void includesSuccessFlag() { // GH-90000
-            ToolCallResult success = ToolCallResult.success("c1", "tool", "ok"); // GH-90000
+        void includesSuccessFlag() { 
+            ToolCallResult success = ToolCallResult.success("c1", "tool", "ok"); 
             assertThat(success.toString()).contains("success=true");
 
-            ToolCallResult failure = ToolCallResult.failure("c2", "tool", "err"); // GH-90000
+            ToolCallResult failure = ToolCallResult.failure("c2", "tool", "err"); 
             assertThat(failure.toString()).contains("success=false");
         }
     }
@@ -108,41 +108,41 @@ class ToolCallResultTest {
 
         @Test
         @DisplayName("equal results are equal")
-        void equalResults() { // GH-90000
-            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            ToolCallResult r2 = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            assertThat(r1).isEqualTo(r2); // GH-90000
-            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); // GH-90000
+        void equalResults() { 
+            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); 
+            ToolCallResult r2 = ToolCallResult.success("c1", "tool", "data"); 
+            assertThat(r1).isEqualTo(r2); 
+            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); 
         }
 
         @Test
         @DisplayName("success vs failure not equal")
-        void successVsFailure() { // GH-90000
-            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            ToolCallResult r2 = ToolCallResult.failure("c1", "tool", "data"); // GH-90000
-            assertThat(r1).isNotEqualTo(r2); // GH-90000
+        void successVsFailure() { 
+            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); 
+            ToolCallResult r2 = ToolCallResult.failure("c1", "tool", "data"); 
+            assertThat(r1).isNotEqualTo(r2); 
         }
 
         @Test
         @DisplayName("different toolCallId not equal")
-        void differentIds() { // GH-90000
-            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            ToolCallResult r2 = ToolCallResult.success("c2", "tool", "data"); // GH-90000
-            assertThat(r1).isNotEqualTo(r2); // GH-90000
+        void differentIds() { 
+            ToolCallResult r1 = ToolCallResult.success("c1", "tool", "data"); 
+            ToolCallResult r2 = ToolCallResult.success("c2", "tool", "data"); 
+            assertThat(r1).isNotEqualTo(r2); 
         }
 
         @Test
         @DisplayName("equal to itself")
-        void equalToItself() { // GH-90000
-            ToolCallResult r = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            assertThat(r).isEqualTo(r); // GH-90000
+        void equalToItself() { 
+            ToolCallResult r = ToolCallResult.success("c1", "tool", "data"); 
+            assertThat(r).isEqualTo(r); 
         }
 
         @Test
         @DisplayName("not equal to null or different type")
-        void notEqualToNullOrDifferentType() { // GH-90000
-            ToolCallResult r = ToolCallResult.success("c1", "tool", "data"); // GH-90000
-            assertThat(r).isNotEqualTo(null); // GH-90000
+        void notEqualToNullOrDifferentType() { 
+            ToolCallResult r = ToolCallResult.success("c1", "tool", "data"); 
+            assertThat(r).isNotEqualTo(null); 
             assertThat(r).isNotEqualTo("string");
         }
     }

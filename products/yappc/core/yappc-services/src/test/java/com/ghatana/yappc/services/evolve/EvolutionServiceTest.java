@@ -27,103 +27,103 @@ import static org.mockito.Mockito.*;
 class EvolutionServiceTest extends EventloopTestBase {
 
     @Test
-    void shouldProposeEvolutionPlan() { // GH-90000
+    void shouldProposeEvolutionPlan() { 
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class); // GH-90000
-        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
+        CompletionService aiService = mock(CompletionService.class); 
+        AuditLogger auditLogger = mock(AuditLogger.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
 
-        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+        when(aiService.complete(any(CompletionRequest.class))) 
+                .thenReturn(Promise.of(CompletionResult.builder() 
                         .text("Recommendation: Optimize database queries")
                         .modelUsed("gpt-4")
-                        .build())); // GH-90000
+                        .build())); 
 
-        when(auditLogger.log(any(Map.class))) // GH-90000
-                .thenReturn(Promise.complete()); // GH-90000
+        when(auditLogger.log(any(Map.class))) 
+                .thenReturn(Promise.complete()); 
 
-        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
-        Insights insights = Insights.builder() // GH-90000
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); 
+        Insights insights = Insights.builder() 
                 .id("insights-123")
                 .observationRef("obs-123")
-                .patterns(List.of()) // GH-90000
-                .anomalies(List.of()) // GH-90000
-                .recommendations(List.of()) // GH-90000
-                .build(); // GH-90000
+                .patterns(List.of()) 
+                .anomalies(List.of()) 
+                .recommendations(List.of()) 
+                .build(); 
 
         // WHEN
-        EvolutionPlan result = runPromise(() -> service.propose(insights)); // GH-90000
+        EvolutionPlan result = runPromise(() -> service.propose(insights)); 
 
         // THEN
-        assertNotNull(result); // GH-90000
-        assertNotNull(result.id()); // GH-90000
-        assertEquals("insights-123", result.insightsRef()); // GH-90000
-        assertNotNull(result.tasks()); // GH-90000
-        assertNotNull(result.createdAt()); // GH-90000
+        assertNotNull(result); 
+        assertNotNull(result.id()); 
+        assertEquals("insights-123", result.insightsRef()); 
+        assertNotNull(result.tasks()); 
+        assertNotNull(result.createdAt()); 
 
-        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); // GH-90000
-        verify(auditLogger, times(1)).log(any(Map.class)); // GH-90000
+        verify(aiService, atLeastOnce()).complete(any(CompletionRequest.class)); 
+        verify(auditLogger, times(1)).log(any(Map.class)); 
     }
 
     @Test
-    void shouldPrioritizeTasks() { // GH-90000
+    void shouldPrioritizeTasks() { 
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class); // GH-90000
-        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
+        CompletionService aiService = mock(CompletionService.class); 
+        AuditLogger auditLogger = mock(AuditLogger.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
 
-        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
-                .thenReturn(Promise.of(CompletionResult.builder() // GH-90000
+        when(aiService.complete(any(CompletionRequest.class))) 
+                .thenReturn(Promise.of(CompletionResult.builder() 
                         .text("High priority: Fix memory leak\nMedium priority: Optimize queries")
                         .modelUsed("gpt-4")
-                        .build())); // GH-90000
+                        .build())); 
 
-        when(auditLogger.log(any(Map.class))) // GH-90000
-                .thenReturn(Promise.complete()); // GH-90000
+        when(auditLogger.log(any(Map.class))) 
+                .thenReturn(Promise.complete()); 
 
-        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
-        Insights insights = Insights.builder() // GH-90000
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); 
+        Insights insights = Insights.builder() 
                 .id("insights-123")
                 .observationRef("obs-123")
-                .patterns(List.of()) // GH-90000
-                .anomalies(List.of()) // GH-90000
-                .recommendations(List.of()) // GH-90000
-                .build(); // GH-90000
+                .patterns(List.of()) 
+                .anomalies(List.of()) 
+                .recommendations(List.of()) 
+                .build(); 
 
         // WHEN
-        EvolutionPlan result = runPromise(() -> service.propose(insights)); // GH-90000
+        EvolutionPlan result = runPromise(() -> service.propose(insights)); 
 
         // THEN
-        assertNotNull(result); // GH-90000
-        assertFalse(result.tasks().isEmpty()); // GH-90000
-        assertFalse(result.tasks().isEmpty()); // GH-90000
+        assertNotNull(result); 
+        assertFalse(result.tasks().isEmpty()); 
+        assertFalse(result.tasks().isEmpty()); 
     }
 
     @Test
-    void shouldHandleProposalFailure() { // GH-90000
+    void shouldHandleProposalFailure() { 
         // GIVEN
-        CompletionService aiService = mock(CompletionService.class); // GH-90000
-        AuditLogger auditLogger = mock(AuditLogger.class); // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
+        CompletionService aiService = mock(CompletionService.class); 
+        AuditLogger auditLogger = mock(AuditLogger.class); 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
 
-        when(aiService.complete(any(CompletionRequest.class))) // GH-90000
+        when(aiService.complete(any(CompletionRequest.class))) 
                 .thenReturn(Promise.ofException(new RuntimeException("Proposal failed")));
 
-        when(auditLogger.log(any(Map.class))) // GH-90000
-                .thenReturn(Promise.complete()); // GH-90000
+        when(auditLogger.log(any(Map.class))) 
+                .thenReturn(Promise.complete()); 
 
-        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); // GH-90000
-        Insights insights = Insights.builder() // GH-90000
+        EvolutionService service = new EvolutionServiceImpl(aiService, auditLogger, metrics); 
+        Insights insights = Insights.builder() 
                 .id("insights-123")
                 .observationRef("obs-123")
-                .build(); // GH-90000
+                .build(); 
 
                 // WHEN
-                EvolutionPlan result = runPromise(() -> service.propose(insights)); // GH-90000
+                EvolutionPlan result = runPromise(() -> service.propose(insights)); 
 
                 // THEN
-                assertNotNull(result); // GH-90000
-                assertEquals("insights-123", result.insightsRef()); // GH-90000
+                assertNotNull(result); 
+                assertEquals("insights-123", result.insightsRef()); 
 
                 verify(metrics, times(1)).incrementCounter(eq("yappc.ai.evolve.propose.fallback"), any(Map.class));
     }

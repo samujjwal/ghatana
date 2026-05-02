@@ -29,92 +29,92 @@ class ReportingTest {
 
     @Test
     @DisplayName("Should generate reports")
-    void shouldGenerateReports() { // GH-90000
-        ReportDefinition definition = ReportDefinition.builder() // GH-90000
+    void shouldGenerateReports() { 
+        ReportDefinition definition = ReportDefinition.builder() 
             .name("weekly-sales")
-            .type(ReportType.QUERY) // GH-90000
-            .format(ReportFormat.JSON) // GH-90000
+            .type(ReportType.QUERY) 
+            .format(ReportFormat.JSON) 
             .query("SELECT * FROM sales")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(definition).isNotNull(); // GH-90000
+        assertThat(definition).isNotNull(); 
         assertThat(definition.getName()).isEqualTo("weekly-sales");
-        assertThat(definition.getType()).isEqualTo(ReportType.QUERY); // GH-90000
+        assertThat(definition.getType()).isEqualTo(ReportType.QUERY); 
     }
 
     @Test
     @DisplayName("Should format report output")
-    void shouldFormatReportOutput() { // GH-90000
-        ReportResult result = ReportResult.builder() // GH-90000
+    void shouldFormatReportOutput() { 
+        ReportResult result = ReportResult.builder() 
             .reportId("report-123")
             .reportName("weekly-sales")
-            .format(ReportFormat.CSV) // GH-90000
+            .format(ReportFormat.CSV) 
             .formattedBody("name,price\nProduct A,100\n")
-            .rowCount(1) // GH-90000
+            .rowCount(1) 
             .contentType("text/csv")
-            .executionTime(Duration.ofMillis(100)) // GH-90000
-            .build(); // GH-90000
+            .executionTime(Duration.ofMillis(100)) 
+            .build(); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getFormat()).isEqualTo(ReportFormat.CSV); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getFormat()).isEqualTo(ReportFormat.CSV); 
         assertThat(result.getFormattedBody()).contains("name,price");
     }
 
     @Test
     @DisplayName("Should handle report exports")
-    void shouldHandleReportExports() { // GH-90000
-        ReportDefinition definition = ReportDefinition.builder() // GH-90000
+    void shouldHandleReportExports() { 
+        ReportDefinition definition = ReportDefinition.builder() 
             .name("entity-export")
-            .type(ReportType.ENTITY_EXPORT) // GH-90000
-            .format(ReportFormat.CSV) // GH-90000
+            .type(ReportType.ENTITY_EXPORT) 
+            .format(ReportFormat.CSV) 
             .collection("products")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(definition).isNotNull(); // GH-90000
-        assertThat(definition.getType()).isEqualTo(ReportType.ENTITY_EXPORT); // GH-90000
+        assertThat(definition).isNotNull(); 
+        assertThat(definition.getType()).isEqualTo(ReportType.ENTITY_EXPORT); 
         assertThat(definition.getCollection()).isEqualTo("products");
     }
 
     @Test
     @DisplayName("Should handle report scheduling")
-    void shouldHandleReportScheduling() { // GH-90000
+    void shouldHandleReportScheduling() { 
         String schedule = "0 0 * * *"; // Daily at midnight
 
-        assertThat(schedule).isNotNull(); // GH-90000
+        assertThat(schedule).isNotNull(); 
         assertThat(schedule).contains("*");
     }
 
     @Test
     @DisplayName("Should handle report failures")
-    void shouldHandleReportFailures() { // GH-90000
-        ReportResult result = ReportResult.builder() // GH-90000
+    void shouldHandleReportFailures() { 
+        ReportResult result = ReportResult.builder() 
             .reportId("report-123")
             .reportName("failed-report")
-            .format(ReportFormat.JSON) // GH-90000
-            .rowCount(0) // GH-90000
-            .executionTime(Duration.ZERO) // GH-90000
+            .format(ReportFormat.JSON) 
+            .rowCount(0) 
+            .executionTime(Duration.ZERO) 
             .contentType("application/json")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(0); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getRowCount()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Should handle report caching")
-    void shouldHandleReportCaching() { // GH-90000
+    void shouldHandleReportCaching() { 
         String reportId = "report-123";
-        ReportResult result = ReportResult.builder() // GH-90000
-            .reportId(reportId) // GH-90000
+        ReportResult result = ReportResult.builder() 
+            .reportId(reportId) 
             .reportName("cached-report")
-            .format(ReportFormat.JSON) // GH-90000
-            .rows(List.of(Map.of("key", "value"))) // GH-90000
-            .rowCount(1) // GH-90000
+            .format(ReportFormat.JSON) 
+            .rows(List.of(Map.of("key", "value"))) 
+            .rowCount(1) 
             .contentType("application/json")
-            .executionTime(Duration.ofMillis(50)) // GH-90000
-            .build(); // GH-90000
+            .executionTime(Duration.ofMillis(50)) 
+            .build(); 
 
-        assertThat(result.getReportId()).isEqualTo(reportId); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(1); // GH-90000
+        assertThat(result.getReportId()).isEqualTo(reportId); 
+        assertThat(result.getRowCount()).isEqualTo(1); 
     }
 }

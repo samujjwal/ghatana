@@ -16,17 +16,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Privacy deletion (GDPR right-to-erasure) contract tests for consent plugins.
+ * Privacy deletion (right-to-erasure) contract tests for consent plugins.
  * <p>
  * Verifies that {@link ConsentPlugin#deleteAllForSubject} correctly removes all
  * consent records and that subsequent queries reflect the erasure.
  *
  * @doc.type class
- * @doc.purpose GDPR right-to-erasure contract tests for StandardConsentPlugin and DurableConsentPlugin
+ * @doc.purpose Right-to-erasure contract tests for StandardConsentPlugin and DurableConsentPlugin
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("Consent Privacy Deletion (GDPR Erasure) Tests")
+@DisplayName("Consent Privacy Deletion Tests")
 class ConsentPrivacyDeletionTest extends EventloopTestBase {
 
     @Nested
@@ -112,7 +112,7 @@ class ConsentPrivacyDeletionTest extends EventloopTestBase {
         @DisplayName("deleteAllForSubject removes all consent records and verifyConsent returns false")
         void deleteAllRemovesConsentAndVerifyReturnsFalse() {
             runPromise(() -> plugin.recordConsent("subject-1", "marketing", ConsentAction.GRANT));
-            runPromise(() -> plugin.recordConsent("subject-1", "healthcare-phr", ConsentAction.GRANT));
+            runPromise(() -> plugin.recordConsent("subject-1", "domain-a-dataset", ConsentAction.GRANT));
 
             boolean beforeDeletion = runPromise(() -> plugin.verifyConsent("subject-1", "marketing"));
             assertThat(beforeDeletion).isTrue();

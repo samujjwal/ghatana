@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.platform.entity;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("[Entity]: query_boundary_schema_versioning_cdc")
 class EntityQueryBoundaryTest extends EventloopTestBase {
 
@@ -40,12 +40,12 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
     private EntityStore entityStore;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Configure lenient stubs for common operations
-        lenient().when(entityStore.query(any(), any())) // GH-90000
-            .thenReturn(Promise.of(EntityStore.QueryResult.empty())); // GH-90000
-        lenient().when(entityStore.findById(any(), any())) // GH-90000
-            .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        lenient().when(entityStore.query(any(), any())) 
+            .thenReturn(Promise.of(EntityStore.QueryResult.empty())); 
+        lenient().when(entityStore.findById(any(), any())) 
+            .thenReturn(Promise.of(Optional.empty())); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -54,11 +54,11 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[QuerySpec]: negative_offset_normalized_to_zero")
-    void negativeOffsetNormalizedToZero() { // GH-90000
-        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
+    void negativeOffsetNormalizedToZero() { 
+        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( 
             "products",
-            List.of(), // GH-90000
-            List.of(), // GH-90000
+            List.of(), 
+            List.of(), 
             -5,
             10,
             null,
@@ -67,17 +67,17 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             null
         );
 
-        assertThat(spec.offset()).isZero(); // GH-90000
-        assertThat(spec.limit()).isEqualTo(10); // GH-90000
+        assertThat(spec.offset()).isZero(); 
+        assertThat(spec.limit()).isEqualTo(10); 
     }
 
     @Test
     @DisplayName("[QuerySpec]: zero_limit_defaults_to_100")
-    void zeroLimitDefaultsTo100() { // GH-90000
-        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
+    void zeroLimitDefaultsTo100() { 
+        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( 
             "products",
-            List.of(), // GH-90000
-            List.of(), // GH-90000
+            List.of(), 
+            List.of(), 
             0,
             0,
             null,
@@ -86,25 +86,25 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             null
         );
 
-        assertThat(spec.limit()).isEqualTo(100); // GH-90000
+        assertThat(spec.limit()).isEqualTo(100); 
     }
 
     @Test
     @DisplayName("[QuerySpec]: limit_above_max_throws_exception")
-    void limitAboveMaxThrowsException() { // GH-90000
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
-            new EntityStore.QuerySpec("products", List.of(), List.of(), 0, 10001, null, List.of(), EntityStore.ConsistencyLevel.EVENTUAL, null) // GH-90000
-        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void limitAboveMaxThrowsException() { 
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
+            new EntityStore.QuerySpec("products", List.of(), List.of(), 0, 10001, null, List.of(), EntityStore.ConsistencyLevel.EVENTUAL, null) 
+        ).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("exceeds maximum allowed value");
     }
 
     @Test
     @DisplayName("[QuerySpec]: max_limit_boundary_accepted")
-    void maxLimitBoundaryAccepted() { // GH-90000
-        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( // GH-90000
+    void maxLimitBoundaryAccepted() { 
+        EntityStore.QuerySpec spec = new EntityStore.QuerySpec( 
             "products",
-            List.of(), // GH-90000
-            List.of(), // GH-90000
+            List.of(), 
+            List.of(), 
             0,
             10000,
             null,
@@ -113,7 +113,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
             null
         );
 
-        assertThat(spec.limit()).isEqualTo(10000); // GH-90000
+        assertThat(spec.limit()).isEqualTo(10000); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -122,45 +122,45 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[Filter]: eq_operator_creates_equality_filter")
-    void eqOperatorCreatesEqualityFilter() { // GH-90000
-        EntityStore.Filter filter = EntityStore.Filter.eq("status", "active"); // GH-90000
+    void eqOperatorCreatesEqualityFilter() { 
+        EntityStore.Filter filter = EntityStore.Filter.eq("status", "active"); 
 
         assertThat(filter.field()).isEqualTo("status");
-        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.EQ); // GH-90000
+        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.EQ); 
         assertThat(filter.value()).isEqualTo("active");
     }
 
     @Test
     @DisplayName("[Filter]: comparison_operators_created_correctly")
-    void comparisonOperatorsCreatedCorrectly() { // GH-90000
-        EntityStore.Filter gt = EntityStore.Filter.gt("price", 100); // GH-90000
-        EntityStore.Filter gte = EntityStore.Filter.gte("price", 100); // GH-90000
-        EntityStore.Filter lt = EntityStore.Filter.lt("price", 100); // GH-90000
-        EntityStore.Filter lte = EntityStore.Filter.lte("price", 100); // GH-90000
+    void comparisonOperatorsCreatedCorrectly() { 
+        EntityStore.Filter gt = EntityStore.Filter.gt("price", 100); 
+        EntityStore.Filter gte = EntityStore.Filter.gte("price", 100); 
+        EntityStore.Filter lt = EntityStore.Filter.lt("price", 100); 
+        EntityStore.Filter lte = EntityStore.Filter.lte("price", 100); 
 
-        assertThat(gt.operator()).isEqualTo(EntityStore.Operator.GT); // GH-90000
-        assertThat(gte.operator()).isEqualTo(EntityStore.Operator.GTE); // GH-90000
-        assertThat(lt.operator()).isEqualTo(EntityStore.Operator.LT); // GH-90000
-        assertThat(lte.operator()).isEqualTo(EntityStore.Operator.LTE); // GH-90000
+        assertThat(gt.operator()).isEqualTo(EntityStore.Operator.GT); 
+        assertThat(gte.operator()).isEqualTo(EntityStore.Operator.GTE); 
+        assertThat(lt.operator()).isEqualTo(EntityStore.Operator.LT); 
+        assertThat(lte.operator()).isEqualTo(EntityStore.Operator.LTE); 
     }
 
     @Test
     @DisplayName("[Filter]: like_operator_creates_pattern_filter")
-    void likeOperatorCreatesPatternFilter() { // GH-90000
-        EntityStore.Filter filter = EntityStore.Filter.like("name", "test%"); // GH-90000
+    void likeOperatorCreatesPatternFilter() { 
+        EntityStore.Filter filter = EntityStore.Filter.like("name", "test%"); 
 
-        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.LIKE); // GH-90000
+        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.LIKE); 
         assertThat(filter.value()).isEqualTo("test%");
     }
 
     @Test
     @DisplayName("[Filter]: in_operator_creates_set_membership_filter")
-    void inOperatorCreatesSetMembershipFilter() { // GH-90000
-        List<String> values = List.of("active", "pending"); // GH-90000
-        EntityStore.Filter filter = EntityStore.Filter.in("status", values); // GH-90000
+    void inOperatorCreatesSetMembershipFilter() { 
+        List<String> values = List.of("active", "pending"); 
+        EntityStore.Filter filter = EntityStore.Filter.in("status", values); 
 
-        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.IN); // GH-90000
-        assertThat(filter.value()).isEqualTo(values); // GH-90000
+        assertThat(filter.operator()).isEqualTo(EntityStore.Operator.IN); 
+        assertThat(filter.value()).isEqualTo(values); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -169,20 +169,20 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[Sort]: asc_creates_ascending_sort")
-    void ascCreatesAscendingSort() { // GH-90000
+    void ascCreatesAscendingSort() { 
         EntityStore.Sort sort = EntityStore.Sort.asc("createdAt");
 
         assertThat(sort.field()).isEqualTo("createdAt");
-        assertThat(sort.direction()).isEqualTo(EntityStore.Direction.ASC); // GH-90000
+        assertThat(sort.direction()).isEqualTo(EntityStore.Direction.ASC); 
     }
 
     @Test
     @DisplayName("[Sort]: desc_creates_descending_sort")
-    void descCreatesDescendingSort() { // GH-90000
+    void descCreatesDescendingSort() { 
         EntityStore.Sort sort = EntityStore.Sort.desc("createdAt");
 
         assertThat(sort.field()).isEqualTo("createdAt");
-        assertThat(sort.direction()).isEqualTo(EntityStore.Direction.DESC); // GH-90000
+        assertThat(sort.direction()).isEqualTo(EntityStore.Direction.DESC); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -191,43 +191,43 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[Entity]: builder_creates_entity_with_all_fields")
-    void builderCreatesEntityWithAllFields() { // GH-90000
+    void builderCreatesEntityWithAllFields() { 
         Map<String, Object> entity = TestEntityBuilder.create("products")
             .withId("prod-001")
-            .withField("name", "Test Product") // GH-90000
-            .withField("price", 29.99) // GH-90000
+            .withField("name", "Test Product") 
+            .withField("price", 29.99) 
             .withTenant("tenant-alpha")
-            .withVersion(1) // GH-90000
-            .build(); // GH-90000
+            .withVersion(1) 
+            .build(); 
 
-        assertThat(entity).containsEntry("id", "prod-001"); // GH-90000
-        assertThat(entity).containsEntry("collection", "products"); // GH-90000
-        assertThat(entity).containsEntry("tenantId", "tenant-alpha"); // GH-90000
-        assertThat(entity).containsEntry("version", 1); // GH-90000
-        assertThat(entity).containsEntry("name", "Test Product"); // GH-90000
-        assertThat(entity).containsEntry("price", 29.99); // GH-90000
+        assertThat(entity).containsEntry("id", "prod-001"); 
+        assertThat(entity).containsEntry("collection", "products"); 
+        assertThat(entity).containsEntry("tenantId", "tenant-alpha"); 
+        assertThat(entity).containsEntry("version", 1); 
+        assertThat(entity).containsEntry("name", "Test Product"); 
+        assertThat(entity).containsEntry("price", 29.99); 
     }
 
     @Test
     @DisplayName("[Entity]: product_template_creates_valid_product")
-    void productTemplateCreatesValidProduct() { // GH-90000
-        Map<String, Object> product = TestEntityBuilder.product() // GH-90000
+    void productTemplateCreatesValidProduct() { 
+        Map<String, Object> product = TestEntityBuilder.product() 
             .withId("prod-template-001")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(product).containsEntry("collection", "products"); // GH-90000
-        assertThat(product).containsKeys("name", "sku", "price", "quantity", "category"); // GH-90000
+        assertThat(product).containsEntry("collection", "products"); 
+        assertThat(product).containsKeys("name", "sku", "price", "quantity", "category"); 
     }
 
     @Test
     @DisplayName("[Entity]: customer_template_creates_valid_customer")
-    void customerTemplateCreatesValidCustomer() { // GH-90000
-        Map<String, Object> customer = TestEntityBuilder.customer() // GH-90000
+    void customerTemplateCreatesValidCustomer() { 
+        Map<String, Object> customer = TestEntityBuilder.customer() 
             .withId("cust-001")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(customer).containsEntry("collection", "customers"); // GH-90000
-        assertThat(customer).containsKeys("name", "email", "phone", "status"); // GH-90000
+        assertThat(customer).containsEntry("collection", "customers"); 
+        assertThat(customer).containsKeys("name", "email", "phone", "status"); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -236,28 +236,28 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[QueryResult]: empty_result_has_zero_count")
-    void emptyResultHasZeroCount() { // GH-90000
-        EntityStore.QueryResult result = runPromise(() -> Promise.of(EntityStore.QueryResult.empty())); // GH-90000
+    void emptyResultHasZeroCount() { 
+        EntityStore.QueryResult result = runPromise(() -> Promise.of(EntityStore.QueryResult.empty())); 
 
-        assertThat(result.entities()).isEmpty(); // GH-90000
-        assertThat(result.totalCount()).isZero(); // GH-90000
-        assertThat(result.hasMore()).isFalse(); // GH-90000
+        assertThat(result.entities()).isEmpty(); 
+        assertThat(result.totalCount()).isZero(); 
+        assertThat(result.hasMore()).isFalse(); 
     }
 
     @Test
     @DisplayName("[QueryResult]: result_with_entities_calculates_hasMore")
-    void resultWithEntitiesCalculatesHasMore() { // GH-90000
-        EntityStore.Entity entity = EntityStore.Entity.builder() // GH-90000
+    void resultWithEntitiesCalculatesHasMore() { 
+        EntityStore.Entity entity = EntityStore.Entity.builder() 
             .collection("products")
-            .data(Map.of("name", "Test")) // GH-90000
-            .build(); // GH-90000
+            .data(Map.of("name", "Test")) 
+            .build(); 
 
-        List<EntityStore.Entity> entities = List.of(entity); // GH-90000
-        EntityStore.QueryResult result = runPromise(() -> Promise.of(EntityStore.QueryResult.of(entities, 100))); // GH-90000
+        List<EntityStore.Entity> entities = List.of(entity); 
+        EntityStore.QueryResult result = runPromise(() -> Promise.of(EntityStore.QueryResult.of(entities, 100))); 
 
-        assertThat(result.entities()).hasSize(1); // GH-90000
-        assertThat(result.totalCount()).isEqualTo(100); // GH-90000
-        assertThat(result.hasMore()).isTrue(); // GH-90000
+        assertThat(result.entities()).hasSize(1); 
+        assertThat(result.totalCount()).isEqualTo(100); 
+        assertThat(result.hasMore()).isTrue(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[EntityId]: of_creates_id_from_string")
-    void ofCreatesIdFromString() { // GH-90000
+    void ofCreatesIdFromString() { 
         EntityStore.EntityId id = EntityStore.EntityId.of("test-id-123");
 
         assertThat(id.value()).isEqualTo("test-id-123");
@@ -274,19 +274,19 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[EntityId]: random_creates_uuid_based_id")
-    void randomCreatesUuidBasedId() { // GH-90000
-        EntityStore.EntityId id = EntityStore.EntityId.random(); // GH-90000
+    void randomCreatesUuidBasedId() { 
+        EntityStore.EntityId id = EntityStore.EntityId.random(); 
 
-        assertThat(id.value()).isNotNull(); // GH-90000
-        assertThat(id.value()).hasSize(36); // UUID string length // GH-90000
+        assertThat(id.value()).isNotNull(); 
+        assertThat(id.value()).hasSize(36); // UUID string length 
     }
 
     @Test
     @DisplayName("[EntityId]: blank_value_throws_exception")
-    void blankValueThrowsException() { // GH-90000
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> // GH-90000
+    void blankValueThrowsException() { 
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
             new EntityStore.EntityId("")
-        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("cannot be blank");
     }
 
@@ -296,77 +296,77 @@ class EntityQueryBoundaryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("[EntityMetadata]: empty_creates_default_metadata")
-    void emptyCreatesDefaultMetadata() { // GH-90000
-        EntityStore.EntityMetadata metadata = EntityStore.EntityMetadata.empty(); // GH-90000
+    void emptyCreatesDefaultMetadata() { 
+        EntityStore.EntityMetadata metadata = EntityStore.EntityMetadata.empty(); 
 
-        assertThat(metadata.version()).isEqualTo(1); // GH-90000
-        assertThat(metadata.createdAt()).isNotNull(); // GH-90000
-        assertThat(metadata.updatedAt()).isNotNull(); // GH-90000
-        assertThat(metadata.createdBy()).isEmpty(); // GH-90000
-        assertThat(metadata.updatedBy()).isEmpty(); // GH-90000
+        assertThat(metadata.version()).isEqualTo(1); 
+        assertThat(metadata.createdAt()).isNotNull(); 
+        assertThat(metadata.updatedAt()).isNotNull(); 
+        assertThat(metadata.createdBy()).isEmpty(); 
+        assertThat(metadata.updatedBy()).isEmpty(); 
     }
 
     @Test
     @DisplayName("[EntityMetadata]: withUpdate_increments_version_and_updates_timestamp")
-    void withUpdateIncrementsVersionAndUpdatesTimestamp() { // GH-90000
-        EntityStore.EntityMetadata original = EntityStore.EntityMetadata.empty(); // GH-90000
+    void withUpdateIncrementsVersionAndUpdatesTimestamp() { 
+        EntityStore.EntityMetadata original = EntityStore.EntityMetadata.empty(); 
         EntityStore.EntityMetadata updated = original.withUpdate("user-123");
 
-        assertThat(updated.version()).isEqualTo(original.version() + 1); // GH-90000
+        assertThat(updated.version()).isEqualTo(original.version() + 1); 
         assertThat(updated.updatedBy()).hasValue("user-123");
-        assertThat(updated.createdAt()).isEqualTo(original.createdAt()); // GH-90000
+        assertThat(updated.createdAt()).isEqualTo(original.createdAt()); 
     }
 
     private static final class TestEntityBuilder {
-        private final Map<String, Object> entity = new java.util.HashMap<>(); // GH-90000
+        private final Map<String, Object> entity = new java.util.HashMap<>(); 
 
-        private TestEntityBuilder(String collection) { // GH-90000
-            entity.put("collection", collection); // GH-90000
+        private TestEntityBuilder(String collection) { 
+            entity.put("collection", collection); 
         }
 
-        static TestEntityBuilder create(String collection) { // GH-90000
-            return new TestEntityBuilder(collection); // GH-90000
+        static TestEntityBuilder create(String collection) { 
+            return new TestEntityBuilder(collection); 
         }
 
-        static TestEntityBuilder product() { // GH-90000
+        static TestEntityBuilder product() { 
             return create("products")
-                .withField("name", "Test Product") // GH-90000
-                .withField("sku", "SKU-001") // GH-90000
-                .withField("price", 29.99) // GH-90000
-                .withField("quantity", 10) // GH-90000
-                .withField("category", "general"); // GH-90000
+                .withField("name", "Test Product") 
+                .withField("sku", "SKU-001") 
+                .withField("price", 29.99) 
+                .withField("quantity", 10) 
+                .withField("category", "general"); 
         }
 
-        static TestEntityBuilder customer() { // GH-90000
+        static TestEntityBuilder customer() { 
             return create("customers")
-                .withField("name", "Test Customer") // GH-90000
-                .withField("email", "customer@example.com") // GH-90000
-                .withField("phone", "+977-0000000000") // GH-90000
-                .withField("status", "active"); // GH-90000
+                .withField("name", "Test Customer") 
+                .withField("email", "customer@example.com") 
+                .withField("phone", "+977-0000000000") 
+                .withField("status", "active"); 
         }
 
-        TestEntityBuilder withId(String id) { // GH-90000
-            entity.put("id", id); // GH-90000
+        TestEntityBuilder withId(String id) { 
+            entity.put("id", id); 
             return this;
         }
 
-        TestEntityBuilder withField(String name, Object value) { // GH-90000
-            entity.put(name, value); // GH-90000
+        TestEntityBuilder withField(String name, Object value) { 
+            entity.put(name, value); 
             return this;
         }
 
-        TestEntityBuilder withTenant(String tenantId) { // GH-90000
-            entity.put("tenantId", tenantId); // GH-90000
+        TestEntityBuilder withTenant(String tenantId) { 
+            entity.put("tenantId", tenantId); 
             return this;
         }
 
-        TestEntityBuilder withVersion(int version) { // GH-90000
-            entity.put("version", version); // GH-90000
+        TestEntityBuilder withVersion(int version) { 
+            entity.put("version", version); 
             return this;
         }
 
-        Map<String, Object> build() { // GH-90000
-            return Map.copyOf(entity); // GH-90000
+        Map<String, Object> build() { 
+            return Map.copyOf(entity); 
         }
     }
 }

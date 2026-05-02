@@ -14,44 +14,44 @@ class ChangeDebouncerTest {
 
   @Test
   @DisplayName("debounce replaces existing scheduled action for the same key")
-  void debounceReplacesExistingScheduledActionForSameKey() { // GH-90000
-    List<FakeCancellation> scheduled = new ArrayList<>(); // GH-90000
+  void debounceReplacesExistingScheduledActionForSameKey() { 
+    List<FakeCancellation> scheduled = new ArrayList<>(); 
     ChangeDebouncer debouncer =
-        new ChangeDebouncer( // GH-90000
-            (delay, action) -> { // GH-90000
-              FakeCancellation cancellation = new FakeCancellation(delay, action); // GH-90000
-              scheduled.add(cancellation); // GH-90000
+        new ChangeDebouncer( 
+            (delay, action) -> { 
+              FakeCancellation cancellation = new FakeCancellation(delay, action); 
+              scheduled.add(cancellation); 
               return cancellation;
             });
 
-    debouncer.debounce("file-1", Duration.ofSeconds(2), () -> {}); // GH-90000
-    debouncer.debounce("file-1", Duration.ofSeconds(3), () -> {}); // GH-90000
+    debouncer.debounce("file-1", Duration.ofSeconds(2), () -> {}); 
+    debouncer.debounce("file-1", Duration.ofSeconds(3), () -> {}); 
 
-    assertThat(scheduled).hasSize(2); // GH-90000
-    assertThat(scheduled.get(0).cancelled).isTrue(); // GH-90000
-    assertThat(scheduled.get(1).cancelled).isFalse(); // GH-90000
-    assertThat(debouncer.pendingCount()).isEqualTo(1); // GH-90000
-    assertThat(scheduled.get(1).delay).isEqualTo(Duration.ofSeconds(3)); // GH-90000
+    assertThat(scheduled).hasSize(2); 
+    assertThat(scheduled.get(0).cancelled).isTrue(); 
+    assertThat(scheduled.get(1).cancelled).isFalse(); 
+    assertThat(debouncer.pendingCount()).isEqualTo(1); 
+    assertThat(scheduled.get(1).delay).isEqualTo(Duration.ofSeconds(3)); 
   }
 
   @Test
   @DisplayName("debounce executes action and removes pending key")
-  void debounceExecutesActionAndRemovesPendingKey() { // GH-90000
-    AtomicInteger executions = new AtomicInteger(); // GH-90000
-    List<FakeCancellation> scheduled = new ArrayList<>(); // GH-90000
+  void debounceExecutesActionAndRemovesPendingKey() { 
+    AtomicInteger executions = new AtomicInteger(); 
+    List<FakeCancellation> scheduled = new ArrayList<>(); 
     ChangeDebouncer debouncer =
-        new ChangeDebouncer( // GH-90000
-            (delay, action) -> { // GH-90000
-              FakeCancellation cancellation = new FakeCancellation(delay, action); // GH-90000
-              scheduled.add(cancellation); // GH-90000
+        new ChangeDebouncer( 
+            (delay, action) -> { 
+              FakeCancellation cancellation = new FakeCancellation(delay, action); 
+              scheduled.add(cancellation); 
               return cancellation;
             });
 
-    debouncer.debounce("file-2", Duration.ofMillis(250), executions::incrementAndGet); // GH-90000
-    scheduled.get(0).run(); // GH-90000
+    debouncer.debounce("file-2", Duration.ofMillis(250), executions::incrementAndGet); 
+    scheduled.get(0).run(); 
 
-    assertThat(executions.get()).isEqualTo(1); // GH-90000
-    assertThat(debouncer.pendingCount()).isZero(); // GH-90000
+    assertThat(executions.get()).isEqualTo(1); 
+    assertThat(debouncer.pendingCount()).isZero(); 
   }
 
   private static final class FakeCancellation implements ChangeDebouncer.Cancellation {
@@ -59,18 +59,18 @@ class ChangeDebouncerTest {
     private final Runnable action;
     private boolean cancelled;
 
-    private FakeCancellation(Duration delay, Runnable action) { // GH-90000
+    private FakeCancellation(Duration delay, Runnable action) { 
       this.delay = delay;
       this.action = action;
     }
 
     @Override
-    public void cancel() { // GH-90000
+    public void cancel() { 
       cancelled = true;
     }
 
-    private void run() { // GH-90000
-      action.run(); // GH-90000
+    private void run() { 
+      action.run(); 
     }
   }
 }

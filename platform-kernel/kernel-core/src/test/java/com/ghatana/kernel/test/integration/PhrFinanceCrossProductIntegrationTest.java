@@ -4,8 +4,8 @@ import com.ghatana.kernel.audit.CrossScopeAuditService;
 import com.ghatana.kernel.audit.CrossScopeAuditService.AuditEventStore;
 import com.ghatana.kernel.audit.CrossScopeAuditService.CrossScopeAuditEvent;
 import com.ghatana.kernel.audit.CrossScopeAuditService.ScopeAuditRecord;
-import com.ghatana.kernel.boundary.BoundaryPolicyResolver;
-import com.ghatana.kernel.boundary.DefaultBoundaryPolicyResolver;
+import com.ghatana.kernel.policy.BoundaryPolicyResolver;
+import com.ghatana.kernel.policy.DefaultBoundaryPolicyResolver;
 import com.ghatana.kernel.boundary.ScopeBoundaryEnforcer;
 import com.ghatana.kernel.context.KernelTenantContext;
 import com.ghatana.kernel.context.KernelTenantContext.SecurityContext;
@@ -13,6 +13,8 @@ import com.ghatana.kernel.context.KernelTenantContext.TenantType;
 import com.ghatana.kernel.policy.ClassificationDescriptor;
 import com.ghatana.kernel.policy.ClassificationDescriptor.SensitivityLevel;
 import com.ghatana.kernel.policy.DefaultAuditPolicyResolver;
+import com.ghatana.kernel.policy.DefaultRetentionPolicyResolver;
+import com.ghatana.kernel.policy.AuditPolicyResolver;
 import com.ghatana.kernel.scope.ScopeDescriptor;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,32 +56,38 @@ class PhrFinanceCrossProductIntegrationTest {
     private CrossScopeAuditService auditService;
     private InMemoryAuditStore auditStore;
 
-    // Canonical scope descriptors — no product-id literal strings
-    private static final ScopeDescriptor PHR_SCOPE      = ScopeDescriptor.domainPack("phr");
-    private static final ScopeDescriptor FINANCE_SCOPE  = ScopeDescriptor.domainPack("finance");
-    private static final ScopeDescriptor PLATFORM_SCOPE = ScopeDescriptor.product("platform");
+    // Canonical scope descriptors â€” neutral domain-pack identifiers, no product-id literal strings
+    private static final ScopeDescriptor DOMAIN_ALPHA_SCOPE  = ScopeDescriptor.domainPack("domain-alpha");
+    private static final ScopeDescriptor DOMAIN_BETA_SCOPE   = ScopeDescriptor.domainPack("domain-beta");
+    private static final ScopeDescriptor PLATFORM_SCOPE      = ScopeDescriptor.product("platform");
 
-    // Classification descriptors — replaces hardcoded product-id branching
-    private static final ClassificationDescriptor PHR_PROTECTED =
-            ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED, "nepal-2081"); 
-    private static final ClassificationDescriptor FINANCE_TRADE =
-            ClassificationDescriptor.of("regulatory", SensitivityLevel.CONFIDENTIAL, "sebon"); 
-    private static final ClassificationDescriptor GENERAL_DATA =
-            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL); 
+    // Classification descriptors â€” compliance tags are framework identifiers, not product names
+    private static final ClassificationDescriptor RESTRICTED_LONG_RETENTION =
+            ClassificationDescriptor.of("regulated", SensitivityLevel.RESTRICTED, "nepal-2081");
+    private static final ClassificationDescriptor CONFIDENTIAL_COMPLIANCE =
+            ClassificationDescriptor.of("regulatory", SensitivityLevel.CONFIDENTIAL, "sebon");
+    private static final ClassificationDescriptor INTERNAL_GENERAL =
+            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL);
     private static final ClassificationDescriptor RESIDENCY_LOCKED =
-            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL, "data-residency-restricted"); 
+            ClassificationDescriptor.of("general", SensitivityLevel.INTERNAL, "data-residency-restricted");
 
     @BeforeEach
-    void setUp() { 
-        BoundaryPolicyResolver policyResolver = DefaultBoundaryPolicyResolver.withStandardRules(); 
-        boundaryEnforcer = new ScopeBoundaryEnforcer(policyResolver); 
+    void setUp() {
+        BoundaryPolicyResolver policyResolver = DefaultBoundaryPolicyResolver.withStandardMappings();
+        boundaryEnforcer = new ScopeBoundaryEnforcer(policyResolver);
 
-        auditStore = new InMemoryAuditStore(); 
-        auditService = new CrossScopeAuditService( 
-                DefaultAuditPolicyResolver.withStandardMappings(), auditStore); 
+        auditStore = new InMemoryAuditStore();
+        // Use custom retention mappings for test scenarios
+        DefaultRetentionPolicyResolver retentionResolver = new DefaultRetentionPolicyResolver(Map.of(
+            "nepal-2081", 25,
+            "sebon", 10,
+            "gdpr", 7
+        ));
+        AuditPolicyResolver auditPolicyResolver = new DefaultAuditPolicyResolver(retentionResolver);
+        auditService = new CrossScopeAuditService(auditPolicyResolver, auditStore);
     }
 
-    // ── PHR Boundary Tests ───────────────────────────────────────────────────
+    // â”€â”€ PHR Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
     @DisplayName("PHR data access boundary enforcement")
@@ -88,15 +96,15 @@ class PhrFinanceCrossProductIntegrationTest {
         @Test
         @DisplayName("Finance cannot read PHR restricted patient records without consent")
         void financeCannotReadPhrRestrictedDataWithoutConsentFeature() { 
-            // No permissions, no consent feature → Layer 2 and Layer 3 both fail
+            // No permissions, no consent feature â†’ Layer 2 and Layer 3 both fail
             KernelTenantContext tenant = tenantContext("tenant-1", 
                     Set.of("read:patient.records"),
                     Set.of() /* no consent feature */); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    FINANCE_SCOPE, PHR_SCOPE,
+                    DOMAIN_BETA_SCOPE, DOMAIN_ALPHA_SCOPE,
                     "patient.records", "read",
-                    PHR_PROTECTED,
+                    RESTRICTED_LONG_RETENTION,
                     tenant);
 
             assertFalse(allowed, 
@@ -112,9 +120,9 @@ class PhrFinanceCrossProductIntegrationTest {
                     Set.of("cross-scope.consent.domain_pack"));
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    FINANCE_SCOPE, PHR_SCOPE,
+                    DOMAIN_BETA_SCOPE, DOMAIN_ALPHA_SCOPE,
                     "patient.records", "read",
-                    PHR_PROTECTED,
+                    RESTRICTED_LONG_RETENTION,
                     tenant);
 
             assertTrue(allowed, 
@@ -124,15 +132,15 @@ class PhrFinanceCrossProductIntegrationTest {
         @Test
         @DisplayName("PHR internal data allows cross-scope read with permission but no consent")
         void phrInternalDataAllowsReadWithoutConsent() { 
-            // INTERNAL sensitivity → no consent required, only permission
+            // INTERNAL sensitivity â†’ no consent required, only permission
             KernelTenantContext tenant = tenantContext("tenant-2", 
                     Set.of("read:patient.records"),
                     Set.of()); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    PLATFORM_SCOPE, PHR_SCOPE,
+                    PLATFORM_SCOPE, DOMAIN_ALPHA_SCOPE,
                     "patient.records", "read",
-                    GENERAL_DATA,
+                    INTERNAL_GENERAL,
                     tenant);
 
             assertTrue(allowed, 
@@ -147,7 +155,7 @@ class PhrFinanceCrossProductIntegrationTest {
                     Set.of("cross-scope.consent.domain_pack"));
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    FINANCE_SCOPE, PHR_SCOPE,
+                    DOMAIN_BETA_SCOPE, DOMAIN_ALPHA_SCOPE,
                     "patient.records", "read",
                     RESIDENCY_LOCKED,
                     tenant);
@@ -157,7 +165,7 @@ class PhrFinanceCrossProductIntegrationTest {
         }
     }
 
-    // ── Finance Boundary Tests ───────────────────────────────────────────────
+    // â”€â”€ Finance Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
     @DisplayName("Finance trade data access boundary enforcement")
@@ -166,15 +174,15 @@ class PhrFinanceCrossProductIntegrationTest {
         @Test
         @DisplayName("PHR can write finance trade records when it holds the write permission")
         void phrCanWriteFinanceTradeRecordsWithPermission() { 
-            // CONFIDENTIAL data → no consent required, Layer 2 permission sufficient
+            // CONFIDENTIAL data â†’ no consent required, Layer 2 permission sufficient
             KernelTenantContext tenant = tenantContext("tenant-3", 
                     Set.of("write:trade.records"),
                     Set.of()); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    PHR_SCOPE, FINANCE_SCOPE,
+                    DOMAIN_ALPHA_SCOPE, DOMAIN_BETA_SCOPE,
                     "trade.records", "write",
-                    FINANCE_TRADE,
+                    CONFIDENTIAL_COMPLIANCE,
                     tenant);
 
             assertTrue(allowed, 
@@ -187,9 +195,9 @@ class PhrFinanceCrossProductIntegrationTest {
             KernelTenantContext tenant = tenantContext("tenant-3", Set.of(), Set.of()); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    PHR_SCOPE, FINANCE_SCOPE,
+                    DOMAIN_ALPHA_SCOPE, DOMAIN_BETA_SCOPE,
                     "trade.records", "write",
-                    FINANCE_TRADE,
+                    CONFIDENTIAL_COMPLIANCE,
                     tenant);
 
             assertFalse(allowed, 
@@ -199,22 +207,22 @@ class PhrFinanceCrossProductIntegrationTest {
         @Test
         @DisplayName("Same-scope access with valid permission is allowed without consent")
         void sameScopeAccessAllowed() { 
-            // Source == target → Layer 1 returns allow(false); Layers 2+3 still gate on permission 
+            // Source == target â†’ Layer 1 returns allow(false); Layers 2+3 still gate on permission 
             KernelTenantContext tenant = tenantContext("tenant-4", 
                     Set.of("write:trade.records"),
                     Set.of()); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    FINANCE_SCOPE, FINANCE_SCOPE,
+                    DOMAIN_BETA_SCOPE, DOMAIN_BETA_SCOPE,
                     "trade.records", "write",
-                    FINANCE_TRADE,
+                    CONFIDENTIAL_COMPLIANCE,
                     tenant);
 
             assertTrue(allowed, "Same-scope access with valid permission should be allowed"); 
         }
     }
 
-    // ── Audit Policy Tests ───────────────────────────────────────────────────
+    // â”€â”€ Audit Policy Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
     @DisplayName("Scope-aware audit service policy resolution")
@@ -224,12 +232,12 @@ class PhrFinanceCrossProductIntegrationTest {
         @DisplayName("PHR audit record uses Nepal-2081 25-year retention")
         void phrAuditUsesNepal2081Retention() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(FINANCE_SCOPE) 
-                    .targetScope(PHR_SCOPE) 
+                    .sourceScope(DOMAIN_BETA_SCOPE) 
+                    .targetScope(DOMAIN_ALPHA_SCOPE) 
                     .action("data.share")
                     .userId("user-101")
                     .tenantId("tenant-nep")
-                    .classification(PHR_PROTECTED) 
+                    .classification(RESTRICTED_LONG_RETENTION) 
                     .build(); 
 
             auditService.auditCrossScopeAction(event).getResult(); 
@@ -246,12 +254,12 @@ class PhrFinanceCrossProductIntegrationTest {
         @DisplayName("Finance audit record uses SEBON 10-year retention")
         void financeAuditUsesSebon10YearRetention() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(PHR_SCOPE) 
-                    .targetScope(FINANCE_SCOPE) 
+                    .sourceScope(DOMAIN_ALPHA_SCOPE) 
+                    .targetScope(DOMAIN_BETA_SCOPE) 
                     .action("compliance.query")
                     .userId("user-202")
                     .tenantId("tenant-fin")
-                    .classification(FINANCE_TRADE) 
+                    .classification(CONFIDENTIAL_COMPLIANCE) 
                     .build(); 
 
             auditService.auditCrossScopeAction(event).getResult(); 
@@ -269,11 +277,11 @@ class PhrFinanceCrossProductIntegrationTest {
         void restrictedAuditRecordIncludesSignature() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(PLATFORM_SCOPE) 
-                    .targetScope(PHR_SCOPE) 
+                    .targetScope(DOMAIN_ALPHA_SCOPE) 
                     .action("patient.export")
                     .userId("user-303")
                     .tenantId("tenant-1")
-                    .classification(PHR_PROTECTED) 
+                    .classification(RESTRICTED_LONG_RETENTION) 
                     .build(); 
 
             auditService.auditCrossScopeAction(event).getResult(); 
@@ -287,12 +295,12 @@ class PhrFinanceCrossProductIntegrationTest {
         @DisplayName("Audit event type uses 'cross-scope.' prefix, not legacy 'cross-product.'")
         void auditEventTypeUsesScopePrefix() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(FINANCE_SCOPE) 
-                    .targetScope(PHR_SCOPE) 
+                    .sourceScope(DOMAIN_BETA_SCOPE) 
+                    .targetScope(DOMAIN_ALPHA_SCOPE) 
                     .action("data.check")
                     .userId("usr")
                     .tenantId("t1")
-                    .classification(GENERAL_DATA) 
+                    .classification(INTERNAL_GENERAL) 
                     .build(); 
 
             auditService.auditCrossScopeAction(event).getResult(); 
@@ -310,39 +318,39 @@ class PhrFinanceCrossProductIntegrationTest {
         @DisplayName("Audit record stores ScopeDescriptor objects, not raw product-id strings")
         void auditRecordCarriesScopeDescriptors() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(FINANCE_SCOPE) 
-                    .targetScope(PHR_SCOPE) 
+                    .sourceScope(DOMAIN_BETA_SCOPE) 
+                    .targetScope(DOMAIN_ALPHA_SCOPE) 
                     .action("analytics.query")
                     .userId("analyst")
                     .tenantId("t-123")
-                    .classification(FINANCE_TRADE) 
+                    .classification(CONFIDENTIAL_COMPLIANCE) 
                     .build(); 
 
             auditService.auditCrossScopeAction(event).getResult(); 
 
             ScopeAuditRecord stored = auditStore.records.get(0); 
-            assertEquals(FINANCE_SCOPE, stored.getSourceScope(), 
+            assertEquals(DOMAIN_BETA_SCOPE, stored.getSourceScope(), 
                 "Source scope must be stored as a ScopeDescriptor");
-            assertEquals(PHR_SCOPE, stored.getTargetScope(), 
+            assertEquals(DOMAIN_ALPHA_SCOPE, stored.getTargetScope(), 
                 "Target scope must be stored as a ScopeDescriptor");
         }
     }
 
-    // ── Boundary + Audit Integration ─────────────────────────────────────────
+    // â”€â”€ Boundary + Audit Integration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
     @DisplayName("Boundary enforcement + audit trail integration")
     class BoundaryAuditIntegrationTests {
 
         @Test
-        @DisplayName("Denied access creates no audit record — boundary gate fires before audit")
+        @DisplayName("Denied access creates no audit record â€” boundary gate fires before audit")
         void deniedAccessProducesNoAuditRecord() { 
             KernelTenantContext tenant = tenantContext("t-denied", Set.of(), Set.of()); 
 
             boolean allowed = boundaryEnforcer.canAccess( 
-                    PHR_SCOPE, FINANCE_SCOPE,
+                    DOMAIN_ALPHA_SCOPE, DOMAIN_BETA_SCOPE,
                     "trade.records", "write",
-                    FINANCE_TRADE,
+                    CONFIDENTIAL_COMPLIANCE,
                     tenant);
 
             assertFalse(allowed); 
@@ -351,7 +359,7 @@ class PhrFinanceCrossProductIntegrationTest {
         }
 
         @Test
-        @DisplayName("Policy engine is product-agnostic — same rules apply to any domain-pack pair")
+        @DisplayName("Policy engine is product-agnostic â€” same rules apply to any domain-pack pair")
         void policyDrivenAccessIsProductAgnostic() { 
             ScopeDescriptor alpha = ScopeDescriptor.domainPack("domain-alpha");
             ScopeDescriptor beta  = ScopeDescriptor.domainPack("domain-beta");
@@ -373,7 +381,7 @@ class PhrFinanceCrossProductIntegrationTest {
         }
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /**
      * Builds a {@link KernelTenantContext} for testing.

@@ -26,88 +26,88 @@ class RefactoringResultTest {
     private static final String FILE1_JAVA = "file1.java";
 
     @Test
-    void testSuccessResult() { // GH-90000
+    void testSuccessResult() { 
         RefactoringResult result =
-                RefactoringResult.success( // GH-90000
-                        Arrays.asList(FILE1_JAVA, "file2.java"), // GH-90000
+                RefactoringResult.success( 
+                        Arrays.asList(FILE1_JAVA, "file2.java"), 
                         5,
                         "Refactoring completed successfully");
 
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals(2, result.getModifiedFiles().size()); // GH-90000
-        assertTrue(result.getModifiedFiles().contains(FILE1_JAVA)); // GH-90000
-        assertEquals(5, result.getChangeCount()); // GH-90000
-        assertEquals("Refactoring completed successfully", result.getSummary()); // GH-90000
-        assertNull(result.getErrorMessage()); // GH-90000
+        assertTrue(result.isSuccess()); 
+        assertEquals(2, result.getModifiedFiles().size()); 
+        assertTrue(result.getModifiedFiles().contains(FILE1_JAVA)); 
+        assertEquals(5, result.getChangeCount()); 
+        assertEquals("Refactoring completed successfully", result.getSummary()); 
+        assertNull(result.getErrorMessage()); 
     }
 
     @Test
-    void testFailureResult() { // GH-90000
+    void testFailureResult() { 
         RefactoringResult result = RefactoringResult.failure("File not found");
 
-        assertFalse(result.isSuccess()); // GH-90000
-        assertTrue(result.getModifiedFiles().isEmpty()); // GH-90000
-        assertEquals(0, result.getChangeCount()); // GH-90000
-        assertEquals("File not found", result.getErrorMessage()); // GH-90000
+        assertFalse(result.isSuccess()); 
+        assertTrue(result.getModifiedFiles().isEmpty()); 
+        assertEquals(0, result.getChangeCount()); 
+        assertEquals("File not found", result.getErrorMessage()); 
     }
 
     @Test
-    void testPartialResult() { // GH-90000
+    void testPartialResult() { 
         RefactoringResult result =
-                RefactoringResult.partial( // GH-90000
-                        Collections.singletonList(FILE1_JAVA), // GH-90000
+                RefactoringResult.partial( 
+                        Collections.singletonList(FILE1_JAVA), 
                         2,
                         "Some changes were made",
                         "Failed to update some references");
 
-        assertFalse(result.isSuccess()); // GH-90000
-        assertEquals(1, result.getModifiedFiles().size()); // GH-90000
-        assertEquals(2, result.getChangeCount()); // GH-90000
-        assertEquals("Some changes were made", result.getSummary()); // GH-90000
-        assertEquals("Failed to update some references", result.getErrorMessage()); // GH-90000
+        assertFalse(result.isSuccess()); 
+        assertEquals(1, result.getModifiedFiles().size()); 
+        assertEquals(2, result.getChangeCount()); 
+        assertEquals("Some changes were made", result.getSummary()); 
+        assertEquals("Failed to update some references", result.getErrorMessage()); 
     }
 
     @Test
-    void testBuilder() { // GH-90000
-        Map<String, Object> metadata = new HashMap<>(); // GH-90000
-        metadata.put("warnings", 2); // GH-90000
-        metadata.put("durationMs", 150); // GH-90000
+    void testBuilder() { 
+        Map<String, Object> metadata = new HashMap<>(); 
+        metadata.put("warnings", 2); 
+        metadata.put("durationMs", 150); 
 
         RefactoringResult result =
-                RefactoringResult.builder() // GH-90000
-                        .success(true) // GH-90000
-                        .addModifiedFile(FILE1_JAVA) // GH-90000
+                RefactoringResult.builder() 
+                        .success(true) 
+                        .addModifiedFile(FILE1_JAVA) 
                         .addModifiedFile("file2.java")
-                        .changeCount(3) // GH-90000
+                        .changeCount(3) 
                         .summary("Refactoring completed")
-                        .errorMessage(null) // GH-90000
-                        .metadata(metadata) // GH-90000
-                        .metadata("additionalInfo", "test") // GH-90000
-                        .build(); // GH-90000
+                        .errorMessage(null) 
+                        .metadata(metadata) 
+                        .metadata("additionalInfo", "test") 
+                        .build(); 
 
-        assertTrue(result.isSuccess()); // GH-90000
-        assertEquals(2, result.getModifiedFiles().size()); // GH-90000
-        assertEquals(3, result.getChangeCount()); // GH-90000
-        assertEquals("Refactoring completed", result.getSummary()); // GH-90000
-        assertNull(result.getErrorMessage()); // GH-90000
+        assertTrue(result.isSuccess()); 
+        assertEquals(2, result.getModifiedFiles().size()); 
+        assertEquals(3, result.getChangeCount()); 
+        assertEquals("Refactoring completed", result.getSummary()); 
+        assertNull(result.getErrorMessage()); 
         assertEquals(2, ((Number) result.getMetadata("warnings")).intValue());
         assertEquals(150L, ((Number) result.getMetadata("durationMs")).longValue());
         assertEquals("test", result.getMetadata("additionalInfo"));
     }
 
     @Test
-    void testEqualsAndHashCode() { // GH-90000
+    void testEqualsAndHashCode() { 
         RefactoringResult result1 =
-                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test"); // GH-90000
+                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test"); 
 
         RefactoringResult result2 =
-                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test"); // GH-90000
+                RefactoringResult.success(Collections.singletonList(FILE1_JAVA), 1, "Test"); 
 
         RefactoringResult result3 = RefactoringResult.failure("Error");
 
-        assertEquals(result1, result2); // GH-90000
-        assertEquals(result1.hashCode(), result2.hashCode()); // GH-90000
-        assertNotEquals(result1, result3); // GH-90000
-        assertNotEquals(result1.hashCode(), result3.hashCode()); // GH-90000
+        assertEquals(result1, result2); 
+        assertEquals(result1.hashCode(), result2.hashCode()); 
+        assertNotEquals(result1, result3); 
+        assertNotEquals(result1.hashCode(), result3.hashCode()); 
     }
 }

@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 class AepEventCloudResolutionTest {
 
     @Test
-    void createResolvesDataCloudBackedEventCloudWhenProviderPresent() { // GH-90000
-        AepEngine engine = Aep.create(Aep.AepConfig.defaults()); // GH-90000
+    void createResolvesDataCloudBackedEventCloudWhenProviderPresent() { 
+        AepEngine engine = Aep.create(Aep.AepConfig.defaults()); 
         try {
-            assertInstanceOf(DataCloudBackedEventCloud.class, engine.eventCloud()); // GH-90000
+            assertInstanceOf(DataCloudBackedEventCloud.class, engine.eventCloud()); 
         } finally {
-            engine.close(); // GH-90000
+            engine.close(); 
         }
     }
 }

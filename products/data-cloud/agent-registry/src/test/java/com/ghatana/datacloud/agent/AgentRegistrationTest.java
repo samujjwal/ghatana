@@ -28,62 +28,62 @@ class AgentRegistrationTest {
 
     @Test
     @DisplayName("Should register agents")
-    void shouldRegisterAgents() { // GH-90000
-        TypedAgent<?, ?> agent = mock(TypedAgent.class); // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
+    void shouldRegisterAgents() { 
+        TypedAgent<?, ?> agent = mock(TypedAgent.class); 
+        AgentConfig config = mock(AgentConfig.class); 
 
-        assertThat(agent).isNotNull(); // GH-90000
-        assertThat(config).isNotNull(); // GH-90000
+        assertThat(agent).isNotNull(); 
+        assertThat(config).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should deregister agents")
-    void shouldDeregisterAgents() { // GH-90000
-        String agentId = UUID.randomUUID().toString(); // GH-90000
+    void shouldDeregisterAgents() { 
+        String agentId = UUID.randomUUID().toString(); 
 
-        assertThat(agentId).isNotNull(); // GH-90000
-        assertThat(agentId).isNotBlank(); // GH-90000
+        assertThat(agentId).isNotNull(); 
+        assertThat(agentId).isNotBlank(); 
     }
 
     @Test
     @DisplayName("Should handle agent lifecycle")
-    void shouldHandleAgentLifecycle() { // GH-90000
+    void shouldHandleAgentLifecycle() { 
         String state = "ACTIVE";
         String[] states = {"REGISTERED", "ACTIVE", "INACTIVE", "DEREGISTERED"};
 
-        assertThat(state).isIn(states); // GH-90000
+        assertThat(state).isIn(states); 
     }
 
     @Test
     @DisplayName("Should handle agent state")
-    void shouldHandleAgentState() { // GH-90000
+    void shouldHandleAgentState() { 
         boolean active = true;
         boolean registered = true;
 
-        assertThat(active).isTrue(); // GH-90000
-        assertThat(registered).isTrue(); // GH-90000
+        assertThat(active).isTrue(); 
+        assertThat(registered).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle registration failures")
-    void shouldHandleRegistrationFailures() { // GH-90000
+    void shouldHandleRegistrationFailures() { 
         TypedAgent<?, ?> agent = null;
         AgentConfig config = null;
 
-        assertThat(agent).isNull(); // GH-90000
-        assertThat(config).isNull(); // GH-90000
+        assertThat(agent).isNull(); 
+        assertThat(config).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle agent metadata")
-    void shouldHandleAgentMetadata() { // GH-90000
-        Map<String, Object> metadata = Map.of( // GH-90000
+    void shouldHandleAgentMetadata() { 
+        Map<String, Object> metadata = Map.of( 
             "version", "1.0.0",
             "namespace", "data-cloud",
             "capabilities", Set.of("anomaly-detection")
         );
 
-        assertThat(metadata).isNotEmpty(); // GH-90000
+        assertThat(metadata).isNotEmpty(); 
         assertThat(metadata).containsKey("version");
         assertThat(metadata).containsKey("namespace");
     }

@@ -1,6 +1,7 @@
 package com.ghatana.kernel.boundary;
 
 import com.ghatana.kernel.context.KernelTenantContext;
+import com.ghatana.kernel.policy.BoundaryPolicyResolver;
 import com.ghatana.kernel.policy.ClassificationDescriptor;
 import com.ghatana.kernel.scope.ScopeDescriptor;
 
@@ -10,12 +11,12 @@ import java.util.Objects;
 /**
  * Scope-aware boundary enforcer using policy-driven access control.
  *
- * <p>Canonical replacement for {@link ProductBoundaryEnforcer}. Enforces cross-scope
+ * <p>Canonical replacement for {@code ProductBoundaryEnforcer}. Enforces cross-scope
  * access control through a three-layer security model that operates on {@link ScopeDescriptor}
  * and {@link ClassificationDescriptor} rather than hardcoded product id allowlists:</p>
  * <ol>
- *   <li><b>Scope Boundary</b>: {@link BoundaryPolicyResolver} evaluates scope, resource, action,
- *       and classification to produce a {@link BoundaryPolicyResolver.BoundaryDecision}</li>
+ *   <li><b>Scope Boundary</b>: {@link com.ghatana.kernel.policy.BoundaryPolicyResolver} evaluates scope, resource, action,
+ *       and classification to produce a {@link com.ghatana.kernel.policy.BoundaryPolicyResolver.BoundaryDecision}</li>
  *   <li><b>Tenant Permission</b>: Verifies the tenant context grants the required permission</li>
  *   <li><b>Consent &amp; Audit</b>: Enforces consent requirements flagged by the policy decision</li>
  * </ol>

@@ -18,40 +18,40 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @DisplayName("AlertWebhookHandler Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AlertWebhookHandlerTest extends EventloopTestBase {
 
   @Mock private IncidentCorrelator incidentCorrelator;
 
   @Test
   @DisplayName("handle ingests alert batches and records metrics")
-  void handleIngestsAlertBatchesAndRecordsMetrics() { // GH-90000
-    AtomicInteger alertsReceived = new AtomicInteger(); // GH-90000
-    AtomicInteger incidentsCreated = new AtomicInteger(); // GH-90000
-    when(incidentCorrelator.correlateAlert(org.mockito.ArgumentMatchers.any())) // GH-90000
-        .thenReturn(Promise.of(new IncidentCorrelator.CorrelationResult("incident-1", true, "platform", "created"))); // GH-90000
+  void handleIngestsAlertBatchesAndRecordsMetrics() { 
+    AtomicInteger alertsReceived = new AtomicInteger(); 
+    AtomicInteger incidentsCreated = new AtomicInteger(); 
+    when(incidentCorrelator.correlateAlert(org.mockito.ArgumentMatchers.any())) 
+        .thenReturn(Promise.of(new IncidentCorrelator.CorrelationResult("incident-1", true, "platform", "created"))); 
 
     AlertWebhookHandler handler =
-        new AlertWebhookHandler( // GH-90000
+        new AlertWebhookHandler( 
             incidentCorrelator,
-            new AlertWebhookHandler.WebhookMetrics() { // GH-90000
+            new AlertWebhookHandler.WebhookMetrics() { 
               @Override
-              public void recordAlertsReceived(int count) { // GH-90000
-                alertsReceived.set(count); // GH-90000
+              public void recordAlertsReceived(int count) { 
+                alertsReceived.set(count); 
               }
 
               @Override
-              public void recordIncidentsCreated(int count) { // GH-90000
-                incidentsCreated.set(count); // GH-90000
+              public void recordIncidentsCreated(int count) { 
+                incidentsCreated.set(count); 
               }
             },
-            new ObjectMapper(), // GH-90000
+            new ObjectMapper(), 
             Clock.fixed(Instant.parse("2026-04-06T12:00:00Z"), ZoneOffset.UTC));
 
     AlertWebhookHandler.AlertHandlingResult result =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                handler.handle( // GH-90000
+        runPromise( 
+            () -> 
+                handler.handle( 
                     """
                     {
                       "tenantId": "tenant-a",
@@ -72,29 +72,29 @@ class AlertWebhookHandlerTest extends EventloopTestBase {
                     }
                     """));
 
-    assertThat(result.alertCount()).isEqualTo(2); // GH-90000
-    assertThat(result.createdIncidentCount()).isEqualTo(2); // GH-90000
-    assertThat(result.results()).hasSize(2); // GH-90000
-    assertThat(alertsReceived.get()).isEqualTo(2); // GH-90000
-    assertThat(incidentsCreated.get()).isEqualTo(2); // GH-90000
+    assertThat(result.alertCount()).isEqualTo(2); 
+    assertThat(result.createdIncidentCount()).isEqualTo(2); 
+    assertThat(result.results()).hasSize(2); 
+    assertThat(alertsReceived.get()).isEqualTo(2); 
+    assertThat(incidentsCreated.get()).isEqualTo(2); 
   }
 
   @Test
   @DisplayName("handle rejects malformed webhook payloads")
-  void handleRejectsMalformedWebhookPayloads() { // GH-90000
+  void handleRejectsMalformedWebhookPayloads() { 
     AlertWebhookHandler handler =
-        new AlertWebhookHandler( // GH-90000
+        new AlertWebhookHandler( 
             incidentCorrelator,
-            new AlertWebhookHandler.WebhookMetrics() { // GH-90000
+            new AlertWebhookHandler.WebhookMetrics() { 
               @Override
-              public void recordAlertsReceived(int count) {} // GH-90000
+              public void recordAlertsReceived(int count) {} 
 
               @Override
-              public void recordIncidentsCreated(int count) {} // GH-90000
+              public void recordIncidentsCreated(int count) {} 
             });
 
     assertThatThrownBy(() -> runPromise(() -> handler.handle("not-json")))
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("Invalid alert webhook payload");
   }
 }

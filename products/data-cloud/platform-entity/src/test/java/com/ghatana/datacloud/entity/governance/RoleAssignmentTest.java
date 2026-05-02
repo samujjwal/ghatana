@@ -10,92 +10,92 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class RoleAssignmentTest {
 
     @Test
-    void shouldBuildActiveAssignmentWithMetadata() { // GH-90000
+    void shouldBuildActiveAssignmentWithMetadata() { 
         Instant grantedAt = Instant.parse("2026-04-21T10:00:00Z");
 
-        RoleAssignment assignment = RoleAssignment.builder() // GH-90000
+        RoleAssignment assignment = RoleAssignment.builder() 
                 .assignmentId("assignment-1")
                 .tenantId("tenant-a")
                 .principalId("user-1")
-                .principalType(RoleAssignment.PrincipalType.GROUP) // GH-90000
+                .principalType(RoleAssignment.PrincipalType.GROUP) 
                 .roleId("operator")
-                .grantedAt(grantedAt) // GH-90000
+                .grantedAt(grantedAt) 
                 .grantedBy("admin-user")
-                .metadata("source", "ui") // GH-90000
-                .build(); // GH-90000
+                .metadata("source", "ui") 
+                .build(); 
 
         assertThat(assignment.getAssignmentId()).isEqualTo("assignment-1");
         assertThat(assignment.getTenantId()).isEqualTo("tenant-a");
         assertThat(assignment.getPrincipalId()).isEqualTo("user-1");
-        assertThat(assignment.getPrincipalType()).isEqualTo(RoleAssignment.PrincipalType.GROUP); // GH-90000
+        assertThat(assignment.getPrincipalType()).isEqualTo(RoleAssignment.PrincipalType.GROUP); 
         assertThat(assignment.getPrincipalType().getValue()).isEqualTo("group");
         assertThat(assignment.getRoleId()).isEqualTo("operator");
-        assertThat(assignment.getGrantedAt()).isEqualTo(grantedAt); // GH-90000
+        assertThat(assignment.getGrantedAt()).isEqualTo(grantedAt); 
         assertThat(assignment.getGrantedBy()).isEqualTo("admin-user");
-        assertThat(assignment.isActive()).isTrue(); // GH-90000
-        assertThat(assignment.getMetadata()).containsEntry("source", "ui"); // GH-90000
+        assertThat(assignment.isActive()).isTrue(); 
+        assertThat(assignment.getMetadata()).containsEntry("source", "ui"); 
     }
 
     @Test
-    void shouldReportRevokedAssignmentsAsInactive() { // GH-90000
+    void shouldReportRevokedAssignmentsAsInactive() { 
         Instant revokedAt = Instant.parse("2026-04-21T11:00:00Z");
 
-        RoleAssignment assignment = RoleAssignment.builder() // GH-90000
+        RoleAssignment assignment = RoleAssignment.builder() 
                 .assignmentId("assignment-2")
                 .tenantId("tenant-a")
                 .principalId("svc-1")
-                .principalType(RoleAssignment.PrincipalType.SERVICE_ACCOUNT) // GH-90000
+                .principalType(RoleAssignment.PrincipalType.SERVICE_ACCOUNT) 
                 .roleId("admin")
                 .grantedBy("bootstrap")
-                .revokedAt(revokedAt, "security-admin") // GH-90000
-                .build(); // GH-90000
+                .revokedAt(revokedAt, "security-admin") 
+                .build(); 
 
-        assertThat(assignment.isActive()).isFalse(); // GH-90000
-        assertThat(assignment.getRevokedAt()).isEqualTo(revokedAt); // GH-90000
+        assertThat(assignment.isActive()).isFalse(); 
+        assertThat(assignment.getRevokedAt()).isEqualTo(revokedAt); 
         assertThat(assignment.getRevokedBy()).isEqualTo("security-admin");
-        assertThat(assignment.toString()).contains("active=false", "SERVICE_ACCOUNT"); // GH-90000
+        assertThat(assignment.toString()).contains("active=false", "SERVICE_ACCOUNT"); 
     }
 
     @Test
-    void shouldExposeImmutableMetadata() { // GH-90000
-        RoleAssignment assignment = RoleAssignment.builder() // GH-90000
+    void shouldExposeImmutableMetadata() { 
+        RoleAssignment assignment = RoleAssignment.builder() 
                 .tenantId("tenant-a")
                 .principalId("user-1")
                 .roleId("viewer")
-                .metadata("reason", "support") // GH-90000
-                .build(); // GH-90000
+                .metadata("reason", "support") 
+                .build(); 
 
-        assertThatThrownBy(() -> assignment.getMetadata().put("other", "value")) // GH-90000
-                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+        assertThatThrownBy(() -> assignment.getMetadata().put("other", "value")) 
+                .isInstanceOf(UnsupportedOperationException.class); 
     }
 
     @Test
-    void shouldCompareAssignmentsUsingIdentityAndActiveState() { // GH-90000
-        RoleAssignment active = RoleAssignment.builder() // GH-90000
+    void shouldCompareAssignmentsUsingIdentityAndActiveState() { 
+        RoleAssignment active = RoleAssignment.builder() 
                 .assignmentId("assignment-3")
                 .tenantId("tenant-a")
                 .principalId("user-1")
                 .roleId("viewer")
-                .build(); // GH-90000
+                .build(); 
 
-        RoleAssignment equivalentActive = RoleAssignment.builder() // GH-90000
+        RoleAssignment equivalentActive = RoleAssignment.builder() 
                 .assignmentId("assignment-3")
                 .tenantId("tenant-a")
                 .principalId("user-1")
                 .roleId("viewer")
-                .metadata("source", "seed") // GH-90000
-                .build(); // GH-90000
+                .metadata("source", "seed") 
+                .build(); 
 
-        RoleAssignment revoked = RoleAssignment.builder() // GH-90000
+        RoleAssignment revoked = RoleAssignment.builder() 
                 .assignmentId("assignment-3")
                 .tenantId("tenant-a")
                 .principalId("user-1")
                 .roleId("viewer")
                 .revokedAt(Instant.parse("2026-04-21T12:00:00Z"), "admin-user")
-                .build(); // GH-90000
+                .build(); 
 
-        assertThat(active).isEqualTo(equivalentActive); // GH-90000
-        assertThat(active.hashCode()).isEqualTo(equivalentActive.hashCode()); // GH-90000
-        assertThat(active).isNotEqualTo(revoked); // GH-90000
+        assertThat(active).isEqualTo(equivalentActive); 
+        assertThat(active.hashCode()).isEqualTo(equivalentActive.hashCode()); 
+        assertThat(active).isNotEqualTo(revoked); 
     }
 }

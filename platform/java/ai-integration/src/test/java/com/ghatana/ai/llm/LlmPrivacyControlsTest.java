@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.ai.llm;
@@ -45,7 +45,7 @@ class LlmPrivacyControlsTest {
     private PolicyEvalResult denyResult;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         delegate = mock(LLMGateway.class);
         policyEngine = mock(PolicyAsCodeEngine.class);
 
@@ -63,25 +63,25 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("prompt containing PII-like secret is blocked before reaching the LLM")
-        void promptContainingPiiIsBlockedBeforeLlmCall() { // GH-90000
+        void promptContainingPiiIsBlockedBeforeLlmCall() { 
             when(policyEngine.evaluate(anyString(), anyString(), any()))
                     .thenReturn(Promise.of(denyResult));
 
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("Please process: ssn=123-45-6789 belongs to Alice Johnson")
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "pii.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "pii.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(request); 
 
-            assertThat(result.isException()).isTrue(); // GH-90000
+            assertThat(result.isException()).isTrue(); 
             // LLM gateway must never be called when policy denies
             verify(delegate, never()).complete(any());
         }
 
         @Test
         @DisplayName("prompt containing hardcoded credential is blocked before reaching the LLM")
-        void promptContainingCredentialIsBlocked() { // GH-90000
+        void promptContainingCredentialIsBlocked() { 
             PolicyEvalResult credentialDeny = mock(PolicyEvalResult.class);
             when(credentialDeny.allowed()).thenReturn(false);
             when(credentialDeny.reasons()).thenReturn(List.of("Hardcoded credential detected"));
@@ -91,10 +91,10 @@ class LlmPrivacyControlsTest {
 
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("api_key='sk-prod-abc123xyz' — summarize this code")
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "secret.guard"); // GH-90000
-            Promise<CompletionResult> actual = guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "secret.guard"); 
+            Promise<CompletionResult> actual = guardRail.complete(request); 
 
             assertThat(actual.isException()).isTrue();
             verify(delegate, never()).complete(any());
@@ -102,7 +102,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("policy input context receives the prompt text for evaluation")
-        void policyEngineReceivesPromptTextForEvaluation() { // GH-90000
+        void policyEngineReceivesPromptTextForEvaluation() { 
             // Capture the context map passed to the policy engine and verify
             // the prompt is included — this is what the policy evaluates.
             PolicyEvalResult allowResult = mock(PolicyEvalResult.class);
@@ -117,10 +117,10 @@ class LlmPrivacyControlsTest {
             when(delegate.complete(any())).thenReturn(Promise.of(completionResult));
 
             String promptText = "Explain quantum computing in simple terms";
-            CompletionRequest request = CompletionRequest.builder().prompt(promptText).build(); // GH-90000
+            CompletionRequest request = CompletionRequest.builder().prompt(promptText).build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); // GH-90000
-            guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "llm.guard"); 
+            guardRail.complete(request); 
 
             Map<String, Object> capturedContext = contextCaptor.getValue();
             assertThat(capturedContext).containsKey("prompt");
@@ -136,7 +136,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("denied request exception message does not expose the raw prompt payload")
-        void deniedRequestExceptionDoesNotExposeRawPromptPayload() { // GH-90000
+        void deniedRequestExceptionDoesNotExposeRawPromptPayload() { 
             // The exception message must include the denial reason from policy
             // but must NOT include the sensitive content of the original prompt.
             PolicyEvalResult piiDeny = mock(PolicyEvalResult.class);
@@ -149,10 +149,10 @@ class LlmPrivacyControlsTest {
             String sensitiveContent = "Card: 4111-1111-1111-1111 for Alice Smith, CVV 123";
             CompletionRequest request = CompletionRequest.builder()
                     .prompt(sensitiveContent)
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "pci.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "pci.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(request); 
 
             assertThat(result.isException()).isTrue();
             Throwable exception = result.getException();
@@ -168,7 +168,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("denied tool request exception does not expose tool argument payload")
-        void deniedToolRequestExceptionDoesNotExposeToolPayload() { // GH-90000
+        void deniedToolRequestExceptionDoesNotExposeToolPayload() { 
             PolicyEvalResult toolDeny = mock(PolicyEvalResult.class);
             when(toolDeny.allowed()).thenReturn(false);
             when(toolDeny.reasons()).thenReturn(List.of("Sensitive data in tool invocation"));
@@ -179,10 +179,10 @@ class LlmPrivacyControlsTest {
             String sensitiveArg = "patient_dob=1990-05-22&ssn=987-65-4321";
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("Look up patient record with params: " + sensitiveArg)
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "hipaa.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.completeWithTools(request, List.of()); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "hipaa.guard"); 
+            Promise<CompletionResult> result = guardRail.completeWithTools(request, List.of()); 
 
             assertThat(result.isException()).isTrue();
             assertThat(result.getException().getMessage())
@@ -192,7 +192,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("trace payload in metadata is not exposed in denial exception")
-        void deniedRequestDoesNotExposeTracePayload() { // GH-90000
+        void deniedRequestDoesNotExposeTracePayload() { 
             PolicyEvalResult traceDeny = mock(PolicyEvalResult.class);
             when(traceDeny.allowed()).thenReturn(false);
             when(traceDeny.reasons()).thenReturn(List.of("Trace payload contains secret token"));
@@ -204,10 +204,10 @@ class LlmPrivacyControlsTest {
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("Process this trace metadata")
                     .metadata(Map.of("tracePayload", tracePayload))
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "trace.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "trace.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(request); 
 
             assertThat(result.isException()).isTrue();
             assertThat(result.getException().getMessage())
@@ -218,7 +218,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("audit metadata values are not exposed in denial exception")
-        void deniedRequestDoesNotExposeAuditMetadata() { // GH-90000
+        void deniedRequestDoesNotExposeAuditMetadata() { 
             PolicyEvalResult auditDeny = mock(PolicyEvalResult.class);
             when(auditDeny.allowed()).thenReturn(false);
             when(auditDeny.reasons()).thenReturn(List.of("Audit payload contains regulated identifier"));
@@ -230,10 +230,10 @@ class LlmPrivacyControlsTest {
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("Summarize audit event")
                     .metadata(Map.of("auditRecord", Map.of("regulatedId", regulatedId)))
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "audit.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(request); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "audit.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(request); 
 
             assertThat(result.isException()).isTrue();
             assertThat(result.getException().getMessage())
@@ -252,7 +252,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("tool-enabled request is blocked when policy detects sensitive tool context")
-        void toolEnabledRequestBlockedWhenPolicyDetectsSensitiveContext() { // GH-90000
+        void toolEnabledRequestBlockedWhenPolicyDetectsSensitiveContext() { 
             PolicyEvalResult toolOutputDeny = mock(PolicyEvalResult.class);
             when(toolOutputDeny.allowed()).thenReturn(false);
             when(toolOutputDeny.reasons()).thenReturn(List.of("Tool invocation with PII parameters"));
@@ -262,12 +262,12 @@ class LlmPrivacyControlsTest {
 
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("Retrieve sensitive customer record")
-                    .build(); // GH-90000
+                    .build(); 
 
             ToolDefinition sensitiveDataTool = mock(ToolDefinition.class);
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "tool.output.guard"); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "tool.output.guard"); 
             Promise<CompletionResult> result =
-                    guardRail.completeWithTools(request, List.of(sensitiveDataTool)); // GH-90000
+                    guardRail.completeWithTools(request, List.of(sensitiveDataTool)); 
 
             assertThat(result.isException()).isTrue();
             verify(delegate, never()).completeWithTools(any(), any());
@@ -275,7 +275,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("allowed tool request is forwarded to delegate without modification")
-        void allowedToolRequestIsForwardedUnmodified() { // GH-90000
+        void allowedToolRequestIsForwardedUnmodified() { 
             PolicyEvalResult allowResult = mock(PolicyEvalResult.class);
             when(allowResult.allowed()).thenReturn(true);
 
@@ -287,11 +287,11 @@ class LlmPrivacyControlsTest {
 
             CompletionRequest request = CompletionRequest.builder()
                     .prompt("What is the weather in London?")
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "tool.guard"); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "tool.guard"); 
             Promise<CompletionResult> result =
-                    guardRail.completeWithTools(request, List.of()); // GH-90000
+                    guardRail.completeWithTools(request, List.of()); 
 
             assertThat(result.getResult()).isEqualTo(expectedResult);
             verify(delegate).completeWithTools(request, List.of());
@@ -306,7 +306,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("eval dataset entry with PII is blocked before reaching the LLM")
-        void evalDatasetEntryWithPiiIsBlocked() { // GH-90000
+        void evalDatasetEntryWithPiiIsBlocked() { 
             // Simulates: an eval runner submits dataset entries to the LLM for scoring.
             // If the entry contains PII, the policy guard rail must block it.
             PolicyEvalResult evalDeny = mock(PolicyEvalResult.class);
@@ -320,10 +320,10 @@ class LlmPrivacyControlsTest {
             CompletionRequest evalRequest = CompletionRequest.builder()
                     .prompt("[EVAL] Prompt: 'email customer@sensitive.org about their account'")
                     .metadata(Map.of("source", "eval-dataset", "datasetId", "ds-001"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "eval.pii.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(evalRequest); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "eval.pii.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(evalRequest); 
 
             assertThat(result.isException()).isTrue();
             assertThat(result.getException().getMessage())
@@ -333,7 +333,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("eval entry with tenant metadata uses policy path from metadata")
-        void evalEntryWithTenantMetadataRoutesPolicyCorrectly() { // GH-90000
+        void evalEntryWithTenantMetadataRoutesPolicyCorrectly() { 
             PolicyEvalResult allowResult = mock(PolicyEvalResult.class);
             when(allowResult.allowed()).thenReturn(true);
 
@@ -348,10 +348,10 @@ class LlmPrivacyControlsTest {
             CompletionRequest evalRequest = CompletionRequest.builder()
                     .prompt("[EVAL] What is 2 + 2?")
                     .metadata(Map.of("policyPath", "eval.safe.guard", "tenantId", "eval-tenant"))
-                    .build(); // GH-90000
+                    .build(); 
 
-            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "default.guard"); // GH-90000
-            Promise<CompletionResult> result = guardRail.complete(evalRequest); // GH-90000
+            PolicyGuardRail guardRail = new PolicyGuardRail(delegate, policyEngine, "default.guard"); 
+            Promise<CompletionResult> result = guardRail.complete(evalRequest); 
 
             assertThat(result.getResult()).isEqualTo(expectedResult);
             // Verify policy was evaluated with metadata-specified path, not default
@@ -368,7 +368,7 @@ class LlmPrivacyControlsTest {
 
         @Test
         @DisplayName("simultaneous requests with different policies are independently evaluated")
-        void simultaneousRequestsWithDifferentPoliciesAreIndependent() { // GH-90000
+        void simultaneousRequestsWithDifferentPoliciesAreIndependent() { 
             PolicyAsCodeEngine policyEngineAllow = mock(PolicyAsCodeEngine.class);
             PolicyAsCodeEngine policyEngineDeny = mock(PolicyAsCodeEngine.class);
 
@@ -387,14 +387,14 @@ class LlmPrivacyControlsTest {
             CompletionResult expected = CompletionResult.builder().text("safe").build();
             when(delegate.complete(any())).thenReturn(Promise.of(expected));
 
-            PolicyGuardRail allowedRail = new PolicyGuardRail(delegate, policyEngineAllow, "open.guard"); // GH-90000
-            PolicyGuardRail blockedRail = new PolicyGuardRail(delegate, policyEngineDeny, "pii.guard"); // GH-90000
+            PolicyGuardRail allowedRail = new PolicyGuardRail(delegate, policyEngineAllow, "open.guard"); 
+            PolicyGuardRail blockedRail = new PolicyGuardRail(delegate, policyEngineDeny, "pii.guard"); 
 
             CompletionRequest safeRequest = CompletionRequest.builder().prompt("Safe prompt").build();
             CompletionRequest sensitiveRequest = CompletionRequest.builder().prompt("Sensitive prompt").build();
 
-            Promise<CompletionResult> allowed = allowedRail.complete(safeRequest); // GH-90000
-            Promise<CompletionResult> blocked = blockedRail.complete(sensitiveRequest); // GH-90000
+            Promise<CompletionResult> allowed = allowedRail.complete(safeRequest); 
+            Promise<CompletionResult> blocked = blockedRail.complete(sensitiveRequest); 
 
             assertThat(allowed.isResult()).isTrue();
             assertThat(allowed.getResult()).isEqualTo(expected);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.compliance;
@@ -33,12 +33,12 @@ class ComplianceTest extends EventloopTestBase {
     private ComplianceService complianceService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        consent = new InMemoryConsentManager(); // GH-90000
-        purposeEnforcer = new DefaultPurposeLimitationEnforcer(); // GH-90000
-        retentionEnforcer = new InMemoryRetentionPolicyEnforcer(); // GH-90000
-        complianceService = new ComplianceService( // GH-90000
-            new DefaultDataAccessBroker(consent, purposeEnforcer), // GH-90000
+    void setUp() { 
+        consent = new InMemoryConsentManager(); 
+        purposeEnforcer = new DefaultPurposeLimitationEnforcer(); 
+        retentionEnforcer = new InMemoryRetentionPolicyEnforcer(); 
+        complianceService = new ComplianceService( 
+            new DefaultDataAccessBroker(consent, purposeEnforcer), 
             retentionEnforcer);
     }
 
@@ -48,30 +48,30 @@ class ComplianceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("unregistered data asset passes retention check (open policy)")
-        void unregisteredDataPassesCheck() { // GH-90000
-            assertThatCode(() -> // GH-90000
-                runBlocking(() -> retentionEnforcer.checkRetention("t1", "unknown-data")) // GH-90000
-            ).doesNotThrowAnyException(); // GH-90000
+        void unregisteredDataPassesCheck() { 
+            assertThatCode(() -> 
+                runBlocking(() -> retentionEnforcer.checkRetention("t1", "unknown-data")) 
+            ).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("data within retention period passes check")
-        void withinRetentionPasses() { // GH-90000
-            runBlocking(() -> retentionEnforcer.registerRetention("t1", "data1", Duration.ofDays(30))); // GH-90000
-            assertThatCode(() -> // GH-90000
-                runBlocking(() -> retentionEnforcer.checkRetention("t1", "data1")) // GH-90000
-            ).doesNotThrowAnyException(); // GH-90000
+        void withinRetentionPasses() { 
+            runBlocking(() -> retentionEnforcer.registerRetention("t1", "data1", Duration.ofDays(30))); 
+            assertThatCode(() -> 
+                runBlocking(() -> retentionEnforcer.checkRetention("t1", "data1")) 
+            ).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("data scheduled for deletion throws RetentionExpiredException")
-        void scheduledForDeletionThrows() { // GH-90000
-            runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "data1")); // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> retentionEnforcer.checkRetention("t1", "data1")) // GH-90000
-            ).isInstanceOf(RetentionExpiredException.class) // GH-90000
-             .satisfies(ex -> { // GH-90000
-                 RetentionExpiredException e = (RetentionExpiredException) ex; // GH-90000
+        void scheduledForDeletionThrows() { 
+            runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "data1")); 
+            assertThatThrownBy(() -> 
+                runPromise(() -> retentionEnforcer.checkRetention("t1", "data1")) 
+            ).isInstanceOf(RetentionExpiredException.class) 
+             .satisfies(ex -> { 
+                 RetentionExpiredException e = (RetentionExpiredException) ex; 
                  assertThat(e.tenantId()).isEqualTo("t1");
                  assertThat(e.dataId()).isEqualTo("data1");
              });
@@ -79,13 +79,13 @@ class ComplianceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("expired retention throws RetentionExpiredException")
-        void expiredRetentionThrows() { // GH-90000
+        void expiredRetentionThrows() { 
             // Register with negative duration — immediately expired
-            runBlocking(() -> retentionEnforcer.registerRetention( // GH-90000
-                "t1", "old-data", Duration.ofMillis(-1))); // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> retentionEnforcer.checkRetention("t1", "old-data")) // GH-90000
-            ).isInstanceOf(RetentionExpiredException.class); // GH-90000
+            runBlocking(() -> retentionEnforcer.registerRetention( 
+                "t1", "old-data", Duration.ofMillis(-1))); 
+            assertThatThrownBy(() -> 
+                runPromise(() -> retentionEnforcer.checkRetention("t1", "old-data")) 
+            ).isInstanceOf(RetentionExpiredException.class); 
         }
     }
 
@@ -95,35 +95,35 @@ class ComplianceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("passes when consent, purpose binding, and retention are all satisfied")
-        void passesAllChecks() { // GH-90000
-            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics")); // GH-90000
+        void passesAllChecks() { 
+            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics")); 
             runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
-            runBlocking(() -> retentionEnforcer.registerRetention("t1", "email-data", Duration.ofDays(90))); // GH-90000
+            runBlocking(() -> retentionEnforcer.registerRetention("t1", "email-data", Duration.ofDays(90))); 
 
-            assertThatCode(() -> // GH-90000
-                runBlocking(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) // GH-90000
-            ).doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> 
+                runBlocking(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) 
+            ).doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("fails when consent is absent")
-        void failsWithoutConsent() { // GH-90000
+        void failsWithoutConsent() { 
             runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) // GH-90000
-            ).isInstanceOf(ConsentRequiredException.class); // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) 
+            ).isInstanceOf(ConsentRequiredException.class); 
         }
 
         @Test
         @DisplayName("fails when data is scheduled for deletion")
-        void failsWhenScheduledForDeletion() { // GH-90000
-            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics")); // GH-90000
+        void failsWhenScheduledForDeletion() { 
+            runBlocking(() -> consent.recordConsent("t1", "user1", "analytics")); 
             runBlocking(() -> purposeEnforcer.bindPurpose("t1", "email-data", Set.of("analytics")));
-            runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "email-data")); // GH-90000
+            runBlocking(() -> retentionEnforcer.scheduleDeletion("t1", "email-data")); 
 
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) // GH-90000
-            ).isInstanceOf(RetentionExpiredException.class); // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> complianceService.checkCompliance("t1", "user1", "email-data", "analytics")) 
+            ).isInstanceOf(RetentionExpiredException.class); 
         }
     }
 }

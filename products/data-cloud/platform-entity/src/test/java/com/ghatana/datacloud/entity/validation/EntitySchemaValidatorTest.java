@@ -25,8 +25,8 @@ class EntitySchemaValidatorTest {
     private EntitySchemaValidator validator;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        validator = EntitySchemaValidator.create(); // GH-90000
+    void setUp() { 
+        validator = EntitySchemaValidator.create(); 
     }
 
     // =========================================================================
@@ -39,20 +39,20 @@ class EntitySchemaValidatorTest {
 
         @Test
         @DisplayName("create() should return non-null validator in non-strict mode")
-        void createShouldReturnNonNull() { // GH-90000
-            assertThat(EntitySchemaValidator.create()).isNotNull(); // GH-90000
+        void createShouldReturnNonNull() { 
+            assertThat(EntitySchemaValidator.create()).isNotNull(); 
         }
 
         @Test
         @DisplayName("create(true) should return non-null strict validator")
-        void createStrictShouldReturnNonNull() { // GH-90000
-            assertThat(EntitySchemaValidator.create(true)).isNotNull(); // GH-90000
+        void createStrictShouldReturnNonNull() { 
+            assertThat(EntitySchemaValidator.create(true)).isNotNull(); 
         }
 
         @Test
         @DisplayName("create(false) should return non-null lenient validator")
-        void createLenientShouldReturnNonNull() { // GH-90000
-            assertThat(EntitySchemaValidator.create(false)).isNotNull(); // GH-90000
+        void createLenientShouldReturnNonNull() { 
+            assertThat(EntitySchemaValidator.create(false)).isNotNull(); 
         }
     }
 
@@ -66,29 +66,29 @@ class EntitySchemaValidatorTest {
 
         @Test
         @DisplayName("should register schema so hasSchema returns true")
-        void shouldRegisterSchema() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldRegisterSchema() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                     MetaField.builder().name("name").type(DataType.STRING).build()
             ));
-            assertThat(validator.hasSchema("tenant-1", "products")).isTrue(); // GH-90000
+            assertThat(validator.hasSchema("tenant-1", "products")).isTrue(); 
         }
 
         @Test
         @DisplayName("should not affect other tenants when registering schema")
-        void shouldIsolateTenants() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldIsolateTenants() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                     MetaField.builder().name("name").type(DataType.STRING).build()
             ));
-            assertThat(validator.hasSchema("tenant-2", "products")).isFalse(); // GH-90000
+            assertThat(validator.hasSchema("tenant-2", "products")).isFalse(); 
         }
 
         @Test
         @DisplayName("should not affect other collections for same tenant")
-        void shouldIsolateCollections() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldIsolateCollections() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                     MetaField.builder().name("name").type(DataType.STRING).build()
             ));
-            assertThat(validator.hasSchema("tenant-1", "orders")).isFalse(); // GH-90000
+            assertThat(validator.hasSchema("tenant-1", "orders")).isFalse(); 
         }
     }
 
@@ -102,8 +102,8 @@ class EntitySchemaValidatorTest {
 
         @Test
         @DisplayName("should return false before any schema registered")
-        void shouldReturnFalseInitially() { // GH-90000
-            assertThat(validator.hasSchema("tenant-1", "products")).isFalse(); // GH-90000
+        void shouldReturnFalseInitially() { 
+            assertThat(validator.hasSchema("tenant-1", "products")).isFalse(); 
         }
     }
 
@@ -117,21 +117,21 @@ class EntitySchemaValidatorTest {
 
         @Test
         @DisplayName("should evict schema so hasSchema returns false")
-        void shouldEvictSchema() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldEvictSchema() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                     MetaField.builder().name("id").type(DataType.STRING).build()
             ));
-            assertThat(validator.hasSchema("tenant-1", "products")).isTrue(); // GH-90000
+            assertThat(validator.hasSchema("tenant-1", "products")).isTrue(); 
 
-            validator.evictSchema("tenant-1", "products"); // GH-90000
-            assertThat(validator.hasSchema("tenant-1", "products")).isFalse(); // GH-90000
+            validator.evictSchema("tenant-1", "products"); 
+            assertThat(validator.hasSchema("tenant-1", "products")).isFalse(); 
         }
 
         @Test
         @DisplayName("should not throw when evicting non-existent schema")
-        void shouldNotThrowOnMissingEvict() { // GH-90000
-            assertThatCode(() -> validator.evictSchema("unknown", "missing")) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+        void shouldNotThrowOnMissingEvict() { 
+            assertThatCode(() -> validator.evictSchema("unknown", "missing")) 
+                    .doesNotThrowAnyException(); 
         }
     }
 
@@ -145,35 +145,35 @@ class EntitySchemaValidatorTest {
 
         @Test
         @DisplayName("should return UNREGISTERED when no schema registered")
-        void shouldReturnUnregisteredWhenSchemaAbsent() { // GH-90000
-            ValidationResult result = validator.validate("tenant-1", "products", Map.of("name", "test")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.UNREGISTERED); // GH-90000
+        void shouldReturnUnregisteredWhenSchemaAbsent() { 
+            ValidationResult result = validator.validate("tenant-1", "products", Map.of("name", "test")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.UNREGISTERED); 
         }
 
         @Test
         @DisplayName("should return SUCCESS when data matches schema")
-        void shouldReturnSuccessForValidData() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldReturnSuccessForValidData() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                     MetaField.builder().name("name").type(DataType.STRING).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "products", Map.of("name", "Widget")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "products", Map.of("name", "Widget")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should return FAILURE when required field is missing")
-        void shouldReturnFailureForMissingRequiredField() { // GH-90000
-            MetaField requiredField = MetaField.builder() // GH-90000
+        void shouldReturnFailureForMissingRequiredField() { 
+            MetaField requiredField = MetaField.builder() 
                     .name("name")
-                    .type(DataType.STRING) // GH-90000
-                    .required(true) // GH-90000
-                    .build(); // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of(requiredField)); // GH-90000
+                    .type(DataType.STRING) 
+                    .required(true) 
+                    .build(); 
+            validator.registerSchema("tenant-1", "products", List.of(requiredField)); 
 
-            ValidationResult result = validator.validate("tenant-1", "products", Map.of()); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); // GH-90000
-            assertThat(result.violations()).isNotEmpty(); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "products", Map.of()); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); 
+            assertThat(result.violations()).isNotEmpty(); 
         }
     }
 }

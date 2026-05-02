@@ -13,46 +13,46 @@ class HealthStatusCanonicalMappingTest {
 
     @Test
     @DisplayName("maps database status to canonical platform health")
-    void shouldMapDatabaseStatusToPlatformHealth() { // GH-90000
+    void shouldMapDatabaseStatusToPlatformHealth() { 
         SQLException failure = new SQLException("Connection refused");
-        HealthDetails details = HealthDetails.builder() // GH-90000
-            .detail("database", "postgres") // GH-90000
-            .detail("connectionsActive", 4) // GH-90000
-            .build(); // GH-90000
-        HealthStatus databaseStatus = HealthStatus.unhealthy( // GH-90000
+        HealthDetails details = HealthDetails.builder() 
+            .detail("database", "postgres") 
+            .detail("connectionsActive", 4) 
+            .build(); 
+        HealthStatus databaseStatus = HealthStatus.unhealthy( 
             "Database unavailable",
-            Duration.ofSeconds(5), // GH-90000
+            Duration.ofSeconds(5), 
             failure);
 
-        com.ghatana.platform.health.HealthStatus platformStatus = databaseStatus.toPlatformHealthStatus(); // GH-90000
+        com.ghatana.platform.health.HealthStatus platformStatus = databaseStatus.toPlatformHealthStatus(); 
 
-        assertThat(platformStatus.getStatus()).isEqualTo(com.ghatana.platform.health.HealthStatus.Status.UNHEALTHY); // GH-90000
+        assertThat(platformStatus.getStatus()).isEqualTo(com.ghatana.platform.health.HealthStatus.Status.UNHEALTHY); 
         assertThat(platformStatus.getMessage()).isEqualTo("Database unavailable");
-        assertThat(platformStatus.getDetails()).containsEntry("responseTimeMs", 5000L); // GH-90000
-        assertThat(platformStatus.getDetails()).containsEntry("exceptionType", SQLException.class.getName()); // GH-90000
-        assertThat(platformStatus.getException()).isSameAs(failure); // GH-90000
+        assertThat(platformStatus.getDetails()).containsEntry("responseTimeMs", 5000L); 
+        assertThat(platformStatus.getDetails()).containsEntry("exceptionType", SQLException.class.getName()); 
+        assertThat(platformStatus.getException()).isSameAs(failure); 
     }
 
     @Test
     @DisplayName("rebuilds database status from canonical platform health")
-    void shouldMapPlatformHealthToDatabaseStatus() { // GH-90000
+    void shouldMapPlatformHealthToDatabaseStatus() { 
         RuntimeException failure = new RuntimeException("Timed out");
         com.ghatana.platform.health.HealthStatus platformStatus =
-            com.ghatana.platform.health.HealthStatus.builder() // GH-90000
-                .withStatus(com.ghatana.platform.health.HealthStatus.Status.HEALTHY) // GH-90000
+            com.ghatana.platform.health.HealthStatus.builder() 
+                .withStatus(com.ghatana.platform.health.HealthStatus.Status.HEALTHY) 
                 .withMessage("Database connection validated")
-                .withDetail("responseTimeMs", 25L) // GH-90000
-                .withDetail("database", "postgres") // GH-90000
-                .withException(failure) // GH-90000
-                .build(); // GH-90000
+                .withDetail("responseTimeMs", 25L) 
+                .withDetail("database", "postgres") 
+                .withException(failure) 
+                .build(); 
 
-        HealthStatus databaseStatus = HealthStatus.fromPlatformHealthStatus(platformStatus); // GH-90000
+        HealthStatus databaseStatus = HealthStatus.fromPlatformHealthStatus(platformStatus); 
 
-        assertThat(databaseStatus.getStatus()).isEqualTo(HealthStatus.HealthState.HEALTHY); // GH-90000
+        assertThat(databaseStatus.getStatus()).isEqualTo(HealthStatus.HealthState.HEALTHY); 
         assertThat(databaseStatus.getMessage()).isEqualTo("Database connection validated");
-        assertThat(databaseStatus.getResponseTime()).isEqualTo(Duration.ofMillis(25)); // GH-90000
-        assertThat(databaseStatus.getDetails()).isNotNull(); // GH-90000
+        assertThat(databaseStatus.getResponseTime()).isEqualTo(Duration.ofMillis(25)); 
+        assertThat(databaseStatus.getDetails()).isNotNull(); 
         assertThat(databaseStatus.getDetails().getDetail("database")).isEqualTo("postgres");
-        assertThat(databaseStatus.getException()).isSameAs(failure); // GH-90000
+        assertThat(databaseStatus.getException()).isSameAs(failure); 
     }
 }

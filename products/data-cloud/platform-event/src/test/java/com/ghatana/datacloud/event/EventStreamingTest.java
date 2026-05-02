@@ -22,37 +22,37 @@ class EventStreamingTest {
 
     @Test
     @DisplayName("Should stream events")
-    void shouldStreamEvents() { // GH-90000
+    void shouldStreamEvents() { 
         String streamId = "stream-123";
         String eventType = "USER_ACTION";
 
-        assertThat(streamId).isNotNull(); // GH-90000
-        assertThat(eventType).isNotNull(); // GH-90000
+        assertThat(streamId).isNotNull(); 
+        assertThat(eventType).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle event processing")
-    void shouldHandleEventProcessing() { // GH-90000
+    void shouldHandleEventProcessing() { 
         String processorId = "processor-123";
         boolean processed = true;
 
-        assertThat(processorId).isNotNull(); // GH-90000
-        assertThat(processed).isTrue(); // GH-90000
+        assertThat(processorId).isNotNull(); 
+        assertThat(processed).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle event delivery")
-    void shouldHandleEventDelivery() { // GH-90000
+    void shouldHandleEventDelivery() { 
         String consumerId = "consumer-123";
         boolean delivered = true;
 
-        assertThat(consumerId).isNotNull(); // GH-90000
-        assertThat(delivered).isTrue(); // GH-90000
+        assertThat(consumerId).isNotNull(); 
+        assertThat(delivered).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle event filtering")
-    void shouldHandleEventFiltering() { // GH-90000
+    void shouldHandleEventFiltering() { 
         String filter = "event_type = 'purchase'";
 
         assertThat(filter).contains("event_type");
@@ -61,20 +61,20 @@ class EventStreamingTest {
 
     @Test
     @DisplayName("Should handle streaming failures")
-    void shouldHandleStreamingFailures() { // GH-90000
+    void shouldHandleStreamingFailures() { 
         boolean failed = false;
         String error = null;
 
-        assertThat(failed).isFalse(); // GH-90000
-        assertThat(error).isNull(); // GH-90000
+        assertThat(failed).isFalse(); 
+        assertThat(error).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle event backpressure")
-    void shouldHandleEventBackpressure() { // GH-90000
+    void shouldHandleEventBackpressure() { 
         int bufferCapacity = 1000;
         int currentSize = 500;
 
-        assertThat(currentSize).isLessThan(bufferCapacity); // GH-90000
+        assertThat(currentSize).isLessThan(bufferCapacity); 
     }
 }

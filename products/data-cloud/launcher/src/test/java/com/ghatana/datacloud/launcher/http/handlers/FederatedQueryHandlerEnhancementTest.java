@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http.handlers;
@@ -29,12 +29,12 @@ import static org.mockito.Mockito.when;
  * and default constant values.
  *
  * @doc.type class
- * @doc.purpose Unit tests for FederatedQueryHandler timeout and tenant catalog isolation (P3.2.1) // GH-90000
+ * @doc.purpose Unit tests for FederatedQueryHandler timeout and tenant catalog isolation (P3.2.1) 
  * @doc.layer product
  * @doc.pattern Test
  */
 @DisplayName("FederatedQueryHandler – query timeout, tenant catalog isolation (P3.2.1)")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class FederatedQueryHandlerEnhancementTest {
 
     @Mock
@@ -57,42 +57,42 @@ class FederatedQueryHandlerEnhancementTest {
 
         @Test
         @DisplayName("DEFAULT_QUERY_TIMEOUT_SECONDS is 30")
-        void defaultTimeoutConstantIs30() { // GH-90000
-            assertThat(FederatedQueryHandler.DEFAULT_QUERY_TIMEOUT_SECONDS).isEqualTo(30); // GH-90000
+        void defaultTimeoutConstantIs30() { 
+            assertThat(FederatedQueryHandler.DEFAULT_QUERY_TIMEOUT_SECONDS).isEqualTo(30); 
         }
 
         @Test
         @DisplayName("4-arg constructor defaults to 30s timeout")
-        void fourArgConstructor_defaultsTo30s() { // GH-90000
-            FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
+        void fourArgConstructor_defaultsTo30s() { 
+            FederatedQueryHandler handler = new FederatedQueryHandler( 
                     http, analyticsEngine, metrics, null);
             // Verify handler constructs without error; timeout is implicitly 30s
-            assertThat(handler).isNotNull(); // GH-90000
+            assertThat(handler).isNotNull(); 
         }
 
         @Test
         @DisplayName("5-arg constructor accepts custom positive timeout")
-        void fiveArgConstructor_acceptsCustomTimeout() { // GH-90000
-            FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
+        void fiveArgConstructor_acceptsCustomTimeout() { 
+            FederatedQueryHandler handler = new FederatedQueryHandler( 
                     http, analyticsEngine, metrics, null, 60);
-            assertThat(handler).isNotNull(); // GH-90000
+            assertThat(handler).isNotNull(); 
         }
 
         @Test
         @DisplayName("5-arg constructor rejects non-positive timeout")
-        void fiveArgConstructor_rejectsZeroTimeout() { // GH-90000
-            assertThatThrownBy(() -> new FederatedQueryHandler( // GH-90000
+        void fiveArgConstructor_rejectsZeroTimeout() { 
+            assertThatThrownBy(() -> new FederatedQueryHandler( 
                             http, analyticsEngine, metrics, null, 0))
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("queryTimeoutSeconds must be positive");
         }
 
         @Test
         @DisplayName("5-arg constructor rejects negative timeout")
-        void fiveArgConstructor_rejectsNegativeTimeout() { // GH-90000
-            assertThatThrownBy(() -> new FederatedQueryHandler( // GH-90000
+        void fiveArgConstructor_rejectsNegativeTimeout() { 
+            assertThatThrownBy(() -> new FederatedQueryHandler( 
                             http, analyticsEngine, metrics, null, -5))
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("queryTimeoutSeconds must be positive");
         }
     }
@@ -105,46 +105,46 @@ class FederatedQueryHandlerEnhancementTest {
 
         @Test
         @DisplayName("replaces trailing catalog segment with tenant catalog")
-        void replacesExistingCatalog() { // GH-90000
-            String result = FederatedQueryHandler.buildTenantUrl( // GH-90000
+        void replacesExistingCatalog() { 
+            String result = FederatedQueryHandler.buildTenantUrl( 
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_acme");
             assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme");
         }
 
         @Test
         @DisplayName("appends tenant catalog when no segment present")
-        void appendsCatalogWhenMissing() { // GH-90000
-            String result = FederatedQueryHandler.buildTenantUrl( // GH-90000
+        void appendsCatalogWhenMissing() { 
+            String result = FederatedQueryHandler.buildTenantUrl( 
                     "jdbc:trino://host:8080", "eventcloud_acme");
             assertThat(result).isEqualTo("jdbc:trino://host:8080/eventcloud_acme");
         }
 
         @Test
         @DisplayName("different tenants produce different catalog URLs")
-        void differentTenantsProduceDifferentUrls() { // GH-90000
-            String urlA = FederatedQueryHandler.buildTenantUrl( // GH-90000
+        void differentTenantsProduceDifferentUrls() { 
+            String urlA = FederatedQueryHandler.buildTenantUrl( 
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_tenantA");
-            String urlB = FederatedQueryHandler.buildTenantUrl( // GH-90000
+            String urlB = FederatedQueryHandler.buildTenantUrl( 
                     "jdbc:trino://host:8080/eventcloud", "eventcloud_tenantB");
-            assertThat(urlA).isNotEqualTo(urlB); // GH-90000
+            assertThat(urlA).isNotEqualTo(urlB); 
             assertThat(urlA).contains("tenantA");
             assertThat(urlB).contains("tenantB");
         }
 
         @Test
         @DisplayName("null base URL returns null gracefully")
-        void nullBaseUrl_returnsNull() { // GH-90000
-            assertThat(FederatedQueryHandler.buildTenantUrl(null, "eventcloud_x")).isNull(); // GH-90000
+        void nullBaseUrl_returnsNull() { 
+            assertThat(FederatedQueryHandler.buildTenantUrl(null, "eventcloud_x")).isNull(); 
         }
 
         @Test
         @DisplayName("tenant catalog follows eventcloud_<tenantId> pattern")
-        void tenantCatalogPattern() { // GH-90000
+        void tenantCatalogPattern() { 
             String tenantId = "my-company-123";
             String expectedCatalog = "eventcloud_" + tenantId;
-            String result = FederatedQueryHandler.buildTenantUrl( // GH-90000
+            String result = FederatedQueryHandler.buildTenantUrl( 
                     "jdbc:trino://localhost:8080/base", expectedCatalog);
-            assertThat(result).endsWith("/" + expectedCatalog); // GH-90000
+            assertThat(result).endsWith("/" + expectedCatalog); 
         }
     }
 
@@ -154,18 +154,18 @@ class FederatedQueryHandlerEnhancementTest {
 
         @Test
         @DisplayName("returns 400 when tenant header is missing")
-        void returns400WhenTenantMissing() { // GH-90000
-            FederatedQueryHandler handler = new FederatedQueryHandler( // GH-90000
+        void returns400WhenTenantMissing() { 
+            FederatedQueryHandler handler = new FederatedQueryHandler( 
                     http, analyticsEngine, metrics, null);
-            HttpResponse badRequest = mock(HttpResponse.class); // GH-90000
+            HttpResponse badRequest = mock(HttpResponse.class); 
 
-            when(http.requireTenantIdOrFail(any())).thenReturn(null); // GH-90000
-            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); // GH-90000
+            when(http.requireTenantIdOrFail(any())).thenReturn(null); 
+            when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(badRequest); 
 
-            HttpResponse response = handler.handleFederatedQuery(request).getResult(); // GH-90000
+            HttpResponse response = handler.handleFederatedQuery(request).getResult(); 
 
-            assertThat(response).isSameAs(badRequest); // GH-90000
-            verify(metrics, never()).incrementCounter("query.federated", "tenant", "default"); // GH-90000
+            assertThat(response).isSameAs(badRequest); 
+            verify(metrics, never()).incrementCounter("query.federated", "tenant", "default"); 
         }
     }
 }

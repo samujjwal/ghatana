@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.learning.consolidation;
@@ -24,17 +24,17 @@ import java.util.Map;
 class DefaultLLMFactExtractorTokenLoggingTest {
 
     @Test
-    void shouldCreateCompletionResultWithTokenCounts() { // GH-90000
+    void shouldCreateCompletionResultWithTokenCounts() { 
         // Verify CompletionResult can be created with token counts using builder
-        CompletionResult result = CompletionResult.builder() // GH-90000
+        CompletionResult result = CompletionResult.builder() 
             .text("Test completion")
-            .tokensUsed(100) // GH-90000
-            .promptTokens(50) // GH-90000
-            .completionTokens(50) // GH-90000
-            .build(); // GH-90000
+            .tokensUsed(100) 
+            .promptTokens(50) 
+            .completionTokens(50) 
+            .build(); 
         
-        assertEquals(100, result.getTokensUsed(), "Total tokens should match"); // GH-90000
-        assertEquals(50, result.getPromptTokens(), "Prompt tokens should match"); // GH-90000
-        assertEquals(50, result.getCompletionTokens(), "Completion tokens should match"); // GH-90000
+        assertEquals(100, result.getTokensUsed(), "Total tokens should match"); 
+        assertEquals(50, result.getPromptTokens(), "Prompt tokens should match"); 
+        assertEquals(50, result.getCompletionTokens(), "Completion tokens should match"); 
     }
 }

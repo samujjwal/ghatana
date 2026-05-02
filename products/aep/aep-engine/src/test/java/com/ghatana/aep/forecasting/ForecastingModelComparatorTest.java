@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.forecasting;
@@ -22,62 +22,62 @@ class ForecastingModelComparatorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("adaptive forecasting beats naive baseline on a stable linear trend")
-    void adaptiveBeatsNaiveOnStableTrend() { // GH-90000
-        ForecastingModelComparator comparator = new ForecastingModelComparator( // GH-90000
-            new NaiveForecastingEngine(3, 3600L), // GH-90000
-            new AdaptiveForecastingEngine( // GH-90000
-                new NaiveForecastingEngine(3, 3600L), // GH-90000
-                new LinearTrendForecastingEngine(3, 3600L), // GH-90000
-                new StatisticalForecastingEngine(0.3, 0.1, 3, 3600L, Executors.newSingleThreadExecutor()), // GH-90000
-                new OnlineRegressionForecastingEngine(3, 3600L, 200, 0.05, Runnable::run), // GH-90000
+    void adaptiveBeatsNaiveOnStableTrend() { 
+        ForecastingModelComparator comparator = new ForecastingModelComparator( 
+            new NaiveForecastingEngine(3, 3600L), 
+            new AdaptiveForecastingEngine( 
+                new NaiveForecastingEngine(3, 3600L), 
+                new LinearTrendForecastingEngine(3, 3600L), 
+                new StatisticalForecastingEngine(0.3, 0.1, 3, 3600L, Executors.newSingleThreadExecutor()), 
+                new OnlineRegressionForecastingEngine(3, 3600L, 200, 0.05, Runnable::run), 
                 2
             ),
             3
         );
 
-        AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData( // GH-90000
+        AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData( 
             "throughput",
-            List.of( // GH-90000
-                new AepEngine.DataPoint(T0, 10.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(14400), 50.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(18000), 60.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(21600), 70.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(25200), 80.0) // GH-90000
+            List.of( 
+                new AepEngine.DataPoint(T0, 10.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(14400), 50.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(18000), 60.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(21600), 70.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(25200), 80.0) 
             )
         );
 
-        ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); // GH-90000
+        ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); 
 
         assertThat(result.baselineAlgorithm()).isEqualTo("naive");
         assertThat(result.candidateAlgorithm()).isEqualTo("adaptive");
         assertThat(result.winner()).isEqualTo("adaptive");
-        assertThat(result.candidateRmse()).isLessThan(result.baselineRmse()); // GH-90000
-        assertThat(result.asMetadata()).containsEntry("winner", "adaptive"); // GH-90000
+        assertThat(result.candidateRmse()).isLessThan(result.baselineRmse()); 
+        assertThat(result.asMetadata()).containsEntry("winner", "adaptive"); 
     }
 
     @Test
     @DisplayName("returns insufficient-history when holdout split cannot be formed")
-    void returnsInsufficientHistoryForShortSeries() { // GH-90000
-        ForecastingModelComparator comparator = new ForecastingModelComparator( // GH-90000
-            new NaiveForecastingEngine(), // GH-90000
-            new LinearTrendForecastingEngine(), // GH-90000
+    void returnsInsufficientHistoryForShortSeries() { 
+        ForecastingModelComparator comparator = new ForecastingModelComparator( 
+            new NaiveForecastingEngine(), 
+            new LinearTrendForecastingEngine(), 
             3
         );
 
-        AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData( // GH-90000
+        AepEngine.TimeSeriesData data = new AepEngine.TimeSeriesData( 
             "throughput",
-            List.of( // GH-90000
-                new AepEngine.DataPoint(T0, 10.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0), // GH-90000
-                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0) // GH-90000
+            List.of( 
+                new AepEngine.DataPoint(T0, 10.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(3600), 20.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(7200), 30.0), 
+                new AepEngine.DataPoint(T0.plusSeconds(10800), 40.0) 
             )
         );
 
-        ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); // GH-90000
+        ForecastingModelComparator.ComparisonResult result = runPromise(() -> comparator.compare("tenant-a", data)); 
 
         assertThat(result.winner()).isEqualTo("insufficient-history");
     }

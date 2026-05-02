@@ -21,96 +21,96 @@ class HttpsRedirectHandlerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("create() uses default HTTPS port 443")
-    void createUsesDefaultPort443() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
-        assertThat(handler.getHttpsPort()).isEqualTo(443); // GH-90000
+    void createUsesDefaultPort443() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
+        assertThat(handler.getHttpsPort()).isEqualTo(443); 
     }
 
     @Test
     @DisplayName("create(port) stores custom port")
-    void createWithPortStoresCustomPort() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(8443); // GH-90000
-        assertThat(handler.getHttpsPort()).isEqualTo(8443); // GH-90000
+    void createWithPortStoresCustomPort() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(8443); 
+        assertThat(handler.getHttpsPort()).isEqualTo(8443); 
     }
 
     @Test
     @DisplayName("create(0) throws IllegalArgumentException for port 0")
-    void createWithPort0Throws() { // GH-90000
-        assertThatThrownBy(() -> HttpsRedirectHandler.create(0)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void createWithPort0Throws() { 
+        assertThatThrownBy(() -> HttpsRedirectHandler.create(0)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("create(-1) throws IllegalArgumentException")
-    void createWithNegativePortThrows() { // GH-90000
-        assertThatThrownBy(() -> HttpsRedirectHandler.create(-1)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void createWithNegativePortThrows() { 
+        assertThatThrownBy(() -> HttpsRedirectHandler.create(-1)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("create(65536) throws IllegalArgumentException for port above max")
-    void createWithPortAboveMaxThrows() { // GH-90000
-        assertThatThrownBy(() -> HttpsRedirectHandler.create(65536)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void createWithPortAboveMaxThrows() { 
+        assertThatThrownBy(() -> HttpsRedirectHandler.create(65536)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     // ── Redirect status code ──────────────────────────────────────────────────
 
     @Test
     @DisplayName("serve() returns 301 Moved Permanently status code")
-    void serveReturns301Status() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
+    void serveReturns301Status() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
         HttpRequest request = HttpRequest.get("http://example.com/path")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(301); // GH-90000
+        assertThat(response.getCode()).isEqualTo(301); 
     }
 
     // ── Location header construction ──────────────────────────────────────────
 
     @Test
     @DisplayName("redirect to standard port 443 omits port from Location header")
-    void standardPortOmittedFromLocation() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
+    void standardPortOmittedFromLocation() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
         HttpRequest request = HttpRequest.get("http://api.example.com/users")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "api.example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "api.example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).isEqualTo("https://api.example.com/users");
         assertThat(location).doesNotContain(":443");
     }
 
     @Test
     @DisplayName("redirect to custom port includes port in Location header")
-    void customPortIncludedInLocation() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(8443); // GH-90000
+    void customPortIncludedInLocation() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(8443); 
         HttpRequest request = HttpRequest.get("http://api.example.com/api/data")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "api.example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "api.example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).isEqualTo("https://api.example.com:8443/api/data");
     }
 
     @Test
     @DisplayName("query parameters are preserved in the Location header")
-    void queryParametersPreservedInLocation() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
+    void queryParametersPreservedInLocation() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
         HttpRequest request = HttpRequest.get("http://example.com/search?q=test&page=1")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).startsWith("https://example.com/search");
         assertThat(location).contains("q=test");
         assertThat(location).contains("page=1");
@@ -118,45 +118,45 @@ class HttpsRedirectHandlerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("root path redirect is preserved correctly")
-    void rootPathPreserved() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
+    void rootPathPreserved() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
         HttpRequest request = HttpRequest.get("http://example.com/")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).isEqualTo("https://example.com/");
     }
 
     @Test
     @DisplayName("host with existing port in Host header strips old port before redirect")
-    void hostWithPortStripsOldPort() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(9443); // GH-90000
+    void hostWithPortStripsOldPort() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(9443); 
         // Host header may contain port from the HTTP listener
         HttpRequest request = HttpRequest.get("http://example.com:8080/api")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com:8080") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com:8080") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).startsWith("https://example.com:9443");
         assertThat(location).doesNotContain(":8080");
     }
 
     @Test
     @DisplayName("Location header uses https:// scheme for all redirects")
-    void locationAlwaysUsesHttpsScheme() { // GH-90000
-        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); // GH-90000
+    void locationAlwaysUsesHttpsScheme() { 
+        HttpsRedirectHandler handler = HttpsRedirectHandler.create(); 
         HttpRequest request = HttpRequest.get("http://example.com/data")
-                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") // GH-90000
-                .build(); // GH-90000
+                .withHeader(io.activej.http.HttpHeaders.HOST, "example.com") 
+                .build(); 
 
-        HttpResponse response = runPromise(() -> handler.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.serve(request)); 
 
-        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); // GH-90000
+        String location = response.getHeader(io.activej.http.HttpHeaders.LOCATION); 
         assertThat(location).startsWith("https://");
         assertThat(location).doesNotContain("http://");
     }

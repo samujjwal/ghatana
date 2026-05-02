@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2024 Ghatana, Inc. // GH-90000
+ * Copyright (c) 2024 Ghatana, Inc. 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,55 +36,55 @@ class SimpleTemplateEngineTest {
     private SimpleTemplateEngine templateEngine;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        templateEngine = new SimpleTemplateEngine(); // GH-90000
+    void setUp() { 
+        templateEngine = new SimpleTemplateEngine(); 
     }
 
     @Test
-    void testSimpleVariableSubstitution() throws TemplateException { // GH-90000
+    void testSimpleVariableSubstitution() throws TemplateException { 
         String template = "Hello {{name}}!";
-        Map<String, Object> context = Map.of("name", "World"); // GH-90000
+        Map<String, Object> context = Map.of("name", "World"); 
 
-        String result = templateEngine.render(template, context); // GH-90000
+        String result = templateEngine.render(template, context); 
 
-        assertEquals("Hello World!", result); // GH-90000
+        assertEquals("Hello World!", result); 
     }
 
     @Test
-    void testPackagePathHelper() throws TemplateException { // GH-90000
+    void testPackagePathHelper() throws TemplateException { 
         String template = "src/{{packagePath com.example.test}}";
-        Map<String, Object> context = Map.of("com.example.test", "com.example.test"); // GH-90000
+        Map<String, Object> context = Map.of("com.example.test", "com.example.test"); 
 
-        String result = templateEngine.render(template, context); // GH-90000
+        String result = templateEngine.render(template, context); 
 
         assertTrue(result.contains("com/example/test"));
     }
 
     @Test
-    void testSafeImportHelper() throws TemplateException { // GH-90000
+    void testSafeImportHelper() throws TemplateException { 
         String template = "{{safeImport java.util.List}}";
-        Map<String, Object> context = Map.of("java.util.List", "java.util.List"); // GH-90000
+        Map<String, Object> context = Map.of("java.util.List", "java.util.List"); 
 
-        String result = templateEngine.render(template, context); // GH-90000
+        String result = templateEngine.render(template, context); 
 
         assertTrue(result.contains("import java.util.List;"));
     }
 
     @Test
-    void testEmptyVariableHandling() throws TemplateException { // GH-90000
+    void testEmptyVariableHandling() throws TemplateException { 
         String template = "Hello {{missing}}!";
-        Map<String, Object> context = Map.of("name", "World"); // GH-90000
+        Map<String, Object> context = Map.of("name", "World"); 
 
-        String result = templateEngine.render(template, context); // GH-90000
+        String result = templateEngine.render(template, context); 
 
-        assertEquals("Hello !", result); // GH-90000
+        assertEquals("Hello !", result); 
     }
 
     @Test
-    void testMergerCreation() { // GH-90000
-        TemplateMerger merger = templateEngine.createMerger(); // GH-90000
+    void testMergerCreation() { 
+        TemplateMerger merger = templateEngine.createMerger(); 
 
-        assertNotNull(merger); // GH-90000
-        assertInstanceOf(DefaultTemplateMerger.class, merger); // GH-90000
+        assertNotNull(merger); 
+        assertInstanceOf(DefaultTemplateMerger.class, merger); 
     }
 }

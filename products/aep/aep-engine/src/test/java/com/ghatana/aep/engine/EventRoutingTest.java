@@ -23,49 +23,49 @@ class EventRoutingTest {
 
     @Test
     @DisplayName("Should route events to subscribers")
-    void shouldRouteEventsToSubscribers() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldRouteEventsToSubscribers() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should filter events by type")
-    void shouldFilterEventsByType() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldFilterEventsByType() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle event transformation")
-    void shouldHandleEventTransformation() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleEventTransformation() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle subscription management")
-    void shouldHandleSubscriptionManagement() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleSubscriptionManagement() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle routing failures")
-    void shouldHandleRoutingFailures() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleRoutingFailures() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle concurrent routing")
-    void shouldHandleConcurrentRouting() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleConcurrentRouting() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 }

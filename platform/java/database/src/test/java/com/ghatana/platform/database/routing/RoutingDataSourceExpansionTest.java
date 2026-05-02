@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.database.routing;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RoutingDataSourceExpansionTest {
 
     // ============================================
-    // READ/WRITE ROUTING (3 tests) // GH-90000
+    // READ/WRITE ROUTING (3 tests) 
     // ============================================
 
     @Nested
@@ -36,57 +36,57 @@ class RoutingDataSourceExpansionTest {
 
         @Test
         @DisplayName("Routes read-only requests to replicas")
-        void routeReadOnlyToReplicas() { // GH-90000
+        void routeReadOnlyToReplicas() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
             replicas.put("replica-1", createMockDataSource("replica-1"));
             replicas.put("replica-2", createMockDataSource("replica-2"));
 
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); 
 
             // Set read-only context
-            RoutingDataSource.setReadOnly(true); // GH-90000
+            RoutingDataSource.setReadOnly(true); 
             try {
                 // Read queries should route to replica
-                assertThat(routingDS).isNotNull(); // GH-90000
-                assertThat(primary).isNotNull(); // GH-90000
+                assertThat(routingDS).isNotNull(); 
+                assertThat(primary).isNotNull(); 
             } finally {
-                RoutingDataSource.clearReadOnly(); // GH-90000
+                RoutingDataSource.clearReadOnly(); 
             }
         }
 
         @Test
         @DisplayName("Routes write requests to primary")
-        void routeWriteToPrimary() { // GH-90000
+        void routeWriteToPrimary() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
             replicas.put("replica-1", createMockDataSource("replica-1"));
 
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); 
 
-            // Write context (not read-only) // GH-90000
-            assertThat(routingDS).isNotNull(); // GH-90000
-            assertThat(primary).isNotNull(); // GH-90000
+            // Write context (not read-only) 
+            assertThat(routingDS).isNotNull(); 
+            assertThat(primary).isNotNull(); 
         }
 
         @Test
         @DisplayName("Maintains routing consistency across requests")
-        void consistentRouting() { // GH-90000
+        void consistentRouting() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
             replicas.put("replica-1", createMockDataSource("replica-1"));
 
-            RoutingDataSource routingDS1 = new RoutingDataSource(primary, replicas); // GH-90000
-            RoutingDataSource routingDS2 = new RoutingDataSource(primary, replicas); // GH-90000
+            RoutingDataSource routingDS1 = new RoutingDataSource(primary, replicas); 
+            RoutingDataSource routingDS2 = new RoutingDataSource(primary, replicas); 
 
             // Both instances should exist and be functional
-            assertThat(routingDS1).isNotNull(); // GH-90000
-            assertThat(routingDS2).isNotNull(); // GH-90000
+            assertThat(routingDS1).isNotNull(); 
+            assertThat(routingDS2).isNotNull(); 
         }
     }
 
     // ============================================
-    // REPLICA LOAD-BALANCING (2 tests) // GH-90000
+    // REPLICA LOAD-BALANCING (2 tests) 
     // ============================================
 
     @Nested
@@ -95,47 +95,47 @@ class RoutingDataSourceExpansionTest {
 
         @Test
         @DisplayName("Round-robins across available replicas")
-        void roundRobinLoadBalancing() { // GH-90000
+        void roundRobinLoadBalancing() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
             replicas.put("replica-1", createMockDataSource("replica-1"));
             replicas.put("replica-2", createMockDataSource("replica-2"));
             replicas.put("replica-3", createMockDataSource("replica-3"));
 
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); 
 
             // Set read-only for replica routing
-            RoutingDataSource.setReadOnly(true); // GH-90000
+            RoutingDataSource.setReadOnly(true); 
             try {
                 // Multiple read operations should distribute load
-                for (int i = 0; i < 9; i++) { // GH-90000
-                    assertThat(routingDS).isNotNull(); // GH-90000
+                for (int i = 0; i < 9; i++) { 
+                    assertThat(routingDS).isNotNull(); 
                 }
             } finally {
-                RoutingDataSource.clearReadOnly(); // GH-90000
+                RoutingDataSource.clearReadOnly(); 
             }
         }
 
         @Test
         @DisplayName("Falls back to primary when replicas unavailable")
-        void fallbackToPrimary() { // GH-90000
+        void fallbackToPrimary() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
 
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas); 
 
-            // With no replicas, read-only should still work (fallback to primary) // GH-90000
-            RoutingDataSource.setReadOnly(true); // GH-90000
+            // With no replicas, read-only should still work (fallback to primary) 
+            RoutingDataSource.setReadOnly(true); 
             try {
-                assertThat(routingDS).isNotNull(); // GH-90000
+                assertThat(routingDS).isNotNull(); 
             } finally {
-                RoutingDataSource.clearReadOnly(); // GH-90000
+                RoutingDataSource.clearReadOnly(); 
             }
         }
     }
 
     // ============================================
-    // CIRCUIT BREAKER BEHAVIOR (2 tests) // GH-90000
+    // CIRCUIT BREAKER BEHAVIOR (2 tests) 
     // ============================================
 
     @Nested
@@ -144,31 +144,31 @@ class RoutingDataSourceExpansionTest {
 
         @Test
         @DisplayName("Handles multiple replica initialization")
-        void multipleReplicaInitialization() { // GH-90000
+        void multipleReplicaInitialization() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
 
-            for (int i = 1; i <= 5; i++) { // GH-90000
-                replicas.put("replica-" + i, createMockDataSource("replica-" + i)); // GH-90000
+            for (int i = 1; i <= 5; i++) { 
+                replicas.put("replica-" + i, createMockDataSource("replica-" + i)); 
             }
 
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas, 30000); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas, 30000); 
 
-            assertThat(routingDS).isNotNull(); // GH-90000
-            assertThat(replicas).hasSize(5); // GH-90000
+            assertThat(routingDS).isNotNull(); 
+            assertThat(replicas).hasSize(5); 
         }
 
         @Test
         @DisplayName("Supports custom circuit breaker timeout")
-        void customCircuitBreakerTimeout() { // GH-90000
+        void customCircuitBreakerTimeout() { 
             DataSource primary = createMockDataSource("primary");
-            Map<String, DataSource> replicas = new HashMap<>(); // GH-90000
+            Map<String, DataSource> replicas = new HashMap<>(); 
             replicas.put("replica-1", createMockDataSource("replica-1"));
 
             long customTimeout = 120000; // 2 minutes
-            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas, customTimeout); // GH-90000
+            RoutingDataSource routingDS = new RoutingDataSource(primary, replicas, customTimeout); 
 
-            assertThat(routingDS).isNotNull(); // GH-90000
+            assertThat(routingDS).isNotNull(); 
         }
     }
 
@@ -176,52 +176,52 @@ class RoutingDataSourceExpansionTest {
     // HELPER METHODS
     // ============================================
 
-    private DataSource createMockDataSource(String name) { // GH-90000
+    private DataSource createMockDataSource(String name) { 
         // Return a mock datasource for testing
-        return new javax.sql.DataSource() { // GH-90000
+        return new javax.sql.DataSource() { 
             @Override
-            public java.sql.Connection getConnection() { // GH-90000
+            public java.sql.Connection getConnection() { 
                 return null;
             }
 
             @Override
-            public java.sql.Connection getConnection(String user, String password) { // GH-90000
+            public java.sql.Connection getConnection(String user, String password) { 
                 return null;
             }
 
             @Override
-            public java.io.PrintWriter getLogWriter() { // GH-90000
+            public java.io.PrintWriter getLogWriter() { 
                 return null;
             }
 
             @Override
-            public void setLogWriter(java.io.PrintWriter out) {} // GH-90000
+            public void setLogWriter(java.io.PrintWriter out) {} 
 
             @Override
-            public void setLoginTimeout(int seconds) {} // GH-90000
+            public void setLoginTimeout(int seconds) {} 
 
             @Override
-            public int getLoginTimeout() { // GH-90000
+            public int getLoginTimeout() { 
                 return 0;
             }
 
             @Override
-            public java.util.logging.Logger getParentLogger() { // GH-90000
+            public java.util.logging.Logger getParentLogger() { 
                 return null;
             }
 
             @Override
-            public <T> T unwrap(Class<T> iface) { // GH-90000
+            public <T> T unwrap(Class<T> iface) { 
                 return null;
             }
 
             @Override
-            public boolean isWrapperFor(Class<?> iface) { // GH-90000
+            public boolean isWrapperFor(Class<?> iface) { 
                 return false;
             }
 
             @Override
-            public String toString() { // GH-90000
+            public String toString() { 
                 return "MockDataSource(" + name + ")";
             }
         };

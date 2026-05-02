@@ -41,152 +41,152 @@ class CodemodOrchestratorTest {
     private Supplier<List<Recipe>> recipeSupplier;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         srcDir = tempDir.resolve("src/main/java");
 
-        mockContext = mock(PolyfixProjectContext.class); // GH-90000
-        Logger mockLogger = mock(Logger.class); // GH-90000
-        when(mockContext.log()).thenReturn(mockLogger); // GH-90000
-        when(mockContext.root()).thenReturn(tempDir); // GH-90000
+        mockContext = mock(PolyfixProjectContext.class); 
+        Logger mockLogger = mock(Logger.class); 
+        when(mockContext.log()).thenReturn(mockLogger); 
+        when(mockContext.root()).thenReturn(tempDir); 
 
-        mockOpenRewriteRunner = mock(OpenRewriteRunner.class); // GH-90000
-        mockJsonYamlCodemods = mock(JsonYamlCodemods.class); // GH-90000
-        mockRecipe = mock(Recipe.class); // GH-90000
+        mockOpenRewriteRunner = mock(OpenRewriteRunner.class); 
+        mockJsonYamlCodemods = mock(JsonYamlCodemods.class); 
+        mockRecipe = mock(Recipe.class); 
         lenient().when(mockRecipe.getName()).thenReturn("mock-recipe");
 
-        recipeSupplier = () -> List.of(mockRecipe); // GH-90000
+        recipeSupplier = () -> List.of(mockRecipe); 
 
         orchestrator =
-                new CodemodOrchestrator( // GH-90000
+                new CodemodOrchestrator( 
                         mockContext, mockOpenRewriteRunner, mockJsonYamlCodemods, recipeSupplier);
     }
 
     @Test
-    void testEmptyFilesList() { // GH-90000
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of()); // GH-90000
-        assertThat(results).isEmpty(); // GH-90000
-        verifyNoInteractions(mockOpenRewriteRunner, mockJsonYamlCodemods); // GH-90000
+    void testEmptyFilesList() { 
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of()); 
+        assertThat(results).isEmpty(); 
+        verifyNoInteractions(mockOpenRewriteRunner, mockJsonYamlCodemods); 
     }
 
     @Test
-    void testJavaFilesOnly() throws Exception { // GH-90000
+    void testJavaFilesOnly() throws Exception { 
         // Setup test files
         Path javaFile = srcDir.resolve("Test.java");
-        Files.createDirectories(javaFile.getParent()); // GH-90000
-        Files.writeString(javaFile, "class Test {}"); // GH-90000
+        Files.createDirectories(javaFile.getParent()); 
+        Files.writeString(javaFile, "class Test {}"); 
 
         // Mock OpenRewrite response
-        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) // GH-90000
-                .thenReturn(List.of(createMockDiagnostic(JAVA))); // GH-90000
+        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) 
+                .thenReturn(List.of(createMockDiagnostic(JAVA))); 
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile)); // GH-90000
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile)); 
 
         // Verify
-        assertThat(results).hasSize(1); // GH-90000
-        assertThat(results.get(0).getMessage()).contains(JAVA); // GH-90000
-        @SuppressWarnings(UNCHECKED) // GH-90000
-        ArgumentCaptor<List<Path>> JAVAFilesCaptor = ArgumentCaptor.forClass(List.class); // GH-90000
-        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVAFilesCaptor.capture()); // GH-90000
-        assertThat(JAVAFilesCaptor.getValue()).containsExactly(javaFile); // GH-90000
-        verifyNoInteractions(mockJsonYamlCodemods); // GH-90000
+        assertThat(results).hasSize(1); 
+        assertThat(results.get(0).getMessage()).contains(JAVA); 
+        @SuppressWarnings(UNCHECKED) 
+        ArgumentCaptor<List<Path>> JAVAFilesCaptor = ArgumentCaptor.forClass(List.class); 
+        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVAFilesCaptor.capture()); 
+        assertThat(JAVAFilesCaptor.getValue()).containsExactly(javaFile); 
+        verifyNoInteractions(mockJsonYamlCodemods); 
     }
 
     @Test
-    void testJsonYamlFilesOnly() throws Exception { // GH-90000
+    void testJsonYamlFilesOnly() throws Exception { 
         // Setup test files
-        Path JSONFile = srcDir.resolve("config." + JSON); // GH-90000
-        Files.createDirectories(JSONFile.getParent()); // GH-90000
-        Files.writeString(JSONFile, "{}"); // GH-90000
+        Path JSONFile = srcDir.resolve("config." + JSON); 
+        Files.createDirectories(JSONFile.getParent()); 
+        Files.writeString(JSONFile, "{}"); 
 
         // Create schema directory
         Path schemaDir = tempDir.resolve("config/schemas");
-        Files.createDirectories(schemaDir); // GH-90000
+        Files.createDirectories(schemaDir); 
 
         // Mock JSON/YAML codemods response
-        when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir))) // GH-90000
-                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON)))); // GH-90000
+        when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir))) 
+                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON)))); 
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(JSONFile)); // GH-90000
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(JSONFile)); 
 
         // Verify
-        assertThat(results).hasSize(1); // GH-90000
-        assertThat(results.get(0).getMessage()).contains(JSON); // GH-90000
-        @SuppressWarnings(UNCHECKED) // GH-90000
-        ArgumentCaptor<List<Path>> JSONFilesCaptor = ArgumentCaptor.forClass(List.class); // GH-90000
-        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONFilesCaptor.capture(), eq(schemaDir)); // GH-90000
-        assertThat(JSONFilesCaptor.getValue()).containsExactly(JSONFile); // GH-90000
-        verifyNoInteractions(mockOpenRewriteRunner); // GH-90000
+        assertThat(results).hasSize(1); 
+        assertThat(results.get(0).getMessage()).contains(JSON); 
+        @SuppressWarnings(UNCHECKED) 
+        ArgumentCaptor<List<Path>> JSONFilesCaptor = ArgumentCaptor.forClass(List.class); 
+        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONFilesCaptor.capture(), eq(schemaDir)); 
+        assertThat(JSONFilesCaptor.getValue()).containsExactly(JSONFile); 
+        verifyNoInteractions(mockOpenRewriteRunner); 
     }
 
     @Test
-    void testMixedFileTypes() throws Exception { // GH-90000
+    void testMixedFileTypes() throws Exception { 
         // Setup test files
         Path javaFile = srcDir.resolve("Test.java");
-        Path JSONFile = srcDir.resolve("config." + JSON); // GH-90000
+        Path JSONFile = srcDir.resolve("config." + JSON); 
 
-        Files.createDirectories(javaFile.getParent()); // GH-90000
-        Files.writeString(javaFile, "class Test {}"); // GH-90000
-        Files.writeString(JSONFile, "{}"); // GH-90000
+        Files.createDirectories(javaFile.getParent()); 
+        Files.writeString(javaFile, "class Test {}"); 
+        Files.writeString(JSONFile, "{}"); 
 
         // Create schema directory
         Path schemaDir = tempDir.resolve("config/schemas");
-        Files.createDirectories(schemaDir); // GH-90000
+        Files.createDirectories(schemaDir); 
 
         // Mock responses
-        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) // GH-90000
-                .thenReturn(List.of(createMockDiagnostic(JAVA))); // GH-90000
-        when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir))) // GH-90000
-                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON)))); // GH-90000
+        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) 
+                .thenReturn(List.of(createMockDiagnostic(JAVA))); 
+        when(mockJsonYamlCodemods.normalizeAndValidate(anyList(), eq(schemaDir))) 
+                .thenReturn(Promise.of(List.of(createMockDiagnostic(JSON)))); 
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile, JSONFile)); // GH-90000
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile, JSONFile)); 
 
         // Verify
-        assertThat(results).hasSize(2); // GH-90000
-        assertThat(results.stream().map(UnifiedDiagnostic::getMessage)) // GH-90000
-                .containsExactlyInAnyOrder(JAVA, JSON); // GH-90000
-        @SuppressWarnings(UNCHECKED) // GH-90000
-        ArgumentCaptor<List<Path>> JAVACaptor = ArgumentCaptor.forClass(List.class); // GH-90000
-        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVACaptor.capture()); // GH-90000
-        assertThat(JAVACaptor.getValue()).containsExactly(javaFile); // GH-90000
+        assertThat(results).hasSize(2); 
+        assertThat(results.stream().map(UnifiedDiagnostic::getMessage)) 
+                .containsExactlyInAnyOrder(JAVA, JSON); 
+        @SuppressWarnings(UNCHECKED) 
+        ArgumentCaptor<List<Path>> JAVACaptor = ArgumentCaptor.forClass(List.class); 
+        verify(mockOpenRewriteRunner).run(eq(mockRecipe), JAVACaptor.capture()); 
+        assertThat(JAVACaptor.getValue()).containsExactly(javaFile); 
 
-        @SuppressWarnings(UNCHECKED) // GH-90000
-        ArgumentCaptor<List<Path>> JSONCaptor = ArgumentCaptor.forClass(List.class); // GH-90000
-        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONCaptor.capture(), eq(schemaDir)); // GH-90000
-        assertThat(JSONCaptor.getValue()).containsExactly(JSONFile); // GH-90000
+        @SuppressWarnings(UNCHECKED) 
+        ArgumentCaptor<List<Path>> JSONCaptor = ArgumentCaptor.forClass(List.class); 
+        verify(mockJsonYamlCodemods).normalizeAndValidate(JSONCaptor.capture(), eq(schemaDir)); 
+        assertThat(JSONCaptor.getValue()).containsExactly(JSONFile); 
     }
 
     @Test
-    void testErrorHandling() throws Exception { // GH-90000
+    void testErrorHandling() throws Exception { 
         // Setup test file
         Path javaFile = srcDir.resolve("Test.java");
-        Files.createDirectories(javaFile.getParent()); // GH-90000
-        Files.writeString(javaFile, "class Test {}"); // GH-90000
+        Files.createDirectories(javaFile.getParent()); 
+        Files.writeString(javaFile, "class Test {}"); 
 
         // Mock error
-        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) // GH-90000
+        when(mockOpenRewriteRunner.run(eq(mockRecipe), anyList())) 
                 .thenThrow(new RuntimeException("Test error"));
 
         // Execute
-        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile)); // GH-90000
+        List<UnifiedDiagnostic> results = orchestrator.applyCodemods(List.of(javaFile)); 
 
         // Verify
-        assertThat(results).hasSize(1); // GH-90000
-        assertThat(results.get(0).getMessage()) // GH-90000
+        assertThat(results).hasSize(1); 
+        assertThat(results.get(0).getMessage()) 
                 .contains("Error applying Java codemods: Test error");
     }
 
-    private UnifiedDiagnostic createMockDiagnostic(String type) { // GH-90000
-        return UnifiedDiagnostic.builder() // GH-90000
+    private UnifiedDiagnostic createMockDiagnostic(String type) { 
+        return UnifiedDiagnostic.builder() 
                 .tool("test")
-                .code(type) // GH-90000
-                .message(type) // GH-90000
-                .startLine(1) // GH-90000
-                .startColumn(1) // GH-90000
-                .endLine(1) // GH-90000
-                .endColumn(1) // GH-90000
-                .build(); // GH-90000
+                .code(type) 
+                .message(type) 
+                .startLine(1) 
+                .startColumn(1) 
+                .endLine(1) 
+                .endColumn(1) 
+                .build(); 
     }
 }

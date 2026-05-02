@@ -23,39 +23,39 @@ class DatabaseCacheNamespaceDriftTest {
 
     @Test
     @DisplayName("database cache sources should not reintroduce the legacy core redis cache package")
-    void databaseCacheSourcesShouldNotUseLegacyCoreRedisNamespace() throws IOException { // GH-90000
-        Path moduleRoot = findDatabaseModuleRoot(); // GH-90000
-        Map<String, String> violations = new LinkedHashMap<>(); // GH-90000
+    void databaseCacheSourcesShouldNotUseLegacyCoreRedisNamespace() throws IOException { 
+        Path moduleRoot = findDatabaseModuleRoot(); 
+        Map<String, String> violations = new LinkedHashMap<>(); 
 
         Files.walk(moduleRoot.resolve("src/main/java"))
                 .filter(path -> path.toString().endsWith(".java"))
-                .forEach(path -> inspectSource(path, moduleRoot, violations)); // GH-90000
+                .forEach(path -> inspectSource(path, moduleRoot, violations)); 
 
-        assertThat(violations) // GH-90000
+        assertThat(violations) 
                 .as("legacy com.ghatana.core.cache.redis namespace should not appear in platform database sources")
-                .isEmpty(); // GH-90000
+                .isEmpty(); 
     }
 
-    private static void inspectSource(Path path, Path moduleRoot, Map<String, String> violations) { // GH-90000
+    private static void inspectSource(Path path, Path moduleRoot, Map<String, String> violations) { 
         try {
-            String source = Files.readString(path, StandardCharsets.UTF_8); // GH-90000
+            String source = Files.readString(path, StandardCharsets.UTF_8); 
             if (source.contains("package com.ghatana.core.cache.redis")
                     || source.contains("com.ghatana.core.cache.redis.")) {
-                violations.put(moduleRoot.relativize(path).toString(), "legacy core redis cache namespace"); // GH-90000
+                violations.put(moduleRoot.relativize(path).toString(), "legacy core redis cache namespace"); 
             }
-        } catch (IOException exception) { // GH-90000
-            throw new IllegalStateException("Failed to inspect source file: " + path, exception); // GH-90000
+        } catch (IOException exception) { 
+            throw new IllegalStateException("Failed to inspect source file: " + path, exception); 
         }
     }
 
-    private static Path findDatabaseModuleRoot() { // GH-90000
+    private static Path findDatabaseModuleRoot() { 
         Path current = Path.of("").toAbsolutePath();
-        while (current != null) { // GH-90000
+        while (current != null) { 
             Path candidate = current.resolve("platform/java/database/build.gradle.kts");
-            if (Files.exists(candidate)) { // GH-90000
-                return candidate.getParent(); // GH-90000
+            if (Files.exists(candidate)) { 
+                return candidate.getParent(); 
             }
-            current = current.getParent(); // GH-90000
+            current = current.getParent(); 
         }
         throw new IllegalStateException("Could not locate platform/java/database module root");
     }

@@ -49,147 +49,147 @@ class ReplicaLagMonitorIT {
     private ReplicaLagMonitor monitor;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
-        config.setMaximumPoolSize(3); // GH-90000
+    void setUp() { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
+        config.setMaximumPoolSize(3); 
 
-        primaryDataSource = new HikariDataSource(config); // GH-90000
+        primaryDataSource = new HikariDataSource(config); 
 
         // Use a second HikariDataSource pointing to the same container as "replica"
-        HikariConfig replicaConfig = new HikariConfig(); // GH-90000
-        replicaConfig.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        replicaConfig.setUsername(POSTGRES.getUsername()); // GH-90000
-        replicaConfig.setPassword(POSTGRES.getPassword()); // GH-90000
-        replicaConfig.setMaximumPoolSize(3); // GH-90000
-        replicaDataSource = new HikariDataSource(replicaConfig); // GH-90000
+        HikariConfig replicaConfig = new HikariConfig(); 
+        replicaConfig.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        replicaConfig.setUsername(POSTGRES.getUsername()); 
+        replicaConfig.setPassword(POSTGRES.getPassword()); 
+        replicaConfig.setMaximumPoolSize(3); 
+        replicaDataSource = new HikariDataSource(replicaConfig); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (monitor != null) { // GH-90000
-            monitor.stop(); // GH-90000
+    void tearDown() { 
+        if (monitor != null) { 
+            monitor.stop(); 
         }
-        if (primaryDataSource != null) { // GH-90000
-            primaryDataSource.close(); // GH-90000
+        if (primaryDataSource != null) { 
+            primaryDataSource.close(); 
         }
-        if (replicaDataSource != null) { // GH-90000
-            replicaDataSource.close(); // GH-90000
+        if (replicaDataSource != null) { 
+            replicaDataSource.close(); 
         }
     }
 
     @Test
     @DisplayName("monitor starts without error when replicas are configured")
-    void startWithReplicas() throws InterruptedException { // GH-90000
-        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
-        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
+    void startWithReplicas() throws InterruptedException { 
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); 
+        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); 
 
-        monitor = new ReplicaLagMonitor( // GH-90000
+        monitor = new ReplicaLagMonitor( 
                 routingDataSource,
                 primaryDataSource,
-                Map.of("replica-1", replicaDataSource), // GH-90000
+                Map.of("replica-1", replicaDataSource), 
                 null,  // MetricsRegistry is null — guarded by constructor
                 10L * 1024 * 1024); // 10 MB threshold
 
         // Should start without throwing
-        monitor.start(0, 1, TimeUnit.SECONDS); // GH-90000
-        Thread.sleep(200); // Give the scheduled task one cycle // GH-90000
+        monitor.start(0, 1, TimeUnit.SECONDS); 
+        Thread.sleep(200); // Give the scheduled task one cycle 
 
-        // Verify the monitor is running (no exception thrown) // GH-90000
-        assertThat(monitor).isNotNull(); // GH-90000
+        // Verify the monitor is running (no exception thrown) 
+        assertThat(monitor).isNotNull(); 
     }
 
     @Test
     @DisplayName("getReplicaLag returns 0 when primary and replica are the same node")
-    void lagIsZeroWhenPrimaryEqualsReplica() throws InterruptedException { // GH-90000
-        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
-        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
+    void lagIsZeroWhenPrimaryEqualsReplica() throws InterruptedException { 
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); 
+        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); 
 
-        monitor = new ReplicaLagMonitor( // GH-90000
+        monitor = new ReplicaLagMonitor( 
                 routingDataSource,
                 primaryDataSource,
-                Map.of("replica-1", replicaDataSource), // GH-90000
+                Map.of("replica-1", replicaDataSource), 
                 null,
                 Long.MAX_VALUE); // Very high threshold — replica stays available
 
-        monitor.start(0, 1, TimeUnit.SECONDS); // GH-90000
-        Thread.sleep(500); // Allow at least one monitoring cycle // GH-90000
+        monitor.start(0, 1, TimeUnit.SECONDS); 
+        Thread.sleep(500); // Allow at least one monitoring cycle 
 
         // On a single-node setup, lag should be reported as 0 or very small
         long lag = monitor.getReplicaLag("replica-1");
-        assertThat(lag).isGreaterThanOrEqualTo(0L); // GH-90000
+        assertThat(lag).isGreaterThanOrEqualTo(0L); 
     }
 
     @Test
     @DisplayName("stop shuts down the scheduler cleanly")
-    void stopShutsDownCleanly() { // GH-90000
-        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); // GH-90000
-        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
+    void stopShutsDownCleanly() { 
+        Map<String, DataSource> replicaMap = Map.of("replica-1", replicaDataSource); 
+        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); 
 
-        monitor = new ReplicaLagMonitor( // GH-90000
+        monitor = new ReplicaLagMonitor( 
                 routingDataSource,
                 primaryDataSource,
-                Map.of("replica-1", replicaDataSource), // GH-90000
+                Map.of("replica-1", replicaDataSource), 
                 null,
                 10L * 1024 * 1024);
 
-        monitor.start(0, 10, TimeUnit.SECONDS); // GH-90000
-        monitor.stop(); // Should not throw // GH-90000
+        monitor.start(0, 10, TimeUnit.SECONDS); 
+        monitor.stop(); // Should not throw 
 
-        // Setting monitor to null so @AfterEach does not call stop() again // GH-90000
+        // Setting monitor to null so @AfterEach does not call stop() again 
         monitor = null;
     }
 
     @Test
     @DisplayName("monitor with no replicas starts and stops without error")
-    void noReplicas() { // GH-90000
-        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, Map.of()); // GH-90000
+    void noReplicas() { 
+        RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, Map.of()); 
 
-        monitor = new ReplicaLagMonitor( // GH-90000
+        monitor = new ReplicaLagMonitor( 
                 routingDataSource,
                 primaryDataSource,
-                Map.of(), // GH-90000
+                Map.of(), 
                 null,
                 10L * 1024 * 1024);
 
-        monitor.start(0, 10, TimeUnit.SECONDS); // GH-90000
-        monitor.stop(); // GH-90000
+        monitor.start(0, 10, TimeUnit.SECONDS); 
+        monitor.stop(); 
         monitor = null;
     }
 
     @Test
     @DisplayName("multiple replicas are all tracked by the monitor")
-    void multipleReplicas() throws InterruptedException { // GH-90000
-        HikariConfig cfg2 = new HikariConfig(); // GH-90000
-        cfg2.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        cfg2.setUsername(POSTGRES.getUsername()); // GH-90000
-        cfg2.setPassword(POSTGRES.getPassword()); // GH-90000
-        cfg2.setMaximumPoolSize(2); // GH-90000
-        HikariDataSource replica2 = new HikariDataSource(cfg2); // GH-90000
+    void multipleReplicas() throws InterruptedException { 
+        HikariConfig cfg2 = new HikariConfig(); 
+        cfg2.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        cfg2.setUsername(POSTGRES.getUsername()); 
+        cfg2.setPassword(POSTGRES.getPassword()); 
+        cfg2.setMaximumPoolSize(2); 
+        HikariDataSource replica2 = new HikariDataSource(cfg2); 
 
         try {
-            Map<String, DataSource> replicaMap = Map.of( // GH-90000
+            Map<String, DataSource> replicaMap = Map.of( 
                     "r1", replicaDataSource,
                     "r2", replica2);
-            RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); // GH-90000
+            RoutingDataSource routingDataSource = new RoutingDataSource(primaryDataSource, replicaMap); 
 
-            monitor = new ReplicaLagMonitor( // GH-90000
+            monitor = new ReplicaLagMonitor( 
                     routingDataSource,
                     primaryDataSource,
-                    Map.of("r1", replicaDataSource, "r2", replica2), // GH-90000
+                    Map.of("r1", replicaDataSource, "r2", replica2), 
                     null,
                     Long.MAX_VALUE);
 
-            monitor.start(0, 1, TimeUnit.SECONDS); // GH-90000
-            Thread.sleep(500); // GH-90000
+            monitor.start(0, 1, TimeUnit.SECONDS); 
+            Thread.sleep(500); 
 
             // Both replicas should be tracked
             assertThat(monitor.getReplicaLag("r1")).isGreaterThanOrEqualTo(0L);
             assertThat(monitor.getReplicaLag("r2")).isGreaterThanOrEqualTo(0L);
         } finally {
-            replica2.close(); // GH-90000
+            replica2.close(); 
         }
     }
 }

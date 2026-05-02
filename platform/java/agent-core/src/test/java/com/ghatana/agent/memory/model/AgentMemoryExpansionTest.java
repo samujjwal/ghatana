@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model;
@@ -34,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentMemoryExpansionTest {
 
     // ============================================
-    // MEMORY LINKS EXPANSION (4 tests) // GH-90000
+    // MEMORY LINKS EXPANSION (4 tests) 
     // ============================================
 
     @Nested
@@ -43,88 +43,88 @@ class AgentMemoryExpansionTest {
 
         @Test
         @DisplayName("Create many memory links")
-        void createManyLinks() { // GH-90000
-            List<MemoryLink> links = new ArrayList<>(); // GH-90000
+        void createManyLinks() { 
+            List<MemoryLink> links = new ArrayList<>(); 
 
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 final int idx = i;
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("item-" + idx) // GH-90000
-                        .linkType(LinkType.RELATED) // GH-90000
-                        .strength(0.5 + (idx % 50) / 100.0) // GH-90000
-                        .description("Link to item " + idx) // GH-90000
-                        .build(); // GH-90000
-                links.add(link); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("item-" + idx) 
+                        .linkType(LinkType.RELATED) 
+                        .strength(0.5 + (idx % 50) / 100.0) 
+                        .description("Link to item " + idx) 
+                        .build(); 
+                links.add(link); 
             }
 
-            assertThat(links).hasSize(100); // GH-90000
-            for (MemoryLink link : links) { // GH-90000
-                assertThat(link.getTargetItemId()).isNotNull(); // GH-90000
-                assertThat(link.getStrength()).isBetween(0.0, 1.0); // GH-90000
+            assertThat(links).hasSize(100); 
+            for (MemoryLink link : links) { 
+                assertThat(link.getTargetItemId()).isNotNull(); 
+                assertThat(link.getStrength()).isBetween(0.0, 1.0); 
             }
         }
 
         @Test
         @DisplayName("Different link types")
-        void differentLinkTypes() { // GH-90000
+        void differentLinkTypes() { 
             LinkType[] types = {
                 LinkType.RELATED, LinkType.SUPPORTS, LinkType.CONTRADICTS,
                 LinkType.DERIVED_FROM, LinkType.SUPERSEDES
             };
 
-            for (int i = 0; i < 50; i++) { // GH-90000
+            for (int i = 0; i < 50; i++) { 
                 final int idx = i;
                 LinkType type = types[idx % types.length];
 
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("item-" + idx) // GH-90000
-                        .linkType(type) // GH-90000
-                        .strength(0.75) // GH-90000
-                        .build(); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("item-" + idx) 
+                        .linkType(type) 
+                        .strength(0.75) 
+                        .build(); 
 
-                assertThat(link.getLinkType()).isEqualTo(type); // GH-90000
+                assertThat(link.getLinkType()).isEqualTo(type); 
             }
         }
 
         @Test
         @DisplayName("Link strength variations")
-        void linkStrengthVariations() { // GH-90000
+        void linkStrengthVariations() { 
             double[] strengths = {0.0, 0.25, 0.5, 0.75, 1.0};
 
-            for (int i = 0; i < 50; i++) { // GH-90000
+            for (int i = 0; i < 50; i++) { 
                 final int idx = i;
                 double strength = strengths[idx % strengths.length];
 
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("item-" + idx) // GH-90000
-                        .linkType(LinkType.RELATED) // GH-90000
-                        .strength(strength) // GH-90000
-                        .build(); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("item-" + idx) 
+                        .linkType(LinkType.RELATED) 
+                        .strength(strength) 
+                        .build(); 
 
-                assertThat(link.getStrength()).isEqualTo(strength); // GH-90000
+                assertThat(link.getStrength()).isEqualTo(strength); 
             }
         }
 
         @Test
         @DisplayName("Links with very long descriptions")
-        void longDescriptions() { // GH-90000
-            String longDesc = "This is a detailed description of the relationship. ".repeat(100); // GH-90000
+        void longDescriptions() { 
+            String longDesc = "This is a detailed description of the relationship. ".repeat(100); 
 
-            for (int i = 0; i < 20; i++) { // GH-90000
+            for (int i = 0; i < 20; i++) { 
                 final int idx = i;
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("item-" + idx) // GH-90000
-                        .linkType(LinkType.RELATED) // GH-90000
-                        .description(longDesc) // GH-90000
-                        .build(); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("item-" + idx) 
+                        .linkType(LinkType.RELATED) 
+                        .description(longDesc) 
+                        .build(); 
 
-                assertThat(link.getDescription()).hasSize(longDesc.length()); // GH-90000
+                assertThat(link.getDescription()).hasSize(longDesc.length()); 
             }
         }
     }
 
     // ============================================
-    // MEMORY ITEM RELATIONSHIPS (3 tests) // GH-90000
+    // MEMORY ITEM RELATIONSHIPS (3 tests) 
     // ============================================
 
     @Nested
@@ -133,77 +133,77 @@ class AgentMemoryExpansionTest {
 
         @Test
         @DisplayName("Build complex relationship graphs")
-        void complexGraphs() { // GH-90000
+        void complexGraphs() { 
             // Create a graph with multiple item relationships
-            List<MemoryLink> itemLinks = new ArrayList<>(); // GH-90000
+            List<MemoryLink> itemLinks = new ArrayList<>(); 
 
-            for (int source = 0; source < 10; source++) { // GH-90000
-                for (int target = 0; target < 10; target++) { // GH-90000
-                    if (source != target) { // GH-90000
+            for (int source = 0; source < 10; source++) { 
+                for (int target = 0; target < 10; target++) { 
+                    if (source != target) { 
                         final int s = source;
                         final int t = target;
-                        MemoryLink link = MemoryLink.builder() // GH-90000
-                                .targetItemId("item-" + t) // GH-90000
-                                .linkType(LinkType.RELATED) // GH-90000
-                                .strength(0.5) // GH-90000
-                                .build(); // GH-90000
-                        itemLinks.add(link); // GH-90000
+                        MemoryLink link = MemoryLink.builder() 
+                                .targetItemId("item-" + t) 
+                                .linkType(LinkType.RELATED) 
+                                .strength(0.5) 
+                                .build(); 
+                        itemLinks.add(link); 
                     }
                 }
             }
 
-            assertThat(itemLinks).hasSize(90);  // 10 * 9 relationships // GH-90000
+            assertThat(itemLinks).hasSize(90);  // 10 * 9 relationships 
         }
 
         @Test
         @DisplayName("Relationship strength distribution")
-        void strengthDistribution() { // GH-90000
-            List<MemoryLink> links = new ArrayList<>(); // GH-90000
+        void strengthDistribution() { 
+            List<MemoryLink> links = new ArrayList<>(); 
             int[] connectionCounts = new int[5];  // Track link counts by strength bucket
 
-            for (int i = 0; i < 500; i++) { // GH-90000
+            for (int i = 0; i < 500; i++) { 
                 final int idx = i;
                 double strength = idx % 5 * 0.2;  // Distribute across [0.0, 1.0]
 
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("item-" + (idx / 5)) // GH-90000
-                        .linkType(LinkType.RELATED) // GH-90000
-                        .strength(strength) // GH-90000
-                        .build(); // GH-90000
-                links.add(link); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("item-" + (idx / 5)) 
+                        .linkType(LinkType.RELATED) 
+                        .strength(strength) 
+                        .build(); 
+                links.add(link); 
 
-                int bucket = (int) (strength * 5); // GH-90000
-                connectionCounts[Math.min(bucket, 4)]++; // GH-90000
+                int bucket = (int) (strength * 5); 
+                connectionCounts[Math.min(bucket, 4)]++; 
             }
 
-            assertThat(links).hasSize(500); // GH-90000
-            for (int count : connectionCounts) { // GH-90000
-                assertThat(count).isGreaterThan(0); // GH-90000
+            assertThat(links).hasSize(500); 
+            for (int count : connectionCounts) { 
+                assertThat(count).isGreaterThan(0); 
             }
         }
 
         @Test
         @DisplayName("Relationship type variety")
-        void typeVariety() { // GH-90000
-            List<MemoryLink> links = new ArrayList<>(); // GH-90000
+        void typeVariety() { 
+            List<MemoryLink> links = new ArrayList<>(); 
 
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 final int idx = i;
-                LinkType type = LinkType.values()[idx % LinkType.values().length]; // GH-90000
+                LinkType type = LinkType.values()[idx % LinkType.values().length]; 
 
-                MemoryLink link = MemoryLink.builder() // GH-90000
-                        .targetItemId("target-" + (idx % 20)) // GH-90000
-                        .linkType(type) // GH-90000
-                        .build(); // GH-90000
-                links.add(link); // GH-90000
+                MemoryLink link = MemoryLink.builder() 
+                        .targetItemId("target-" + (idx % 20)) 
+                        .linkType(type) 
+                        .build(); 
+                links.add(link); 
             }
 
-            assertThat(links).hasSize(100); // GH-90000
+            assertThat(links).hasSize(100); 
         }
     }
 
     // ============================================
-    // MEMORY ITEM OPERATIONS (2 tests) // GH-90000
+    // MEMORY ITEM OPERATIONS (2 tests) 
     // ============================================
 
     @Nested
@@ -212,45 +212,45 @@ class AgentMemoryExpansionTest {
 
         @Test
         @DisplayName("Many memory items with cross-references")
-        void manyItemsCrossReferences() { // GH-90000
-            Set<MemoryItem> items = new HashSet<>(); // GH-90000
+        void manyItemsCrossReferences() { 
+            Set<MemoryItem> items = new HashSet<>(); 
 
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 final int idx = i;
-                MemoryItem item = EnhancedProcedure.builder() // GH-90000
-                        .id("item-" + idx) // GH-90000
-                    .situation("Situation for item " + idx) // GH-90000
-                    .action("Action for item " + idx) // GH-90000
-                        .build(); // GH-90000
-                items.add(item); // GH-90000
+                MemoryItem item = EnhancedProcedure.builder() 
+                        .id("item-" + idx) 
+                    .situation("Situation for item " + idx) 
+                    .action("Action for item " + idx) 
+                        .build(); 
+                items.add(item); 
             }
 
-            assertThat(items).hasSize(100); // GH-90000
+            assertThat(items).hasSize(100); 
         }
 
         @Test
         @DisplayName("Memory items with link updates")
-        void itemsWithLinkUpdates() { // GH-90000
-            List<MemoryItem> items = new ArrayList<>(); // GH-90000
+        void itemsWithLinkUpdates() { 
+            List<MemoryItem> items = new ArrayList<>(); 
 
-            for (int i = 0; i < 50; i++) { // GH-90000
+            for (int i = 0; i < 50; i++) { 
                 final int idx = i;
-                MemoryItem item = EnhancedProcedure.builder() // GH-90000
-                        .id("item-" + idx) // GH-90000
+                MemoryItem item = EnhancedProcedure.builder() 
+                        .id("item-" + idx) 
                     .situation("Situation")
                     .action("Action")
-                        .build(); // GH-90000
-                items.add(item); // GH-90000
+                        .build(); 
+                items.add(item); 
             }
 
             // Simulate adding links to items
-            for (int i = 0; i < items.size(); i++) { // GH-90000
-                for (int j = 0; j < 5; j++) { // GH-90000
+            for (int i = 0; i < items.size(); i++) { 
+                for (int j = 0; j < 5; j++) { 
                     final int linkIdx = j;
-                    MemoryLink link = MemoryLink.builder() // GH-90000
-                            .targetItemId("item-" + ((i + linkIdx + 1) % items.size())) // GH-90000
-                            .linkType(LinkType.RELATED) // GH-90000
-                            .build(); // GH-90000
+                    MemoryLink link = MemoryLink.builder() 
+                            .targetItemId("item-" + ((i + linkIdx + 1) % items.size())) 
+                            .linkType(LinkType.RELATED) 
+                            .build(); 
                     // Link would be added to item[i]
                 }
             }
@@ -258,7 +258,7 @@ class AgentMemoryExpansionTest {
     }
 
     // ============================================
-    // CONCURRENT MEMORY OPERATIONS (2 tests) // GH-90000
+    // CONCURRENT MEMORY OPERATIONS (2 tests) 
     // ============================================
 
     @Nested
@@ -267,71 +267,71 @@ class AgentMemoryExpansionTest {
 
         @Test
         @DisplayName("Concurrent memory link creation")
-        void concurrentLinkCreation() throws Exception { // GH-90000
+        void concurrentLinkCreation() throws Exception { 
             int threadCount = 20;
             int linksPerThread = 100;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            AtomicInteger totalLinks = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
+            AtomicInteger totalLinks = new AtomicInteger(0); 
 
-            ExecutorService exec = Executors.newFixedThreadPool(threadCount); // GH-90000
+            ExecutorService exec = Executors.newFixedThreadPool(threadCount); 
             try {
-                for (int t = 0; t < threadCount; t++) { // GH-90000
+                for (int t = 0; t < threadCount; t++) { 
                     final int threadIdx = t;
-                    exec.submit(() -> { // GH-90000
+                    exec.submit(() -> { 
                         try {
-                            for (int i = 0; i < linksPerThread; i++) { // GH-90000
+                            for (int i = 0; i < linksPerThread; i++) { 
                                 final int linkIdx = i;
-                                MemoryLink link = MemoryLink.builder() // GH-90000
-                                        .targetItemId("item-" + threadIdx + "-" + linkIdx) // GH-90000
-                                        .linkType(LinkType.RELATED) // GH-90000
-                                        .strength(0.5) // GH-90000
-                                        .build(); // GH-90000
+                                MemoryLink link = MemoryLink.builder() 
+                                        .targetItemId("item-" + threadIdx + "-" + linkIdx) 
+                                        .linkType(LinkType.RELATED) 
+                                        .strength(0.5) 
+                                        .build(); 
 
-                                assertThat(link.getTargetItemId()).isNotNull(); // GH-90000
-                                totalLinks.incrementAndGet(); // GH-90000
+                                assertThat(link.getTargetItemId()).isNotNull(); 
+                                totalLinks.incrementAndGet(); 
                             }
                         } finally {
-                            latch.countDown(); // GH-90000
+                            latch.countDown(); 
                         }
                     });
                 }
-                assertThat(latch.await(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); // GH-90000
+                assertThat(latch.await(15, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); 
             } finally {
-                exec.shutdownNow(); // GH-90000
+                exec.shutdownNow(); 
             }
 
-            assertThat(totalLinks.get()).isEqualTo(threadCount * linksPerThread); // GH-90000
+            assertThat(totalLinks.get()).isEqualTo(threadCount * linksPerThread); 
         }
 
         @Test
         @DisplayName("High-volume relationship network building")
-        void highVolumeNetworkBuilding() { // GH-90000
+        void highVolumeNetworkBuilding() { 
             // Build a large relationship network
             int itemCount = 50;
             int linksPerItem = 30;
             int totalLinks = 0;
 
-            for (int i = 0; i < itemCount; i++) { // GH-90000
-                for (int j = 0; j < linksPerItem; j++) { // GH-90000
+            for (int i = 0; i < itemCount; i++) { 
+                for (int j = 0; j < linksPerItem; j++) { 
                     final int si = i;
                     final int tj = j;
-                    MemoryLink link = MemoryLink.builder() // GH-90000
-                            .targetItemId("item-" + ((si + tj) % itemCount)) // GH-90000
-                            .linkType(LinkType.RELATED) // GH-90000
-                            .strength(0.75) // GH-90000
-                            .build(); // GH-90000
+                    MemoryLink link = MemoryLink.builder() 
+                            .targetItemId("item-" + ((si + tj) % itemCount)) 
+                            .linkType(LinkType.RELATED) 
+                            .strength(0.75) 
+                            .build(); 
 
-                    assertThat(link.getTargetItemId()).isNotNull(); // GH-90000
+                    assertThat(link.getTargetItemId()).isNotNull(); 
                     totalLinks++;
                 }
             }
 
-            assertThat(totalLinks).isEqualTo(itemCount * linksPerItem); // GH-90000
+            assertThat(totalLinks).isEqualTo(itemCount * linksPerItem); 
         }
     }
 
     // ============================================
-    // EDGE CASES (1 test) // GH-90000
+    // EDGE CASES (1 test) 
     // ============================================
 
     @Nested
@@ -340,29 +340,29 @@ class AgentMemoryExpansionTest {
 
         @Test
         @DisplayName("Extreme memory link scenarios")
-        void extremeScenarios() { // GH-90000
+        void extremeScenarios() { 
             // Very long target ID
-            String longTargetId = "item-" + "x".repeat(500); // GH-90000
-            MemoryLink longIdLink = MemoryLink.builder() // GH-90000
-                    .targetItemId(longTargetId) // GH-90000
-                    .linkType(LinkType.RELATED) // GH-90000
-                    .build(); // GH-90000
-                assertThat(longIdLink.getTargetItemId()).hasSize(longTargetId.length()); // GH-90000
+            String longTargetId = "item-" + "x".repeat(500); 
+            MemoryLink longIdLink = MemoryLink.builder() 
+                    .targetItemId(longTargetId) 
+                    .linkType(LinkType.RELATED) 
+                    .build(); 
+                assertThat(longIdLink.getTargetItemId()).hasSize(longTargetId.length()); 
 
             // Extreme strength values
-            MemoryLink minStrength = MemoryLink.builder() // GH-90000
+            MemoryLink minStrength = MemoryLink.builder() 
                     .targetItemId("item-min")
-                    .linkType(LinkType.RELATED) // GH-90000
-                    .strength(0.0) // GH-90000
-                    .build(); // GH-90000
-            assertThat(minStrength.getStrength()).isEqualTo(0.0); // GH-90000
+                    .linkType(LinkType.RELATED) 
+                    .strength(0.0) 
+                    .build(); 
+            assertThat(minStrength.getStrength()).isEqualTo(0.0); 
 
-            MemoryLink maxStrength = MemoryLink.builder() // GH-90000
+            MemoryLink maxStrength = MemoryLink.builder() 
                     .targetItemId("item-max")
-                    .linkType(LinkType.RELATED) // GH-90000
-                    .strength(1.0) // GH-90000
-                    .build(); // GH-90000
-            assertThat(maxStrength.getStrength()).isEqualTo(1.0); // GH-90000
+                    .linkType(LinkType.RELATED) 
+                    .strength(1.0) 
+                    .build(); 
+            assertThat(maxStrength.getStrength()).isEqualTo(1.0); 
         }
     }
 }

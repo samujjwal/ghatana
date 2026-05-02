@@ -36,43 +36,43 @@ class ApiInputValidatorTest {
     class TenantIdTests {
 
         @Test
-        void acceptsValidTenantId() { // GH-90000
+        void acceptsValidTenantId() { 
             assertThat(ApiInputValidator.validateTenantId("acme-corp")).isEmpty();
             assertThat(ApiInputValidator.validateTenantId("tenant_123")).isEmpty();
             assertThat(ApiInputValidator.validateTenantId("my.tenant:1")).isEmpty();
         }
 
         @Test
-        void rejectsNull() { // GH-90000
-            assertThat(ApiInputValidator.validateTenantId(null)).isPresent(); // GH-90000
+        void rejectsNull() { 
+            assertThat(ApiInputValidator.validateTenantId(null)).isPresent(); 
         }
 
         @Test
-        void rejectsBlank() { // GH-90000
+        void rejectsBlank() { 
             assertThat(ApiInputValidator.validateTenantId("")).isPresent();
             assertThat(ApiInputValidator.validateTenantId("   ")).isPresent();
         }
 
         @Test
-        void rejectsTooLong() { // GH-90000
-            String long128 = "a".repeat(ApiInputValidator.MAX_TENANT_ID_LEN + 1); // GH-90000
-            assertThat(ApiInputValidator.validateTenantId(long128)).isPresent(); // GH-90000
+        void rejectsTooLong() { 
+            String long128 = "a".repeat(ApiInputValidator.MAX_TENANT_ID_LEN + 1); 
+            assertThat(ApiInputValidator.validateTenantId(long128)).isPresent(); 
         }
 
         @Test
-        void acceptsMaxLength() { // GH-90000
-            String exact = "a".repeat(ApiInputValidator.MAX_TENANT_ID_LEN); // GH-90000
-            assertThat(ApiInputValidator.validateTenantId(exact)).isEmpty(); // GH-90000
+        void acceptsMaxLength() { 
+            String exact = "a".repeat(ApiInputValidator.MAX_TENANT_ID_LEN); 
+            assertThat(ApiInputValidator.validateTenantId(exact)).isEmpty(); 
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"tenant/hack", "tenant\0zero", "tenant;drop", "../etc"}) // GH-90000
-        void rejectsIllegalChars(String bad) { // GH-90000
-            assertThat(ApiInputValidator.validateTenantId(bad)).isPresent(); // GH-90000
+        @ValueSource(strings = {"tenant/hack", "tenant\0zero", "tenant;drop", "../etc"}) 
+        void rejectsIllegalChars(String bad) { 
+            assertThat(ApiInputValidator.validateTenantId(bad)).isPresent(); 
         }
 
         @Test
-        void rejectsXssAttempt() { // GH-90000
+        void rejectsXssAttempt() { 
             assertThat(ApiInputValidator.validateTenantId("<script>alert(1)</script>")).isPresent();
         }
     }
@@ -85,31 +85,31 @@ class ApiInputValidatorTest {
     class CollectionTests {
 
         @Test
-        void acceptsValidCollection() { // GH-90000
+        void acceptsValidCollection() { 
             assertThat(ApiInputValidator.validateCollection("users")).isEmpty();
             assertThat(ApiInputValidator.validateCollection("my-collection.v2")).isEmpty();
         }
 
         @Test
-        void rejectsNull() { // GH-90000
-            assertThat(ApiInputValidator.validateCollection(null)).isPresent(); // GH-90000
+        void rejectsNull() { 
+            assertThat(ApiInputValidator.validateCollection(null)).isPresent(); 
         }
 
         @Test
-        void rejectsBlank() { // GH-90000
+        void rejectsBlank() { 
             assertThat(ApiInputValidator.validateCollection("")).isPresent();
         }
 
         @Test
-        void rejectsTooLong() { // GH-90000
-            String tooLong = "x".repeat(ApiInputValidator.MAX_COLLECTION_LEN + 1); // GH-90000
-            assertThat(ApiInputValidator.validateCollection(tooLong)).isPresent(); // GH-90000
+        void rejectsTooLong() { 
+            String tooLong = "x".repeat(ApiInputValidator.MAX_COLLECTION_LEN + 1); 
+            assertThat(ApiInputValidator.validateCollection(tooLong)).isPresent(); 
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"coll/hack", "coll\ninjection", "col!@#"}) // GH-90000
-        void rejectsIllegalChars(String bad) { // GH-90000
-            assertThat(ApiInputValidator.validateCollection(bad)).isPresent(); // GH-90000
+        @ValueSource(strings = {"coll/hack", "coll\ninjection", "col!@#"}) 
+        void rejectsIllegalChars(String bad) { 
+            assertThat(ApiInputValidator.validateCollection(bad)).isPresent(); 
         }
     }
 
@@ -121,26 +121,26 @@ class ApiInputValidatorTest {
     class IdTests {
 
         @Test
-        void acceptsValidId() { // GH-90000
+        void acceptsValidId() { 
             assertThat(ApiInputValidator.validateId("entity-123")).isEmpty();
             assertThat(ApiInputValidator.validateId("UUID-style-11111111-2")).isEmpty();
         }
 
         @Test
-        void rejectsNull() { // GH-90000
-            assertThat(ApiInputValidator.validateId(null)).isPresent(); // GH-90000
+        void rejectsNull() { 
+            assertThat(ApiInputValidator.validateId(null)).isPresent(); 
         }
 
         @Test
-        void rejectsTooLong() { // GH-90000
-            String tooLong = "a".repeat(ApiInputValidator.MAX_ID_LEN + 1); // GH-90000
-            assertThat(ApiInputValidator.validateId(tooLong)).isPresent(); // GH-90000
+        void rejectsTooLong() { 
+            String tooLong = "a".repeat(ApiInputValidator.MAX_ID_LEN + 1); 
+            assertThat(ApiInputValidator.validateId(tooLong)).isPresent(); 
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"../../etc/passwd", "id\0null", "id?q=1"}) // GH-90000
-        void rejectsPathTraversalAndInjection(String bad) { // GH-90000
-            assertThat(ApiInputValidator.validateId(bad)).isPresent(); // GH-90000
+        @ValueSource(strings = {"../../etc/passwd", "id\0null", "id?q=1"}) 
+        void rejectsPathTraversalAndInjection(String bad) { 
+            assertThat(ApiInputValidator.validateId(bad)).isPresent(); 
         }
     }
 
@@ -152,63 +152,63 @@ class ApiInputValidatorTest {
     class LimitTests {
 
         @Test
-        void returnsDefaultWhenNull() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit(null, 100); // GH-90000
-            assertThat(lr.isValid()).isTrue(); // GH-90000
-            assertThat(lr.getValue()).isEqualTo(100); // GH-90000
+        void returnsDefaultWhenNull() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit(null, 100); 
+            assertThat(lr.isValid()).isTrue(); 
+            assertThat(lr.getValue()).isEqualTo(100); 
         }
 
         @Test
-        void returnsDefaultWhenBlank() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("  ", 50); // GH-90000
-            assertThat(lr.isValid()).isTrue(); // GH-90000
-            assertThat(lr.getValue()).isEqualTo(50); // GH-90000
+        void returnsDefaultWhenBlank() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("  ", 50); 
+            assertThat(lr.isValid()).isTrue(); 
+            assertThat(lr.getValue()).isEqualTo(50); 
         }
 
         @Test
-        void parsesValidLimit() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("100", 10); // GH-90000
-            assertThat(lr.isValid()).isTrue(); // GH-90000
-            assertThat(lr.getValue()).isEqualTo(100); // GH-90000
+        void parsesValidLimit() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("100", 10); 
+            assertThat(lr.isValid()).isTrue(); 
+            assertThat(lr.getValue()).isEqualTo(100); 
         }
 
         @Test
-        void acceptsMaxAllowedLimit() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit(String.valueOf(ApiInputValidator.MAX_LIMIT), 10); // GH-90000
-            assertThat(lr.isValid()).isTrue(); // GH-90000
-            assertThat(lr.getValue()).isEqualTo(ApiInputValidator.MAX_LIMIT); // GH-90000
+        void acceptsMaxAllowedLimit() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit(String.valueOf(ApiInputValidator.MAX_LIMIT), 10); 
+            assertThat(lr.isValid()).isTrue(); 
+            assertThat(lr.getValue()).isEqualTo(ApiInputValidator.MAX_LIMIT); 
         }
 
         @Test
-        void rejectsZero() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("0", 10); // GH-90000
-            assertThat(lr.isValid()).isFalse(); // GH-90000
-            assertThat(lr.getError()).isPresent(); // GH-90000
+        void rejectsZero() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("0", 10); 
+            assertThat(lr.isValid()).isFalse(); 
+            assertThat(lr.getError()).isPresent(); 
         }
 
         @Test
-        void rejectsNegative() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("-1", 10); // GH-90000
-            assertThat(lr.isValid()).isFalse(); // GH-90000
+        void rejectsNegative() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("-1", 10); 
+            assertThat(lr.isValid()).isFalse(); 
         }
 
         @Test
-        void rejectsExceedsMax() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("9999999", 10); // GH-90000
-            assertThat(lr.isValid()).isFalse(); // GH-90000
+        void rejectsExceedsMax() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("9999999", 10); 
+            assertThat(lr.isValid()).isFalse(); 
         }
 
         @Test
-        void rejectsNonNumeric() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("abc", 10); // GH-90000
-            assertThat(lr.isValid()).isFalse(); // GH-90000
+        void rejectsNonNumeric() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("abc", 10); 
+            assertThat(lr.isValid()).isFalse(); 
             assertThat(lr.getError().orElseThrow()).contains("valid integer");
         }
 
         @Test
-        void rejectsSqlInjectionAttempt() { // GH-90000
-            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("1; DROP TABLE users--", 10); // GH-90000
-            assertThat(lr.isValid()).isFalse(); // GH-90000
+        void rejectsSqlInjectionAttempt() { 
+            ApiInputValidator.LimitResult lr = ApiInputValidator.validateLimit("1; DROP TABLE users--", 10); 
+            assertThat(lr.isValid()).isFalse(); 
         }
     }
 
@@ -220,33 +220,33 @@ class ApiInputValidatorTest {
     class SearchQueryTests {
 
         @Test
-        void acceptsSimpleQuery() { // GH-90000
+        void acceptsSimpleQuery() { 
             assertThat(ApiInputValidator.validateSearchQuery("hello world")).isEmpty();
         }
 
         @Test
-        void acceptsLuceneSyntax() { // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery("name:\"John Doe\" AND age:[25 TO 35]")).isEmpty(); // GH-90000
+        void acceptsLuceneSyntax() { 
+            assertThat(ApiInputValidator.validateSearchQuery("name:\"John Doe\" AND age:[25 TO 35]")).isEmpty(); 
         }
 
         @Test
-        void rejectsNull() { // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery(null)).isPresent(); // GH-90000
+        void rejectsNull() { 
+            assertThat(ApiInputValidator.validateSearchQuery(null)).isPresent(); 
         }
 
         @Test
-        void rejectsBlank() { // GH-90000
+        void rejectsBlank() { 
             assertThat(ApiInputValidator.validateSearchQuery("")).isPresent();
         }
 
         @Test
-        void rejectsTooLong() { // GH-90000
-            String tooLong = "a".repeat(ApiInputValidator.MAX_SEARCH_QUERY_LEN + 1); // GH-90000
-            assertThat(ApiInputValidator.validateSearchQuery(tooLong)).isPresent(); // GH-90000
+        void rejectsTooLong() { 
+            String tooLong = "a".repeat(ApiInputValidator.MAX_SEARCH_QUERY_LEN + 1); 
+            assertThat(ApiInputValidator.validateSearchQuery(tooLong)).isPresent(); 
         }
 
         @Test
-        void rejectsControlCharacters() { // GH-90000
+        void rejectsControlCharacters() { 
             assertThat(ApiInputValidator.validateSearchQuery("ok\u0007bell")).isPresent();
             assertThat(ApiInputValidator.validateSearchQuery("ok\u0000null")).isPresent();
         }
@@ -260,65 +260,65 @@ class ApiInputValidatorTest {
     class BatchSizeTests {
 
         @Test
-        void acceptsValidBatch() { // GH-90000
-            List<Map<String, Object>> batch = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 10; i++) batch.add(Map.of("key", i)); // GH-90000
-            assertThat(ApiInputValidator.validateBatchSize(batch)).isEmpty(); // GH-90000
+        void acceptsValidBatch() { 
+            List<Map<String, Object>> batch = new ArrayList<>(); 
+            for (int i = 0; i < 10; i++) batch.add(Map.of("key", i)); 
+            assertThat(ApiInputValidator.validateBatchSize(batch)).isEmpty(); 
         }
 
         @Test
-        void rejectsNull() { // GH-90000
-            assertThat(ApiInputValidator.validateBatchSize(null)).isPresent(); // GH-90000
+        void rejectsNull() { 
+            assertThat(ApiInputValidator.validateBatchSize(null)).isPresent(); 
         }
 
         @Test
-        void rejectsEmpty() { // GH-90000
-            assertThat(ApiInputValidator.validateBatchSize(List.of())).isPresent(); // GH-90000
+        void rejectsEmpty() { 
+            assertThat(ApiInputValidator.validateBatchSize(List.of())).isPresent(); 
         }
 
         @Test
-        void acceptsExactlyMaxBatchSize() { // GH-90000
-            List<Map<String, Object>> batch = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < ApiInputValidator.MAX_BATCH_SIZE; i++) batch.add(Map.of()); // GH-90000
-            assertThat(ApiInputValidator.validateBatchSize(batch)).isEmpty(); // GH-90000
+        void acceptsExactlyMaxBatchSize() { 
+            List<Map<String, Object>> batch = new ArrayList<>(); 
+            for (int i = 0; i < ApiInputValidator.MAX_BATCH_SIZE; i++) batch.add(Map.of()); 
+            assertThat(ApiInputValidator.validateBatchSize(batch)).isEmpty(); 
         }
 
         @Test
-        void rejectsExceedsMaxBatchSize() { // GH-90000
-            List<Map<String, Object>> batch = new ArrayList<>(); // GH-90000
-            for (int i = 0; i <= ApiInputValidator.MAX_BATCH_SIZE; i++) batch.add(Map.of()); // GH-90000
-            assertThat(ApiInputValidator.validateBatchSize(batch)).isPresent(); // GH-90000
+        void rejectsExceedsMaxBatchSize() { 
+            List<Map<String, Object>> batch = new ArrayList<>(); 
+            for (int i = 0; i <= ApiInputValidator.MAX_BATCH_SIZE; i++) batch.add(Map.of()); 
+            assertThat(ApiInputValidator.validateBatchSize(batch)).isPresent(); 
         }
     }
 
     // -----------------------------------------------------------------------
-    // delete batch (ids) // GH-90000
+    // delete batch (ids) 
     // -----------------------------------------------------------------------
     @Nested
     @DisplayName("validateDeleteBatch")
     class DeleteBatchTests {
 
         @Test
-        void acceptsValidIds() { // GH-90000
-            assertThat(ApiInputValidator.validateDeleteBatch(List.of("id-1", "id-2", "id-3"))).isEmpty(); // GH-90000
+        void acceptsValidIds() { 
+            assertThat(ApiInputValidator.validateDeleteBatch(List.of("id-1", "id-2", "id-3"))).isEmpty(); 
         }
 
         @Test
-        void rejectsNullList() { // GH-90000
-            assertThat(ApiInputValidator.validateDeleteBatch(null)).isPresent(); // GH-90000
+        void rejectsNullList() { 
+            assertThat(ApiInputValidator.validateDeleteBatch(null)).isPresent(); 
         }
 
         @Test
-        void rejectsEmptyList() { // GH-90000
-            assertThat(ApiInputValidator.validateDeleteBatch(List.of())).isPresent(); // GH-90000
+        void rejectsEmptyList() { 
+            assertThat(ApiInputValidator.validateDeleteBatch(List.of())).isPresent(); 
         }
 
         @Test
-        void rejectsInvalidIdInList() { // GH-90000
-            List<String> ids = new ArrayList<>(); // GH-90000
+        void rejectsInvalidIdInList() { 
+            List<String> ids = new ArrayList<>(); 
             ids.add("valid-id");
             ids.add("invalid/path/../traversal");
-            assertThat(ApiInputValidator.validateDeleteBatch(ids)).isPresent() // GH-90000
+            assertThat(ApiInputValidator.validateDeleteBatch(ids)).isPresent() 
                 .get().asString().contains("ids[1]");
         }
     }
@@ -331,50 +331,50 @@ class ApiInputValidatorTest {
     class EntityPayloadTests {
 
         @Test
-        void acceptsValidPayload() { // GH-90000
-            assertThat(ApiInputValidator.validateEntityPayload(Map.of("name", "Alice", "age", 30))).isEmpty(); // GH-90000
+        void acceptsValidPayload() { 
+            assertThat(ApiInputValidator.validateEntityPayload(Map.of("name", "Alice", "age", 30))).isEmpty(); 
         }
 
         @Test
-        void rejectsNullPayload() { // GH-90000
-            assertThat(ApiInputValidator.validateEntityPayload(null)).isPresent(); // GH-90000
+        void rejectsNullPayload() { 
+            assertThat(ApiInputValidator.validateEntityPayload(null)).isPresent(); 
         }
 
         @Test
-        void rejectsEmptyPayload() { // GH-90000
-            assertThat(ApiInputValidator.validateEntityPayload(Map.of())).isPresent(); // GH-90000
+        void rejectsEmptyPayload() { 
+            assertThat(ApiInputValidator.validateEntityPayload(Map.of())).isPresent(); 
         }
 
         @Test
-        void rejectsStringValueWithControlChars() { // GH-90000
-            Map<String, Object> data = new HashMap<>(); // GH-90000
-            data.put("field", "bad\u0000value"); // GH-90000
-            assertThat(ApiInputValidator.validateEntityPayload(data)).isPresent(); // GH-90000
+        void rejectsStringValueWithControlChars() { 
+            Map<String, Object> data = new HashMap<>(); 
+            data.put("field", "bad\u0000value"); 
+            assertThat(ApiInputValidator.validateEntityPayload(data)).isPresent(); 
         }
 
         @Test
-        void rejectsNestingTooDeep() { // GH-90000
-            // Build a deeply nested map (> MAX_NESTING_DEPTH) // GH-90000
-            Map<String, Object> inner = Map.of("leaf", "value"); // GH-90000
-            Map<String, Object> current = new HashMap<>(inner); // GH-90000
-            for (int i = 0; i < ApiInputValidator.MAX_NESTING_DEPTH + 2; i++) { // GH-90000
-                Map<String, Object> next = new HashMap<>(); // GH-90000
-                next.put("child", current); // GH-90000
+        void rejectsNestingTooDeep() { 
+            // Build a deeply nested map (> MAX_NESTING_DEPTH) 
+            Map<String, Object> inner = Map.of("leaf", "value"); 
+            Map<String, Object> current = new HashMap<>(inner); 
+            for (int i = 0; i < ApiInputValidator.MAX_NESTING_DEPTH + 2; i++) { 
+                Map<String, Object> next = new HashMap<>(); 
+                next.put("child", current); 
                 current = next;
             }
-            assertThat(ApiInputValidator.validateEntityPayload(current)).isPresent(); // GH-90000
+            assertThat(ApiInputValidator.validateEntityPayload(current)).isPresent(); 
         }
 
         @Test
-        void acceptsNestedMapWithinDepthLimit() { // GH-90000
-            Map<String, Object> data = Map.of( // GH-90000
-                "level1", Map.of( // GH-90000
-                    "level2", Map.of( // GH-90000
+        void acceptsNestedMapWithinDepthLimit() { 
+            Map<String, Object> data = Map.of( 
+                "level1", Map.of( 
+                    "level2", Map.of( 
                         "level3", "deep but ok"
                     )
                 )
             );
-            assertThat(ApiInputValidator.validateEntityPayload(data)).isEmpty(); // GH-90000
+            assertThat(ApiInputValidator.validateEntityPayload(data)).isEmpty(); 
         }
     }
 
@@ -386,20 +386,20 @@ class ApiInputValidatorTest {
     class SanitizeForMessageTests {
 
         @Test
-        void stripsControlChars() { // GH-90000
+        void stripsControlChars() { 
             String result = ApiInputValidator.sanitizeForMessage("ok\u0007\r\nval");
             assertThat(result).doesNotContain("\u0007").doesNotContain("\r").doesNotContain("\n");
         }
 
         @Test
-        void truncatesLongStrings() { // GH-90000
-            String long200 = "a".repeat(200); // GH-90000
-            String result = ApiInputValidator.sanitizeForMessage(long200); // GH-90000
-            assertThat(result.length()).isLessThanOrEqualTo(132); // 128 + ellipsis // GH-90000
+        void truncatesLongStrings() { 
+            String long200 = "a".repeat(200); 
+            String result = ApiInputValidator.sanitizeForMessage(long200); 
+            assertThat(result.length()).isLessThanOrEqualTo(132); // 128 + ellipsis 
         }
 
         @Test
-        void handlesNull() { // GH-90000
+        void handlesNull() { 
             assertThat(ApiInputValidator.sanitizeForMessage(null)).isEqualTo("<null>");
         }
     }
@@ -412,15 +412,15 @@ class ApiInputValidatorTest {
     class ValidateAllTests {
 
         @Test
-        void returnsEmptyForValidInput() { // GH-90000
-            assertThat(ApiInputValidator.validateAll("tenant-1", "users", Map.of("name", "Bob"))).isEmpty(); // GH-90000
+        void returnsEmptyForValidInput() { 
+            assertThat(ApiInputValidator.validateAll("tenant-1", "users", Map.of("name", "Bob"))).isEmpty(); 
         }
 
         @Test
-        void accumulatesMultipleViolations() { // GH-90000
+        void accumulatesMultipleViolations() { 
             // null tenantId + null collection + null payload → all 3 violations joined
-            Optional<String> result = ApiInputValidator.validateAll(null, null, null); // GH-90000
-            assertThat(result).isPresent(); // GH-90000
+            Optional<String> result = ApiInputValidator.validateAll(null, null, null); 
+            assertThat(result).isPresent(); 
             // error message contains separator
             assertThat(result.get()).contains(";");
         }

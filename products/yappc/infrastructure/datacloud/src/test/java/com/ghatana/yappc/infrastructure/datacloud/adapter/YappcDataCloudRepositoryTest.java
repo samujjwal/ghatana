@@ -48,20 +48,20 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
     private YappcDataCloudRepository<TestEntity> repository;
 
     @AfterEach
-    void tearDown() { // GH-90000
-        runBlocking(TenantContext::clear); // GH-90000
-        TenantContext.clear(); // GH-90000
+    void tearDown() { 
+        runBlocking(TenantContext::clear); 
+        TenantContext.clear(); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
 
-        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        mapper = new YappcEntityMapper(objectMapper); // GH-90000
+        ObjectMapper objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        mapper = new YappcEntityMapper(objectMapper); 
 
-        repository = new YappcDataCloudRepository<>( // GH-90000
+        repository = new YappcDataCloudRepository<>( 
             client,
             mapper,
             "test_collection",
@@ -71,100 +71,100 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should save entity through data-cloud")
-    void shouldSaveEntity() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        TestEntity entity = new TestEntity(id, "Test", 42); // GH-90000
+    void shouldSaveEntity() { 
+        UUID id = UUID.randomUUID(); 
+        TestEntity entity = new TestEntity(id, "Test", 42); 
 
-        DataCloudClient.Entity savedEntity = DataCloudClient.Entity.of( // GH-90000
-            id.toString(), "test_collection", // GH-90000
-            Map.of("id", id.toString(), "name", "Test", "value", 42)); // GH-90000
+        DataCloudClient.Entity savedEntity = DataCloudClient.Entity.of( 
+            id.toString(), "test_collection", 
+            Map.of("id", id.toString(), "name", "Test", "value", 42)); 
 
-        when(client.save(anyString(), anyString(), any())) // GH-90000
-            .thenReturn(Promise.of(savedEntity)); // GH-90000
+        when(client.save(anyString(), anyString(), any())) 
+            .thenReturn(Promise.of(savedEntity)); 
 
-        Promise<TestEntity> result = repository.save(entity); // GH-90000
+        Promise<TestEntity> result = repository.save(entity); 
 
-        verify(client).save(anyString(), anyString(), any()); // GH-90000
+        verify(client).save(anyString(), anyString(), any()); 
     }
 
     @Test
     @DisplayName("Should find entity by ID")
-    void shouldFindById() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
-        DataCloudClient.Entity entity = DataCloudClient.Entity.of( // GH-90000
-            id.toString(), "test_collection", // GH-90000
-            Map.of("id", id.toString(), "name", "Test", "value", 42)); // GH-90000
+    void shouldFindById() { 
+        UUID id = UUID.randomUUID(); 
+        DataCloudClient.Entity entity = DataCloudClient.Entity.of( 
+            id.toString(), "test_collection", 
+            Map.of("id", id.toString(), "name", "Test", "value", 42)); 
 
-        when(client.findById(anyString(), anyString(), anyString())) // GH-90000
-            .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
+        when(client.findById(anyString(), anyString(), anyString())) 
+            .thenReturn(Promise.of(Optional.of(entity))); 
 
-        Promise<Optional<TestEntity>> result = repository.findById(id); // GH-90000
+        Promise<Optional<TestEntity>> result = repository.findById(id); 
 
-        verify(client).findById(anyString(), anyString(), anyString()); // GH-90000
+        verify(client).findById(anyString(), anyString(), anyString()); 
     }
 
     @Test
     @DisplayName("Should find all entities")
-    void shouldFindAll() { // GH-90000
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-            .thenReturn(Promise.of(List.of())); // GH-90000
+    void shouldFindAll() { 
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
+            .thenReturn(Promise.of(List.of())); 
 
-        Promise<List<TestEntity>> result = repository.findAll(); // GH-90000
+        Promise<List<TestEntity>> result = repository.findAll(); 
 
-        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); 
     }
 
     @Test
     @DisplayName("Should delete entity by ID")
-    void shouldDeleteById() { // GH-90000
-        UUID id = UUID.randomUUID(); // GH-90000
+    void shouldDeleteById() { 
+        UUID id = UUID.randomUUID(); 
 
-        when(client.delete(anyString(), anyString(), anyString())) // GH-90000
-            .thenReturn(Promise.of(null)); // GH-90000
+        when(client.delete(anyString(), anyString(), anyString())) 
+            .thenReturn(Promise.of(null)); 
 
-        Promise<Void> result = repository.deleteById(id); // GH-90000
+        Promise<Void> result = repository.deleteById(id); 
 
-        verify(client).delete(anyString(), anyString(), anyString()); // GH-90000
+        verify(client).delete(anyString(), anyString(), anyString()); 
     }
 
     @Test
     @DisplayName("Should encrypt project environment variables before saving")
-    void shouldEncryptProjectEnvironmentVariablesBeforeSaving() { // GH-90000
-        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        YappcEntityMapper encryptedMapper = new YappcEntityMapper( // GH-90000
+    void shouldEncryptProjectEnvironmentVariablesBeforeSaving() { 
+        ObjectMapper objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        YappcEntityMapper encryptedMapper = new YappcEntityMapper( 
             objectMapper,
-            new EncryptionService(Base64.getDecoder().decode(EncryptionService.generateKey())) // GH-90000
+            new EncryptionService(Base64.getDecoder().decode(EncryptionService.generateKey())) 
         );
-        YappcDataCloudRepository<ProjectEntity> projectRepository = new YappcDataCloudRepository<>( // GH-90000
+        YappcDataCloudRepository<ProjectEntity> projectRepository = new YappcDataCloudRepository<>( 
             client,
             encryptedMapper,
-            ProjectEntity.getCollectionName(), // GH-90000
+            ProjectEntity.getCollectionName(), 
             ProjectEntity.class
         );
-        ProjectEntity project = new ProjectEntity("Secure Project", "Desc", "user-1"); // GH-90000
+        ProjectEntity project = new ProjectEntity("Secure Project", "Desc", "user-1"); 
         project.setTenantId("tenant-alpha");
-        project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-live-secret")); // GH-90000
+        project.setEnvironmentVariables(Map.of("OPENAI_API_KEY", "sk-live-secret")); 
 
         TenantContext.setCurrentTenantId("tenant-alpha");
         runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
 
-        AtomicReference<Map<String, Object>> savedPayloadRef = new AtomicReference<>(); // GH-90000
-        when(client.save(anyString(), anyString(), any())) // GH-90000
-            .thenAnswer(invocation -> { // GH-90000
-                Map<String, Object> payload = invocation.getArgument(2); // GH-90000
-                savedPayloadRef.set(payload); // GH-90000
-                return Promise.of(DataCloudClient.Entity.of( // GH-90000
-                    project.getId().toString(), // GH-90000
-                    ProjectEntity.getCollectionName(), // GH-90000
+        AtomicReference<Map<String, Object>> savedPayloadRef = new AtomicReference<>(); 
+        when(client.save(anyString(), anyString(), any())) 
+            .thenAnswer(invocation -> { 
+                Map<String, Object> payload = invocation.getArgument(2); 
+                savedPayloadRef.set(payload); 
+                return Promise.of(DataCloudClient.Entity.of( 
+                    project.getId().toString(), 
+                    ProjectEntity.getCollectionName(), 
                     payload
                 ));
             });
 
-        ProjectEntity saved = runPromise(() -> projectRepository.save(project)); // GH-90000
+        ProjectEntity saved = runPromise(() -> projectRepository.save(project)); 
 
         verify(client).save(eq("tenant-alpha"), eq(ProjectEntity.getCollectionName()), any());
-        Map<String, Object> savedPayload = savedPayloadRef.get(); // GH-90000
+        Map<String, Object> savedPayload = savedPayloadRef.get(); 
         @SuppressWarnings("unchecked")
         Map<String, String> persistedEnvironmentVariables =
             (Map<String, String>) savedPayload.get("environmentVariables");
@@ -172,13 +172,13 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         assertThat(persistedEnvironmentVariables.get("OPENAI_API_KEY"))
             .startsWith("enc::")
             .isNotEqualTo("sk-live-secret");
-        assertThat(saved.getEnvironmentVariables()) // GH-90000
-            .containsEntry("OPENAI_API_KEY", "sk-live-secret"); // GH-90000
+        assertThat(saved.getEnvironmentVariables()) 
+            .containsEntry("OPENAI_API_KEY", "sk-live-secret"); 
     }
 
     @Test
     @DisplayName("findByFilter with non-null sort returns failed Promise")
-    void findByFilterRejectsSortParameter() { // GH-90000
+    void findByFilterRejectsSortParameter() { 
         TenantContext.setCurrentTenantId("tenant-alpha");
         runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
 
@@ -191,7 +191,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findByFilterPaginated with non-null sort returns failed Promise")
-    void findByFilterPaginatedRejectsSortParameter() { // GH-90000
+    void findByFilterPaginatedRejectsSortParameter() { 
         TenantContext.setCurrentTenantId("tenant-alpha");
         runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
 
@@ -204,7 +204,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findByFilter with null sort executes normally")
-    void findByFilterAcceptsNullSort() { // GH-90000
+    void findByFilterAcceptsNullSort() { 
         TenantContext.setCurrentTenantId("tenant-alpha");
         runBlocking(() -> TenantContext.setCurrentTenantId("tenant-alpha"));
 
@@ -215,7 +215,7 @@ class YappcDataCloudRepositoryTest extends EventloopTestBase {
         assertThat(result).isEmpty();
     }
 
-    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { // GH-90000
-        @Override public UUID getId() { return id; } // GH-90000
+    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { 
+        @Override public UUID getId() { return id; } 
     }
 }

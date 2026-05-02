@@ -23,13 +23,13 @@ class PhaseEventPublisherTest extends EventloopTestBase {
     private InMemoryEventPublisher eventPublisher;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventPublisher = new InMemoryEventPublisher(); // GH-90000
-        publisher = new PhaseEventPublisher(eventPublisher); // GH-90000
+    void setUp() { 
+        eventPublisher = new InMemoryEventPublisher(); 
+        publisher = new PhaseEventPublisher(eventPublisher); 
     }
 
     @Test
-    void shouldPublishPhaseStartedEvent() { // GH-90000
+    void shouldPublishPhaseStartedEvent() { 
         // GIVEN
         String phaseId = "phase-123";
         PhaseType phaseType = PhaseType.INTENT;
@@ -40,35 +40,35 @@ class PhaseEventPublisherTest extends EventloopTestBase {
         String productId = "product-123";
 
         // WHEN
-        runPromise(() -> publisher.publishPhaseStarted( // GH-90000
+        runPromise(() -> publisher.publishPhaseStarted( 
                 phaseId, phaseType, inputSpecRef, actor, correlationId, tenantId, productId));
 
         // THEN
         List<Map<String, Object>> events = eventPublisher.getEvents("PhaseStartedEvent");
-        assertEquals(1, events.size()); // GH-90000
+        assertEquals(1, events.size()); 
         assertEquals(phaseId, events.get(0).get("phase_id"));
         assertEquals(phaseType.name(), events.get(0).get("phase_type"));
     }
 
     @Test
-    void shouldPublishPhaseCompletedEvent() { // GH-90000
+    void shouldPublishPhaseCompletedEvent() { 
         // GIVEN
         String phaseId = "phase-123";
         PhaseType phaseType = PhaseType.SHAPE;
 
         // WHEN
-        runPromise(() -> publisher.publishPhaseCompleted( // GH-90000
+        runPromise(() -> publisher.publishPhaseCompleted( 
                 phaseId, phaseType, "input-ref", "output-ref",
-                ActorType.AI_ASSISTED, "corr-123", "tenant-123", "product-123", Map.of())); // GH-90000
+                ActorType.AI_ASSISTED, "corr-123", "tenant-123", "product-123", Map.of())); 
 
         // THEN
         List<Map<String, Object>> events = eventPublisher.getEvents("PhaseCompletedEvent");
-        assertEquals(1, events.size()); // GH-90000
+        assertEquals(1, events.size()); 
         assertEquals("output-ref", events.get(0).get("output_artifact_ref"));
     }
 
     @Test
-    void shouldPublishPhaseFailedEvent() { // GH-90000
+    void shouldPublishPhaseFailedEvent() { 
         // GIVEN
         String phaseId = "phase-123";
         PhaseType phaseType = PhaseType.VALIDATE;
@@ -76,47 +76,47 @@ class PhaseEventPublisherTest extends EventloopTestBase {
         String errorCode = "VAL_001";
 
         // WHEN
-        runPromise(() -> publisher.publishPhaseFailed( // GH-90000
+        runPromise(() -> publisher.publishPhaseFailed( 
                 phaseId, phaseType, errorMessage, errorCode,
-                "corr-123", "tenant-123", "product-123", Map.of())); // GH-90000
+                "corr-123", "tenant-123", "product-123", Map.of())); 
 
         // THEN
         List<Map<String, Object>> events = eventPublisher.getEvents("PhaseFailedEvent");
-        assertEquals(1, events.size()); // GH-90000
+        assertEquals(1, events.size()); 
         assertEquals(errorMessage, events.get(0).get("error_message"));
         assertEquals(errorCode, events.get(0).get("error_code"));
     }
 
     @Test
-    void shouldPublishLifecycleEvent() { // GH-90000
+    void shouldPublishLifecycleEvent() { 
         // GIVEN
         String lifecycleId = "lifecycle-123";
         String productId = "product-123";
         String status = "completed";
 
         // WHEN
-        runPromise(() -> publisher.publishLifecycleEvent( // GH-90000
-                lifecycleId, productId, status, "tenant-123", Map.of())); // GH-90000
+        runPromise(() -> publisher.publishLifecycleEvent( 
+                lifecycleId, productId, status, "tenant-123", Map.of())); 
 
         // THEN
         List<Map<String, Object>> events = eventPublisher.getEvents("LifecycleExecutionEvent");
-        assertEquals(1, events.size()); // GH-90000
+        assertEquals(1, events.size()); 
         assertEquals(lifecycleId, events.get(0).get("lifecycle_id"));
         assertEquals(status, events.get(0).get("status"));
     }
 
     @Test
-    void shouldTrackMultipleEvents() { // GH-90000
+    void shouldTrackMultipleEvents() { 
         // GIVEN/WHEN
-        runPromise(() -> publisher.publishPhaseStarted( // GH-90000
+        runPromise(() -> publisher.publishPhaseStarted( 
                 "phase-1", PhaseType.INTENT, "input", ActorType.HUMAN,
                 "corr-1", "tenant-1", "product-1"));
-        runPromise(() -> publisher.publishPhaseCompleted( // GH-90000
+        runPromise(() -> publisher.publishPhaseCompleted( 
                 "phase-1", PhaseType.INTENT, "input", "output", ActorType.HUMAN,
-                "corr-1", "tenant-1", "product-1", Map.of())); // GH-90000
+                "corr-1", "tenant-1", "product-1", Map.of())); 
 
         // THEN
-        assertEquals(2, eventPublisher.size()); // GH-90000
+        assertEquals(2, eventPublisher.size()); 
         assertEquals(1, eventPublisher.getEvents("PhaseStartedEvent").size());
         assertEquals(1, eventPublisher.getEvents("PhaseCompletedEvent").size());
     }

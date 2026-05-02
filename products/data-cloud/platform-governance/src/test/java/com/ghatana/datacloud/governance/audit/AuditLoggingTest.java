@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.governance.audit;
@@ -31,75 +31,75 @@ class AuditLoggingTest {
     private AuditStore store;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new AuditStore(); // GH-90000
-        logger = new AuditLogger(store); // GH-90000
+    void setUp() { 
+        store = new AuditStore(); 
+        logger = new AuditLogger(store); 
     }
 
     // ── Event emission ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("data read event is recorded")
-    void dataReadEventIsRecorded() { // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "user-a", "record-42")); // GH-90000
+    void dataReadEventIsRecorded() { 
+        logger.log(AuditEvent.read("tenant-1", "user-a", "record-42")); 
         assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
     @DisplayName("data write event is recorded")
-    void dataWriteEventIsRecorded() { // GH-90000
-        logger.log(AuditEvent.write("tenant-1", "user-a", "record-42")); // GH-90000
+    void dataWriteEventIsRecorded() { 
+        logger.log(AuditEvent.write("tenant-1", "user-a", "record-42")); 
         assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
     @DisplayName("data delete event is recorded")
-    void dataDeleteEventIsRecorded() { // GH-90000
-        logger.log(AuditEvent.delete("tenant-1", "admin-a", "record-42")); // GH-90000
+    void dataDeleteEventIsRecorded() { 
+        logger.log(AuditEvent.delete("tenant-1", "admin-a", "record-42")); 
         assertThat(store.getEvents("tenant-1")).hasSize(1);
     }
 
     @Test
     @DisplayName("policy change event is recorded")
-    void policyChangeEventIsRecorded() { // GH-90000
-        logger.log(AuditEvent.policyChange("tenant-1", "admin-a", "retention-policy")); // GH-90000
+    void policyChangeEventIsRecorded() { 
+        logger.log(AuditEvent.policyChange("tenant-1", "admin-a", "retention-policy")); 
         List<AuditEvent> events = store.getEvents("tenant-1");
-        assertThat(events).hasSize(1); // GH-90000
-        assertThat(events.get(0).action()).isEqualTo(AuditAction.POLICY_CHANGE); // GH-90000
+        assertThat(events).hasSize(1); 
+        assertThat(events.get(0).action()).isEqualTo(AuditAction.POLICY_CHANGE); 
     }
 
     // ── Required metadata ─────────────────────────────────────────────────────
 
     @Test
     @DisplayName("each event has a non-null timestamp")
-    void eventHasTimestamp() { // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); // GH-90000
+    void eventHasTimestamp() { 
+        logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); 
         AuditEvent event = store.getEvents("tenant-1").get(0);
-        assertThat(event.timestamp()).isNotNull(); // GH-90000
-        assertThat(event.timestamp()).isBefore(Instant.now().plusSeconds(1)); // GH-90000
+        assertThat(event.timestamp()).isNotNull(); 
+        assertThat(event.timestamp()).isBefore(Instant.now().plusSeconds(1)); 
     }
 
     @Test
     @DisplayName("each event has a unique ID")
-    void eventHasUniqueId() { // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "user-a", "r2")); // GH-90000
+    void eventHasUniqueId() { 
+        logger.log(AuditEvent.read("tenant-1", "user-a", "r1")); 
+        logger.log(AuditEvent.read("tenant-1", "user-a", "r2")); 
         List<AuditEvent> events = store.getEvents("tenant-1");
-        assertThat(events).extracting(AuditEvent::eventId).doesNotHaveDuplicates(); // GH-90000
+        assertThat(events).extracting(AuditEvent::eventId).doesNotHaveDuplicates(); 
     }
 
     @Test
     @DisplayName("event captures the acting principal (userId)")
-    void eventCapturesPrincipal() { // GH-90000
-        logger.log(AuditEvent.write("tenant-1", "alice", "r1")); // GH-90000
+    void eventCapturesPrincipal() { 
+        logger.log(AuditEvent.write("tenant-1", "alice", "r1")); 
         AuditEvent event = store.getEvents("tenant-1").get(0);
         assertThat(event.actorId()).isEqualTo("alice");
     }
 
     @Test
     @DisplayName("event captures the resource identifier")
-    void eventCapturesResource() { // GH-90000
-        logger.log(AuditEvent.delete("tenant-1", "admin", "record-99")); // GH-90000
+    void eventCapturesResource() { 
+        logger.log(AuditEvent.delete("tenant-1", "admin", "record-99")); 
         AuditEvent event = store.getEvents("tenant-1").get(0);
         assertThat(event.resourceId()).isEqualTo("record-99");
     }
@@ -108,9 +108,9 @@ class AuditLoggingTest {
 
     @Test
     @DisplayName("events for different tenants are stored separately")
-    void eventsAreTenantIsolated() { // GH-90000
-        logger.log(AuditEvent.read("tenant-a", "u1", "r1")); // GH-90000
-        logger.log(AuditEvent.read("tenant-b", "u2", "r2")); // GH-90000
+    void eventsAreTenantIsolated() { 
+        logger.log(AuditEvent.read("tenant-a", "u1", "r1")); 
+        logger.log(AuditEvent.read("tenant-b", "u2", "r2")); 
         assertThat(store.getEvents("tenant-a")).hasSize(1);
         assertThat(store.getEvents("tenant-b")).hasSize(1);
         assertThat(store.getEvents("tenant-a").get(0).actorId()).isEqualTo("u1");
@@ -119,7 +119,7 @@ class AuditLoggingTest {
 
     @Test
     @DisplayName("querying unknown tenant returns empty list")
-    void unknownTenantReturnsEmptyList() { // GH-90000
+    void unknownTenantReturnsEmptyList() { 
         assertThat(store.getEvents("ghost-tenant")).isEmpty();
     }
 
@@ -127,14 +127,14 @@ class AuditLoggingTest {
 
     @Test
     @DisplayName("events are returned in chronological order")
-    void eventsAreChronological() { // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "u1", "r1")); // GH-90000
-        logger.log(AuditEvent.write("tenant-1", "u1", "r2")); // GH-90000
-        logger.log(AuditEvent.delete("tenant-1", "admin", "r3")); // GH-90000
+    void eventsAreChronological() { 
+        logger.log(AuditEvent.read("tenant-1", "u1", "r1")); 
+        logger.log(AuditEvent.write("tenant-1", "u1", "r2")); 
+        logger.log(AuditEvent.delete("tenant-1", "admin", "r3")); 
         List<AuditEvent> events = store.getEvents("tenant-1");
-        for (int i = 1; i < events.size(); i++) { // GH-90000
-            boolean ordered = !events.get(i).timestamp().isBefore(events.get(i - 1).timestamp()); // GH-90000
-            assertThat(ordered).isTrue(); // GH-90000
+        for (int i = 1; i < events.size(); i++) { 
+            boolean ordered = !events.get(i).timestamp().isBefore(events.get(i - 1).timestamp()); 
+            assertThat(ordered).isTrue(); 
         }
     }
 
@@ -142,14 +142,14 @@ class AuditLoggingTest {
 
     @Test
     @DisplayName("events can be filtered by action type")
-    void filterByAction() { // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "u1", "r1")); // GH-90000
-        logger.log(AuditEvent.write("tenant-1", "u1", "r2")); // GH-90000
-        logger.log(AuditEvent.read("tenant-1", "u2", "r3")); // GH-90000
+    void filterByAction() { 
+        logger.log(AuditEvent.read("tenant-1", "u1", "r1")); 
+        logger.log(AuditEvent.write("tenant-1", "u1", "r2")); 
+        logger.log(AuditEvent.read("tenant-1", "u2", "r3")); 
 
-        List<AuditEvent> reads = store.getEventsByAction("tenant-1", AuditAction.READ); // GH-90000
-        assertThat(reads).hasSize(2); // GH-90000
-        assertThat(reads).extracting(AuditEvent::action).containsOnly(AuditAction.READ); // GH-90000
+        List<AuditEvent> reads = store.getEventsByAction("tenant-1", AuditAction.READ); 
+        assertThat(reads).hasSize(2); 
+        assertThat(reads).extracting(AuditEvent::action).containsOnly(AuditAction.READ); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ class AuditLoggingTest {
 
     enum AuditAction { READ, WRITE, DELETE, POLICY_CHANGE }
 
-    record AuditEvent( // GH-90000
+    record AuditEvent( 
             String eventId,
             Instant timestamp,
             String tenantId,
@@ -166,50 +166,50 @@ class AuditLoggingTest {
             String resourceId,
             AuditAction action
     ) {
-        static AuditEvent read(String tenant, String actor, String resource) { // GH-90000
-            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.READ); // GH-90000
+        static AuditEvent read(String tenant, String actor, String resource) { 
+            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.READ); 
         }
 
-        static AuditEvent write(String tenant, String actor, String resource) { // GH-90000
-            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.WRITE); // GH-90000
+        static AuditEvent write(String tenant, String actor, String resource) { 
+            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.WRITE); 
         }
 
-        static AuditEvent delete(String tenant, String actor, String resource) { // GH-90000
-            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.DELETE); // GH-90000
+        static AuditEvent delete(String tenant, String actor, String resource) { 
+            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.DELETE); 
         }
 
-        static AuditEvent policyChange(String tenant, String actor, String resource) { // GH-90000
-            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.POLICY_CHANGE); // GH-90000
+        static AuditEvent policyChange(String tenant, String actor, String resource) { 
+            return new AuditEvent(UUID.randomUUID().toString(), Instant.now(), tenant, actor, resource, AuditAction.POLICY_CHANGE); 
         }
     }
 
     static class AuditStore {
-        private final Map<String, List<AuditEvent>> tenantEvents = new HashMap<>(); // GH-90000
+        private final Map<String, List<AuditEvent>> tenantEvents = new HashMap<>(); 
 
-        void append(AuditEvent event) { // GH-90000
-            tenantEvents.computeIfAbsent(event.tenantId(), k -> new ArrayList<>()).add(event); // GH-90000
+        void append(AuditEvent event) { 
+            tenantEvents.computeIfAbsent(event.tenantId(), k -> new ArrayList<>()).add(event); 
         }
 
-        List<AuditEvent> getEvents(String tenantId) { // GH-90000
-            return Collections.unmodifiableList(tenantEvents.getOrDefault(tenantId, List.of())); // GH-90000
+        List<AuditEvent> getEvents(String tenantId) { 
+            return Collections.unmodifiableList(tenantEvents.getOrDefault(tenantId, List.of())); 
         }
 
-        List<AuditEvent> getEventsByAction(String tenantId, AuditAction action) { // GH-90000
-            return getEvents(tenantId).stream() // GH-90000
-                    .filter(e -> e.action() == action) // GH-90000
-                    .toList(); // GH-90000
+        List<AuditEvent> getEventsByAction(String tenantId, AuditAction action) { 
+            return getEvents(tenantId).stream() 
+                    .filter(e -> e.action() == action) 
+                    .toList(); 
         }
     }
 
     static class AuditLogger {
         private final AuditStore store;
 
-        AuditLogger(AuditStore store) { // GH-90000
+        AuditLogger(AuditStore store) { 
             this.store = store;
         }
 
-        void log(AuditEvent event) { // GH-90000
-            store.append(event); // GH-90000
+        void log(AuditEvent event) { 
+            store.append(event); 
         }
     }
 }

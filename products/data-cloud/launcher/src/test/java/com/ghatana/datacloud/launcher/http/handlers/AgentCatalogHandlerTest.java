@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AgentCatalogHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AgentCatalogHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,31 +41,31 @@ class AgentCatalogHandlerTest extends EventloopTestBase {
     private AgentCatalogHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new AgentCatalogHandler(http, metrics); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new AgentCatalogHandler(http, metrics); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("list rejects missing tenant before metrics or catalog work")
-    void listRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void listRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleListCatalog(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleListCatalog(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(metrics, never()).incrementCounter("agent.catalog.list", "tenant", "default"); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(metrics, never()).incrementCounter("agent.catalog.list", "tenant", "default"); 
     }
 
     @Test
     @DisplayName("get rejects missing tenant before metrics or catalog work")
-    void getRejectsMissingTenant() { // GH-90000
+    void getRejectsMissingTenant() { 
         when(request.getPathParameter("id")).thenReturn("agent-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleGetAgent(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleGetAgent(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1"); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(metrics, never()).incrementCounter("agent.catalog.get", "tenant", "default", "agentId", "agent-1"); 
     }
 }

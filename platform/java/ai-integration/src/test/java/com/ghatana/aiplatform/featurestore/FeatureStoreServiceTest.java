@@ -15,30 +15,30 @@ class FeatureStoreServiceTest {
 
     @Test
     @DisplayName("cache-only mode ingests and serves features without a datasource")
-    void cacheOnlyModeIngestsAndServesFeaturesWithoutDatasource() { // GH-90000
-        FeatureStoreService service = new FeatureStoreService(null, MetricsCollector.create()); // GH-90000
-        MLFeature feature = MLFeature.builder() // GH-90000
+    void cacheOnlyModeIngestsAndServesFeaturesWithoutDatasource() { 
+        FeatureStoreService service = new FeatureStoreService(null, MetricsCollector.create()); 
+        MLFeature feature = MLFeature.builder() 
                 .name("purchase_amount")
                 .entityId("entity-1")
-                .value(42.5) // GH-90000
+                .value(42.5) 
                 .timestamp(Instant.parse("2026-03-27T12:00:00Z"))
-                .build(); // GH-90000
+                .build(); 
 
-        service.ingest("tenant-a", feature); // GH-90000
+        service.ingest("tenant-a", feature); 
 
         Map<String, Double> values = service.getFeatures("tenant-a", "entity-1", List.of("purchase_amount"));
 
-        assertThat(values).containsEntry("purchase_amount", 42.5); // GH-90000
-        assertThat(service.getCacheSize()).isEqualTo(1); // GH-90000
+        assertThat(values).containsEntry("purchase_amount", 42.5); 
+        assertThat(service.getCacheSize()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("cache-only mode returns zero for uncached features")
-    void cacheOnlyModeReturnsZeroForUncachedFeatures() { // GH-90000
-        FeatureStoreService service = new FeatureStoreService(null, MetricsCollector.create()); // GH-90000
+    void cacheOnlyModeReturnsZeroForUncachedFeatures() { 
+        FeatureStoreService service = new FeatureStoreService(null, MetricsCollector.create()); 
 
         Map<String, Double> values = service.getFeatures("tenant-a", "missing-entity", List.of("missing_feature"));
 
-        assertThat(values).containsEntry("missing_feature", 0.0); // GH-90000
+        assertThat(values).containsEntry("missing_feature", 0.0); 
     }
 }

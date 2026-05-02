@@ -15,23 +15,23 @@ import java.util.Map;
 */
 public class TestProjectBuilder {
     private final Path projectRoot;
-    private final Map<String, String> files = new HashMap<>(); // GH-90000
+    private final Map<String, String> files = new HashMap<>(); 
 
-    public TestProjectBuilder(Path projectRoot) { // GH-90000
+    public TestProjectBuilder(Path projectRoot) { 
         this.projectRoot = projectRoot;
     }
 
     /**
      * Adds a Java source file to the test project.
      *
-     * @param packagePath The package path (e.g., "com/example") // GH-90000
+     * @param packagePath The package path (e.g., "com/example") 
      * @param className The name of the class
      * @param content The source code content
      * @return This builder for method chaining
      */
-    public TestProjectBuilder withJavaFile(String packagePath, String className, String content) { // GH-90000
-        String relativePath = String.format("src/main/java/%s/%s.java", packagePath, className); // GH-90000
-        files.put(relativePath, content); // GH-90000
+    public TestProjectBuilder withJavaFile(String packagePath, String className, String content) { 
+        String relativePath = String.format("src/main/java/%s/%s.java", packagePath, className); 
+        files.put(relativePath, content); 
         return this;
     }
 
@@ -42,11 +42,11 @@ public class TestProjectBuilder {
      * @param content The source code content
      * @return This builder for method chaining
      */
-    public TestProjectBuilder withTypeScriptFile(String relativePath, String content) { // GH-90000
+    public TestProjectBuilder withTypeScriptFile(String relativePath, String content) { 
         if (!relativePath.endsWith(".ts")) {
             relativePath += ".ts";
         }
-        files.put(relativePath, content); // GH-90000
+        files.put(relativePath, content); 
         return this;
     }
 
@@ -57,8 +57,8 @@ public class TestProjectBuilder {
      * @param content The config file content
      * @return This builder for method chaining
      */
-    public TestProjectBuilder withConfigFile(String fileName, String content) { // GH-90000
-        files.put(fileName, content); // GH-90000
+    public TestProjectBuilder withConfigFile(String fileName, String content) { 
+        files.put(fileName, content); 
         return this;
     }
 
@@ -68,43 +68,43 @@ public class TestProjectBuilder {
      * @return The project root path
      * @throws IOException If an I/O error occurs
      */
-    public Path build() throws IOException { // GH-90000
-        for (Map.Entry<String, String> entry : files.entrySet()) { // GH-90000
-            Path filePath = projectRoot.resolve(entry.getKey()); // GH-90000
-            Files.createDirectories(filePath.getParent()); // GH-90000
-            Files.writeString(filePath, entry.getValue()); // GH-90000
+    public Path build() throws IOException { 
+        for (Map.Entry<String, String> entry : files.entrySet()) { 
+            Path filePath = projectRoot.resolve(entry.getKey()); 
+            Files.createDirectories(filePath.getParent()); 
+            Files.writeString(filePath, entry.getValue()); 
         }
         return projectRoot;
     }
 
     /** Creates a simple Java project with a main class. */
-    public static TestProjectBuilder createSimpleJavaProject( // GH-90000
+    public static TestProjectBuilder createSimpleJavaProject( 
             Path tempDir, String packageName, String className) {
         String content =
-                String.format( // GH-90000
+                String.format( 
                         "package %s;\n\n"
                                 + "public class %s {\n"
-                                + "    public static void main(String[] args) {\n" // GH-90000
-                                + "        System.out.println(\"Hello, World!\");\n" // GH-90000
+                                + "    public static void main(String[] args) {\n" 
+                                + "        System.out.println(\"Hello, World!\");\n" 
                                 + "    }\n"
                                 + "}",
                         packageName, className);
 
-        return new TestProjectBuilder(tempDir) // GH-90000
-                .withJavaFile(packageName.replace('.', '/'), className, content); // GH-90000
+        return new TestProjectBuilder(tempDir) 
+                .withJavaFile(packageName.replace('.', '/'), className, content); 
     }
 
     /** Creates a simple TypeScript project with a main file. */
-    public static TestProjectBuilder createSimpleTypeScriptProject(Path tempDir, String fileName) { // GH-90000
+    public static TestProjectBuilder createSimpleTypeScriptProject(Path tempDir, String fileName) { 
         String content =
-                "function greet(name: string): string {\n" // GH-90000
+                "function greet(name: string): string {\n" 
                         + "    return `Hello, ${name}!`;\n"
                         + "}\n\n"
-                        + "console.log(greet('World'));"; // GH-90000
+                        + "console.log(greet('World'));"; 
 
-        return new TestProjectBuilder(tempDir) // GH-90000
-                .withTypeScriptFile(fileName, content) // GH-90000
-                .withConfigFile( // GH-90000
+        return new TestProjectBuilder(tempDir) 
+                .withTypeScriptFile(fileName, content) 
+                .withConfigFile( 
                         "tsconfig.json",
                         "{\n"
                                 + "  \"compilerOptions\": {\n"

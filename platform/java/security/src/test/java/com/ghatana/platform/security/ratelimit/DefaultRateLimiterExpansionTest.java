@@ -26,18 +26,18 @@ class DefaultRateLimiterExpansionTest {
     private DefaultRateLimiter limiter;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        limiter = DefaultRateLimiter.create( // GH-90000
-            RateLimiterConfig.builder() // GH-90000
-                .maxRequestsPerMinute(5) // GH-90000
-                .burstSize(5) // GH-90000
-                .windowDuration(Duration.ofMinutes(1)) // GH-90000
-                .build() // GH-90000
+    void setUp() { 
+        limiter = DefaultRateLimiter.create( 
+            RateLimiterConfig.builder() 
+                .maxRequestsPerMinute(5) 
+                .burstSize(5) 
+                .windowDuration(Duration.ofMinutes(1)) 
+                .build() 
         );
     }
 
     // ============================================
-    // QUOTA EXHAUSTION AND RECOVERY (2 tests) // GH-90000
+    // QUOTA EXHAUSTION AND RECOVERY (2 tests) 
     // ============================================
 
     @Nested
@@ -46,42 +46,42 @@ class DefaultRateLimiterExpansionTest {
 
         @Test
         @DisplayName("After quota exhaustion, subsequent requests are rejected")
-        void quotaExhaustionBlocks() { // GH-90000
+        void quotaExhaustionBlocks() { 
             String tenant = "tenant-exhausted";
 
-            // Exhaust the quota (5 requests allowed) // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
-                assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); // GH-90000
+            // Exhaust the quota (5 requests allowed) 
+            for (int i = 0; i < 5; i++) { 
+                assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); 
             }
 
             // 6th request should be rejected
-            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); // GH-90000
+            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); 
 
             // Additional attempts should remain rejected
-            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); // GH-90000
-            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); // GH-90000
+            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); 
+            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); 
         }
 
         @Test
         @DisplayName("Reset quota allows same tenant to acquire again")
-        void quotaResetAllowsRecovery() { // GH-90000
+        void quotaResetAllowsRecovery() { 
             String tenant = "tenant-reset";
 
             // Exhaust quota
-            for (int i = 0; i < 5; i++) { // GH-90000
-                limiter.tryAcquire(tenant); // GH-90000
+            for (int i = 0; i < 5; i++) { 
+                limiter.tryAcquire(tenant); 
             }
-            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); // GH-90000
+            assertThat(limiter.tryAcquire(tenant).allowed()).isFalse(); 
 
             // Reset should allow quota reload
-            limiter.reset(tenant); // GH-90000
-            assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); // GH-90000
-            assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); // GH-90000
+            limiter.reset(tenant); 
+            assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); 
+            assertThat(limiter.tryAcquire(tenant).allowed()).isTrue(); 
         }
     }
 
     // ============================================
-    // CONCURRENT REQUEST HANDLING (1 test) // GH-90000
+    // CONCURRENT REQUEST HANDLING (1 test) 
     // ============================================
 
     @Nested
@@ -90,39 +90,39 @@ class DefaultRateLimiterExpansionTest {
 
         @Test
         @DisplayName("Concurrent requests from same tenant properly enforce quota")
-        void concurrentRequestsEnforceQuota() throws InterruptedException { // GH-90000
+        void concurrentRequestsEnforceQuota() throws InterruptedException { 
             String tenant = "tenant-concurrent";
             int threadCount = 10;
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            AtomicInteger allowedCount = new AtomicInteger(0); // GH-90000
-            AtomicInteger rejectedCount = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
+            AtomicInteger allowedCount = new AtomicInteger(0); 
+            AtomicInteger rejectedCount = new AtomicInteger(0); 
 
-            for (int i = 0; i < threadCount; i++) { // GH-90000
-                new Thread(() -> { // GH-90000
+            for (int i = 0; i < threadCount; i++) { 
+                new Thread(() -> { 
                     try {
-                        RateLimiter.AcquireResult result = limiter.tryAcquire(tenant); // GH-90000
-                        if (result.allowed()) { // GH-90000
-                            allowedCount.incrementAndGet(); // GH-90000
+                        RateLimiter.AcquireResult result = limiter.tryAcquire(tenant); 
+                        if (result.allowed()) { 
+                            allowedCount.incrementAndGet(); 
                         } else {
-                            rejectedCount.incrementAndGet(); // GH-90000
+                            rejectedCount.incrementAndGet(); 
                         }
                     } finally {
-                        latch.countDown(); // GH-90000
+                        latch.countDown(); 
                     }
-                }).start(); // GH-90000
+                }).start(); 
             }
 
-            latch.await(); // GH-90000
+            latch.await(); 
 
-            // Only 5 should be allowed (burst size), rest rejected // GH-90000
-            assertThat(allowedCount.get()).isEqualTo(5); // GH-90000
-            assertThat(rejectedCount.get()).isEqualTo(5); // GH-90000
-            assertThat(limiter.getStats().getTotalAllowed()).isGreaterThanOrEqualTo(5); // GH-90000
+            // Only 5 should be allowed (burst size), rest rejected 
+            assertThat(allowedCount.get()).isEqualTo(5); 
+            assertThat(rejectedCount.get()).isEqualTo(5); 
+            assertThat(limiter.getStats().getTotalAllowed()).isGreaterThanOrEqualTo(5); 
         }
     }
 
     // ============================================
-    // MULTI-TENANT ISOLATION (1 test) // GH-90000
+    // MULTI-TENANT ISOLATION (1 test) 
     // ============================================
 
     @Nested
@@ -131,26 +131,26 @@ class DefaultRateLimiterExpansionTest {
 
         @Test
         @DisplayName("Different tenants have independent quotas")
-        void tenantQuotasAreIndependent() { // GH-90000
+        void tenantQuotasAreIndependent() { 
             String tenant1 = "tenant-1";
             String tenant2 = "tenant-2";
 
             // Exhaust tenant-1's quota
-            for (int i = 0; i < 5; i++) { // GH-90000
-                assertThat(limiter.tryAcquire(tenant1).allowed()).isTrue(); // GH-90000
+            for (int i = 0; i < 5; i++) { 
+                assertThat(limiter.tryAcquire(tenant1).allowed()).isTrue(); 
             }
-            assertThat(limiter.tryAcquire(tenant1).allowed()).isFalse(); // GH-90000
+            assertThat(limiter.tryAcquire(tenant1).allowed()).isFalse(); 
 
             // tenant-2 should still have full quota
-            for (int i = 0; i < 5; i++) { // GH-90000
-                assertThat(limiter.tryAcquire(tenant2).allowed()).isTrue(); // GH-90000
+            for (int i = 0; i < 5; i++) { 
+                assertThat(limiter.tryAcquire(tenant2).allowed()).isTrue(); 
             }
-            assertThat(limiter.tryAcquire(tenant2).allowed()).isFalse(); // GH-90000
+            assertThat(limiter.tryAcquire(tenant2).allowed()).isFalse(); 
         }
     }
 
     // ============================================
-    // RESET BEHAVIOR (1 test) // GH-90000
+    // RESET BEHAVIOR (1 test) 
     // ============================================
 
     @Nested
@@ -159,18 +159,18 @@ class DefaultRateLimiterExpansionTest {
 
         @Test
         @DisplayName("resetAll() clears quotas for all tracked tenants")
-        void resetAllClearsAllTenants() { // GH-90000
+        void resetAllClearsAllTenants() { 
             // Create quota usage across multiple tenants
             limiter.tryAcquire("tenant-1");
             limiter.tryAcquire("tenant-2");
             limiter.tryAcquire("tenant-3");
 
-            long trackedBefore = limiter.getTrackedKeyCount(); // GH-90000
-            assertThat(trackedBefore).isGreaterThan(0); // GH-90000
+            long trackedBefore = limiter.getTrackedKeyCount(); 
+            assertThat(trackedBefore).isGreaterThan(0); 
 
             // Reset all should clear all tracking
-            limiter.resetAll(); // GH-90000
-            assertThat(limiter.getTrackedKeyCount()).isZero(); // GH-90000
+            limiter.resetAll(); 
+            assertThat(limiter.getTrackedKeyCount()).isZero(); 
 
             // All tenants should be able to start fresh
             assertThat(limiter.tryAcquire("tenant-1").allowed()).isTrue();

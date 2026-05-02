@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.security;
@@ -21,14 +21,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for data privacy compliance (S005). // GH-90000
+ * Tests for data privacy compliance (S005). 
  *
  * @doc.type class
  * @doc.purpose Data privacy compliance tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("DataPrivacy – Privacy Compliance (S005)")
 class DataPrivacyTest extends EventloopTestBase {
 
@@ -41,36 +41,36 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: pii_access_requires_permission")
-        void piiAccessRequiresPermission() { // GH-90000
+        void piiAccessRequiresPermission() { 
             String userId = "user-001";
             String tenantId = "tenant-alpha";
             String piiResource = "user-profile-123";
 
-            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean hasAccess = runPromise(() -> // GH-90000
-                rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource) // GH-90000
+            Boolean hasAccess = runPromise(() -> 
+                rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource) 
             );
 
-            assertThat(hasAccess).isTrue(); // GH-90000
+            assertThat(hasAccess).isTrue(); 
         }
 
         @Test
         @DisplayName("[S005]: unauthorized_pii_access_denied")
-        void unauthorizedPiiAccessDenied() { // GH-90000
+        void unauthorizedPiiAccessDenied() { 
             String userId = "user-002";
             String tenantId = "tenant-alpha";
             String piiResource = "user-profile-123";
 
-            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource)) // GH-90000
-                .thenReturn(Promise.of(false)); // GH-90000
+            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource)) 
+                .thenReturn(Promise.of(false)); 
 
-            Boolean hasAccess = runPromise(() -> // GH-90000
-                rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource) // GH-90000
+            Boolean hasAccess = runPromise(() -> 
+                rbacService.hasPermission(userId, tenantId, RBACService.Permission.USER_READ, piiResource) 
             );
 
-            assertThat(hasAccess).isFalse(); // GH-90000
+            assertThat(hasAccess).isFalse(); 
         }
     }
 
@@ -80,34 +80,34 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: data_export_requires_export_permission")
-        void dataExportRequiresExportPermission() { // GH-90000
+        void dataExportRequiresExportPermission() { 
             String userId = "user-001";
             String tenantId = "tenant-alpha";
 
-            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.AUDIT_EXPORT, null)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.AUDIT_EXPORT, null)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean canExport = runPromise(() -> // GH-90000
-                rbacService.hasPermission(userId, tenantId, RBACService.Permission.AUDIT_EXPORT, null) // GH-90000
+            Boolean canExport = runPromise(() -> 
+                rbacService.hasPermission(userId, tenantId, RBACService.Permission.AUDIT_EXPORT, null) 
             );
 
-            assertThat(canExport).isTrue(); // GH-90000
+            assertThat(canExport).isTrue(); 
         }
 
         @Test
         @DisplayName("[S005]: bulk_export_requires_admin_permission")
-        void bulkExportRequiresAdminPermission() { // GH-90000
+        void bulkExportRequiresAdminPermission() { 
             String userId = "admin-user";
             String tenantId = "tenant-alpha";
 
-            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.TENANT_ADMIN, null)) // GH-90000
-                .thenReturn(Promise.of(true)); // GH-90000
+            when(rbacService.hasPermission(userId, tenantId, RBACService.Permission.TENANT_ADMIN, null)) 
+                .thenReturn(Promise.of(true)); 
 
-            Boolean isAdmin = runPromise(() -> // GH-90000
-                rbacService.hasPermission(userId, tenantId, RBACService.Permission.TENANT_ADMIN, null) // GH-90000
+            Boolean isAdmin = runPromise(() -> 
+                rbacService.hasPermission(userId, tenantId, RBACService.Permission.TENANT_ADMIN, null) 
             );
 
-            assertThat(isAdmin).isTrue(); // GH-90000
+            assertThat(isAdmin).isTrue(); 
         }
     }
 
@@ -117,24 +117,24 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: consent_required_for_data_processing")
-        void consentRequiredForDataProcessing() { // GH-90000
+        void consentRequiredForDataProcessing() { 
             // Simulate consent check
-            boolean hasConsent = checkConsent("user-001", "data-processing"); // GH-90000
+            boolean hasConsent = checkConsent("user-001", "data-processing"); 
 
-            assertThat(hasConsent).isTrue(); // GH-90000
+            assertThat(hasConsent).isTrue(); 
         }
 
         @Test
         @DisplayName("[S005]: no_consent_blocks_processing")
-        void noConsentBlocksProcessing() { // GH-90000
-            boolean hasConsent = checkConsent("user-002", "marketing"); // GH-90000
+        void noConsentBlocksProcessing() { 
+            boolean hasConsent = checkConsent("user-002", "marketing"); 
 
-            assertThat(hasConsent).isFalse(); // GH-90000
+            assertThat(hasConsent).isFalse(); 
         }
 
-        private boolean checkConsent(String userId, String purpose) { // GH-90000
+        private boolean checkConsent(String userId, String purpose) { 
             // Simulated consent check
-            return !"user-002".equals(userId); // GH-90000
+            return !"user-002".equals(userId); 
         }
     }
 
@@ -144,21 +144,21 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: only_necessary_fields_retrieved")
-        void onlyNecessaryFieldsRetrieved() { // GH-90000
+        void onlyNecessaryFieldsRetrieved() { 
             // Simulate that queries only return necessary fields
-            Set<String> necessaryFields = Set.of("id", "name", "email"); // GH-90000
-            Set<String> allFields = Set.of("id", "name", "email", "ssn", "dob", "address"); // GH-90000
+            Set<String> necessaryFields = Set.of("id", "name", "email"); 
+            Set<String> allFields = Set.of("id", "name", "email", "ssn", "dob", "address"); 
 
             Set<String> retrievedFields = necessaryFields;
 
-            assertThat(retrievedFields).isSubsetOf(allFields); // GH-90000
-            assertThat(retrievedFields).doesNotContain("ssn", "dob"); // GH-90000
+            assertThat(retrievedFields).isSubsetOf(allFields); 
+            assertThat(retrievedFields).doesNotContain("ssn", "dob"); 
         }
 
         @Test
         @DisplayName("[S005]: pii_fields_filtered_by_default")
-        void piiFieldsFilteredByDefault() { // GH-90000
-            Map<String, Object> userData = Map.of( // GH-90000
+        void piiFieldsFilteredByDefault() { 
+            Map<String, Object> userData = Map.of( 
                 "id", "user-001",
                 "name", "John Doe",
                 "email", "john@example.com",
@@ -167,13 +167,13 @@ class DataPrivacyTest extends EventloopTestBase {
             );
 
             // Filter PII fields
-            Set<String> piiFields = Set.of("phone", "address"); // GH-90000
-            Map<String, Object> filtered = userData.entrySet().stream() // GH-90000
-                .filter(e -> !piiFields.contains(e.getKey())) // GH-90000
-                .collect(java.util.HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), java.util.HashMap::putAll); // GH-90000
+            Set<String> piiFields = Set.of("phone", "address"); 
+            Map<String, Object> filtered = userData.entrySet().stream() 
+                .filter(e -> !piiFields.contains(e.getKey())) 
+                .collect(java.util.HashMap::new, (m, e) -> m.put(e.getKey(), e.getValue()), java.util.HashMap::putAll); 
 
-            assertThat(filtered).doesNotContainKeys("phone", "address"); // GH-90000
-            assertThat(filtered).containsKeys("id", "name", "email"); // GH-90000
+            assertThat(filtered).doesNotContainKeys("phone", "address"); 
+            assertThat(filtered).containsKeys("id", "name", "email"); 
         }
     }
 
@@ -183,28 +183,28 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: user_data_deletion_supported")
-        void userDataDeletionSupported() { // GH-90000
+        void userDataDeletionSupported() { 
             String userId = "user-001";
 
             // Simulate deletion
-            boolean deleted = deleteUserData(userId); // GH-90000
+            boolean deleted = deleteUserData(userId); 
 
-            assertThat(deleted).isTrue(); // GH-90000
+            assertThat(deleted).isTrue(); 
         }
 
         @Test
         @DisplayName("[S005]: deletion_removes_all_user_data")
-        void deletionRemovesAllUserData() { // GH-90000
+        void deletionRemovesAllUserData() { 
             String userId = "user-001";
 
             // Simulate complete deletion
-            boolean deleted = deleteUserData(userId); // GH-90000
+            boolean deleted = deleteUserData(userId); 
 
-            assertThat(deleted).isTrue(); // GH-90000
+            assertThat(deleted).isTrue(); 
             // In real implementation, would verify no data remains
         }
 
-        private boolean deleteUserData(String userId) { // GH-90000
+        private boolean deleteUserData(String userId) { 
             // Simulated deletion
             return userId != null;
         }
@@ -216,20 +216,20 @@ class DataPrivacyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S005]: privacy_access_logged")
-        void privacyAccessLogged() { // GH-90000
+        void privacyAccessLogged() { 
             // Simulate that PII access is logged
             boolean accessLogged = true;
 
-            assertThat(accessLogged).isTrue(); // GH-90000
+            assertThat(accessLogged).isTrue(); 
         }
 
         @Test
         @DisplayName("[S005]: privacy_violations_detected")
-        void privacyViolationsDetected() { // GH-90000
+        void privacyViolationsDetected() { 
             // Simulate violation detection
             boolean violationDetected = true;
 
-            assertThat(violationDetected).isTrue(); // GH-90000
+            assertThat(violationDetected).isTrue(); 
         }
     }
 

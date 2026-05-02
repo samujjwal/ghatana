@@ -25,48 +25,48 @@ class ProposeEnhancementsStepTest extends EventloopTestBase {
   private ProposeEnhancementsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new ProposeEnhancementsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new ProposeEnhancementsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("enhancement.proposeenhancements");
   }
 
   // @Test
   // @DisplayName("Should propose enhancements from analyzed feedback")
-  // void shouldProposeEnhancements() { // GH-90000
+  // void shouldProposeEnhancements() { 
   //   // GIVEN
-  //   WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); // GH-90000
-  //   context.put("analysisId", "analysis-001"); // GH-90000
-  //   context.put("feedbackItems", List.of("feedback-001", "feedback-002")); // GH-90000
+  //   WorkflowContext context = WorkflowContext.forWorkflow("wf-123", "tenant-abc"); 
+  //   context.put("analysisId", "analysis-001"); 
+  //   context.put("feedbackItems", List.of("feedback-001", "feedback-002")); 
   //
   //   Map<String, Object> mockAnalysis =
-  //       Map.of( // GH-90000
+  //       Map.of( 
   //           "analysisId",
   //           "analysis-001",
   //           "tenantId",
   //           "tenant-abc",
   //           "patterns",
-  //           List.of("pattern1", "pattern2"), // GH-90000
+  //           List.of("pattern1", "pattern2"), 
   //           "insights",
   //           List.of("insight1"));
   //
-  //   when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
-  //       .thenReturn(Promise.of(List.of(mockAnalysis))); // GH-90000
-  //   when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-  //   when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-  //   when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) // GH-90000
+  //   when(dbClient.query(anyString(), any(), anyInt())) 
+  //       .thenReturn(Promise.of(List.of(mockAnalysis))); 
+  //   when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+  //   when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+  //   when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) 
   // null));
   //
   //   // WHEN / THEN - just verify it doesn't throw
   //   try {
-  //     runPromise(() -> step.execute(context)); // GH-90000
-  //   } catch (Exception e) { // GH-90000
+  //     runPromise(() -> step.execute(context)); 
+  //   } catch (Exception e) { 
   //     // Expected - may fail due to incomplete mock data
   //   }
   // }

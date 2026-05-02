@@ -18,8 +18,8 @@ class AgentLifecycleStatusTest {
 
   @Test
   @DisplayName("should have all expected enum values")
-  void shouldHaveAllExpectedValues() { // GH-90000
-    assertThat(AgentLifecycleStatus.values()).containsExactly( // GH-90000
+  void shouldHaveAllExpectedValues() { 
+    assertThat(AgentLifecycleStatus.values()).containsExactly( 
         AgentLifecycleStatus.REGISTERED,
         AgentLifecycleStatus.INITIALIZING,
         AgentLifecycleStatus.READY,
@@ -31,7 +31,7 @@ class AgentLifecycleStatusTest {
 
   @Test
   @DisplayName("should return correct enum by name")
-  void shouldReturnCorrectEnumByName() { // GH-90000
+  void shouldReturnCorrectEnumByName() { 
     assertThat(AgentLifecycleStatus.valueOf("REGISTERED")).isEqualTo(AgentLifecycleStatus.REGISTERED);
     assertThat(AgentLifecycleStatus.valueOf("INITIALIZING")).isEqualTo(AgentLifecycleStatus.INITIALIZING);
     assertThat(AgentLifecycleStatus.valueOf("READY")).isEqualTo(AgentLifecycleStatus.READY);
@@ -42,12 +42,12 @@ class AgentLifecycleStatusTest {
 
   @Test
   @DisplayName("should have correct ordinal values")
-  void shouldHaveCorrectOrdinals() { // GH-90000
-    assertThat(AgentLifecycleStatus.REGISTERED.ordinal()).isZero(); // GH-90000
-    assertThat(AgentLifecycleStatus.INITIALIZING.ordinal()).isEqualTo(1); // GH-90000
-    assertThat(AgentLifecycleStatus.READY.ordinal()).isEqualTo(2); // GH-90000
-    assertThat(AgentLifecycleStatus.FAILED.ordinal()).isEqualTo(3); // GH-90000
-    assertThat(AgentLifecycleStatus.STOPPING.ordinal()).isEqualTo(4); // GH-90000
-    assertThat(AgentLifecycleStatus.STOPPED.ordinal()).isEqualTo(5); // GH-90000
+  void shouldHaveCorrectOrdinals() { 
+    assertThat(AgentLifecycleStatus.REGISTERED.ordinal()).isZero(); 
+    assertThat(AgentLifecycleStatus.INITIALIZING.ordinal()).isEqualTo(1); 
+    assertThat(AgentLifecycleStatus.READY.ordinal()).isEqualTo(2); 
+    assertThat(AgentLifecycleStatus.FAILED.ordinal()).isEqualTo(3); 
+    assertThat(AgentLifecycleStatus.STOPPING.ordinal()).isEqualTo(4); 
+    assertThat(AgentLifecycleStatus.STOPPED.ordinal()).isEqualTo(5); 
   }
 }

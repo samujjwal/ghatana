@@ -29,49 +29,49 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
     // ── In-memory Redis simulation ────────────────────────────────────────────
 
     static class InMemoryRedis {
-        record Entry(String value, Long expiresAtMs) {} // GH-90000
+        record Entry(String value, Long expiresAtMs) {} 
 
-        private final Map<String, Entry> store = new HashMap<>(); // GH-90000
+        private final Map<String, Entry> store = new HashMap<>(); 
         private long nowMs;
 
-        InMemoryRedis(long nowMs) { // GH-90000
+        InMemoryRedis(long nowMs) { 
             this.nowMs = nowMs;
         }
 
-        void set(String key, String value) { // GH-90000
-            store.put(key, new Entry(value, null)); // GH-90000
+        void set(String key, String value) { 
+            store.put(key, new Entry(value, null)); 
         }
 
-        void setEx(String key, String value, long ttlMs) { // GH-90000
-            store.put(key, new Entry(value, nowMs + ttlMs)); // GH-90000
+        void setEx(String key, String value, long ttlMs) { 
+            store.put(key, new Entry(value, nowMs + ttlMs)); 
         }
 
-        Optional<String> get(String key) { // GH-90000
-            Entry entry = store.get(key); // GH-90000
-            if (entry == null) return Optional.empty(); // GH-90000
-            if (entry.expiresAtMs() != null && nowMs >= entry.expiresAtMs()) { // GH-90000
-                store.remove(key); // GH-90000
-                return Optional.empty(); // GH-90000
+        Optional<String> get(String key) { 
+            Entry entry = store.get(key); 
+            if (entry == null) return Optional.empty(); 
+            if (entry.expiresAtMs() != null && nowMs >= entry.expiresAtMs()) { 
+                store.remove(key); 
+                return Optional.empty(); 
             }
-            return Optional.of(entry.value()); // GH-90000
+            return Optional.of(entry.value()); 
         }
 
-        void delete(String key) { // GH-90000
-            store.remove(key); // GH-90000
+        void delete(String key) { 
+            store.remove(key); 
         }
 
-        boolean exists(String key) { // GH-90000
-            return get(key).isPresent(); // GH-90000
+        boolean exists(String key) { 
+            return get(key).isPresent(); 
         }
 
-        long incr(String key) { // GH-90000
+        long incr(String key) { 
             String current = get(key).orElse("0");
-            long next = Long.parseLong(current) + 1; // GH-90000
-            set(key, String.valueOf(next)); // GH-90000
+            long next = Long.parseLong(current) + 1; 
+            set(key, String.valueOf(next)); 
             return next;
         }
 
-        void advanceTimeMs(long ms) { // GH-90000
+        void advanceTimeMs(long ms) { 
             nowMs += ms;
         }
     }
@@ -79,8 +79,8 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
     private InMemoryRedis redis;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        redis = new InMemoryRedis(System.currentTimeMillis()); // GH-90000
+    void setUp() { 
+        redis = new InMemoryRedis(System.currentTimeMillis()); 
     }
 
     // ── Basic get/set ─────────────────────────────────────────────────────────
@@ -91,36 +91,36 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("set then get returns the stored value")
-        void setThenGet_returnsStoredValue() { // GH-90000
-            redis.set("user:123", "{\"name\":\"Alice\"}"); // GH-90000
+        void setThenGet_returnsStoredValue() { 
+            redis.set("user:123", "{\"name\":\"Alice\"}"); 
 
             Optional<String> result = redis.get("user:123");
 
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get()).isEqualTo("{\"name\":\"Alice\"}"); // GH-90000
+            assertThat(result).isPresent(); 
+            assertThat(result.get()).isEqualTo("{\"name\":\"Alice\"}"); 
         }
 
         @Test
         @DisplayName("get non-existent key returns empty optional")
-        void getNonExistentKey_returnsEmpty() { // GH-90000
+        void getNonExistentKey_returnsEmpty() { 
             Optional<String> result = redis.get("missing-key");
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
         @DisplayName("overwrite existing key with new value")
-        void overwriteExistingKey_replacesValue() { // GH-90000
-            redis.set("config:mode", "slow"); // GH-90000
-            redis.set("config:mode", "fast"); // GH-90000
+        void overwriteExistingKey_replacesValue() { 
+            redis.set("config:mode", "slow"); 
+            redis.set("config:mode", "fast"); 
 
             assertThat(redis.get("config:mode")).hasValue("fast");
         }
 
         @Test
         @DisplayName("delete removes key from store")
-        void delete_removesKeyFromStore() { // GH-90000
-            redis.set("temp:key", "temp-value"); // GH-90000
+        void delete_removesKeyFromStore() { 
+            redis.set("temp:key", "temp-value"); 
             redis.delete("temp:key");
 
             assertThat(redis.exists("temp:key")).isFalse();
@@ -135,30 +135,30 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("key is accessible before TTL expiry")
-        void keyIsAccessible_beforeTtlExpiry() { // GH-90000
-            redis.setEx("session:abc", "active", 1000L); // GH-90000
+        void keyIsAccessible_beforeTtlExpiry() { 
+            redis.setEx("session:abc", "active", 1000L); 
 
-            redis.advanceTimeMs(500L); // GH-90000
+            redis.advanceTimeMs(500L); 
 
             assertThat(redis.get("session:abc")).isPresent();
         }
 
         @Test
         @DisplayName("key is evicted after TTL expiry")
-        void keyIsEvicted_afterTtlExpiry() { // GH-90000
-            redis.setEx("session:abc", "active", 1000L); // GH-90000
+        void keyIsEvicted_afterTtlExpiry() { 
+            redis.setEx("session:abc", "active", 1000L); 
 
-            redis.advanceTimeMs(1001L); // GH-90000
+            redis.advanceTimeMs(1001L); 
 
             assertThat(redis.get("session:abc")).isEmpty();
         }
 
         @Test
         @DisplayName("key without TTL persists indefinitely")
-        void keyWithoutTtl_persistsIndefinitely() { // GH-90000
-            redis.set("permanent:key", "forever"); // GH-90000
+        void keyWithoutTtl_persistsIndefinitely() { 
+            redis.set("permanent:key", "forever"); 
 
-            redis.advanceTimeMs(Long.MAX_VALUE / 2); // GH-90000
+            redis.advanceTimeMs(Long.MAX_VALUE / 2); 
 
             assertThat(redis.get("permanent:key")).isPresent();
         }
@@ -172,15 +172,15 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("incr on new key starts at 1")
-        void incrOnNewKey_startsAt1() { // GH-90000
+        void incrOnNewKey_startsAt1() { 
             long result = redis.incr("counter:new");
 
-            assertThat(result).isEqualTo(1); // GH-90000
+            assertThat(result).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("multiple incr operations accumulate correctly")
-        void multipleIncr_accumulatesCorrectly() { // GH-90000
+        void multipleIncr_accumulatesCorrectly() { 
             redis.incr("counter:hits");
             redis.incr("counter:hits");
             redis.incr("counter:hits");
@@ -190,11 +190,11 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("incr on existing numeric value increments by 1")
-        void incrOnExistingNumericValue_incrementsBy1() { // GH-90000
-            redis.set("counter:page", "10"); // GH-90000
+        void incrOnExistingNumericValue_incrementsBy1() { 
+            redis.set("counter:page", "10"); 
             long result = redis.incr("counter:page");
 
-            assertThat(result).isEqualTo(11L); // GH-90000
+            assertThat(result).isEqualTo(11L); 
         }
     }
 
@@ -206,34 +206,34 @@ class RedisConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("published message is received by subscriber")
-        void publishedMessage_isReceivedBySubscriber() { // GH-90000
-            java.util.List<String> received = new java.util.ArrayList<>(); // GH-90000
+        void publishedMessage_isReceivedBySubscriber() { 
+            java.util.List<String> received = new java.util.ArrayList<>(); 
 
-            // Subscribe (register handler) // GH-90000
+            // Subscribe (register handler) 
             java.util.function.Consumer<String> subscriber = received::add;
 
-            // Publish (direct invocation in our simulation) // GH-90000
+            // Publish (direct invocation in our simulation) 
             String message = "event:user_logged_in";
-            subscriber.accept(message); // GH-90000
+            subscriber.accept(message); 
 
             assertThat(received).containsExactly("event:user_logged_in");
         }
 
         @Test
         @DisplayName("multiple subscribers each receive the published message")
-        void multipleSubscribers_eachReceivePublishedMessage() { // GH-90000
-            java.util.List<String> sub1Received = new java.util.ArrayList<>(); // GH-90000
-            java.util.List<String> sub2Received = new java.util.ArrayList<>(); // GH-90000
+        void multipleSubscribers_eachReceivePublishedMessage() { 
+            java.util.List<String> sub1Received = new java.util.ArrayList<>(); 
+            java.util.List<String> sub2Received = new java.util.ArrayList<>(); 
 
             java.util.function.Consumer<String> sub1 = sub1Received::add;
             java.util.function.Consumer<String> sub2 = sub2Received::add;
 
             String message = "event:order_placed";
-            sub1.accept(message); // GH-90000
-            sub2.accept(message); // GH-90000
+            sub1.accept(message); 
+            sub2.accept(message); 
 
-            assertThat(sub1Received).containsExactly(message); // GH-90000
-            assertThat(sub2Received).containsExactly(message); // GH-90000
+            assertThat(sub1Received).containsExactly(message); 
+            assertThat(sub2Received).containsExactly(message); 
         }
     }
 }

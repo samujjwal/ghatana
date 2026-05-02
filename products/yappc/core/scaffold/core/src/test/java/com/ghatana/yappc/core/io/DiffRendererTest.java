@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -37,27 +37,27 @@ class DiffRendererTest {
     private DiffRenderer renderer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        renderer = new DiffRenderer(); // GH-90000
+    void setUp() { 
+        renderer = new DiffRenderer(); 
     }
 
     @Test
     @DisplayName("Render diff - identical texts")
-    void testRenderIdenticalTexts() { // GH-90000
+    void testRenderIdenticalTexts() { 
         String original = "line1\nline2\nline3";
         String modified = "line1\nline2\nline3";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("--- original"));
         assertTrue(diff.contains("+++ modified"));
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("  line2"));
         assertTrue(diff.contains("  line3"));
-        // Check that there are no addition or deletion markers (excluding the header lines) // GH-90000
+        // Check that there are no addition or deletion markers (excluding the header lines) 
         String[] lines = diff.split("\n");
-        for (String line : lines) { // GH-90000
+        for (String line : lines) { 
             if (!line.startsWith("---") && !line.startsWith("+++")) {
                 assertFalse(line.startsWith("+ "), "Found unexpected addition: " + line);
                 assertFalse(line.startsWith("- "), "Found unexpected deletion: " + line);
@@ -67,13 +67,13 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render diff - line added")
-    void testRenderLineAdded() { // GH-90000
+    void testRenderLineAdded() { 
         String original = "line1\nline2";
         String modified = "line1\nline2\nline3";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("  line2"));
         assertTrue(diff.contains("+ line3"));
@@ -81,13 +81,13 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render diff - line removed")
-    void testRenderLineRemoved() { // GH-90000
+    void testRenderLineRemoved() { 
         String original = "line1\nline2\nline3";
         String modified = "line1\nline2";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("  line2"));
         assertTrue(diff.contains("- line3"));
@@ -95,13 +95,13 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render diff - line changed")
-    void testRenderLineChanged() { // GH-90000
+    void testRenderLineChanged() { 
         String original = "line1\nline2\nline3";
         String modified = "line1\nmodified line2\nline3";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("- line2"));
         assertTrue(diff.contains("+ modified line2"));
@@ -110,13 +110,13 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render diff - multiple changes")
-    void testRenderMultipleChanges() { // GH-90000
+    void testRenderMultipleChanges() { 
         String original = "line1\nline2\nline3\nline4";
         String modified = "line1\nmodified line2\nline3\nline5";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("  line1"));
         assertTrue(diff.contains("- line2"));
         assertTrue(diff.contains("+ modified line2"));
@@ -127,56 +127,56 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render diff - empty original")
-    void testRenderEmptyOriginal() { // GH-90000
+    void testRenderEmptyOriginal() { 
         String original = "";
         String modified = "line1\nline2";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("+ line1"));
         assertTrue(diff.contains("+ line2"));
     }
 
     @Test
     @DisplayName("Render diff - empty modified")
-    void testRenderEmptyModified() { // GH-90000
+    void testRenderEmptyModified() { 
         String original = "line1\nline2";
         String modified = "";
 
-        String diff = renderer.render(original, modified); // GH-90000
+        String diff = renderer.render(original, modified); 
 
-        assertNotNull(diff); // GH-90000
+        assertNotNull(diff); 
         assertTrue(diff.contains("- line1"));
         assertTrue(diff.contains("- line2"));
     }
 
     @Test
     @DisplayName("Render patch - empty list")
-    void testRenderPatchEmpty() { // GH-90000
-        String result = renderer.renderPatch(List.of()); // GH-90000
-        assertEquals("", result); // GH-90000
+    void testRenderPatchEmpty() { 
+        String result = renderer.renderPatch(List.of()); 
+        assertEquals("", result); 
     }
 
     @Test
     @DisplayName("Render patch - null list")
-    void testRenderPatchNull() { // GH-90000
-        String result = renderer.renderPatch(null); // GH-90000
-        assertEquals("", result); // GH-90000
+    void testRenderPatchNull() { 
+        String result = renderer.renderPatch(null); 
+        assertEquals("", result); 
     }
 
     @Test
     @DisplayName("Render patch - with additions")
-    void testRenderPatchAdditions() { // GH-90000
-        List<String> patches = List.of( // GH-90000
+    void testRenderPatchAdditions() { 
+        List<String> patches = List.of( 
             "+added line",
             " unchanged line",
             "+another added line"
         );
 
-        String result = renderer.renderPatch(patches); // GH-90000
+        String result = renderer.renderPatch(patches); 
 
-        assertNotNull(result); // GH-90000
+        assertNotNull(result); 
         assertTrue(result.contains("[+] added line"));
         assertTrue(result.contains("    unchanged line"));
         assertTrue(result.contains("[+] another added line"));
@@ -184,16 +184,16 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render patch - with deletions")
-    void testRenderPatchDeletions() { // GH-90000
-        List<String> patches = List.of( // GH-90000
+    void testRenderPatchDeletions() { 
+        List<String> patches = List.of( 
             "-deleted line",
             " unchanged line",
             "-another deleted line"
         );
 
-        String result = renderer.renderPatch(patches); // GH-90000
+        String result = renderer.renderPatch(patches); 
 
-        assertNotNull(result); // GH-90000
+        assertNotNull(result); 
         assertTrue(result.contains("[-] deleted line"));
         assertTrue(result.contains("    unchanged line"));
         assertTrue(result.contains("[-] another deleted line"));
@@ -201,17 +201,17 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render patch - with hunk markers")
-    void testRenderPatchHunkMarkers() { // GH-90000
-        List<String> patches = List.of( // GH-90000
+    void testRenderPatchHunkMarkers() { 
+        List<String> patches = List.of( 
             "@@ -1,3 +1,3 @@",
             " unchanged line",
             "-deleted line",
             "+added line"
         );
 
-        String result = renderer.renderPatch(patches); // GH-90000
+        String result = renderer.renderPatch(patches); 
 
-        assertNotNull(result); // GH-90000
+        assertNotNull(result); 
         assertTrue(result.contains("[@] @@ -1,3 +1,3 @@"));
         assertTrue(result.contains("    unchanged line"));
         assertTrue(result.contains("[-] deleted line"));
@@ -220,8 +220,8 @@ class DiffRendererTest {
 
     @Test
     @DisplayName("Render patch - mixed content")
-    void testRenderPatchMixed() { // GH-90000
-        List<String> patches = List.of( // GH-90000
+    void testRenderPatchMixed() { 
+        List<String> patches = List.of( 
             "@@ -1,5 +1,5 @@",
             " context line 1",
             "-old line",
@@ -230,9 +230,9 @@ class DiffRendererTest {
             "+added line"
         );
 
-        String result = renderer.renderPatch(patches); // GH-90000
+        String result = renderer.renderPatch(patches); 
 
-        assertNotNull(result); // GH-90000
+        assertNotNull(result); 
         assertTrue(result.contains("[@]"));
         assertTrue(result.contains("[+]"));
         assertTrue(result.contains("[-]"));

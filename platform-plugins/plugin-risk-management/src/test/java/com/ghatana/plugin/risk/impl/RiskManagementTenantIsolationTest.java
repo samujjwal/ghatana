@@ -24,11 +24,11 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Covers:</p>
  * <ul>
- *   <li>KP-RSK-001: risk limits isolation — limits set for entity-A must not affect entity-B alerts</li>
- *   <li>KP-RSK-002: limit breach deterministic fixture — position exceeding limit must generate a BREACH alert</li>
- *   <li>KP-RSK-003: within-limit fixture — normal position must not generate a BREACH alert</li>
- *   <li>KP-RSK-004: alert isolation — alerts for entity-A must not appear in entity-B's alert list</li>
- *   <li>KP-RSK-005: explainability — risk score must carry non-empty factors for audit purposes</li>
+ *   <li>KP-RSK-001: risk limits isolation â€” limits set for entity-A must not affect entity-B alerts</li>
+ *   <li>KP-RSK-002: limit breach deterministic fixture â€” position exceeding limit must generate a BREACH alert</li>
+ *   <li>KP-RSK-003: within-limit fixture â€” normal position must not generate a BREACH alert</li>
+ *   <li>KP-RSK-004: alert isolation â€” alerts for entity-A must not appear in entity-B's alert list</li>
+ *   <li>KP-RSK-005: explainability â€” risk score must carry non-empty factors for audit purposes</li>
  * </ul>
  *
  * @doc.type class
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.layer platform
  * @doc.pattern Test
  */
-@DisplayName("RiskManagementPlugin — tenant isolation and deterministic fixture tests")
+@DisplayName("RiskManagementPlugin â€” tenant isolation and deterministic fixture tests")
 @ExtendWith(MockitoExtension.class)
 class RiskManagementTenantIsolationTest extends EventloopTestBase {
 
@@ -51,7 +51,7 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         runPromise(() -> plugin.initialize(mockContext).then(v -> plugin.start()));
     }
 
-    // ── KP-RSK-001 / KP-RSK-004: Isolation ────────────────────────────────────
+    // â”€â”€ KP-RSK-001 / KP-RSK-004: Isolation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("KP-RSK-001/004: risk limits and alerts for entity-A must not contaminate entity-B")
@@ -59,13 +59,13 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         String entityA = "portfolio-A-" + UUID.randomUUID();
         String entityB = "portfolio-B-" + UUID.randomUUID();
 
-        RiskManagementPlugin.RiskLimits limitsA = new RiskManagementPlugin.RiskLimits(
-                new BigDecimal("1000"), new BigDecimal("50000"), new BigDecimal("0.3"),
-                new BigDecimal("10000"), new BigDecimal("500"));
+        Map<String, BigDecimal> limitsA = Map.of(
+                "position_size", new BigDecimal("1000"),
+                "max_exposure", new BigDecimal("50000"));
         runPromise(() -> plugin.setRiskLimits(entityA, limitsA));
 
         // Calculate a very large risk for entity-A to trigger alerts
-        runPromise(() -> plugin.calculateRisk(entityA, RiskManagementPlugin.RiskType.MARKET,
+        runPromise(() -> plugin.calculateRisk(entityA, RiskManagementPlugin.RiskModelId.MARKET,
                 Map.of("position_value", 100_000, "var_95", 60_000)));
 
         // Entity-B should have zero alerts (no limits set, no large position)
@@ -76,22 +76,22 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
                 .isEmpty();
     }
 
-    // ── KP-RSK-002: Limit breach deterministic fixture ───────────────────────
+    // â”€â”€ KP-RSK-002: Limit breach deterministic fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("KP-RSK-002: position exceeding risk limit must generate a BREACH alert")
     void testLimitBreachGeneratesAlert() {
         String entityId = "portfolio-BREACH-" + UUID.randomUUID();
 
-        RiskManagementPlugin.RiskLimits limits = new RiskManagementPlugin.RiskLimits(
-                new BigDecimal("1000"), new BigDecimal("5000"), new BigDecimal("0.2"),
-                new BigDecimal("1000"), new BigDecimal("200"));
+        Map<String, BigDecimal> limits = Map.of(
+                "position_size", new BigDecimal("1000"),
+                "max_exposure", new BigDecimal("5000"));
         runPromise(() -> plugin.setRiskLimits(entityId, limits));
 
         // Position value far exceeds the max position limit of 5000
         RiskManagementPlugin.RiskScore score = runPromise(() -> plugin.calculateRisk(
-                entityId, RiskManagementPlugin.RiskType.MARKET,
-                Map.of("position_value", 50_000, "var_95", 30_000)));
+                entityId, RiskManagementPlugin.RiskModelId.MARKET,
+                Map.of("position_size", 50_000.0, "volatility", 0.9)));
 
         assertThat(score).isNotNull();
 
@@ -102,20 +102,20 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
                 .anyMatch(a -> a.severity() >= 0.8 || a.severity() >= 0.6);
     }
 
-    // ── KP-RSK-003: Within-limit fixture ──────────────────────────────────────
+    // â”€â”€ KP-RSK-003: Within-limit fixture â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("KP-RSK-003: position within limits must not generate a BREACH alert")
     void testWithinLimitNoAlert() {
         String entityId = "portfolio-OK-" + UUID.randomUUID();
 
-        RiskManagementPlugin.RiskLimits limits = new RiskManagementPlugin.RiskLimits(
-                new BigDecimal("1000"), new BigDecimal("100000"), new BigDecimal("0.5"),
-                new BigDecimal("50000"), new BigDecimal("1000"));
+        Map<String, BigDecimal> limits = Map.of(
+                "position_size", new BigDecimal("1000"),
+                "max_exposure", new BigDecimal("100000"));
         runPromise(() -> plugin.setRiskLimits(entityId, limits));
 
-        runPromise(() -> plugin.calculateRisk(entityId, RiskManagementPlugin.RiskType.MARKET,
-                Map.of("position_value", 1_000, "var_95", 500)));
+        runPromise(() -> plugin.calculateRisk(entityId, RiskManagementPlugin.RiskModelId.MARKET,
+                Map.of("position_size", 500.0, "volatility", 0.1)));
 
         List<RiskManagementPlugin.RiskAlert> alerts = runPromise(() -> plugin.getActiveAlerts(entityId));
         assertThat(alerts)
@@ -123,7 +123,7 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
                 .isEmpty();
     }
 
-    // ── KP-RSK-005: Explainability ────────────────────────────────────────────
+    // â”€â”€ KP-RSK-005: Explainability â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("KP-RSK-005: risk score must carry non-empty factors list for audit purposes")
@@ -131,7 +131,7 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         String entityId = "portfolio-EXPLAIN-" + UUID.randomUUID();
 
         RiskManagementPlugin.RiskScore score = runPromise(() -> plugin.calculateRisk(
-                entityId, RiskManagementPlugin.RiskType.CREDIT,
+                entityId, RiskManagementPlugin.RiskModelId.CREDIT,
                 Map.of("credit_score", 650, "debt_ratio", 0.6)));
 
         assertThat(score.componentScores())

@@ -5,8 +5,8 @@
 
 package com.ghatana.finance.kernel.service;
 
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import com.ghatana.platform.resilience.Bulkhead;
 import com.ghatana.platform.resilience.CircuitBreaker;
 import com.ghatana.platform.resilience.CircuitBreakerProfiles;
@@ -19,22 +19,22 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Finance implementation of {@link LedgerPostingService} — bridges the platform
+ * Finance implementation of {@link LedgerPlugin} — bridges the platform
  * billing contract to the Finance {@link LedgerManagementService}.
  *
- * <p>Each {@link BillingTransaction} is converted to a {@link LedgerManagementService.LedgerEntryRequest}
+ * <p>Each {@link LedgerTransaction} is converted to a {@link LedgerManagementService.LedgerEntryRequest}
  * and posted through the existing double-entry ledger. Duplicate transaction IDs are
  * detected via an in-memory idempotency map and return the previous entry ID without
  * creating a second posting.
  *
  * @doc.type class
- * @doc.purpose Finance adapter — translates platform BillingTransaction to double-entry ledger posting
+ * @doc.purpose Finance adapter — translates platform LedgerTransaction to double-entry ledger posting
  * @doc.layer product
  * @doc.pattern Adapter
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class BillingLedgerAdapter implements BillingLedgerPlugin {
+public class BillingLedgerAdapter implements LedgerPlugin {
 
     private static final Logger log = LoggerFactory.getLogger(BillingLedgerAdapter.class);
     private static final int DEFAULT_LEDGER_BULKHEAD_LIMIT = 32;
@@ -77,7 +77,7 @@ public class BillingLedgerAdapter implements BillingLedgerPlugin {
     // =========================================================================
 
     @Override
-    public Promise<String> postTransaction(BillingTransaction transaction) {
+    public Promise<String> postTransaction(LedgerTransaction transaction) {
         Objects.requireNonNull(transaction, "transaction must not be null");
 
         String txId = transaction.getTransactionId();
@@ -94,7 +94,7 @@ public class BillingLedgerAdapter implements BillingLedgerPlugin {
             transaction.getCreditAccount(),
             transaction.getAmount(),
             transaction.getCurrency(),
-            transaction.getDescription() + " [src=" + transaction.getSourceProductId()
+            transaction.getDescription() + " [src=" + transaction.getSourceId()
                 + (transaction.getExternalReferenceId() != null
                     ? ", ref=" + transaction.getExternalReferenceId() : "")
                 + "]",
@@ -156,16 +156,16 @@ public class BillingLedgerAdapter implements BillingLedgerPlugin {
     }
 
     @Override
-    public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
+    public Promise<LedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
         Objects.requireNonNull(transactionId, "transactionId must not be null");
 
         if (!postedEntries.containsKey(transactionId)) {
-            return Promise.of(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+            return Promise.of(LedgerPlugin.PostingStatus.NOT_FOUND);
         }
         if (reversalEntries.containsKey(transactionId)) {
-            return Promise.of(BillingLedgerPlugin.PostingStatus.REVERSED);
+            return Promise.of(LedgerPlugin.PostingStatus.REVERSED);
         }
-        return Promise.of(BillingLedgerPlugin.PostingStatus.POSTED);
+        return Promise.of(LedgerPlugin.PostingStatus.POSTED);
     }
 
     private <T> T executeWithResilience(java.util.concurrent.Callable<T> operation) {
@@ -178,19 +178,19 @@ public class BillingLedgerAdapter implements BillingLedgerPlugin {
     }
 
     @Override
-    public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+    public Promise<LedgerPlugin.LedgerAccount> createAccount(String accountId, LedgerPlugin.AccountType type) {
         // Not implemented in this adapter - would need to integrate with ledger management service
         return Promise.ofException(new UnsupportedOperationException("createAccount not implemented"));
     }
 
     @Override
-    public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+    public Promise<java.util.Optional<LedgerPlugin.LedgerEntry>> getEntry(String entryId) {
         // Not implemented in this adapter
         return Promise.ofException(new UnsupportedOperationException("getEntry not implemented"));
     }
 
     @Override
-    public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+    public Promise<java.util.List<LedgerPlugin.LedgerEntry>> queryEntries(String accountId, LedgerPlugin.TimeRange range) {
         // Not implemented in this adapter
         return Promise.ofException(new UnsupportedOperationException("queryEntries not implemented"));
     }

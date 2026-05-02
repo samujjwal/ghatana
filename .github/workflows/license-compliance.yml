@@ -45,7 +45,7 @@ jobs:
       - name: Run license report for plugins
         run: |
           ./gradlew :platform-plugins:plugin-audit-trail:checkLicense \
-                    :platform-plugins:plugin-billing-ledger:checkLicense \
+                    :platform-plugins:plugin-ledger:checkLicense \
                     :platform-plugins:plugin-compliance:checkLicense \
                     :platform-plugins:plugin-consent:checkLicense \
                     :platform-plugins:plugin-fraud-detection:checkLicense \
@@ -208,8 +208,8 @@ jobs:
           ./gradlew :platform-kernel:kernel-core:dependencies \
             > /tmp/deps/kernel-core-deps.txt 2>&1
           
-          ./gradlew :platform-plugins:plugin-billing-ledger:dependencies \
-            > /tmp/deps/plugin-billing-deps.txt 2>&1
+          ./gradlew :platform-plugins:plugin-ledger:dependencies \
+            > /tmp/deps/plugin-ledger-deps.txt 2>&1
           
           ./gradlew :products:phr:dependencies \
             > /tmp/deps/phr-deps.txt 2>&1

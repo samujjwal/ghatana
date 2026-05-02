@@ -16,87 +16,87 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @UnitTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS) // GH-90000
-@ExtendWith(LifecycleAwareExtension.class) // GH-90000
+@TestInstance(TestInstance.Lifecycle.PER_CLASS) 
+@ExtendWith(LifecycleAwareExtension.class) 
 @DisplayName("LifecycleAwareExtension")
 class LifecycleAwareExtensionTest implements TestLifecycleCallback {
 
-    private final List<String> events = new ArrayList<>(); // GH-90000
-    private static final List<String> allEvents = new ArrayList<>(); // GH-90000
-    private static final AtomicInteger testCount = new AtomicInteger(0); // GH-90000
+    private final List<String> events = new ArrayList<>(); 
+    private static final List<String> allEvents = new ArrayList<>(); 
+    private static final AtomicInteger testCount = new AtomicInteger(0); 
     private static boolean beforeAllCalled = false;
 
     @Override
-    public void beforeAll(ExtensionContext context) { // GH-90000
+    public void beforeAll(ExtensionContext context) { 
         beforeAllCalled = true;
         events.add("callback-beforeAll");
         allEvents.add("callback-beforeAll");
     }
 
     @Override
-    public void afterAll(ExtensionContext context) { // GH-90000
+    public void afterAll(ExtensionContext context) { 
         allEvents.add("callback-afterAll");
     }
 
     @Override
-    public void beforeEach(ExtensionContext context) { // GH-90000
+    public void beforeEach(ExtensionContext context) { 
         events.add("callback-beforeEach");
         allEvents.add("callback-beforeEach");
     }
 
     @Override
-    public void afterEach(ExtensionContext context) { // GH-90000
+    public void afterEach(ExtensionContext context) { 
         events.add("callback-afterEach");
         allEvents.add("callback-afterEach");
-        testCount.incrementAndGet(); // GH-90000
+        testCount.incrementAndGet(); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         events.add("junit-beforeEach");
         allEvents.add("junit-beforeEach");
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
+    void tearDown() { 
         events.add("junit-afterEach");
         allEvents.add("junit-afterEach");
     }
 
     @AfterAll
-    static void verifyAfterAll() { // GH-90000
+    static void verifyAfterAll() { 
         // Verify that beforeAll was called at least once
-        assertThat(beforeAllCalled).isTrue(); // GH-90000
+        assertThat(beforeAllCalled).isTrue(); 
 
         // Verify that we have at least one test that completed
-        assertThat(testCount.get()).isGreaterThan(0); // GH-90000
+        assertThat(testCount.get()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("delegates lifecycle callbacks to implementations")
-    void shouldDelegateLifecycleCallbacks() { // GH-90000
+    void shouldDelegateLifecycleCallbacks() { 
         events.add("test");
         allEvents.add("test");
 
         // Verify the order of events for this test
-        assertThat(events) // GH-90000
-            .containsSubsequence("callback-beforeAll", "callback-beforeEach", "junit-beforeEach", "test"); // GH-90000
+        assertThat(events) 
+            .containsSubsequence("callback-beforeAll", "callback-beforeEach", "junit-beforeEach", "test"); 
     }
 
     @Test
     @DisplayName("handles test execution errors")
-    void executionError() { // GH-90000
+    void executionError() { 
         events.add("test-error");
         allEvents.add("test-error");
 
         // This test verifies that exceptions are properly propagated
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> { // GH-90000
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> { 
             throw new RuntimeException("Expected test exception");
         });
         assertThat(exception).hasMessage("Expected test exception");
 
         // Verify the order of events for this test
-        assertThat(events) // GH-90000
-            .containsSubsequence("callback-beforeEach", "junit-beforeEach", "test-error"); // GH-90000
+        assertThat(events) 
+            .containsSubsequence("callback-beforeEach", "junit-beforeEach", "test-error"); 
     }
 }

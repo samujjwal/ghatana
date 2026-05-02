@@ -11,66 +11,66 @@ import static org.junit.jupiter.api.Assertions.*;
 class AgentIdTest {
 
     @Test
-    void testOf() { // GH-90000
+    void testOf() { 
         AgentId id = AgentId.of("test-agent-id");
 
-        assertEquals("test-agent-id", id.value()); // GH-90000
-        assertEquals("test-agent-id", id.raw()); // GH-90000
+        assertEquals("test-agent-id", id.value()); 
+        assertEquals("test-agent-id", id.raw()); 
     }
 
     @Test
-    void testRandom() { // GH-90000
-        AgentId id1 = AgentId.random(); // GH-90000
-        AgentId id2 = AgentId.random(); // GH-90000
+    void testRandom() { 
+        AgentId id1 = AgentId.random(); 
+        AgentId id2 = AgentId.random(); 
 
-        assertNotNull(id1.value()); // GH-90000
-        assertNotNull(id2.value()); // GH-90000
-        assertNotEquals(id1.value(), id2.value()); // GH-90000
+        assertNotNull(id1.value()); 
+        assertNotNull(id2.value()); 
+        assertNotEquals(id1.value(), id2.value()); 
     }
 
     @Test
-    void testNullValueThrowsException() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            new AgentId(null) // GH-90000
+    void testNullValueThrowsException() { 
+        assertThrows(IllegalArgumentException.class, () -> 
+            new AgentId(null) 
         );
     }
 
     @Test
-    void testBlankValueThrowsException() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+    void testBlankValueThrowsException() { 
+        assertThrows(IllegalArgumentException.class, () -> 
             new AgentId("  ")
         );
     }
 
     @Test
-    void testEmptyValueThrowsException() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
+    void testEmptyValueThrowsException() { 
+        assertThrows(IllegalArgumentException.class, () -> 
             new AgentId("")
         );
     }
 
     @Test
-    void testEquals() { // GH-90000
+    void testEquals() { 
         AgentId id1 = AgentId.of("same-id");
         AgentId id2 = AgentId.of("same-id");
         AgentId id3 = AgentId.of("different-id");
 
-        assertEquals(id1, id2); // GH-90000
-        assertNotEquals(id1, id3); // GH-90000
+        assertEquals(id1, id2); 
+        assertNotEquals(id1, id3); 
     }
 
     @Test
-    void testHashCode() { // GH-90000
+    void testHashCode() { 
         AgentId id1 = AgentId.of("same-id");
         AgentId id2 = AgentId.of("same-id");
 
-        assertEquals(id1.hashCode(), id2.hashCode()); // GH-90000
+        assertEquals(id1.hashCode(), id2.hashCode()); 
     }
 
     @Test
-    void testToString() { // GH-90000
+    void testToString() { 
         AgentId id = AgentId.of("test-id");
 
-        assertEquals("test-id", id.toString()); // GH-90000
+        assertEquals("test-id", id.toString()); 
     }
 }

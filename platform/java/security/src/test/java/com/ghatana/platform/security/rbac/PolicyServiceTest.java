@@ -26,9 +26,9 @@ class PolicyServiceTest {
     private PolicyService policyService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        repository = new InMemoryPolicyRepository(); // GH-90000
-        policyService = new PolicyService(repository); // GH-90000
+    void setUp() { 
+        repository = new InMemoryPolicyRepository(); 
+        policyService = new PolicyService(repository); 
     }
 
     @Nested
@@ -37,26 +37,26 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should create and persist a policy")
-        void shouldCreateAndPersist() { // GH-90000
-            Policy policy = policyService.createPolicy( // GH-90000
+        void shouldCreateAndPersist() { 
+            Policy policy = policyService.createPolicy( 
                     "admin-access", "Admin access to users",
-                    "ADMIN", "users", Set.of("read", "write", "delete")); // GH-90000
+                    "ADMIN", "users", Set.of("read", "write", "delete")); 
 
-            assertThat(policy).isNotNull(); // GH-90000
-            assertThat(policy.getId()).isNotNull(); // GH-90000
+            assertThat(policy).isNotNull(); 
+            assertThat(policy.getId()).isNotNull(); 
             assertThat(policy.getName()).isEqualTo("admin-access");
             assertThat(policy.getRole()).isEqualTo("ADMIN");
             assertThat(policy.getResource()).isEqualTo("users");
-            assertThat(policy.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete"); // GH-90000
+            assertThat(policy.getPermissions()).containsExactlyInAnyOrder("read", "write", "delete"); 
         }
 
         @Test
         @DisplayName("should allow retrieving created policy by ID")
-        void shouldRetrieveById() { // GH-90000
-            Policy created = policyService.createPolicy( // GH-90000
+        void shouldRetrieveById() { 
+            Policy created = policyService.createPolicy( 
                     "viewer", "Viewer policy", "VIEWER", "reports", Set.of("read"));
 
-            Policy retrieved = policyService.getPolicyById(created.getId()); // GH-90000
+            Policy retrieved = policyService.getPolicyById(created.getId()); 
             assertThat(retrieved.getName()).isEqualTo("viewer");
         }
     }
@@ -67,9 +67,9 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should throw ResourceNotFoundException for unknown ID")
-        void shouldThrowForUnknownId() { // GH-90000
+        void shouldThrowForUnknownId() { 
             assertThatThrownBy(() -> policyService.getPolicyById("non-existent"))
-                    .isInstanceOf(ResourceNotFoundException.class); // GH-90000
+                    .isInstanceOf(ResourceNotFoundException.class); 
         }
     }
 
@@ -79,33 +79,33 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should return true when policy grants permission")
-        void shouldReturnTrueWhenGranted() { // GH-90000
-            policyService.createPolicy("p1", "desc", "ADMIN", "users", Set.of("read", "write")); // GH-90000
+        void shouldReturnTrueWhenGranted() { 
+            policyService.createPolicy("p1", "desc", "ADMIN", "users", Set.of("read", "write")); 
 
-            assertThat(policyService.hasPermission("ADMIN", "users", "read")).isTrue(); // GH-90000
-            assertThat(policyService.hasPermission("ADMIN", "users", "write")).isTrue(); // GH-90000
+            assertThat(policyService.hasPermission("ADMIN", "users", "read")).isTrue(); 
+            assertThat(policyService.hasPermission("ADMIN", "users", "write")).isTrue(); 
         }
 
         @Test
         @DisplayName("should return false when permission not granted")
-        void shouldReturnFalseWhenNotGranted() { // GH-90000
+        void shouldReturnFalseWhenNotGranted() { 
             policyService.createPolicy("p1", "desc", "VIEWER", "users", Set.of("read"));
 
-            assertThat(policyService.hasPermission("VIEWER", "users", "delete")).isFalse(); // GH-90000
+            assertThat(policyService.hasPermission("VIEWER", "users", "delete")).isFalse(); 
         }
 
         @Test
         @DisplayName("should return false when no matching role")
-        void shouldReturnFalseForUnknownRole() { // GH-90000
-            assertThat(policyService.hasPermission("UNKNOWN", "users", "read")).isFalse(); // GH-90000
+        void shouldReturnFalseForUnknownRole() { 
+            assertThat(policyService.hasPermission("UNKNOWN", "users", "read")).isFalse(); 
         }
 
         @Test
         @DisplayName("should grant all permissions with wildcard")
-        void shouldHandleWildcardPermission() { // GH-90000
+        void shouldHandleWildcardPermission() { 
             policyService.createPolicy("p1", "desc", "SUPERADMIN", "users", Set.of("*"));
 
-            assertThat(policyService.hasPermission("SUPERADMIN", "users", "anything")).isTrue(); // GH-90000
+            assertThat(policyService.hasPermission("SUPERADMIN", "users", "anything")).isTrue(); 
         }
     }
 
@@ -115,18 +115,18 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should not throw when permission is granted")
-        void shouldPassWhenGranted() { // GH-90000
+        void shouldPassWhenGranted() { 
             policyService.createPolicy("p1", "desc", "ADMIN", "users", Set.of("read"));
 
             // Should not throw
-            policyService.enforcePermission("ADMIN", "users", "read"); // GH-90000
+            policyService.enforcePermission("ADMIN", "users", "read"); 
         }
 
         @Test
         @DisplayName("should throw AccessDeniedException when permission denied")
-        void shouldThrowWhenDenied() { // GH-90000
-            assertThatThrownBy(() -> policyService.enforcePermission("VIEWER", "users", "delete")) // GH-90000
-                    .isInstanceOf(AccessDeniedException.class); // GH-90000
+        void shouldThrowWhenDenied() { 
+            assertThatThrownBy(() -> policyService.enforcePermission("VIEWER", "users", "delete")) 
+                    .isInstanceOf(AccessDeniedException.class); 
         }
     }
 
@@ -136,19 +136,19 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should return all permissions for role and resource")
-        void shouldReturnAllPermissions() { // GH-90000
-            policyService.createPolicy("p1", "desc", "ADMIN", "users", Set.of("read", "write")); // GH-90000
+        void shouldReturnAllPermissions() { 
+            policyService.createPolicy("p1", "desc", "ADMIN", "users", Set.of("read", "write")); 
             policyService.createPolicy("p2", "desc", "ADMIN", "users", Set.of("delete"));
 
-            Set<String> perms = policyService.getPermissions("ADMIN", "users"); // GH-90000
-            assertThat(perms).containsExactlyInAnyOrder("read", "write", "delete"); // GH-90000
+            Set<String> perms = policyService.getPermissions("ADMIN", "users"); 
+            assertThat(perms).containsExactlyInAnyOrder("read", "write", "delete"); 
         }
 
         @Test
         @DisplayName("should return empty set for no matching policies")
-        void shouldReturnEmptyForNoMatch() { // GH-90000
-            Set<String> perms = policyService.getPermissions("UNKNOWN", "resources"); // GH-90000
-            assertThat(perms).isEmpty(); // GH-90000
+        void shouldReturnEmptyForNoMatch() { 
+            Set<String> perms = policyService.getPermissions("UNKNOWN", "resources"); 
+            assertThat(perms).isEmpty(); 
         }
     }
 
@@ -158,32 +158,32 @@ class PolicyServiceTest {
 
         @Test
         @DisplayName("should add permission to existing policy")
-        void shouldAddPermission() { // GH-90000
-            Policy policy = policyService.createPolicy( // GH-90000
+        void shouldAddPermission() { 
+            Policy policy = policyService.createPolicy( 
                     "p1", "desc", "ADMIN", "users", Set.of("read"));
 
-            Policy updated = policyService.addPermission(policy.getId(), "write"); // GH-90000
-            assertThat(updated.getPermissions()).contains("read", "write"); // GH-90000
+            Policy updated = policyService.addPermission(policy.getId(), "write"); 
+            assertThat(updated.getPermissions()).contains("read", "write"); 
         }
 
         @Test
         @DisplayName("should remove permission from existing policy")
-        void shouldRemovePermission() { // GH-90000
-            Policy policy = policyService.createPolicy( // GH-90000
-                    "p1", "desc", "ADMIN", "users", Set.of("read", "write")); // GH-90000
+        void shouldRemovePermission() { 
+            Policy policy = policyService.createPolicy( 
+                    "p1", "desc", "ADMIN", "users", Set.of("read", "write")); 
 
-            Policy updated = policyService.removePermission(policy.getId(), "write"); // GH-90000
+            Policy updated = policyService.removePermission(policy.getId(), "write"); 
             assertThat(updated.getPermissions()).containsExactly("read");
         }
 
         @Test
         @DisplayName("should disable policy so it no longer grants permissions")
-        void shouldDisablePolicy() { // GH-90000
-            Policy policy = policyService.createPolicy( // GH-90000
+        void shouldDisablePolicy() { 
+            Policy policy = policyService.createPolicy( 
                     "p1", "desc", "ADMIN", "users", Set.of("read"));
 
-            policyService.updatePolicy(policy.getId(), null, null, false); // GH-90000
-            assertThat(policyService.hasPermission("ADMIN", "users", "read")).isFalse(); // GH-90000
+            policyService.updatePolicy(policy.getId(), null, null, false); 
+            assertThat(policyService.hasPermission("ADMIN", "users", "read")).isFalse(); 
         }
     }
 }

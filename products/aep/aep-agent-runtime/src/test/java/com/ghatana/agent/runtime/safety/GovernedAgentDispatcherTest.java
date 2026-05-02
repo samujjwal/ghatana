@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 /**
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
  * trace recording, and backward-compat 3-arg constructor.
  */
 @DisplayName("GovernedAgentDispatcher")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class GovernedAgentDispatcherTest extends EventloopTestBase {
 
     @Mock
@@ -70,34 +70,34 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     private AgentContext ctx;
 
     @Override
-    protected Duration eventloopTimeout() { // GH-90000
-        return Duration.ofSeconds(10); // GH-90000
+    protected Duration eventloopTimeout() { 
+        return Duration.ofSeconds(10); 
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        invariantMonitor = new DefaultInvariantMonitor(); // GH-90000
-        ctx = AgentContext.builder() // GH-90000
+    void setUp() { 
+        invariantMonitor = new DefaultInvariantMonitor(); 
+        ctx = AgentContext.builder() 
                 .turnId("turn-1")
                 .agentId("test-agent")
                 .tenantId("tenant-x")
-                .memoryStore(mock(MemoryStore.class)) // GH-90000
-                .build(); // GH-90000
+                .memoryStore(mock(MemoryStore.class)) 
+                .build(); 
 
         // Default stubs — lenient because not all tests use them
-        lenient().when(traceLedger.append(any())).thenReturn(Promise.of(null)); // GH-90000
-        lenient().when(delegate.dispatch(anyString(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(AgentResult.builder() // GH-90000
-                        .status(AgentResultStatus.SUCCESS) // GH-90000
+        lenient().when(traceLedger.append(any())).thenReturn(Promise.of(null)); 
+        lenient().when(delegate.dispatch(anyString(), any(), any())) 
+                .thenReturn(Promise.of(AgentResult.builder() 
+                        .status(AgentResultStatus.SUCCESS) 
                         .agentId("test-agent")
-                        .confidence(1.0) // GH-90000
-                        .processingTime(Duration.ofMillis(10)) // GH-90000
-                        .build())); // GH-90000
-        lenient().when(delegate.resolve(anyString())).thenReturn(ExecutionTier.JAVA_IMPLEMENTED); // GH-90000
+                        .confidence(1.0) 
+                        .processingTime(Duration.ofMillis(10)) 
+                        .build())); 
+        lenient().when(delegate.resolve(anyString())).thenReturn(ExecutionTier.JAVA_IMPLEMENTED); 
     }
 
     // =========================================================================
-    // Backward compatibility — 3-arg constructor (no release repository) // GH-90000
+    // Backward compatibility — 3-arg constructor (no release repository) 
     // =========================================================================
 
     @Nested
@@ -106,25 +106,25 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("3-arg constructor dispatches without release check")
-        void threeArgConstructorDispatchesWithoutReleaseCheck() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void threeArgConstructorDispatchesWithoutReleaseCheck() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
-            verify(delegate).dispatch(anyString(), any(), any()); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
+            verify(delegate).dispatch(anyString(), any(), any()); 
         }
 
         @Test
         @DisplayName("resolve delegates to inner dispatcher")
-        void resolveDelegatesToInnerDispatcher() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void resolveDelegatesToInnerDispatcher() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
             ExecutionTier tier = dispatcher.resolve("test-agent");
 
-            assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); // GH-90000
+            assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); 
             verify(delegate).resolve("test-agent");
         }
     }
@@ -134,16 +134,16 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     // =========================================================================
 
     /** Creates a minimal valid release with TX-2/TX-5 required fields. */
-    private static AgentRelease release(String agentId, AgentReleaseState state) { // GH-90000
-        return new AgentReleaseBuilder() // GH-90000
-                .agentId(agentId) // GH-90000
+    private static AgentRelease release(String agentId, AgentReleaseState state) { 
+        return new AgentReleaseBuilder() 
+                .agentId(agentId) 
                 .releaseVersion("1.0.0")
-                .state(state) // GH-90000
+                .state(state) 
                 .redactionProfileId("rp-test")
                 .threatModelId("tm-test")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); // GH-90000
+                .build(); 
     }
 
     @Nested
@@ -153,130 +153,130 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
         private GovernedAgentDispatcher dispatcher;
 
         @BeforeEach
-        void setUp() { // GH-90000
-            dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void setUp() { 
+            dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, releaseRepository);
         }
 
         @Test
         @DisplayName("dispatches when active release is dispatchable")
-        void dispatchesWhenReleaseIsDispatchable() { // GH-90000
-            AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
+        void dispatchesWhenReleaseIsDispatchable() { 
+            AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(activeRelease))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(activeRelease))); 
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("dispatches when no governing release found")
-        void dispatchesWhenNoGoverningReleaseFound() { // GH-90000
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void dispatchesWhenNoGoverningReleaseFound() { 
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("denies dispatch when release state is BLOCKED")
-        void deniesDispatchWhenReleaseIsBlocked() { // GH-90000
-            AgentRelease blockedRelease = release("test-agent", AgentReleaseState.BLOCKED); // GH-90000
+        void deniesDispatchWhenReleaseIsBlocked() { 
+            AgentRelease blockedRelease = release("test-agent", AgentReleaseState.BLOCKED); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(blockedRelease))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(blockedRelease))); 
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
             assertThat(result.getExplanation()).contains("BLOCKED");
         }
 
         @Test
         @DisplayName("denies dispatch when release state is RETIRED")
-        void deniesDispatchWhenReleaseIsRetired() { // GH-90000
-            AgentRelease retiredRelease = release("test-agent", AgentReleaseState.RETIRED); // GH-90000
+        void deniesDispatchWhenReleaseIsRetired() { 
+            AgentRelease retiredRelease = release("test-agent", AgentReleaseState.RETIRED); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(retiredRelease))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(retiredRelease))); 
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
             assertThat(result.getExplanation()).contains("RETIRED");
         }
 
         @Test
         @DisplayName("denies dispatch when release state is DEPRECATED")
-        void deniesDispatchWhenReleaseIsDeprecated() { // GH-90000
-            AgentRelease deprecatedRelease = release("test-agent", AgentReleaseState.DEPRECATED); // GH-90000
+        void deniesDispatchWhenReleaseIsDeprecated() { 
+            AgentRelease deprecatedRelease = release("test-agent", AgentReleaseState.DEPRECATED); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(deprecatedRelease))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(deprecatedRelease))); 
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
         }
 
         @Test
         @DisplayName("enriches context with agentReleaseId when release is found")
         @SuppressWarnings("unchecked")
-        void enrichesContextWithAgentReleaseId() { // GH-90000
-            AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
+        void enrichesContextWithAgentReleaseId() { 
+            AgentRelease activeRelease = release("test-agent", AgentReleaseState.ACTIVE); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(activeRelease))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(activeRelease))); 
 
             // Capture the context passed to delegate
-            when(delegate.dispatch(anyString(), any(), any())) // GH-90000
-                    .thenAnswer(invocation -> { // GH-90000
-                        AgentContext capturedCtx = invocation.getArgument(2); // GH-90000
+            when(delegate.dispatch(anyString(), any(), any())) 
+                    .thenAnswer(invocation -> { 
+                        AgentContext capturedCtx = invocation.getArgument(2); 
                         // Verify that the context was enriched with the release ID
                         assertThat(capturedCtx.getConfig("agentReleaseId"))
-                                .isEqualTo(activeRelease.agentReleaseId()); // GH-90000
-                        return Promise.of(AgentResult.builder() // GH-90000
-                                .status(AgentResultStatus.SUCCESS) // GH-90000
+                                .isEqualTo(activeRelease.agentReleaseId()); 
+                        return Promise.of(AgentResult.builder() 
+                                .status(AgentResultStatus.SUCCESS) 
                                 .agentId("test-agent")
-                                .confidence(1.0) // GH-90000
-                                .processingTime(Duration.ofMillis(5)) // GH-90000
-                                .build()); // GH-90000
+                                .confidence(1.0) 
+                                .processingTime(Duration.ofMillis(5)) 
+                                .build()); 
                     });
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
         }
 
         @Test
         @DisplayName("does not add agentReleaseId to context when no release found")
         @SuppressWarnings("unchecked")
-        void doesNotAddReleaseIdWhenNoReleaseFound() { // GH-90000
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void doesNotAddReleaseIdWhenNoReleaseFound() { 
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            when(delegate.dispatch(anyString(), any(), any())) // GH-90000
-                    .thenAnswer(invocation -> { // GH-90000
-                        AgentContext capturedCtx = invocation.getArgument(2); // GH-90000
+            when(delegate.dispatch(anyString(), any(), any())) 
+                    .thenAnswer(invocation -> { 
+                        AgentContext capturedCtx = invocation.getArgument(2); 
                         assertThat(capturedCtx.getConfig("agentReleaseId")).isNull();
-                        return Promise.of(AgentResult.builder() // GH-90000
-                                .status(AgentResultStatus.SUCCESS) // GH-90000
+                        return Promise.of(AgentResult.builder() 
+                                .status(AgentResultStatus.SUCCESS) 
                                 .agentId("test-agent")
-                                .confidence(1.0) // GH-90000
-                                .processingTime(Duration.ofMillis(5)) // GH-90000
-                                .build()); // GH-90000
+                                .confidence(1.0) 
+                                .processingTime(Duration.ofMillis(5)) 
+                                .build()); 
                     });
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
         }
 
         @Test
         @DisplayName("delegates resolve to inner dispatcher")
-        void delegatesResolve() { // GH-90000
+        void delegatesResolve() { 
             ExecutionTier tier = dispatcher.resolve("test-agent");
-            assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); // GH-90000
+            assertThat(tier).isEqualTo(ExecutionTier.JAVA_IMPLEMENTED); 
         }
     }
 
@@ -290,286 +290,286 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
 
         @Test
         @DisplayName("dispatches active release end-to-end")
-        void dispatchesActiveReleaseEndToEnd() { // GH-90000
-            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
-            AgentRelease release = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
-            runPromise(() -> repo.save(release)); // GH-90000
+        void dispatchesActiveReleaseEndToEnd() { 
+            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); 
+            AgentRelease release = release("test-agent", AgentReleaseState.ACTIVE); 
+            runPromise(() -> repo.save(release)); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, repo);
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("uses real trace ledger end-to-end with release guard")
-        void usesRealTraceLedgerEndToEnd() { // GH-90000
-            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
-            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
-            AgentRelease release = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
-            runPromise(() -> repo.save(release)); // GH-90000
+        void usesRealTraceLedgerEndToEnd() { 
+            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); 
+            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); 
+            AgentRelease release = release("test-agent", AgentReleaseState.ACTIVE); 
+            runPromise(() -> repo.save(release)); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, ledger, repo);
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("blocks dispatch on BLOCKED state end-to-end with real ledger")
-        void blocksDispatchWithRealLedger() { // GH-90000
-            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
-            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
-            AgentRelease release = release("test-agent", AgentReleaseState.BLOCKED); // GH-90000
-            runPromise(() -> repo.save(release)); // GH-90000
+        void blocksDispatchWithRealLedger() { 
+            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); 
+            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); 
+            AgentRelease release = release("test-agent", AgentReleaseState.BLOCKED); 
+            runPromise(() -> repo.save(release)); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, ledger, repo);
 
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
             assertThat(result.getExplanation()).containsIgnoringCase("BLOCKED");
         }
     }
 
     // =========================================================================
-    // TX-4: Explainability trace events (TURN_STARTED, POLICY_EVALUATED) // GH-90000
+    // TX-4: Explainability trace events (TURN_STARTED, POLICY_EVALUATED) 
     // =========================================================================
 
     @Nested
     @DisplayName("TX-4 explainability trace events")
     class ExplainabilityTraceEvents {
 
-        private final List<TraceEvent> capturedEvents = new ArrayList<>(); // GH-90000
+        private final List<TraceEvent> capturedEvents = new ArrayList<>(); 
 
         @BeforeEach
-        void captureAppends() { // GH-90000
-            capturedEvents.clear(); // GH-90000
-            lenient().when(traceLedger.append(any())).thenAnswer(invocation -> { // GH-90000
-                capturedEvents.add(invocation.getArgument(0)); // GH-90000
-                return Promise.of(null); // GH-90000
+        void captureAppends() { 
+            capturedEvents.clear(); 
+            lenient().when(traceLedger.append(any())).thenAnswer(invocation -> { 
+                capturedEvents.add(invocation.getArgument(0)); 
+                return Promise.of(null); 
             });
         }
 
         @Test
         @DisplayName("emits TURN_STARTED event before dispatch")
-        void emitsTurnStarted() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void emitsTurnStarted() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            assertThat(capturedEvents) // GH-90000
-                    .extracting(TraceEvent::eventType) // GH-90000
-                    .contains(TraceEventType.TURN_STARTED); // GH-90000
+            assertThat(capturedEvents) 
+                    .extracting(TraceEvent::eventType) 
+                    .contains(TraceEventType.TURN_STARTED); 
         }
 
         @Test
         @DisplayName("TURN_STARTED event payload includes agentId")
-        void turnStartedPayloadHasAgentId() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void turnStartedPayloadHasAgentId() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            TraceEvent turnStarted = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(turnStarted.payload()).containsEntry("agentId", "test-agent"); // GH-90000
+            TraceEvent turnStarted = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(turnStarted.payload()).containsEntry("agentId", "test-agent"); 
         }
 
         @Test
         @DisplayName("TURN_STARTED includes release metadata when release present")
-        void turnStartedIncludesReleaseMetadata() { // GH-90000
-            AgentRelease rel = new AgentReleaseBuilder() // GH-90000
+        void turnStartedIncludesReleaseMetadata() { 
+            AgentRelease rel = new AgentReleaseBuilder() 
                     .agentId("test-agent")
                     .releaseVersion("2.0.0")
-                    .state(AgentReleaseState.ACTIVE) // GH-90000
+                    .state(AgentReleaseState.ACTIVE) 
                     .redactionProfileId("rp-prod")
                     .threatModelId("tm-prod")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L2")
                     .policyPackId("pp-123")
-                    .build(); // GH-90000
+                    .build(); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(rel))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(rel))); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, releaseRepository);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            TraceEvent turnStarted = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(turnStarted.payload()) // GH-90000
-                    .containsEntry("agentReleaseId", rel.agentReleaseId()) // GH-90000
-                    .containsEntry("releaseVersion", "2.0.0") // GH-90000
-                    .containsEntry("redactionProfileId", "rp-prod") // GH-90000
-                    .containsEntry("threatModelId", "tm-prod") // GH-90000
-                    .containsEntry("capabilityMaturityProfile", "L2") // GH-90000
-                    .containsEntry("policyPackId", "pp-123"); // GH-90000
+            TraceEvent turnStarted = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.TURN_STARTED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(turnStarted.payload()) 
+                    .containsEntry("agentReleaseId", rel.agentReleaseId()) 
+                    .containsEntry("releaseVersion", "2.0.0") 
+                    .containsEntry("redactionProfileId", "rp-prod") 
+                    .containsEntry("threatModelId", "tm-prod") 
+                    .containsEntry("capabilityMaturityProfile", "L2") 
+                    .containsEntry("policyPackId", "pp-123"); 
         }
 
         @Test
         @DisplayName("emits POLICY_EVALUATED (ALLOW) when invariants pass")
-        void emitsPolicyEvaluatedAllowWhenInvariantsPass() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void emitsPolicyEvaluatedAllowWhenInvariantsPass() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            TraceEvent policyEval = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(policyEval.payload()).containsEntry("decision", "ALLOW"); // GH-90000
-            assertThat(policyEval.payload()).containsEntry("violationCount", "0"); // GH-90000
+            TraceEvent policyEval = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(policyEval.payload()).containsEntry("decision", "ALLOW"); 
+            assertThat(policyEval.payload()).containsEntry("violationCount", "0"); 
         }
 
         @Test
         @DisplayName("emits POLICY_EVALUATED (DENY) and ACTION_DENIED when invariants fail")
-        void emitsPolicyEvaluatedDenyThenActionDenied() { // GH-90000
+        void emitsPolicyEvaluatedDenyThenActionDenied() { 
             // Inject a breached cost cap invariant by setting metrics that violate
-            AgentContext overBudgetCtx = AgentContext.builder() // GH-90000
+            AgentContext overBudgetCtx = AgentContext.builder() 
                     .turnId("turn-over")
                     .agentId("test-agent")
                     .tenantId("tenant-x")
-                    .memoryStore(mock(MemoryStore.class)) // GH-90000
-                    .addConfig("__accumulatedCostUsd", 999.0) // GH-90000
-                    .addConfig("__costCapUsd", 1.0) // GH-90000
-                    .build(); // GH-90000
+                    .memoryStore(mock(MemoryStore.class)) 
+                    .addConfig("__accumulatedCostUsd", 999.0) 
+                    .addConfig("__costCapUsd", 1.0) 
+                    .build(); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            AgentResult<?> result = runPromise(() -> // GH-90000
-                    dispatcher.dispatch("test-agent", "input", overBudgetCtx)); // GH-90000
+            AgentResult<?> result = runPromise(() -> 
+                    dispatcher.dispatch("test-agent", "input", overBudgetCtx)); 
 
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
 
-            List<TraceEventType> types = capturedEvents.stream() // GH-90000
-                    .map(TraceEvent::eventType) // GH-90000
-                    .toList(); // GH-90000
-            assertThat(types).contains(TraceEventType.TURN_STARTED); // GH-90000
-            assertThat(types).contains(TraceEventType.POLICY_EVALUATED); // GH-90000
-            assertThat(types).contains(TraceEventType.ACTION_DENIED); // GH-90000
+            List<TraceEventType> types = capturedEvents.stream() 
+                    .map(TraceEvent::eventType) 
+                    .toList(); 
+            assertThat(types).contains(TraceEventType.TURN_STARTED); 
+            assertThat(types).contains(TraceEventType.POLICY_EVALUATED); 
+            assertThat(types).contains(TraceEventType.ACTION_DENIED); 
 
-            TraceEvent policyEval = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(policyEval.payload()).containsEntry("decision", "DENY"); // GH-90000
+            TraceEvent policyEval = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(policyEval.payload()).containsEntry("decision", "DENY"); 
         }
 
         @Test
         @DisplayName("TURN_STARTED is emitted before POLICY_EVALUATED in sequence")
-        void turnStartedBeforePolicyEvaluated() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void turnStartedBeforePolicyEvaluated() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            List<TraceEventType> types = capturedEvents.stream() // GH-90000
-                    .map(TraceEvent::eventType) // GH-90000
-                    .toList(); // GH-90000
-            int turnStartedIdx = types.indexOf(TraceEventType.TURN_STARTED); // GH-90000
-            int policyEvaluatedIdx = types.indexOf(TraceEventType.POLICY_EVALUATED); // GH-90000
-            assertThat(turnStartedIdx).isNotNegative(); // GH-90000
-            assertThat(policyEvaluatedIdx).isGreaterThan(turnStartedIdx); // GH-90000
+            List<TraceEventType> types = capturedEvents.stream() 
+                    .map(TraceEvent::eventType) 
+                    .toList(); 
+            int turnStartedIdx = types.indexOf(TraceEventType.TURN_STARTED); 
+            int policyEvaluatedIdx = types.indexOf(TraceEventType.POLICY_EVALUATED); 
+            assertThat(turnStartedIdx).isNotNegative(); 
+            assertThat(policyEvaluatedIdx).isGreaterThan(turnStartedIdx); 
         }
 
         @Test
         @DisplayName("POLICY_EVALUATED (ALLOW) payload includes policyPackId when release is present")
-        void policyEvaluatedAllowIncludesPolicyPackId() { // GH-90000
-            AgentRelease rel = new AgentReleaseBuilder() // GH-90000
+        void policyEvaluatedAllowIncludesPolicyPackId() { 
+            AgentRelease rel = new AgentReleaseBuilder() 
                     .agentId("test-agent")
                     .releaseVersion("1.0")
-                    .state(AgentReleaseState.ACTIVE) // GH-90000
+                    .state(AgentReleaseState.ACTIVE) 
                     .redactionProfileId("rp-t")
                     .threatModelId("tm-t")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-456")
-                    .build(); // GH-90000
+                    .build(); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(rel))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(rel))); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, releaseRepository);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            TraceEvent policyEval = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(policyEval.payload()) // GH-90000
-                    .containsEntry("decision", "ALLOW") // GH-90000
-                    .containsEntry("policyPackId", "pp-456"); // GH-90000
+            TraceEvent policyEval = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.POLICY_EVALUATED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(policyEval.payload()) 
+                    .containsEntry("decision", "ALLOW") 
+                    .containsEntry("policyPackId", "pp-456"); 
         }
 
         @Test
         @DisplayName("ACTION_EXECUTED payload includes policyPackId when release is present")
-        void actionExecutedIncludesPolicyPackId() { // GH-90000
-            AgentRelease rel = new AgentReleaseBuilder() // GH-90000
+        void actionExecutedIncludesPolicyPackId() { 
+            AgentRelease rel = new AgentReleaseBuilder() 
                     .agentId("test-agent")
                     .releaseVersion("1.0")
-                    .state(AgentReleaseState.ACTIVE) // GH-90000
+                    .state(AgentReleaseState.ACTIVE) 
                     .redactionProfileId("rp-t")
                     .threatModelId("tm-t")
                     .addPermittedPurpose("agent.inference")
                     .capabilityMaturityProfile("L1")
                     .policyPackId("pp-789")
-                    .build(); // GH-90000
+                    .build(); 
 
-            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(rel))); // GH-90000
+            when(releaseRepository.findGoverningRelease("test-agent", "tenant-x")) 
+                    .thenReturn(Promise.of(Optional.of(rel))); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, releaseRepository);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
 
-            TraceEvent actionExecuted = capturedEvents.stream() // GH-90000
-                    .filter(e -> e.eventType() == TraceEventType.ACTION_EXECUTED) // GH-90000
-                    .findFirst() // GH-90000
-                    .orElseThrow(); // GH-90000
-            assertThat(actionExecuted.payload()).containsEntry("policyPackId", "pp-789"); // GH-90000
+            TraceEvent actionExecuted = capturedEvents.stream() 
+                    .filter(e -> e.eventType() == TraceEventType.ACTION_EXECUTED) 
+                    .findFirst() 
+                    .orElseThrow(); 
+            assertThat(actionExecuted.payload()).containsEntry("policyPackId", "pp-789"); 
         }
 
         @Test
         @DisplayName("full happy-path event sequence is correct with real ledger")
-        void fullHappyPathSequenceWithRealLedger() { // GH-90000
-            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); // GH-90000
-            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); // GH-90000
-            AgentRelease rel = release("test-agent", AgentReleaseState.ACTIVE); // GH-90000
-            runPromise(() -> repo.save(rel)); // GH-90000
+        void fullHappyPathSequenceWithRealLedger() { 
+            HashChainedTraceAppender ledger = new HashChainedTraceAppender(); 
+            InMemoryAgentReleaseRepository repo = new InMemoryAgentReleaseRepository(); 
+            AgentRelease rel = release("test-agent", AgentReleaseState.ACTIVE); 
+            runPromise(() -> repo.save(rel)); 
 
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, ledger, repo);
 
-            runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); // GH-90000
+            runPromise(() -> dispatcher.dispatch("test-agent", "payload", ctx)); 
 
             String traceId = ctx.getConfig("__traceId") != null
                     ? ctx.getConfig("__traceId").toString()
                     : null;
             // Fetch all events from ledger
-            List<TraceEvent> events = runPromise(() -> // GH-90000
-                    ledger.getByAgent("test-agent", "tenant-x", null, null, 100)); // GH-90000
+            List<TraceEvent> events = runPromise(() -> 
+                    ledger.getByAgent("test-agent", "tenant-x", null, null, 100)); 
 
-            assertThat(events).isNotEmpty(); // GH-90000
-            List<TraceEventType> types = events.stream().map(TraceEvent::eventType).toList(); // GH-90000
-            assertThat(types).contains( // GH-90000
+            assertThat(events).isNotEmpty(); 
+            List<TraceEventType> types = events.stream().map(TraceEvent::eventType).toList(); 
+            assertThat(types).contains( 
                     TraceEventType.TURN_STARTED,
                     TraceEventType.POLICY_EVALUATED,
                     TraceEventType.ACTION_EXECUTED);
@@ -584,57 +584,57 @@ class GovernedAgentDispatcherTest extends EventloopTestBase {
     @DisplayName("manifest capability guard (P8-T12)")
     class ManifestGuardTests {
 
-        private com.ghatana.agent.pluggability.AgentCapabilityManifest supervisedOnlyManifest() { // GH-90000
+        private com.ghatana.agent.pluggability.AgentCapabilityManifest supervisedOnlyManifest() { 
             // A manifest with only SUPERVISED mode — not AUTONOMOUS
-            return new com.ghatana.agent.pluggability.AgentCapabilityManifest( // GH-90000
+            return new com.ghatana.agent.pluggability.AgentCapabilityManifest( 
                     "test-agent", "1.0.0", "tenant-x",
-                    java.util.List.of(com.ghatana.agent.pluggability.InteractionMode.SUPERVISED), // GH-90000
+                    java.util.List.of(com.ghatana.agent.pluggability.InteractionMode.SUPERVISED), 
                     com.ghatana.agent.pluggability.SupervisionRole.SUBORDINATE,
                     com.ghatana.agent.pluggability.HandoffCapability.NONE,
-                    java.util.List.of(), java.util.List.of(), java.util.Map.of()); // GH-90000
+                    java.util.List.of(), java.util.List.of(), java.util.Map.of()); 
         }
 
-        private com.ghatana.agent.pluggability.AgentCapabilityManifest autonomousManifest() { // GH-90000
-            return com.ghatana.agent.pluggability.AgentCapabilityManifest.standalone("test-agent", "1.0.0", "tenant-x"); // GH-90000
+        private com.ghatana.agent.pluggability.AgentCapabilityManifest autonomousManifest() { 
+            return com.ghatana.agent.pluggability.AgentCapabilityManifest.standalone("test-agent", "1.0.0", "tenant-x"); 
         }
 
         @Test
         @DisplayName("AUTONOMOUS manifest allows dispatch without supervisor context")
-        void autonomousManifestAllowsDispatch() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
-                    delegate, invariantMonitor, traceLedger, null, null, autonomousManifest()); // GH-90000
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+        void autonomousManifestAllowsDispatch() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
+                    delegate, invariantMonitor, traceLedger, null, null, autonomousManifest()); 
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("null manifest skips manifest check")
-        void nullManifestSkipsCheck() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
+        void nullManifestSkipsCheck() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
                     delegate, invariantMonitor, traceLedger, null, null, null);
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
 
         @Test
         @DisplayName("SUPERVISED-only manifest with no supervisorAgentId in context → DENIED")
-        void supervisedOnlyManifestWithoutSupervisorIsDenied() { // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
-                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); // GH-90000
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); // GH-90000
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); // GH-90000
+        void supervisedOnlyManifestWithoutSupervisorIsDenied() { 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
+                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); 
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", ctx)); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.DENIED); 
         }
 
         @Test
         @DisplayName("SUPERVISED-only manifest with supervisorAgentId in context → allowed")
-        void supervisedManifestWithSupervisorContextIsAllowed() { // GH-90000
-            AgentContext supervisedCtx = ctx.toBuilder() // GH-90000
-                    .addConfig("supervisorAgentId", "supervisor-001") // GH-90000
-                    .build(); // GH-90000
-            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( // GH-90000
-                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); // GH-90000
-            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", supervisedCtx)); // GH-90000
-            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); // GH-90000
+        void supervisedManifestWithSupervisorContextIsAllowed() { 
+            AgentContext supervisedCtx = ctx.toBuilder() 
+                    .addConfig("supervisorAgentId", "supervisor-001") 
+                    .build(); 
+            GovernedAgentDispatcher dispatcher = new GovernedAgentDispatcher( 
+                    delegate, invariantMonitor, traceLedger, null, null, supervisedOnlyManifest()); 
+            AgentResult<?> result = runPromise(() -> dispatcher.dispatch("test-agent", "input", supervisedCtx)); 
+            assertThat(result.getStatus()).isEqualTo(AgentResultStatus.SUCCESS); 
         }
     }
 }

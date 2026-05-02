@@ -13,23 +13,23 @@ class AepRegistryPostgresFixtureSmokeTest {
 
     @Test
     @DisplayName("should start a postgres fixture for registry integration tests")
-    void shouldStartPostgresFixture() { // GH-90000
+    void shouldStartPostgresFixture() { 
         boolean dockerAvailable;
         try {
-            dockerAvailable = DockerClientFactory.instance().isDockerAvailable(); // GH-90000
-        } catch (RuntimeException ignored) { // GH-90000
+            dockerAvailable = DockerClientFactory.instance().isDockerAvailable(); 
+        } catch (RuntimeException ignored) { 
             dockerAvailable = false;
         }
 
-        Assumptions.assumeTrue(dockerAvailable, "Docker not available for Testcontainers-based integration tests"); // GH-90000
+        Assumptions.assumeTrue(dockerAvailable, "Docker not available for Testcontainers-based integration tests"); 
 
         try (PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine")) {
-            postgres.start(); // GH-90000
+            postgres.start(); 
 
-            assertThat(postgres.isRunning()).isTrue(); // GH-90000
+            assertThat(postgres.isRunning()).isTrue(); 
             assertThat(postgres.getJdbcUrl()).contains("jdbc:postgresql://");
-            assertThat(postgres.getUsername()).isNotBlank(); // GH-90000
-            assertThat(postgres.getPassword()).isNotBlank(); // GH-90000
+            assertThat(postgres.getUsername()).isNotBlank(); 
+            assertThat(postgres.getPassword()).isNotBlank(); 
         }
     }
 }

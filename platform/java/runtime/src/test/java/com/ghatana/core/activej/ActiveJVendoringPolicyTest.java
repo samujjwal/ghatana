@@ -11,13 +11,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class ActiveJVendoringPolicyTest {
 
-    private static final List<String> POLICY_ARTIFACTS = List.of( // GH-90000
+    private static final List<String> POLICY_ARTIFACTS = List.of( 
         "io/README.md",
         "io/activej/PATCHES.md",
         "io/activej/package-info.java"
     );
 
-    private static final List<String> VENDORED_SOURCES = List.of( // GH-90000
+    private static final List<String> VENDORED_SOURCES = List.of( 
         "io/activej/promise/AbstractPromise.java",
         "io/activej/promise/SettablePromise.java",
         "io/activej/common/time/Stopwatch.java",
@@ -25,44 +25,44 @@ class ActiveJVendoringPolicyTest {
     );
 
     @Test
-    void vendoredActivejAreaMustRemainDocumented() { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
+    void vendoredActivejAreaMustRemainDocumented() { 
+        Path repoRoot = findRepoRoot(); 
 
-        for (String relativePath : POLICY_ARTIFACTS) { // GH-90000
-            assertThat(repoRoot.resolve(relativePath)) // GH-90000
-                .as("Expected vendored ActiveJ policy artifact %s", relativePath) // GH-90000
-                .exists(); // GH-90000
+        for (String relativePath : POLICY_ARTIFACTS) { 
+            assertThat(repoRoot.resolve(relativePath)) 
+                .as("Expected vendored ActiveJ policy artifact %s", relativePath) 
+                .exists(); 
         }
     }
 
     @Test
-    void vendoredSourceFilesMustCarryOwnershipMarkers() throws IOException { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
+    void vendoredSourceFilesMustCarryOwnershipMarkers() throws IOException { 
+        Path repoRoot = findRepoRoot(); 
 
-        for (String relativePath : VENDORED_SOURCES) { // GH-90000
-            String content = Files.readString(repoRoot.resolve(relativePath)); // GH-90000
-            assertThat(content) // GH-90000
-                .as("Expected vendored ActiveJ file %s to carry GHATANA-PATCH ownership marker", relativePath) // GH-90000
+        for (String relativePath : VENDORED_SOURCES) { 
+            String content = Files.readString(repoRoot.resolve(relativePath)); 
+            assertThat(content) 
+                .as("Expected vendored ActiveJ file %s to carry GHATANA-PATCH ownership marker", relativePath) 
                 .contains("GHATANA-PATCH:")
                 .contains("6.0-rc2");
         }
     }
 
     @Test
-    void patchManifestMustTrackCurrentActivejBaseline() throws IOException { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
+    void patchManifestMustTrackCurrentActivejBaseline() throws IOException { 
+        Path repoRoot = findRepoRoot(); 
         String manifest = Files.readString(repoRoot.resolve("io/activej/PATCHES.md"));
 
-        assertThat(manifest).contains("Baseline upstream version:", "activej-6.0-rc2"); // GH-90000
-        assertThat(manifest).contains("AbstractPromise.java", "SettablePromise.java", "Stopwatch.java", "EventloopInspector.java"); // GH-90000
+        assertThat(manifest).contains("Baseline upstream version:", "activej-6.0-rc2"); 
+        assertThat(manifest).contains("AbstractPromise.java", "SettablePromise.java", "Stopwatch.java", "EventloopInspector.java"); 
     }
 
-    private static Path findRepoRoot() { // GH-90000
+    private static Path findRepoRoot() { 
         Path current = Path.of("").toAbsolutePath();
         while (current != null && !Files.exists(current.resolve("settings.gradle.kts"))) {
-            current = current.getParent(); // GH-90000
+            current = current.getParent(); 
         }
-        if (current == null) { // GH-90000
+        if (current == null) { 
             throw new IllegalStateException("Could not locate repository root from test working directory");
         }
         return current;

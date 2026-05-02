@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.audio.video.multimodal.adapter;
@@ -32,17 +32,17 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("LLM_FALLBACK mode uses AI Inference fallback")
-    void llmFallbackModeUsesAiInference() { // GH-90000
-        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( // GH-90000
+    void llmFallbackModeUsesAiInference() { 
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( 
                 "localhost",
                 50051,
                 GrpcSttClientAdapter.SttMode.LLM_FALLBACK
         )) {
             byte[] audioData = new byte[1024];
-            AudioResult result = adapter.transcribe(audioData); // GH-90000
+            AudioResult result = adapter.transcribe(audioData); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); 
         }
     }
 
@@ -51,19 +51,19 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("NOP mode returns empty result")
-    void nopModeReturnsEmptyResult() { // GH-90000
-        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( // GH-90000
+    void nopModeReturnsEmptyResult() { 
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( 
                 "localhost",
                 50051,
                 GrpcSttClientAdapter.SttMode.NOP
         )) {
             byte[] audioData = new byte[1024];
-            AudioResult result = adapter.transcribe(audioData); // GH-90000
+            AudioResult result = adapter.transcribe(audioData); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.getTranscription()).isEmpty(); // GH-90000
-            assertThat(result.getConfidence()).isEqualTo(0.0); // GH-90000
-            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.NOP); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.getTranscription()).isEmpty(); 
+            assertThat(result.getConfidence()).isEqualTo(0.0); 
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.NOP); 
         }
     }
 
@@ -72,13 +72,13 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("GRPC mode is rejected and LLM_FALLBACK is required")
-    void grpcModeIsRejected() { // GH-90000
-        assertThatThrownBy(() -> new GrpcSttClientAdapter( // GH-90000
+    void grpcModeIsRejected() { 
+        assertThatThrownBy(() -> new GrpcSttClientAdapter( 
             "localhost",
             50051,
             GrpcSttClientAdapter.SttMode.GRPC
         ))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("LLM_FALLBACK");
     }
 
@@ -87,12 +87,12 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("Default constructor uses LLM_FALLBACK mode")
-    void defaultConstructorUsesLlmFallbackMode() { // GH-90000
-        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051)) { // GH-90000
+    void defaultConstructorUsesLlmFallbackMode() { 
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter("localhost", 50051)) { 
             byte[] audioData = new byte[1024];
-            adapter.transcribe(audioData); // GH-90000
+            adapter.transcribe(audioData); 
 
-            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); // GH-90000
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); 
         }
     }
 
@@ -101,13 +101,13 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("getCurrentMode returns the current mode")
-    void getCurrentModeReturnsCurrentMode() { // GH-90000
-        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( // GH-90000
+    void getCurrentModeReturnsCurrentMode() { 
+        try (GrpcSttClientAdapter adapter = new GrpcSttClientAdapter( 
                 "localhost",
                 50051,
                 GrpcSttClientAdapter.SttMode.LLM_FALLBACK
         )) {
-            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); // GH-90000
+            assertThat(adapter.getCurrentMode()).isEqualTo(GrpcSttClientAdapter.SttMode.LLM_FALLBACK); 
         }
     }
 
@@ -116,8 +116,8 @@ class GrpcSttClientAdapterTest {
      */
     @Test
     @DisplayName("Adapter can be closed")
-    void adapterCanBeClosed() { // GH-90000
-        try (GrpcSttClientAdapter ignored = new GrpcSttClientAdapter("localhost", 50051)) { // GH-90000
+    void adapterCanBeClosed() { 
+        try (GrpcSttClientAdapter ignored = new GrpcSttClientAdapter("localhost", 50051)) { 
             // Auto-close via try-with-resources
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.test.builder;
@@ -20,12 +20,12 @@ import java.util.Map;
  * {@code
  * Map<String, Object> pipeline = PipelineBuilder.create("etl-001")
  *     .withName("Daily ETL")
- *     .withStep("extract", Map.of("source", "jdbc")) // GH-90000
- *     .withStep("transform", Map.of("type", "sql")) // GH-90000
- *     .withStep("load", Map.of("target", "warehouse")) // GH-90000
+ *     .withStep("extract", Map.of("source", "jdbc")) 
+ *     .withStep("transform", Map.of("type", "sql")) 
+ *     .withStep("load", Map.of("target", "warehouse")) 
  *     .withTenant("tenant-alpha")
  *     .withSchedule("0 0 * * *")
- *     .build(); // GH-90000
+ *     .build(); 
  * }
  * </pre>
  *
@@ -40,15 +40,15 @@ public final class PipelineBuilder {
     private String name;
     private String tenantId = "tenant-default";
     private String description = "Test pipeline";
-    private final List<Map<String, Object>> steps = new ArrayList<>(); // GH-90000
+    private final List<Map<String, Object>> steps = new ArrayList<>(); 
     private String schedule;
     private String status = "draft";
     private int version = 1;
     private Instant createdAt;
     private Instant updatedAt;
-    private final Map<String, Object> metadata = new HashMap<>(); // GH-90000
+    private final Map<String, Object> metadata = new HashMap<>(); 
 
-    private PipelineBuilder(String id) { // GH-90000
+    private PipelineBuilder(String id) { 
         this.id = id;
         this.name = "Pipeline-" + id;
         this.createdAt = Instant.parse("2026-01-01T00:00:00Z");
@@ -61,8 +61,8 @@ public final class PipelineBuilder {
      * @param id pipeline ID
      * @return new builder instance
      */
-    public static PipelineBuilder create(String id) { // GH-90000
-        return new PipelineBuilder(id); // GH-90000
+    public static PipelineBuilder create(String id) { 
+        return new PipelineBuilder(id); 
     }
 
     /**
@@ -71,7 +71,7 @@ public final class PipelineBuilder {
      * @param name pipeline name
      * @return this builder
      */
-    public PipelineBuilder withName(String name) { // GH-90000
+    public PipelineBuilder withName(String name) { 
         this.name = name;
         return this;
     }
@@ -82,7 +82,7 @@ public final class PipelineBuilder {
      * @param tenantId tenant identifier
      * @return this builder
      */
-    public PipelineBuilder withTenant(String tenantId) { // GH-90000
+    public PipelineBuilder withTenant(String tenantId) { 
         this.tenantId = tenantId;
         return this;
     }
@@ -93,7 +93,7 @@ public final class PipelineBuilder {
      * @param description pipeline description
      * @return this builder
      */
-    public PipelineBuilder withDescription(String description) { // GH-90000
+    public PipelineBuilder withDescription(String description) { 
         this.description = description;
         return this;
     }
@@ -105,52 +105,52 @@ public final class PipelineBuilder {
      * @param config step configuration
      * @return this builder
      */
-    public PipelineBuilder withStep(String name, Map<String, Object> config) { // GH-90000
-        Map<String, Object> step = new HashMap<>(); // GH-90000
-        step.put("name", name); // GH-90000
-        step.put("config", config); // GH-90000
-        step.put("order", steps.size()); // GH-90000
-        steps.add(step); // GH-90000
+    public PipelineBuilder withStep(String name, Map<String, Object> config) { 
+        Map<String, Object> step = new HashMap<>(); 
+        step.put("name", name); 
+        step.put("config", config); 
+        step.put("order", steps.size()); 
+        steps.add(step); 
         return this;
     }
 
     /**
      * Add an extract step.
      *
-     * @param source source type (jdbc, api, file) // GH-90000
+     * @param source source type (jdbc, api, file) 
      * @param config additional config
      * @return this builder
      */
-    public PipelineBuilder withExtractStep(String source, Map<String, Object> config) { // GH-90000
-        Map<String, Object> fullConfig = new HashMap<>(config); // GH-90000
-        fullConfig.put("source", source); // GH-90000
-        return withStep("extract", fullConfig); // GH-90000
+    public PipelineBuilder withExtractStep(String source, Map<String, Object> config) { 
+        Map<String, Object> fullConfig = new HashMap<>(config); 
+        fullConfig.put("source", source); 
+        return withStep("extract", fullConfig); 
     }
 
     /**
      * Add a transform step.
      *
-     * @param type transform type (sql, python, map) // GH-90000
+     * @param type transform type (sql, python, map) 
      * @param config additional config
      * @return this builder
      */
-    public PipelineBuilder withTransformStep(String type, Map<String, Object> config) { // GH-90000
-        Map<String, Object> fullConfig = new HashMap<>(config); // GH-90000
-        fullConfig.put("type", type); // GH-90000
-        return withStep("transform", fullConfig); // GH-90000
+    public PipelineBuilder withTransformStep(String type, Map<String, Object> config) { 
+        Map<String, Object> fullConfig = new HashMap<>(config); 
+        fullConfig.put("type", type); 
+        return withStep("transform", fullConfig); 
     }
 
     /**
      * Add a load step.
      *
-     * @param target target type (warehouse, api, file) // GH-90000
+     * @param target target type (warehouse, api, file) 
      * @param config additional config
      * @return this builder
      */
-    public PipelineBuilder withLoadStep(String target, Map<String, Object> config) { // GH-90000
-        Map<String, Object> fullConfig = new HashMap<>(config); // GH-90000
-        fullConfig.put("target", target); // GH-90000
-        return withStep("load", fullConfig); // GH-90000
+    public PipelineBuilder withLoadStep(String target, Map<String, Object> config) { 
+        Map<String, Object> fullConfig = new HashMap<>(config); 
+        fullConfig.put("target", target); 
+        return withStep("load", fullConfig); 
     }
 
     /**
@@ -159,7 +159,7 @@ public final class PipelineBuilder {
      * @param schedule cron expression
      * @return this builder
      */
-    public PipelineBuilder withSchedule(String schedule) { // GH-90000
+    public PipelineBuilder withSchedule(String schedule) { 
         this.schedule = schedule;
         return this;
     }
@@ -167,10 +167,10 @@ public final class PipelineBuilder {
     /**
      * Set pipeline status.
      *
-     * @param status status (draft, active, paused, archived) // GH-90000
+     * @param status status (draft, active, paused, archived) 
      * @return this builder
      */
-    public PipelineBuilder withStatus(String status) { // GH-90000
+    public PipelineBuilder withStatus(String status) { 
         this.status = status;
         return this;
     }
@@ -181,7 +181,7 @@ public final class PipelineBuilder {
      * @param version version number
      * @return this builder
      */
-    public PipelineBuilder withVersion(int version) { // GH-90000
+    public PipelineBuilder withVersion(int version) { 
         this.version = version;
         return this;
     }
@@ -193,8 +193,8 @@ public final class PipelineBuilder {
      * @param value metadata value
      * @return this builder
      */
-    public PipelineBuilder withMetadata(String key, Object value) { // GH-90000
-        this.metadata.put(key, value); // GH-90000
+    public PipelineBuilder withMetadata(String key, Object value) { 
+        this.metadata.put(key, value); 
         return this;
     }
 
@@ -203,19 +203,19 @@ public final class PipelineBuilder {
      *
      * @return pipeline as Map<String, Object>
      */
-    public Map<String, Object> build() { // GH-90000
-        Map<String, Object> pipeline = new HashMap<>(); // GH-90000
-        pipeline.put("id", id); // GH-90000
-        pipeline.put("name", name); // GH-90000
-        pipeline.put("tenantId", tenantId); // GH-90000
-        pipeline.put("description", description); // GH-90000
-        pipeline.put("steps", new ArrayList<>(steps)); // GH-90000
-        pipeline.put("schedule", schedule); // GH-90000
-        pipeline.put("status", status); // GH-90000
-        pipeline.put("version", version); // GH-90000
-        pipeline.put("createdAt", createdAt.toString()); // GH-90000
-        pipeline.put("updatedAt", updatedAt.toString()); // GH-90000
-        pipeline.put("metadata", new HashMap<>(metadata)); // GH-90000
+    public Map<String, Object> build() { 
+        Map<String, Object> pipeline = new HashMap<>(); 
+        pipeline.put("id", id); 
+        pipeline.put("name", name); 
+        pipeline.put("tenantId", tenantId); 
+        pipeline.put("description", description); 
+        pipeline.put("steps", new ArrayList<>(steps)); 
+        pipeline.put("schedule", schedule); 
+        pipeline.put("status", status); 
+        pipeline.put("version", version); 
+        pipeline.put("createdAt", createdAt.toString()); 
+        pipeline.put("updatedAt", updatedAt.toString()); 
+        pipeline.put("metadata", new HashMap<>(metadata)); 
         return pipeline;
     }
 
@@ -227,12 +227,12 @@ public final class PipelineBuilder {
      * @param id pipeline ID
      * @return pipeline builder
      */
-    public static PipelineBuilder etl(String id) { // GH-90000
-        return PipelineBuilder.create(id) // GH-90000
-            .withName("ETL Pipeline " + id) // GH-90000
-            .withExtractStep("jdbc", Map.of("table", "source_data")) // GH-90000
-            .withTransformStep("sql", Map.of("query", "SELECT * FROM source")) // GH-90000
-            .withLoadStep("warehouse", Map.of("table", "analytics")); // GH-90000
+    public static PipelineBuilder etl(String id) { 
+        return PipelineBuilder.create(id) 
+            .withName("ETL Pipeline " + id) 
+            .withExtractStep("jdbc", Map.of("table", "source_data")) 
+            .withTransformStep("sql", Map.of("query", "SELECT * FROM source")) 
+            .withLoadStep("warehouse", Map.of("table", "analytics")); 
     }
 
     /**
@@ -241,12 +241,12 @@ public final class PipelineBuilder {
      * @param id pipeline ID
      * @return pipeline builder
      */
-    public static PipelineBuilder streaming(String id) { // GH-90000
-        return PipelineBuilder.create(id) // GH-90000
-            .withName("Streaming Pipeline " + id) // GH-90000
-            .withExtractStep("kafka", Map.of("topic", "events")) // GH-90000
-            .withTransformStep("map", Map.of("mappings", Map.of("userId", "customer_id"))) // GH-90000
-            .withLoadStep("api", Map.of("endpoint", "/ingest")); // GH-90000
+    public static PipelineBuilder streaming(String id) { 
+        return PipelineBuilder.create(id) 
+            .withName("Streaming Pipeline " + id) 
+            .withExtractStep("kafka", Map.of("topic", "events")) 
+            .withTransformStep("map", Map.of("mappings", Map.of("userId", "customer_id"))) 
+            .withLoadStep("api", Map.of("endpoint", "/ingest")); 
     }
 
     /**
@@ -255,12 +255,12 @@ public final class PipelineBuilder {
      * @param id pipeline ID
      * @return pipeline builder
      */
-    public static PipelineBuilder batch(String id) { // GH-90000
-        return PipelineBuilder.create(id) // GH-90000
-            .withName("Batch Pipeline " + id) // GH-90000
-            .withExtractStep("file", Map.of("path", "/data/input.csv", "format", "csv")) // GH-90000
-            .withTransformStep("python", Map.of("script", "transform.py")) // GH-90000
-            .withLoadStep("file", Map.of("path", "/data/output.parquet")) // GH-90000
+    public static PipelineBuilder batch(String id) { 
+        return PipelineBuilder.create(id) 
+            .withName("Batch Pipeline " + id) 
+            .withExtractStep("file", Map.of("path", "/data/input.csv", "format", "csv")) 
+            .withTransformStep("python", Map.of("script", "transform.py")) 
+            .withLoadStep("file", Map.of("path", "/data/output.parquet")) 
             .withSchedule("0 2 * * *"); // Daily at 2 AM
     }
 }

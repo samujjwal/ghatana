@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.integration;
@@ -44,191 +44,191 @@ class ServiceIntegrationTest extends EventloopTestBase {
     private EntityServiceImpl entityService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        entityService = new EntityServiceImpl(entityRepository, metrics); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        entityService = new EntityServiceImpl(entityRepository, metrics); 
     }
 
     @Test
     @DisplayName("[INTEGRATION-001]: entity_creation_emits_event")
-    void entityCreationEmitsEvent() { // GH-90000
+    void entityCreationEmitsEvent() { 
         // Given - Setup entity repository to return saved entity
         String tenantId = "tenant-alpha";
         String collectionName = "customers";
         String userId = "user-123";
-        Map<String, Object> data = Map.of("name", "John Doe", "email", "john@example.com"); // GH-90000
+        Map<String, Object> data = Map.of("name", "John Doe", "email", "john@example.com"); 
 
-        UUID entityId = UUID.randomUUID(); // GH-90000
-        Entity savedEntity = Entity.builder() // GH-90000
-            .id(entityId) // GH-90000
-            .tenantId(tenantId) // GH-90000
-            .collectionName(collectionName) // GH-90000
-            .data(data) // GH-90000
-            .createdBy(userId) // GH-90000
-            .updatedBy(userId) // GH-90000
-            .createdAt(Instant.now()) // GH-90000
-            .updatedAt(Instant.now()) // GH-90000
-            .version(1) // GH-90000
-            .build(); // GH-90000
+        UUID entityId = UUID.randomUUID(); 
+        Entity savedEntity = Entity.builder() 
+            .id(entityId) 
+            .tenantId(tenantId) 
+            .collectionName(collectionName) 
+            .data(data) 
+            .createdBy(userId) 
+            .updatedBy(userId) 
+            .createdAt(Instant.now()) 
+            .updatedAt(Instant.now()) 
+            .version(1) 
+            .build(); 
 
-        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity)); // GH-90000
+        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(savedEntity)); 
 
         // When - Create entity through service
-        Entity result = runPromise(() -> entityService.createEntity(tenantId, collectionName, data, userId)); // GH-90000
+        Entity result = runPromise(() -> entityService.createEntity(tenantId, collectionName, data, userId)); 
 
         // Then - Verify entity was created with correct data
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getId()).isEqualTo(entityId); // GH-90000
-        assertThat(result.getTenantId()).isEqualTo(tenantId); // GH-90000
-        assertThat(result.getCollectionName()).isEqualTo(collectionName); // GH-90000
-        assertThat(result.getData()).isEqualTo(data); // GH-90000
-        assertThat(result.getVersion()).isEqualTo(1); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getId()).isEqualTo(entityId); 
+        assertThat(result.getTenantId()).isEqualTo(tenantId); 
+        assertThat(result.getCollectionName()).isEqualTo(collectionName); 
+        assertThat(result.getData()).isEqualTo(data); 
+        assertThat(result.getVersion()).isEqualTo(1); 
 
-        System.out.println("[INTEGRATION] Entity created: " + result.getId()); // GH-90000
+        System.out.println("[INTEGRATION] Entity created: " + result.getId()); 
     }
 
     @Test
     @DisplayName("[INTEGRATION-002]: entity_update_increments_version")
-    void entityUpdateIncrementsVersion() { // GH-90000
+    void entityUpdateIncrementsVersion() { 
         // Given - Existing entity
         String tenantId = "tenant-alpha";
         String collectionName = "customers";
-        UUID entityId = UUID.randomUUID(); // GH-90000
+        UUID entityId = UUID.randomUUID(); 
         String userId = "user-123";
 
-        Entity existingEntity = Entity.builder() // GH-90000
-            .id(entityId) // GH-90000
-            .tenantId(tenantId) // GH-90000
-            .collectionName(collectionName) // GH-90000
-            .data(Map.of("name", "Old Name")) // GH-90000
+        Entity existingEntity = Entity.builder() 
+            .id(entityId) 
+            .tenantId(tenantId) 
+            .collectionName(collectionName) 
+            .data(Map.of("name", "Old Name")) 
             .createdBy("user-1")
-            .createdAt(Instant.now()) // GH-90000
+            .createdAt(Instant.now()) 
             .updatedBy("user-1")
-            .updatedAt(Instant.now()) // GH-90000
-            .version(1) // GH-90000
-            .build(); // GH-90000
+            .updatedAt(Instant.now()) 
+            .version(1) 
+            .build(); 
 
-        when(entityRepository.findById(tenantId, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(Optional.of(existingEntity))); // GH-90000
-        when(entityRepository.save(eq(tenantId), any(Entity.class))) // GH-90000
-            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1))); // GH-90000
+        when(entityRepository.findById(tenantId, collectionName, entityId)) 
+            .thenReturn(Promise.of(Optional.of(existingEntity))); 
+        when(entityRepository.save(eq(tenantId), any(Entity.class))) 
+            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1))); 
 
         // When - Update entity
-        Map<String, Object> newData = Map.of("name", "New Name"); // GH-90000
-        Entity result = runPromise(() -> entityService.updateEntity(tenantId, collectionName, entityId, newData, userId)); // GH-90000
+        Map<String, Object> newData = Map.of("name", "New Name"); 
+        Entity result = runPromise(() -> entityService.updateEntity(tenantId, collectionName, entityId, newData, userId)); 
 
         // Then - Version should be incremented
-        assertThat(result.getVersion()).isEqualTo(2); // GH-90000
-        assertThat(result.getData()).isEqualTo(newData); // GH-90000
-        assertThat(result.getUpdatedBy()).isEqualTo(userId); // GH-90000
+        assertThat(result.getVersion()).isEqualTo(2); 
+        assertThat(result.getData()).isEqualTo(newData); 
+        assertThat(result.getUpdatedBy()).isEqualTo(userId); 
 
-        System.out.println("[INTEGRATION] Entity updated from v1 to v" + result.getVersion()); // GH-90000
+        System.out.println("[INTEGRATION] Entity updated from v1 to v" + result.getVersion()); 
     }
 
     @Test
     @DisplayName("[INTEGRATION-003]: full_entity_lifecycle")
-    void fullEntityLifecycle() { // GH-90000
+    void fullEntityLifecycle() { 
         // Given
         String tenantId = "tenant-lifecycle";
         String collectionName = "products";
         String userId = "admin-1";
 
-        UUID entityId = UUID.randomUUID(); // GH-90000
+        UUID entityId = UUID.randomUUID(); 
 
         // Step 1: Create
-        Map<String, Object> createData = Map.of( // GH-90000
+        Map<String, Object> createData = Map.of( 
             "name", "Product A",
             "price", 99.99,
             "category", "electronics"
         );
 
-        Entity createdEntity = Entity.builder() // GH-90000
-            .id(entityId) // GH-90000
-            .tenantId(tenantId) // GH-90000
-            .collectionName(collectionName) // GH-90000
-            .data(createData) // GH-90000
-            .createdBy(userId) // GH-90000
-            .updatedBy(userId) // GH-90000
-            .createdAt(Instant.now()) // GH-90000
-            .updatedAt(Instant.now()) // GH-90000
-            .version(1) // GH-90000
-            .build(); // GH-90000
+        Entity createdEntity = Entity.builder() 
+            .id(entityId) 
+            .tenantId(tenantId) 
+            .collectionName(collectionName) 
+            .data(createData) 
+            .createdBy(userId) 
+            .updatedBy(userId) 
+            .createdAt(Instant.now()) 
+            .updatedAt(Instant.now()) 
+            .version(1) 
+            .build(); 
 
-        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(createdEntity)); // GH-90000
+        when(entityRepository.save(eq(tenantId), any(Entity.class))).thenReturn(Promise.of(createdEntity)); 
 
-        Entity createResult = runPromise(() -> // GH-90000
-            entityService.createEntity(tenantId, collectionName, createData, userId)); // GH-90000
+        Entity createResult = runPromise(() -> 
+            entityService.createEntity(tenantId, collectionName, createData, userId)); 
 
-        assertThat(createResult.getVersion()).isEqualTo(1); // GH-90000
-        System.out.println("[INTEGRATION] Created: v" + createResult.getVersion()); // GH-90000
+        assertThat(createResult.getVersion()).isEqualTo(1); 
+        System.out.println("[INTEGRATION] Created: v" + createResult.getVersion()); 
 
         // Step 2: Update
-        when(entityRepository.findById(tenantId, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(Optional.of(createdEntity))); // GH-90000
-        when(entityRepository.save(eq(tenantId), any(Entity.class))) // GH-90000
-            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1))); // GH-90000
+        when(entityRepository.findById(tenantId, collectionName, entityId)) 
+            .thenReturn(Promise.of(Optional.of(createdEntity))); 
+        when(entityRepository.save(eq(tenantId), any(Entity.class))) 
+            .thenAnswer(invocation -> Promise.of(invocation.getArgument(1))); 
 
-        Map<String, Object> updateData = Map.of( // GH-90000
+        Map<String, Object> updateData = Map.of( 
             "name", "Product A Updated",
             "price", 89.99,
             "category", "electronics"
         );
 
-        Entity updateResult = runPromise(() -> // GH-90000
-            entityService.updateEntity(tenantId, collectionName, entityId, updateData, userId)); // GH-90000
+        Entity updateResult = runPromise(() -> 
+            entityService.updateEntity(tenantId, collectionName, entityId, updateData, userId)); 
 
-        assertThat(updateResult.getVersion()).isEqualTo(2); // GH-90000
-        System.out.println("[INTEGRATION] Updated: v" + updateResult.getVersion()); // GH-90000
+        assertThat(updateResult.getVersion()).isEqualTo(2); 
+        System.out.println("[INTEGRATION] Updated: v" + updateResult.getVersion()); 
 
         // Step 3: Get
-        when(entityRepository.findById(tenantId, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(Optional.of(updateResult))); // GH-90000
+        when(entityRepository.findById(tenantId, collectionName, entityId)) 
+            .thenReturn(Promise.of(Optional.of(updateResult))); 
 
-        Entity getResult = runPromise(() -> entityService.getEntity(tenantId, collectionName, entityId)); // GH-90000
+        Entity getResult = runPromise(() -> entityService.getEntity(tenantId, collectionName, entityId)); 
 
-        assertThat(getResult).isNotNull(); // GH-90000
+        assertThat(getResult).isNotNull(); 
         assertThat(getResult.getData().get("price")).isEqualTo(89.99);
         System.out.println("[INTEGRATION] Retrieved: price = " + getResult.getData().get("price"));
 
         // Step 4: Delete
-        when(entityRepository.delete(tenantId, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(null)); // GH-90000
+        when(entityRepository.delete(tenantId, collectionName, entityId)) 
+            .thenReturn(Promise.of(null)); 
 
-        runPromise(() -> entityService.deleteEntity(tenantId, collectionName, entityId, userId)); // GH-90000
+        runPromise(() -> entityService.deleteEntity(tenantId, collectionName, entityId, userId)); 
         System.out.println("[INTEGRATION] Deleted successfully");
     }
 
     @Test
     @DisplayName("[INTEGRATION-004]: multi_tenant_isolation")
-    void multiTenantIsolation() { // GH-90000
+    void multiTenantIsolation() { 
         // Given - Two tenants with same entity ID
         String tenantA = "tenant-alpha";
         String tenantB = "tenant-beta";
         String collectionName = "shared-collection";
-        UUID entityId = UUID.randomUUID(); // GH-90000
+        UUID entityId = UUID.randomUUID(); 
 
-        Entity entityA = Entity.builder() // GH-90000
-            .id(entityId) // GH-90000
-            .tenantId(tenantA) // GH-90000
-            .collectionName(collectionName) // GH-90000
-            .data(Map.of("tenant", "A")) // GH-90000
-            .build(); // GH-90000
+        Entity entityA = Entity.builder() 
+            .id(entityId) 
+            .tenantId(tenantA) 
+            .collectionName(collectionName) 
+            .data(Map.of("tenant", "A")) 
+            .build(); 
 
-        Entity entityB = Entity.builder() // GH-90000
-            .id(entityId) // GH-90000
-            .tenantId(tenantB) // GH-90000
-            .collectionName(collectionName) // GH-90000
-            .data(Map.of("tenant", "B")) // GH-90000
-            .build(); // GH-90000
+        Entity entityB = Entity.builder() 
+            .id(entityId) 
+            .tenantId(tenantB) 
+            .collectionName(collectionName) 
+            .data(Map.of("tenant", "B")) 
+            .build(); 
 
-        when(entityRepository.findById(tenantA, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(Optional.of(entityA))); // GH-90000
-        when(entityRepository.findById(tenantB, collectionName, entityId)) // GH-90000
-            .thenReturn(Promise.of(Optional.of(entityB))); // GH-90000
+        when(entityRepository.findById(tenantA, collectionName, entityId)) 
+            .thenReturn(Promise.of(Optional.of(entityA))); 
+        when(entityRepository.findById(tenantB, collectionName, entityId)) 
+            .thenReturn(Promise.of(Optional.of(entityB))); 
 
         // When - Get from both tenants
-        Entity resultA = runPromise(() -> entityService.getEntity(tenantA, collectionName, entityId)); // GH-90000
-        Entity resultB = runPromise(() -> entityService.getEntity(tenantB, collectionName, entityId)); // GH-90000
+        Entity resultA = runPromise(() -> entityService.getEntity(tenantA, collectionName, entityId)); 
+        Entity resultB = runPromise(() -> entityService.getEntity(tenantB, collectionName, entityId)); 
 
         // Then - Each tenant sees their own data
         assertThat(resultA.getData().get("tenant")).isEqualTo("A");

@@ -32,9 +32,9 @@ class ShellcheckRunnerTest {
     private Path testScript;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        PolyfixProjectContext context = mock(PolyfixProjectContext.class); // GH-90000
-        shellcheckRunner = new ShellcheckRunner(context); // GH-90000
+    void setUp() throws Exception { 
+        PolyfixProjectContext context = mock(PolyfixProjectContext.class); 
+        shellcheckRunner = new ShellcheckRunner(context); 
 
         // Create a test bash script
         testScript = tempDir.resolve("test.sh");
@@ -42,117 +42,117 @@ class ShellcheckRunnerTest {
                 "#!/bin/bash\n"
                         + "echo $1\n"
                         + // SC2086: Double quote to prevent globbing and word splitting
-                        "echo `ls`\n"; // SC2006: Use $(..) instead of legacy backticks // GH-90000
+                        "echo `ls`\n"; // SC2006: Use $(..) instead of legacy backticks 
 
-        Files.writeString(testScript, scriptContent); // GH-90000
+        Files.writeString(testScript, scriptContent); 
     }
 
     @Test
-    void testRun_WithValidScript_ReturnsDiagnostics() throws Exception { // GH-90000
+    void testRun_WithValidScript_ReturnsDiagnostics() throws Exception { 
         // Check if shellcheck is available
-        if (!shellcheckRunner.isShellcheckAvailable()) { // GH-90000
+        if (!shellcheckRunner.isShellcheckAvailable()) { 
             System.out.println("Skipping test: shellcheck not available");
             return;
         }
 
         // Recreate the test script to ensure it exists and is executable
         String scriptContent = "#!/bin/bash\n" + "echo $1\n" + "echo `ls`\n";
-        Files.writeString(testScript, scriptContent); // GH-90000
+        Files.writeString(testScript, scriptContent); 
 
         // Make the script executable
-        if (!testScript.toFile().setExecutable(true)) { // GH-90000
+        if (!testScript.toFile().setExecutable(true)) { 
             fail("Could not set execute permission on test script");
         }
 
         // Verify the script exists and is executable
-        if (!Files.exists(testScript)) { // GH-90000
-            fail("Test script was not created at: " + testScript); // GH-90000
+        if (!Files.exists(testScript)) { 
+            fail("Test script was not created at: " + testScript); 
         }
-        if (!Files.isExecutable(testScript)) { // GH-90000
-            fail("Test script is not executable: " + testScript); // GH-90000
+        if (!Files.isExecutable(testScript)) { 
+            fail("Test script is not executable: " + testScript); 
         }
 
         // Debug output
-        System.out.println("=== Running shellcheck on: " + testScript); // GH-90000
-        System.out.println("File exists: " + Files.exists(testScript)); // GH-90000
-        System.out.println("File content:\n" + Files.readString(testScript)); // GH-90000
+        System.out.println("=== Running shellcheck on: " + testScript); 
+        System.out.println("File exists: " + Files.exists(testScript)); 
+        System.out.println("File content:\n" + Files.readString(testScript)); 
 
         // Run shellcheck directly first to verify it works
         try {
             Process process =
-                    new ProcessBuilder("shellcheck", testScript.toString()) // GH-90000
-                            .redirectErrorStream(true) // GH-90000
-                            .start(); // GH-90000
-            process.waitFor(5, TimeUnit.SECONDS); // GH-90000
-            String output = new String(process.getInputStream().readAllBytes()); // GH-90000
-            System.out.println("Direct shellcheck output:\n" + output); // GH-90000
-        } catch (Exception e) { // GH-90000
-            System.err.println("Error running shellcheck directly: " + e.getMessage()); // GH-90000
-            e.printStackTrace(); // GH-90000
+                    new ProcessBuilder("shellcheck", testScript.toString()) 
+                            .redirectErrorStream(true) 
+                            .start(); 
+            process.waitFor(5, TimeUnit.SECONDS); 
+            String output = new String(process.getInputStream().readAllBytes()); 
+            System.out.println("Direct shellcheck output:\n" + output); 
+        } catch (Exception e) { 
+            System.err.println("Error running shellcheck directly: " + e.getMessage()); 
+            e.printStackTrace(); 
         }
 
         // Run shellcheck
-        List<UnifiedDiagnostic> diagnostics = shellcheckRunner.run(testScript); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = shellcheckRunner.run(testScript); 
 
         // Print diagnostics for debugging
-        if (diagnostics.isEmpty()) { // GH-90000
-            System.out.println( // GH-90000
+        if (diagnostics.isEmpty()) { 
+            System.out.println( 
                     "No diagnostics found. This might indicate an issue with shellcheck"
                             + " execution.");
             System.out.println("Trying to run shellcheck directly for more info...");
             try {
                 Process process =
-                        new ProcessBuilder("shellcheck", testScript.toString()) // GH-90000
-                                .redirectErrorStream(true) // GH-90000
-                                .start(); // GH-90000
-                process.waitFor(5, TimeUnit.SECONDS); // GH-90000
-                String output = new String(process.getInputStream().readAllBytes()); // GH-90000
-                System.out.println("Direct shellcheck output:\n" + output); // GH-90000
-            } catch (Exception e) { // GH-90000
-                System.err.println("Error running shellcheck directly: " + e.getMessage()); // GH-90000
+                        new ProcessBuilder("shellcheck", testScript.toString()) 
+                                .redirectErrorStream(true) 
+                                .start(); 
+                process.waitFor(5, TimeUnit.SECONDS); 
+                String output = new String(process.getInputStream().readAllBytes()); 
+                System.out.println("Direct shellcheck output:\n" + output); 
+            } catch (Exception e) { 
+                System.err.println("Error running shellcheck directly: " + e.getMessage()); 
             }
         } else {
-            System.out.println("Found " + diagnostics.size() + " diagnostics:"); // GH-90000
-            diagnostics.forEach( // GH-90000
+            System.out.println("Found " + diagnostics.size() + " diagnostics:"); 
+            diagnostics.forEach( 
                     d ->
-                            System.out.printf( // GH-90000
-                                    "- %s: %s (line %d, col %d)%n", // GH-90000
-                                    d.getRuleId(), d.getMessage(), d.getLine(), d.getColumn())); // GH-90000
+                            System.out.printf( 
+                                    "- %s: %s (line %d, col %d)%n", 
+                                    d.getRuleId(), d.getMessage(), d.getLine(), d.getColumn())); 
         }
 
         // Assertions with more detailed error messages
-        assertFalse( // GH-90000
-                diagnostics.isEmpty(), // GH-90000
+        assertFalse( 
+                diagnostics.isEmpty(), 
                 "Expected to find shellcheck issues. Check the logs above for details.");
 
         // Check for SC2086
-        boolean hasSC2086 = diagnostics.stream().anyMatch(d -> "SC2086".equals(d.getRuleId())); // GH-90000
-        assertTrue( // GH-90000
+        boolean hasSC2086 = diagnostics.stream().anyMatch(d -> "SC2086".equals(d.getRuleId())); 
+        assertTrue( 
                 hasSC2086,
-                "Expected SC2086 diagnostic (Double quote to prevent globbing and word splitting). " // GH-90000
+                "Expected SC2086 diagnostic (Double quote to prevent globbing and word splitting). " 
                         + "Found rules: "
-                        + diagnostics.stream().map(UnifiedDiagnostic::getRuleId).toList()); // GH-90000
+                        + diagnostics.stream().map(UnifiedDiagnostic::getRuleId).toList()); 
 
         // Check for SC2006
-        boolean hasSC2006 = diagnostics.stream().anyMatch(d -> "SC2006".equals(d.getRuleId())); // GH-90000
-        assertTrue( // GH-90000
+        boolean hasSC2006 = diagnostics.stream().anyMatch(d -> "SC2006".equals(d.getRuleId())); 
+        assertTrue( 
                 hasSC2006,
-                "Expected SC2006 diagnostic (Use $(..) instead of legacy backticks). " // GH-90000
+                "Expected SC2006 diagnostic (Use $(..) instead of legacy backticks). " 
                         + "Found rules: "
-                        + diagnostics.stream().map(UnifiedDiagnostic::getRuleId).toList()); // GH-90000
+                        + diagnostics.stream().map(UnifiedDiagnostic::getRuleId).toList()); 
     }
 
     @Test
-    void testRun_WithNonExistentFile_ReturnsEmptyList() { // GH-90000
+    void testRun_WithNonExistentFile_ReturnsEmptyList() { 
         Path nonExistentFile = tempDir.resolve("nonexistent.sh");
-        List<UnifiedDiagnostic> diagnostics = shellcheckRunner.run(nonExistentFile); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = shellcheckRunner.run(nonExistentFile); 
 
-        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for non-existent file"); // GH-90000
+        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for non-existent file"); 
     }
 
     @Test
-    void testIsShellcheckAvailable() { // GH-90000
+    void testIsShellcheckAvailable() { 
         // Just verify the method doesn't throw and returns a boolean
-        assertDoesNotThrow(() -> shellcheckRunner.isShellcheckAvailable()); // GH-90000
+        assertDoesNotThrow(() -> shellcheckRunner.isShellcheckAvailable()); 
     }
 }

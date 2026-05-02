@@ -94,11 +94,12 @@ include(":platform-kernel:kernel-bom")
 // =============================================================================
 include(":platform-plugins:plugin-audit-trail")
 include(":platform-plugins:plugin-human-approval")
-include(":platform-plugins:plugin-billing-ledger")
+include(":platform-plugins:plugin-ledger")
 include(":platform-plugins:plugin-compliance")
 include(":platform-plugins:plugin-consent")
 include(":platform-plugins:plugin-fraud-detection")
 include(":platform-plugins:plugin-risk-management")
+include(":platform-plugins:core-observability")
 
 // =============================================================================
 // Platform Java
@@ -151,6 +152,17 @@ include(":products:aep:orchestrator")
 include(":products:aep:server")
 include(":products:aep:aep-identity")
 include(":products:aep:aep-compliance")
+
+// =============================================================================
+// Product: Digital Marketing Operating System (DMOS)
+// =============================================================================
+include(":products:digital-marketing:dm-core-contracts")
+include(":products:digital-marketing:dm-domain-packs")
+include(":products:digital-marketing:dm-kernel-bridge")
+include(":products:digital-marketing:dm-domain")
+include(":products:digital-marketing:dm-application")
+include(":products:digital-marketing:dm-api")
+include(":products:digital-marketing:dm-integration-tests")
 
 // =============================================================================
 // Product: Data-Cloud

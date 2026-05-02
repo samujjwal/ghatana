@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
  * Tenant-isolation regression tests for {@link AgentController}.
  *
  * <p>Verifies that requests missing mandatory tenant-scoped headers
- * ({@code X-Tenant-ID}, {@code X-Organization-ID}, {@code X-Workspace-ID}) // GH-90000
+ * ({@code X-Tenant-ID}, {@code X-Organization-ID}, {@code X-Workspace-ID}) 
  * are rejected with 400 Bad Request instead of falling back to defaults.
  *
  * @doc.type class
@@ -34,10 +34,10 @@ class AgentControllerTenantTest extends EventloopTestBase {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        AgentRegistry registry = mock(AgentRegistry.class); // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        controller = new AgentController(registry, objectMapper); // GH-90000
+    void setUp() { 
+        AgentRegistry registry = mock(AgentRegistry.class); 
+        objectMapper = new ObjectMapper(); 
+        controller = new AgentController(registry, objectMapper); 
     }
 
     @Nested
@@ -46,79 +46,79 @@ class AgentControllerTenantTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should reject request missing X-Tenant-ID with 400")
-        void shouldRejectMissingTenantId() { // GH-90000
+        void shouldRejectMissingTenantId() { 
             // GIVEN — request with workspace+org but NO tenant header
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
-            HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, 
                     "http://localhost/api/v1/agents/copilot/execute")
                     .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
                     .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
-                    .withBody(body.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(body.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); 
 
             // THEN — 400 instead of silently defaulting
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("should reject request missing X-Organization-ID with 400")
-        void shouldRejectMissingOrganizationId() { // GH-90000
+        void shouldRejectMissingOrganizationId() { 
             // GIVEN — request with tenant+workspace but NO org header
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
-            HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, 
                     "http://localhost/api/v1/agents/copilot/execute")
                     .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                    .withBody(body.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(body.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("should reject request missing X-Workspace-ID with 400")
-        void shouldRejectMissingWorkspaceId() { // GH-90000
+        void shouldRejectMissingWorkspaceId() { 
             // GIVEN — request with tenant+org but NO workspace header or body field
             String body = "{\"prompt\": \"hello\"}";
-            HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, 
                     "http://localhost/api/v1/agents/copilot/execute")
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
                     .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
-                    .withBody(body.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(body.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("should accept request with all required headers")
-        void shouldAcceptWithAllHeaders() { // GH-90000
+        void shouldAcceptWithAllHeaders() { 
             // GIVEN — request with all required headers
             String body = "{\"prompt\": \"hello\", \"workspaceId\": \"ws-1\"}";
-            HttpRequest request = HttpRequest.builder(HttpMethod.POST, // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.POST, 
                     "http://localhost/api/v1/agents/copilot/execute")
                     .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
                     .withHeader(HttpHeaders.of("X-Organization-ID"), "org-1")
                     .withHeader(HttpHeaders.of("X-Workspace-ID"), "ws-1")
-                    .withBody(body.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(body.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.executeAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.executeAgent(request)); 
 
-            // THEN — should not be 400 (may be 404 for unknown agent, but not 400 for missing headers) // GH-90000
-            assertThat(response.getCode()).isNotEqualTo(400); // GH-90000
+            // THEN — should not be 400 (may be 404 for unknown agent, but not 400 for missing headers) 
+            assertThat(response.getCode()).isNotEqualTo(400); 
         }
     }
 }

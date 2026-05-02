@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Tests for {@link InMemoryEventSource}.
- * Covers start/stop lifecycle, event emission (addEvent), consumption (next), // GH-90000
+ * Covers start/stop lifecycle, event emission (addEvent), consumption (next), 
  * waiter mechanics, and queue state inspection.
  *
  * @doc.type class
@@ -32,23 +32,23 @@ class InMemoryEventSourceTest extends EventloopTestBase {
     private InMemoryEventSource source;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        source = new InMemoryEventSource(); // GH-90000
+    void setUp() { 
+        source = new InMemoryEventSource(); 
     }
 
     // --- Helper ---
 
-    private IngestEvent createTestEvent(String typeName) { // GH-90000
-        return IngestEvent.builder() // GH-90000
-                .tenantId(TenantId.random()) // GH-90000
-                .eventTypeName(typeName) // GH-90000
+    private IngestEvent createTestEvent(String typeName) { 
+        return IngestEvent.builder() 
+                .tenantId(TenantId.random()) 
+                .eventTypeName(typeName) 
                 .eventTypeVersion("1.0.0")
-                .occurrenceTime(Instant.now()) // GH-90000
-                .headers(Map.of()) // GH-90000
-                .contentType(ContentType.JSON) // GH-90000
+                .occurrenceTime(Instant.now()) 
+                .headers(Map.of()) 
+                .contentType(ContentType.JSON) 
                 .schemaUri("urn:test:schema")
-                .payload(ByteBuffer.wrap("{\"key\":\"value\"}".getBytes())) // GH-90000
-                .build(); // GH-90000
+                .payload(ByteBuffer.wrap("{\"key\":\"value\"}".getBytes())) 
+                .build(); 
     }
 
     // --- Lifecycle ---
@@ -59,28 +59,28 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should start successfully")
-        void shouldStart() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldStart() { 
+            runPromise(() -> source.start()); 
             // No exception implies success
         }
 
         @Test
         @DisplayName("should stop successfully after start")
-        void shouldStopAfterStart() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
-            runPromise(() -> source.stop()); // GH-90000
+        void shouldStopAfterStart() { 
+            runPromise(() -> source.start()); 
+            runPromise(() -> source.stop()); 
             // No exception implies success
         }
 
         @Test
         @DisplayName("should reject next() when not started")
-        void shouldRejectNextWhenNotStarted() { // GH-90000
+        void shouldRejectNextWhenNotStarted() { 
             try {
-                runPromise(() -> source.next()); // GH-90000
+                runPromise(() -> source.next()); 
                 org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source");
-            } catch (Exception e) { // GH-90000
-                assertThat(e) // GH-90000
-                        .isInstanceOf(IllegalStateException.class) // GH-90000
+            } catch (Exception e) { 
+                assertThat(e) 
+                        .isInstanceOf(IllegalStateException.class) 
                         .hasMessageContaining("not started");
             }
         }
@@ -94,30 +94,30 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return queued event immediately from next()")
-        void shouldReturnQueuedEvent() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldReturnQueuedEvent() { 
+            runPromise(() -> source.start()); 
 
             IngestEvent event = createTestEvent("user.created");
-            source.addEvent(event); // GH-90000
+            source.addEvent(event); 
 
-            IngestEvent received = runPromise(() -> source.next()); // GH-90000
+            IngestEvent received = runPromise(() -> source.next()); 
 
-            assertThat(received).isNotNull(); // GH-90000
+            assertThat(received).isNotNull(); 
             assertThat(received.eventTypeName()).isEqualTo("user.created");
         }
 
         @Test
         @DisplayName("should return events in FIFO order")
-        void shouldReturnEventsInFIFOOrder() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldReturnEventsInFIFOOrder() { 
+            runPromise(() -> source.start()); 
 
             source.addEvent(createTestEvent("first"));
             source.addEvent(createTestEvent("second"));
             source.addEvent(createTestEvent("third"));
 
-            IngestEvent e1 = runPromise(() -> source.next()); // GH-90000
-            IngestEvent e2 = runPromise(() -> source.next()); // GH-90000
-            IngestEvent e3 = runPromise(() -> source.next()); // GH-90000
+            IngestEvent e1 = runPromise(() -> source.next()); 
+            IngestEvent e2 = runPromise(() -> source.next()); 
+            IngestEvent e3 = runPromise(() -> source.next()); 
 
             assertThat(e1.eventTypeName()).isEqualTo("first");
             assertThat(e2.eventTypeName()).isEqualTo("second");
@@ -126,26 +126,26 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should reject null event in addEvent()")
-        void shouldRejectNullEvent() { // GH-90000
-            assertThatThrownBy(() -> source.addEvent(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void shouldRejectNullEvent() { 
+            assertThatThrownBy(() -> source.addEvent(null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("event cannot be null");
         }
 
         @Test
         @DisplayName("should complete waiter when event is added after next()")
-        void shouldCompleteWaiterWhenEventAdded() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldCompleteWaiterWhenEventAdded() { 
+            runPromise(() -> source.start()); 
 
-            // No events queued — next() creates a waiter // GH-90000
-            assertThat(source.queueSize()).isZero(); // GH-90000
+            // No events queued — next() creates a waiter 
+            assertThat(source.queueSize()).isZero(); 
 
             // Add event directly to satisfy a future waiter
-            // To test this properly, we add the event and then call next() // GH-90000
+            // To test this properly, we add the event and then call next() 
             IngestEvent event = createTestEvent("deferred.event");
-            source.addEvent(event); // GH-90000
+            source.addEvent(event); 
 
-            IngestEvent received = runPromise(() -> source.next()); // GH-90000
+            IngestEvent received = runPromise(() -> source.next()); 
             assertThat(received.eventTypeName()).isEqualTo("deferred.event");
         }
     }
@@ -158,31 +158,31 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should report correct queue size")
-        void shouldReportQueueSize() { // GH-90000
-            assertThat(source.queueSize()).isZero(); // GH-90000
+        void shouldReportQueueSize() { 
+            assertThat(source.queueSize()).isZero(); 
 
             source.addEvent(createTestEvent("a"));
             source.addEvent(createTestEvent("b"));
 
-            assertThat(source.queueSize()).isEqualTo(2); // GH-90000
+            assertThat(source.queueSize()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("should report zero waiter count initially")
-        void shouldReportZeroWaiters() { // GH-90000
-            assertThat(source.waiterCount()).isZero(); // GH-90000
+        void shouldReportZeroWaiters() { 
+            assertThat(source.waiterCount()).isZero(); 
         }
 
         @Test
         @DisplayName("should decrement queue size after consuming event")
-        void shouldDecrementQueueAfterConsume() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldDecrementQueueAfterConsume() { 
+            runPromise(() -> source.start()); 
 
             source.addEvent(createTestEvent("x"));
-            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
+            assertThat(source.queueSize()).isEqualTo(1); 
 
-            runPromise(() -> source.next()); // GH-90000
-            assertThat(source.queueSize()).isZero(); // GH-90000
+            runPromise(() -> source.next()); 
+            assertThat(source.queueSize()).isZero(); 
         }
     }
 
@@ -194,30 +194,30 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should reject next() after stop")
-        void shouldRejectNextAfterStop() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
-            runPromise(() -> source.stop()); // GH-90000
+        void shouldRejectNextAfterStop() { 
+            runPromise(() -> source.start()); 
+            runPromise(() -> source.stop()); 
 
             try {
-                runPromise(() -> source.next()); // GH-90000
+                runPromise(() -> source.next()); 
                 org.junit.jupiter.api.Assertions.fail("Expected exception for next() on stopped source");
-            } catch (Exception e) { // GH-90000
-                assertThat(e) // GH-90000
-                        .isInstanceOf(IllegalStateException.class) // GH-90000
+            } catch (Exception e) { 
+                assertThat(e) 
+                        .isInstanceOf(IllegalStateException.class) 
                         .hasMessageContaining("not started");
             }
         }
 
         @Test
         @DisplayName("should drain events remain in queue after stop")
-        void shouldLeaveEventsInQueueAfterStop() { // GH-90000
+        void shouldLeaveEventsInQueueAfterStop() { 
             source.addEvent(createTestEvent("leftover"));
 
-            runPromise(() -> source.start()); // GH-90000
-            runPromise(() -> source.stop()); // GH-90000
+            runPromise(() -> source.start()); 
+            runPromise(() -> source.stop()); 
 
-            // Events stay in queue (source is stopped but queue is not cleared) // GH-90000
-            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
+            // Events stay in queue (source is stopped but queue is not cleared) 
+            assertThat(source.queueSize()).isEqualTo(1); 
         }
     }
 
@@ -229,13 +229,13 @@ class InMemoryEventSourceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("addEvent should bypass queue when waiter is present")
-        void shouldBypassQueueForWaiter() { // GH-90000
-            runPromise(() -> source.start()); // GH-90000
+        void shouldBypassQueueForWaiter() { 
+            runPromise(() -> source.start()); 
 
             // Manually verify: add event goes to queue when no waiters
             source.addEvent(createTestEvent("queued"));
-            assertThat(source.queueSize()).isEqualTo(1); // GH-90000
-            assertThat(source.waiterCount()).isZero(); // GH-90000
+            assertThat(source.queueSize()).isEqualTo(1); 
+            assertThat(source.waiterCount()).isZero(); 
         }
     }
 }

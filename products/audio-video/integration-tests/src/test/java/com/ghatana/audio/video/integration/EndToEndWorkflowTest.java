@@ -24,71 +24,71 @@ class EndToEndWorkflowTest {
 
     @Test
     @DisplayName("Should handle complete audio processing workflow")
-    void shouldHandleCompleteAudioProcessingWorkflow() { // GH-90000
+    void shouldHandleCompleteAudioProcessingWorkflow() { 
         String inputFormat = "WAV";
         String outputFormat = "MP3";
         int bitrate = 320;
         boolean success = true;
         
-        assertThat(inputFormat).isNotNull(); // GH-90000
-        assertThat(outputFormat).isNotNull(); // GH-90000
-        assertThat(bitrate).isPositive(); // GH-90000
-        assertThat(success).isTrue(); // GH-90000
+        assertThat(inputFormat).isNotNull(); 
+        assertThat(outputFormat).isNotNull(); 
+        assertThat(bitrate).isPositive(); 
+        assertThat(success).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle complete video processing workflow")
-    void shouldHandleCompleteVideoProcessingWorkflow() { // GH-90000
+    void shouldHandleCompleteVideoProcessingWorkflow() { 
         String inputFormat = "MOV";
         String outputFormat = "MP4";
         String codec = "H264";
         boolean success = true;
         
-        assertThat(inputFormat).isNotNull(); // GH-90000
-        assertThat(outputFormat).isNotNull(); // GH-90000
-        assertThat(codec).isNotNull(); // GH-90000
-        assertThat(success).isTrue(); // GH-90000
+        assertThat(inputFormat).isNotNull(); 
+        assertThat(outputFormat).isNotNull(); 
+        assertThat(codec).isNotNull(); 
+        assertThat(success).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle mixed audio-video workflow")
-    void shouldHandleMixedAudioVideoWorkflow() { // GH-90000
+    void shouldHandleMixedAudioVideoWorkflow() { 
         String videoFormat = "MP4";
         String audioFormat = "AAC";
         boolean synced = true;
         
-        assertThat(videoFormat).isNotNull(); // GH-90000
-        assertThat(audioFormat).isNotNull(); // GH-90000
-        assertThat(synced).isTrue(); // GH-90000
+        assertThat(videoFormat).isNotNull(); 
+        assertThat(audioFormat).isNotNull(); 
+        assertThat(synced).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle workflow with failures")
-    void shouldHandleWorkflowWithFailures() { // GH-90000
+    void shouldHandleWorkflowWithFailures() { 
         boolean failed = false;
         String error = null;
         
-        assertThat(failed).isFalse(); // GH-90000
-        assertThat(error).isNull(); // GH-90000
+        assertThat(failed).isFalse(); 
+        assertThat(error).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle workflow rollback")
-    void shouldHandleWorkflowRollback() { // GH-90000
+    void shouldHandleWorkflowRollback() { 
         boolean rolledBack = false;
         String rollbackReason = null;
         
-        assertThat(rolledBack).isFalse(); // GH-90000
-        assertThat(rollbackReason).isNull(); // GH-90000
+        assertThat(rolledBack).isFalse(); 
+        assertThat(rollbackReason).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle workflow monitoring")
-    void shouldHandleWorkflowMonitoring() { // GH-90000
+    void shouldHandleWorkflowMonitoring() { 
         String workflowId = "workflow-123";
         String status = "COMPLETED";
         
-        assertThat(workflowId).isNotNull(); // GH-90000
+        assertThat(workflowId).isNotNull(); 
         assertThat(status).isEqualTo("COMPLETED");
     }
 }

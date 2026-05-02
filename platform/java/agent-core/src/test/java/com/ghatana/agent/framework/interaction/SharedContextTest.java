@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.framework.interaction;
@@ -19,43 +19,43 @@ class SharedContextTest {
 
         @Test
         @DisplayName("generates a non-blank entryId")
-        void generatesId() { // GH-90000
-            var ctx = SharedContext.create("ns", "key", "value", "tenant-1", ContextSharingScope.SESSION); // GH-90000
-            assertThat(ctx.entryId()).isNotBlank(); // GH-90000
+        void generatesId() { 
+            var ctx = SharedContext.create("ns", "key", "value", "tenant-1", ContextSharingScope.SESSION); 
+            assertThat(ctx.entryId()).isNotBlank(); 
         }
 
         @Test
         @DisplayName("sets all fields correctly")
-        void setsFields() { // GH-90000
-            var ctx = SharedContext.create("ns1", "k1", "v1", "t1", ContextSharingScope.CONVERSATION); // GH-90000
+        void setsFields() { 
+            var ctx = SharedContext.create("ns1", "k1", "v1", "t1", ContextSharingScope.CONVERSATION); 
             assertThat(ctx.namespace()).isEqualTo("ns1");
             assertThat(ctx.key()).isEqualTo("k1");
             assertThat(ctx.value()).isEqualTo("v1");
             assertThat(ctx.tenantId()).isEqualTo("t1");
-            assertThat(ctx.scope()).isEqualTo(ContextSharingScope.CONVERSATION); // GH-90000
-            assertThat(ctx.createdAt()).isNotNull(); // GH-90000
+            assertThat(ctx.scope()).isEqualTo(ContextSharingScope.CONVERSATION); 
+            assertThat(ctx.createdAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("null value creates a tombstone entry")
-        void nullValueIsTombstone() { // GH-90000
-            var ctx = SharedContext.create("ns", "key", null, "t", ContextSharingScope.TENANT); // GH-90000
-            assertThat(ctx.isDeleted()).isTrue(); // GH-90000
+        void nullValueIsTombstone() { 
+            var ctx = SharedContext.create("ns", "key", null, "t", ContextSharingScope.TENANT); 
+            assertThat(ctx.isDeleted()).isTrue(); 
         }
 
         @Test
         @DisplayName("non-null value is not deleted")
-        void nonNullIsNotDeleted() { // GH-90000
-            var ctx = SharedContext.create("ns", "key", 42, "t", ContextSharingScope.COMPOSITION_GROUP); // GH-90000
-            assertThat(ctx.isDeleted()).isFalse(); // GH-90000
+        void nonNullIsNotDeleted() { 
+            var ctx = SharedContext.create("ns", "key", 42, "t", ContextSharingScope.COMPOSITION_GROUP); 
+            assertThat(ctx.isDeleted()).isFalse(); 
         }
 
         @Test
         @DisplayName("each call generates unique entryId")
-        void uniqueIds() { // GH-90000
-            var c1 = SharedContext.create("ns", "key", "v", "t", ContextSharingScope.SESSION); // GH-90000
-            var c2 = SharedContext.create("ns", "key", "v", "t", ContextSharingScope.SESSION); // GH-90000
-            assertThat(c1.entryId()).isNotEqualTo(c2.entryId()); // GH-90000
+        void uniqueIds() { 
+            var c1 = SharedContext.create("ns", "key", "v", "t", ContextSharingScope.SESSION); 
+            var c2 = SharedContext.create("ns", "key", "v", "t", ContextSharingScope.SESSION); 
+            assertThat(c1.entryId()).isNotEqualTo(c2.entryId()); 
         }
     }
 
@@ -65,9 +65,9 @@ class SharedContextTest {
 
         @Test
         @DisplayName("all four scopes exist")
-        void allScopes() { // GH-90000
-            assertThat(ContextSharingScope.values()) // GH-90000
-                    .containsExactlyInAnyOrder( // GH-90000
+        void allScopes() { 
+            assertThat(ContextSharingScope.values()) 
+                    .containsExactlyInAnyOrder( 
                             ContextSharingScope.CONVERSATION,
                             ContextSharingScope.SESSION,
                             ContextSharingScope.COMPOSITION_GROUP,
@@ -81,16 +81,16 @@ class SharedContextTest {
 
         @Test
         @DisplayName("null namespace throws NPE")
-        void rejectsNullNamespace() { // GH-90000
-            assertThatThrownBy(() -> SharedContext.create(null, "k", "v", "t", ContextSharingScope.SESSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullNamespace() { 
+            assertThatThrownBy(() -> SharedContext.create(null, "k", "v", "t", ContextSharingScope.SESSION)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("null tenantId throws NPE")
-        void rejectsNullTenant() { // GH-90000
-            assertThatThrownBy(() -> SharedContext.create("ns", "k", "v", null, ContextSharingScope.SESSION)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullTenant() { 
+            assertThatThrownBy(() -> SharedContext.create("ns", "k", "v", null, ContextSharingScope.SESSION)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 }

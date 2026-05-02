@@ -23,8 +23,8 @@ class PromptTemplateManagerTest {
     private PromptTemplateManager manager;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        manager = new PromptTemplateManager(); // GH-90000
+    void setUp() { 
+        manager = new PromptTemplateManager(); 
     }
 
     // ---- registerTemplate ----
@@ -35,17 +35,17 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("registers a valid template successfully")
-        void validTemplate() { // GH-90000
-            manager.registerTemplate("greeting", "Hello, {{name}}!"); // GH-90000
+        void validTemplate() { 
+            manager.registerTemplate("greeting", "Hello, {{name}}!"); 
 
             assertThat(manager.listTemplates()).contains("greeting");
         }
 
         @Test
         @DisplayName("overwrites existing template with same name")
-        void overwriteExisting() { // GH-90000
-            manager.registerTemplate("tmpl", "version 1: {{a}}"); // GH-90000
-            manager.registerTemplate("tmpl", "version 2: {{b}}"); // GH-90000
+        void overwriteExisting() { 
+            manager.registerTemplate("tmpl", "version 1: {{a}}"); 
+            manager.registerTemplate("tmpl", "version 2: {{b}}"); 
 
             assertThat(manager.getTemplate("tmpl")).isEqualTo("version 2: {{b}}");
             assertThat(manager.getRequiredVariables("tmpl")).containsExactly("b");
@@ -53,32 +53,32 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("throws on null name")
-        void nullName() { // GH-90000
-            assertThatThrownBy(() -> manager.registerTemplate(null, "template")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void nullName() { 
+            assertThatThrownBy(() -> manager.registerTemplate(null, "template")) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("name");
         }
 
         @Test
         @DisplayName("throws on empty name")
-        void emptyName() { // GH-90000
-            assertThatThrownBy(() -> manager.registerTemplate("   ", "template")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void emptyName() { 
+            assertThatThrownBy(() -> manager.registerTemplate("   ", "template")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("throws on null template")
-        void nullTemplate() { // GH-90000
-            assertThatThrownBy(() -> manager.registerTemplate("test", null)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void nullTemplate() { 
+            assertThatThrownBy(() -> manager.registerTemplate("test", null)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("template");
         }
 
         @Test
         @DisplayName("throws on empty template")
-        void emptyTemplate() { // GH-90000
-            assertThatThrownBy(() -> manager.registerTemplate("test", "  ")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void emptyTemplate() { 
+            assertThatThrownBy(() -> manager.registerTemplate("test", "  ")) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -90,16 +90,16 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("returns registered template")
-        void existingTemplate() { // GH-90000
-            manager.registerTemplate("sys", "You are {{role}}."); // GH-90000
+        void existingTemplate() { 
+            manager.registerTemplate("sys", "You are {{role}}."); 
             assertThat(manager.getTemplate("sys")).isEqualTo("You are {{role}}.");
         }
 
         @Test
         @DisplayName("throws for non-existent template")
-        void nonExistentTemplate() { // GH-90000
+        void nonExistentTemplate() { 
             assertThatThrownBy(() -> manager.getTemplate("missing"))
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("Template not found");
         }
     }
@@ -112,11 +112,11 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("renders template with all variables provided")
-        void allVariablesProvided() { // GH-90000
-            manager.registerTemplate("email", // GH-90000
+        void allVariablesProvided() { 
+            manager.registerTemplate("email", 
                     "Dear {{name}}, your order {{orderId}} is confirmed.");
 
-            String result = manager.render("email", Map.of( // GH-90000
+            String result = manager.render("email", Map.of( 
                     "name", "Alice",
                     "orderId", "ORD-123"
             ));
@@ -126,39 +126,39 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("renders template with no variables")
-        void noVariables() { // GH-90000
-            manager.registerTemplate("static", "This is a static prompt."); // GH-90000
+        void noVariables() { 
+            manager.registerTemplate("static", "This is a static prompt."); 
 
-            String result = manager.render("static", Map.of()); // GH-90000
+            String result = manager.render("static", Map.of()); 
 
             assertThat(result).isEqualTo("This is a static prompt.");
         }
 
         @Test
         @DisplayName("throws when required variable is missing")
-        void missingVariable() { // GH-90000
-            manager.registerTemplate("greet", "Hello {{firstName}} {{lastName}}!"); // GH-90000
+        void missingVariable() { 
+            manager.registerTemplate("greet", "Hello {{firstName}} {{lastName}}!"); 
 
-            assertThatThrownBy(() -> manager.render("greet", Map.of("firstName", "Bob"))) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> manager.render("greet", Map.of("firstName", "Bob"))) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("Missing required variables")
                     .hasMessageContaining("lastName");
         }
 
         @Test
         @DisplayName("throws for non-existent template")
-        void nonExistentTemplate() { // GH-90000
-            assertThatThrownBy(() -> manager.render("ghost", Map.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void nonExistentTemplate() { 
+            assertThatThrownBy(() -> manager.render("ghost", Map.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("Template not found");
         }
 
         @Test
         @DisplayName("handles multiple occurrences of same variable")
-        void multipleOccurrences() { // GH-90000
-            manager.registerTemplate("repeat", "{{name}} says hi. Again, {{name}}!"); // GH-90000
+        void multipleOccurrences() { 
+            manager.registerTemplate("repeat", "{{name}} says hi. Again, {{name}}!"); 
 
-            String result = manager.render("repeat", Map.of("name", "Charlie")); // GH-90000
+            String result = manager.render("repeat", Map.of("name", "Charlie")); 
 
             assertThat(result).isEqualTo("Charlie says hi. Again, Charlie!");
         }
@@ -172,12 +172,12 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("uses default when variable not provided")
-        void usesDefault() { // GH-90000
-            manager.registerTemplate("prompt", "Role: {{role}}, Tone: {{tone}}"); // GH-90000
+        void usesDefault() { 
+            manager.registerTemplate("prompt", "Role: {{role}}, Tone: {{tone}}"); 
 
-            String result = manager.renderWithDefaults("prompt", // GH-90000
-                    Map.of("role", "assistant"), // GH-90000
-                    Map.of("tone", "friendly", "role", "system")); // GH-90000
+            String result = manager.renderWithDefaults("prompt", 
+                    Map.of("role", "assistant"), 
+                    Map.of("tone", "friendly", "role", "system")); 
 
             // Explicit variable overrides default
             assertThat(result).isEqualTo("Role: assistant, Tone: friendly");
@@ -185,12 +185,12 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("falls back to defaults for all missing variables")
-        void allDefaults() { // GH-90000
-            manager.registerTemplate("cfg", "Model: {{model}}, Temp: {{temp}}"); // GH-90000
+        void allDefaults() { 
+            manager.registerTemplate("cfg", "Model: {{model}}, Temp: {{temp}}"); 
 
-            String result = manager.renderWithDefaults("cfg", // GH-90000
-                    Map.of(), // GH-90000
-                    Map.of("model", "gpt-4", "temp", "0.7")); // GH-90000
+            String result = manager.renderWithDefaults("cfg", 
+                    Map.of(), 
+                    Map.of("model", "gpt-4", "temp", "0.7")); 
 
             assertThat(result).isEqualTo("Model: gpt-4, Temp: 0.7");
         }
@@ -204,28 +204,28 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("extracts all variable names from template")
-        void extractsVariables() { // GH-90000
-            manager.registerTemplate("complex", // GH-90000
+        void extractsVariables() { 
+            manager.registerTemplate("complex", 
                     "{{system}} prompt for {{user}} about {{topic}}");
 
             Set<String> vars = manager.getRequiredVariables("complex");
 
-            assertThat(vars).containsExactlyInAnyOrder("system", "user", "topic"); // GH-90000
+            assertThat(vars).containsExactlyInAnyOrder("system", "user", "topic"); 
         }
 
         @Test
         @DisplayName("returns empty set for template without variables")
-        void noVariables() { // GH-90000
-            manager.registerTemplate("plain", "No variables here."); // GH-90000
+        void noVariables() { 
+            manager.registerTemplate("plain", "No variables here."); 
 
             assertThat(manager.getRequiredVariables("plain")).isEmpty();
         }
 
         @Test
         @DisplayName("throws for non-existent template")
-        void nonExistent() { // GH-90000
+        void nonExistent() { 
             assertThatThrownBy(() -> manager.getRequiredVariables("nope"))
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -237,42 +237,42 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("returns true when all required variables are present")
-        void allPresent() { // GH-90000
-            manager.registerTemplate("tmpl", "{{a}} and {{b}}"); // GH-90000
+        void allPresent() { 
+            manager.registerTemplate("tmpl", "{{a}} and {{b}}"); 
 
-            assertThat(manager.validateVariables("tmpl", Map.of("a", "1", "b", "2"))).isTrue(); // GH-90000
+            assertThat(manager.validateVariables("tmpl", Map.of("a", "1", "b", "2"))).isTrue(); 
         }
 
         @Test
         @DisplayName("returns true when extra variables are provided")
-        void extraVariables() { // GH-90000
-            manager.registerTemplate("tmpl", "{{a}}"); // GH-90000
+        void extraVariables() { 
+            manager.registerTemplate("tmpl", "{{a}}"); 
 
-            assertThat(manager.validateVariables("tmpl", Map.of("a", "1", "extra", "x"))).isTrue(); // GH-90000
+            assertThat(manager.validateVariables("tmpl", Map.of("a", "1", "extra", "x"))).isTrue(); 
         }
 
         @Test
         @DisplayName("returns false when a required variable is missing")
-        void missingVariable() { // GH-90000
-            manager.registerTemplate("tmpl", "{{a}} and {{b}}"); // GH-90000
+        void missingVariable() { 
+            manager.registerTemplate("tmpl", "{{a}} and {{b}}"); 
 
-            assertThat(manager.validateVariables("tmpl", Map.of("a", "1"))).isFalse(); // GH-90000
+            assertThat(manager.validateVariables("tmpl", Map.of("a", "1"))).isFalse(); 
         }
 
         @Test
         @DisplayName("returns false when variables map is null and template has variables")
-        void nullVariables() { // GH-90000
-            manager.registerTemplate("tmpl", "{{x}}"); // GH-90000
+        void nullVariables() { 
+            manager.registerTemplate("tmpl", "{{x}}"); 
 
-            assertThat(manager.validateVariables("tmpl", null)).isFalse(); // GH-90000
+            assertThat(manager.validateVariables("tmpl", null)).isFalse(); 
         }
 
         @Test
         @DisplayName("returns true when variables map is null and template has no variables")
-        void nullVariablesNoRequired() { // GH-90000
-            manager.registerTemplate("tmpl", "static text"); // GH-90000
+        void nullVariablesNoRequired() { 
+            manager.registerTemplate("tmpl", "static text"); 
 
-            assertThat(manager.validateVariables("tmpl", null)).isTrue(); // GH-90000
+            assertThat(manager.validateVariables("tmpl", null)).isTrue(); 
         }
     }
 
@@ -284,29 +284,29 @@ class PromptTemplateManagerTest {
 
         @Test
         @DisplayName("returns missing variable names")
-        void returnsMissing() { // GH-90000
-            manager.registerTemplate("tmpl", "{{a}} {{b}} {{c}}"); // GH-90000
+        void returnsMissing() { 
+            manager.registerTemplate("tmpl", "{{a}} {{b}} {{c}}"); 
 
-            Set<String> missing = manager.getMissingVariables("tmpl", Map.of("a", "1")); // GH-90000
+            Set<String> missing = manager.getMissingVariables("tmpl", Map.of("a", "1")); 
 
-            assertThat(missing).containsExactlyInAnyOrder("b", "c"); // GH-90000
+            assertThat(missing).containsExactlyInAnyOrder("b", "c"); 
         }
 
         @Test
         @DisplayName("returns empty when all provided")
-        void allProvided() { // GH-90000
-            manager.registerTemplate("tmpl", "{{x}}"); // GH-90000
+        void allProvided() { 
+            manager.registerTemplate("tmpl", "{{x}}"); 
 
-            assertThat(manager.getMissingVariables("tmpl", Map.of("x", "val"))).isEmpty(); // GH-90000
+            assertThat(manager.getMissingVariables("tmpl", Map.of("x", "val"))).isEmpty(); 
         }
 
         @Test
         @DisplayName("returns all when null variables provided")
-        void nullVariables() { // GH-90000
-            manager.registerTemplate("tmpl", "{{p}} {{q}}"); // GH-90000
+        void nullVariables() { 
+            manager.registerTemplate("tmpl", "{{p}} {{q}}"); 
 
-            assertThat(manager.getMissingVariables("tmpl", null)) // GH-90000
-                    .containsExactlyInAnyOrder("p", "q"); // GH-90000
+            assertThat(manager.getMissingVariables("tmpl", null)) 
+                    .containsExactlyInAnyOrder("p", "q"); 
         }
     }
 
@@ -314,39 +314,39 @@ class PromptTemplateManagerTest {
 
     @Test
     @DisplayName("listTemplates returns all registered templates")
-    void listTemplates() { // GH-90000
-        manager.registerTemplate("alpha", "a"); // GH-90000
-        manager.registerTemplate("beta", "b"); // GH-90000
-        manager.registerTemplate("gamma", "c"); // GH-90000
+    void listTemplates() { 
+        manager.registerTemplate("alpha", "a"); 
+        manager.registerTemplate("beta", "b"); 
+        manager.registerTemplate("gamma", "c"); 
 
-        assertThat(manager.listTemplates()).containsExactlyInAnyOrder("alpha", "beta", "gamma"); // GH-90000
+        assertThat(manager.listTemplates()).containsExactlyInAnyOrder("alpha", "beta", "gamma"); 
     }
 
     // ---- removeTemplate ----
 
     @Test
     @DisplayName("removeTemplate removes specific template")
-    void removeTemplate() { // GH-90000
-        manager.registerTemplate("keep", "stay"); // GH-90000
-        manager.registerTemplate("drop", "go"); // GH-90000
+    void removeTemplate() { 
+        manager.registerTemplate("keep", "stay"); 
+        manager.registerTemplate("drop", "go"); 
 
         manager.removeTemplate("drop");
 
         assertThat(manager.listTemplates()).containsExactly("keep");
         assertThatThrownBy(() -> manager.getTemplate("drop"))
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     // ---- clear ----
 
     @Test
     @DisplayName("clear removes all templates")
-    void clear() { // GH-90000
-        manager.registerTemplate("a", "1"); // GH-90000
-        manager.registerTemplate("b", "2"); // GH-90000
+    void clear() { 
+        manager.registerTemplate("a", "1"); 
+        manager.registerTemplate("b", "2"); 
 
-        manager.clear(); // GH-90000
+        manager.clear(); 
 
-        assertThat(manager.listTemplates()).isEmpty(); // GH-90000
+        assertThat(manager.listTemplates()).isEmpty(); 
     }
 }

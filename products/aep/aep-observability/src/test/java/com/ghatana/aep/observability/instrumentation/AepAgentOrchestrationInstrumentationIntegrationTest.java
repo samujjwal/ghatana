@@ -20,16 +20,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AEP Agent Orchestration Instrumentation Integration Tests")
 class AepAgentOrchestrationInstrumentationIntegrationTest {
 
     private AepAgentOrchestrationInstrumentation instrumentation;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        instrumentation = new AepAgentOrchestrationInstrumentation(); // GH-90000
-        MDC.clear(); // GH-90000
+    void setUp() { 
+        instrumentation = new AepAgentOrchestrationInstrumentation(); 
+        MDC.clear(); 
     }
 
     @Nested
@@ -37,86 +37,86 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class PipelineDeploymentInstrumentationTests {
 
         @Test
-        void shouldInstrumentSuccessfulPipelineDeployment() throws Exception { // GH-90000
+        void shouldInstrumentSuccessfulPipelineDeployment() throws Exception { 
             // Given
             String pipelineId = "deploy-pipeline-123";
             String tenantId = "deploy-tenant-456";
             String expectedResult = "deployment-successful";
 
             // When
-            String result = instrumentation.instrumentPipelineDeployment( // GH-90000
+            String result = instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenantId,
-                    () -> expectedResult // GH-90000
+                    () -> expectedResult 
             );
 
             // Then
-            assertThat(result).isEqualTo(expectedResult); // GH-90000
-            assertThat(MDC.getCopyOfContextMap()).isEmpty(); // GH-90000
+            assertThat(result).isEqualTo(expectedResult); 
+            assertThat(MDC.getCopyOfContextMap()).isEmpty(); 
         }
 
         @Test
-        void shouldPropagateExceptionDuringDeployment() { // GH-90000
+        void shouldPropagateExceptionDuringDeployment() { 
             // Given
             String pipelineId = "failing-pipeline";
             String tenantId = "failing-tenant";
             RuntimeException exception = new RuntimeException("Deployment failed");
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentPipelineDeployment( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         throw exception;
                     }
-            )).isInstanceOf(RuntimeException.class) // GH-90000
+            )).isInstanceOf(RuntimeException.class) 
                     .hasMessage("Deployment failed");
         }
 
         @Test
-        void shouldClearMDCAfterDeployment() throws Exception { // GH-90000
+        void shouldClearMDCAfterDeployment() throws Exception { 
             // Given
             String pipelineId = "cleanup-pipeline";
             String tenantId = "cleanup-tenant";
 
             // When
-            instrumentation.instrumentPipelineDeployment( // GH-90000
+            instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenantId,
-                    () -> "result" // GH-90000
+                    () -> "result" 
             );
 
             // Then
-            // MDC should be cleared after instrumentation (in finally block) // GH-90000
+            // MDC should be cleared after instrumentation (in finally block) 
             // Note: Due to thread-local nature of MDC, this test verifies cleanup occurred
-            assertThat(MDC.getCopyOfContextMap()).isEmpty(); // GH-90000
+            assertThat(MDC.getCopyOfContextMap()).isEmpty(); 
         }
 
         @Test
-        void shouldRecordDurationMetrics() throws Exception { // GH-90000
+        void shouldRecordDurationMetrics() throws Exception { 
             // Given
             String pipelineId = "duration-pipeline";
             String tenantId = "duration-tenant";
-            long startTime = System.currentTimeMillis(); // GH-90000
+            long startTime = System.currentTimeMillis(); 
 
             // When
-            instrumentation.instrumentPipelineDeployment( // GH-90000
+            instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         try {
-                            Thread.sleep(100); // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            Thread.sleep(100); 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                         }
                         return "result";
                     }
             );
 
-            long duration = System.currentTimeMillis() - startTime; // GH-90000
+            long duration = System.currentTimeMillis() - startTime; 
 
             // Then
-            assertThat(duration).isGreaterThanOrEqualTo(100); // GH-90000
+            assertThat(duration).isGreaterThanOrEqualTo(100); 
         }
     }
 
@@ -125,7 +125,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class AgentExecutionInstrumentationTests {
 
         @Test
-        void shouldInstrumentSuccessfulAgentExecution() throws Exception { // GH-90000
+        void shouldInstrumentSuccessfulAgentExecution() throws Exception { 
             // Given
             String agentId = "agent-exec-123";
             String pipelineId = "exec-pipeline-456";
@@ -133,31 +133,31 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             String expectedResult = "agent-output";
 
             // When
-            String result = instrumentation.instrumentAgentExecution( // GH-90000
+            String result = instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenantId,
-                    () -> expectedResult // GH-90000
+                    () -> expectedResult 
             );
 
             // Then
-            assertThat(result).isEqualTo(expectedResult); // GH-90000
+            assertThat(result).isEqualTo(expectedResult); 
             assertThat(MDC.get("agentId")).isNull();
         }
 
         @Test
-        void shouldValidateAgentExecutionSLA() throws Exception { // GH-90000
+        void shouldValidateAgentExecutionSLA() throws Exception { 
             // Given
             String agentId = "sla-agent";
             String pipelineId = "sla-pipeline";
             String tenantId = "sla-tenant";
 
             // When + Then - SLA threshold is 5 seconds
-            String result = instrumentation.instrumentAgentExecution( // GH-90000
+            String result = instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         // Simulate quick execution within SLA
                         return "completed-within-sla";
                     }
@@ -167,23 +167,23 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldLogWarningWhenExecutionExceedsSLA() throws Exception { // GH-90000
+        void shouldLogWarningWhenExecutionExceedsSLA() throws Exception { 
             // Given
             String agentId = "slow-agent";
             String pipelineId = "slow-pipeline";
             String tenantId = "slow-tenant";
 
             // When
-            String result = instrumentation.instrumentAgentExecution( // GH-90000
+            String result = instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         try {
                             // Simulate execution exceeding 5 second SLA
-                            Thread.sleep(100); // Simulating delay // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            Thread.sleep(100); // Simulating delay 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                         }
                         return "slow-result";
                     }
@@ -191,11 +191,11 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
 
             // Then
             assertThat(result).isEqualTo("slow-result");
-            // SLA warning would be logged (verified through log capture in real tests) // GH-90000
+            // SLA warning would be logged (verified through log capture in real tests) 
         }
 
         @Test
-        void shouldPropagateAgentExecutionException() { // GH-90000
+        void shouldPropagateAgentExecutionException() { 
             // Given
             String agentId = "failing-agent";
             String pipelineId = "failing-exec-pipeline";
@@ -203,30 +203,30 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             IllegalStateException exception = new IllegalStateException("Agent state invalid");
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentAgentExecution( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         throw exception;
                     }
-            )).isInstanceOf(IllegalStateException.class) // GH-90000
+            )).isInstanceOf(IllegalStateException.class) 
                     .hasMessage("Agent state invalid");
         }
 
         @Test
-        void shouldClearAgentContextAfterExecution() throws Exception { // GH-90000
+        void shouldClearAgentContextAfterExecution() throws Exception { 
             // Given
             String agentId = "context-cleanup-agent";
             String pipelineId = "context-cleanup-pipeline";
             String tenantId = "context-cleanup-tenant";
 
             // When
-            instrumentation.instrumentAgentExecution( // GH-90000
+            instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenantId,
-                    () -> "result" // GH-90000
+                    () -> "result" 
             );
 
             // Then
@@ -239,7 +239,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class EventProcessingInstrumentationTests {
 
         @Test
-        void shouldInstrumentSuccessfulEventProcessing() throws Exception { // GH-90000
+        void shouldInstrumentSuccessfulEventProcessing() throws Exception { 
             // Given
             String eventId = "event-proc-123";
             String eventType = "agent.deployed";
@@ -247,35 +247,35 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             String expectedResult = "event-processed";
 
             // When
-            String result = instrumentation.instrumentEventProcessing( // GH-90000
+            String result = instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> expectedResult // GH-90000
+                    () -> expectedResult 
             );
 
             // Then
-            assertThat(result).isEqualTo(expectedResult); // GH-90000
+            assertThat(result).isEqualTo(expectedResult); 
             assertThat(MDC.get("eventId")).isNull();
         }
 
         @Test
-        void shouldDetectSlowEventProcessing() throws Exception { // GH-90000
+        void shouldDetectSlowEventProcessing() throws Exception { 
             // Given
             String eventId = "slow-event";
             String eventType = "slow.process";
             String tenantId = "slow-event-tenant";
 
             // When
-            String result = instrumentation.instrumentEventProcessing( // GH-90000
+            String result = instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         try {
-                            Thread.sleep(100); // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            Thread.sleep(100); 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                         }
                         return "slow-result";
                     }
@@ -287,7 +287,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldPropagateEventProcessingException() { // GH-90000
+        void shouldPropagateEventProcessingException() { 
             // Given
             String eventId = "failing-event";
             String eventType = "event.failed";
@@ -295,30 +295,30 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             IOException exception = new java.io.IOException("Event processing IO error");
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentEventProcessing( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         throw exception;
                     }
-            )).isInstanceOf(IOException.class) // GH-90000
+            )).isInstanceOf(IOException.class) 
                     .hasMessage("Event processing IO error");
         }
 
         @Test
-        void shouldClearEventContextAfterProcessing() throws Exception { // GH-90000
+        void shouldClearEventContextAfterProcessing() throws Exception { 
             // Given
             String eventId = "cleanup-event";
             String eventType = "cleanup.type";
             String tenantId = "cleanup-event-tenant";
 
             // When
-            instrumentation.instrumentEventProcessing( // GH-90000
+            instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> "result" // GH-90000
+                    () -> "result" 
             );
 
             // Then
@@ -327,25 +327,25 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldPreserveCorrelationIdDuringEventProcessing() throws Exception { // GH-90000
+        void shouldPreserveCorrelationIdDuringEventProcessing() throws Exception { 
             // Given
             String correlationId = "correlation-event-123";
-            MDC.put("correlationId", correlationId); // GH-90000
+            MDC.put("correlationId", correlationId); 
             String eventId = "corr-event";
             String eventType = "corr.type";
             String tenantId = "corr-tenant";
 
             // When
-            instrumentation.instrumentEventProcessing( // GH-90000
+            instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> "result" // GH-90000
+                    () -> "result" 
             );
 
             // Then
             // Correlation ID should be preserved through instrumentation
-            // (actual verification requires log capture in real tests) // GH-90000
+            // (actual verification requires log capture in real tests) 
         }
     }
 
@@ -354,18 +354,18 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class BatchOperationInstrumentationTests {
 
         @Test
-        void shouldInstrumentSuccessfulBatchOperation() throws Exception { // GH-90000
+        void shouldInstrumentSuccessfulBatchOperation() throws Exception { 
             // Given
             String batchId = "batch-123";
             String tenantId = "batch-tenant-456";
             int totalItems = 10;
 
             // When + Then
-            instrumentation.instrumentBatchOperation( // GH-90000
+            instrumentation.instrumentBatchOperation( 
                     batchId,
                     tenantId,
                     totalItems,
-                    () -> { // GH-90000
+                    () -> { 
                         // Simulate batch processing
                     }
             );
@@ -374,52 +374,52 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldCalculatePerItemDuration() throws Exception { // GH-90000
+        void shouldCalculatePerItemDuration() throws Exception { 
             // Given
             String batchId = "duration-batch";
             String tenantId = "duration-batch-tenant";
             int totalItems = 5;
-            long startTime = System.currentTimeMillis(); // GH-90000
+            long startTime = System.currentTimeMillis(); 
 
             // When
-            instrumentation.instrumentBatchOperation( // GH-90000
+            instrumentation.instrumentBatchOperation( 
                     batchId,
                     tenantId,
                     totalItems,
-                    () -> { // GH-90000
+                    () -> { 
                         try {
-                            Thread.sleep(100); // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            Thread.sleep(100); 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                         }
                     }
             );
 
-            long totalDuration = System.currentTimeMillis() - startTime; // GH-90000
+            long totalDuration = System.currentTimeMillis() - startTime; 
 
             // Then
-            assertThat(totalDuration).isGreaterThanOrEqualTo(100); // GH-90000
+            assertThat(totalDuration).isGreaterThanOrEqualTo(100); 
             long perItemDuration = totalDuration / totalItems;
-            assertThat(perItemDuration).isGreaterThan(0); // GH-90000
+            assertThat(perItemDuration).isGreaterThan(0); 
         }
 
         @Test
-        void shouldWarnWhenPerItemDurationExceedsThreshold() throws Exception { // GH-90000
+        void shouldWarnWhenPerItemDurationExceedsThreshold() throws Exception { 
             // Given
             String batchId = "slow-batch";
             String tenantId = "slow-batch-tenant";
             int totalItems = 1;
 
             // When
-            instrumentation.instrumentBatchOperation( // GH-90000
+            instrumentation.instrumentBatchOperation( 
                     batchId,
                     tenantId,
                     totalItems,
-                    () -> { // GH-90000
+                    () -> { 
                         try {
-                            Thread.sleep(150); // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            Thread.sleep(150); 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                         }
                     }
             );
@@ -429,7 +429,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldPropagateBatchOperationException() { // GH-90000
+        void shouldPropagateBatchOperationException() { 
             // Given
             String batchId = "failing-batch";
             String tenantId = "failing-batch-tenant";
@@ -437,30 +437,30 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             RuntimeException exception = new RuntimeException("Batch processing failed");
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentBatchOperation( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentBatchOperation( 
                     batchId,
                     tenantId,
                     totalItems,
-                    () -> { // GH-90000
+                    () -> { 
                         throw exception;
                     }
-            )).isInstanceOf(RuntimeException.class) // GH-90000
+            )).isInstanceOf(RuntimeException.class) 
                     .hasMessage("Batch processing failed");
         }
 
         @Test
-        void shouldHandleZeroItemBatch() throws Exception { // GH-90000
+        void shouldHandleZeroItemBatch() throws Exception { 
             // Given
             String batchId = "empty-batch";
             String tenantId = "empty-batch-tenant";
             int totalItems = 0;
 
             // When + Then
-            instrumentation.instrumentBatchOperation( // GH-90000
+            instrumentation.instrumentBatchOperation( 
                     batchId,
                     tenantId,
                     totalItems,
-                    () -> { // GH-90000
+                    () -> { 
                         // No items to process
                     }
             );
@@ -474,25 +474,25 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class MultiTenantContextIsolationTests {
 
         @Test
-        void shouldIsolateTenantContextInPipelineDeployment() throws Exception { // GH-90000
+        void shouldIsolateTenantContextInPipelineDeployment() throws Exception { 
             // Given
             String tenant1 = "isolation-tenant-1";
             String tenant2 = "isolation-tenant-2";
             String pipelineId = "isolation-pipeline";
 
             // When
-            instrumentation.instrumentPipelineDeployment( // GH-90000
+            instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenant1,
-                    () -> "tenant1-result" // GH-90000
+                    () -> "tenant1-result" 
             );
 
-            MDC.clear(); // GH-90000
+            MDC.clear(); 
 
-            instrumentation.instrumentPipelineDeployment( // GH-90000
+            instrumentation.instrumentPipelineDeployment( 
                     pipelineId,
                     tenant2,
-                    () -> "tenant2-result" // GH-90000
+                    () -> "tenant2-result" 
             );
 
             // Then
@@ -500,7 +500,7 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
         }
 
         @Test
-        void shouldIsolateTenantContextInAgentExecution() throws Exception { // GH-90000
+        void shouldIsolateTenantContextInAgentExecution() throws Exception { 
             // Given
             String tenant1 = "agent-isolation-tenant-1";
             String tenant2 = "agent-isolation-tenant-2";
@@ -508,20 +508,20 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
             String pipelineId = "multitenancy-pipeline";
 
             // When
-            instrumentation.instrumentAgentExecution( // GH-90000
+            instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenant1,
-                    () -> "tenant1-agent-result" // GH-90000
+                    () -> "tenant1-agent-result" 
             );
 
-            MDC.clear(); // GH-90000
+            MDC.clear(); 
 
-            instrumentation.instrumentAgentExecution( // GH-90000
+            instrumentation.instrumentAgentExecution( 
                     agentId,
                     pipelineId,
                     tenant2,
-                    () -> "tenant2-agent-result" // GH-90000
+                    () -> "tenant2-agent-result" 
             );
 
             // Then
@@ -534,60 +534,60 @@ class AepAgentOrchestrationInstrumentationIntegrationTest {
     class ExceptionHandlingAndErrorPropagationTests {
 
         @Test
-        void shouldClearMDCEvenOnException() throws Exception { // GH-90000
+        void shouldClearMDCEvenOnException() throws Exception { 
             // Given
             String pipelineId = "exception-cleanup";
             String tenantId = "exception-cleanup-tenant";
 
             // When
             try {
-                instrumentation.instrumentPipelineDeployment( // GH-90000
+                instrumentation.instrumentPipelineDeployment( 
                         pipelineId,
                         tenantId,
-                        () -> { // GH-90000
+                        () -> { 
                             throw new RuntimeException("Test exception");
                         }
                 );
-            } catch (RuntimeException e) { // GH-90000
+            } catch (RuntimeException e) { 
                 // Expected
             }
 
             // Then
-            assertThat(MDC.getCopyOfContextMap()).isEmpty(); // GH-90000
+            assertThat(MDC.getCopyOfContextMap()).isEmpty(); 
         }
 
         @Test
-        void shouldPreserveOriginalExceptionMessage() { // GH-90000
+        void shouldPreserveOriginalExceptionMessage() { 
             // Given
             String originalMessage = "Original error message";
-            Exception originalException = new RuntimeException(originalMessage); // GH-90000
+            Exception originalException = new RuntimeException(originalMessage); 
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentPipelineDeployment( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentPipelineDeployment( 
                     "pipeline",
                     "tenant",
-                    () -> { // GH-90000
+                    () -> { 
                         throw originalException;
                     }
-            )).hasMessage(originalMessage); // GH-90000
+            )).hasMessage(originalMessage); 
         }
 
         @Test
-        void shouldHandleCheckedExceptions() { // GH-90000
+        void shouldHandleCheckedExceptions() { 
             // Given
             String eventId = "checked-exception-event";
             String eventType = "error.type";
             String tenantId = "error-tenant";
 
             // When + Then
-            assertThatThrownBy(() -> instrumentation.instrumentEventProcessing( // GH-90000
+            assertThatThrownBy(() -> instrumentation.instrumentEventProcessing( 
                     eventId,
                     eventType,
                     tenantId,
-                    () -> { // GH-90000
+                    () -> { 
                         throw new InterruptedException("Thread interrupted");
                     }
-            )).isInstanceOf(InterruptedException.class); // GH-90000
+            )).isInstanceOf(InterruptedException.class); 
         }
     }
 }

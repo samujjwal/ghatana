@@ -28,7 +28,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("SseStreamingHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class SseStreamingHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -58,67 +58,67 @@ class SseStreamingHandlerTest extends EventloopTestBase {
     private SseStreamingHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, http) // GH-90000
-            .withOpenSearchConnector(openSearchConnector); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new SseStreamingHandler(client, brain, learningBridge, objectMapper, http) 
+            .withOpenSearchConnector(openSearchConnector); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("entity CDC rejects missing tenant before event log access")
-    void entityCdcRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void entityCdcRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleEntityCdcStream(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleEntityCdcStream(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(client, never()).eventLogStore(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(client, never()).eventLogStore(); 
     }
 
     @Test
     @DisplayName("general SSE rejects missing tenant before event log access")
-    void generalSseRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void generalSseRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleSseStream(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleSseStream(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(client, never()).eventLogStore(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(client, never()).eventLogStore(); 
     }
 
     @Test
     @DisplayName("brain workspace SSE rejects missing tenant before workspace access")
-    void brainWorkspaceRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void brainWorkspaceRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleBrainWorkspaceStream(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleBrainWorkspaceStream(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(brain, never()).getWorkspace(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(brain, never()).getWorkspace(); 
     }
 
     @Test
     @DisplayName("learning SSE rejects missing tenant before stream setup")
-    void learningStreamRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void learningStreamRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleLearningStream(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleLearningStream(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(learningBridge, never()).getStatus(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(learningBridge, never()).getStatus(); 
     }
 
     @Test
     @DisplayName("streaming query SSE rejects missing tenant before query execution")
-    void streamingQueryRejectsMissingTenant() { // GH-90000
+    void streamingQueryRejectsMissingTenant() { 
         when(request.getPathParameter("collection")).thenReturn("orders");
         when(request.getQueryParameter("q")).thenReturn("status:open");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleStreamingQuerySse(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleStreamingQuerySse(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verifyNoInteractions(openSearchConnector); // GH-90000
-        verify(client, never()).eventLogStore(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verifyNoInteractions(openSearchConnector); 
+        verify(client, never()).eventLogStore(); 
     }
 }

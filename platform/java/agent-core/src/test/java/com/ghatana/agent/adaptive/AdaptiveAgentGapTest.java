@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  * Phase 4 — Task 4.1: Gap-filling tests for AdaptiveAgent.
  */
 
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
  *   <li>Invalid arm index feedback rejection</li>
  *   <li>Exploitation ratio convergence</li>
  *   <li>Arm statistics completeness</li>
- *   <li>Custom parameter range (non [0,1])</li> // GH-90000
+ *   <li>Custom parameter range (non [0,1])</li> 
  *   <li>Single arm edge case</li>
  *   <li>All algorithms with many iterations — verifying statistical properties</li>
  * </ul>
@@ -38,46 +38,46 @@ class AdaptiveAgentGapTest {
     private AgentContext ctx;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        ctx = AgentContext.builder() // GH-90000
+    void setUp() { 
+        ctx = AgentContext.builder() 
                 .turnId("turn-1")
                 .agentId("adaptive-gap")
                 .tenantId("test-tenant")
-                .memoryStore(mock(MemoryStore.class)) // GH-90000
-                .build(); // GH-90000
+                .memoryStore(mock(MemoryStore.class)) 
+                .build(); 
     }
 
-    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
-        AtomicReference<T> result = new AtomicReference<>(); // GH-90000
-        AtomicReference<Exception> err = new AtomicReference<>(); // GH-90000
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
-        eventloop.post(() -> supplier.get() // GH-90000
-                .whenResult(result::set) // GH-90000
-                .whenException(err::set)); // GH-90000
-        eventloop.run(); // GH-90000
-        if (err.get() != null) throw new RuntimeException(err.get()); // GH-90000
-        return result.get(); // GH-90000
+    private <T> T runOnEventloop(java.util.function.Supplier<Promise<T>> supplier) { 
+        AtomicReference<T> result = new AtomicReference<>(); 
+        AtomicReference<Exception> err = new AtomicReference<>(); 
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); 
+        eventloop.post(() -> supplier.get() 
+                .whenResult(result::set) 
+                .whenException(err::set)); 
+        eventloop.run(); 
+        if (err.get() != null) throw new RuntimeException(err.get()); 
+        return result.get(); 
     }
 
-    private AdaptiveAgent createAgent(String id, AdaptiveAgentConfig.BanditAlgorithm algo, // GH-90000
+    private AdaptiveAgent createAgent(String id, AdaptiveAgentConfig.BanditAlgorithm algo, 
                                        int arms, double min, double max, double explorationRate) {
-        AdaptiveAgent agent = new AdaptiveAgent(id); // GH-90000
-        AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() // GH-90000
-                .agentId(id) // GH-90000
-                .type(AgentType.ADAPTIVE) // GH-90000
-                .banditAlgorithm(algo) // GH-90000
+        AdaptiveAgent agent = new AdaptiveAgent(id); 
+        AdaptiveAgentConfig config = AdaptiveAgentConfig.builder() 
+                .agentId(id) 
+                .type(AgentType.ADAPTIVE) 
+                .banditAlgorithm(algo) 
                 .tunedParameter("threshold")
-                .parameterMin(min) // GH-90000
-                .parameterMax(max) // GH-90000
-                .armCount(arms) // GH-90000
-                .explorationRate(explorationRate) // GH-90000
-                .build(); // GH-90000
-        runOnEventloop(() -> agent.initialize(config)); // GH-90000
+                .parameterMin(min) 
+                .parameterMax(max) 
+                .armCount(arms) 
+                .explorationRate(explorationRate) 
+                .build(); 
+        runOnEventloop(() -> agent.initialize(config)); 
         return agent;
     }
 
-    private AdaptiveAgent createAgent(String id, AdaptiveAgentConfig.BanditAlgorithm algo, int arms) { // GH-90000
-        return createAgent(id, algo, arms, 0.0, 1.0, 0.1); // GH-90000
+    private AdaptiveAgent createAgent(String id, AdaptiveAgentConfig.BanditAlgorithm algo, int arms) { 
+        return createAgent(id, algo, arms, 0.0, 1.0, 0.1); 
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -89,48 +89,48 @@ class AdaptiveAgentGapTest {
     class NegativeRewardTests {
 
         @Test
-        void negativeRewardAcceptedAndTracked() { // GH-90000
-            AdaptiveAgent agent = createAgent("neg-reward", // GH-90000
+        void negativeRewardAcceptedAndTracked() { 
+            AdaptiveAgent agent = createAgent("neg-reward", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 3);
 
-            // Process to explore all 3 arms first (pullCount must be > 0) // GH-90000
-            for (int i = 0; i < 3; i++) { // GH-90000
-                runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            // Process to explore all 3 arms first (pullCount must be > 0) 
+            for (int i = 0; i < 3; i++) { 
+                runOnEventloop(() -> agent.process(ctx, Map.of())); 
             }
 
-            // Give arm 0 negative rewards (penalize it) // GH-90000
-            for (int i = 0; i < 20; i++) { // GH-90000
-                agent.recordFeedback(0, -1.0); // GH-90000
-                agent.recordFeedback(1, 0.8); // GH-90000
-                agent.recordFeedback(2, 0.5); // GH-90000
+            // Give arm 0 negative rewards (penalize it) 
+            for (int i = 0; i < 20; i++) { 
+                agent.recordFeedback(0, -1.0); 
+                agent.recordFeedback(1, 0.8); 
+                agent.recordFeedback(2, 0.5); 
             }
 
             // Arm 0 should NOT be the best arm
-            assertThat(agent.getBestArm()).isNotEqualTo(0); // GH-90000
-            // Arm 1 (highest reward) should be best // GH-90000
-            assertThat(agent.getBestArm()).isEqualTo(1); // GH-90000
+            assertThat(agent.getBestArm()).isNotEqualTo(0); 
+            // Arm 1 (highest reward) should be best 
+            assertThat(agent.getBestArm()).isEqualTo(1); 
         }
 
         @Test
-        void zeroRewardCountsAsFailureForThompson() { // GH-90000
-            AdaptiveAgent agent = createAgent("zero-reward", // GH-90000
+        void zeroRewardCountsAsFailureForThompson() { 
+            AdaptiveAgent agent = createAgent("zero-reward", 
                     AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING, 3);
 
-            // Process enough times to explore all 3 arms (Thompson Sampling is // GH-90000
+            // Process enough times to explore all 3 arms (Thompson Sampling is 
             // stochastic so 3 calls may not cover every arm; 30 virtually guarantees it).
-            for (int i = 0; i < 30; i++) { // GH-90000
-                runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            for (int i = 0; i < 30; i++) { 
+                runOnEventloop(() -> agent.process(ctx, Map.of())); 
             }
 
-            // Give arm 2 all successes (>0.5), others all failures (<=0.5) // GH-90000
+            // Give arm 2 all successes (>0.5), others all failures (<=0.5) 
             // Enough rounds to dominate any noise from the initial exploration.
-            for (int i = 0; i < 300; i++) { // GH-90000
-                agent.recordFeedback(0, 0.0);  // failure // GH-90000
-                agent.recordFeedback(1, 0.1);  // failure // GH-90000
-                agent.recordFeedback(2, 1.0);  // success // GH-90000
+            for (int i = 0; i < 300; i++) { 
+                agent.recordFeedback(0, 0.0);  // failure 
+                agent.recordFeedback(1, 0.1);  // failure 
+                agent.recordFeedback(2, 1.0);  // success 
             }
 
-            assertThat(agent.getBestArm()).isEqualTo(2); // GH-90000
+            assertThat(agent.getBestArm()).isEqualTo(2); 
         }
     }
 
@@ -143,21 +143,21 @@ class AdaptiveAgentGapTest {
     class InvalidArmTests {
 
         @Test
-        void feedbackWithNegativeIndexThrows() { // GH-90000
-            AdaptiveAgent agent = createAgent("invalid-neg", // GH-90000
+        void feedbackWithNegativeIndexThrows() { 
+            AdaptiveAgent agent = createAgent("invalid-neg", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 3);
 
-            assertThatThrownBy(() -> agent.recordFeedback(-1, 0.5)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+            assertThatThrownBy(() -> agent.recordFeedback(-1, 0.5)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
-        void feedbackWithIndexBeyondRangeThrows() { // GH-90000
-            AdaptiveAgent agent = createAgent("invalid-high", // GH-90000
+        void feedbackWithIndexBeyondRangeThrows() { 
+            AdaptiveAgent agent = createAgent("invalid-high", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 3);
 
-            assertThatThrownBy(() -> agent.recordFeedback(3, 0.5)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+            assertThatThrownBy(() -> agent.recordFeedback(3, 0.5)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -170,34 +170,34 @@ class AdaptiveAgentGapTest {
     class ExploitationRatioTests {
 
         @Test
-        void exploitationRatioIncreasesWithTraining() { // GH-90000
-            AdaptiveAgent agent = createAgent("expl-ratio", // GH-90000
+        void exploitationRatioIncreasesWithTraining() { 
+            AdaptiveAgent agent = createAgent("expl-ratio", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 5);
 
-            // Initial pulls — low exploitation ratio (exploring) // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
-                runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            // Initial pulls — low exploitation ratio (exploring) 
+            for (int i = 0; i < 5; i++) { 
+                runOnEventloop(() -> agent.process(ctx, Map.of())); 
             }
-            var earlyResult = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-            double earlyConfidence = earlyResult.getConfidence(); // GH-90000
+            var earlyResult = runOnEventloop(() -> agent.process(ctx, Map.of())); 
+            double earlyConfidence = earlyResult.getConfidence(); 
 
             // Train arm 2 heavily
-            for (int i = 0; i < 200; i++) { // GH-90000
-                agent.recordFeedback(2, 1.0); // GH-90000
-                for (int j = 0; j < 5; j++) { // GH-90000
-                    if (j != 2) agent.recordFeedback(j, 0.1); // GH-90000
+            for (int i = 0; i < 200; i++) { 
+                agent.recordFeedback(2, 1.0); 
+                for (int j = 0; j < 5; j++) { 
+                    if (j != 2) agent.recordFeedback(j, 0.1); 
                 }
             }
 
             // Many more pulls — exploitation ratio should increase
-            for (int i = 0; i < 50; i++) { // GH-90000
-                runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            for (int i = 0; i < 50; i++) { 
+                runOnEventloop(() -> agent.process(ctx, Map.of())); 
             }
 
-            var lateResult = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-            double lateConfidence = lateResult.getConfidence(); // GH-90000
+            var lateResult = runOnEventloop(() -> agent.process(ctx, Map.of())); 
+            double lateConfidence = lateResult.getConfidence(); 
 
-            assertThat(lateConfidence).isGreaterThanOrEqualTo(earlyConfidence); // GH-90000
+            assertThat(lateConfidence).isGreaterThanOrEqualTo(earlyConfidence); 
         }
     }
 
@@ -210,16 +210,16 @@ class AdaptiveAgentGapTest {
     class ArmStatisticsTests {
 
         @Test
-        void statisticsContainAllExpectedFields() { // GH-90000
-            AdaptiveAgent agent = createAgent("stats", // GH-90000
+        void statisticsContainAllExpectedFields() { 
+            AdaptiveAgent agent = createAgent("stats", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 4);
 
             // Pull some arms and give feedback
-            runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-            agent.recordFeedback(0, 0.7); // GH-90000
-            runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, Map.of())); 
+            agent.recordFeedback(0, 0.7); 
+            runOnEventloop(() -> agent.process(ctx, Map.of())); 
 
-            Map<String, Object> stats = agent.getArmStatistics(); // GH-90000
+            Map<String, Object> stats = agent.getArmStatistics(); 
 
             assertThat(stats).containsKey("totalPulls");
             assertThat(stats).containsKey("bestArm");
@@ -228,7 +228,7 @@ class AdaptiveAgentGapTest {
 
             assertThat(stats.get("arm_0")).isInstanceOf(Map.class);
             Map<?, ?> arm0 = (Map<?, ?>) stats.get("arm_0");
-            assertThat(arm0.keySet().containsAll(List.of("value", "pulls", "totalReward", "avgReward"))).isTrue(); // GH-90000
+            assertThat(arm0.keySet().containsAll(List.of("value", "pulls", "totalReward", "avgReward"))).isTrue(); 
         }
     }
 
@@ -241,30 +241,30 @@ class AdaptiveAgentGapTest {
     class CustomRangeTests {
 
         @Test
-        void armValuesDistributedAcrossCustomRange() { // GH-90000
-            AdaptiveAgent agent = createAgent("custom-range", // GH-90000
+        void armValuesDistributedAcrossCustomRange() { 
+            AdaptiveAgent agent = createAgent("custom-range", 
                     AdaptiveAgentConfig.BanditAlgorithm.EPSILON_GREEDY,
                     5, 100.0, 500.0, 0.1);
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); 
             double param = ((Number) result.getOutput().get("threshold")).doubleValue();
 
-            assertThat(param).isBetween(100.0, 500.0); // GH-90000
+            assertThat(param).isBetween(100.0, 500.0); 
         }
 
         @Test
-        void bestParameterValueWithinCustomRange() { // GH-90000
-            AdaptiveAgent agent = createAgent("range-check", // GH-90000
+        void bestParameterValueWithinCustomRange() { 
+            AdaptiveAgent agent = createAgent("range-check", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1,
                     3, 10.0, 30.0, 0.1);
 
             // Pull each arm
-            for (int i = 0; i < 3; i++) { // GH-90000
-                runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            for (int i = 0; i < 3; i++) { 
+                runOnEventloop(() -> agent.process(ctx, Map.of())); 
             }
 
-            double best = agent.getBestParameterValue(); // GH-90000
-            assertThat(best).isBetween(10.0, 30.0); // GH-90000
+            double best = agent.getBestParameterValue(); 
+            assertThat(best).isBetween(10.0, 30.0); 
         }
     }
 
@@ -277,14 +277,14 @@ class AdaptiveAgentGapTest {
     class SingleArmTests {
 
         @Test
-        void singleArmAlwaysSelected() { // GH-90000
-            AdaptiveAgent agent = createAgent("single-arm", // GH-90000
+        void singleArmAlwaysSelected() { 
+            AdaptiveAgent agent = createAgent("single-arm", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 1);
 
-            for (int i = 0; i < 10; i++) { // GH-90000
-                var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            for (int i = 0; i < 10; i++) { 
+                var result = runOnEventloop(() -> agent.process(ctx, Map.of())); 
                 int arm = ((Number) result.getOutput().get("_adaptive.selectedArm")).intValue();
-                assertThat(arm).isEqualTo(0); // GH-90000
+                assertThat(arm).isEqualTo(0); 
             }
         }
     }
@@ -298,26 +298,26 @@ class AdaptiveAgentGapTest {
     class OutputMetadataTests {
 
         @Test
-        void outputContainsAlgorithmName() { // GH-90000
-            AdaptiveAgent agent = createAgent("meta-algo", // GH-90000
+        void outputContainsAlgorithmName() { 
+            AdaptiveAgent agent = createAgent("meta-algo", 
                     AdaptiveAgentConfig.BanditAlgorithm.THOMPSON_SAMPLING, 3);
 
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); 
 
             assertThat(result.getOutput().get("_adaptive.algorithm"))
                     .isEqualTo("THOMPSON_SAMPLING");
         }
 
         @Test
-        void outputContainsPullCounts() { // GH-90000
-            AdaptiveAgent agent = createAgent("meta-pulls", // GH-90000
+        void outputContainsPullCounts() { 
+            AdaptiveAgent agent = createAgent("meta-pulls", 
                     AdaptiveAgentConfig.BanditAlgorithm.UCB1, 3);
 
-            runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
-            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); // GH-90000
+            runOnEventloop(() -> agent.process(ctx, Map.of())); 
+            var result = runOnEventloop(() -> agent.process(ctx, Map.of())); 
 
             long totalPulls = ((Number) result.getOutput().get("_adaptive.totalPulls")).longValue();
-            assertThat(totalPulls).isEqualTo(2); // GH-90000
+            assertThat(totalPulls).isEqualTo(2); 
         }
     }
 }

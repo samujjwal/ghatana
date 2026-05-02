@@ -24,45 +24,45 @@ class DataCloudGrpcLauncherBootstrapTest {
 
     @Test
     @DisplayName("registers shutdown hook after successful startup")
-    void registersShutdownHookAfterSuccessfulStartup() { // GH-90000
-        Logger log = mock(Logger.class); // GH-90000
-        AtomicReference<Thread> registeredHook = new AtomicReference<>(); // GH-90000
-        AtomicInteger stopCalls = new AtomicInteger(); // GH-90000
+    void registersShutdownHookAfterSuccessfulStartup() { 
+        Logger log = mock(Logger.class); 
+        AtomicReference<Thread> registeredHook = new AtomicReference<>(); 
+        AtomicInteger stopCalls = new AtomicInteger(); 
 
-        DataCloudGrpcLauncherBootstrap.startTransport( // GH-90000
+        DataCloudGrpcLauncherBootstrap.startTransport( 
                 log,
-                () -> {}, // GH-90000
+                () -> {}, 
                 stopCalls::incrementAndGet,
                 registeredHook::set);
 
-        assertThat(registeredHook.get()).isNotNull(); // GH-90000
-    registeredHook.get().start(); // GH-90000
+        assertThat(registeredHook.get()).isNotNull(); 
+    registeredHook.get().start(); 
         try {
-            registeredHook.get().join(); // GH-90000
-        } catch (InterruptedException exception) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
-            throw new AssertionError("Interrupted while waiting for shutdown hook", exception); // GH-90000
+            registeredHook.get().join(); 
+        } catch (InterruptedException exception) { 
+            Thread.currentThread().interrupt(); 
+            throw new AssertionError("Interrupted while waiting for shutdown hook", exception); 
         }
-        assertThat(stopCalls.get()).isEqualTo(1); // GH-90000
+        assertThat(stopCalls.get()).isEqualTo(1); 
         verify(log).info("Stopping gRPC server...");
     }
 
     @Test
     @DisplayName("wraps startup failures in typed transport exception")
-    void wrapsStartupFailuresInTypedTransportException() { // GH-90000
-        Logger log = mock(Logger.class); // GH-90000
+    void wrapsStartupFailuresInTypedTransportException() { 
+        Logger log = mock(Logger.class); 
 
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudGrpcLauncherBootstrap.startTransport( // GH-90000
+        assertThatThrownBy(() -> 
+                DataCloudGrpcLauncherBootstrap.startTransport( 
                         log,
-                        () -> { // GH-90000
+                        () -> { 
                             throw new IllegalStateException("boom");
                         },
-                        () -> {}, // GH-90000
+                        () -> {}, 
                         hook -> {}))
-                .isInstanceOf(com.ghatana.datacloud.launcher.DataCloudTransportStartupException.class) // GH-90000
+                .isInstanceOf(com.ghatana.datacloud.launcher.DataCloudTransportStartupException.class) 
                 .hasMessage("Failed to start gRPC server")
-                .hasCauseInstanceOf(IllegalStateException.class); // GH-90000
+                .hasCauseInstanceOf(IllegalStateException.class); 
 
         verify(log).error(eq("Failed to start gRPC server"), any(IllegalStateException.class));
     }

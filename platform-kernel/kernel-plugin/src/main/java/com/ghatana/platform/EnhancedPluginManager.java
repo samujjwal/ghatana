@@ -22,6 +22,7 @@ import java.util.concurrent.Executor;
  *   <li>T1/T2/T3 plugin tier enforcement</li>
  *   <li>Plugin capability verification and approval</li>
  *   <li>Resource quota enforcement</li>
+ *   <li>Plugin config schema validation at install time</li>
  *   <li>Manifest signature verification</li>
  *   <li>Plugin dependency resolution</li>
  *   <li>Hot reload with state migration</li>
@@ -44,6 +45,7 @@ public final class EnhancedPluginManager {
     private final PluginResourceEnforcer resourceEnforcer;
     private final PluginDependencyResolver dependencyResolver;
     private final PluginStateMigrationService stateMigrationService;
+    private final PluginConfigSchemaValidator configSchemaValidator;
     private final Executor executor;
 
     private final Map<String, EnhancedLoadedPlugin> enhancedPlugins = new ConcurrentHashMap<>();
@@ -62,6 +64,7 @@ public final class EnhancedPluginManager {
         this.resourceEnforcer = new PluginResourceEnforcer();
         this.dependencyResolver = new PluginDependencyResolver();
         this.stateMigrationService = new PluginStateMigrationService();
+        this.configSchemaValidator = new PluginConfigSchemaValidator();
         this.executor = executor;
 
         // Register lifecycle listener
@@ -127,6 +130,9 @@ public final class EnhancedPluginManager {
             try {
                 // Verify plugin manifest
                 PluginManifest manifest = verifyPluginManifest(pluginPath);
+
+                // Validate config schema (no external config in path-only load; schema must accept empty)
+                configSchemaValidator.validate(manifest.getPluginId(), manifest.getConfigSchema(), Map.of());
 
                 // Check tier compatibility
                 PluginTier tier = PluginTier.fromManifest(manifest);

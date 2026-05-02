@@ -371,7 +371,7 @@ public class DataCloudHttpServer {
     private TierMigrationScheduler warmMigrationScheduler; // B10: L1→L2 warm tier scheduler
     private ArchiveMigrationScheduler coldMigrationScheduler; // B10: L2→L3 cold tier scheduler
     private TierMigrationHandler tierMigrationHandler; // B10: manual tier migration API (wired in start())
-    private SettingsHandler settingsHandler; // GH-90000: admin settings CRUD API
+    private SettingsHandler settingsHandler; // admin settings CRUD API
     private UserActivityHandler userActivityHandler;
     private final Map<String, Supplier<Map<String, Object>>> healthSubsystemSuppliers = new LinkedHashMap<>();
 
@@ -1122,32 +1122,30 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
         runtimePluginManager = new DataCloudRuntimePluginManager();
-        // Temporarily disable all plugin registration to debug startup timeout
-        // try {
-        //     runtimePluginManager.registerBuiltInPlugins();
-        //     log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
-        // } catch (Exception e) {
-        //     log.error("[DC-AUD-005] Failed to register OOB plugins", e);
-        // }
-        // if (workflowExecutionEnabled) {
-        //     runtimePluginManager.registerWorkflowPlugin(client);
-        //     log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
-        // } else {
-        //     log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
-        //             + "Set DATACLOUD_WORKFLOW_EXECUTION_ENABLED=true to enable.");
-        // }
+        try {
+            runtimePluginManager.registerBuiltInPlugins();
+            log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
+        } catch (Exception e) {
+            log.error("[DC-AUD-005] Failed to register OOB plugins", e);
+        }
+        if (workflowExecutionEnabled) {
+            runtimePluginManager.registerWorkflowPlugin(client);
+            log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
+        } else {
+            log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
+                    + "Set DATACLOUD_WORKFLOW_EXECUTION_ENABLED=true to enable.");
+        }
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
         learningHandler = new LearningHandler(learningBridge, httpSupport);
 
         analyticsHandler = new AnalyticsHandler(analyticsEngine, httpSupport);
-        // Temporarily disable report plugin registration to debug startup timeout
-        // if (reportService != null) {
-        //     runtimePluginManager.registerReportPlugin(reportService);
-        //     analyticsHandler.withReportCapability(
-        //         runtimePluginManager.findCapability(ReportExecutionCapability.class).orElse(null));
-        //     analyticsHandler.withReportService(reportService);
-        // }
+        if (reportService != null) {
+            runtimePluginManager.registerReportPlugin(reportService);
+            analyticsHandler.withReportCapability(
+                runtimePluginManager.findCapability(ReportExecutionCapability.class).orElse(null));
+            analyticsHandler.withReportService(reportService);
+        }
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
 
         workflowExecutionHandler = new WorkflowExecutionHandler(httpSupport, runtimePluginManager);
@@ -1271,7 +1269,7 @@ public class DataCloudHttpServer {
         // B10: Tier migration handler — uses schedulers when they are configured via withTierMigrationSchedulers()
         tierMigrationHandler = new TierMigrationHandler(httpSupport, warmMigrationScheduler, coldMigrationScheduler);
 
-        // GH-90000 / DC-S14: Admin settings handler — use injected persistent store or fall back to in-memory
+        // DC-S14: Admin settings handler — use injected persistent store or fall back to in-memory
         SettingsStore resolvedStore = settingsStore != null ? settingsStore : new InMemorySettingsStore();
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
 

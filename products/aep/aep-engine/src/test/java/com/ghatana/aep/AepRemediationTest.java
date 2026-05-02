@@ -19,11 +19,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Covers:
  * <ul>
  *   <li>Consent gating and identity stitching</li>
- *   <li>Pattern matching (THRESHOLD, SEQUENCE)</li> // GH-90000
+ *   <li>Pattern matching (THRESHOLD, SEQUENCE)</li> 
  *   <li>Anomaly threshold configuration</li>
- *   <li>Event schema validation (AEP-002)</li> // GH-90000
- *   <li>Configuration validation - fail-fast (AEP-004)</li> // GH-90000
- *   <li>Event versioning (ECR-003)</li> // GH-90000
+ *   <li>Event schema validation (AEP-002)</li> 
+ *   <li>Configuration validation - fail-fast (AEP-004)</li> 
+ *   <li>Event versioning (ECR-003)</li> 
  * </ul>
  *
  * @doc.type class
@@ -40,9 +40,9 @@ class AepRemediationTest extends EventloopTestBase {
     private AepEngine engine;
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (engine != null) { // GH-90000
-            engine.close(); // GH-90000
+    void tearDown() { 
+        if (engine != null) { 
+            engine.close(); 
         }
     }
 
@@ -56,54 +56,54 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("process() applies threshold pattern matching")
-        void shouldDetectThresholdPattern() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
-            AepEngine.Pattern pattern = runPromise(() -> engine.registerPattern( // GH-90000
+        void shouldDetectThresholdPattern() { 
+            engine = Aep.forTesting(); 
+            AepEngine.Pattern pattern = runPromise(() -> engine.registerPattern( 
                 TENANT_ID,
-                new AepEngine.PatternDefinition( // GH-90000
+                new AepEngine.PatternDefinition( 
                     "High value",
                     "Detect value threshold exceedance",
                     AepEngine.PatternType.THRESHOLD,
-                    Map.of("field", "value", "threshold", 50.0) // GH-90000
+                    Map.of("field", "value", "threshold", 50.0) 
                 )
             ));
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process( // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process( 
                 TENANT_ID,
-                new AepEngine.Event("sensor.metric", Map.of("value", 75.0), Map.of(), Instant.now()) // GH-90000
+                new AepEngine.Event("sensor.metric", Map.of("value", 75.0), Map.of(), Instant.now()) 
             ));
 
-            assertThat(result.success()).isTrue(); // GH-90000
-            assertThat(result.detections()).hasSize(1); // GH-90000
-            assertThat(result.detections().get(0).patternId()).isEqualTo(pattern.id()); // GH-90000
+            assertThat(result.success()).isTrue(); 
+            assertThat(result.detections()).hasSize(1); 
+            assertThat(result.detections().get(0).patternId()).isEqualTo(pattern.id()); 
         }
 
         @Test
         @DisplayName("process() completes a configured sequence pattern")
-        void shouldDetectSequencePattern() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
-            runPromise(() -> engine.registerPattern( // GH-90000
+        void shouldDetectSequencePattern() { 
+            engine = Aep.forTesting(); 
+            runPromise(() -> engine.registerPattern( 
                 TENANT_ID,
-                new AepEngine.PatternDefinition( // GH-90000
+                new AepEngine.PatternDefinition( 
                     "Login then purchase",
                     "Detect two-step conversion sequence",
                     AepEngine.PatternType.SEQUENCE,
-                    Map.of("expectedTypes", List.of("user.login", "order.completed"), // GH-90000
+                    Map.of("expectedTypes", List.of("user.login", "order.completed"), 
                            "correlationField", "userId")
                 )
             ));
 
-            runPromise(() -> engine.process( // GH-90000
+            runPromise(() -> engine.process( 
                 TENANT_ID,
-                new AepEngine.Event("user.login", Map.of("userId", "u-1"), Map.of(), Instant.now()) // GH-90000
+                new AepEngine.Event("user.login", Map.of("userId", "u-1"), Map.of(), Instant.now()) 
             ));
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process( // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process( 
                 TENANT_ID,
-                new AepEngine.Event("order.completed", Map.of("userId", "u-1"), Map.of(), Instant.now()) // GH-90000
+                new AepEngine.Event("order.completed", Map.of("userId", "u-1"), Map.of(), Instant.now()) 
             ));
 
-            assertThat(result.detections()).hasSize(1); // GH-90000
+            assertThat(result.detections()).hasSize(1); 
             assertThat(result.detections().get(0).patternName()).isEqualTo("Login then purchase");
         }
     }
@@ -118,41 +118,41 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("process() rejects events with denied consent")
-        void shouldSkipDeniedConsent() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
+        void shouldSkipDeniedConsent() { 
+            engine = Aep.forTesting(); 
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process( // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process( 
                 TENANT_ID,
-                new AepEngine.Event( // GH-90000
+                new AepEngine.Event( 
                     "profile.update",
                     Map.of("consentStatus", "DENIED", "allowedPurposes", List.of("event_processing")),
-                    Map.of(), // GH-90000
-                    Instant.now() // GH-90000
+                    Map.of(), 
+                    Instant.now() 
                 )
             ));
 
-            assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.metadata()).containsEntry("skipped", true); // GH-90000
-            assertThat(result.metadata()).containsEntry("reason", "Event rejected by consent policy"); // GH-90000
+            assertThat(result.success()).isFalse(); 
+            assertThat(result.metadata()).containsEntry("skipped", true); 
+            assertThat(result.metadata()).containsEntry("reason", "Event rejected by consent policy"); 
         }
 
         @Test
         @DisplayName("process() derives stitched identity from headers and payload")
-        void shouldResolveStitchedIdentity() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
+        void shouldResolveStitchedIdentity() { 
+            engine = Aep.forTesting(); 
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process( // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process( 
                 TENANT_ID,
-                new AepEngine.Event( // GH-90000
+                new AepEngine.Event( 
                     "session.start",
-                    Map.of("anonymousId", "anon-99", "sessionId", "sess-1"), // GH-90000
-                    Map.of("x-user-id", "user-7"), // GH-90000
-                    Instant.now() // GH-90000
+                    Map.of("anonymousId", "anon-99", "sessionId", "sess-1"), 
+                    Map.of("x-user-id", "user-7"), 
+                    Instant.now() 
                 )
             ));
 
-            assertThat(result.success()).isTrue(); // GH-90000
-            assertThat(result.metadata()).containsEntry("stitchedId", "user-7"); // GH-90000
+            assertThat(result.success()).isTrue(); 
+            assertThat(result.metadata()).containsEntry("stitchedId", "user-7"); 
         }
     }
 
@@ -166,64 +166,64 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("detectAnomalies() honors configurable anomaly threshold")
-        void shouldUseConfiguredAnomalyThreshold() { // GH-90000
-            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.5).build()); // GH-90000
+        void shouldUseConfiguredAnomalyThreshold() { 
+            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.5).build()); 
 
-            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( // GH-90000
+            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( 
                 TENANT_ID,
-                List.of(new AepEngine.Event("sensor.cpu", Map.of("anomaly_score", 0.6), Map.of(), Instant.now())) // GH-90000
+                List.of(new AepEngine.Event("sensor.cpu", Map.of("anomaly_score", 0.6), Map.of(), Instant.now())) 
             ));
 
-            assertThat(anomalies).hasSize(1); // GH-90000
-            assertThat(anomalies.get(0).score()).isEqualTo(0.6); // GH-90000
+            assertThat(anomalies).hasSize(1); 
+            assertThat(anomalies.get(0).score()).isEqualTo(0.6); 
         }
 
         @Test
         @DisplayName("detectAnomalies() ignores events below threshold")
-        void shouldIgnoreEventsBelowThreshold() { // GH-90000
-            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.8).build()); // GH-90000
+        void shouldIgnoreEventsBelowThreshold() { 
+            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.8).build()); 
 
-            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( // GH-90000
+            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( 
                 TENANT_ID,
-                List.of(new AepEngine.Event("sensor.cpu", Map.of("anomaly_score", 0.5), Map.of(), Instant.now())) // GH-90000
+                List.of(new AepEngine.Event("sensor.cpu", Map.of("anomaly_score", 0.5), Map.of(), Instant.now())) 
             ));
 
-            assertThat(anomalies).isEmpty(); // GH-90000
+            assertThat(anomalies).isEmpty(); 
         }
 
         @Test
         @DisplayName("detectAnomalies() uses model-backed scoring for numeric series without explicit score")
-        void shouldUseModelBackedScoringForNumericSeries() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
+        void shouldUseModelBackedScoringForNumericSeries() { 
+            engine = Aep.forTesting(); 
 
-            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( // GH-90000
+            List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( 
                 TENANT_ID,
-                List.of( // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.2), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.8), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.3), Map.of(), Instant.now()), // GH-90000
-                    new AepEngine.Event("sensor.cpu", Map.of("value", 75.0), Map.of(), Instant.now()) // GH-90000
+                List.of( 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.2), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.8), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.1), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.0), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 9.9), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 10.3), Map.of(), Instant.now()), 
+                    new AepEngine.Event("sensor.cpu", Map.of("value", 75.0), Map.of(), Instant.now()) 
                 )
             ));
 
-            assertThat(anomalies).hasSize(1); // GH-90000
+            assertThat(anomalies).hasSize(1); 
             assertThat(anomalies.get(0).anomalyType()).isEqualTo("MODEL_DETECTED");
-            assertThat(anomalies.get(0).score()).isGreaterThan(3.0); // GH-90000
-            assertThat(anomalies.get(0).details()) // GH-90000
-                .containsEntry("event_type", "sensor.cpu") // GH-90000
-                .containsEntry("detector", "z-score"); // GH-90000
+            assertThat(anomalies.get(0).score()).isGreaterThan(3.0); 
+            assertThat(anomalies.get(0).details()) 
+                .containsEntry("event_type", "sensor.cpu") 
+                .containsEntry("detector", "z-score"); 
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Event schema validation (AEP-002) // GH-90000
+    // Event schema validation (AEP-002) 
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -232,63 +232,63 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("EventSchemaValidator rejects null event")
-        void shouldRejectNullEvent() { // GH-90000
-            EventSchemaValidator validator = new EventSchemaValidator(); // GH-90000
-            EventSchemaValidator.ValidationResult result = validator.validate(null); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+        void shouldRejectNullEvent() { 
+            EventSchemaValidator validator = new EventSchemaValidator(); 
+            EventSchemaValidator.ValidationResult result = validator.validate(null); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.firstError()).contains("null");
-            assertThat(result.firstDetail()).isNotNull(); // GH-90000
-            assertThat(result.firstDetail().code()).isEqualTo(EventSchemaValidator.ErrorCode.MALFORMED); // GH-90000
+            assertThat(result.firstDetail()).isNotNull(); 
+            assertThat(result.firstDetail().code()).isEqualTo(EventSchemaValidator.ErrorCode.MALFORMED); 
             assertThat(result.firstDetail().field()).isEqualTo("event");
         }
 
         @Test
         @DisplayName("EventSchemaValidator rejects event with oversized type")
-        void shouldRejectOversizedType() { // GH-90000
-            EventSchemaValidator validator = new EventSchemaValidator(); // GH-90000
-            String longType = "a".repeat(257); // GH-90000
-            AepEngine.Event event = new AepEngine.Event(longType, Map.of(), Map.of(), Instant.now()); // GH-90000
-            EventSchemaValidator.ValidationResult result = validator.validate(event); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+        void shouldRejectOversizedType() { 
+            EventSchemaValidator validator = new EventSchemaValidator(); 
+            String longType = "a".repeat(257); 
+            AepEngine.Event event = new AepEngine.Event(longType, Map.of(), Map.of(), Instant.now()); 
+            EventSchemaValidator.ValidationResult result = validator.validate(event); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.summary()).contains("maximum length");
-            assertThat(result.hasCode(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED)).isTrue(); // GH-90000
-            assertThat(result.details()) // GH-90000
-                .anySatisfy(detail -> { // GH-90000
+            assertThat(result.hasCode(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED)).isTrue(); 
+            assertThat(result.details()) 
+                .anySatisfy(detail -> { 
                     assertThat(detail.field()).isEqualTo("event.type");
-                    assertThat(detail.code()).isEqualTo(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED); // GH-90000
+                    assertThat(detail.code()).isEqualTo(EventSchemaValidator.ErrorCode.SIZE_EXCEEDED); 
                 });
         }
 
         @Test
         @DisplayName("EventSchemaValidator accepts a well-formed event")
-        void shouldAcceptWellFormedEvent() { // GH-90000
-            EventSchemaValidator validator = new EventSchemaValidator(); // GH-90000
-            AepEngine.Event event = new AepEngine.Event( // GH-90000
+        void shouldAcceptWellFormedEvent() { 
+            EventSchemaValidator validator = new EventSchemaValidator(); 
+            AepEngine.Event event = new AepEngine.Event( 
                 "user.clicked",
-                Map.of("buttonId", "buy-now"), // GH-90000
-                Map.of("x-tenant-id", "t1"), // GH-90000
-                Instant.now() // GH-90000
+                Map.of("buttonId", "buy-now"), 
+                Map.of("x-tenant-id", "t1"), 
+                Instant.now() 
             );
-            EventSchemaValidator.ValidationResult result = validator.validate(event); // GH-90000
-            assertThat(result.isValid()).isTrue(); // GH-90000
+            EventSchemaValidator.ValidationResult result = validator.validate(event); 
+            assertThat(result.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("process() short-circuits on invalid event schema")
-        void shouldShortCircuitOnInvalidSchema() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
-            String oversizedType = "x".repeat(300); // GH-90000
-            AepEngine.Event invalid = new AepEngine.Event(oversizedType, Map.of(), Map.of(), Instant.now()); // GH-90000
+        void shouldShortCircuitOnInvalidSchema() { 
+            engine = Aep.forTesting(); 
+            String oversizedType = "x".repeat(300); 
+            AepEngine.Event invalid = new AepEngine.Event(oversizedType, Map.of(), Map.of(), Instant.now()); 
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_ID, invalid)); // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_ID, invalid)); 
 
-            assertThat(result.success()).isFalse(); // GH-90000
-            assertThat(result.metadata()).containsEntry("failed", true); // GH-90000
+            assertThat(result.success()).isFalse(); 
+            assertThat(result.metadata()).containsEntry("failed", true); 
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Configuration validation (AEP-004) // GH-90000
+    // Configuration validation (AEP-004) 
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -297,78 +297,78 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Aep.create() throws on zero anomalyThreshold")
-        void shouldThrowOnZeroAnomalyThreshold() { // GH-90000
+        void shouldThrowOnZeroAnomalyThreshold() { 
             // AepConfig compact constructor silently clamps 0.0 to 0.9;
             // AepConfigValidator detects the violation before engine creation.
-            assertThatThrownBy(() -> Aep.create( // GH-90000
-                new Aep.AepConfig("id", 1, 100, false, false, 0.0, Map.of()) // GH-90000
+            assertThatThrownBy(() -> Aep.create( 
+                new Aep.AepConfig("id", 1, 100, false, false, 0.0, Map.of()) 
             ))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("anomalyThreshold");
         }
 
         @Test
         @DisplayName("Aep.create() throws when maxPipelinesPerTenant exceeds 10 000")
-        void shouldThrowOnExcessivePipelineLimit() { // GH-90000
-            assertThatThrownBy(() -> Aep.create( // GH-90000
-                new Aep.AepConfig("id", 1, 20_000, false, false, 0.9, Map.of()) // GH-90000
+        void shouldThrowOnExcessivePipelineLimit() { 
+            assertThatThrownBy(() -> Aep.create( 
+                new Aep.AepConfig("id", 1, 20_000, false, false, 0.9, Map.of()) 
             ))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("maxPipelinesPerTenant");
         }
 
         @Test
         @DisplayName("Aep.create() succeeds with valid configuration")
-        void shouldSucceedWithValidConfig() { // GH-90000
-            AepEngine eng = Aep.create(Aep.AepConfig.builder() // GH-90000
+        void shouldSucceedWithValidConfig() { 
+            AepEngine eng = Aep.create(Aep.AepConfig.builder() 
                 .instanceId("my-instance")
-                .workerThreads(2) // GH-90000
-                .maxPipelinesPerTenant(500) // GH-90000
-                .anomalyThreshold(0.7) // GH-90000
-                .build()); // GH-90000
-            assertThat(eng).isNotNull(); // GH-90000
-            eng.close(); // GH-90000
+                .workerThreads(2) 
+                .maxPipelinesPerTenant(500) 
+                .anomalyThreshold(0.7) 
+                .build()); 
+            assertThat(eng).isNotNull(); 
+            eng.close(); 
         }
 
         @Test
         @DisplayName("Aep.create() uses configured consent provider when available")
-        void shouldUseConfiguredConsentProvider() { // GH-90000
-            AepEngine eng = Aep.create(Aep.AepConfig.builder() // GH-90000
+        void shouldUseConfiguredConsentProvider() { 
+            AepEngine eng = Aep.create(Aep.AepConfig.builder() 
                 .consentProvider("deny-all-test")
-                .build()); // GH-90000
+                .build()); 
             try {
-                AepEngine.ProcessingResult result = runPromise(() -> eng.process( // GH-90000
+                AepEngine.ProcessingResult result = runPromise(() -> eng.process( 
                     TENANT_ID,
-                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy")))); // GH-90000
+                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy")))); 
 
-                assertThat(result.success()).isFalse(); // GH-90000
-                assertThat(result.metadata()).containsEntry("skipped", true); // GH-90000
-                assertThat(result.metadata()).containsEntry("reason", "Event rejected by consent policy"); // GH-90000
+                assertThat(result.success()).isFalse(); 
+                assertThat(result.metadata()).containsEntry("skipped", true); 
+                assertThat(result.metadata()).containsEntry("reason", "Event rejected by consent policy"); 
             } finally {
-                eng.close(); // GH-90000
+                eng.close(); 
             }
         }
 
         @Test
         @DisplayName("Aep.create() falls back to default consent provider when configured provider is missing")
-        void shouldFallbackWhenConsentProviderMissing() { // GH-90000
-            AepEngine eng = Aep.create(Aep.AepConfig.builder() // GH-90000
+        void shouldFallbackWhenConsentProviderMissing() { 
+            AepEngine eng = Aep.create(Aep.AepConfig.builder() 
                 .consentProvider("missing-provider")
-                .build()); // GH-90000
+                .build()); 
             try {
-                AepEngine.ProcessingResult result = runPromise(() -> eng.process( // GH-90000
+                AepEngine.ProcessingResult result = runPromise(() -> eng.process( 
                     TENANT_ID,
-                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy")))); // GH-90000
+                    AepEngine.Event.of("user.clicked", Map.of("buttonId", "buy")))); 
 
-                assertThat(result.success()).isTrue(); // GH-90000
+                assertThat(result.success()).isTrue(); 
             } finally {
-                eng.close(); // GH-90000
+                eng.close(); 
             }
         }
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // Event versioning (ECR-003) // GH-90000
+    // Event versioning (ECR-003) 
     // ──────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -377,49 +377,49 @@ class AepRemediationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Event defaults to version 1.0 when not specified")
-        void shouldDefaultToVersion1() { // GH-90000
-            AepEngine.Event event = new AepEngine.Event("test.event", Map.of(), Map.of(), Instant.now()); // GH-90000
-            assertThat(event.version()).isEqualTo(AepEngine.Event.DEFAULT_VERSION); // GH-90000
+        void shouldDefaultToVersion1() { 
+            AepEngine.Event event = new AepEngine.Event("test.event", Map.of(), Map.of(), Instant.now()); 
+            assertThat(event.version()).isEqualTo(AepEngine.Event.DEFAULT_VERSION); 
         }
 
         @Test
         @DisplayName("withVersion() creates a copy with the specified version")
-        void shouldUpdateVersionWithCopy() { // GH-90000
-            AepEngine.Event v1 = AepEngine.Event.of("test.event", Map.of()); // GH-90000
+        void shouldUpdateVersionWithCopy() { 
+            AepEngine.Event v1 = AepEngine.Event.of("test.event", Map.of()); 
             AepEngine.Event v2 = v1.withVersion("2.0");
 
             assertThat(v1.version()).isEqualTo("1.0");
             assertThat(v2.version()).isEqualTo("2.0");
-            assertThat(v2.type()).isEqualTo(v1.type()); // GH-90000
+            assertThat(v2.type()).isEqualTo(v1.type()); 
         }
 
         @Test
         @DisplayName("Event.of() factory also defaults to version 1.0")
-        void factoryShouldDefaultToVersion1() { // GH-90000
-            AepEngine.Event event = AepEngine.Event.of("payment.received", Map.of("amount", 100)); // GH-90000
+        void factoryShouldDefaultToVersion1() { 
+            AepEngine.Event event = AepEngine.Event.of("payment.received", Map.of("amount", 100)); 
             assertThat(event.version()).isEqualTo("1.0");
         }
 
         @Test
         @DisplayName("Validator accepts events with non-default version")
-        void shouldAcceptNonDefaultVersion() { // GH-90000
-            EventSchemaValidator validator = new EventSchemaValidator(); // GH-90000
-            AepEngine.Event v2Event = AepEngine.Event.of("payment.received", Map.of()) // GH-90000
+        void shouldAcceptNonDefaultVersion() { 
+            EventSchemaValidator validator = new EventSchemaValidator(); 
+            AepEngine.Event v2Event = AepEngine.Event.of("payment.received", Map.of()) 
                 .withVersion("2.0");
-            EventSchemaValidator.ValidationResult result = validator.validate(v2Event); // GH-90000
-            assertThat(result.isValid()).isTrue(); // GH-90000
+            EventSchemaValidator.ValidationResult result = validator.validate(v2Event); 
+            assertThat(result.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("process() succeeds with versioned event")
-        void shouldProcessVersionedEvent() { // GH-90000
-            engine = Aep.forTesting(); // GH-90000
-            AepEngine.Event versioned = AepEngine.Event.of("user.action", Map.of("action", "click")) // GH-90000
+        void shouldProcessVersionedEvent() { 
+            engine = Aep.forTesting(); 
+            AepEngine.Event versioned = AepEngine.Event.of("user.action", Map.of("action", "click")) 
                 .withVersion("2.1");
 
-            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_ID, versioned)); // GH-90000
+            AepEngine.ProcessingResult result = runPromise(() -> engine.process(TENANT_ID, versioned)); 
 
-            assertThat(result.success()).isTrue(); // GH-90000
+            assertThat(result.success()).isTrue(); 
         }
     }
 }

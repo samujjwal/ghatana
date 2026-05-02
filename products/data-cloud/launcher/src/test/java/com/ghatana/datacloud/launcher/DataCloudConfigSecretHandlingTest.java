@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -33,9 +33,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("DataCloudConfigValidator – secret handling (P1-03)")
 class DataCloudConfigSecretHandlingTest {
 
-    private static final String SENSITIVE_PASSWORD = "sup3r-s3cret-p4ssw0rd!"; // GH-90000
-    private static final String SENSITIVE_API_KEY  = "sk-live-abc123xyz789"; // GH-90000
-    private static final String SENSITIVE_JWT      = "jwt-secret-signing-key-must-not-leak"; // GH-90000
+    private static final String SENSITIVE_PASSWORD = "sup3r-s3cret-p4ssw0rd!"; 
+    private static final String SENSITIVE_API_KEY  = "sk-live-abc123xyz789"; 
+    private static final String SENSITIVE_JWT      = "jwt-secret-signing-key-must-not-leak"; 
 
     // ─────────────────────────────────────────────────────────────────────────
     // Secret values must not appear in validation error messages
@@ -43,7 +43,7 @@ class DataCloudConfigSecretHandlingTest {
 
     @Test
     @DisplayName("DB password value does not appear in validation exception message")
-    void dbPasswordValueNotInExceptionMessage() { // GH-90000
+    void dbPasswordValueNotInExceptionMessage() { 
         // DB enabled but URL missing — validator should report the missing key name,
         // NOT echo back the password value
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
@@ -53,20 +53,20 @@ class DataCloudConfigSecretHandlingTest {
                 .dbPassword(SENSITIVE_PASSWORD)
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
             .as("Validation error must not echo the DB password value")
-            .doesNotContain(SENSITIVE_PASSWORD); // GH-90000
+            .doesNotContain(SENSITIVE_PASSWORD); 
         assertThat(ex.getMessage())
             .as("Validation error must reference the missing key name")
-            .contains("DATACLOUD_DB_URL"); // GH-90000
+            .contains("DATACLOUD_DB_URL"); 
     }
 
     @Test
     @DisplayName("DB user value does not appear in validation exception message")
-    void dbUserValueNotInExceptionMessage() { // GH-90000
+    void dbUserValueNotInExceptionMessage() { 
         // DB enabled, URL present, but password missing — error must not leak the user value
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
             () -> DataCloudConfigValidator.builder()
@@ -75,32 +75,32 @@ class DataCloudConfigSecretHandlingTest {
                 .dbUser("sensitive_db_user_123")
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
             .as("Validation error must not echo the DB user name")
-            .doesNotContain("sensitive_db_user_123"); // GH-90000
+            .doesNotContain("sensitive_db_user_123"); 
         assertThat(ex.getMessage())
             .as("Validation error must reference the missing key name")
-            .contains("DATACLOUD_DB_PASSWORD"); // GH-90000
+            .contains("DATACLOUD_DB_PASSWORD"); 
     }
 
     @Test
     @DisplayName("Kafka bootstrap URL does not appear in validation exception message when dependent required value is missing")
-    void kafkaBootstrapValueNotInExceptionMessage() { // GH-90000
+    void kafkaBootstrapValueNotInExceptionMessage() { 
         // Kafka enabled but bootstrap missing — validator references the key name only
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
             () -> DataCloudConfigValidator.builder()
                 .kafkaEnabled(true)
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
             .as("Validation error must reference the missing bootstrap key")
-            .contains("DATACLOUD_KAFKA_BOOTSTRAP"); // GH-90000
+            .contains("DATACLOUD_KAFKA_BOOTSTRAP"); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ class DataCloudConfigSecretHandlingTest {
 
     @Test
     @DisplayName("Validation error for missing DB password references env var name, not value")
-    void missingDbPasswordReferencesEnvVarName() { // GH-90000
+    void missingDbPasswordReferencesEnvVarName() { 
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
             () -> DataCloudConfigValidator.builder()
                 .dbEnabled(true)
@@ -118,17 +118,17 @@ class DataCloudConfigSecretHandlingTest {
                 // intentionally omit dbPassword
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
             .as("Error must name the missing key, not expose a value")
-            .containsIgnoringCase("DATACLOUD_DB_PASSWORD"); // GH-90000
+            .containsIgnoringCase("DATACLOUD_DB_PASSWORD"); 
     }
 
     @Test
     @DisplayName("Multiple secret violations do not cross-contaminate each other in the error message")
-    void multipleSecretViolationsDoNotLeakValues() { // GH-90000
+    void multipleSecretViolationsDoNotLeakValues() { 
         // DB enabled with a password but missing URL and user
         // — the password value must not appear in the combined error
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
@@ -137,11 +137,11 @@ class DataCloudConfigSecretHandlingTest {
                 .dbPassword(SENSITIVE_PASSWORD)
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
-            .doesNotContain(SENSITIVE_PASSWORD); // GH-90000
+            .doesNotContain(SENSITIVE_PASSWORD); 
         // Multiple key references in the message are fine
         assertThat(ex.getMessage()).contains("DATACLOUD_DB_URL");
     }
@@ -152,7 +152,7 @@ class DataCloudConfigSecretHandlingTest {
 
     @Test
     @DisplayName("Valid full config including sensitive values passes without revealing them")
-    void validConfigPassesWithoutRevealingSecrets() { // GH-90000
+    void validConfigPassesWithoutRevealingSecrets() { 
         // No exception means validation passed; secrets are consumed, not echoed
         assertThatCode(() ->
             DataCloudConfigValidator.builder()
@@ -162,12 +162,12 @@ class DataCloudConfigSecretHandlingTest {
                 .dbPassword(SENSITIVE_PASSWORD)
                 .build()
                 .validate()
-        ).doesNotThrowAnyException(); // GH-90000
+        ).doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("Port validation error does not contaminate secret-related messages")
-    void portValidationErrorDoesNotLeakSecrets() { // GH-90000
+    void portValidationErrorDoesNotLeakSecrets() { 
         IllegalStateException ex = org.assertj.core.api.Assertions.catchThrowableOfType(
             () -> DataCloudConfigValidator.builder()
                 .httpPortStr("99999") // port violation
@@ -177,13 +177,13 @@ class DataCloudConfigSecretHandlingTest {
                 .dbPassword(SENSITIVE_PASSWORD) // valid but must not appear in error
                 .build()
                 .validate(),
-            IllegalStateException.class); // GH-90000
+            IllegalStateException.class); 
 
-        assertThat(ex).isNotNull(); // GH-90000
+        assertThat(ex).isNotNull(); 
         assertThat(ex.getMessage())
             .as("Port error must not expose a valid secret from another field")
-            .doesNotContain(SENSITIVE_PASSWORD); // GH-90000
-        assertThat(ex.getMessage()).contains("DATACLOUD_HTTP_PORT"); // GH-90000
+            .doesNotContain(SENSITIVE_PASSWORD); 
+        assertThat(ex.getMessage()).contains("DATACLOUD_HTTP_PORT"); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -192,12 +192,12 @@ class DataCloudConfigSecretHandlingTest {
 
     @Test
     @DisplayName("Validation exception is an IllegalStateException not a runtime leaking exception")
-    void validationExceptionType_isIllegalState() { // GH-90000
+    void validationExceptionType_isIllegalState() { 
         assertThatThrownBy(() ->
             DataCloudConfigValidator.builder()
                 .dbEnabled(true)
                 .build()
                 .validate()
-        ).isExactlyInstanceOf(IllegalStateException.class); // GH-90000
+        ).isExactlyInstanceOf(IllegalStateException.class); 
     }
 }

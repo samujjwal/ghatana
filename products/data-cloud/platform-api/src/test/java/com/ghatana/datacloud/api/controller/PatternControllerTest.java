@@ -16,28 +16,28 @@ class PatternControllerTest extends EventloopTestBase {
 
     @Test
     @DisplayName("returns active patterns from the catalog")
-    void returnsActivePatternsFromCatalog() { // GH-90000
-        DefaultPatternCatalog catalog = new DefaultPatternCatalog(); // GH-90000
-        PatternController controller = new PatternController(catalog); // GH-90000
+    void returnsActivePatternsFromCatalog() { 
+        DefaultPatternCatalog catalog = new DefaultPatternCatalog(); 
+        PatternController controller = new PatternController(catalog); 
 
         PatternRecord older = runPromise(() -> catalog.register(pattern("older-pattern", Instant.parse("2026-01-01T00:00:00Z"))));
         PatternRecord newer = runPromise(() -> catalog.register(pattern("newer-pattern", Instant.parse("2026-02-01T00:00:00Z"))));
 
-        runPromise(() -> catalog.activate(older.getId(), "default")); // GH-90000
-        runPromise(() -> catalog.activate(newer.getId(), "default")); // GH-90000
+        runPromise(() -> catalog.activate(older.getId(), "default")); 
+        runPromise(() -> catalog.activate(newer.getId(), "default")); 
 
-        List<PatternRecord> patterns = runPromise(controller::getPatterns); // GH-90000
+        List<PatternRecord> patterns = runPromise(controller::getPatterns); 
 
-        assertThat(patterns).extracting(PatternRecord::getName) // GH-90000
-                .containsExactly("newer-pattern", "older-pattern"); // GH-90000
+        assertThat(patterns).extracting(PatternRecord::getName) 
+                .containsExactly("newer-pattern", "older-pattern"); 
     }
 
-    private static PatternRecord pattern(String name, Instant updatedAt) { // GH-90000
-        return PatternRecord.builder() // GH-90000
+    private static PatternRecord pattern(String name, Instant updatedAt) { 
+        return PatternRecord.builder() 
                 .tenantId("default")
-                .name(name) // GH-90000
-                .description(name + " description") // GH-90000
-                .updatedAt(updatedAt) // GH-90000
-                .build(); // GH-90000
+                .name(name) 
+                .description(name + " description") 
+                .updatedAt(updatedAt) 
+                .build(); 
     }
 }

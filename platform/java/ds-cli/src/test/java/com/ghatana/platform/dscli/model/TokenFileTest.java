@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -33,8 +33,8 @@ class TokenFileTest {
 
     @Test
     @DisplayName("should set and get schema")
-    void shouldSetAndGetSchema() { // GH-90000
-        TokenFile tokenFile = new TokenFile(); // GH-90000
+    void shouldSetAndGetSchema() { 
+        TokenFile tokenFile = new TokenFile(); 
         tokenFile.setSchema("https://example.com/schema.json");
 
         assertThat(tokenFile.getSchema()).isEqualTo("https://example.com/schema.json");
@@ -42,16 +42,16 @@ class TokenFileTest {
 
     @Test
     @DisplayName("should default version to 1.0.0")
-    void shouldDefaultVersionTo1_0_0() { // GH-90000
-        TokenFile tokenFile = new TokenFile(); // GH-90000
+    void shouldDefaultVersionTo1_0_0() { 
+        TokenFile tokenFile = new TokenFile(); 
 
         assertThat(tokenFile.getVersion()).isEqualTo("1.0.0");
     }
 
     @Test
     @DisplayName("should set and get custom version")
-    void shouldSetAndGetCustomVersion() { // GH-90000
-        TokenFile tokenFile = new TokenFile(); // GH-90000
+    void shouldSetAndGetCustomVersion() { 
+        TokenFile tokenFile = new TokenFile(); 
         tokenFile.setVersion("2.0.0");
 
         assertThat(tokenFile.getVersion()).isEqualTo("2.0.0");
@@ -59,25 +59,25 @@ class TokenFileTest {
 
     @Test
     @DisplayName("should set and get tokens via any setter")
-    void shouldSetAndGetTokensViaAnySetter() { // GH-90000
-        TokenFile tokenFile = new TokenFile(); // GH-90000
-        tokenFile.setToken("color-primary", "#000000"); // GH-90000
-        tokenFile.setToken("color-secondary", "#ffffff"); // GH-90000
+    void shouldSetAndGetTokensViaAnySetter() { 
+        TokenFile tokenFile = new TokenFile(); 
+        tokenFile.setToken("color-primary", "#000000"); 
+        tokenFile.setToken("color-secondary", "#ffffff"); 
 
-        assertThat(tokenFile.getTokens()).hasSize(2); // GH-90000
-        assertThat(tokenFile.getTokens()).containsEntry("color-primary", "#000000"); // GH-90000
-        assertThat(tokenFile.getTokens()).containsEntry("color-secondary", "#ffffff"); // GH-90000
+        assertThat(tokenFile.getTokens()).hasSize(2); 
+        assertThat(tokenFile.getTokens()).containsEntry("color-primary", "#000000"); 
+        assertThat(tokenFile.getTokens()).containsEntry("color-secondary", "#ffffff"); 
     }
 
     @Test
     @DisplayName("should maintain token order")
-    void shouldMaintainTokenOrder() { // GH-90000
-        TokenFile tokenFile = new TokenFile(); // GH-90000
-        tokenFile.setToken("z-token", "value1"); // GH-90000
-        tokenFile.setToken("a-token", "value2"); // GH-90000
-        tokenFile.setToken("m-token", "value3"); // GH-90000
+    void shouldMaintainTokenOrder() { 
+        TokenFile tokenFile = new TokenFile(); 
+        tokenFile.setToken("z-token", "value1"); 
+        tokenFile.setToken("a-token", "value2"); 
+        tokenFile.setToken("m-token", "value3"); 
 
-        var keys = tokenFile.getTokens().keySet().toArray(); // GH-90000
+        var keys = tokenFile.getTokens().keySet().toArray(); 
         assertThat(keys[0]).isEqualTo("z-token");
         assertThat(keys[1]).isEqualTo("a-token");
         assertThat(keys[2]).isEqualTo("m-token");

@@ -23,59 +23,59 @@ class PluginSecurityTest {
 
     @Test
     @DisplayName("Should validate plugin permissions")
-    void shouldValidatePluginPermissions() { // GH-90000
-        Set<String> permissions = Set.of("read", "write", "execute"); // GH-90000
+    void shouldValidatePluginPermissions() { 
+        Set<String> permissions = Set.of("read", "write", "execute"); 
         String requiredPermission = "read";
 
-        assertThat(permissions).contains(requiredPermission); // GH-90000
+        assertThat(permissions).contains(requiredPermission); 
     }
 
     @Test
     @DisplayName("Should handle plugin authentication")
-    void shouldHandlePluginAuthentication() { // GH-90000
+    void shouldHandlePluginAuthentication() { 
         String token = "plugin-token-123";
         boolean authenticated = true;
 
-        assertThat(token).isNotNull(); // GH-90000
-        assertThat(authenticated).isTrue(); // GH-90000
+        assertThat(token).isNotNull(); 
+        assertThat(authenticated).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle plugin authorization")
-    void shouldHandlePluginAuthorization() { // GH-90000
+    void shouldHandlePluginAuthorization() { 
         String role = "ADMIN";
-        Set<String> allowedRoles = Set.of("ADMIN", "USER"); // GH-90000
+        Set<String> allowedRoles = Set.of("ADMIN", "USER"); 
 
-        assertThat(allowedRoles).contains(role); // GH-90000
+        assertThat(allowedRoles).contains(role); 
     }
 
     @Test
     @DisplayName("Should handle plugin sandboxing")
-    void shouldHandlePluginSandboxing() { // GH-90000
+    void shouldHandlePluginSandboxing() { 
         boolean sandboxed = true;
         String isolationLevel = "PROCESS";
 
-        assertThat(sandboxed).isTrue(); // GH-90000
-        assertThat(isolationLevel).isNotNull(); // GH-90000
+        assertThat(sandboxed).isTrue(); 
+        assertThat(isolationLevel).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle security violations")
-    void shouldHandleSecurityViolations() { // GH-90000
+    void shouldHandleSecurityViolations() { 
         boolean violation = false;
         String violationType = null;
 
-        assertThat(violation).isFalse(); // GH-90000
-        assertThat(violationType).isNull(); // GH-90000
+        assertThat(violation).isFalse(); 
+        assertThat(violationType).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle plugin certificates")
-    void shouldHandlePluginCertificates() { // GH-90000
+    void shouldHandlePluginCertificates() { 
         String certificate = "cert-123";
         boolean valid = true;
 
-        assertThat(certificate).isNotNull(); // GH-90000
-        assertThat(valid).isTrue(); // GH-90000
+        assertThat(certificate).isNotNull(); 
+        assertThat(valid).isTrue(); 
     }
 }

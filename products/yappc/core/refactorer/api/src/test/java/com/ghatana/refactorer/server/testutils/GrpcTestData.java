@@ -17,7 +17,7 @@ import java.util.Map;
 */
 public final class GrpcTestData {
 
-    private GrpcTestData() {} // GH-90000
+    private GrpcTestData() {} 
 
     /**
      * Creates a {@link RunRequest} proto message for testing.
@@ -31,7 +31,7 @@ public final class GrpcTestData {
      * @param languages      language identifiers
      * @return a populated {@link RunRequest}
      */
-    public static RunRequest runRequest( // GH-90000
+    public static RunRequest runRequest( 
             String repoRoot,
             List<String> includes,
             boolean autoFix,
@@ -40,14 +40,14 @@ public final class GrpcTestData {
             Map<String, String> properties,
             List<String> languages) {
 
-        DiagnoseRequest config = buildDiagnoseRequest(repoRoot, includes, autoFix, tenant, // GH-90000
+        DiagnoseRequest config = buildDiagnoseRequest(repoRoot, includes, autoFix, tenant, 
                 languages, properties);
 
-        return RunRequest.newBuilder() // GH-90000
-                .setConfig(config) // GH-90000
-                .setIdempotencyKey(idempotencyKey) // GH-90000
-                .setTenantId(tenant) // GH-90000
-                .build(); // GH-90000
+        return RunRequest.newBuilder() 
+                .setConfig(config) 
+                .setIdempotencyKey(idempotencyKey) 
+                .setTenantId(tenant) 
+                .build(); 
     }
 
     /**
@@ -61,7 +61,7 @@ public final class GrpcTestData {
      * @param properties policy key-value pairs
      * @return a populated {@link DiagnoseRequest}
      */
-    public static DiagnoseRequest diagnoseRequest( // GH-90000
+    public static DiagnoseRequest diagnoseRequest( 
             String repoRoot,
             List<String> includes,
             boolean autoFix,
@@ -69,10 +69,10 @@ public final class GrpcTestData {
             List<String> languages,
             Map<String, String> properties) {
 
-        return buildDiagnoseRequest(repoRoot, includes, autoFix, tenant, languages, properties); // GH-90000
+        return buildDiagnoseRequest(repoRoot, includes, autoFix, tenant, languages, properties); 
     }
 
-    private static DiagnoseRequest buildDiagnoseRequest( // GH-90000
+    private static DiagnoseRequest buildDiagnoseRequest( 
             String repoRoot,
             List<String> includes,
             boolean autoFix,
@@ -81,20 +81,20 @@ public final class GrpcTestData {
             Map<String, String> properties) {
 
         DiagnoseRequest.Builder builder =
-                DiagnoseRequest.newBuilder() // GH-90000
-                        .setRepoRoot(repoRoot) // GH-90000
-                        .addAllIncludeGlobs(includes) // GH-90000
-                        .setFormatters(autoFix) // GH-90000
-                        .setTenantId(tenant); // GH-90000
+                DiagnoseRequest.newBuilder() 
+                        .setRepoRoot(repoRoot) 
+                        .addAllIncludeGlobs(includes) 
+                        .setFormatters(autoFix) 
+                        .setTenantId(tenant); 
 
-        languages.forEach( // GH-90000
-                lang -> builder.addLanguages(Language.newBuilder().setId(lang).build())); // GH-90000
+        languages.forEach( 
+                lang -> builder.addLanguages(Language.newBuilder().setId(lang).build())); 
 
-        properties.forEach( // GH-90000
-                (key, value) -> // GH-90000
-                        builder.addPolicies( // GH-90000
-                                PolicyKV.newBuilder().setKey(key).setValue(value).build())); // GH-90000
+        properties.forEach( 
+                (key, value) -> 
+                        builder.addPolicies( 
+                                PolicyKV.newBuilder().setKey(key).setValue(value).build())); 
 
-        return builder.build(); // GH-90000
+        return builder.build(); 
     }
 }

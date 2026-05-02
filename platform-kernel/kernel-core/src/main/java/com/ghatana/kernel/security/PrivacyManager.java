@@ -6,7 +6,7 @@ import java.util.Map;
  * Privacy management for data protection and consent.
  *
  * <p>Manages consent, data classification, and data residency requirements
- * for privacy compliance (GDPR, HIPAA, etc.).</p>
+ * for privacy compliance with applicable regulatory frameworks.</p>
  *
  * @doc.type interface
  * @doc.purpose Privacy and consent management

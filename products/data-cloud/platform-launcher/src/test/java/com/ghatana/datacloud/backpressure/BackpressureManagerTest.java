@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.backpressure;
@@ -22,12 +22,12 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Unit tests for {@link BackpressureManager}.
  *
- * <p>Covers all four backpressure strategies (DROP, BUFFER, THROTTLE, ADAPTIVE), // GH-90000
+ * <p>Covers all four backpressure strategies (DROP, BUFFER, THROTTLE, ADAPTIVE), 
  * priority levels, metric counters, and correct non-blocking behaviour when
  * the manager is used from the ActiveJ Eventloop.
  *
  * @doc.type test
- * @doc.purpose Comprehensive unit tests for BackpressureManager (PDC-001) // GH-90000
+ * @doc.purpose Comprehensive unit tests for BackpressureManager (PDC-001) 
  * @doc.layer infrastructure
  * @doc.pattern Unit Test
  */
@@ -37,9 +37,9 @@ class BackpressureManagerTest extends EventloopTestBase {
     private BackpressureManager manager;
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (manager != null) { // GH-90000
-            manager.shutdown(); // GH-90000
+    void tearDown() { 
+        if (manager != null) { 
+            manager.shutdown(); 
         }
     }
 
@@ -52,90 +52,90 @@ class BackpressureManagerTest extends EventloopTestBase {
     class DropStrategyTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(2) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.DROP) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(2) 
+                    .strategy(BackpressureManager.BackpressureStrategy.DROP) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should execute operation when slot is available")
-        void shouldExecuteWhenSlotAvailable() { // GH-90000
-            String result = runPromise(() -> manager.execute( // GH-90000
+        void shouldExecuteWhenSlotAvailable() { 
+            String result = runPromise(() -> manager.execute( 
                     () -> Promise.of("ok")));
 
             assertThat(result).isEqualTo("ok");
-            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(1); // GH-90000
+            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("Should drop request and return BackpressureException when all slots busy")
-        void shouldDropWhenOverloaded() { // GH-90000
+        void shouldDropWhenOverloaded() { 
             // Fill both slots with in-flight promises that never complete during this test
-            CountDownLatch blocker = new CountDownLatch(1); // GH-90000
+            CountDownLatch blocker = new CountDownLatch(1); 
 
             // Use executeSync to saturate the semaphore synchronously in background threads
-            AtomicInteger acquired = new AtomicInteger(0); // GH-90000
-            for (int i = 0; i < 2; i++) { // GH-90000
-                new Thread(() -> { // GH-90000
+            AtomicInteger acquired = new AtomicInteger(0); 
+            for (int i = 0; i < 2; i++) { 
+                new Thread(() -> { 
                     try {
-                        manager.executeSync(() -> { // GH-90000
-                            acquired.incrementAndGet(); // GH-90000
-                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} // GH-90000
+                        manager.executeSync(() -> { 
+                            acquired.incrementAndGet(); 
+                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} 
                             return null;
                         });
-                    } catch (Exception ignored) {} // GH-90000
-                }).start(); // GH-90000
+                    } catch (Exception ignored) {} 
+                }).start(); 
             }
 
             // Wait until both slots are taken
-            assertThat(acquired) // GH-90000
-                    .satisfies(a -> { // GH-90000
+            assertThat(acquired) 
+                    .satisfies(a -> { 
                         int waited = 0;
-                        while (a.get() < 2 && waited++ < 50) { // GH-90000
-                            try { Thread.sleep(10); } catch (InterruptedException ignored) {} // GH-90000
+                        while (a.get() < 2 && waited++ < 50) { 
+                            try { Thread.sleep(10); } catch (InterruptedException ignored) {} 
                         }
                     });
 
             // Third concurrent call should be dropped non-blockingly
-            assertThatThrownBy(() -> // GH-90000
+            assertThatThrownBy(() -> 
                     runPromise(() -> manager.execute(() -> Promise.of("dropped"))))
-                    .isInstanceOf(BackpressureException.class) // GH-90000
+                    .isInstanceOf(BackpressureException.class) 
                     .hasMessageContaining("dropped");
 
-            assertThat(manager.getMetrics().getDroppedRequests()).isGreaterThanOrEqualTo(1); // GH-90000
+            assertThat(manager.getMetrics().getDroppedRequests()).isGreaterThanOrEqualTo(1); 
 
-            blocker.countDown(); // GH-90000
+            blocker.countDown(); 
         }
 
         @Test
         @DisplayName("Should NOT block the event loop thread while dropping")
-        void shouldReturnImmediatelyOnDrop() { // GH-90000
+        void shouldReturnImmediatelyOnDrop() { 
             // Saturate
-            CountDownLatch blocker = new CountDownLatch(1); // GH-90000
-            for (int i = 0; i < 2; i++) { // GH-90000
-                new Thread(() -> { // GH-90000
+            CountDownLatch blocker = new CountDownLatch(1); 
+            for (int i = 0; i < 2; i++) { 
+                new Thread(() -> { 
                     try {
-                        manager.executeSync(() -> { // GH-90000
-                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} // GH-90000
+                        manager.executeSync(() -> { 
+                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} 
                             return null;
                         });
-                    } catch (Exception ignored) {} // GH-90000
-                }).start(); // GH-90000
+                    } catch (Exception ignored) {} 
+                }).start(); 
             }
 
-            try { Thread.sleep(50); } catch (InterruptedException ignored) {} // GH-90000
+            try { Thread.sleep(50); } catch (InterruptedException ignored) {} 
 
-            long start = System.currentTimeMillis(); // GH-90000
-            // execute() with DROP should return a failed promise immediately, not block // GH-90000
+            long start = System.currentTimeMillis(); 
+            // execute() with DROP should return a failed promise immediately, not block 
             Promise<String> p = manager.execute(() -> Promise.of("should_drop"));
-            long elapsed = System.currentTimeMillis() - start; // GH-90000
+            long elapsed = System.currentTimeMillis() - start; 
 
             // Must resolve synchronously within a few milliseconds
-            assertThat(elapsed).isLessThan(500); // GH-90000
+            assertThat(elapsed).isLessThan(500); 
 
-            blocker.countDown(); // GH-90000
+            blocker.countDown(); 
         }
     }
 
@@ -148,17 +148,17 @@ class BackpressureManagerTest extends EventloopTestBase {
     class BufferStrategyTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(1) // GH-90000
-                    .queueCapacity(5) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.BUFFER) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(1) 
+                    .queueCapacity(5) 
+                    .strategy(BackpressureManager.BackpressureStrategy.BUFFER) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should execute queued request once slot becomes free")
-        void shouldExecuteQueuedRequest() { // GH-90000
+        void shouldExecuteQueuedRequest() { 
             // First request executes immediately
             String result = runPromise(() -> manager.execute(() -> Promise.of("first")));
             assertThat(result).isEqualTo("first");
@@ -166,32 +166,32 @@ class BackpressureManagerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should drop when queue capacity is exceeded")
-        void shouldDropWhenQueueFull() { // GH-90000
+        void shouldDropWhenQueueFull() { 
             // Saturate slot
-            CountDownLatch blocker = new CountDownLatch(1); // GH-90000
-            new Thread(() -> { // GH-90000
+            CountDownLatch blocker = new CountDownLatch(1); 
+            new Thread(() -> { 
                 try {
-                    manager.executeSync(() -> { // GH-90000
-                        try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} // GH-90000
+                    manager.executeSync(() -> { 
+                        try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} 
                         return null;
                     });
-                } catch (Exception ignored) {} // GH-90000
-            }).start(); // GH-90000
-            try { Thread.sleep(30); } catch (InterruptedException ignored) {} // GH-90000
+                } catch (Exception ignored) {} 
+            }).start(); 
+            try { Thread.sleep(30); } catch (InterruptedException ignored) {} 
 
-            // Fill queue (capacity = 5) // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
+            // Fill queue (capacity = 5) 
+            for (int i = 0; i < 5; i++) { 
                 final int requestIndex = i;
-                manager.execute(() -> Promise.of("queued-" + requestIndex)); // GH-90000
+                manager.execute(() -> Promise.of("queued-" + requestIndex)); 
             }
 
             // Next call should be dropped: queue full
-            assertThatThrownBy(() -> // GH-90000
+            assertThatThrownBy(() -> 
                     runPromise(() -> manager.execute(() -> Promise.of("overflow"))))
-                    .isInstanceOf(BackpressureException.class) // GH-90000
+                    .isInstanceOf(BackpressureException.class) 
                     .hasMessageContaining("Queue capacity exceeded");
 
-            blocker.countDown(); // GH-90000
+            blocker.countDown(); 
         }
     }
 
@@ -204,48 +204,48 @@ class BackpressureManagerTest extends EventloopTestBase {
     class ThrottleStrategyTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(2) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.THROTTLE) // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(2) 
+                    .strategy(BackpressureManager.BackpressureStrategy.THROTTLE) 
                     // Very short timeout so the test does not block long
-                    .timeout(Duration.ofMillis(100)) // GH-90000
-                    .build(); // GH-90000
+                    .timeout(Duration.ofMillis(100)) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should execute successfully when slot is available")
-        void shouldExecuteWhenSlotFree() { // GH-90000
+        void shouldExecuteWhenSlotFree() { 
             String result = runPromise(() -> manager.execute(() -> Promise.of("throttled-ok")));
             assertThat(result).isEqualTo("throttled-ok");
         }
 
         @Test
         @DisplayName("Should return BackpressureException when timeout expires and no slot frees")
-        void shouldTimeoutWhenSlotNotFree() { // GH-90000
+        void shouldTimeoutWhenSlotNotFree() { 
             // Saturate both slots
-            CountDownLatch blocker = new CountDownLatch(1); // GH-90000
-            for (int i = 0; i < 2; i++) { // GH-90000
-                new Thread(() -> { // GH-90000
+            CountDownLatch blocker = new CountDownLatch(1); 
+            for (int i = 0; i < 2; i++) { 
+                new Thread(() -> { 
                     try {
-                        manager.executeSync(() -> { // GH-90000
-                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} // GH-90000
+                        manager.executeSync(() -> { 
+                            try { blocker.await(5, TimeUnit.SECONDS); } catch (InterruptedException ignored) {} 
                             return null;
                         });
-                    } catch (Exception ignored) {} // GH-90000
-                }).start(); // GH-90000
+                    } catch (Exception ignored) {} 
+                }).start(); 
             }
-            try { Thread.sleep(30); } catch (InterruptedException ignored) {} // GH-90000
+            try { Thread.sleep(30); } catch (InterruptedException ignored) {} 
 
             // The THROTTLE path uses Promise.ofBlocking so this must NOT block the test thread
-            assertThatThrownBy(() -> // GH-90000
+            assertThatThrownBy(() -> 
                     runPromise(() -> manager.execute(() -> Promise.of("timed-out"))))
-                    .isInstanceOf(BackpressureException.class) // GH-90000
+                    .isInstanceOf(BackpressureException.class) 
                     .hasMessageContaining("timed out");
 
-            assertThat(manager.getMetrics().getDroppedRequests()).isGreaterThanOrEqualTo(1); // GH-90000
+            assertThat(manager.getMetrics().getDroppedRequests()).isGreaterThanOrEqualTo(1); 
 
-            blocker.countDown(); // GH-90000
+            blocker.countDown(); 
         }
     }
 
@@ -258,29 +258,29 @@ class BackpressureManagerTest extends EventloopTestBase {
     class AdaptiveStrategyTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(4) // GH-90000
-                    .queueCapacity(10) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.ADAPTIVE) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(4) 
+                    .queueCapacity(10) 
+                    .strategy(BackpressureManager.BackpressureStrategy.ADAPTIVE) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should execute normal priority requests within capacity")
-        void shouldExecuteNormalRequestsWithinCapacity() { // GH-90000
-            for (int i = 0; i < 4; i++) { // GH-90000
+        void shouldExecuteNormalRequestsWithinCapacity() { 
+            for (int i = 0; i < 4; i++) { 
                 String result = runPromise(() -> manager.execute(() -> Promise.of("ok")));
                 assertThat(result).isEqualTo("ok");
             }
-            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(4); // GH-90000
+            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(4); 
         }
 
         @Test
         @DisplayName("Should report isUnderPressure() as false when load is low")
-        void shouldReportHealthyWhenIdle() { // GH-90000
-            assertThat(manager.isHealthy()).isTrue(); // GH-90000
-            assertThat(manager.isUnderPressure()).isFalse(); // GH-90000
+        void shouldReportHealthyWhenIdle() { 
+            assertThat(manager.isHealthy()).isTrue(); 
+            assertThat(manager.isUnderPressure()).isFalse(); 
         }
     }
 
@@ -293,25 +293,25 @@ class BackpressureManagerTest extends EventloopTestBase {
     class PriorityTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(10) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.DROP) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(10) 
+                    .strategy(BackpressureManager.BackpressureStrategy.DROP) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("CRITICAL priority request should proceed when slot is available")
-        void criticalShouldSucceedWhenSlotFree() { // GH-90000
-            String result = runPromise(() -> // GH-90000
+        void criticalShouldSucceedWhenSlotFree() { 
+            String result = runPromise(() -> 
                     manager.execute(BackpressureManager.Priority.CRITICAL, () -> Promise.of("critical-ok")));
             assertThat(result).isEqualTo("critical-ok");
         }
 
         @Test
         @DisplayName("HIGH priority request should succeed when slot is available")
-        void highPriorityShouldSucceedWhenSlotFree() { // GH-90000
-            String result = runPromise(() -> // GH-90000
+        void highPriorityShouldSucceedWhenSlotFree() { 
+            String result = runPromise(() -> 
                     manager.execute(BackpressureManager.Priority.HIGH, () -> Promise.of("high-ok")));
             assertThat(result).isEqualTo("high-ok");
         }
@@ -326,40 +326,40 @@ class BackpressureManagerTest extends EventloopTestBase {
     class MetricsTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(5) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.DROP) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(5) 
+                    .strategy(BackpressureManager.BackpressureStrategy.DROP) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should increment totalRequests and completedRequests on success")
-        void shouldIncrementCountersOnSuccess() { // GH-90000
+        void shouldIncrementCountersOnSuccess() { 
             runPromise(() -> manager.execute(() -> Promise.of("x")));
             runPromise(() -> manager.execute(() -> Promise.of("y")));
 
-            assertThat(manager.getMetrics().getTotalRequests()).isEqualTo(2); // GH-90000
-            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(2); // GH-90000
-            assertThat(manager.getMetrics().getFailedRequests()).isZero(); // GH-90000
+            assertThat(manager.getMetrics().getTotalRequests()).isEqualTo(2); 
+            assertThat(manager.getMetrics().getCompletedRequests()).isEqualTo(2); 
+            assertThat(manager.getMetrics().getFailedRequests()).isZero(); 
         }
 
         @Test
         @DisplayName("Should increment failedRequests on promise failure")
-        void shouldIncrementFailedRequestsOnError() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    runPromise(() -> manager.execute(() -> // GH-90000
+        void shouldIncrementFailedRequestsOnError() { 
+            assertThatThrownBy(() -> 
+                    runPromise(() -> manager.execute(() -> 
                             Promise.ofException(new RuntimeException("boom")))))
-                    .isInstanceOf(RuntimeException.class); // GH-90000
+                    .isInstanceOf(RuntimeException.class); 
 
-            assertThat(manager.getMetrics().getFailedRequests()).isEqualTo(1); // GH-90000
+            assertThat(manager.getMetrics().getFailedRequests()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("getStatus() toMap() should contain all expected keys")
-        void statusMapShouldContainExpectedKeys() { // GH-90000
-            var statusMap = manager.getStatus().toMap(); // GH-90000
-            assertThat(statusMap).containsKeys( // GH-90000
+        void statusMapShouldContainExpectedKeys() { 
+            var statusMap = manager.getStatus().toMap(); 
+            assertThat(statusMap).containsKeys( 
                     "active_requests", "max_concurrent", "utilization",
                     "queued_requests", "queue_capacity", "queue_utilization",
                     "total_requests", "completed_requests", "failed_requests",
@@ -377,26 +377,26 @@ class BackpressureManagerTest extends EventloopTestBase {
     class ExecuteSyncTests {
 
         @BeforeEach
-        void setUp() { // GH-90000
-            manager = BackpressureManager.builder() // GH-90000
-                    .maxConcurrent(3) // GH-90000
-                    .strategy(BackpressureManager.BackpressureStrategy.DROP) // GH-90000
-                    .build(); // GH-90000
+        void setUp() { 
+            manager = BackpressureManager.builder() 
+                    .maxConcurrent(3) 
+                    .strategy(BackpressureManager.BackpressureStrategy.DROP) 
+                    .build(); 
         }
 
         @Test
         @DisplayName("Should return the operation result synchronously")
-        void shouldReturnResultSync() throws BackpressureException { // GH-90000
-            String result = manager.executeSync(() -> "sync-result"); // GH-90000
+        void shouldReturnResultSync() throws BackpressureException { 
+            String result = manager.executeSync(() -> "sync-result"); 
             assertThat(result).isEqualTo("sync-result");
         }
 
         @Test
         @DisplayName("Should propagate exceptions from the operation")
-        void shouldPropagateExceptionFromOperation() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
+        void shouldPropagateExceptionFromOperation() { 
+            assertThatThrownBy(() -> 
                     manager.executeSync(() -> { throw new IllegalStateException("boom"); }))
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessage("boom");
         }
     }

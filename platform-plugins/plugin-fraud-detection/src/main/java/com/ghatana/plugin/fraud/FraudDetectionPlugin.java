@@ -7,17 +7,21 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Fraud Detection Plugin - Cross-product fraud detection framework.
+ * Fraud Detection Plugin - Platform-level behavioral anomaly and fraud signal framework.
  *
- * <p>Supports multiple fraud detection use cases:</p>
+ * <p>Provides product-agnostic fraud detection capabilities:</p>
  * <ul>
- *   <li>Transaction fraud (Finance)</li>
- *   <li>Insurance claim fraud (PHR)</li>
- *   <li>Identity fraud (general)</li>
+ *   <li>Transaction anomaly detection</li>
+ *   <li>Behavioral fraud signals and pattern recognition</li>
+ *   <li>Identity fraud and account takeover signals</li>
+ *   <li>Velocity-based abuse detection</li>
  * </ul>
  *
+ * <p>Products supply domain-specific scoring models via registered evaluators;
+ * no product terms appear in this interface.</p>
+ *
  * @doc.type interface
- * @doc.purpose Fraud detection plugin interface
+ * @doc.purpose Platform fraud detection and behavioral anomaly signal framework
  * @doc.layer platform
  * @doc.pattern Plugin
  * @since 1.0.0

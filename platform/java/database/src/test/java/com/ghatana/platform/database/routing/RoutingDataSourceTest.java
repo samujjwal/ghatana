@@ -28,48 +28,48 @@ class RoutingDataSourceTest {
     private RoutingDataSource routingDS;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         primary = createH2DataSource("primary-db");
         replica1 = createH2DataSource("replica1-db");
         replica2 = createH2DataSource("replica2-db");
 
-        routingDS = new RoutingDataSource( // GH-90000
+        routingDS = new RoutingDataSource( 
                 primary,
-                Map.of("replica-1", replica1, "replica-2", replica2), // GH-90000
+                Map.of("replica-1", replica1, "replica-2", replica2), 
                 60_000L);
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        RoutingDataSource.clearReadOnly(); // GH-90000
+    void tearDown() { 
+        RoutingDataSource.clearReadOnly(); 
     }
 
-    private static DataSource createH2DataSource(String dbName) { // GH-90000
-        JdbcDataSource ds = new JdbcDataSource(); // GH-90000
-        ds.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1"); // GH-90000
+    private static DataSource createH2DataSource(String dbName) { 
+        JdbcDataSource ds = new JdbcDataSource(); 
+        ds.setURL("jdbc:h2:mem:" + dbName + ";DB_CLOSE_DELAY=-1"); 
         ds.setUser("sa");
         ds.setPassword("");
         return ds;
     }
 
-    // ── getConnection() — write mode ────────────────────────────────────────── // GH-90000
+    // ── getConnection() — write mode ────────────────────────────────────────── 
 
     @Test
     @DisplayName("getConnection() returns a usable connection in write mode")
-    void getConnectionReturnsUsableConnectionInWriteMode() throws SQLException { // GH-90000
-        RoutingDataSource.setReadOnly(false); // GH-90000
+    void getConnectionReturnsUsableConnectionInWriteMode() throws SQLException { 
+        RoutingDataSource.setReadOnly(false); 
 
-        try (Connection conn = routingDS.getConnection()) { // GH-90000
-            assertThat(conn).isNotNull(); // GH-90000
-            assertThat(conn.isClosed()).isFalse(); // GH-90000
+        try (Connection conn = routingDS.getConnection()) { 
+            assertThat(conn).isNotNull(); 
+            assertThat(conn.isClosed()).isFalse(); 
         }
     }
 
     @Test
     @DisplayName("getConnection() is non-null by default (write mode)")
-    void getConnectionNonNullByDefault() throws SQLException { // GH-90000
-        try (Connection conn = routingDS.getConnection()) { // GH-90000
-            assertThat(conn).isNotNull(); // GH-90000
+    void getConnectionNonNullByDefault() throws SQLException { 
+        try (Connection conn = routingDS.getConnection()) { 
+            assertThat(conn).isNotNull(); 
         }
     }
 
@@ -77,12 +77,12 @@ class RoutingDataSourceTest {
 
     @Test
     @DisplayName("getConnection() returns a usable connection in read-only mode")
-    void getConnectionUsableInReadOnlyMode() throws SQLException { // GH-90000
-        RoutingDataSource.setReadOnly(true); // GH-90000
+    void getConnectionUsableInReadOnlyMode() throws SQLException { 
+        RoutingDataSource.setReadOnly(true); 
 
-        try (Connection conn = routingDS.getConnection()) { // GH-90000
-            assertThat(conn).isNotNull(); // GH-90000
-            assertThat(conn.isClosed()).isFalse(); // GH-90000
+        try (Connection conn = routingDS.getConnection()) { 
+            assertThat(conn).isNotNull(); 
+            assertThat(conn.isClosed()).isFalse(); 
         }
     }
 
@@ -90,92 +90,92 @@ class RoutingDataSourceTest {
 
     @Test
     @DisplayName("setReadOnly(true) marks current thread context as read-only")
-    void setReadOnlyMarksThreadAsReadOnly() { // GH-90000
-        RoutingDataSource.setReadOnly(true); // GH-90000
-        assertThat(RoutingDataSource.isReadOnly()).isTrue(); // GH-90000
+    void setReadOnlyMarksThreadAsReadOnly() { 
+        RoutingDataSource.setReadOnly(true); 
+        assertThat(RoutingDataSource.isReadOnly()).isTrue(); 
     }
 
     @Test
     @DisplayName("setReadOnly(false) marks current thread context as writable")
-    void setReadOnlyFalseMarksWritable() { // GH-90000
-        RoutingDataSource.setReadOnly(true); // GH-90000
-        RoutingDataSource.setReadOnly(false); // GH-90000
-        assertThat(RoutingDataSource.isReadOnly()).isFalse(); // GH-90000
+    void setReadOnlyFalseMarksWritable() { 
+        RoutingDataSource.setReadOnly(true); 
+        RoutingDataSource.setReadOnly(false); 
+        assertThat(RoutingDataSource.isReadOnly()).isFalse(); 
     }
 
     @Test
     @DisplayName("clearReadOnly() removes thread-local read-only context")
-    void clearReadOnlyRemovesContext() { // GH-90000
-        RoutingDataSource.setReadOnly(true); // GH-90000
-        RoutingDataSource.clearReadOnly(); // GH-90000
-        assertThat(RoutingDataSource.isReadOnly()).isFalse(); // GH-90000
+    void clearReadOnlyRemovesContext() { 
+        RoutingDataSource.setReadOnly(true); 
+        RoutingDataSource.clearReadOnly(); 
+        assertThat(RoutingDataSource.isReadOnly()).isFalse(); 
     }
 
     // ── getPrimaryDataSource / getReplicaDataSources ─────────────────────────
 
     @Test
     @DisplayName("getPrimaryDataSource returns the primary DataSource")
-    void getPrimaryDataSourceReturnsPrimary() { // GH-90000
-        assertThat(routingDS.getPrimaryDataSource()).isSameAs(primary); // GH-90000
+    void getPrimaryDataSourceReturnsPrimary() { 
+        assertThat(routingDS.getPrimaryDataSource()).isSameAs(primary); 
     }
 
     @Test
     @DisplayName("getReplicaDataSources returns a copy with all replicas")
-    void getReplicaDataSourcesReturnsDefensiveCopy() { // GH-90000
-        Map<String, DataSource> replicas = routingDS.getReplicaDataSources(); // GH-90000
-        assertThat(replicas).containsKeys("replica-1", "replica-2"); // GH-90000
-        assertThat(replicas).hasSize(2); // GH-90000
+    void getReplicaDataSourcesReturnsDefensiveCopy() { 
+        Map<String, DataSource> replicas = routingDS.getReplicaDataSources(); 
+        assertThat(replicas).containsKeys("replica-1", "replica-2"); 
+        assertThat(replicas).hasSize(2); 
     }
 
     // ── Circuit breaker ───────────────────────────────────────────────────────
 
     @Test
     @DisplayName("initially all replicas are available")
-    void initiallyAllReplicasAvailable() { // GH-90000
-        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); // GH-90000
-        assertThat(status).containsEntry("replica-1", true); // GH-90000
-        assertThat(status).containsEntry("replica-2", true); // GH-90000
+    void initiallyAllReplicasAvailable() { 
+        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); 
+        assertThat(status).containsEntry("replica-1", true); 
+        assertThat(status).containsEntry("replica-2", true); 
     }
 
     @Test
     @DisplayName("markReplicaUnavailable() marks a replica as unavailable")
-    void markReplicaUnavailableChangesStatus() { // GH-90000
+    void markReplicaUnavailableChangesStatus() { 
         routingDS.markReplicaUnavailable("replica-1");
-        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); // GH-90000
-        assertThat(status).containsEntry("replica-1", false); // GH-90000
+        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); 
+        assertThat(status).containsEntry("replica-1", false); 
     }
 
     @Test
     @DisplayName("markReplicaAvailable() restores a previously unavailable replica")
-    void markReplicaAvailableRestoresStatus() { // GH-90000
+    void markReplicaAvailableRestoresStatus() { 
         routingDS.markReplicaUnavailable("replica-1");
         routingDS.markReplicaAvailable("replica-1");
-        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); // GH-90000
-        assertThat(status).containsEntry("replica-1", true); // GH-90000
+        Map<String, Boolean> status = routingDS.getReplicaAvailabilityStatus(); 
+        assertThat(status).containsEntry("replica-1", true); 
     }
 
     // ── No replicas ───────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("falls back to primary when no replicas are configured")
-    void fallbackToPrimaryWhenNoReplicas() throws SQLException { // GH-90000
-        RoutingDataSource noReplicaDS = new RoutingDataSource(primary, Map.of()); // GH-90000
-        RoutingDataSource.setReadOnly(true); // GH-90000
+    void fallbackToPrimaryWhenNoReplicas() throws SQLException { 
+        RoutingDataSource noReplicaDS = new RoutingDataSource(primary, Map.of()); 
+        RoutingDataSource.setReadOnly(true); 
 
-        try (Connection conn = noReplicaDS.getConnection()) { // GH-90000
-            assertThat(conn).isNotNull(); // GH-90000
+        try (Connection conn = noReplicaDS.getConnection()) { 
+            assertThat(conn).isNotNull(); 
         }
     }
 
     @Test
     @DisplayName("all replicas unavailable falls back to primary for reads")
-    void fallbackToPrimaryWhenAllReplicasUnavailable() throws SQLException { // GH-90000
+    void fallbackToPrimaryWhenAllReplicasUnavailable() throws SQLException { 
         routingDS.markReplicaUnavailable("replica-1");
         routingDS.markReplicaUnavailable("replica-2");
-        RoutingDataSource.setReadOnly(true); // GH-90000
+        RoutingDataSource.setReadOnly(true); 
 
-        try (Connection conn = routingDS.getConnection()) { // GH-90000
-            assertThat(conn).isNotNull(); // GH-90000
+        try (Connection conn = routingDS.getConnection()) { 
+            assertThat(conn).isNotNull(); 
         }
     }
 }

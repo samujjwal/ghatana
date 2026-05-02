@@ -31,456 +31,456 @@ class SqlInjectionTest {
 
     @Test
     @DisplayName("Should escape single quote in parameterized query")
-    void shouldEscapeSingleQuoteInParameterizedQuery() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeSingleQuoteInParameterizedQuery() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection with single quote
         String maliciousInput = "admin' OR '1'='1";
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
-        // Verify the parameter was set as-is (PreparedStatement handles escaping) // GH-90000
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        // Verify the parameter was set as-is (PreparedStatement handles escaping) 
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape comment-based SQL injection")
-    void shouldEscapeCommentBasedSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeCommentBasedSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt comment-based SQL injection
         String maliciousInput = "admin'--";
-        jdbcTemplate.queryForList( // GH-90000
+        jdbcTemplate.queryForList( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape union-based SQL injection")
-    void shouldEscapeUnionBasedSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeUnionBasedSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt UNION-based SQL injection
         String maliciousInput = "admin' UNION SELECT password FROM users--";
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape tautology-based SQL injection")
-    void shouldEscapeTautologyBasedSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeTautologyBasedSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt tautology-based SQL injection
         String maliciousInput = "1' OR '1'='1";
-        jdbcTemplate.queryForList( // GH-90000
+        jdbcTemplate.queryForList( 
             "SELECT * FROM users WHERE id = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape stacked query SQL injection")
-    void shouldEscapeStackedQuerySqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeStackedQuerySqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt stacked query SQL injection
         String maliciousInput = "admin'; DROP TABLE users;--";
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape time-based blind SQL injection")
-    void shouldEscapeTimeBasedBlindSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeTimeBasedBlindSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt time-based blind SQL injection
-        String maliciousInput = "admin' AND SLEEP(10)--"; // GH-90000
-        jdbcTemplate.queryForList( // GH-90000
+        String maliciousInput = "admin' AND SLEEP(10)--"; 
+        jdbcTemplate.queryForList( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should escape boolean-based blind SQL injection")
-    void shouldEscapeBooleanBasedBlindSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldEscapeBooleanBasedBlindSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt boolean-based blind SQL injection
         String maliciousInput = "admin' AND 1=1--";
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection in update operations")
-    void shouldProtectAgainstSqlInjectionInUpdateOperations() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionInUpdateOperations() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeUpdate()).thenReturn(1); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeUpdate()).thenReturn(1); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection in update
         String maliciousInput = "admin'; UPDATE users SET password='hacked' WHERE username='admin'--";
-        jdbcTemplate.update( // GH-90000
-            "UPDATE users SET last_login = NOW() WHERE username = ?", // GH-90000
+        jdbcTemplate.update( 
+            "UPDATE users SET last_login = NOW() WHERE username = ?", 
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeUpdate(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeUpdate(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection in batch operations")
-    void shouldProtectAgainstSqlInjectionInBatchOperations() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionInBatchOperations() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeBatch()).thenReturn(new int[]{1, 1}); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeBatch()).thenReturn(new int[]{1, 1}); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection in batch
-        var maliciousInputs = java.util.List.of( // GH-90000
+        var maliciousInputs = java.util.List.of( 
             "admin' OR '1'='1",
             "user'; DROP TABLE users;--"
         );
 
-        jdbcTemplate.batchUpdate( // GH-90000
-            "INSERT INTO logs (message) VALUES (?)", // GH-90000
+        jdbcTemplate.batchUpdate( 
+            "INSERT INTO logs (message) VALUES (?)", 
             maliciousInputs,
-            (ps, input) -> ps.setString(1, input) // GH-90000
+            (ps, input) -> ps.setString(1, input) 
         );
 
         // Verify parameters were set properly
-        verify(mockStatement, times(2)).addBatch(); // GH-90000
-        verify(mockStatement).executeBatch(); // GH-90000
+        verify(mockStatement, times(2)).addBatch(); 
+        verify(mockStatement).executeBatch(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection with special characters")
-    void shouldProtectAgainstSqlInjectionWithSpecialCharacters() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionWithSpecialCharacters() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection with various special characters
         String maliciousInput = "admin'\";\\--\n\t\r";
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should protect against second-order SQL injection")
-    void shouldProtectAgainstSecondOrderSqlInjection() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSecondOrderSqlInjection() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Simulate second-order injection: malicious input stored then used in query
         String maliciousInput = "admin' OR '1'='1";
         
         // First operation: store the malicious input
-        jdbcTemplate.update( // GH-90000
-            "INSERT INTO user_inputs (input_value) VALUES (?)", // GH-90000
+        jdbcTemplate.update( 
+            "INSERT INTO user_inputs (input_value) VALUES (?)", 
             maliciousInput
         );
 
         // Second operation: use the stored value in a query
-        jdbcTemplate.queryForObject( // GH-90000
-            "SELECT * FROM users WHERE username = (SELECT input_value FROM user_inputs LIMIT 1)", // GH-90000
+        jdbcTemplate.queryForObject( 
+            "SELECT * FROM users WHERE username = (SELECT input_value FROM user_inputs LIMIT 1)", 
             rs -> rs.getString("username")
         );
 
         // Verify both operations used parameterized queries
-        verify(mockStatement, atLeastOnce()).setObject(anyInt(), eq(maliciousInput)); // GH-90000
+        verify(mockStatement, atLeastOnce()).setObject(anyInt(), eq(maliciousInput)); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection in pagination parameters")
-    void shouldProtectAgainstSqlInjectionInPaginationParameters() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionInPaginationParameters() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
-        // Attempt SQL injection in pagination offset (simplified test without pagination) // GH-90000
-        jdbcTemplate.queryForList( // GH-90000
+        // Attempt SQL injection in pagination offset (simplified test without pagination) 
+        jdbcTemplate.queryForList( 
             "SELECT * FROM users WHERE active = ?",
             rs -> rs.getString("username"),
             true
         );
 
         // Verify parameters were set properly
-        verify(mockStatement).setObject(1, true); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, true); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection in LIKE queries")
-    void shouldProtectAgainstSqlInjectionInLikeQueries() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionInLikeQueries() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection in LIKE pattern
         String maliciousInput = "%' OR '1'='1'--";
-        jdbcTemplate.queryForList( // GH-90000
+        jdbcTemplate.queryForList( 
             "SELECT * FROM users WHERE username LIKE ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection with encoded characters")
-    void shouldProtectAgainstSqlInjectionWithEncodedCharacters() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionWithEncodedCharacters() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection with URL-encoded characters
         String maliciousInput = "admin%27%20OR%20%271%27%3D%271"; // admin' OR '1'='1
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE username = ?",
             rs -> rs.getString("username"),
             maliciousInput
         );
 
-        // Verify the parameter was set as-is (encoding is application's responsibility) // GH-90000
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        // Verify the parameter was set as-is (encoding is application's responsibility) 
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should protect against SQL injection in IN clause parameters")
-    void shouldProtectAgainstSqlInjectionInInClauseParameters() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldProtectAgainstSqlInjectionInInClauseParameters() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Attempt SQL injection in IN clause
         String maliciousInput = "admin') OR '1'='1'--";
-        jdbcTemplate.queryForList( // GH-90000
-            "SELECT * FROM users WHERE username IN (?)", // GH-90000
+        jdbcTemplate.queryForList( 
+            "SELECT * FROM users WHERE username IN (?)", 
             rs -> rs.getString("username"),
             maliciousInput
         );
 
         // Verify the parameter was set properly
-        verify(mockStatement).setObject(1, maliciousInput); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        verify(mockStatement).setObject(1, maliciousInput); 
+        verify(mockStatement).executeQuery(); 
     }
 
     @Test
     @DisplayName("Should use PreparedStatement for all queries (no Statement)")
-    void shouldUsePreparedStatementForAllQueries() throws SQLException { // GH-90000
-        DataSource mockDataSource = mock(DataSource.class); // GH-90000
-        Connection mockConnection = mock(Connection.class); // GH-90000
-        PreparedStatement mockStatement = mock(PreparedStatement.class); // GH-90000
-        ResultSet mockResultSet = mock(ResultSet.class); // GH-90000
+    void shouldUsePreparedStatementForAllQueries() throws SQLException { 
+        DataSource mockDataSource = mock(DataSource.class); 
+        Connection mockConnection = mock(Connection.class); 
+        PreparedStatement mockStatement = mock(PreparedStatement.class); 
+        ResultSet mockResultSet = mock(ResultSet.class); 
 
-        when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
-        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); // GH-90000
-        when(mockStatement.executeQuery()).thenReturn(mockResultSet); // GH-90000
-        when(mockResultSet.next()).thenReturn(false); // GH-90000
+        when(mockDataSource.getConnection()).thenReturn(mockConnection); 
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockStatement); 
+        when(mockStatement.executeQuery()).thenReturn(mockResultSet); 
+        when(mockResultSet.next()).thenReturn(false); 
 
-        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); // GH-90000
+        JdbcTemplate jdbcTemplate = new JdbcTemplate(mockDataSource); 
 
         // Execute a query
-        jdbcTemplate.queryForObject( // GH-90000
+        jdbcTemplate.queryForObject( 
             "SELECT * FROM users WHERE id = ?",
             rs -> rs.getString("username"),
             123
         );
 
-        // Verify PreparedStatement was used (not Statement) // GH-90000
-        verify(mockConnection).prepareStatement(anyString()); // GH-90000
-        verify(mockStatement).setObject(1, 123); // GH-90000
-        verify(mockStatement).executeQuery(); // GH-90000
+        // Verify PreparedStatement was used (not Statement) 
+        verify(mockConnection).prepareStatement(anyString()); 
+        verify(mockStatement).setObject(1, 123); 
+        verify(mockStatement).executeQuery(); 
 
-        // Verify createStatement was NOT called (which would allow SQL injection) // GH-90000
-        verify(mockConnection, never()).createStatement(); // GH-90000
+        // Verify createStatement was NOT called (which would allow SQL injection) 
+        verify(mockConnection, never()).createStatement(); 
     }
 }

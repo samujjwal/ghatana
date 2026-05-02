@@ -23,31 +23,31 @@ class CollectionUtilsTest {
 
     @Test
     @DisplayName("isEmpty returns true for null collection")
-    void isEmptyNullReturnsTrue() { // GH-90000
-        assertThat(CollectionUtils.isEmpty(null)).isTrue(); // GH-90000
+    void isEmptyNullReturnsTrue() { 
+        assertThat(CollectionUtils.isEmpty(null)).isTrue(); 
     }
 
     @Test
     @DisplayName("isEmpty returns true for empty collection")
-    void isEmptyEmptyReturnsTrue() { // GH-90000
-        assertThat(CollectionUtils.isEmpty(Collections.emptyList())).isTrue(); // GH-90000
+    void isEmptyEmptyReturnsTrue() { 
+        assertThat(CollectionUtils.isEmpty(Collections.emptyList())).isTrue(); 
     }
 
     @Test
     @DisplayName("isEmpty returns false for non-empty collection")
-    void isEmptyNonEmptyReturnsFalse() { // GH-90000
+    void isEmptyNonEmptyReturnsFalse() { 
         assertThat(CollectionUtils.isEmpty(List.of("a"))).isFalse();
     }
 
     @Test
     @DisplayName("isNotEmpty returns false for null collection")
-    void isNotEmptyNullReturnsFalse() { // GH-90000
-        assertThat(CollectionUtils.isNotEmpty(null)).isFalse(); // GH-90000
+    void isNotEmptyNullReturnsFalse() { 
+        assertThat(CollectionUtils.isNotEmpty(null)).isFalse(); 
     }
 
     @Test
     @DisplayName("isNotEmpty returns true for non-empty collection")
-    void isNotEmptyNonEmptyReturnsTrue() { // GH-90000
+    void isNotEmptyNonEmptyReturnsTrue() { 
         assertThat(CollectionUtils.isNotEmpty(List.of("x"))).isTrue();
     }
 
@@ -55,84 +55,84 @@ class CollectionUtilsTest {
 
     @Test
     @DisplayName("emptyIfNull returns empty list for null input")
-    void emptyIfNullReturnsEmptyForNull() { // GH-90000
-        assertThat(CollectionUtils.emptyIfNull(null)).isEmpty(); // GH-90000
+    void emptyIfNullReturnsEmptyForNull() { 
+        assertThat(CollectionUtils.emptyIfNull(null)).isEmpty(); 
     }
 
     @Test
     @DisplayName("emptyIfNull returns original list for non-null input")
-    void emptyIfNullReturnsOriginalForNonNull() { // GH-90000
-        List<String> input = List.of("a", "b"); // GH-90000
-        assertThat(CollectionUtils.emptyIfNull(input)).containsExactly("a", "b"); // GH-90000
+    void emptyIfNullReturnsOriginalForNonNull() { 
+        List<String> input = List.of("a", "b"); 
+        assertThat(CollectionUtils.emptyIfNull(input)).containsExactly("a", "b"); 
     }
 
     // ── toNonNullList ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("toNonNullList filters out null elements")
-    void toNonNullListFiltersNulls() { // GH-90000
-        List<String> result = CollectionUtils.toNonNullList(Arrays.asList("a", null, "b", null, "c")); // GH-90000
-        assertThat(result).containsExactly("a", "b", "c"); // GH-90000
+    void toNonNullListFiltersNulls() { 
+        List<String> result = CollectionUtils.toNonNullList(Arrays.asList("a", null, "b", null, "c")); 
+        assertThat(result).containsExactly("a", "b", "c"); 
     }
 
     @Test
     @DisplayName("toNonNullList returns empty list for null input")
-    void toNonNullListReturnsEmptyForNull() { // GH-90000
-        assertThat(CollectionUtils.toNonNullList(null)).isEmpty(); // GH-90000
+    void toNonNullListReturnsEmptyForNull() { 
+        assertThat(CollectionUtils.toNonNullList(null)).isEmpty(); 
     }
 
     @Test
     @DisplayName("toNonNullList returns unmodifiable list")
-    void toNonNullListIsUnmodifiable() { // GH-90000
-        List<String> result = CollectionUtils.toNonNullList(List.of("a", "b")); // GH-90000
+    void toNonNullListIsUnmodifiable() { 
+        List<String> result = CollectionUtils.toNonNullList(List.of("a", "b")); 
         assertThatThrownBy(() -> result.add("c"))
-                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                .isInstanceOf(UnsupportedOperationException.class); 
     }
 
     // ── mapList ──────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("mapList transforms each element")
-    void mapListTransformsElements() { // GH-90000
-        List<Integer> result = CollectionUtils.mapList(List.of("a", "bb", "ccc"), String::length); // GH-90000
-        assertThat(result).containsExactly(1, 2, 3); // GH-90000
+    void mapListTransformsElements() { 
+        List<Integer> result = CollectionUtils.mapList(List.of("a", "bb", "ccc"), String::length); 
+        assertThat(result).containsExactly(1, 2, 3); 
     }
 
     @Test
     @DisplayName("mapList returns empty list for null input")
-    void mapListReturnsEmptyForNull() { // GH-90000
-        List<Integer> result = CollectionUtils.mapList(null, String::length); // GH-90000
-        assertThat(result).isEmpty(); // GH-90000
+    void mapListReturnsEmptyForNull() { 
+        List<Integer> result = CollectionUtils.mapList(null, String::length); 
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("mapList returns empty list for empty input")
-    void mapListReturnsEmptyForEmpty() { // GH-90000
-        List<Integer> result = CollectionUtils.mapList(Collections.emptyList(), String::length); // GH-90000
-        assertThat(result).isEmpty(); // GH-90000
+    void mapListReturnsEmptyForEmpty() { 
+        List<Integer> result = CollectionUtils.mapList(Collections.emptyList(), String::length); 
+        assertThat(result).isEmpty(); 
     }
 
     // ── toMap ────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("toMap creates map keyed by extractor result")
-    void toMapCreatesKeyedMap() { // GH-90000
-        List<String> items = List.of("apple", "banana", "cherry"); // GH-90000
-        Map<Integer, String> result = CollectionUtils.toMap(items, String::length); // GH-90000
-        assertThat(result).containsEntry(5, "apple").containsEntry(6, "cherry"); // GH-90000
+    void toMapCreatesKeyedMap() { 
+        List<String> items = List.of("apple", "banana", "cherry"); 
+        Map<Integer, String> result = CollectionUtils.toMap(items, String::length); 
+        assertThat(result).containsEntry(5, "apple").containsEntry(6, "cherry"); 
     }
 
     @Test
     @DisplayName("toMap returns empty map for null input")
-    void toMapReturnsEmptyForNull() { // GH-90000
-        assertThat(CollectionUtils.toMap(null, String::length)).isEmpty(); // GH-90000
+    void toMapReturnsEmptyForNull() { 
+        assertThat(CollectionUtils.toMap(null, String::length)).isEmpty(); 
     }
 
     @Test
     @DisplayName("toMap last value wins on duplicate keys")
-    void toMapLastValueWinsOnDuplicateKeys() { // GH-90000
-        List<String> items = List.of("ab", "cd"); // both have length 2 // GH-90000
-        Map<Integer, String> result = CollectionUtils.toMap(items, String::length); // GH-90000
+    void toMapLastValueWinsOnDuplicateKeys() { 
+        List<String> items = List.of("ab", "cd"); // both have length 2 
+        Map<Integer, String> result = CollectionUtils.toMap(items, String::length); 
         assertThat(result.get(2)).isEqualTo("cd");
     }
 
@@ -140,35 +140,35 @@ class CollectionUtilsTest {
 
     @Test
     @DisplayName("partition splits list into fixed-size batches")
-    void partitionSplitsIntoBatches() { // GH-90000
-        List<Integer> items = List.of(1, 2, 3, 4, 5); // GH-90000
-        List<List<Integer>> batches = CollectionUtils.partition(items, 2); // GH-90000
-        assertThat(batches).hasSize(3); // GH-90000
-        assertThat(batches.get(0)).containsExactly(1, 2); // GH-90000
-        assertThat(batches.get(1)).containsExactly(3, 4); // GH-90000
-        assertThat(batches.get(2)).containsExactly(5); // GH-90000
+    void partitionSplitsIntoBatches() { 
+        List<Integer> items = List.of(1, 2, 3, 4, 5); 
+        List<List<Integer>> batches = CollectionUtils.partition(items, 2); 
+        assertThat(batches).hasSize(3); 
+        assertThat(batches.get(0)).containsExactly(1, 2); 
+        assertThat(batches.get(1)).containsExactly(3, 4); 
+        assertThat(batches.get(2)).containsExactly(5); 
     }
 
     @Test
     @DisplayName("partition handles batch size equal to list size")
-    void partitionEqualBatchSize() { // GH-90000
-        List<Integer> items = List.of(1, 2, 3); // GH-90000
-        List<List<Integer>> batches = CollectionUtils.partition(items, 3); // GH-90000
-        assertThat(batches).hasSize(1); // GH-90000
-        assertThat(batches.get(0)).containsExactly(1, 2, 3); // GH-90000
+    void partitionEqualBatchSize() { 
+        List<Integer> items = List.of(1, 2, 3); 
+        List<List<Integer>> batches = CollectionUtils.partition(items, 3); 
+        assertThat(batches).hasSize(1); 
+        assertThat(batches.get(0)).containsExactly(1, 2, 3); 
     }
 
     @Test
     @DisplayName("partition returns empty list for empty input")
-    void partitionReturnsEmptyForEmpty() { // GH-90000
-        assertThat(CollectionUtils.partition(Collections.emptyList(), 5)).isEmpty(); // GH-90000
+    void partitionReturnsEmptyForEmpty() { 
+        assertThat(CollectionUtils.partition(Collections.emptyList(), 5)).isEmpty(); 
     }
 
     @Test
     @DisplayName("partition throws for non-positive batch size")
-    void partitionThrowsForNonPositiveBatchSize() { // GH-90000
-        assertThatThrownBy(() -> CollectionUtils.partition(List.of(1, 2), 0)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void partitionThrowsForNonPositiveBatchSize() { 
+        assertThatThrownBy(() -> CollectionUtils.partition(List.of(1, 2), 0)) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("batchSize");
     }
 
@@ -176,28 +176,28 @@ class CollectionUtilsTest {
 
     @Test
     @DisplayName("intersection returns common elements")
-    void intersectionReturnsCommonElements() { // GH-90000
-        List<String> a = List.of("apple", "banana", "cherry"); // GH-90000
-        List<String> b = List.of("banana", "cherry", "date"); // GH-90000
-        List<String> result = CollectionUtils.intersection(a, b); // GH-90000
-        assertThat(result).containsExactlyInAnyOrder("banana", "cherry"); // GH-90000
+    void intersectionReturnsCommonElements() { 
+        List<String> a = List.of("apple", "banana", "cherry"); 
+        List<String> b = List.of("banana", "cherry", "date"); 
+        List<String> result = CollectionUtils.intersection(a, b); 
+        assertThat(result).containsExactlyInAnyOrder("banana", "cherry"); 
     }
 
     @Test
     @DisplayName("intersection returns empty list when no common elements")
-    void intersectionReturnsEmptyWhenDisjoint() { // GH-90000
+    void intersectionReturnsEmptyWhenDisjoint() { 
         assertThat(CollectionUtils.intersection(List.of("a"), List.of("b"))).isEmpty();
     }
 
     @Test
     @DisplayName("intersection returns empty list for null first argument")
-    void intersectionReturnsEmptyForNullFirst() { // GH-90000
+    void intersectionReturnsEmptyForNullFirst() { 
         assertThat(CollectionUtils.intersection(null, List.of("a"))).isEmpty();
     }
 
     @Test
     @DisplayName("intersection returns empty list for null second argument")
-    void intersectionReturnsEmptyForNullSecond() { // GH-90000
+    void intersectionReturnsEmptyForNullSecond() { 
         assertThat(CollectionUtils.intersection(List.of("a"), null)).isEmpty();
     }
 }

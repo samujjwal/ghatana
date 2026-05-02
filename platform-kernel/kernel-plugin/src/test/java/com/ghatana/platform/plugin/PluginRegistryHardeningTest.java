@@ -68,7 +68,7 @@ class PluginRegistryHardeningTest extends EventloopTestBase {
 
         TrackingPlugin incompatiblePlugin = new TrackingPlugin(
             "kp3-incompatible",
-            PluginCompatibility.dataCloudVersion("2.0.0")
+            PluginCompatibility.atLeast("2.0.0")
         );
 
         assertThatThrownBy(() -> registry.register(incompatiblePlugin))

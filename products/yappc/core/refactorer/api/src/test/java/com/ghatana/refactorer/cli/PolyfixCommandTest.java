@@ -21,13 +21,13 @@ class PolyfixCommandTest {
     Path tempDir;
 
     @Test
-    void buildContextWrapsInvalidConfigurationFailures() throws IOException { // GH-90000
+    void buildContextWrapsInvalidConfigurationFailures() throws IOException { 
         Files.writeString(tempDir.resolve("polyfix.json"), "{ invalid json }");
 
-        assertThatThrownBy(() -> PolyfixCommand.buildContext(tempDir)) // GH-90000
-                .isInstanceOf(RefactorerOperationException.class) // GH-90000
+        assertThatThrownBy(() -> PolyfixCommand.buildContext(tempDir)) 
+                .isInstanceOf(RefactorerOperationException.class) 
                 .hasMessageContaining("Failed to load configuration")
-                .hasMessageContaining(tempDir.toString()) // GH-90000
-                .hasCauseInstanceOf(IOException.class); // GH-90000
+                .hasMessageContaining(tempDir.toString()) 
+                .hasCauseInstanceOf(IOException.class); 
     }
 }

@@ -27,67 +27,67 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Testcontainers, IntegrationTest
  */
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("PostgresEntityStore Integration Tests")
 class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = postgresContainer(); // GH-90000
+    static final PostgreSQLContainer<?> POSTGRES = postgresContainer(); 
 
     private PostgresEntityStore entityStore;
 
     @BeforeAll
-    static void migrateSchema() { // GH-90000
-        Flyway.configure() // GH-90000
-            .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) // GH-90000
+    static void migrateSchema() { 
+        Flyway.configure() 
+            .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()) 
             .locations("filesystem:" + Path.of(System.getProperty("user.dir"), "products", "data-cloud", "platform-launcher", "src", "main", "resources", "db", "migration"))
-            .load() // GH-90000
-            .migrate(); // GH-90000
+            .load() 
+            .migrate(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (entityStore != null) { // GH-90000
-            entityStore.close(); // GH-90000
+    void tearDown() { 
+        if (entityStore != null) { 
+            entityStore.close(); 
         }
     }
 
     @Test
     @DisplayName("CRUD, batch, query, and count work against PostgreSQL")
-    void crudBatchQueryAndCountWorkAgainstPostgreSql() { // GH-90000
-        entityStore = store(); // GH-90000
+    void crudBatchQueryAndCountWorkAgainstPostgreSql() { 
+        entityStore = store(); 
         TenantContext tenant = TenantContext.of("tenant-alpha");
 
-        EntityStore.Entity saved = runPromise(() -> entityStore.save(tenant, EntityStore.Entity.builder() // GH-90000
+        EntityStore.Entity saved = runPromise(() -> entityStore.save(tenant, EntityStore.Entity.builder() 
             .collection("orders")
             .id("order-1")
-            .data(Map.of("status", "open", "amount", 42, "customer", "Ada")) // GH-90000
-            .build())); // GH-90000
+            .data(Map.of("status", "open", "amount", 42, "customer", "Ada")) 
+            .build())); 
 
-        Optional<EntityStore.Entity> found = runPromise(() -> entityStore.findById(tenant, saved.id())); // GH-90000
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.orElseThrow().data()).containsEntry("customer", "Ada"); // GH-90000
+        Optional<EntityStore.Entity> found = runPromise(() -> entityStore.findById(tenant, saved.id())); 
+        assertThat(found).isPresent(); 
+        assertThat(found.orElseThrow().data()).containsEntry("customer", "Ada"); 
 
-        BatchResult<String> batchResult = runPromise(() -> entityStore.saveBatch(tenant, List.of( // GH-90000
+        BatchResult<String> batchResult = runPromise(() -> entityStore.saveBatch(tenant, List.of( 
             EntityStore.Entity.builder().collection("orders").id("order-2").data(Map.of("status", "open", "amount", 99)).build(),
             EntityStore.Entity.builder().collection("orders").id("order-3").data(Map.of("status", "closed", "amount", 11)).build()
         )));
-        assertThat(batchResult.isFullySuccessful()).isTrue(); // GH-90000
+        assertThat(batchResult.isFullySuccessful()).isTrue(); 
 
-        EntityStore.QueryResult queryResult = runPromise(() -> entityStore.query(tenant, EntityStore.QuerySpec.builder() // GH-90000
+        EntityStore.QueryResult queryResult = runPromise(() -> entityStore.query(tenant, EntityStore.QuerySpec.builder() 
             .collection("orders")
-            .filters(List.of(EntityStore.Filter.eq("status", "open"))) // GH-90000
+            .filters(List.of(EntityStore.Filter.eq("status", "open"))) 
             .sorts(List.of(EntityStore.Sort.asc("customer")))
-            .limit(10) // GH-90000
-            .build())); // GH-90000
-        assertThat(queryResult.entities()).hasSize(2); // GH-90000
-        assertThat(queryResult.totalCount()).isEqualTo(2); // GH-90000
+            .limit(10) 
+            .build())); 
+        assertThat(queryResult.entities()).hasSize(2); 
+        assertThat(queryResult.totalCount()).isEqualTo(2); 
 
-        long count = runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder() // GH-90000
+        long count = runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder() 
             .collection("orders")
-            .filters(List.of(EntityStore.Filter.gte("amount", 40))) // GH-90000
-            .build())); // GH-90000
-        assertThat(count).isEqualTo(2); // GH-90000
+            .filters(List.of(EntityStore.Filter.gte("amount", 40))) 
+            .build())); 
+        assertThat(count).isEqualTo(2); 
 
         runPromise(() -> entityStore.delete(tenant, EntityStore.EntityId.of("order-1")));
         assertThat(runPromise(() -> entityStore.exists(tenant, EntityStore.EntityId.of("order-1")))).isFalse();
@@ -95,85 +95,85 @@ class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("tenant isolation prevents tenant-B from reading tenant-A data")
-    void tenantIsolationPreventsCrossTenantReads() { // GH-90000
-        entityStore = store(); // GH-90000
+    void tenantIsolationPreventsCrossTenantReads() { 
+        entityStore = store(); 
         TenantContext tenantA = TenantContext.of("tenant-a");
         TenantContext tenantB = TenantContext.of("tenant-b");
 
-        runPromise(() -> entityStore.save(tenantA, EntityStore.Entity.builder() // GH-90000
+        runPromise(() -> entityStore.save(tenantA, EntityStore.Entity.builder() 
             .collection("documents")
             .id("doc-1")
-            .data(Map.of("title", "A-only", "classification", "internal")) // GH-90000
-            .build())); // GH-90000
-        runPromise(() -> entityStore.save(tenantB, EntityStore.Entity.builder() // GH-90000
+            .data(Map.of("title", "A-only", "classification", "internal")) 
+            .build())); 
+        runPromise(() -> entityStore.save(tenantB, EntityStore.Entity.builder() 
             .collection("documents")
             .id("doc-2")
-            .data(Map.of("title", "B-only", "classification", "restricted")) // GH-90000
-            .build())); // GH-90000
+            .data(Map.of("title", "B-only", "classification", "restricted")) 
+            .build())); 
 
-        EntityStore.QueryResult tenantAResult = runPromise(() -> entityStore.query(tenantA, EntityStore.QuerySpec.builder() // GH-90000
+        EntityStore.QueryResult tenantAResult = runPromise(() -> entityStore.query(tenantA, EntityStore.QuerySpec.builder() 
             .collection("documents")
-            .build())); // GH-90000
-        EntityStore.QueryResult tenantBResult = runPromise(() -> entityStore.query(tenantB, EntityStore.QuerySpec.builder() // GH-90000
+            .build())); 
+        EntityStore.QueryResult tenantBResult = runPromise(() -> entityStore.query(tenantB, EntityStore.QuerySpec.builder() 
             .collection("documents")
-            .build())); // GH-90000
+            .build())); 
 
         assertThat(tenantAResult.entities()).extracting(entity -> entity.id().value()).containsExactly("doc-1");
         assertThat(tenantBResult.entities()).extracting(entity -> entity.id().value()).containsExactly("doc-2");
 
         Optional<EntityStore.Entity> crossTenantRead = runPromise(() -> entityStore.findById(tenantB, EntityStore.EntityId.of("doc-1")));
-        assertThat(crossTenantRead).isEmpty(); // GH-90000
+        assertThat(crossTenantRead).isEmpty(); 
 
         try (var connection = POSTGRES.createConnection("");
              var statement = connection.prepareStatement("SELECT tenant_id, id FROM entities ORDER BY tenant_id, id")) {
-            try (var resultSet = statement.executeQuery()) { // GH-90000
-                assertThat(resultSet.next()).isTrue(); // GH-90000
+            try (var resultSet = statement.executeQuery()) { 
+                assertThat(resultSet.next()).isTrue(); 
                 assertThat(resultSet.getString("tenant_id")).isEqualTo("tenant-a");
                 assertThat(resultSet.getObject("id").toString()).isEqualTo("doc-1");
-                assertThat(resultSet.next()).isTrue(); // GH-90000
+                assertThat(resultSet.next()).isTrue(); 
                 assertThat(resultSet.getString("tenant_id")).isEqualTo("tenant-b");
                 assertThat(resultSet.getObject("id").toString()).isEqualTo("doc-2");
-                assertThat(resultSet.next()).isFalse(); // GH-90000
+                assertThat(resultSet.next()).isFalse(); 
             }
-        } catch (Exception exception) { // GH-90000
-            throw new AssertionError("Direct database inspection failed", exception); // GH-90000
+        } catch (Exception exception) { 
+            throw new AssertionError("Direct database inspection failed", exception); 
         }
     }
 
     @Test
     @DisplayName("deleteBatch soft-deletes 1000+ entities")
-    void deleteBatchSoftDeletesLargeBatch() { // GH-90000
-        entityStore = store(); // GH-90000
+    void deleteBatchSoftDeletesLargeBatch() { 
+        entityStore = store(); 
         TenantContext tenant = TenantContext.of("tenant-batch");
 
-        List<EntityStore.Entity> entities = IntStream.range(0, 1_001) // GH-90000
-            .mapToObj(index -> EntityStore.Entity.builder() // GH-90000
+        List<EntityStore.Entity> entities = IntStream.range(0, 1_001) 
+            .mapToObj(index -> EntityStore.Entity.builder() 
                 .collection("orders")
-                .id("batch-order-" + index) // GH-90000
-                .data(Map.of("index", index, "status", "expired")) // GH-90000
-                .build()) // GH-90000
-            .toList(); // GH-90000
-        List<EntityStore.EntityId> ids = entities.stream().map(EntityStore.Entity::id).toList(); // GH-90000
+                .id("batch-order-" + index) 
+                .data(Map.of("index", index, "status", "expired")) 
+                .build()) 
+            .toList(); 
+        List<EntityStore.EntityId> ids = entities.stream().map(EntityStore.Entity::id).toList(); 
 
-        BatchResult<String> saveResult = runPromise(() -> entityStore.saveBatch(tenant, entities)); // GH-90000
-        assertThat(saveResult.isFullySuccessful()).isTrue(); // GH-90000
+        BatchResult<String> saveResult = runPromise(() -> entityStore.saveBatch(tenant, entities)); 
+        assertThat(saveResult.isFullySuccessful()).isTrue(); 
 
-        BatchResult<String> deleteResult = runPromise(() -> entityStore.deleteBatch(tenant, ids)); // GH-90000
+        BatchResult<String> deleteResult = runPromise(() -> entityStore.deleteBatch(tenant, ids)); 
 
-        assertThat(deleteResult.totalCount()).isEqualTo(1_001); // GH-90000
-        assertThat(deleteResult.successCount()).isEqualTo(1_001); // GH-90000
-        assertThat(deleteResult.failureCount()).isZero(); // GH-90000
-        assertThat(runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder() // GH-90000
+        assertThat(deleteResult.totalCount()).isEqualTo(1_001); 
+        assertThat(deleteResult.successCount()).isEqualTo(1_001); 
+        assertThat(deleteResult.failureCount()).isZero(); 
+        assertThat(runPromise(() -> entityStore.count(tenant, EntityStore.QuerySpec.builder() 
             .collection("orders")
-            .build()))).isZero(); // GH-90000
+            .build()))).isZero(); 
         assertThat(runPromise(() -> entityStore.findById(tenant, EntityStore.EntityId.of("batch-order-0")))).isEmpty();
     }
 
-    private PostgresEntityStore store() { // GH-90000
-        return new PostgresEntityStore(new PostgresEntityStoreConfig( // GH-90000
-            POSTGRES.getJdbcUrl(), // GH-90000
-            POSTGRES.getUsername(), // GH-90000
-            POSTGRES.getPassword(), // GH-90000
+    private PostgresEntityStore store() { 
+        return new PostgresEntityStore(new PostgresEntityStoreConfig( 
+            POSTGRES.getJdbcUrl(), 
+            POSTGRES.getUsername(), 
+            POSTGRES.getPassword(), 
             8,
             1,
             30_000L,
@@ -183,7 +183,7 @@ class PostgresEntityStoreIntegrationTest extends EventloopTestBase {
     }
 
     @SuppressWarnings("resource")
-    private static PostgreSQLContainer<?> postgresContainer() { // GH-90000
+    private static PostgreSQLContainer<?> postgresContainer() { 
         return new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("datacloud_plugins_it")
             .withUsername("dc_plugins")

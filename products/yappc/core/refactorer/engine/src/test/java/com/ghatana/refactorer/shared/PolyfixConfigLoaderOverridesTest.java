@@ -28,237 +28,237 @@ class PolyfixConfigLoaderOverridesTest {
     private static final String NODE_PATH = "/usr/local/bin/node";
 
     @Test
-    void applyOverrides_shouldApplyNestedProperties() { // GH-90000
+    void applyOverrides_shouldApplyNestedProperties() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
         Map<String, String> overrides =
-                Map.of( // GH-90000
+                Map.of( 
                         BUDGETS_MAX_PASSES, "10",
                         POLICIES_TS_ALLOW_TEMPORARY_ANY, "false",
                         TOOLS_NODE, "/custom/path/to/node");
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then
-        assertEquals(10, result.budgets().maxPasses()); // GH-90000
-        assertFalse(result.policies().tsAllowTemporaryAny()); // GH-90000
-        assertEquals("/custom/path/to/node", result.tools().node()); // GH-90000
+        assertEquals(10, result.budgets().maxPasses()); 
+        assertFalse(result.policies().tsAllowTemporaryAny()); 
+        assertEquals("/custom/path/to/node", result.tools().node()); 
     }
 
     @Test
-    void applyOverrides_shouldHandleNestedProperties() { // GH-90000
+    void applyOverrides_shouldHandleNestedProperties() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
         Map<String, String> overrides =
-                Map.of( // GH-90000
+                Map.of( 
                         BUDGETS_MAX_PASSES, "5",
                         POLICIES_TS_ALLOW_TEMPORARY_ANY, "true",
                         "policies.pythonAddMissingImports", "false",
                         TOOLS_NODE, NODE_PATH);
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then
-        assertEquals(5, result.budgets().maxPasses()); // GH-90000
-        assertTrue(result.policies().tsAllowTemporaryAny()); // GH-90000
-        assertFalse(result.policies().pythonAddMissingImports()); // GH-90000
-        assertEquals("/usr/local/bin/node", result.tools().node()); // GH-90000
+        assertEquals(5, result.budgets().maxPasses()); 
+        assertTrue(result.policies().tsAllowTemporaryAny()); 
+        assertFalse(result.policies().pythonAddMissingImports()); 
+        assertEquals("/usr/local/bin/node", result.tools().node()); 
     }
 
     @Test
-    void applyOverrides_shouldHandleStringValues() { // GH-90000
+    void applyOverrides_shouldHandleStringValues() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
         Map<String, String> overrides =
-                Map.of( // GH-90000
+                Map.of( 
                         TOOLS_NODE, NODE_PATH,
                         "tools.eslint", "/usr/local/bin/eslint",
                         "tools.tsc", "/usr/local/bin/tsc");
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then
-        assertEquals("/usr/local/bin/node", result.tools().node()); // GH-90000
-        assertEquals("/usr/local/bin/eslint", result.tools().eslint()); // GH-90000
-        assertEquals("/usr/local/bin/tsc", result.tools().tsc()); // GH-90000
+        assertEquals("/usr/local/bin/node", result.tools().node()); 
+        assertEquals("/usr/local/bin/eslint", result.tools().eslint()); 
+        assertEquals("/usr/local/bin/tsc", result.tools().tsc()); 
     }
 
     @Test
-    void applyOverrides_shouldHandleInvalidPaths() { // GH-90000
+    void applyOverrides_shouldHandleInvalidPaths() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of("nonexistent.path", "value"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of("nonexistent.path", "value"); 
 
         // When / Then
-        assertThrows( // GH-90000
+        assertThrows( 
                 IllegalArgumentException.class,
-                () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
+                () -> PolyfixConfigLoader.applyOverrides(config, overrides)); 
     }
 
     @Test
-    void applyOverrides_shouldHandleNullValuesInMap() { // GH-90000
+    void applyOverrides_shouldHandleNullValuesInMap() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = new java.util.HashMap<>(); // GH-90000
-        overrides.put(BUDGETS_MAX_PASSES, null); // GH-90000
-        overrides.put(null, "value"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = new java.util.HashMap<>(); 
+        overrides.put(BUDGETS_MAX_PASSES, null); 
+        overrides.put(null, "value"); 
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then - should not throw and should return the original config
-        assertEquals(config, result); // GH-90000
+        assertEquals(config, result); 
     }
 
     @Test
-    void applyOverrides_shouldHandleEmptyMap() { // GH-90000
+    void applyOverrides_shouldHandleEmptyMap() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Collections.emptyMap(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Collections.emptyMap(); 
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then - should return the original config
-        assertEquals(config, result); // GH-90000
+        assertEquals(config, result); 
     }
 
     @Test
-    void applyOverrides_shouldHandleNullMap() { // GH-90000
+    void applyOverrides_shouldHandleNullMap() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, null); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, null); 
 
         // Then - should return the original config
-        assertEquals(config, result); // GH-90000
+        assertEquals(config, result); 
     }
 
     @Test
-    void applyOverrides_shouldHandleInvalidBooleanValue() { // GH-90000
+    void applyOverrides_shouldHandleInvalidBooleanValue() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of("policies.tsAllowTemporaryAny", "not-a-boolean"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of("policies.tsAllowTemporaryAny", "not-a-boolean"); 
 
         // When / Then
         Exception exception =
-                assertThrows( // GH-90000
+                assertThrows( 
                         IllegalStateException.class,
-                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
+                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); 
 
-        assertTrue( // GH-90000
-                exception.getCause() // GH-90000
+        assertTrue( 
+                exception.getCause() 
                         instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException);
     }
 
     @Test
-    void applyOverrides_shouldHandleInvalidIntegerValue() { // GH-90000
+    void applyOverrides_shouldHandleInvalidIntegerValue() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of("budgets.maxPasses", "not-an-integer"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of("budgets.maxPasses", "not-an-integer"); 
 
         // When / Then
         Exception exception =
-                assertThrows( // GH-90000
+                assertThrows( 
                         IllegalStateException.class,
-                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
+                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); 
 
-        assertTrue( // GH-90000
-                exception.getCause() // GH-90000
+        assertTrue( 
+                exception.getCause() 
                         instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException);
     }
 
     @Test
-    void applyOverrides_shouldHandleUnsupportedType() { // GH-90000
+    void applyOverrides_shouldHandleUnsupportedType() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of("languages", "[java,typescript]"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of("languages", "[java,typescript]"); 
 
         // When / Then - Should throw IllegalStateException with MismatchedInputException as cause
         Exception exception =
-                assertThrows( // GH-90000
+                assertThrows( 
                         IllegalStateException.class,
-                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
+                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); 
 
-        assertTrue( // GH-90000
-                exception.getCause() // GH-90000
+        assertTrue( 
+                exception.getCause() 
                         instanceof com.fasterxml.jackson.databind.exc.MismatchedInputException);
     }
 
     @Test
-    void applyOverrides_shouldHandleBooleanValues() { // GH-90000
+    void applyOverrides_shouldHandleBooleanValues() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
         Map<String, String> overrides =
-                Map.of( // GH-90000
+                Map.of( 
                         "policies.tsAllowTemporaryAny", "true",
                         "policies.pythonAddMissingImports", "false");
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then
-        assertTrue(result.policies().tsAllowTemporaryAny()); // GH-90000
-        assertFalse(result.policies().pythonAddMissingImports()); // GH-90000
+        assertTrue(result.policies().tsAllowTemporaryAny()); 
+        assertFalse(result.policies().pythonAddMissingImports()); 
     }
 
     @Test
-    void applyOverrides_shouldHandleNumericValues() { // GH-90000
+    void applyOverrides_shouldHandleNumericValues() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
         Map<String, String> overrides =
-                Map.of( // GH-90000
+                Map.of( 
                         "budgets.maxPasses", "5",
                         "budgets.maxEditsPerFile", "15");
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then
-        assertEquals(5, result.budgets().maxPasses()); // GH-90000
-        assertEquals(15, result.budgets().maxEditsPerFile()); // GH-90000
+        assertEquals(5, result.budgets().maxPasses()); 
+        assertEquals(15, result.budgets().maxEditsPerFile()); 
     }
 
     @Test
-    void applyOverrides_shouldThrowOnInvalidPath() { // GH-90000
+    void applyOverrides_shouldThrowOnInvalidPath() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of("nonexistent.path", "value"); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of("nonexistent.path", "value"); 
 
         // When / Then
         IllegalArgumentException exception =
-                assertThrows( // GH-90000
+                assertThrows( 
                         IllegalArgumentException.class,
-                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); // GH-90000
+                        () -> PolyfixConfigLoader.applyOverrides(config, overrides)); 
         assertTrue(exception.getMessage().contains("Invalid configuration path"));
     }
 
     @Test
-    void applyOverrides_shouldHandleEmptyOverrides() { // GH-90000
+    void applyOverrides_shouldHandleEmptyOverrides() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
-        Map<String, String> overrides = Map.of(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
+        Map<String, String> overrides = Map.of(); 
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, overrides); 
 
         // Then - should return the same config
-        assertEquals(config, result); // GH-90000
+        assertEquals(config, result); 
     }
 
     @Test
-    void applyOverrides_shouldHandleNullOverrides() { // GH-90000
+    void applyOverrides_shouldHandleNullOverrides() { 
         // Given
-        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); // GH-90000
+        PolyfixConfig config = PolyfixConfigLoader.getDefaultConfig(); 
 
         // When
-        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, null); // GH-90000
+        PolyfixConfig result = PolyfixConfigLoader.applyOverrides(config, null); 
 
         // Then - should return the same config
-        assertEquals(config, result); // GH-90000
+        assertEquals(config, result); 
     }
 }

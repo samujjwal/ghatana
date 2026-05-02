@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.memory;
@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for memory recall accuracy with deterministic fixtures (D010). // GH-90000
+ * Tests for memory recall accuracy with deterministic fixtures (D010). 
  *
  * <p>Validates memory retrieval accuracy and LRU eviction logic.
  *
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("MemoryRecallAccuracy – Deterministic Fixtures (D010)")
 class MemoryRecallAccuracyTest extends EventloopTestBase {
 
@@ -48,122 +48,122 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D010]: exact_match_recall_returns_correct_memory")
-        void exactMatchRecallReturnsCorrectMemory() { // GH-90000
+        void exactMatchRecallReturnsCorrectMemory() { 
             String agentId = "agent-001";
             String searchContent = "weather forecast";
 
-            MemoryService.MemoryEntry memory = MemoryService.MemoryEntry.create( // GH-90000
+            MemoryService.MemoryEntry memory = MemoryService.MemoryEntry.create( 
                 agentId, MemoryService.MemoryTier.EPISODIC, searchContent,
-                Map.of("type", "weather"), 0.8 // GH-90000
+                Map.of("type", "weather"), 0.8 
             );
 
-            when(episodicRepository.findByPattern(eq(agentId), eq(searchContent), anyInt())) // GH-90000
-                .thenReturn(Promise.of(List.of(memory))); // GH-90000
+            when(episodicRepository.findByPattern(eq(agentId), eq(searchContent), anyInt())) 
+                .thenReturn(Promise.of(List.of(memory))); 
 
-            List<MemoryService.MemoryEntry> results = runPromise(() -> // GH-90000
-                episodicRepository.findByPattern(agentId, searchContent, 10) // GH-90000
+            List<MemoryService.MemoryEntry> results = runPromise(() -> 
+                episodicRepository.findByPattern(agentId, searchContent, 10) 
             );
 
-            assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.get(0).content()).isEqualTo(searchContent); // GH-90000
+            assertThat(results).hasSize(1); 
+            assertThat(results.get(0).content()).isEqualTo(searchContent); 
         }
 
         @Test
         @DisplayName("[D010]: partial_match_recall_returns_relevant_memories")
-        void partialMatchRecallReturnsRelevantMemories() { // GH-90000
+        void partialMatchRecallReturnsRelevantMemories() { 
             String agentId = "agent-001";
             String searchPattern = "weather";
 
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "weather forecast today", Map.of(), 0.7), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "weather update", Map.of(), 0.6), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "unrelated topic", Map.of(), 0.5) // GH-90000
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "weather forecast today", Map.of(), 0.7), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "weather update", Map.of(), 0.6), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "unrelated topic", Map.of(), 0.5) 
             );
 
-            when(episodicRepository.findByPattern(eq(agentId), eq(searchPattern), anyInt())) // GH-90000
-                .thenReturn(Promise.of(memories.subList(0, 2))); // GH-90000
+            when(episodicRepository.findByPattern(eq(agentId), eq(searchPattern), anyInt())) 
+                .thenReturn(Promise.of(memories.subList(0, 2))); 
 
-            List<MemoryService.MemoryEntry> results = runPromise(() -> // GH-90000
-                episodicRepository.findByPattern(agentId, searchPattern, 10) // GH-90000
+            List<MemoryService.MemoryEntry> results = runPromise(() -> 
+                episodicRepository.findByPattern(agentId, searchPattern, 10) 
             );
 
-            assertThat(results).hasSize(2); // GH-90000
+            assertThat(results).hasSize(2); 
             assertThat(results.get(0).content()).contains("weather");
             assertThat(results.get(1).content()).contains("weather");
         }
 
         @Test
         @DisplayName("[D010]: recall_with_importance_threshold_filters_by_score")
-        void recallWithImportanceThresholdFiltersByScore() { // GH-90000
+        void recallWithImportanceThresholdFiltersByScore() { 
             String agentId = "agent-001";
 
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "high importance", Map.of(), 0.9), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "medium importance", Map.of(), 0.6), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "low importance", Map.of(), 0.3) // GH-90000
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "high importance", Map.of(), 0.9), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "medium importance", Map.of(), 0.6), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "low importance", Map.of(), 0.3) 
             );
 
-            when(episodicRepository.findByPattern(eq(agentId), anyString(), anyInt())) // GH-90000
-                .thenReturn(Promise.of(memories.stream() // GH-90000
-                    .filter(m -> m.importance() >= 0.7) // GH-90000
-                    .toList())); // GH-90000
+            when(episodicRepository.findByPattern(eq(agentId), anyString(), anyInt())) 
+                .thenReturn(Promise.of(memories.stream() 
+                    .filter(m -> m.importance() >= 0.7) 
+                    .toList())); 
 
-            List<MemoryService.MemoryEntry> results = runPromise(() -> // GH-90000
-                episodicRepository.findByPattern(agentId, "importance", 10) // GH-90000
+            List<MemoryService.MemoryEntry> results = runPromise(() -> 
+                episodicRepository.findByPattern(agentId, "importance", 10) 
             );
 
-            assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.get(0).importance()).isGreaterThanOrEqualTo(0.7); // GH-90000
+            assertThat(results).hasSize(1); 
+            assertThat(results.get(0).importance()).isGreaterThanOrEqualTo(0.7); 
         }
 
         @Test
         @DisplayName("[D010]: recall_with_time_range_filters_by_date")
-        void recallWithTimeRangeFiltersByDate() { // GH-90000
+        void recallWithTimeRangeFiltersByDate() { 
             String agentId = "agent-001";
             long startTime = 1704067200000L; // 2024-01-01
             long endTime = 1706745600000L;   // 2024-02-01
 
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                createMemoryWithTimestamp(agentId, "January event", 1704153600000L), // GH-90000
-                createMemoryWithTimestamp(agentId, "February event", 1706832000000L) // GH-90000
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                createMemoryWithTimestamp(agentId, "January event", 1704153600000L), 
+                createMemoryWithTimestamp(agentId, "February event", 1706832000000L) 
             );
 
-            when(episodicRepository.findByTimeRange(eq(agentId), eq(startTime), eq(endTime))) // GH-90000
-                .thenReturn(Promise.of(memories.stream() // GH-90000
-                    .filter(m -> m.timestamp() >= startTime && m.timestamp() <= endTime) // GH-90000
-                    .toList())); // GH-90000
+            when(episodicRepository.findByTimeRange(eq(agentId), eq(startTime), eq(endTime))) 
+                .thenReturn(Promise.of(memories.stream() 
+                    .filter(m -> m.timestamp() >= startTime && m.timestamp() <= endTime) 
+                    .toList())); 
 
-            List<MemoryService.MemoryEntry> results = runPromise(() -> // GH-90000
-                episodicRepository.findByTimeRange(agentId, startTime, endTime) // GH-90000
+            List<MemoryService.MemoryEntry> results = runPromise(() -> 
+                episodicRepository.findByTimeRange(agentId, startTime, endTime) 
             );
 
-            assertThat(results).hasSize(1); // GH-90000
+            assertThat(results).hasSize(1); 
             assertThat(results.get(0).content()).isEqualTo("January event");
         }
 
         @Test
         @DisplayName("[D010]: recall_results_ordered_by_relevance")
-        void recallResultsOrderedByRelevance() { // GH-90000
+        void recallResultsOrderedByRelevance() { 
             String agentId = "agent-001";
 
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "low relevance", Map.of(), 0.4), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "high relevance", Map.of(), 0.9), // GH-90000
-                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "medium relevance", Map.of(), 0.6) // GH-90000
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "low relevance", Map.of(), 0.4), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "high relevance", Map.of(), 0.9), 
+                MemoryService.MemoryEntry.create(agentId, MemoryService.MemoryTier.EPISODIC, 
+                    "medium relevance", Map.of(), 0.6) 
             );
 
-            List<MemoryService.MemoryEntry> sorted = memories.stream() // GH-90000
-                .sorted(Comparator.comparingDouble(MemoryService.MemoryEntry::importance).reversed()) // GH-90000
-                .toList(); // GH-90000
+            List<MemoryService.MemoryEntry> sorted = memories.stream() 
+                .sorted(Comparator.comparingDouble(MemoryService.MemoryEntry::importance).reversed()) 
+                .toList(); 
 
             assertThat(sorted.get(0).content()).isEqualTo("high relevance");
             assertThat(sorted.get(1).content()).isEqualTo("medium relevance");
@@ -181,60 +181,60 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D010]: same_query_produces_same_results")
-        void sameQueryProducesSameResults() { // GH-90000
+        void sameQueryProducesSameResults() { 
             String agentId = "agent-001";
             String query = "weather";
 
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                createDeterministicMemory(agentId, 1, "Sunny today", 0.7), // GH-90000
-                createDeterministicMemory(agentId, 2, "Rain expected", 0.6) // GH-90000
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                createDeterministicMemory(agentId, 1, "Sunny today", 0.7), 
+                createDeterministicMemory(agentId, 2, "Rain expected", 0.6) 
             );
 
             // First call
-            when(episodicRepository.findByPattern(agentId, query, 10)) // GH-90000
-                .thenReturn(Promise.of(memories)); // GH-90000
-            List<MemoryService.MemoryEntry> results1 = runPromise(() -> // GH-90000
-                episodicRepository.findByPattern(agentId, query, 10) // GH-90000
+            when(episodicRepository.findByPattern(agentId, query, 10)) 
+                .thenReturn(Promise.of(memories)); 
+            List<MemoryService.MemoryEntry> results1 = runPromise(() -> 
+                episodicRepository.findByPattern(agentId, query, 10) 
             );
 
             // Second call with same query
-            when(episodicRepository.findByPattern(agentId, query, 10)) // GH-90000
-                .thenReturn(Promise.of(memories)); // GH-90000
-            List<MemoryService.MemoryEntry> results2 = runPromise(() -> // GH-90000
-                episodicRepository.findByPattern(agentId, query, 10) // GH-90000
+            when(episodicRepository.findByPattern(agentId, query, 10)) 
+                .thenReturn(Promise.of(memories)); 
+            List<MemoryService.MemoryEntry> results2 = runPromise(() -> 
+                episodicRepository.findByPattern(agentId, query, 10) 
             );
 
-            assertThat(results1).hasSize(results2.size()); // GH-90000
+            assertThat(results1).hasSize(results2.size()); 
         }
 
         @Test
         @DisplayName("[D010]: memory_ids_consistent_in_fixtures")
-        void memoryIdsConsistentInFixtures() { // GH-90000
+        void memoryIdsConsistentInFixtures() { 
             String agentId = "agent-001";
             String memoryId = "mem-001";
 
-            MemoryService.MemoryEntry memory = new MemoryService.MemoryEntry( // GH-90000
+            MemoryService.MemoryEntry memory = new MemoryService.MemoryEntry( 
                 memoryId, agentId, MemoryService.MemoryTier.EPISODIC,
-                "Consistent content", Map.of(), 0.8, // GH-90000
-                System.currentTimeMillis(), 0, System.currentTimeMillis() // GH-90000
+                "Consistent content", Map.of(), 0.8, 
+                System.currentTimeMillis(), 0, System.currentTimeMillis() 
             );
 
-            assertThat(memory.id()).isEqualTo(memoryId); // GH-90000
+            assertThat(memory.id()).isEqualTo(memoryId); 
         }
 
         @Test
         @DisplayName("[D010]: timestamps_deterministic_in_fixtures")
-        void timestampsDeterministicInFixtures() { // GH-90000
+        void timestampsDeterministicInFixtures() { 
             long fixedTimestamp = 1704067200000L;
 
-            MemoryService.MemoryEntry memory = new MemoryService.MemoryEntry( // GH-90000
+            MemoryService.MemoryEntry memory = new MemoryService.MemoryEntry( 
                 "mem-001", "agent-001", MemoryService.MemoryTier.EPISODIC,
-                "Content", Map.of(), 0.8, // GH-90000
+                "Content", Map.of(), 0.8, 
                 fixedTimestamp, 0, fixedTimestamp
             );
 
-            assertThat(memory.timestamp()).isEqualTo(fixedTimestamp); // GH-90000
-            assertThat(memory.lastAccessed()).isEqualTo(fixedTimestamp); // GH-90000
+            assertThat(memory.timestamp()).isEqualTo(fixedTimestamp); 
+            assertThat(memory.lastAccessed()).isEqualTo(fixedTimestamp); 
         }
     }
 
@@ -248,47 +248,47 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D010]: accessed_increments_count")
-        void accessedIncrementsCount() { // GH-90000
-            MemoryService.MemoryEntry original = new MemoryService.MemoryEntry( // GH-90000
+        void accessedIncrementsCount() { 
+            MemoryService.MemoryEntry original = new MemoryService.MemoryEntry( 
                 "mem-001", "agent-001", MemoryService.MemoryTier.EPISODIC,
-                "Content", Map.of(), 0.8, // GH-90000
-                System.currentTimeMillis(), 5, System.currentTimeMillis() // GH-90000
+                "Content", Map.of(), 0.8, 
+                System.currentTimeMillis(), 5, System.currentTimeMillis() 
             );
 
-            MemoryService.MemoryEntry accessed = original.accessed(); // GH-90000
+            MemoryService.MemoryEntry accessed = original.accessed(); 
 
-            assertThat(accessed.accessCount()).isEqualTo(6); // GH-90000
+            assertThat(accessed.accessCount()).isEqualTo(6); 
         }
 
         @Test
         @DisplayName("[D010]: accessed_updates_last_accessed_timestamp")
-        void accessedUpdatesLastAccessedTimestamp() { // GH-90000
-            long originalTime = System.currentTimeMillis() - 10000; // GH-90000
+        void accessedUpdatesLastAccessedTimestamp() { 
+            long originalTime = System.currentTimeMillis() - 10000; 
 
-            MemoryService.MemoryEntry original = new MemoryService.MemoryEntry( // GH-90000
+            MemoryService.MemoryEntry original = new MemoryService.MemoryEntry( 
                 "mem-001", "agent-001", MemoryService.MemoryTier.EPISODIC,
-                "Content", Map.of(), 0.8, // GH-90000
+                "Content", Map.of(), 0.8, 
                 originalTime, 0, originalTime
             );
 
-            MemoryService.MemoryEntry accessed = original.accessed(); // GH-90000
+            MemoryService.MemoryEntry accessed = original.accessed(); 
 
-            assertThat(accessed.lastAccessed()).isGreaterThan(original.lastAccessed()); // GH-90000
+            assertThat(accessed.lastAccessed()).isGreaterThan(original.lastAccessed()); 
         }
 
         @Test
         @DisplayName("[D010]: high_access_count_memories_prioritized")
-        void highAccessCountMemoriesPrioritized() { // GH-90000
-            List<MemoryService.MemoryEntry> memories = List.of( // GH-90000
-                new MemoryService.MemoryEntry("mem-1", "agent-001", MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "Low access", Map.of(), 0.7, System.currentTimeMillis(), 1, System.currentTimeMillis()), // GH-90000
-                new MemoryService.MemoryEntry("mem-2", "agent-001", MemoryService.MemoryTier.EPISODIC, // GH-90000
-                    "High access", Map.of(), 0.7, System.currentTimeMillis(), 50, System.currentTimeMillis()) // GH-90000
+        void highAccessCountMemoriesPrioritized() { 
+            List<MemoryService.MemoryEntry> memories = List.of( 
+                new MemoryService.MemoryEntry("mem-1", "agent-001", MemoryService.MemoryTier.EPISODIC, 
+                    "Low access", Map.of(), 0.7, System.currentTimeMillis(), 1, System.currentTimeMillis()), 
+                new MemoryService.MemoryEntry("mem-2", "agent-001", MemoryService.MemoryTier.EPISODIC, 
+                    "High access", Map.of(), 0.7, System.currentTimeMillis(), 50, System.currentTimeMillis()) 
             );
 
-            List<MemoryService.MemoryEntry> sorted = memories.stream() // GH-90000
-                .sorted(Comparator.comparingLong(MemoryService.MemoryEntry::accessCount).reversed()) // GH-90000
-                .toList(); // GH-90000
+            List<MemoryService.MemoryEntry> sorted = memories.stream() 
+                .sorted(Comparator.comparingLong(MemoryService.MemoryEntry::accessCount).reversed()) 
+                .toList(); 
 
             assertThat(sorted.get(0).id()).isEqualTo("mem-2");
         }
@@ -304,40 +304,40 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[D010]: exact_match_highest_relevance")
-        void exactMatchHighestRelevance() { // GH-90000
+        void exactMatchHighestRelevance() { 
             String query = "weather forecast";
             String content = "weather forecast";
 
-            double relevance = calculateRelevance(query, content); // GH-90000
+            double relevance = calculateRelevance(query, content); 
 
-            assertThat(relevance).isEqualTo(1.0); // GH-90000
+            assertThat(relevance).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("[D010]: partial_match_medium_relevance")
-        void partialMatchMediumRelevance() { // GH-90000
+        void partialMatchMediumRelevance() { 
             String query = "weather";
             String content = "weather forecast today";
 
-            double relevance = calculateRelevance(query, content); // GH-90000
+            double relevance = calculateRelevance(query, content); 
 
-            assertThat(relevance).isGreaterThan(0.0).isLessThan(1.0); // GH-90000
+            assertThat(relevance).isGreaterThan(0.0).isLessThan(1.0); 
         }
 
         @Test
         @DisplayName("[D010]: no_match_zero_relevance")
-        void noMatchZeroRelevance() { // GH-90000
+        void noMatchZeroRelevance() { 
             String query = "weather";
             String content = "completely unrelated topic";
 
-            double relevance = calculateRelevance(query, content); // GH-90000
+            double relevance = calculateRelevance(query, content); 
 
-            assertThat(relevance).isEqualTo(0.0); // GH-90000
+            assertThat(relevance).isEqualTo(0.0); 
         }
 
-        private double calculateRelevance(String query, String content) { // GH-90000
-            if (content.equalsIgnoreCase(query)) return 1.0; // GH-90000
-            if (content.toLowerCase().contains(query.toLowerCase())) return 0.5; // GH-90000
+        private double calculateRelevance(String query, String content) { 
+            if (content.equalsIgnoreCase(query)) return 1.0; 
+            if (content.toLowerCase().contains(query.toLowerCase())) return 0.5; 
             return 0.0;
         }
     }
@@ -346,17 +346,17 @@ class MemoryRecallAccuracyTest extends EventloopTestBase {
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────────
 
-    private MemoryService.MemoryEntry createMemoryWithTimestamp(String agentId, String content, long timestamp) { // GH-90000
-        return new MemoryService.MemoryEntry( // GH-90000
-            "mem-" + content.hashCode(), agentId, MemoryService.MemoryTier.EPISODIC, // GH-90000
-            content, Map.of(), 0.5, timestamp, 0, timestamp // GH-90000
+    private MemoryService.MemoryEntry createMemoryWithTimestamp(String agentId, String content, long timestamp) { 
+        return new MemoryService.MemoryEntry( 
+            "mem-" + content.hashCode(), agentId, MemoryService.MemoryTier.EPISODIC, 
+            content, Map.of(), 0.5, timestamp, 0, timestamp 
         );
     }
 
-    private MemoryService.MemoryEntry createDeterministicMemory(String agentId, int id, String content, double importance) { // GH-90000
-        return new MemoryService.MemoryEntry( // GH-90000
+    private MemoryService.MemoryEntry createDeterministicMemory(String agentId, int id, String content, double importance) { 
+        return new MemoryService.MemoryEntry( 
             "mem-" + id, agentId, MemoryService.MemoryTier.EPISODIC,
-            content, Map.of(), importance, // GH-90000
+            content, Map.of(), importance, 
             1704067200000L, 0, 1704067200000L
         );
     }

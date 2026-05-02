@@ -24,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * <p>Validates:
  * <ul>
  *   <li>Metadata conversion from YAPPC to platform format</li>
- *   <li>Lifecycle delegation (initialize, start, stop, shutdown)</li> // GH-90000
+ *   <li>Lifecycle delegation (initialize, start, stop, shutdown)</li> 
  *   <li>Health check bridging</li>
  *   <li>Registration with the platform PluginRegistry</li>
  * </ul>
@@ -43,12 +43,12 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should convert YAPPC metadata to platform format")
-        void shouldConvertMetadata() { // GH-90000
+        void shouldConvertMetadata() { 
             // GIVEN
-            YAPPCPlugin plugin = new StubPlugin("test-validator", "Test Validator", "ai"); // GH-90000
+            YAPPCPlugin plugin = new StubPlugin("test-validator", "Test Validator", "ai"); 
 
             // WHEN
-            Plugin bridged = new PlatformPluginBridge(plugin); // GH-90000
+            Plugin bridged = new PlatformPluginBridge(plugin); 
 
             // THEN
             assertThat(bridged.metadata().id()).isEqualTo("yappc.test-validator");
@@ -59,64 +59,64 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should start in DISCOVERED state")
-        void shouldStartInDiscoveredState() { // GH-90000
+        void shouldStartInDiscoveredState() { 
             // GIVEN / WHEN
-            Plugin bridged = new PlatformPluginBridge(new StubPlugin("p1", "P1", "general")); // GH-90000
+            Plugin bridged = new PlatformPluginBridge(new StubPlugin("p1", "P1", "general")); 
 
             // THEN
-            assertThat(bridged.getState()).isEqualTo(PluginState.DISCOVERED); // GH-90000
+            assertThat(bridged.getState()).isEqualTo(PluginState.DISCOVERED); 
         }
 
         @Test
         @DisplayName("should delegate start lifecycle to YAPPC plugin")
-        void shouldDelegateStart() { // GH-90000
+        void shouldDelegateStart() { 
             // GIVEN
-            StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
-            Plugin bridged = new PlatformPluginBridge(stub); // GH-90000
+            StubPlugin stub = new StubPlugin("p1", "P1", "general"); 
+            Plugin bridged = new PlatformPluginBridge(stub); 
 
             // WHEN
-            runPromise(() -> bridged.start()); // GH-90000
+            runPromise(() -> bridged.start()); 
 
             // THEN
-            assertThat(bridged.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
-            assertThat(stub.started).isTrue(); // GH-90000
+            assertThat(bridged.getState()).isEqualTo(PluginState.RUNNING); 
+            assertThat(stub.started).isTrue(); 
         }
 
         @Test
         @DisplayName("should delegate stop lifecycle to YAPPC plugin")
-        void shouldDelegateStop() { // GH-90000
+        void shouldDelegateStop() { 
             // GIVEN
-            StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
-            Plugin bridged = new PlatformPluginBridge(stub); // GH-90000
-            runPromise(() -> bridged.start()); // GH-90000
+            StubPlugin stub = new StubPlugin("p1", "P1", "general"); 
+            Plugin bridged = new PlatformPluginBridge(stub); 
+            runPromise(() -> bridged.start()); 
 
             // WHEN
-            runPromise(() -> bridged.stop()); // GH-90000
+            runPromise(() -> bridged.stop()); 
 
             // THEN
-            assertThat(bridged.getState()).isEqualTo(PluginState.STOPPED); // GH-90000
-            assertThat(stub.stopped).isTrue(); // GH-90000
+            assertThat(bridged.getState()).isEqualTo(PluginState.STOPPED); 
+            assertThat(stub.stopped).isTrue(); 
         }
 
         @Test
         @DisplayName("should delegate health check to YAPPC plugin")
-        void shouldDelegateHealthCheck() { // GH-90000
+        void shouldDelegateHealthCheck() { 
             // GIVEN
-            StubPlugin stub = new StubPlugin("p1", "P1", "general"); // GH-90000
-            Plugin bridged = new PlatformPluginBridge(stub); // GH-90000
+            StubPlugin stub = new StubPlugin("p1", "P1", "general"); 
+            Plugin bridged = new PlatformPluginBridge(stub); 
 
             // WHEN
-            HealthStatus health = runPromise(bridged::healthCheck); // GH-90000
+            HealthStatus health = runPromise(bridged::healthCheck); 
 
             // THEN
-            assertThat(health.isHealthy()).isTrue(); // GH-90000
+            assertThat(health.isHealthy()).isTrue(); 
         }
 
         @Test
         @DisplayName("should reject null delegate")
-        void shouldRejectNullDelegate() { // GH-90000
-            assertThatThrownBy(() -> new PlatformPluginBridge(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldRejectNullDelegate() { 
+            assertThatThrownBy(() -> new PlatformPluginBridge(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -126,30 +126,30 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should register bridged plugins with platform registry")
-        void shouldRegisterWithPlatformRegistry() { // GH-90000
+        void shouldRegisterWithPlatformRegistry() { 
             // GIVEN
-            PluginRegistry registry = new PluginRegistry(); // GH-90000
-            PlatformPluginBridge bridge = new PlatformPluginBridge( // GH-90000
-                    new StubPlugin("boot-test", "Boot Test", "general")); // GH-90000
-            registry.register(bridge); // GH-90000
+            PluginRegistry registry = new PluginRegistry(); 
+            PlatformPluginBridge bridge = new PlatformPluginBridge( 
+                    new StubPlugin("boot-test", "Boot Test", "general")); 
+            registry.register(bridge); 
 
             // THEN
             assertThat(registry.isRegistered("yappc.boot-test")).isTrue();
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
+            assertThat(registry.size()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("should not duplicate registration")
-        void shouldNotDuplicateRegistration() { // GH-90000
+        void shouldNotDuplicateRegistration() { 
             // GIVEN
-            PluginRegistry registry = new PluginRegistry(); // GH-90000
-            PlatformPluginBridge bridge = new PlatformPluginBridge( // GH-90000
-                    new StubPlugin("dup-test", "Dup Test", "general")); // GH-90000
-            registry.register(bridge); // GH-90000
+            PluginRegistry registry = new PluginRegistry(); 
+            PlatformPluginBridge bridge = new PlatformPluginBridge( 
+                    new StubPlugin("dup-test", "Dup Test", "general")); 
+            registry.register(bridge); 
 
             // WHEN / THEN
-            assertThatThrownBy(() -> registry.register(bridge)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> registry.register(bridge)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("already registered");
         }
     }
@@ -171,53 +171,53 @@ class PlatformPluginBridgeTest extends EventloopTestBase {
         boolean stopped;
         boolean shutdown;
 
-        StubPlugin(String id, String name, String category) { // GH-90000
+        StubPlugin(String id, String name, String category) { 
             this.id = id;
             this.name = name;
             this.category = category;
         }
 
         @Override
-        public Promise<Void> initialize(PluginContext context) { // GH-90000
+        public Promise<Void> initialize(PluginContext context) { 
             initialized = true;
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> start() { // GH-90000
+        public Promise<Void> start() { 
             started = true;
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> stop() { // GH-90000
+        public Promise<Void> stop() { 
             stopped = true;
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> shutdown() { // GH-90000
+        public Promise<Void> shutdown() { 
             shutdown = true;
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         }
 
         @Override
-        public PluginMetadata getMetadata() { // GH-90000
-            return PluginMetadata.builder() // GH-90000
-                    .id(id) // GH-90000
-                    .name(name) // GH-90000
-                    .category(category) // GH-90000
-                    .build(); // GH-90000
+        public PluginMetadata getMetadata() { 
+            return PluginMetadata.builder() 
+                    .id(id) 
+                    .name(name) 
+                    .category(category) 
+                    .build(); 
         }
 
         @Override
-        public PluginCapabilities getCapabilities() { // GH-90000
-            return PluginCapabilities.builder().build(); // GH-90000
+        public PluginCapabilities getCapabilities() { 
+            return PluginCapabilities.builder().build(); 
         }
 
         @Override
-        public Promise<com.ghatana.yappc.plugin.HealthStatus> checkHealth() { // GH-90000
-            return Promise.of(com.ghatana.yappc.plugin.HealthStatus.healthy()); // GH-90000
+        public Promise<com.ghatana.yappc.plugin.HealthStatus> checkHealth() { 
+            return Promise.of(com.ghatana.yappc.plugin.HealthStatus.healthy()); 
         }
     }
 }

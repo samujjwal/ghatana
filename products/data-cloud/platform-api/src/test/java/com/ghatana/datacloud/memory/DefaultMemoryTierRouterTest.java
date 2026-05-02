@@ -12,15 +12,15 @@ class DefaultMemoryTierRouterTest {
 
     @Test
     @DisplayName("applies custom policies during construction")
-    void appliesCustomPoliciesDuringConstruction() { // GH-90000
-        TierPolicy hotPolicy = TierPolicy.defaultFor(MemoryTier.HOT) // GH-90000
-                .toBuilder() // GH-90000
-                .maxRecords(42) // GH-90000
-                .build(); // GH-90000
+    void appliesCustomPoliciesDuringConstruction() { 
+        TierPolicy hotPolicy = TierPolicy.defaultFor(MemoryTier.HOT) 
+                .toBuilder() 
+                .maxRecords(42) 
+                .build(); 
 
         DefaultMemoryTierRouter<com.ghatana.datacloud.EntityRecord> router =
-                new DefaultMemoryTierRouter<>(Map.of(MemoryTier.HOT, hotPolicy)); // GH-90000
+                new DefaultMemoryTierRouter<>(Map.of(MemoryTier.HOT, hotPolicy)); 
 
-        assertThat(router.getPolicy(MemoryTier.HOT).getMaxRecords()).isEqualTo(42); // GH-90000
+        assertThat(router.getPolicy(MemoryTier.HOT).getMaxRecords()).isEqualTo(42); 
     }
 }

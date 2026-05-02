@@ -15,65 +15,65 @@ class QuerySpecContractTest {
 
     @Test
     @DisplayName("EntityStore query spec normalizes defaults and bounds")
-    void entityStoreQuerySpecNormalizesDefaultsAndBounds() { // GH-90000
-        EntityStore.QuerySpec spec = EntityStore.QuerySpec.builder() // GH-90000
+    void entityStoreQuerySpecNormalizesDefaultsAndBounds() { 
+        EntityStore.QuerySpec spec = EntityStore.QuerySpec.builder() 
                 .collection("orders")
                 .offset(-5)
                 .limit(0)
                 .build();
 
         assertThat(spec.collection()).isEqualTo("orders");
-        assertThat(spec.filters()).isEmpty(); // GH-90000
-        assertThat(spec.sorts()).isEmpty(); // GH-90000
-        assertThat(spec.offset()).isZero(); // GH-90000
-        assertThat(spec.limit()).isEqualTo(EntityStore.QuerySpec.DEFAULT_LIMIT); // GH-90000
+        assertThat(spec.filters()).isEmpty(); 
+        assertThat(spec.sorts()).isEmpty(); 
+        assertThat(spec.offset()).isZero(); 
+        assertThat(spec.limit()).isEqualTo(EntityStore.QuerySpec.DEFAULT_LIMIT); 
     }
 
     @Test
     @DisplayName("EntityStore query spec rejects runaway limits")
-    void entityStoreQuerySpecRejectsRunawayLimits() { // GH-90000
-        assertThatThrownBy(() -> EntityStore.QuerySpec.builder() // GH-90000
+    void entityStoreQuerySpecRejectsRunawayLimits() { 
+        assertThatThrownBy(() -> EntityStore.QuerySpec.builder() 
                 .collection("orders")
                 .filters(List.of())
                 .sorts(List.of())
                 .offset(0)
                 .limit(EntityStore.QuerySpec.MAX_LIMIT + 1)
                 .build()
-        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("exceeds maximum allowed value");
     }
 
     @Test
     @DisplayName("QueryCapability query spec builder keeps plugin-native shape")
-    void queryCapabilityQuerySpecBuilderKeepsPluginNativeShape() { // GH-90000
-        QueryCapability.QuerySpec spec = QueryCapability.QuerySpec.builder() // GH-90000
-                .filter("status", "active") // GH-90000
-                .orderBy("createdAt", "priority") // GH-90000
-                .projections(List.of("id", "status")) // GH-90000
-                .build(); // GH-90000
+    void queryCapabilityQuerySpecBuilderKeepsPluginNativeShape() { 
+        QueryCapability.QuerySpec spec = QueryCapability.QuerySpec.builder() 
+                .filter("status", "active") 
+                .orderBy("createdAt", "priority") 
+                .projections(List.of("id", "status")) 
+                .build(); 
 
-        assertThat(spec.filters()).containsEntry("status", "active"); // GH-90000
-        assertThat(spec.orderBy()).containsExactly("createdAt", "priority"); // GH-90000
-        assertThat(spec.ascending()).isTrue(); // GH-90000
-        assertThat(spec.projections()).containsExactly("id", "status"); // GH-90000
+        assertThat(spec.filters()).containsEntry("status", "active"); 
+        assertThat(spec.orderBy()).containsExactly("createdAt", "priority"); 
+        assertThat(spec.ascending()).isTrue(); 
+        assertThat(spec.projections()).containsExactly("id", "status"); 
     }
 
     @Test
     @DisplayName("QuerySpec types remain intentionally distinct")
-    void querySpecTypesRemainIntentionallyDistinct() { // GH-90000
-        EntityStore.QuerySpec entityStoreSpec = EntityStore.QuerySpec.builder() // GH-90000
+    void querySpecTypesRemainIntentionallyDistinct() { 
+        EntityStore.QuerySpec entityStoreSpec = EntityStore.QuerySpec.builder() 
                 .collection("orders")
-                .filter(EntityStore.Filter.eq("status", "active")) // GH-90000
-                .build(); // GH-90000
-        QueryCapability.QuerySpec capabilitySpec = QueryCapability.QuerySpec.builder() // GH-90000
-                .filters(Map.of("status", "active")) // GH-90000
-                .build(); // GH-90000
+                .filter(EntityStore.Filter.eq("status", "active")) 
+                .build(); 
+        QueryCapability.QuerySpec capabilitySpec = QueryCapability.QuerySpec.builder() 
+                .filters(Map.of("status", "active")) 
+                .build(); 
 
         assertThat(entityStoreSpec.collection()).isEqualTo("orders");
-        assertThat(entityStoreSpec.filters()).singleElement() // GH-90000
-                .extracting(EntityStore.Filter::field) // GH-90000
+        assertThat(entityStoreSpec.filters()).singleElement() 
+                .extracting(EntityStore.Filter::field) 
                 .isEqualTo("status");
-        assertThat(capabilitySpec.filters()).containsEntry("status", "active"); // GH-90000
-        assertThat(capabilitySpec.projections()).isEmpty(); // GH-90000
+        assertThat(capabilitySpec.filters()).containsEntry("status", "active"); 
+        assertThat(capabilitySpec.projections()).isEmpty(); 
     }
 }

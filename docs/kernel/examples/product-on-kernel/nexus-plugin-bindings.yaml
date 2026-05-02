@@ -1,0 +1,81 @@
+# Nexus Plugin Bindings Manifest
+# Example: How a logistics product configures platform plugins.
+# No plugin source code is modified — all domain-specificity is in this YAML.
+
+product: nexus
+version: "1.0.0"
+description: "Nexus logistics plugin binding manifest — platform plugins activated with logistics domain configuration"
+
+bindings:
+
+  - pluginId: audit-trail-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Immutable shipment and carrier event audit trail"
+    config:
+      retentionYears: 7
+      eventCategories:
+        - SHIPMENT_CREATED
+        - SHIPMENT_STATE_CHANGED
+        - CARRIER_ONBOARDED
+        - CUSTOMS_DECLARATION_SUBMITTED
+        - MANIFEST_PROCESSED
+      sinkType: APPEND_ONLY_LOG
+      encryptAtRest: false
+
+  - pluginId: compliance-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Customs and dangerous goods compliance evaluation"
+    config:
+      rulePack: nexus-compliance-rules-v1
+      evaluationMode: WARN_ON_VIOLATION
+      regulatoryFrameworks:
+        - iata-dgr
+        - imo-imdg
+        - customs-harmonized
+
+  - pluginId: risk-management-plugin
+    version: ">=1.2.0"
+    enabled: true
+    description: "Supply-chain operational risk management"
+    config:
+      evaluators:
+        - modelId: OPERATIONAL
+          description: "Carrier reliability and shipment delay risk"
+          factorKeys:
+            - carrier.on_time_rate
+            - route.disruption_score
+            - weather.risk_index
+            - customs.clearance_delay_hours
+
+  - pluginId: fraud-detection-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Cargo fraud and unauthorized rerouting detection"
+    config:
+      signals:
+        - id: nexus.reroute.unauthorized
+          description: "Shipment rerouted without carrier authorization"
+          weight: 0.9
+        - id: nexus.manifest.mismatch
+          description: "Cargo manifest does not match actual shipment contents"
+          weight: 0.85
+      thresholds:
+        flagScore: 0.5
+        blockScore: 0.8
+
+  - pluginId: human-approval-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Human approval for dangerous goods and high-value shipment rerouting"
+    config:
+      workflows:
+        - id: nexus.dangerous-goods-approval
+          description: "Approval for dangerous goods shipment dispatch"
+          approvers: [nexus-safety-officer]
+          slaMinutes: 60
+        - id: nexus.reroute-approval
+          description: "Approval for shipment reroute affecting ETA by >24h"
+          approvers: [nexus-ops-lead]
+          slaMinutes: 30

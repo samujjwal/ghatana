@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer application
  */
 @DisplayName("QualityScoringService Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class QualityScoringServiceTest extends EventloopTestBase {
 
     @Mock
@@ -51,26 +51,26 @@ class QualityScoringServiceTest extends EventloopTestBase {
     private QualityScoreExplanation stubExplanation;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new QualityScoringService(qualityScorer, metrics); // GH-90000
-        sampleEntity = Entity.builder() // GH-90000
-                .id(UUID.randomUUID()) // GH-90000
+    void setUp() { 
+        service = new QualityScoringService(qualityScorer, metrics); 
+        sampleEntity = Entity.builder() 
+                .id(UUID.randomUUID()) 
                 .tenantId("tenant-1")
                 .collectionName("test_collection")
-                .data(new HashMap<>(Map.of("name", "Test Entity"))) // GH-90000
-                .createdAt(Instant.now()) // GH-90000
-                .build(); // GH-90000
-        perfectMetrics = QualityMetrics.uniform(100); // GH-90000
-        stubExplanation = QualityScoreExplanation.builder() // GH-90000
-                .score(100) // GH-90000
-                .level(QualityLevel.EXCELLENT) // GH-90000
-                .findings(List.of()) // GH-90000
-                .recommendations(List.of()) // GH-90000
-                .build(); // GH-90000
-        lenient().when(qualityScorer.validateEntity(any(), any())) // GH-90000
-                .thenReturn(Promise.of(QualityScorer.ValidationResult.valid())); // GH-90000
-        lenient().when(qualityScorer.explainScore(any(), any(), any())) // GH-90000
-                .thenReturn(Promise.of(stubExplanation)); // GH-90000
+                .data(new HashMap<>(Map.of("name", "Test Entity"))) 
+                .createdAt(Instant.now()) 
+                .build(); 
+        perfectMetrics = QualityMetrics.uniform(100); 
+        stubExplanation = QualityScoreExplanation.builder() 
+                .score(100) 
+                .level(QualityLevel.EXCELLENT) 
+                .findings(List.of()) 
+                .recommendations(List.of()) 
+                .build(); 
+        lenient().when(qualityScorer.validateEntity(any(), any())) 
+                .thenReturn(Promise.of(QualityScorer.ValidationResult.valid())); 
+        lenient().when(qualityScorer.explainScore(any(), any(), any())) 
+                .thenReturn(Promise.of(stubExplanation)); 
     }
 
     // =========================================================================
@@ -83,16 +83,16 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should throw NullPointerException for null scorer")
-        void shouldThrowForNullScorer() { // GH-90000
-            assertThatThrownBy(() -> new QualityScoringService(null, metrics)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullScorer() { 
+            assertThatThrownBy(() -> new QualityScoringService(null, metrics)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should throw NullPointerException for null metrics")
-        void shouldThrowForNullMetrics() { // GH-90000
-            assertThatThrownBy(() -> new QualityScoringService(qualityScorer, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullMetrics() { 
+            assertThatThrownBy(() -> new QualityScoringService(qualityScorer, null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -106,50 +106,50 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return successful scoring response for valid entity")
-        void shouldScoreValidEntity() { // GH-90000
+        void shouldScoreValidEntity() { 
             when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
-                    .thenReturn(Promise.of(perfectMetrics)); // GH-90000
+                    .thenReturn(Promise.of(perfectMetrics)); 
 
             QualityScoringService.ScoringResponse response =
-                    runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); // GH-90000
+                    runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); 
 
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.isSuccess()).isTrue(); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("should expose quality level in successful response")
-        void shouldExposeQualityLevel() { // GH-90000
+        void shouldExposeQualityLevel() { 
             when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
-                    .thenReturn(Promise.of(perfectMetrics)); // GH-90000
+                    .thenReturn(Promise.of(perfectMetrics)); 
 
             QualityScoringService.ScoringResponse response =
-                    runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); // GH-90000
+                    runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); 
 
-            assertThat(response.getQualityLevel()).isNotNull(); // GH-90000
+            assertThat(response.getQualityLevel()).isNotNull(); 
         }
 
         @Test
         @DisplayName("should throw NullPointerException for null entity")
-        void shouldThrowForNullEntity() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> service.scoreEntity("tenant-1", null))) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullEntity() { 
+            assertThatThrownBy(() -> runPromise(() -> service.scoreEntity("tenant-1", null))) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should throw NullPointerException for null tenantId")
-        void shouldThrowForNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> service.scoreEntity(null, sampleEntity))) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullTenantId() { 
+            assertThatThrownBy(() -> runPromise(() -> service.scoreEntity(null, sampleEntity))) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should delegate scoring to QualityScorer with tenant context")
-        void shouldDelegateToScorer() { // GH-90000
+        void shouldDelegateToScorer() { 
             when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
-                    .thenReturn(Promise.of(perfectMetrics)); // GH-90000
+                    .thenReturn(Promise.of(perfectMetrics)); 
 
-            runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); // GH-90000
+            runPromise(() -> service.scoreEntity("tenant-1", sampleEntity)); 
 
             verify(qualityScorer).scoreEntity(eq("tenant-1"), eq(sampleEntity), any());
         }
@@ -165,41 +165,41 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return batch response with results for all entities")
-        void shouldReturnBatchResponse() { // GH-90000
+        void shouldReturnBatchResponse() { 
             when(qualityScorer.scoreEntity(eq("tenant-1"), eq(sampleEntity), any()))
-                    .thenReturn(Promise.of(perfectMetrics)); // GH-90000
+                    .thenReturn(Promise.of(perfectMetrics)); 
 
             QualityScoringService.BatchScoringResponse response =
-                    runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of(sampleEntity))); // GH-90000
+                    runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of(sampleEntity))); 
 
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.getTotalCount()).isEqualTo(1); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.getTotalCount()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("should return success rate of 1.0 when all entities score successfully")
-        void shouldReturnFullSuccessRate() { // GH-90000
+        void shouldReturnFullSuccessRate() { 
             when(qualityScorer.scoreEntity(eq("tenant-1"), any(), any()))
-                    .thenReturn(Promise.of(perfectMetrics)); // GH-90000
+                    .thenReturn(Promise.of(perfectMetrics)); 
 
             QualityScoringService.BatchScoringResponse response =
-                    runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of(sampleEntity))); // GH-90000
+                    runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of(sampleEntity))); 
 
-            assertThat(response.getSuccessRate()).isEqualTo(100.0); // GH-90000
+            assertThat(response.getSuccessRate()).isEqualTo(100.0); 
         }
 
         @Test
         @DisplayName("should throw NullPointerException for null entities list")
-        void shouldThrowForNullEntities() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", null))) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullEntities() { 
+            assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", null))) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("should throw for empty entities list")
-        void shouldThrowForEmptyEntities() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of()))) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void shouldThrowForEmptyEntities() { 
+            assertThatThrownBy(() -> runPromise(() -> service.scoreEntitiesBatch("tenant-1", List.of()))) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -213,12 +213,12 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return non-empty list of supported quality dimensions")
-        void shouldReturnSupportedDimensions() { // GH-90000
-            lenient().when(qualityScorer.getSupportedDimensions()) // GH-90000
-                    .thenReturn(Promise.of(List.of("completeness", "accuracy", "consistency"))); // GH-90000
+        void shouldReturnSupportedDimensions() { 
+            lenient().when(qualityScorer.getSupportedDimensions()) 
+                    .thenReturn(Promise.of(List.of("completeness", "accuracy", "consistency"))); 
 
-            List<String> dimensions = runPromise(() -> service.getSupportedDimensions()); // GH-90000
-            assertThat(dimensions).isNotNull().isNotEmpty(); // GH-90000
+            List<String> dimensions = runPromise(() -> service.getSupportedDimensions()); 
+            assertThat(dimensions).isNotNull().isNotEmpty(); 
         }
     }
 
@@ -232,22 +232,22 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should delegate configuration update to scorer")
-        void shouldDelegateUpdateToScorer() { // GH-90000
-            when(qualityScorer.updateConfiguration("tenant-1", Map.of("threshold", 80))) // GH-90000
-                    .thenReturn(Promise.complete()); // GH-90000
+        void shouldDelegateUpdateToScorer() { 
+            when(qualityScorer.updateConfiguration("tenant-1", Map.of("threshold", 80))) 
+                    .thenReturn(Promise.complete()); 
 
-            assertThatCode(() -> runPromise(() -> // GH-90000
-                    service.updateConfiguration("tenant-1", Map.of("threshold", 80)))) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
-            verify(qualityScorer).updateConfiguration("tenant-1", Map.of("threshold", 80)); // GH-90000
+            assertThatCode(() -> runPromise(() -> 
+                    service.updateConfiguration("tenant-1", Map.of("threshold", 80)))) 
+                    .doesNotThrowAnyException(); 
+            verify(qualityScorer).updateConfiguration("tenant-1", Map.of("threshold", 80)); 
         }
 
         @Test
         @DisplayName("should throw NullPointerException for null tenantId in update")
-        void shouldThrowForNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> // GH-90000
-                    service.updateConfiguration(null, Map.of()))) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void shouldThrowForNullTenantId() { 
+            assertThatThrownBy(() -> runPromise(() -> 
+                    service.updateConfiguration(null, Map.of()))) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -261,9 +261,9 @@ class QualityScoringServiceTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return configuration map for tenant")
-        void shouldReturnConfiguration() { // GH-90000
+        void shouldReturnConfiguration() { 
             when(qualityScorer.getConfiguration("tenant-1"))
-                    .thenReturn(Promise.of(Map.of("threshold", 80))); // GH-90000
+                    .thenReturn(Promise.of(Map.of("threshold", 80))); 
 
             Map<String, Object> config = runPromise(() -> service.getConfiguration("tenant-1"));
             assertThat(config).isNotNull().containsKey("threshold");

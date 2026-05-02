@@ -24,8 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Revocation support</li>
  * </ul>
  *
- * <p>Supports healthcare (PHR), financial (Finance), and general use cases.</p>
- *
  * @doc.type class
  * @doc.purpose Standard consent management implementation
  * @doc.layer platform
@@ -38,6 +36,8 @@ public class StandardConsentPlugin implements ConsentPlugin {
 
     private final Map<String, ConsentRecord> consents = new ConcurrentHashMap<>();
     private final Map<String, List<ConsentRecord>> subjectHistory = new ConcurrentHashMap<>();
+    /** Products configure purpose-specific expiry (days) via plugin binding manifest. Default is 730 days (2 years). */
+    private final Map<String, Long> purposeExpiryDays = new ConcurrentHashMap<>();
     private static final PluginMetadata METADATA = PluginMetadata.builder()
         .id("com.ghatana.plugin.consent")
         .name("Consent Plugin")
@@ -255,13 +255,9 @@ public class StandardConsentPlugin implements ConsentPlugin {
     }
 
     private Instant calculateExpiry(String purpose, Instant grantedAt) {
-        // Default expiration based on purpose
-        long days = switch (purpose) {
-            case "marketing" -> 365; // 1 year for marketing
-            case "healthcare_data_processing" -> 2555; // 7 years for healthcare
-            case "financial_data_sharing" -> 1825; // 5 years for finance
-            default -> 730; // 2 years default
-        };
+        // Default expiration is 2 years. Products configure purpose-specific expiry
+        // via ConsentPlugin configuration (purposeVocabulary.expiryDays in binding manifest).
+        long days = purposeExpiryDays.getOrDefault(purpose, 730L);
         return grantedAt.plusSeconds(days * 24 * 60 * 60);
     }
 

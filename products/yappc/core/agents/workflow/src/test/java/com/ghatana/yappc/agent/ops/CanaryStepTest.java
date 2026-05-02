@@ -33,23 +33,23 @@ class CanaryStepTest extends EventloopTestBase {
   private CanaryStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new CanaryStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new CanaryStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should perform canary deployment with traffic shifting")
-  void shouldPerformCanaryDeployment() { // GH-90000
+  void shouldPerformCanaryDeployment() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // GH-90000
-    context.put("deploymentId", "deploy-001"); // GH-90000
-    context.put("validated", true); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("tenantId", "tenant-abc"); 
+    context.put("deploymentId", "deploy-001"); 
+    context.put("validated", true); 
 
     Map<String, Object> mockDeployment =
-        Map.of( // GH-90000
+        Map.of( 
             "deploymentId",
             "deploy-001",
             "environment",
@@ -61,33 +61,33 @@ class CanaryStepTest extends EventloopTestBase {
             "imageTag",
             "v1.2.0");
 
-    when(dbClient.query(anyString(), any(), anyInt())) // GH-90000
-        .thenReturn(Promise.of(List.of(mockDeployment))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.query(anyString(), any(), anyInt())) 
+        .thenReturn(Promise.of(List.of(mockDeployment))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("status")).isEqualTo("COMPLETED");
     assertThat(result.get("canaryId")).isNotNull();
   }
 
   @Test
   @DisplayName("Should fail when deployment is not validated")
-  void shouldFailWhenDeploymentNotValidated() { // GH-90000
+  void shouldFailWhenDeploymentNotValidated() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // GH-90000
-    context.put("validated", false); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("tenantId", "tenant-abc"); 
+    context.put("validated", false); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalStateException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalStateException.class) 
         .hasMessageContaining("not validated");
   }
 }

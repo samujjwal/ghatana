@@ -20,7 +20,7 @@ class KGSchemaMigrationTest {
 
     @Test
     @DisplayName("tenant isolation migration scopes node and edge identity by tenant")
-    void tenantIsolationMigrationScopesIdentityByTenant() throws IOException { // GH-90000
+    void tenantIsolationMigrationScopesIdentityByTenant() throws IOException { 
         String migration = readMigration("db/migration/V003__kg_tenant_isolation.sql");
 
         assertThat(migration).contains("ADD CONSTRAINT kg_nodes_pkey PRIMARY KEY (tenant_id, node_id)");
@@ -29,7 +29,7 @@ class KGSchemaMigrationTest {
 
     @Test
     @DisplayName("tenant isolation migration rewires edge foreign keys to tenant scoped nodes")
-    void tenantIsolationMigrationRewiresTenantScopedForeignKeys() throws IOException { // GH-90000
+    void tenantIsolationMigrationRewiresTenantScopedForeignKeys() throws IOException { 
         String migration = readMigration("db/migration/V003__kg_tenant_isolation.sql");
 
         assertThat(migration).contains("DROP CONSTRAINT IF EXISTS fk_kg_edges_from_node");
@@ -41,7 +41,7 @@ class KGSchemaMigrationTest {
 
     @Test
     @DisplayName("tenant isolation migration adds composite indexes for tenant hot paths")
-    void tenantIsolationMigrationAddsCompositeHotPathIndexes() throws IOException { // GH-90000
+    void tenantIsolationMigrationAddsCompositeHotPathIndexes() throws IOException { 
         String migration = readMigration("db/migration/V003__kg_tenant_isolation.sql");
 
         assertThat(migration).contains("idx_kg_nodes_tenant_type_updated");
@@ -50,10 +50,10 @@ class KGSchemaMigrationTest {
         assertThat(migration).contains("ON kg_edges(tenant_id, from_node_id, relationship_type)");
     }
 
-    private String readMigration(String resourcePath) throws IOException { // GH-90000
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath)) { // GH-90000
-            assertThat(inputStream).isNotNull(); // GH-90000
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8); // GH-90000
+    private String readMigration(String resourcePath) throws IOException { 
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resourcePath)) { 
+            assertThat(inputStream).isNotNull(); 
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8); 
         }
     }
 }

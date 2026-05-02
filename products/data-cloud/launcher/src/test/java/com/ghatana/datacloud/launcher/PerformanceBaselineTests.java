@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -29,68 +29,68 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("GET collection: response time < 50ms (p50)")
-        void shouldMeetGetCollectionP50SLA() { // GH-90000
-            long duration = measureGetCollectionLatency(); // GH-90000
-            assertThat(duration).isLessThan(50); // GH-90000
+        void shouldMeetGetCollectionP50SLA() { 
+            long duration = measureGetCollectionLatency(); 
+            assertThat(duration).isLessThan(50); 
         }
 
         @Test
         @DisplayName("GET collection: response time < 200ms (p99)")
-        void shouldMeetGetCollectionP99SLA() { // GH-90000
+        void shouldMeetGetCollectionP99SLA() { 
             long maxDuration = 0;
-            for (int i = 0; i < 100; i++) { // GH-90000
-                maxDuration = Math.max(maxDuration, measureGetCollectionLatency()); // GH-90000
+            for (int i = 0; i < 100; i++) { 
+                maxDuration = Math.max(maxDuration, measureGetCollectionLatency()); 
             }
-            assertThat(maxDuration).isLessThan(200); // GH-90000
+            assertThat(maxDuration).isLessThan(200); 
         }
 
         @Test
         @DisplayName("POST collection: response time < 100ms (p50)")
-        void shouldMeetPostCollectionP50SLA() { // GH-90000
-            long duration = measurePostCollectionLatency(); // GH-90000
-            assertThat(duration).isLessThan(100); // GH-90000
+        void shouldMeetPostCollectionP50SLA() { 
+            long duration = measurePostCollectionLatency(); 
+            assertThat(duration).isLessThan(100); 
         }
 
         @Test
         @DisplayName("POST dataset upload: response time < 500ms (p50)")
-        void shouldMeetUploadP50SLA() { // GH-90000
-            long duration = measureUploadLatency(10_000_000); // 10MB // GH-90000
-            assertThat(duration).isLessThan(500); // GH-90000
+        void shouldMeetUploadP50SLA() { 
+            long duration = measureUploadLatency(10_000_000); // 10MB 
+            assertThat(duration).isLessThan(500); 
         }
 
         @Test
         @DisplayName("DELETE resource: response time < 50ms (p50)")
-        void shouldMeetDeleteP50SLA() { // GH-90000
-            long duration = measureDeleteLatency(); // GH-90000
-            assertThat(duration).isLessThan(50); // GH-90000
+        void shouldMeetDeleteP50SLA() { 
+            long duration = measureDeleteLatency(); 
+            assertThat(duration).isLessThan(50); 
         }
 
         @Test
         @DisplayName("Query execution: P50 latency under 1s")
-        void shouldMeetQueryP50SLA() { // GH-90000
-            long duration = measureQueryLatency(100_000); // 100K rows // GH-90000
-            assertThat(duration).isLessThan(1000); // GH-90000
+        void shouldMeetQueryP50SLA() { 
+            long duration = measureQueryLatency(100_000); // 100K rows 
+            assertThat(duration).isLessThan(1000); 
         }
 
         @Test
         @DisplayName("Query execution: P99 latency under 5s")
-        void shouldMeetQueryP99SLA() { // GH-90000
+        void shouldMeetQueryP99SLA() { 
             long maxDuration = 0;
-            for (int i = 0; i < 20; i++) { // GH-90000
-                maxDuration = Math.max(maxDuration, measureQueryLatency(100_000)); // GH-90000
+            for (int i = 0; i < 20; i++) { 
+                maxDuration = Math.max(maxDuration, measureQueryLatency(100_000)); 
             }
-            assertThat(maxDuration).isLessThan(5000); // GH-90000
+            assertThat(maxDuration).isLessThan(5000); 
         }
 
         @Test
         @DisplayName("Bulk operation: create 1000 collections < 5s")
-        void shouldMeetBulkCreateSLA() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
-            for (int i = 0; i < 1000; i++) { // GH-90000
-                createCollectionSync("Bulk-" + i); // GH-90000
+        void shouldMeetBulkCreateSLA() { 
+            long start = System.currentTimeMillis(); 
+            for (int i = 0; i < 1000; i++) { 
+                createCollectionSync("Bulk-" + i); 
             }
-            long duration = System.currentTimeMillis() - start; // GH-90000
-            assertThat(duration).isLessThan(5000); // GH-90000
+            long duration = System.currentTimeMillis() - start; 
+            assertThat(duration).isLessThan(5000); 
         }
     }
 
@@ -100,41 +100,41 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("throughput: 1000 requests per second (RPS)")
-        void shouldHandle1000RPS() { // GH-90000
-            int requestsPerSecond = simulateLoadForDuration(1000, 1); // 1000 RPS for 1 second // GH-90000
-            assertThat(requestsPerSecond).isGreaterThanOrEqualTo(900); // GH-90000
+        void shouldHandle1000RPS() { 
+            int requestsPerSecond = simulateLoadForDuration(1000, 1); // 1000 RPS for 1 second 
+            assertThat(requestsPerSecond).isGreaterThanOrEqualTo(900); 
         }
 
         @Test
         @DisplayName("throughput: 500 concurrent queries")
-        void shouldHandle500ConcurrentQueries() { // GH-90000
-            int successful = simulateConcurrentLoad(500); // GH-90000
-            assertThat(successful).isGreaterThanOrEqualTo(495); // 99% success rate // GH-90000
+        void shouldHandle500ConcurrentQueries() { 
+            int successful = simulateConcurrentLoad(500); 
+            assertThat(successful).isGreaterThanOrEqualTo(495); // 99% success rate 
         }
 
         @Test
         @DisplayName("throughput: 10Gbps data transfer for bulk upload")
-        void shouldHandle10GbpsTransfer() { // GH-90000
-            long bytesTransferred = simulateBulkUpload(10 * 1024 * 1024 * 1024L); // 10GB // GH-90000
-            assertThat(bytesTransferred).isGreaterThan(0); // GH-90000
+        void shouldHandle10GbpsTransfer() { 
+            long bytesTransferred = simulateBulkUpload(10 * 1024 * 1024 * 1024L); // 10GB 
+            assertThat(bytesTransferred).isGreaterThan(0); 
         }
 
         @Test
         @DisplayName("throughput: 100K events per second ingest")
-        void shouldIngest100KEventsPerSecond() { // GH-90000
-            int eventsIngested = simulateEventIngest(100_000); // GH-90000
-            assertThat(eventsIngested).isGreaterThanOrEqualTo(99_000); // GH-90000
+        void shouldIngest100KEventsPerSecond() { 
+            int eventsIngested = simulateEventIngest(100_000); 
+            assertThat(eventsIngested).isGreaterThanOrEqualTo(99_000); 
         }
 
         @Test
         @DisplayName("throughput: export 1M rows in 30 seconds")
-        void shouldExport1MRowsIn30Seconds() { // GH-90000
-            long start = System.currentTimeMillis(); // GH-90000
-            int rows = simulateExport(1_000_000); // GH-90000
-            long duration = System.currentTimeMillis() - start; // GH-90000
+        void shouldExport1MRowsIn30Seconds() { 
+            long start = System.currentTimeMillis(); 
+            int rows = simulateExport(1_000_000); 
+            long duration = System.currentTimeMillis() - start; 
 
-            assertThat(rows).isEqualTo(1_000_000); // GH-90000
-            assertThat(duration).isLessThan(30_000); // GH-90000
+            assertThat(rows).isEqualTo(1_000_000); 
+            assertThat(duration).isLessThan(30_000); 
         }
     }
 
@@ -144,46 +144,46 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("simple query: COUNT(*) on 10M rows < 500ms")
-        void shouldCountFast() { // GH-90000
-            long duration = measureQueryLatency(10_000_000); // GH-90000
-            assertThat(duration).isLessThan(500); // GH-90000
+        void shouldCountFast() { 
+            long duration = measureQueryLatency(10_000_000); 
+            assertThat(duration).isLessThan(500); 
         }
 
         @Test
         @DisplayName("aggregation query: GROUP BY on 1M rows < 2s")
-        void shouldAggregateInTime() { // GH-90000
-            long duration = measureAggregationLatency(1_000_000); // GH-90000
-            assertThat(duration).isLessThan(2000); // GH-90000
+        void shouldAggregateInTime() { 
+            long duration = measureAggregationLatency(1_000_000); 
+            assertThat(duration).isLessThan(2000); 
         }
 
         @Test
         @DisplayName("join query: 2 tables (100K rows each) < 3s")
-        void shouldJoinInTime() { // GH-90000
-            long duration = measureJoinLatency(100_000, 100_000); // GH-90000
-            assertThat(duration).isLessThan(3000); // GH-90000
+        void shouldJoinInTime() { 
+            long duration = measureJoinLatency(100_000, 100_000); 
+            assertThat(duration).isLessThan(3000); 
         }
 
         @Test
         @DisplayName("full-text search: index lookup < 50ms")
-        void shouldSearchIndexFast() { // GH-90000
-            long duration = measureFullTextSearchLatency(); // GH-90000
-            assertThat(duration).isLessThan(50); // GH-90000
+        void shouldSearchIndexFast() { 
+            long duration = measureFullTextSearchLatency(); 
+            assertThat(duration).isLessThan(50); 
         }
 
         @Test
         @DisplayName("query plan analysis: < 10ms")
-        void shouldAnalyzePlanQuickly() { // GH-90000
-            long duration = measureQueryPlanAnalysis(); // GH-90000
-            assertThat(duration).isLessThan(10); // GH-90000
+        void shouldAnalyzePlanQuickly() { 
+            long duration = measureQueryPlanAnalysis(); 
+            assertThat(duration).isLessThan(10); 
         }
 
         @Test
         @DisplayName("prepared statement reuse: 2x faster than fresh parse")
-        void shouldBenefitFromPreparedStatements() { // GH-90000
-            long freshParse = measureFreshQueryTime(); // GH-90000
-            long prepared = measurePreparedQueryTime(); // GH-90000
+        void shouldBenefitFromPreparedStatements() { 
+            long freshParse = measureFreshQueryTime(); 
+            long prepared = measurePreparedQueryTime(); 
 
-            assertThat(prepared).isLessThan(freshParse / 2); // GH-90000
+            assertThat(prepared).isLessThan(freshParse / 2); 
         }
     }
 
@@ -193,49 +193,49 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("memory baseline: 500MB heap sufficient for typical operations")
-        void shouldNotExceedMemoryBaseline() { // GH-90000
-            long memoryUsed = simulateTypicalLoad(); // GH-90000
-            assertThat(memoryUsed).isLessThan(500 * 1024 * 1024); // 500MB // GH-90000
+        void shouldNotExceedMemoryBaseline() { 
+            long memoryUsed = simulateTypicalLoad(); 
+            assertThat(memoryUsed).isLessThan(500 * 1024 * 1024); // 500MB 
         }
 
         @Test
         @DisplayName("memory leak detection: stable memory after GC")
-        void shouldNotHaveMemoryLeak() { // GH-90000
-            long before = getHeapUsed(); // GH-90000
-            simulateWorkloadAndGC(); // GH-90000
-            long after = getHeapUsed(); // GH-90000
+        void shouldNotHaveMemoryLeak() { 
+            long before = getHeapUsed(); 
+            simulateWorkloadAndGC(); 
+            long after = getHeapUsed(); 
 
             // Allow 10% variance
-            long variance = Math.abs(after - before); // GH-90000
-            assertThat(variance).isLessThan(before / 10); // GH-90000
+            long variance = Math.abs(after - before); 
+            assertThat(variance).isLessThan(before / 10); 
         }
 
         @Test
         @DisplayName("connection pool: maintains < 100 idle connections")
-        void shouldManageConnectionPool() { // GH-90000
-            int idleConnections = getIdleConnections(); // GH-90000
-            assertThat(idleConnections).isLessThan(100); // GH-90000
+        void shouldManageConnectionPool() { 
+            int idleConnections = getIdleConnections(); 
+            assertThat(idleConnections).isLessThan(100); 
         }
 
         @Test
         @DisplayName("thread pool: < 50 threads for standard load")
-        void shouldManageThreadPool() { // GH-90000
-            int activeThreads = getActiveThreadCount(); // GH-90000
-            assertThat(activeThreads).isLessThan(50); // GH-90000
+        void shouldManageThreadPool() { 
+            int activeThreads = getActiveThreadCount(); 
+            assertThat(activeThreads).isLessThan(50); 
         }
 
         @Test
         @DisplayName("disk I/O: 1000 IOPS sustained")
-        void shouldSustainDiskIOPS() { // GH-90000
-            int iops = measureDiskIOPS(); // GH-90000
-            assertThat(iops).isGreaterThanOrEqualTo(1000); // GH-90000
+        void shouldSustainDiskIOPS() { 
+            int iops = measureDiskIOPS(); 
+            assertThat(iops).isGreaterThanOrEqualTo(1000); 
         }
 
         @Test
         @DisplayName("cache hit ratio: > 80% for repeated queries")
-        void shouldMaintainHighCacheHitRatio() { // GH-90000
-            double hitRatio = measureCacheHitRatio(); // GH-90000
-            assertThat(hitRatio).isGreaterThan(0.80); // GH-90000
+        void shouldMaintainHighCacheHitRatio() { 
+            double hitRatio = measureCacheHitRatio(); 
+            assertThat(hitRatio).isGreaterThan(0.80); 
         }
     }
 
@@ -245,43 +245,43 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("linear scaling: 2x load = 2x resources")
-        void shouldScaleLinearly() { // GH-90000
-            long resource1 = measureResourceUsageForLoad(1000); // GH-90000
-            long resource2 = measureResourceUsageForLoad(2000); // GH-90000
+        void shouldScaleLinearly() { 
+            long resource1 = measureResourceUsageForLoad(1000); 
+            long resource2 = measureResourceUsageForLoad(2000); 
 
-            assertThat(resource2).isLessThan((long) (resource1 * 2.2)); // Allow 10% overhead // GH-90000
+            assertThat(resource2).isLessThan((long) (resource1 * 2.2)); // Allow 10% overhead 
         }
 
         @Test
         @DisplayName("dataset growth: query time grows logarithmically")
-        void shouldScaleLogarithmically() { // GH-90000
-            long time100K = measureQueryLatency(100_000); // GH-90000
-            long time10M = measureQueryLatency(10_000_000); // GH-90000
+        void shouldScaleLogarithmically() { 
+            long time100K = measureQueryLatency(100_000); 
+            long time10M = measureQueryLatency(10_000_000); 
 
             // 10M is 100x larger but query should be < 10x slower
-            assertThat(time10M).isLessThan(time100K * 10); // GH-90000
+            assertThat(time10M).isLessThan(time100K * 10); 
         }
 
         @Test
         @DisplayName("concurrent users: 1000 concurrent users handled")
-        void shouldHandle1000ConcurrentUsers() { // GH-90000
-            Map<String, Object> result = simulateConcurrentUsers(1000); // GH-90000
+        void shouldHandle1000ConcurrentUsers() { 
+            Map<String, Object> result = simulateConcurrentUsers(1000); 
             int successful = ((Number) result.get("successful")).intValue();
 
-            assertThat(successful).isGreaterThanOrEqualTo(990); // 99% success rate // GH-90000
+            assertThat(successful).isGreaterThanOrEqualTo(990); // 99% success rate 
         }
 
         @Test
         @DisplayName("multi-tenant isolation: no cross-tenant performance impact")
-        void shouldMaintainTenantIsolation() { // GH-90000
+        void shouldMaintainTenantIsolation() { 
             // Single tenant baseline
             long singleTenantTime = measureQueryLatencyForTenant("tenant-1");
 
             // 100 tenants
-            long multiTenantTime = measureQueryLatencyAcrossTenants(100); // GH-90000
+            long multiTenantTime = measureQueryLatencyAcrossTenants(100); 
 
             // Multi-tenant should not degrade by more than 20%
-            assertThat(multiTenantTime).isLessThan((long) (singleTenantTime * 1.2)); // GH-90000
+            assertThat(multiTenantTime).isLessThan((long) (singleTenantTime * 1.2)); 
         }
     }
 
@@ -291,36 +291,36 @@ public class PerformanceBaselineTests {
 
         @Test
         @DisplayName("error rate: < 0.1% in sustained load")
-        void shouldMaintainLowErrorRate() { // GH-90000
-            Map<String, Integer> stats = simulateSustainedLoad(10_000); // GH-90000
+        void shouldMaintainLowErrorRate() { 
+            Map<String, Integer> stats = simulateSustainedLoad(10_000); 
             int errors = stats.get("errors");
             int total = stats.get("total");
 
-            double errorRate = (double) errors / total; // GH-90000
-            assertThat(errorRate).isLessThan(0.001); // GH-90000
+            double errorRate = (double) errors / total; 
+            assertThat(errorRate).isLessThan(0.001); 
         }
 
         @Test
         @DisplayName("availability: 99.95% uptime SLA")
-        void shouldMaintainAvailabilitySLA() { // GH-90000
-            double availability = simulateAvailability(3600); // 1 hour // GH-90000
-            assertThat(availability).isGreaterThan(0.9995); // GH-90000
+        void shouldMaintainAvailabilitySLA() { 
+            double availability = simulateAvailability(3600); // 1 hour 
+            assertThat(availability).isGreaterThan(0.9995); 
         }
 
         @Test
         @DisplayName("recovery time: < 30s after failure")
-        void shouldRecoverQuickly() { // GH-90000
-            long recoveryTime = simulateFailureAndRecovery(); // GH-90000
-            assertThat(recoveryTime).isLessThan(30_000); // GH-90000
+        void shouldRecoverQuickly() { 
+            long recoveryTime = simulateFailureAndRecovery(); 
+            assertThat(recoveryTime).isLessThan(30_000); 
         }
 
         @Test
         @DisplayName("consistency: no data loss in 100K operations")
-        void shouldMaintainDataConsistency() { // GH-90000
+        void shouldMaintainDataConsistency() { 
             int written = 100_000;
-            int read = verifyDataConsistency(written); // GH-90000
+            int read = verifyDataConsistency(written); 
 
-            assertThat(read).isEqualTo(written); // GH-90000
+            assertThat(read).isEqualTo(written); 
         }
     }
 
@@ -328,199 +328,199 @@ public class PerformanceBaselineTests {
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────
 
-    private long measureGetCollectionLatency() { // GH-90000
-        long start = System.nanoTime(); // GH-90000
-        listCollections(); // GH-90000
-        return (System.nanoTime() - start) / 1_000_000; // Convert to ms // GH-90000
+    private long measureGetCollectionLatency() { 
+        long start = System.nanoTime(); 
+        listCollections(); 
+        return (System.nanoTime() - start) / 1_000_000; // Convert to ms 
     }
 
-    private long measurePostCollectionLatency() { // GH-90000
-        long start = System.nanoTime(); // GH-90000
+    private long measurePostCollectionLatency() { 
+        long start = System.nanoTime(); 
         createCollectionSync("Test Collection");
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureUploadLatency(int sizeBytes) { // GH-90000
-        long start = System.nanoTime(); // GH-90000
-        uploadDatasetSync(sizeBytes); // GH-90000
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+    private long measureUploadLatency(int sizeBytes) { 
+        long start = System.nanoTime(); 
+        uploadDatasetSync(sizeBytes); 
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureDeleteLatency() { // GH-90000
-        long start = System.nanoTime(); // GH-90000
-        deleteResourceSync(); // GH-90000
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+    private long measureDeleteLatency() { 
+        long start = System.nanoTime(); 
+        deleteResourceSync(); 
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureQueryLatency(int rows) { // GH-90000
+    private long measureQueryLatency(int rows) { 
         // Simulate logarithmic scaling: time grows logarithmically with dataset size
         // Base latency + logarithmic component
         long baseLatency = 10L; // 10ms base
-        long logComponent = (long) (Math.log(rows) * 5); // logarithmic scaling factor // GH-90000
+        long logComponent = (long) (Math.log(rows) * 5); // logarithmic scaling factor 
         return baseLatency + logComponent;
     }
 
-    private int simulateLoadForDuration(int rps, int durationSeconds) { // GH-90000
+    private int simulateLoadForDuration(int rps, int durationSeconds) { 
         int successful = 0;
-        long endTime = System.currentTimeMillis() + (durationSeconds * 1000L); // GH-90000
+        long endTime = System.currentTimeMillis() + (durationSeconds * 1000L); 
 
-        while (System.currentTimeMillis() < endTime) { // GH-90000
-            if (executeQuerySync(1000) > 0) successful++; // GH-90000
+        while (System.currentTimeMillis() < endTime) { 
+            if (executeQuerySync(1000) > 0) successful++; 
         }
 
         return successful;
     }
 
-    private int simulateConcurrentLoad(int concurrentCount) { // GH-90000
+    private int simulateConcurrentLoad(int concurrentCount) { 
         int successful = 0;
-        for (int i = 0; i < concurrentCount; i++) { // GH-90000
-            if (executeQuerySync(1000) > 0) successful++; // GH-90000
+        for (int i = 0; i < concurrentCount; i++) { 
+            if (executeQuerySync(1000) > 0) successful++; 
         }
         return successful;
     }
 
-    private long simulateBulkUpload(long totalBytes) { // GH-90000
+    private long simulateBulkUpload(long totalBytes) { 
         return totalBytes; // Simulated successful transfer
     }
 
-    private int simulateEventIngest(int eventCount) { // GH-90000
+    private int simulateEventIngest(int eventCount) { 
         return eventCount;
     }
 
-    private int simulateExport(int rowCount) { // GH-90000
+    private int simulateExport(int rowCount) { 
         return rowCount;
     }
 
-    private long measureAggregationLatency(int rows) { // GH-90000
-        long start = System.nanoTime(); // GH-90000
-        aggregateQuery(rows); // GH-90000
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+    private long measureAggregationLatency(int rows) { 
+        long start = System.nanoTime(); 
+        aggregateQuery(rows); 
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureJoinLatency(int table1Rows, int table2Rows) { // GH-90000
-        long start = System.nanoTime(); // GH-90000
-        joinQuery(table1Rows, table2Rows); // GH-90000
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+    private long measureJoinLatency(int table1Rows, int table2Rows) { 
+        long start = System.nanoTime(); 
+        joinQuery(table1Rows, table2Rows); 
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureFullTextSearchLatency() { // GH-90000
-        long start = System.nanoTime(); // GH-90000
+    private long measureFullTextSearchLatency() { 
+        long start = System.nanoTime(); 
         fullTextSearch("keyword");
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureQueryPlanAnalysis() { // GH-90000
-        long start = System.nanoTime(); // GH-90000
+    private long measureQueryPlanAnalysis() { 
+        long start = System.nanoTime(); 
         analyzeQueryPlan("SELECT * FROM data");
-        return (System.nanoTime() - start) / 1_000_000; // GH-90000
+        return (System.nanoTime() - start) / 1_000_000; 
     }
 
-    private long measureFreshQueryTime() { // GH-90000
+    private long measureFreshQueryTime() { 
         return 10L; // Simulated: 10ms
     }
 
-    private long measurePreparedQueryTime() { // GH-90000
-        return 4L; // Simulated: 4ms (prepared is faster) // GH-90000
+    private long measurePreparedQueryTime() { 
+        return 4L; // Simulated: 4ms (prepared is faster) 
     }
 
-    private long simulateTypicalLoad() { // GH-90000
+    private long simulateTypicalLoad() { 
         return 250 * 1024 * 1024; // 250MB typical
     }
 
-    private void simulateWorkloadAndGC() { // GH-90000
+    private void simulateWorkloadAndGC() { 
         transientAllocation = new byte[1024];
         transientAllocation[0] = 1;
         transientAllocation = null;
     }
 
-    private long getHeapUsed() { // GH-90000
+    private long getHeapUsed() { 
         // Return predictable value for testing to avoid environment-dependent failures
         // This simulates stable memory usage after GC
         return 100_000_000L; // 100MB stable baseline
     }
 
-    private int getIdleConnections() { // GH-90000
+    private int getIdleConnections() { 
         return 25; // Simulated
     }
 
-    private int getActiveThreadCount() { // GH-90000
+    private int getActiveThreadCount() { 
         return 32; // Simulated
     }
 
-    private int measureDiskIOPS() { // GH-90000
+    private int measureDiskIOPS() { 
         return 1500; // Simulated: 1500 IOPS
     }
 
-    private double measureCacheHitRatio() { // GH-90000
+    private double measureCacheHitRatio() { 
         return 0.85; // 85% hit ratio
     }
 
-    private long measureResourceUsageForLoad(int load) { // GH-90000
+    private long measureResourceUsageForLoad(int load) { 
         return 100 * load / 1000; // Simulated linear: 100MB per 1000 load units
     }
 
-    private long measureQueryLatencyForTenant(String tenant) { // GH-90000
+    private long measureQueryLatencyForTenant(String tenant) { 
         return 50L; // 50ms baseline
     }
 
-    private long measureQueryLatencyAcrossTenants(int tenantCount) { // GH-90000
+    private long measureQueryLatencyAcrossTenants(int tenantCount) { 
         return 55L; // Minimal degradation with 100 tenants
     }
 
-    private Map<String, Integer> simulateSustainedLoad(int operations) { // GH-90000
+    private Map<String, Integer> simulateSustainedLoad(int operations) { 
         int errors = operations / 2000; // 0.05% error rate
-        return Map.of("total", operations, "errors", errors); // GH-90000
+        return Map.of("total", operations, "errors", errors); 
     }
 
-    private double simulateAvailability(int durationSeconds) { // GH-90000
+    private double simulateAvailability(int durationSeconds) { 
         return 0.9996; // 99.96% uptime
     }
 
-    private long simulateFailureAndRecovery() { // GH-90000
+    private long simulateFailureAndRecovery() { 
         return 25_000L; // 25 seconds
     }
 
-    private int verifyDataConsistency(int written) { // GH-90000
+    private int verifyDataConsistency(int written) { 
         return written; // All data consistent
     }
 
-    private Map<String, Object> simulateConcurrentUsers(int userCount) { // GH-90000
-        return Map.of("successful", (int) (userCount * 0.99), "total", userCount); // GH-90000
+    private Map<String, Object> simulateConcurrentUsers(int userCount) { 
+        return Map.of("successful", (int) (userCount * 0.99), "total", userCount); 
     }
 
-    private void createCollectionSync(String name) { // GH-90000
+    private void createCollectionSync(String name) { 
         // Simulated operation
     }
 
-    private void uploadDatasetSync(int sizeBytes) { // GH-90000
+    private void uploadDatasetSync(int sizeBytes) { 
         // Simulated operation
     }
 
-    private void deleteResourceSync() { // GH-90000
+    private void deleteResourceSync() { 
         // Simulated operation
     }
 
-    private long executeQuerySync(int rows) { // GH-90000
+    private long executeQuerySync(int rows) { 
         return rows > 0 ? 1L : 0L;
     }
 
-    private void aggregateQuery(int rows) { // GH-90000
+    private void aggregateQuery(int rows) { 
         // Simulated
     }
 
-    private void joinQuery(int rows1, int rows2) { // GH-90000
+    private void joinQuery(int rows1, int rows2) { 
         // Simulated
     }
 
-    private void fullTextSearch(String keyword) { // GH-90000
+    private void fullTextSearch(String keyword) { 
         // Simulated
     }
 
-    private void analyzeQueryPlan(String query) { // GH-90000
+    private void analyzeQueryPlan(String query) { 
         // Simulated
     }
 
-    private void listCollections() { // GH-90000
+    private void listCollections() { 
         // Simulated
     }
 }

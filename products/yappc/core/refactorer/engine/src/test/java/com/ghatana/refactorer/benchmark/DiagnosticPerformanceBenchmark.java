@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * @doc.pattern ValueObject
 */
 public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
-    private static final Logger log = LogManager.getLogger(DiagnosticPerformanceBenchmark.class); // GH-90000
+    private static final Logger log = LogManager.getLogger(DiagnosticPerformanceBenchmark.class); 
 
     private final Path testProjectRoot;
     private final Reactor reactor;
@@ -38,147 +38,147 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
     private final JavaLanguageService javaService;
     private final PythonLanguageService pythonService;
 
-    public DiagnosticPerformanceBenchmark(Path testProjectRoot) { // GH-90000
+    public DiagnosticPerformanceBenchmark(Path testProjectRoot) { 
         this.testProjectRoot = testProjectRoot;
-        this.reactor = Eventloop.builder().build(); // GH-90000
+        this.reactor = Eventloop.builder().build(); 
 
         // Create test context
-        PolyfixConfig config = createDefaultConfig(); // GH-90000
-        this.context = new PolyfixProjectContext( // GH-90000
+        PolyfixConfig config = createDefaultConfig(); 
+        this.context = new PolyfixProjectContext( 
             testProjectRoot,
             config,
-            List.of(), // GH-90000
+            List.of(), 
             null,
             log
         );
 
         // Initialize services
-        this.javaService = new JavaLanguageService(reactor); // GH-90000
-        this.pythonService = new PythonLanguageService(reactor); // GH-90000
+        this.javaService = new JavaLanguageService(reactor); 
+        this.pythonService = new PythonLanguageService(reactor); 
     }
 
     /**
      * Initialize the eventloop runner. Call this after construction.
      */
-    public void initialize() { // GH-90000
-        // Start the eventloop runner so runPromise() works when used as a helper class // GH-90000
-        setUpEventloop(); // GH-90000
+    public void initialize() { 
+        // Start the eventloop runner so runPromise() works when used as a helper class 
+        setUpEventloop(); 
     }
 
     /** Stop the eventloop runner when this benchmark is no longer needed. */
-    public void close() { // GH-90000
-        tearDownEventloop(); // GH-90000
+    public void close() { 
+        tearDownEventloop(); 
     }
 
     /**
      * Benchmark: Process files in parallel using Promise-based API
      */
-    public BenchmarkResult benchmarkParallelProcessing(List<Path> files) { // GH-90000
-        long startTime = System.nanoTime(); // GH-90000
-        long startMemory = getUsedMemory(); // GH-90000
+    public BenchmarkResult benchmarkParallelProcessing(List<Path> files) { 
+        long startTime = System.nanoTime(); 
+        long startMemory = getUsedMemory(); 
 
         try {
             // Process files in parallel using Promises
-            List<UnifiedDiagnostic> diagnostics = runPromise(() -> // GH-90000
-                processFilesParallel(files) // GH-90000
+            List<UnifiedDiagnostic> diagnostics = runPromise(() -> 
+                processFilesParallel(files) 
             );
 
-            long endTime = System.nanoTime(); // GH-90000
-            long endMemory = getUsedMemory(); // GH-90000
+            long endTime = System.nanoTime(); 
+            long endMemory = getUsedMemory(); 
 
-            return new BenchmarkResult( // GH-90000
-                "Parallel (Promise-based)", // GH-90000
-                files.size(), // GH-90000
-                diagnostics.size(), // GH-90000
-                (endTime - startTime) / 1_000_000, // Convert to milliseconds // GH-90000
+            return new BenchmarkResult( 
+                "Parallel (Promise-based)", 
+                files.size(), 
+                diagnostics.size(), 
+                (endTime - startTime) / 1_000_000, // Convert to milliseconds 
                 endMemory - startMemory,
-                calculateThroughput(files.size(), endTime - startTime) // GH-90000
+                calculateThroughput(files.size(), endTime - startTime) 
             );
-        } catch (Exception e) { // GH-90000
-            log.error("Parallel benchmark failed", e); // GH-90000
-            return BenchmarkResult.error("Parallel", files.size(), e.getMessage()); // GH-90000
+        } catch (Exception e) { 
+            log.error("Parallel benchmark failed", e); 
+            return BenchmarkResult.error("Parallel", files.size(), e.getMessage()); 
         }
     }
 
     /**
-     * Benchmark: Process files sequentially (simulated baseline) // GH-90000
+     * Benchmark: Process files sequentially (simulated baseline) 
      */
-    public BenchmarkResult benchmarkSequentialProcessing(List<Path> files) { // GH-90000
-        long startTime = System.nanoTime(); // GH-90000
-        long startMemory = getUsedMemory(); // GH-90000
+    public BenchmarkResult benchmarkSequentialProcessing(List<Path> files) { 
+        long startTime = System.nanoTime(); 
+        long startMemory = getUsedMemory(); 
 
         try {
             // Process files sequentially
-            List<UnifiedDiagnostic> diagnostics = new ArrayList<>(); // GH-90000
-            for (Path file : files) { // GH-90000
-                List<UnifiedDiagnostic> fileDiags = runPromise(() -> // GH-90000
-                    processFile(file) // GH-90000
+            List<UnifiedDiagnostic> diagnostics = new ArrayList<>(); 
+            for (Path file : files) { 
+                List<UnifiedDiagnostic> fileDiags = runPromise(() -> 
+                    processFile(file) 
                 );
-                diagnostics.addAll(fileDiags); // GH-90000
+                diagnostics.addAll(fileDiags); 
             }
 
-            long endTime = System.nanoTime(); // GH-90000
-            long endMemory = getUsedMemory(); // GH-90000
+            long endTime = System.nanoTime(); 
+            long endMemory = getUsedMemory(); 
 
-            return new BenchmarkResult( // GH-90000
-                "Sequential (Baseline)", // GH-90000
-                files.size(), // GH-90000
-                diagnostics.size(), // GH-90000
-                (endTime - startTime) / 1_000_000, // GH-90000
+            return new BenchmarkResult( 
+                "Sequential (Baseline)", 
+                files.size(), 
+                diagnostics.size(), 
+                (endTime - startTime) / 1_000_000, 
                 endMemory - startMemory,
-                calculateThroughput(files.size(), endTime - startTime) // GH-90000
+                calculateThroughput(files.size(), endTime - startTime) 
             );
-        } catch (Exception e) { // GH-90000
-            log.error("Sequential benchmark failed", e); // GH-90000
-            return BenchmarkResult.error("Sequential", files.size(), e.getMessage()); // GH-90000
+        } catch (Exception e) { 
+            log.error("Sequential benchmark failed", e); 
+            return BenchmarkResult.error("Sequential", files.size(), e.getMessage()); 
         }
     }
 
     /**
-     * Process files in parallel using Promise.toList() // GH-90000
+     * Process files in parallel using Promise.toList() 
      */
-    private Promise<List<UnifiedDiagnostic>> processFilesParallel(List<Path> files) { // GH-90000
-        List<Promise<List<UnifiedDiagnostic>>> promises = files.stream() // GH-90000
-            .map(this::processFile) // GH-90000
-            .collect(Collectors.toList()); // GH-90000
+    private Promise<List<UnifiedDiagnostic>> processFilesParallel(List<Path> files) { 
+        List<Promise<List<UnifiedDiagnostic>>> promises = files.stream() 
+            .map(this::processFile) 
+            .collect(Collectors.toList()); 
 
-        return Promises.toList(promises) // GH-90000
-            .map(listOfLists -> listOfLists.stream() // GH-90000
-                .flatMap(List::stream) // GH-90000
-                .collect(Collectors.toList())); // GH-90000
+        return Promises.toList(promises) 
+            .map(listOfLists -> listOfLists.stream() 
+                .flatMap(List::stream) 
+                .collect(Collectors.toList())); 
     }
 
     /**
      * Process a single file based on its extension
      */
-    private Promise<List<UnifiedDiagnostic>> processFile(Path file) { // GH-90000
-        String fileName = file.getFileName().toString(); // GH-90000
+    private Promise<List<UnifiedDiagnostic>> processFile(Path file) { 
+        String fileName = file.getFileName().toString(); 
         if (fileName.endsWith(".java")) {
-            return javaService.diagnose(context, List.of(file)); // GH-90000
+            return javaService.diagnose(context, List.of(file)); 
         } else if (fileName.endsWith(".py")) {
-            return pythonService.diagnose(context, List.of(file)); // GH-90000
+            return pythonService.diagnose(context, List.of(file)); 
         } else {
-            return Promise.of(List.of()); // GH-90000
+            return Promise.of(List.of()); 
         }
     }
 
-    private double calculateThroughput(int fileCount, long nanoTime) { // GH-90000
+    private double calculateThroughput(int fileCount, long nanoTime) { 
         double seconds = nanoTime / 1_000_000_000.0;
         return fileCount / seconds;
     }
 
-    private long getUsedMemory() { // GH-90000
-        Runtime runtime = Runtime.getRuntime(); // GH-90000
-        return runtime.totalMemory() - runtime.freeMemory(); // GH-90000
+    private long getUsedMemory() { 
+        Runtime runtime = Runtime.getRuntime(); 
+        return runtime.totalMemory() - runtime.freeMemory(); 
     }
 
-    private PolyfixConfig createDefaultConfig() { // GH-90000
-        return new PolyfixConfig( // GH-90000
-            List.of("java", "python"), // GH-90000
-            List.of(), // GH-90000
-            new PolyfixConfig.Budgets(100, 1000), // GH-90000
-            new PolyfixConfig.Policies(true, true, true, true), // GH-90000
-            new PolyfixConfig.Tools( // GH-90000
+    private PolyfixConfig createDefaultConfig() { 
+        return new PolyfixConfig( 
+            List.of("java", "python"), 
+            List.of(), 
+            new PolyfixConfig.Budgets(100, 1000), 
+            new PolyfixConfig.Policies(true, true, true, true), 
+            new PolyfixConfig.Tools( 
                 "node", "eslint", "tsc", "prettier",
                 "ruff", "black", "mypy",
                 "shellcheck", "shfmt",
@@ -200,7 +200,7 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
         public final double throughputFilesPerSec;
         public final String errorMessage;
 
-        public BenchmarkResult(String name, int filesProcessed, int diagnosticsFound, // GH-90000
+        public BenchmarkResult(String name, int filesProcessed, int diagnosticsFound, 
                              long executionTimeMs, long memoryUsedBytes, double throughputFilesPerSec) {
             this.name = name;
             this.filesProcessed = filesProcessed;
@@ -211,7 +211,7 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
             this.errorMessage = null;
         }
 
-        private BenchmarkResult(String name, int filesProcessed, String error) { // GH-90000
+        private BenchmarkResult(String name, int filesProcessed, String error) { 
             this.name = name;
             this.filesProcessed = filesProcessed;
             this.errorMessage = error;
@@ -221,23 +221,23 @@ public class DiagnosticPerformanceBenchmark extends EventloopTestBase {
             this.throughputFilesPerSec = 0;
         }
 
-        public static BenchmarkResult error(String name, int filesProcessed, String error) { // GH-90000
-            return new BenchmarkResult(name, filesProcessed, error); // GH-90000
+        public static BenchmarkResult error(String name, int filesProcessed, String error) { 
+            return new BenchmarkResult(name, filesProcessed, error); 
         }
 
-        public boolean isSuccess() { // GH-90000
+        public boolean isSuccess() { 
             return errorMessage == null;
         }
 
         @Override
-        public String toString() { // GH-90000
-            if (!isSuccess()) { // GH-90000
-                return String.format("%s: ERROR - %s", name, errorMessage); // GH-90000
+        public String toString() { 
+            if (!isSuccess()) { 
+                return String.format("%s: ERROR - %s", name, errorMessage); 
             }
-            return String.format( // GH-90000
-                "%s: %d files in %d ms (%.2f files/sec), %d diagnostics, %.2f MB memory", // GH-90000
+            return String.format( 
+                "%s: %d files in %d ms (%.2f files/sec), %d diagnostics, %.2f MB memory", 
                 name, filesProcessed, executionTimeMs, throughputFilesPerSec,
-                diagnosticsFound, memoryUsedBytes / (1024.0 * 1024.0) // GH-90000
+                diagnosticsFound, memoryUsedBytes / (1024.0 * 1024.0) 
             );
         }
     }

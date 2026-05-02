@@ -31,98 +31,98 @@ class TsMorphBridgeTest extends EventloopTestBase {
     private PolyfixProjectContext context;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Enable debug logging for tests
-        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) { // GH-90000
-            Configuration config = ctx.getConfiguration(); // GH-90000
-            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG); // GH-90000
-            ctx.updateLoggers(config); // GH-90000
+        try (LoggerContext ctx = (LoggerContext) LogManager.getContext(false)) { 
+            Configuration config = ctx.getConfiguration(); 
+            config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME).setLevel(Level.DEBUG); 
+            ctx.updateLoggers(config); 
         }
 
         this.context =
-                new PolyfixProjectContext( // GH-90000
+                new PolyfixProjectContext( 
                         tempDir,
                         null,
-                        List.of(), // GH-90000
+                        List.of(), 
                         null,
-                        LogManager.getLogger(TsMorphBridgeTest.class)); // GH-90000
-        this.bridge = new TsMorphBridge(context); // GH-90000
+                        LogManager.getLogger(TsMorphBridgeTest.class)); 
+        this.bridge = new TsMorphBridge(context); 
     }
 
     @Test
-    void testIsAvailable() { // GH-90000
+    void testIsAvailable() { 
         // This test will pass if ts-morph is available
-        boolean isAvailable = bridge.isAvailable(); // GH-90000
-        System.out.println("ts-morph is " + (isAvailable ? "available" : "not available")); // GH-90000
+        boolean isAvailable = bridge.isAvailable(); 
+        System.out.println("ts-morph is " + (isAvailable ? "available" : "not available")); 
 
         // We don't fail the test if not available, just log it
-        if (!isAvailable) { // GH-90000
+        if (!isAvailable) { 
             System.out.println("Skipping ts-morph tests because ts-morph is not available");
         }
     }
 
     @Test
-    void testApplyEmptyPlan() throws ExecutionException, InterruptedException { // GH-90000
+    void testApplyEmptyPlan() throws ExecutionException, InterruptedException { 
         // Create an empty plan
-        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS)); // GH-90000
+        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS)); 
 
-        // Apply the plan (should do nothing) // GH-90000
-        runPromise(() -> bridge.apply(plan)); // GH-90000
+        // Apply the plan (should do nothing) 
+        runPromise(() -> bridge.apply(plan)); 
 
         // No exceptions should be thrown
-        assertTrue(plan.isEmpty()); // GH-90000
+        assertTrue(plan.isEmpty()); 
     }
 
     @Test
-    void testPlanWithImports() throws Exception { // GH-90000
-        if (!bridge.isAvailable()) { // GH-90000
+    void testPlanWithImports() throws Exception { 
+        if (!bridge.isAvailable()) { 
             System.out.println("Skipping testPlanWithImports: ts-morph not available");
             return;
         }
 
         // Create a test TypeScript file
-        Path testFile = tempDir.resolve(TEST_TS); // GH-90000
-        Files.writeString(testFile, "// Test file\nconsole.log('Hello, world!');"); // GH-90000
+        Path testFile = tempDir.resolve(TEST_TS); 
+        Files.writeString(testFile, "// Test file\nconsole.log('Hello, world!');"); 
 
         // Create a plan to add imports
-        TsMorphPlan plan = new TsMorphPlan(testFile); // GH-90000
-        plan.addImport("react", List.of("useState", "useEffect"), null, false, null); // GH-90000
-        plan.addImport("@/components/Button", null, "Button", false, null); // GH-90000
+        TsMorphPlan plan = new TsMorphPlan(testFile); 
+        plan.addImport("react", List.of("useState", "useEffect"), null, false, null); 
+        plan.addImport("@/components/Button", null, "Button", false, null); 
 
         // Verify the plan
-        assertFalse(plan.isEmpty()); // GH-90000
-        assertEquals(2, plan.getActions().size()); // GH-90000
+        assertFalse(plan.isEmpty()); 
+        assertEquals(2, plan.getActions().size()); 
 
         // Apply the plan
-        runPromise(() -> bridge.apply(plan)); // GH-90000
+        runPromise(() -> bridge.apply(plan)); 
 
         // Verify the file was modified
-        String content = Files.readString(testFile); // GH-90000
+        String content = Files.readString(testFile); 
         assertTrue(content.contains("import { useState, useEffect } from 'react'"));
         assertTrue(content.contains("import Button from '@/components/Button'"));
     }
 
     @Test
-    void testPlanWithDiagnostics() { // GH-90000
+    void testPlanWithDiagnostics() { 
         // Create a test diagnostic
         UnifiedDiagnostic diagnostic =
-                UnifiedDiagnostic.builder() // GH-90000
+                UnifiedDiagnostic.builder() 
                         .tool("typescript")
                         .code("TS2304")
                         .message("Cannot find name 'React'.")
-                        .file(tempDir.resolve(TEST_TS)) // GH-90000
-                        .startLine(1) // GH-90000
-                        .startColumn(10) // GH-90000
-                        .endLine(1) // GH-90000
-                        .endColumn(15) // GH-90000
-                        .build(); // GH-90000
+                        .file(tempDir.resolve(TEST_TS)) 
+                        .startLine(1) 
+                        .startColumn(10) 
+                        .endLine(1) 
+                        .endColumn(15) 
+                        .build(); 
 
         // Create a plan that fixes the diagnostic
-        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS)); // GH-90000
-        plan.addImport("react", null, "React", false, diagnostic); // GH-90000
+        TsMorphPlan plan = new TsMorphPlan(tempDir.resolve(TEST_TS)); 
+        plan.addImport("react", null, "React", false, diagnostic); 
 
         // Verify the diagnostic is associated with the plan
-        assertEquals(1, plan.getFixedDiagnostics().size()); // GH-90000
-        assertEquals(diagnostic, plan.getFixedDiagnostics().get(0)); // GH-90000
+        assertEquals(1, plan.getFixedDiagnostics().size()); 
+        assertEquals(diagnostic, plan.getFixedDiagnostics().get(0)); 
     }
 }

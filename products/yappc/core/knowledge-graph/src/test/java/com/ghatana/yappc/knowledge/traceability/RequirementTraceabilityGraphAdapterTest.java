@@ -40,92 +40,92 @@ class RequirementTraceabilityGraphAdapterTest extends EventloopTestBase {
   private RequirementTraceabilityGraphAdapter adapter;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    MockitoAnnotations.openMocks(this); // GH-90000
-    adapter = new RequirementTraceabilityGraphAdapter(graphService); // GH-90000
+  void setUp() { 
+    MockitoAnnotations.openMocks(this); 
+    adapter = new RequirementTraceabilityGraphAdapter(graphService); 
   }
 
   @Test
   @DisplayName("upsertRequirementNode creates a REQUIREMENT node in the graph")
-  void upsertRequirementNodeCreatesRequirementNode() { // GH-90000
-    Requirement requirement = requirement(); // GH-90000
-    when(graphService.createYAPPCNode(any())).thenAnswer(invocation -> Promise.of(invocation.getArgument(0))); // GH-90000
+  void upsertRequirementNodeCreatesRequirementNode() { 
+    Requirement requirement = requirement(); 
+    when(graphService.createYAPPCNode(any())).thenAnswer(invocation -> Promise.of(invocation.getArgument(0))); 
 
-    runPromise(() -> adapter.upsertRequirementNode(requirement, "tenant-1")); // GH-90000
+    runPromise(() -> adapter.upsertRequirementNode(requirement, "tenant-1")); 
 
-    verify(graphService).createYAPPCNode(eq(YAPPCGraphNode.builder() // GH-90000
+    verify(graphService).createYAPPCNode(eq(YAPPCGraphNode.builder() 
         .id("req-1")
-        .type(YAPPCGraphNode.YAPPCNodeType.REQUIREMENT) // GH-90000
+        .type(YAPPCGraphNode.YAPPCNodeType.REQUIREMENT) 
         .name("Secure billing access")
         .description("Users must authenticate with MFA before opening billing settings.")
-        .properties(Map.of( // GH-90000
+        .properties(Map.of( 
             "status", "DRAFT",
             "priority", "MUST_HAVE",
             "currentVersion", 0))
-        .tags(new java.util.LinkedHashSet<>()) // GH-90000
-        .metadata(new YAPPCGraphMetadata( // GH-90000
+        .tags(new java.util.LinkedHashSet<>()) 
+        .metadata(new YAPPCGraphMetadata( 
             "tenant-1",
             "proj-1",
             null,
             "tester",
-            requirement.getCreatedAt(), // GH-90000
-            requirement.getUpdatedAt(), // GH-90000
+            requirement.getCreatedAt(), 
+            requirement.getUpdatedAt(), 
             "0",
-            Map.of("source", "requirements"))) // GH-90000
-        .build())); // GH-90000
+            Map.of("source", "requirements"))) 
+        .build())); 
   }
 
   @Test
   @DisplayName("semanticSearch maps graph semantic matches to traceability candidates")
-  void semanticSearchMapsMatches() { // GH-90000
-    YAPPCGraphNode node = YAPPCGraphNode.builder() // GH-90000
+  void semanticSearchMapsMatches() { 
+    YAPPCGraphNode node = YAPPCGraphNode.builder() 
         .id("svc-1")
-        .type(YAPPCGraphNode.YAPPCNodeType.SERVICE) // GH-90000
+        .type(YAPPCGraphNode.YAPPCNodeType.SERVICE) 
         .name("BillingService")
         .description("Handles billing settings")
-        .properties(Map.of()) // GH-90000
-        .tags(java.util.Set.of()) // GH-90000
-        .metadata(new YAPPCGraphMetadata( // GH-90000
+        .properties(Map.of()) 
+        .tags(java.util.Set.of()) 
+        .metadata(new YAPPCGraphMetadata( 
             "tenant-1", "proj-1", null, "tester",
             Instant.parse("2026-04-06T00:00:00Z"),
             Instant.parse("2026-04-06T00:00:00Z"),
-            "1", Map.of())) // GH-90000
-        .build(); // GH-90000
-    when(graphService.semanticSearch("secure billing", "tenant-1", 5, 0.7)) // GH-90000
-        .thenReturn(Promise.of(List.of(new KGSemanticSearchService.SemanticNodeMatch(node, 0.91, Map.of("tenantId", "tenant-1"))))); // GH-90000
+            "1", Map.of())) 
+        .build(); 
+    when(graphService.semanticSearch("secure billing", "tenant-1", 5, 0.7)) 
+        .thenReturn(Promise.of(List.of(new KGSemanticSearchService.SemanticNodeMatch(node, 0.91, Map.of("tenantId", "tenant-1"))))); 
 
     List<com.ghatana.yappc.ai.requirements.traceability.RequirementTraceabilityGraphPort.TraceabilityCandidate> result =
-        runPromise(() -> adapter.semanticSearch("secure billing", "tenant-1", 5, 0.7)); // GH-90000
+        runPromise(() -> adapter.semanticSearch("secure billing", "tenant-1", 5, 0.7)); 
 
-    assertThat(result).containsExactly( // GH-90000
-        new com.ghatana.yappc.ai.requirements.traceability.RequirementTraceabilityGraphPort.TraceabilityCandidate( // GH-90000
-            "svc-1", "SERVICE", "BillingService", 0.91, Map.of("tenantId", "tenant-1"))); // GH-90000
+    assertThat(result).containsExactly( 
+        new com.ghatana.yappc.ai.requirements.traceability.RequirementTraceabilityGraphPort.TraceabilityCandidate( 
+            "svc-1", "SERVICE", "BillingService", 0.91, Map.of("tenantId", "tenant-1"))); 
   }
 
   @Test
   @DisplayName("createRelationship delegates to the graph service")
-  void createRelationshipDelegates() { // GH-90000
-    when(graphService.createCodeRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1")) // GH-90000
-        .thenReturn(Promise.of(null)); // GH-90000
+  void createRelationshipDelegates() { 
+    when(graphService.createCodeRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1")) 
+        .thenReturn(Promise.of(null)); 
 
-    runPromise(() -> adapter.createRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1", Map.of("linkedBy", "test"))); // GH-90000
+    runPromise(() -> adapter.createRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1", Map.of("linkedBy", "test"))); 
 
-    verify(graphService).createCodeRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1"); // GH-90000
+    verify(graphService).createCodeRelationship("req-1", "svc-1", "IMPLEMENTS", "tenant-1"); 
   }
 
-  private Requirement requirement() { // GH-90000
-    return Requirement.builder() // GH-90000
+  private Requirement requirement() { 
+    return Requirement.builder() 
         .requirementId("req-1")
         .projectId("proj-1")
         .title("Secure billing access")
         .description("Users must authenticate with MFA before opening billing settings.")
-        .type(RequirementType.FUNCTIONAL) // GH-90000
-        .priority(RequirementPriority.MUST_HAVE) // GH-90000
-        .status(RequirementStatus.DRAFT) // GH-90000
+        .type(RequirementType.FUNCTIONAL) 
+        .priority(RequirementPriority.MUST_HAVE) 
+        .status(RequirementStatus.DRAFT) 
         .createdBy("tester")
-        .metadata(RequirementMetadata.empty()) // GH-90000
+        .metadata(RequirementMetadata.empty()) 
         .createdAt(Instant.parse("2026-04-06T00:00:00Z"))
         .updatedAt(Instant.parse("2026-04-06T00:00:00Z"))
-        .build(); // GH-90000
+        .build(); 
   }
 }

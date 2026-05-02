@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.pluggability;
@@ -29,10 +29,10 @@ class AgentCapabilityManifestTest {
     private static final String VERSION    = "1.0.0";
     private static final String TENANT_ID  = "tenant-001";
 
-    private static AgentCapabilityManifest build( // GH-90000
+    private static AgentCapabilityManifest build( 
             List<InteractionMode> modes, SupervisionRole role, HandoffCapability hc) {
-        return new AgentCapabilityManifest( // GH-90000
-                AGENT_ID, VERSION, TENANT_ID, modes, role, hc, List.of(), List.of(), Map.of()); // GH-90000
+        return new AgentCapabilityManifest( 
+                AGENT_ID, VERSION, TENANT_ID, modes, role, hc, List.of(), List.of(), Map.of()); 
     }
 
     // ─── Record validation ────────────────────────────────────────────────────
@@ -43,35 +43,35 @@ class AgentCapabilityManifestTest {
 
         @Test
         @DisplayName("blank agentId is rejected")
-        void blankAgentIdRejected() { // GH-90000
-            assertThatThrownBy(() -> new AgentCapabilityManifest( // GH-90000
-                    "", VERSION, TENANT_ID, List.of(InteractionMode.AUTONOMOUS), // GH-90000
-                    null, HandoffCapability.NONE, List.of(), List.of(), Map.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void blankAgentIdRejected() { 
+            assertThatThrownBy(() -> new AgentCapabilityManifest( 
+                    "", VERSION, TENANT_ID, List.of(InteractionMode.AUTONOMOUS), 
+                    null, HandoffCapability.NONE, List.of(), List.of(), Map.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("agentId");
         }
 
         @Test
         @DisplayName("empty interactionModes is rejected")
-        void emptyModesRejected() { // GH-90000
-            assertThatThrownBy(() -> new AgentCapabilityManifest( // GH-90000
-                    AGENT_ID, VERSION, TENANT_ID, List.of(), // GH-90000
-                    null, HandoffCapability.NONE, List.of(), List.of(), Map.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void emptyModesRejected() { 
+            assertThatThrownBy(() -> new AgentCapabilityManifest( 
+                    AGENT_ID, VERSION, TENANT_ID, List.of(), 
+                    null, HandoffCapability.NONE, List.of(), List.of(), Map.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("interactionModes");
         }
 
         @Test
         @DisplayName("collections are defensively immutable")
-        void collectionsAreImmutable() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); // GH-90000
-            assertThatThrownBy(() -> m.interactionModes().add(InteractionMode.CONVERSATIONAL)) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+        void collectionsAreImmutable() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); 
+            assertThatThrownBy(() -> m.interactionModes().add(InteractionMode.CONVERSATIONAL)) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
     }
 
-    // ─── supports() / handoff helpers ──────────────────────────────────────── // GH-90000
+    // ─── supports() / handoff helpers ──────────────────────────────────────── 
 
     @Nested
     @DisplayName("capability query helpers")
@@ -79,51 +79,51 @@ class AgentCapabilityManifestTest {
 
         @Test
         @DisplayName("supports() returns true for declared mode")
-        void supportsTrue() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS, InteractionMode.SUPERVISED), // GH-90000
+        void supportsTrue() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS, InteractionMode.SUPERVISED), 
                     null, HandoffCapability.NONE);
-            assertThat(m.supports(InteractionMode.SUPERVISED)).isTrue(); // GH-90000
+            assertThat(m.supports(InteractionMode.SUPERVISED)).isTrue(); 
         }
 
         @Test
         @DisplayName("supports() returns false for undeclared mode")
-        void supportsFalse() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); // GH-90000
-            assertThat(m.supports(InteractionMode.COLLABORATIVE)).isFalse(); // GH-90000
+        void supportsFalse() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); 
+            assertThat(m.supports(InteractionMode.COLLABORATIVE)).isFalse(); 
         }
 
         @Test
         @DisplayName("canReceiveHandoff() is true for RECEIVER_ONLY")
-        void canReceiveTrueForReceiverOnly() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.RECEIVER_ONLY); // GH-90000
-            assertThat(m.canReceiveHandoff()).isTrue(); // GH-90000
+        void canReceiveTrueForReceiverOnly() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.RECEIVER_ONLY); 
+            assertThat(m.canReceiveHandoff()).isTrue(); 
         }
 
         @Test
         @DisplayName("canReceiveHandoff() is true for BIDIRECTIONAL")
-        void canReceiveTrueForBidirectional() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.BIDIRECTIONAL); // GH-90000
-            assertThat(m.canReceiveHandoff()).isTrue(); // GH-90000
+        void canReceiveTrueForBidirectional() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.BIDIRECTIONAL); 
+            assertThat(m.canReceiveHandoff()).isTrue(); 
         }
 
         @Test
         @DisplayName("canInitiateHandoff() is true for INITIATOR_ONLY")
-        void canInitiateForInitiatorOnly() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.INITIATOR_ONLY); // GH-90000
-            assertThat(m.canInitiateHandoff()).isTrue(); // GH-90000
+        void canInitiateForInitiatorOnly() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.INITIATOR_ONLY); 
+            assertThat(m.canInitiateHandoff()).isTrue(); 
         }
 
         @Test
         @DisplayName("canInitiateHandoff() is false for NONE")
-        void cannotInitiateForNone() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); // GH-90000
-            assertThat(m.canInitiateHandoff()).isFalse(); // GH-90000
+        void cannotInitiateForNone() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), null, HandoffCapability.NONE); 
+            assertThat(m.canInitiateHandoff()).isFalse(); 
         }
     }
 
@@ -135,11 +135,11 @@ class AgentCapabilityManifestTest {
 
         @Test
         @DisplayName("standalone() creates manifest with AUTONOMOUS mode and NONE handoff")
-        void standaloneFactory() { // GH-90000
-            AgentCapabilityManifest m = AgentCapabilityManifest.standalone(AGENT_ID, VERSION, TENANT_ID); // GH-90000
-            assertThat(m.interactionModes()).containsExactly(InteractionMode.AUTONOMOUS); // GH-90000
-            assertThat(m.handoffCapability()).isEqualTo(HandoffCapability.NONE); // GH-90000
-            assertThat(m.supervisionRole()).isEqualTo(SupervisionRole.STANDALONE); // GH-90000
+        void standaloneFactory() { 
+            AgentCapabilityManifest m = AgentCapabilityManifest.standalone(AGENT_ID, VERSION, TENANT_ID); 
+            assertThat(m.interactionModes()).containsExactly(InteractionMode.AUTONOMOUS); 
+            assertThat(m.handoffCapability()).isEqualTo(HandoffCapability.NONE); 
+            assertThat(m.supervisionRole()).isEqualTo(SupervisionRole.STANDALONE); 
         }
     }
 
@@ -151,83 +151,83 @@ class AgentCapabilityManifestTest {
 
         @Test
         @DisplayName("valid standalone manifest passes")
-        void validStandaloneManifestPasses() { // GH-90000
-            AgentCapabilityManifest m = AgentCapabilityManifest.standalone(AGENT_ID, VERSION, TENANT_ID); // GH-90000
+        void validStandaloneManifestPasses() { 
+            AgentCapabilityManifest m = AgentCapabilityManifest.standalone(AGENT_ID, VERSION, TENANT_ID); 
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isTrue(); // GH-90000
-            assertThat(r.errors()).isEmpty(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isTrue(); 
+            assertThat(r.errors()).isEmpty(); 
         }
 
         @Test
         @DisplayName("ORCHESTRATOR without INITIATOR handoff produces error")
-        void orchestratorWithoutInitiatorHandoffProducesError() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.ORCHESTRATOR), // GH-90000
+        void orchestratorWithoutInitiatorHandoffProducesError() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.ORCHESTRATOR), 
                     SupervisionRole.SUPERVISOR,
                     HandoffCapability.RECEIVER_ONLY); // wrong — should be INITIATOR_ONLY+
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isFalse(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isFalse(); 
             assertThat(r.errors()).anyMatch(e -> e.contains("ORCHESTRATOR"));
         }
 
         @Test
         @DisplayName("SUPERVISOR role without ORCHESTRATOR / COLLABORATIVE mode produces error")
-        void supervisorRoleWithoutRightModeProducesError() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.AUTONOMOUS), // GH-90000
+        void supervisorRoleWithoutRightModeProducesError() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.AUTONOMOUS), 
                     SupervisionRole.SUPERVISOR,
                     HandoffCapability.BIDIRECTIONAL);
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isFalse(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isFalse(); 
             assertThat(r.errors()).anyMatch(e -> e.contains("SUPERVISOR"));
         }
 
         @Test
         @DisplayName("STANDALONE role with SPECIALIST mode produces error")
-        void standaloneAndSpecialistProducesError() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.SPECIALIST), // GH-90000
+        void standaloneAndSpecialistProducesError() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.SPECIALIST), 
                     SupervisionRole.STANDALONE,
                     HandoffCapability.NONE);
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isFalse(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isFalse(); 
             assertThat(r.errors()).anyMatch(e -> e.contains("STANDALONE"));
         }
 
         @Test
         @DisplayName("COLLABORATIVE with NONE handoff produces warning not error")
-        void collaborativeWithNoneHandoffProducesWarning() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.COLLABORATIVE), // GH-90000
+        void collaborativeWithNoneHandoffProducesWarning() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.COLLABORATIVE), 
                     SupervisionRole.PEER,
                     HandoffCapability.NONE);
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isTrue(); // warning only // GH-90000
-            assertThat(r.warnings()).isNotEmpty(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isTrue(); // warning only 
+            assertThat(r.warnings()).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("valid ORCHESTRATOR manifest passes")
-        void validOrchestratorManifestPasses() { // GH-90000
-            AgentCapabilityManifest m = build( // GH-90000
-                    List.of(InteractionMode.ORCHESTRATOR), // GH-90000
+        void validOrchestratorManifestPasses() { 
+            AgentCapabilityManifest m = build( 
+                    List.of(InteractionMode.ORCHESTRATOR), 
                     SupervisionRole.SUPERVISOR,
                     HandoffCapability.BIDIRECTIONAL);
             AgentCapabilityManifestValidator.ValidationResult r =
-                    AgentCapabilityManifestValidator.validate(m); // GH-90000
-            assertThat(r.valid()).isTrue(); // GH-90000
+                    AgentCapabilityManifestValidator.validate(m); 
+            assertThat(r.valid()).isTrue(); 
         }
 
         @Test
         @DisplayName("null manifest throws NullPointerException")
-        void nullManifestThrows() { // GH-90000
-            assertThatThrownBy(() -> AgentCapabilityManifestValidator.validate(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullManifestThrows() { 
+            assertThatThrownBy(() -> AgentCapabilityManifestValidator.validate(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 }

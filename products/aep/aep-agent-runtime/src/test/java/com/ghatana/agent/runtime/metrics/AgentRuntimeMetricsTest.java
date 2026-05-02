@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 /**
@@ -34,9 +34,9 @@ class AgentRuntimeMetricsTest {
     private AgentRuntimeMetrics metrics;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new SimpleMeterRegistry(); // GH-90000
-        metrics = new AgentRuntimeMetrics(registry); // GH-90000
+    void setUp() { 
+        registry = new SimpleMeterRegistry(); 
+        metrics = new AgentRuntimeMetrics(registry); 
     }
 
     // ── Constant inventory ───────────────────────────────────────────────────
@@ -47,42 +47,42 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("all 11 metric name constants are non-blank")
-        void allMetricNamesNonBlank() { // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL).isNotBlank(); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TURN_COMPLETED).isNotBlank(); // GH-90000
+        void allMetricNamesNonBlank() { 
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL).isNotBlank(); 
+            assertThat(AgentRuntimeMetrics.METRIC_TURN_COMPLETED).isNotBlank(); 
         }
 
         @Test
         @DisplayName("all metric names use ghatana.agent prefix")
-        void allMetricNamesHaveGhatanaPrefix() { // GH-90000
+        void allMetricNamesHaveGhatanaPrefix() { 
             String prefix = "ghatana.agent";
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL).startsWith(prefix); // GH-90000
-            assertThat(AgentRuntimeMetrics.METRIC_TURN_COMPLETED).startsWith(prefix); // GH-90000
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL).startsWith(prefix); 
+            assertThat(AgentRuntimeMetrics.METRIC_TURN_COMPLETED).startsWith(prefix); 
         }
 
         @Test
         @DisplayName("null registry throws NullPointerException")
-        void nullRegistryThrows() { // GH-90000
-            assertThatThrownBy(() -> new AgentRuntimeMetrics(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullRegistryThrows() { 
+            assertThatThrownBy(() -> new AgentRuntimeMetrics(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -94,30 +94,30 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordDispatch increments dispatch.total counter and records timer")
-        void recordDispatchIncrements() { // GH-90000
-            metrics.recordDispatch("agent-1", "tenant-1", "SUCCESS", Duration.ofMillis(100)); // GH-90000
+        void recordDispatchIncrements() { 
+            metrics.recordDispatch("agent-1", "tenant-1", "SUCCESS", Duration.ofMillis(100)); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "status", "SUCCESS") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(1.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_TOTAL) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "status", "SUCCESS") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(1.0); 
 
-            Timer timer = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1") // GH-90000
-                    .timer(); // GH-90000
-            assertThat(timer.count()).isEqualTo(1L); // GH-90000
+            Timer timer = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_DURATION) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1") 
+                    .timer(); 
+            assertThat(timer.count()).isEqualTo(1L); 
         }
 
         @Test
         @DisplayName("recordDispatchDenied increments dispatch.denied counter")
-        void recordDispatchDeniedIncrements() { // GH-90000
-            metrics.recordDispatchDenied("agent-1", "tenant-1"); // GH-90000
-            metrics.recordDispatchDenied("agent-1", "tenant-1"); // GH-90000
+        void recordDispatchDeniedIncrements() { 
+            metrics.recordDispatchDenied("agent-1", "tenant-1"); 
+            metrics.recordDispatchDenied("agent-1", "tenant-1"); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(2.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_DISPATCH_DENIED) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(2.0); 
         }
     }
 
@@ -129,34 +129,34 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordPolicyEval increments total and NOT denied when allowed")
-        void recordPolicyEvalAllowedDoesNotIncrementDenied() { // GH-90000
-            metrics.recordPolicyEval("agent-1", "tenant-1", true); // GH-90000
+        void recordPolicyEvalAllowedDoesNotIncrementDenied() { 
+            metrics.recordPolicyEval("agent-1", "tenant-1", true); 
 
-            Counter total = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(total.count()).isEqualTo(1.0); // GH-90000
+            Counter total = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1") 
+                    .counter(); 
+            assertThat(total.count()).isEqualTo(1.0); 
 
             // denied counter should not exist for tags not used
-            assertThat(registry.find(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1") // GH-90000
-                    .counter()).isNull(); // GH-90000
+            assertThat(registry.find(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1") 
+                    .counter()).isNull(); 
         }
 
         @Test
         @DisplayName("recordPolicyEval increments both total and denied when denied")
-        void recordPolicyEvalDeniedIncrementsTwo() { // GH-90000
-            metrics.recordPolicyEval("agent-2", "tenant-2", false); // GH-90000
+        void recordPolicyEvalDeniedIncrementsTwo() { 
+            metrics.recordPolicyEval("agent-2", "tenant-2", false); 
 
-            Counter total = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL) // GH-90000
-                    .tags("agentId", "agent-2", "tenantId", "tenant-2") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(total.count()).isEqualTo(1.0); // GH-90000
+            Counter total = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_TOTAL) 
+                    .tags("agentId", "agent-2", "tenantId", "tenant-2") 
+                    .counter(); 
+            assertThat(total.count()).isEqualTo(1.0); 
 
-            Counter denied = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED) // GH-90000
-                    .tags("agentId", "agent-2", "tenantId", "tenant-2") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(denied.count()).isEqualTo(1.0); // GH-90000
+            Counter denied = registry.get(AgentRuntimeMetrics.METRIC_POLICY_EVAL_DENIED) 
+                    .tags("agentId", "agent-2", "tenantId", "tenant-2") 
+                    .counter(); 
+            assertThat(denied.count()).isEqualTo(1.0); 
         }
     }
 
@@ -168,13 +168,13 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordInvariantViolation increments by count")
-        void recordInvariantViolationByCount() { // GH-90000
-            metrics.recordInvariantViolation("agent-1", "tenant-1", 3); // GH-90000
+        void recordInvariantViolationByCount() { 
+            metrics.recordInvariantViolation("agent-1", "tenant-1", 3); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(3.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_INVARIANT_VIOLATION) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(3.0); 
         }
     }
 
@@ -186,29 +186,29 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordToolExecution increments total and records timer")
-        void recordToolExecutionIncrements() { // GH-90000
-            metrics.recordToolExecution("agent-1", "tenant-1", "search-tool", "SUCCESS", Duration.ofMillis(50)); // GH-90000
+        void recordToolExecutionIncrements() { 
+            metrics.recordToolExecution("agent-1", "tenant-1", "search-tool", "SUCCESS", Duration.ofMillis(50)); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "search-tool", "status", "SUCCESS") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(1.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_TOTAL) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "search-tool", "status", "SUCCESS") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(1.0); 
 
-            Timer timer = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "search-tool") // GH-90000
-                    .timer(); // GH-90000
-            assertThat(timer.count()).isEqualTo(1L); // GH-90000
+            Timer timer = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DURATION) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "search-tool") 
+                    .timer(); 
+            assertThat(timer.count()).isEqualTo(1L); 
         }
 
         @Test
         @DisplayName("recordToolExecutionDenied increments tool.execution.denied counter")
-        void recordToolExecutionDeniedIncrements() { // GH-90000
-            metrics.recordToolExecutionDenied("agent-1", "tenant-1", "danger-tool"); // GH-90000
+        void recordToolExecutionDeniedIncrements() { 
+            metrics.recordToolExecutionDenied("agent-1", "tenant-1", "danger-tool"); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "danger-tool") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(1.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TOOL_EXEC_DENIED) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "toolId", "danger-tool") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(1.0); 
         }
     }
 
@@ -220,14 +220,14 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordMemoryAccess increments memory.access.total counter")
-        void recordMemoryAccessIncrements() { // GH-90000
-            metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); // GH-90000
-            metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); // GH-90000
+        void recordMemoryAccessIncrements() { 
+            metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); 
+            metrics.recordMemoryAccess("agent-1", "tenant-1", "READ"); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "operation", "READ") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(2.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_MEMORY_ACCESS_TOTAL) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "operation", "READ") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(2.0); 
         }
     }
 
@@ -239,13 +239,13 @@ class AgentRuntimeMetricsTest {
 
         @Test
         @DisplayName("recordTurnCompleted increments turn.completed.total counter")
-        void recordTurnCompletedIncrements() { // GH-90000
-            metrics.recordTurnCompleted("agent-1", "tenant-1", "SUCCESS"); // GH-90000
+        void recordTurnCompletedIncrements() { 
+            metrics.recordTurnCompleted("agent-1", "tenant-1", "SUCCESS"); 
 
-            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TURN_COMPLETED) // GH-90000
-                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "status", "SUCCESS") // GH-90000
-                    .counter(); // GH-90000
-            assertThat(counter.count()).isEqualTo(1.0); // GH-90000
+            Counter counter = registry.get(AgentRuntimeMetrics.METRIC_TURN_COMPLETED) 
+                    .tags("agentId", "agent-1", "tenantId", "tenant-1", "status", "SUCCESS") 
+                    .counter(); 
+            assertThat(counter.count()).isEqualTo(1.0); 
         }
     }
 
@@ -253,7 +253,7 @@ class AgentRuntimeMetricsTest {
 
     @Test
     @DisplayName("registry() returns the underlying MeterRegistry")
-    void registryReturnsUnderlyingRegistry() { // GH-90000
-        assertThat(metrics.registry()).isSameAs(registry); // GH-90000
+    void registryReturnsUnderlyingRegistry() { 
+        assertThat(metrics.registry()).isSameAs(registry); 
     }
 }

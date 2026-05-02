@@ -2,8 +2,8 @@ package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.service.AbstractDataService;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
@@ -39,7 +39,7 @@ public class BillingService extends AbstractDataService {
 
     /** Retained for tenant-context lookup in async callbacks. */
     private final KernelContext kernelContext;
-    private final BillingLedgerPlugin billingLedgerPlugin;
+    private final LedgerPlugin ledgerPlugin;
 
     public BillingService(KernelContext context) {
         this(context, null);
@@ -49,27 +49,27 @@ public class BillingService extends AbstractDataService {
      * Creates a BillingService with Finance ledger integration enabled.
      *
      * @param context              kernel context providing DataCloudKernelAdapter
-     * @param billingLedgerPlugin  ledger plugin for cross-domain billing integration;
+     * @param ledgerPlugin         ledger plugin for cross-domain billing integration;
      *                             may be {@code null} to disable ledger posting
      */
-    public BillingService(KernelContext context, BillingLedgerPlugin billingLedgerPlugin) {
+    public BillingService(KernelContext context, LedgerPlugin ledgerPlugin) {
         super(context);
         this.kernelContext = context;
-        this.billingLedgerPlugin = billingLedgerPlugin;
+        this.ledgerPlugin = ledgerPlugin;
     }
 
     /**
      * Creates a BillingService with Finance ledger integration enabled and a custom executor.
      *
      * @param context              kernel context providing DataCloudKernelAdapter
-     * @param billingLedgerPlugin  ledger plugin for cross-domain billing integration;
+     * @param ledgerPlugin         ledger plugin for cross-domain billing integration;
      *                             may be {@code null} to disable ledger posting
      * @param executor             executor for blocking operations (e.g., in tests)
      */
-    public BillingService(KernelContext context, BillingLedgerPlugin billingLedgerPlugin, java.util.concurrent.Executor executor) {
+    public BillingService(KernelContext context, LedgerPlugin ledgerPlugin, java.util.concurrent.Executor executor) {
         super(context, executor);
         this.kernelContext = context;
-        this.billingLedgerPlugin = billingLedgerPlugin;
+        this.ledgerPlugin = ledgerPlugin;
     }
 
     @Override
@@ -185,31 +185,31 @@ public class BillingService extends AbstractDataService {
     }
 
     /**
-     * Posts a closed encounter as a {@link BillingTransaction} to the Finance ledger.
-     * A no-op when no {@link BillingLedgerPlugin} was injected.
+     * Posts a closed encounter as a {@link LedgerTransaction} to the Finance ledger.
+     * A no-op when no {@link LedgerPlugin} was injected.
      */
     private Promise<Void> postEncounterToLedger(BillingEncounter encounter) {
-        if (billingLedgerPlugin == null) {
+        if (ledgerPlugin == null) {
             return Promise.complete();
         }
         String tenantId = Optional.ofNullable(kernelContext.getTenantContext())
             .map(com.ghatana.kernel.context.KernelTenantContext::getTenantId)
             .orElse("default");
-        BillingTransaction tx = BillingTransaction.builder()
+        LedgerTransaction tx = LedgerTransaction.builder()
             .transactionId("enc:" + encounter.id())
-            .sourceProductId("phr")
+            .sourceId("phr")
             .debitAccount("PHR:AR:" + encounter.patientId())
             .creditAccount("PHR:REVENUE:" + encounter.providerId())
             .amount(encounter.totalAmount())
             .currency(encounter.currency())
-            .type(BillingTransaction.TransactionType.CHARGE)
+            .type(LedgerTransaction.TransactionType.CHARGE)
             .description("Healthcare encounter closed: " + encounter.id())
             .externalReferenceId(encounter.id())
             .tenantId(tenantId)
             .occurredAt(encounter.closedAt())
             .build();
 
-        return billingLedgerPlugin.postTransaction(tx)
+        return ledgerPlugin.postTransaction(tx)
             .map(entryId -> {
                 log.info("Encounter '{}' posted to ledger as entry '{}'", encounter.id(), entryId);
                 return (Void) null;

@@ -13,63 +13,63 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  */
 class AgentBoundaryTest {
 
-    private static final JavaClasses CLASSES = new ClassFileImporter() // GH-90000
+    private static final JavaClasses CLASSES = new ClassFileImporter() 
         .importPackages("com.ghatana.yappc.agents.code");
 
     @Test
-    void codeSpecialistsShouldNotDependOnArchitectureSpecialists() { // GH-90000
-        ArchRule rule = noClasses() // GH-90000
+    void codeSpecialistsShouldNotDependOnArchitectureSpecialists() { 
+        ArchRule rule = noClasses() 
             .that().resideInAPackage("..agents.code..")
             .should().dependOnClassesThat().resideInAPackage("..agents.architecture..")
             .because("Code specialists must not depend on architecture specialists")
-            .allowEmptyShould(true); // GH-90000
+            .allowEmptyShould(true); 
 
-        rule.check(CLASSES); // GH-90000
+        rule.check(CLASSES); 
     }
 
     @Test
-    void codeSpecialistsShouldNotDependOnTestingSpecialists() { // GH-90000
-        ArchRule rule = noClasses() // GH-90000
+    void codeSpecialistsShouldNotDependOnTestingSpecialists() { 
+        ArchRule rule = noClasses() 
             .that().resideInAPackage("..agents.code..")
             .should().dependOnClassesThat().resideInAPackage("..agents.testing..")
             .because("Code specialists must not depend on testing specialists")
-            .allowEmptyShould(true); // GH-90000
+            .allowEmptyShould(true); 
 
-        rule.check(CLASSES); // GH-90000
+        rule.check(CLASSES); 
     }
 
     @Test
-    void agentsShouldNotDependOnScaffold() { // GH-90000
-        ArchRule rule = noClasses() // GH-90000
+    void agentsShouldNotDependOnScaffold() { 
+        ArchRule rule = noClasses() 
             .that().resideInAPackage("..agents..")
             .should().dependOnClassesThat().resideInAPackage("..scaffold..")
             .because("Agents must not depend on scaffold - they are different concerns")
-            .allowEmptyShould(true); // GH-90000
+            .allowEmptyShould(true); 
 
-        rule.check(CLASSES); // GH-90000
+        rule.check(CLASSES); 
     }
 
     @Test
-    void agentsShouldNotDependOnRefactorer() { // GH-90000
-        ArchRule rule = noClasses() // GH-90000
+    void agentsShouldNotDependOnRefactorer() { 
+        ArchRule rule = noClasses() 
             .that().resideInAPackage("..agents..")
             .should().dependOnClassesThat().resideInAPackage("..refactorer..")
             .because("Agents must not depend on refactorer")
-            .allowEmptyShould(true); // GH-90000
+            .allowEmptyShould(true); 
 
-        rule.check(CLASSES); // GH-90000
+        rule.check(CLASSES); 
     }
 
     @Test
-    void modulesShouldHaveMaximum150Files() { // GH-90000
+    void modulesShouldHaveMaximum150Files() { 
         // This is enforced by Gradle checkModuleSize task
         // This test documents the requirement
-        ArchRule rule = classes() // GH-90000
+        ArchRule rule = classes() 
             .that().resideInAPackage("..agents.code..")
             .should().haveSimpleNameNotContaining("TooManyFiles")
             .because("Modules should have maximum 150 files")
-            .allowEmptyShould(true); // GH-90000
+            .allowEmptyShould(true); 
 
-        rule.check(CLASSES); // GH-90000
+        rule.check(CLASSES); 
     }
 }

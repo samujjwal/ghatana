@@ -22,64 +22,64 @@ class AepContextBridgeEngineIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("shareToAep mirrors context into the engine event cloud and caches it locally")
-    void shareToAepMirrorsContextIntoEventCloud() { // GH-90000
-        EventCloud eventCloud = mock(EventCloud.class); // GH-90000
-        AepEngine engine = mock(AepEngine.class); // GH-90000
-        when(engine.eventCloud()).thenReturn(eventCloud); // GH-90000
-        AepContextBridge bridge = new AepContextBridge(MemoryStore.noOp(), engine); // GH-90000
+    void shareToAepMirrorsContextIntoEventCloud() { 
+        EventCloud eventCloud = mock(EventCloud.class); 
+        AepEngine engine = mock(AepEngine.class); 
+        when(engine.eventCloud()).thenReturn(eventCloud); 
+        AepContextBridge bridge = new AepContextBridge(MemoryStore.noOp(), engine); 
 
-        runPromise(bridge::activate); // GH-90000
-        runPromise(() -> bridge.shareToAep("tenant-1", "context-payload")); // GH-90000
+        runPromise(bridge::activate); 
+        runPromise(() -> bridge.shareToAep("tenant-1", "context-payload")); 
         String shared = runPromise(() -> bridge.getFromAep("tenant-1"));
 
         assertThat(shared).isEqualTo("context-payload");
-        verify(eventCloud).append( // GH-90000
+        verify(eventCloud).append( 
             org.mockito.ArgumentMatchers.eq("tenant-1"),
-            org.mockito.ArgumentMatchers.eq(AepContextBridge.CONTEXT_EVENT_TYPE), // GH-90000
-            argThat(bytes -> Arrays.equals(bytes, "context-payload".getBytes(StandardCharsets.UTF_8))) // GH-90000
+            org.mockito.ArgumentMatchers.eq(AepContextBridge.CONTEXT_EVENT_TYPE), 
+            argThat(bytes -> Arrays.equals(bytes, "context-payload".getBytes(StandardCharsets.UTF_8))) 
         );
     }
 
     @Test
     @DisplayName("toAgentContext propagates tenant trace and metadata from product execution context")
-    void toAgentContextPropagatesExecutionMetadata() { // GH-90000
-        AepContextBridge bridge = new AepContextBridge(MemoryStore.noOp()); // GH-90000
+    void toAgentContextPropagatesExecutionMetadata() { 
+        AepContextBridge bridge = new AepContextBridge(MemoryStore.noOp()); 
         com.ghatana.aep.domain.agent.registry.AgentExecutionContext executionContext =
-            new com.ghatana.aep.domain.agent.registry.AgentExecutionContext() { // GH-90000
+            new com.ghatana.aep.domain.agent.registry.AgentExecutionContext() { 
                 @Override
-                public String tenantId() { return "tenant-7"; } // GH-90000
+                public String tenantId() { return "tenant-7"; } 
 
                 @Override
-                public String userId() { return "user-9"; } // GH-90000
+                public String userId() { return "user-9"; } 
 
                 @Override
-                public com.ghatana.aep.domain.agent.registry.SecurityContext securityContext() { return null; } // GH-90000
+                public com.ghatana.aep.domain.agent.registry.SecurityContext securityContext() { return null; } 
 
                 @Override
-                public String correlationId() { return "trace-123"; } // GH-90000
+                public String correlationId() { return "trace-123"; } 
 
                 @Override
-                public java.util.Map<String, Object> metadata() { return java.util.Map.of("source", "agent-runtime"); } // GH-90000
+                public java.util.Map<String, Object> metadata() { return java.util.Map.of("source", "agent-runtime"); } 
 
                 @Override
                 public java.util.Set<String> enabledCapabilities() { return java.util.Set.of("read"); }
 
                 @Override
-                public long timeoutMs() { return 1_000L; } // GH-90000
+                public long timeoutMs() { return 1_000L; } 
 
                 @Override
-                public long createdAt() { return System.currentTimeMillis(); } // GH-90000
+                public long createdAt() { return System.currentTimeMillis(); } 
 
                 @Override
-                public com.ghatana.aep.domain.agent.registry.AgentExecutionContext copy() { return this; } // GH-90000
+                public com.ghatana.aep.domain.agent.registry.AgentExecutionContext copy() { return this; } 
             };
 
-        AgentContext agentContext = bridge.toAgentContext(executionContext, "fraud-detector"); // GH-90000
+        AgentContext agentContext = bridge.toAgentContext(executionContext, "fraud-detector"); 
 
         assertThat(agentContext.getTenantId()).isEqualTo("tenant-7");
         assertThat(agentContext.getUserId()).isEqualTo("user-9");
         assertThat(agentContext.getTraceId()).isEqualTo("trace-123");
         assertThat(agentContext.getLogger().getName()).isEqualTo("agent.fraud-detector");
-        assertThat(agentContext.getMetadata()).containsEntry("source", "agent-runtime"); // GH-90000
+        assertThat(agentContext.getMetadata()).containsEntry("source", "agent-runtime"); 
     }
 }

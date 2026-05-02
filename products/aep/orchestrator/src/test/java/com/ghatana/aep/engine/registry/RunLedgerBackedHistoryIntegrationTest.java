@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.pattern IntegrationTest
  */
 @Tag("integration")
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("RunLedgerBackedHistoryIntegrationTest")
 class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
 
@@ -41,15 +41,15 @@ class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("append persists an execution record that getHistory can read back")
-    void appendPersistsExecutionHistory() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
+    void appendPersistsExecutionHistory() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
 
-        try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
-             Connection connection = dataSource.getConnection(); // GH-90000
-             Statement statement = connection.createStatement()) { // GH-90000
+        try (HikariDataSource dataSource = new HikariDataSource(config); 
+             Connection connection = dataSource.getConnection(); 
+             Statement statement = connection.createStatement()) { 
             statement.execute("""
                 CREATE TABLE IF NOT EXISTS agent_execution_history (
                     execution_id TEXT PRIMARY KEY,
@@ -63,22 +63,22 @@ class RunLedgerBackedHistoryIntegrationTest extends EventloopTestBase {
                 """);
 
             Executor executor = Runnable::run;
-            RunLedgerBackedHistory history = new RunLedgerBackedHistory(dataSource, executor); // GH-90000
-            AgentExecutionService.ExecutionRecord record = new AgentExecutionService.ExecutionRecord( // GH-90000
+            RunLedgerBackedHistory history = new RunLedgerBackedHistory(dataSource, executor); 
+            AgentExecutionService.ExecutionRecord record = new AgentExecutionService.ExecutionRecord( 
                 "exec-1",
                 "success",
-                Map.of("message", "hello"), // GH-90000
-                Map.of("result", "ok"), // GH-90000
+                Map.of("message", "hello"), 
+                Map.of("result", "ok"), 
                 15L,
                 Instant.parse("2026-04-15T12:00:00Z").toString());
 
-            runPromise(() -> history.append("agent-1", record)); // GH-90000
-            List<AgentExecutionService.ExecutionRecord> stored = runPromise(() -> history.getHistory("agent-1", 10)); // GH-90000
+            runPromise(() -> history.append("agent-1", record)); 
+            List<AgentExecutionService.ExecutionRecord> stored = runPromise(() -> history.getHistory("agent-1", 10)); 
 
-            assertThat(stored).hasSize(1); // GH-90000
+            assertThat(stored).hasSize(1); 
             assertThat(stored.get(0).executionId()).isEqualTo("exec-1");
-            assertThat(stored.get(0).input()).isEqualTo(Map.of("message", "hello")); // GH-90000
-            assertThat(stored.get(0).output()).isEqualTo(Map.of("result", "ok")); // GH-90000
+            assertThat(stored.get(0).input()).isEqualTo(Map.of("message", "hello")); 
+            assertThat(stored.get(0).output()).isEqualTo(Map.of("result", "ok")); 
         }
     }
 }

@@ -6,43 +6,41 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * Risk Management Plugin - Generic risk calculation framework.
+ * Risk Management Plugin — generic, model-driven risk framework.
  *
- * <p>Supports multiple risk types:</p>
- * <ul>
- *   <li>Trading risk (Finance)</li>
- *   <li>Clinical risk (PHR)</li>
- *   <li>Credit risk (general)</li>
- * </ul>
+ * <p>Supports any risk domain through registered {@link RiskModelId} types.
+ * Products supply their own evaluator implementations; the kernel plugin
+ * itself is domain-agnostic.</p>
  *
  * @doc.type interface
- * @doc.purpose Risk management plugin interface
+ * @doc.purpose Generic risk management plugin interface — model-driven, domain-agnostic
  * @doc.layer platform
  * @doc.pattern Plugin
- * @since 1.0.0
+ * @since 1.2.0
  */
 public interface RiskManagementPlugin extends Plugin {
 
     /**
-     * Calculates risk for an entity.
+     * Calculates risk for an entity using the specified risk model.
      *
      * @param entityId the entity identifier
-     * @param type the risk type
-     * @param factors the risk factors
+     * @param modelId  the risk model identifier (domain-supplied)
+     * @param factors  the input risk factors as key-value pairs
      * @return Promise containing the risk score
      */
-    Promise<RiskScore> calculateRisk(String entityId, RiskType type, Map<String, Object> factors);
+    Promise<RiskScore> calculateRisk(String entityId, RiskModelId modelId, Map<String, Object> factors);
 
     /**
      * Sets risk limits for an entity.
      *
      * @param entityId the entity identifier
-     * @param limits the risk limits
+     * @param limits   named limit values (e.g. {@code "max-exposure" -> 1_000_000})
      * @return Promise completing when limits are set
      */
-    Promise<Void> setRiskLimits(String entityId, RiskLimits limits);
+    Promise<Void> setRiskLimits(String entityId, Map<String, BigDecimal> limits);
 
     /**
      * Gets active risk alerts for an entity.
@@ -53,55 +51,76 @@ public interface RiskManagementPlugin extends Plugin {
     Promise<List<RiskAlert>> getActiveAlerts(String entityId);
 
     /**
-     * Generates a risk report.
+     * Generates a risk report for a time range.
      *
      * @param entityId the entity identifier
-     * @param range the time range
+     * @param range    the time range
      * @return Promise containing the risk report
      */
     Promise<RiskReport> generateReport(String entityId, TimeRange range);
 
     /**
-     * Risk types.
+     * Typed identifier for a risk model.
+     *
+     * <p>Products register evaluators under a {@code RiskModelId};
+     * the kernel uses the id as a lookup key, not a hardcoded enum.</p>
+     *
+     * <p>Well-known generic IDs are provided as constants but any string is valid.</p>
      */
-    enum RiskType {
-        MARKET,
-        CREDIT,
-        OPERATIONAL,
-        CLINICAL,
-        FRAUD,
-        COMPLIANCE
+    final class RiskModelId {
+        /** Generic market-volatility and position risk. */
+        public static final RiskModelId MARKET      = new RiskModelId("MARKET");
+        /** Counterparty and debt-obligation risk. */
+        public static final RiskModelId CREDIT      = new RiskModelId("CREDIT");
+        /** Operational-process and infrastructure risk. */
+        public static final RiskModelId OPERATIONAL = new RiskModelId("OPERATIONAL");
+        /** Transaction-fraud risk. */
+        public static final RiskModelId FRAUD       = new RiskModelId("FRAUD");
+        /** Regulatory-compliance risk. */
+        public static final RiskModelId COMPLIANCE  = new RiskModelId("COMPLIANCE");
+
+        private final String id;
+
+        public RiskModelId(String id) {
+            if (id == null || id.isBlank()) throw new IllegalArgumentException("RiskModelId must not be blank");
+            this.id = id.toUpperCase(java.util.Locale.ROOT);
+        }
+
+        public String getId() { return id; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof RiskModelId that)) return false;
+            return id.equals(that.id);
+        }
+
+        @Override
+        public int hashCode() { return Objects.hash(id); }
+
+        @Override
+        public String toString() { return id; }
     }
 
     /**
-     * Risk score.
+     * Risk score produced by a model evaluation.
      */
     record RiskScore(
         String entityId,
-        RiskType type,
+        RiskModelId modelId,
         double score,
         RiskLevel level,
         Map<String, Double> componentScores,
         Instant calculatedAt
     ) {
+        /** Qualitative risk level derived from a normalized score. */
         public enum RiskLevel {
             LOW, MEDIUM, HIGH, CRITICAL
         }
     }
 
     /**
-     * Risk limits.
-     */
-    record RiskLimits(
-        BigDecimal maxPositionNotional,
-        BigDecimal maxPortfolioNotional,
-        BigDecimal maxPortfolioVaR,
-        BigDecimal maxConcentration,
-        BigDecimal maxPositionLoss
-    ) {}
-
-    /**
-     * Risk alert.
+     * Risk alert triggered when a score or limit is breached.
      */
     record RiskAlert(
         String alertId,
@@ -113,7 +132,7 @@ public interface RiskManagementPlugin extends Plugin {
     ) {}
 
     /**
-     * Risk report.
+     * Risk report covering a time range.
      */
     record RiskReport(
         String entityId,
@@ -125,7 +144,8 @@ public interface RiskManagementPlugin extends Plugin {
     ) {}
 
     /**
-     * Time range.
+     * Inclusive time range for report and history queries.
      */
     record TimeRange(Instant start, Instant end) {}
 }
+

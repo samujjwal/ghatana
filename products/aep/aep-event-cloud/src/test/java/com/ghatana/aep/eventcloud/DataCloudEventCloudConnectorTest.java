@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link DataCloudEventCloudConnector}.
  */
 @DisplayName("DataCloudEventCloudConnector")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DataCloudEventCloudConnectorTest extends EventloopTestBase {
 
     @Mock
@@ -46,137 +46,137 @@ class DataCloudEventCloudConnectorTest extends EventloopTestBase {
     private DataCloudEventCloudConnector connector;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        connector = new DataCloudEventCloudConnector(eventLogStore, "test-tenant"); // GH-90000
+    void setUp() { 
+        connector = new DataCloudEventCloudConnector(eventLogStore, "test-tenant"); 
     }
 
     @Test
-    void shouldPublishEventToEventLogStore() { // GH-90000
+    void shouldPublishEventToEventLogStore() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
-        byte[] payload = "{\"order\":123}".getBytes(StandardCharsets.UTF_8); // GH-90000
+        byte[] payload = "{\"order\":123}".getBytes(StandardCharsets.UTF_8); 
 
         // WHEN
-        String eventId = runPromise(() -> connector.publish("order.created", payload)); // GH-90000
+        String eventId = runPromise(() -> connector.publish("order.created", payload)); 
 
         // THEN
-        assertThat(eventId).isNotBlank(); // GH-90000
-        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); // GH-90000
+        assertThat(eventId).isNotBlank(); 
+        verify(eventLogStore).append(tenantCaptor.capture(), entryCaptor.capture()); 
 
         // Verify tenant
         assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("test-tenant");
 
         // Verify event entry
-        EventEntry entry = entryCaptor.getValue(); // GH-90000
+        EventEntry entry = entryCaptor.getValue(); 
         assertThat(entry.eventType()).isEqualTo("order.created");
-        assertThat(entry.eventId()).isNotNull(); // GH-90000
+        assertThat(entry.eventId()).isNotNull(); 
     }
 
     @Test
-    void shouldReturnEventIdOnPublish() { // GH-90000
+    void shouldReturnEventIdOnPublish() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("42")));
 
         // WHEN
-        String eventId = runPromise(() -> // GH-90000
-            connector.publish("test.topic", "data".getBytes(StandardCharsets.UTF_8))); // GH-90000
+        String eventId = runPromise(() -> 
+            connector.publish("test.topic", "data".getBytes(StandardCharsets.UTF_8))); 
 
         // THEN
-        assertThat(eventId).matches( // GH-90000
+        assertThat(eventId).matches( 
             "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
     }
 
     @Test
-    void shouldUseCustomTenantId() { // GH-90000
+    void shouldUseCustomTenantId() { 
         // GIVEN
         DataCloudEventCloudConnector customConnector =
-            new DataCloudEventCloudConnector(eventLogStore, "custom-tenant"); // GH-90000
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+            new DataCloudEventCloudConnector(eventLogStore, "custom-tenant"); 
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
         // WHEN
-        runPromise(() -> customConnector.publish("topic", new byte[]{1})); // GH-90000
+        runPromise(() -> customConnector.publish("topic", new byte[]{1})); 
 
         // THEN
-        verify(eventLogStore).append(tenantCaptor.capture(), any()); // GH-90000
+        verify(eventLogStore).append(tenantCaptor.capture(), any()); 
         assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("custom-tenant");
     }
 
     @Test
-    void shouldPublishWithExplicitTenantId() { // GH-90000
+    void shouldPublishWithExplicitTenantId() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
         // WHEN
-        String eventId = runPromise(() -> // GH-90000
-            connector.publish("explicit-tenant", "topic", new byte[]{1})); // GH-90000
+        String eventId = runPromise(() -> 
+            connector.publish("explicit-tenant", "topic", new byte[]{1})); 
 
         // THEN
-        assertThat(eventId).isNotBlank(); // GH-90000
-        verify(eventLogStore).append(tenantCaptor.capture(), any()); // GH-90000
+        assertThat(eventId).isNotBlank(); 
+        verify(eventLogStore).append(tenantCaptor.capture(), any()); 
         assertThat(tenantCaptor.getValue().tenantId()).isEqualTo("explicit-tenant");
     }
 
     @Test
-    void shouldSubscribeToEventLogStore() { // GH-90000
+    void shouldSubscribeToEventLogStore() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.zero())); // GH-90000
-        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) // GH-90000
-            .thenReturn(Promise.of(new EventLogStore.Subscription() { // GH-90000
-                @Override public void cancel() {} // GH-90000
-                @Override public boolean isCancelled() { return false; } // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
+            .thenReturn(Promise.of(Offset.zero())); 
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
+                @Override public void cancel() {} 
+                @Override public boolean isCancelled() { return false; } 
             }));
 
         // WHEN
-        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> // GH-90000
-            connector.subscribe("order.created", "group-1", // GH-90000
-                (eventId, topic, payload) -> {})); // GH-90000
+        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> 
+            connector.subscribe("order.created", "group-1", 
+                (eventId, topic, payload) -> {})); 
 
         // THEN
-        assertThat(sub).isNotNull(); // GH-90000
-        assertThat(sub.isCancelled()).isFalse(); // GH-90000
+        assertThat(sub).isNotNull(); 
+        assertThat(sub.isCancelled()).isFalse(); 
     }
 
     @Test
-    void shouldCancelConnectorSubscription() { // GH-90000
+    void shouldCancelConnectorSubscription() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.zero())); // GH-90000
-        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) // GH-90000
-            .thenReturn(Promise.of(new EventLogStore.Subscription() { // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
+            .thenReturn(Promise.of(Offset.zero())); 
+        when(eventLogStore.tail(any(TenantContext.class), any(Offset.class), any())) 
+            .thenReturn(Promise.of(new EventLogStore.Subscription() { 
                 private boolean cancelled = false;
-                @Override public void cancel() { cancelled = true; } // GH-90000
-                @Override public boolean isCancelled() { return cancelled; } // GH-90000
+                @Override public void cancel() { cancelled = true; } 
+                @Override public boolean isCancelled() { return cancelled; } 
             }));
 
-        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> // GH-90000
-            connector.subscribe("topic", "group", // GH-90000
-                (eventId, topic, payload) -> {})); // GH-90000
+        EventCloudConnector.ConnectorSubscription sub = runPromise(() -> 
+            connector.subscribe("topic", "group", 
+                (eventId, topic, payload) -> {})); 
 
         // WHEN
-        sub.cancel(); // GH-90000
+        sub.cancel(); 
 
         // THEN
-        assertThat(sub.isCancelled()).isTrue(); // GH-90000
+        assertThat(sub.isCancelled()).isTrue(); 
     }
 
     @Test
-    void shouldPropagatePublishFailure() { // GH-90000
+    void shouldPropagatePublishFailure() { 
         // GIVEN
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.ofException(new RuntimeException("Store unavailable")));
 
         // WHEN/THEN
         try {
-            runPromise(() -> connector.publish("topic", new byte[]{1})); // GH-90000
-        } catch (Exception e) { // GH-90000
+            runPromise(() -> connector.publish("topic", new byte[]{1})); 
+        } catch (Exception e) { 
             assertThat(e).hasMessageContaining("Store unavailable");
         }
-        clearFatalError(); // GH-90000
+        clearFatalError(); 
     }
 }

@@ -28,56 +28,56 @@ class AepProductionModuleTest {
 
     @Test
     @DisplayName("AEP_PROFILE takes precedence over AEP_ENV")
-    void profileTakesPrecedence() { // GH-90000
-        assertThat(AepRuntimeProfile.resolve(Map.of( // GH-90000
+    void profileTakesPrecedence() { 
+        assertThat(AepRuntimeProfile.resolve(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_ENV", "development"))).isEqualTo("production");
     }
 
     @Test
     @DisplayName("defaults to production when env vars are absent")
-    void defaultsToProduction() { // GH-90000
+    void defaultsToProduction() { 
         assertThat(AepRuntimeProfile.resolve(Map.of())).isEqualTo("production");
-        assertThat(AepRuntimeProfile.isProduction(Map.of())).isTrue(); // GH-90000
+        assertThat(AepRuntimeProfile.isProduction(Map.of())).isTrue(); 
     }
 
     @Test
     @DisplayName("production module requires AEP_DB_URL and AEP_JWT_SECRET")
-    void requiresMandatoryProductionSettings() { // GH-90000
-        assertThatThrownBy(() -> new AepProductionModule(Map.of("AEP_PROFILE", "production"))) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+    void requiresMandatoryProductionSettings() { 
+        assertThatThrownBy(() -> new AepProductionModule(Map.of("AEP_PROFILE", "production"))) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("AEP_DB_URL");
 
-        assertThatThrownBy(() -> new AepProductionModule(Map.of( // GH-90000
+        assertThatThrownBy(() -> new AepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep")))
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("AEP_JWT_SECRET");
     }
 
     @Test
     @DisplayName("non-production profile does not require production settings")
-    void nonProductionAllowsMissingSettings() { // GH-90000
-        new AepProductionModule(Map.of("AEP_PROFILE", "development")); // GH-90000
+    void nonProductionAllowsMissingSettings() { 
+        new AepProductionModule(Map.of("AEP_PROFILE", "development")); 
     }
 
     @Test
     @DisplayName("production module wires a non-in-memory identity service when required config is present")
-    void productionWiresJdbcBackedIdentityService() { // GH-90000
-        AepProductionModule module = new TestAepProductionModule(Map.of( // GH-90000
+    void productionWiresJdbcBackedIdentityService() { 
+        AepProductionModule module = new TestAepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep",
             "AEP_JWT_SECRET", "test-secret"));
 
-        IdentityService identityService = module.identityService(); // GH-90000
+        IdentityService identityService = module.identityService(); 
 
-        assertThat(identityService).isNotNull(); // GH-90000
+        assertThat(identityService).isNotNull(); 
     }
 
     @Test
     @DisplayName("production module adds OIDC federation resolver ahead of JDBC when configured")
-    void productionAddsOidcResolverWhenConfigured() { // GH-90000
-        AepProductionModule module = new AepProductionModule(Map.of( // GH-90000
+    void productionAddsOidcResolverWhenConfigured() { 
+        AepProductionModule module = new AepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep",
             "AEP_JWT_SECRET", "test-secret",
@@ -89,16 +89,16 @@ class AepProductionModuleTest {
             "AEP_OIDC_AGENT_TOKENS", "tenant-a:agent-1=token-1",
             "AEP_OIDC_AGENT_SCOPES", "tenant-a:agent-1=aep:capability:routing|aep:capability:govern"));
 
-        List<IdentityResolver> resolvers = module.identityResolvers(mock(DataSource.class)); // GH-90000
+        List<IdentityResolver> resolvers = module.identityResolvers(mock(DataSource.class)); 
 
-        assertThat(resolvers).hasSize(2); // GH-90000
-        assertThat(resolvers.get(0)).isInstanceOf(OidcIdentityProvider.class); // GH-90000
+        assertThat(resolvers).hasSize(2); 
+        assertThat(resolvers.get(0)).isInstanceOf(OidcIdentityProvider.class); 
     }
 
     @Test
     @DisplayName("production module adds SAML federation resolver ahead of JDBC when configured")
-    void productionAddsSamlResolverWhenConfigured() { // GH-90000
-        AepProductionModule module = new AepProductionModule(Map.of( // GH-90000
+    void productionAddsSamlResolverWhenConfigured() { 
+        AepProductionModule module = new AepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep",
             "AEP_JWT_SECRET", "test-secret",
@@ -107,49 +107,49 @@ class AepProductionModuleTest {
             "AEP_SAML_AGENT_SUBJECTS", "tenant-a:agent-1=saml-subject-1",
             "AEP_SAML_AGENT_ASSERTIONS", "tenant-a:agent-1=<Assertion xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\"><Issuer>https://idp.example.com/metadata</Issuer><Subject><NameID>saml-subject-1</NameID></Subject><Conditions NotBefore=\"2026-04-15T00:00:00Z\" NotOnOrAfter=\"2099-04-15T00:00:00Z\"><AudienceRestriction><Audience>https://aep.example.com/sp</Audience></AudienceRestriction></Conditions></Assertion>"));
 
-        List<IdentityResolver> resolvers = module.identityResolvers(mock(DataSource.class)); // GH-90000
+        List<IdentityResolver> resolvers = module.identityResolvers(mock(DataSource.class)); 
 
-        assertThat(resolvers).hasSize(2); // GH-90000
-        assertThat(resolvers.get(0)).isInstanceOf(SamlIdentityProvider.class); // GH-90000
+        assertThat(resolvers).hasSize(2); 
+        assertThat(resolvers.get(0)).isInstanceOf(SamlIdentityProvider.class); 
     }
 
     @Test
     @DisplayName("partial OIDC federation configuration fails fast")
-    void partialOidcConfigurationFailsFast() { // GH-90000
-        AepProductionModule module = new AepProductionModule(Map.of( // GH-90000
+    void partialOidcConfigurationFailsFast() { 
+        AepProductionModule module = new AepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep",
             "AEP_JWT_SECRET", "test-secret",
             "AEP_OIDC_CLIENT_ID", "aep-client"));
 
-        assertThatThrownBy(() -> module.identityResolvers(mock(DataSource.class))) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> module.identityResolvers(mock(DataSource.class))) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("AEP_OIDC_CLIENT_SECRET");
     }
 
     @Test
     @DisplayName("partial SAML federation configuration fails fast")
-    void partialSamlConfigurationFailsFast() { // GH-90000
-        AepProductionModule module = new AepProductionModule(Map.of( // GH-90000
+    void partialSamlConfigurationFailsFast() { 
+        AepProductionModule module = new AepProductionModule(Map.of( 
             "AEP_PROFILE", "production",
             "AEP_DB_URL", "jdbc:postgresql://localhost:5432/aep",
             "AEP_JWT_SECRET", "test-secret",
             "AEP_SAML_IDP_ENTITY_ID", "https://idp.example.com/metadata"));
 
-        assertThatThrownBy(() -> module.identityResolvers(mock(DataSource.class))) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> module.identityResolvers(mock(DataSource.class))) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("AEP_SAML_SP_ENTITY_ID");
     }
 
     private static final class TestAepProductionModule extends AepProductionModule {
 
-        private TestAepProductionModule(Map<String, String> environment) { // GH-90000
-            super(environment); // GH-90000
+        private TestAepProductionModule(Map<String, String> environment) { 
+            super(environment); 
         }
 
         @Override
-        DataSource dataSource() { // GH-90000
-            return mock(DataSource.class); // GH-90000
+        DataSource dataSource() { 
+            return mock(DataSource.class); 
         }
     }
 }

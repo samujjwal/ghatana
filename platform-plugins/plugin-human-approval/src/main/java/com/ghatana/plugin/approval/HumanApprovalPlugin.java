@@ -11,9 +11,10 @@ import java.util.List;
  * <p>Provides the canonical interface for requesting, querying, and completing
  * human approvals in regulated workflows. Use cases include:</p>
  * <ul>
- *   <li>Healthcare: manual override of automated clinical decisions</li>
- *   <li>Finance: large-value trade approval gates, regulatory sign-off</li>
- *   <li>Compliance: exception request review, policy waiver approval</li>
+ *   <li>High-value or high-risk operation approval gates</li>
+ *   <li>Exception request review and policy waiver workflows</li>
+ *   <li>Regulated workflow sign-off and human attestation</li>
+ *   <li>Four-eyes approval for irreversible state changes</li>
  * </ul>
  *
  * <p>Implementations must be idempotent on duplicate requests with the same

@@ -8,191 +8,191 @@ import static org.junit.jupiter.api.Assertions.*;
 class AuditEntryTest {
 
     @Test
-    void shouldCreateAuditEntryWithRequiredFields() { // GH-90000
+    void shouldCreateAuditEntryWithRequiredFields() { 
         // Given
         String action = "CREATE";
         String resourceType = "USER";
         String resourceId = "123";
         String performedBy = "test-user";
-        long timestamp = System.currentTimeMillis(); // GH-90000
+        long timestamp = System.currentTimeMillis(); 
         String notes = "Test notes";
 
         // When
-        AuditEntry entry = AuditEntry.builder() // GH-90000
-            .action(action) // GH-90000
-            .resourceType(resourceType) // GH-90000
-            .resourceId(resourceId) // GH-90000
-            .performedBy(performedBy) // GH-90000
-            .timestamp(timestamp) // GH-90000
-            .notes(notes) // GH-90000
-            .build(); // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
+            .action(action) 
+            .resourceType(resourceType) 
+            .resourceId(resourceId) 
+            .performedBy(performedBy) 
+            .timestamp(timestamp) 
+            .notes(notes) 
+            .build(); 
 
         // Then
-        assertThat(entry.getAction()).isEqualTo(action); // GH-90000
-        assertThat(entry.getResourceType()).isEqualTo(resourceType); // GH-90000
-        assertThat(entry.getResourceId()).isEqualTo(resourceId); // GH-90000
-        assertThat(entry.getPerformedBy()).isEqualTo(performedBy); // GH-90000
-        assertThat(entry.getTimestamp()).isEqualTo(timestamp); // GH-90000
-        assertThat(entry.getNotes()).isEqualTo(notes); // GH-90000
+        assertThat(entry.getAction()).isEqualTo(action); 
+        assertThat(entry.getResourceType()).isEqualTo(resourceType); 
+        assertThat(entry.getResourceId()).isEqualTo(resourceId); 
+        assertThat(entry.getPerformedBy()).isEqualTo(performedBy); 
+        assertThat(entry.getTimestamp()).isEqualTo(timestamp); 
+        assertThat(entry.getNotes()).isEqualTo(notes); 
     }
 
     @Test
-    void shouldCreateAuditEntryWithNotes() { // GH-90000
+    void shouldCreateAuditEntryWithNotes() { 
         // Given
         String notes = "User was created with admin privileges";
 
         // When
-        AuditEntry entry = AuditEntry.builder() // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
             .action("UPDATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(System.currentTimeMillis()) // GH-90000
-            .notes(notes) // GH-90000
-            .build(); // GH-90000
+            .timestamp(System.currentTimeMillis()) 
+            .notes(notes) 
+            .build(); 
 
         // Then
-        assertThat(entry.getNotes()).isEqualTo(notes); // GH-90000
+        assertThat(entry.getNotes()).isEqualTo(notes); 
     }
 
     @Test
-    void shouldThrowExceptionWhenRequiredFieldsAreMissing() { // GH-90000
+    void shouldThrowExceptionWhenRequiredFieldsAreMissing() { 
         // When/Then
-        assertThrows(NullPointerException.class, () -> // GH-90000
-            AuditEntry.builder() // GH-90000
+        assertThrows(NullPointerException.class, () -> 
+            AuditEntry.builder() 
                 .resourceType("USER")
                 .resourceId("123")
                 .performedBy("test-user")
-                .timestamp(System.currentTimeMillis()) // GH-90000
-                .build(), // GH-90000
+                .timestamp(System.currentTimeMillis()) 
+                .build(), 
             "Action should be required"
         );
 
-        assertThrows(NullPointerException.class, () -> // GH-90000
-            AuditEntry.builder() // GH-90000
+        assertThrows(NullPointerException.class, () -> 
+            AuditEntry.builder() 
                 .action("CREATE")
                 .resourceId("123")
                 .performedBy("test-user")
-                .timestamp(System.currentTimeMillis()) // GH-90000
-                .build(), // GH-90000
+                .timestamp(System.currentTimeMillis()) 
+                .build(), 
             "Resource type should be required"
         );
 
-        assertThrows(NullPointerException.class, () -> // GH-90000
-            AuditEntry.builder() // GH-90000
+        assertThrows(NullPointerException.class, () -> 
+            AuditEntry.builder() 
                 .action("CREATE")
                 .resourceType("USER")
                 .performedBy("test-user")
-                .timestamp(System.currentTimeMillis()) // GH-90000
-                .build(), // GH-90000
+                .timestamp(System.currentTimeMillis()) 
+                .build(), 
             "Resource ID should be required"
         );
 
-        assertThrows(NullPointerException.class, () -> // GH-90000
-            AuditEntry.builder() // GH-90000
+        assertThrows(NullPointerException.class, () -> 
+            AuditEntry.builder() 
                 .action("CREATE")
                 .resourceType("USER")
                 .resourceId("123")
-                .timestamp(System.currentTimeMillis()) // GH-90000
-                .build(), // GH-90000
+                .timestamp(System.currentTimeMillis()) 
+                .build(), 
             "Performed by should be required"
         );
     }
 
     @Test
-    void shouldHandleNullNotes() { // GH-90000
+    void shouldHandleNullNotes() { 
         // When
-        AuditEntry entry = AuditEntry.builder() // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
             .action("DELETE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(System.currentTimeMillis()) // GH-90000
-            .notes(null) // GH-90000
-            .build(); // GH-90000
+            .timestamp(System.currentTimeMillis()) 
+            .notes(null) 
+            .build(); 
 
         // Then
-        assertThat(entry.getNotes()).isNull(); // GH-90000
+        assertThat(entry.getNotes()).isNull(); 
     }
 
     @Test
-    void shouldHandleEmptyNotes() { // GH-90000
+    void shouldHandleEmptyNotes() { 
         // When
-        AuditEntry entry = AuditEntry.builder() // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
             .action("VIEW")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(System.currentTimeMillis()) // GH-90000
+            .timestamp(System.currentTimeMillis()) 
             .notes("")
-            .build(); // GH-90000
+            .build(); 
 
         // Then
-        assertThat(entry.getNotes()).isEmpty(); // GH-90000
+        assertThat(entry.getNotes()).isEmpty(); 
     }
 
     @Test
-    void shouldBeImmutable() { // GH-90000
+    void shouldBeImmutable() { 
         // Given
-        AuditEntry entry = AuditEntry.builder() // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
             .action("UPDATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(System.currentTimeMillis()) // GH-90000
+            .timestamp(System.currentTimeMillis()) 
             .notes("Original notes")
-            .build(); // GH-90000
+            .build(); 
 
         // When/Then - Verify that the class is immutable by checking for mutator methods
-        assertThat(entry.getClass().getMethods()) // GH-90000
+        assertThat(entry.getClass().getMethods()) 
             .filteredOn(method -> method.getName().startsWith("set"))
             .describedAs("AuditEntry should not have any setter methods")
-            .isEmpty(); // GH-90000
+            .isEmpty(); 
     }
 
     @Test
-    void shouldImplementComparable() { // GH-90000
+    void shouldImplementComparable() { 
         // Given
-        long now = System.currentTimeMillis(); // GH-90000
-        AuditEntry earlier = AuditEntry.builder() // GH-90000
+        long now = System.currentTimeMillis(); 
+        AuditEntry earlier = AuditEntry.builder() 
             .action("CREATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(now - 1000) // GH-90000
-            .build(); // GH-90000
+            .timestamp(now - 1000) 
+            .build(); 
 
-        AuditEntry later = AuditEntry.builder() // GH-90000
+        AuditEntry later = AuditEntry.builder() 
             .action("UPDATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(now) // GH-90000
-            .build(); // GH-90000
+            .timestamp(now) 
+            .build(); 
 
         // When/Then
-        assertThat(earlier.compareTo(later)).isNegative(); // GH-90000
-        assertThat(later.compareTo(earlier)).isPositive(); // GH-90000
-        assertThat(earlier.compareTo(earlier)).isZero(); // GH-90000
+        assertThat(earlier.compareTo(later)).isNegative(); 
+        assertThat(later.compareTo(earlier)).isPositive(); 
+        assertThat(earlier.compareTo(earlier)).isZero(); 
     }
 
     @Test
-    void shouldHaveUsefulToString() { // GH-90000
+    void shouldHaveUsefulToString() { 
         // Given
-        AuditEntry entry = AuditEntry.builder() // GH-90000
+        AuditEntry entry = AuditEntry.builder() 
             .action("CREATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(1234567890L) // GH-90000
+            .timestamp(1234567890L) 
             .notes("User created")
-            .build(); // GH-90000
+            .build(); 
 
         // When
-        String toString = entry.toString(); // GH-90000
+        String toString = entry.toString(); 
 
         // Then
-        assertThat(toString) // GH-90000
+        assertThat(toString) 
             .contains("action=CREATE")
             .contains("resourceType=USER")
             .contains("resourceId=123")
@@ -202,16 +202,16 @@ class AuditEntryTest {
     }
 
     @Test
-    void shouldCreateCopyWithNewNotes() { // GH-90000
+    void shouldCreateCopyWithNewNotes() { 
         // Given
-        AuditEntry original = AuditEntry.builder() // GH-90000
+        AuditEntry original = AuditEntry.builder() 
             .action("CREATE")
             .resourceType("USER")
             .resourceId("123")
             .performedBy("test-user")
-            .timestamp(System.currentTimeMillis()) // GH-90000
+            .timestamp(System.currentTimeMillis()) 
             .notes("Original notes")
-            .build(); // GH-90000
+            .build(); 
 
         // When
         AuditEntry updated = original.withNotes("Updated notes");
@@ -221,10 +221,10 @@ class AuditEntryTest {
         assertThat(updated.getNotes()).isEqualTo("Updated notes");
 
         // Verify other fields remain the same
-        assertThat(updated.getAction()).isEqualTo(original.getAction()); // GH-90000
-        assertThat(updated.getResourceType()).isEqualTo(original.getResourceType()); // GH-90000
-        assertThat(updated.getResourceId()).isEqualTo(original.getResourceId()); // GH-90000
-        assertThat(updated.getPerformedBy()).isEqualTo(original.getPerformedBy()); // GH-90000
-        assertThat(updated.getTimestamp()).isEqualTo(original.getTimestamp()); // GH-90000
+        assertThat(updated.getAction()).isEqualTo(original.getAction()); 
+        assertThat(updated.getResourceType()).isEqualTo(original.getResourceType()); 
+        assertThat(updated.getResourceId()).isEqualTo(original.getResourceId()); 
+        assertThat(updated.getPerformedBy()).isEqualTo(original.getPerformedBy()); 
+        assertThat(updated.getTimestamp()).isEqualTo(original.getTimestamp()); 
     }
 }

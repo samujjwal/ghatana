@@ -21,56 +21,56 @@ class AnalyticsPerformanceTest {
 
     @Test
     @DisplayName("Should measure query throughput")
-    void shouldMeasureQueryThroughput() { // GH-90000
+    void shouldMeasureQueryThroughput() { 
         int queriesPerSecond = 1000;
         int targetThroughput = 500;
 
-        assertThat(queriesPerSecond).isGreaterThan(targetThroughput); // GH-90000
+        assertThat(queriesPerSecond).isGreaterThan(targetThroughput); 
     }
 
     @Test
     @DisplayName("Should measure query latency")
-    void shouldMeasureQueryLatency() { // GH-90000
+    void shouldMeasureQueryLatency() { 
         long latencyMs = 50L;
         long maxLatencyMs = 100L;
 
-        assertThat(latencyMs).isLessThan(maxLatencyMs); // GH-90000
+        assertThat(latencyMs).isLessThan(maxLatencyMs); 
     }
 
     @Test
     @DisplayName("Should handle concurrent queries")
-    void shouldHandleConcurrentQueries() { // GH-90000
+    void shouldHandleConcurrentQueries() { 
         int concurrentQueries = 10;
         int maxConcurrency = 20;
 
-        assertThat(concurrentQueries).isLessThanOrEqualTo(maxConcurrency); // GH-90000
+        assertThat(concurrentQueries).isLessThanOrEqualTo(maxConcurrency); 
     }
 
     @Test
     @DisplayName("Should measure resource utilization")
-    void shouldMeasureResourceUtilization() { // GH-90000
+    void shouldMeasureResourceUtilization() { 
         double cpuUtilization = 0.75;
         double memoryUtilization = 0.60;
 
-        assertThat(cpuUtilization).isLessThan(1.0); // GH-90000
-        assertThat(memoryUtilization).isLessThan(1.0); // GH-90000
+        assertThat(cpuUtilization).isLessThan(1.0); 
+        assertThat(memoryUtilization).isLessThan(1.0); 
     }
 
     @Test
     @DisplayName("Should handle performance degradation")
-    void shouldHandlePerformanceDegradation() { // GH-90000
+    void shouldHandlePerformanceDegradation() { 
         long baselineLatency = 50L;
         long degradedLatency = 200L;
 
-        assertThat(degradedLatency).isGreaterThan(baselineLatency); // GH-90000
+        assertThat(degradedLatency).isGreaterThan(baselineLatency); 
     }
 
     @Test
     @DisplayName("Should handle performance optimization")
-    void shouldHandlePerformanceOptimization() { // GH-90000
+    void shouldHandlePerformanceOptimization() { 
         long optimizedLatency = 30L;
         long baselineLatency = 50L;
 
-        assertThat(optimizedLatency).isLessThan(baselineLatency); // GH-90000
+        assertThat(optimizedLatency).isLessThan(baselineLatency); 
     }
 }

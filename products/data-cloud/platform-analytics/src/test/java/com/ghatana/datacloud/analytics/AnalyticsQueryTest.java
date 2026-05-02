@@ -24,22 +24,22 @@ class AnalyticsQueryTest {
 
     @Test
     @DisplayName("Should execute analytics queries")
-    void shouldExecuteAnalyticsQueries() { // GH-90000
-        AnalyticsQuery query = AnalyticsQuery.builder() // GH-90000
+    void shouldExecuteAnalyticsQueries() { 
+        AnalyticsQuery query = AnalyticsQuery.builder() 
             .id("query-123")
             .tenantId("tenant-123")
             .queryText("SELECT * FROM products")
             .status("SUBMITTED")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(query).isNotNull(); // GH-90000
+        assertThat(query).isNotNull(); 
         assertThat(query.getQueryText()).contains("SELECT");
         assertThat(query.getStatus()).isEqualTo("SUBMITTED");
     }
 
     @Test
     @DisplayName("Should parse SQL queries")
-    void shouldParseSqlQueries() { // GH-90000
+    void shouldParseSqlQueries() { 
         String queryText = "SELECT name, price FROM products WHERE price > 100";
 
         assertThat(queryText).contains("SELECT");
@@ -49,54 +49,54 @@ class AnalyticsQueryTest {
 
     @Test
     @DisplayName("Should handle query optimization")
-    void shouldHandleQueryOptimization() { // GH-90000
-        QueryPlan plan = QueryPlan.builder() // GH-90000
+    void shouldHandleQueryOptimization() { 
+        QueryPlan plan = QueryPlan.builder() 
             .queryId("query-123")
-            .queryType(QueryType.SELECT) // GH-90000
-            .optimized(true) // GH-90000
-            .estimatedCost(10.0) // GH-90000
-            .build(); // GH-90000
+            .queryType(QueryType.SELECT) 
+            .optimized(true) 
+            .estimatedCost(10.0) 
+            .build(); 
 
-        assertThat(plan).isNotNull(); // GH-90000
-        assertThat(plan.isOptimized()).isTrue(); // GH-90000
-        assertThat(plan.getEstimatedCost()).isPositive(); // GH-90000
+        assertThat(plan).isNotNull(); 
+        assertThat(plan.isOptimized()).isTrue(); 
+        assertThat(plan.getEstimatedCost()).isPositive(); 
     }
 
     @Test
     @DisplayName("Should handle query failures")
-    void shouldHandleQueryFailures() { // GH-90000
-        AnalyticsQuery query = AnalyticsQuery.builder() // GH-90000
+    void shouldHandleQueryFailures() { 
+        AnalyticsQuery query = AnalyticsQuery.builder() 
             .id("query-123")
             .tenantId("tenant-123")
             .queryText("INVALID SQL")
             .status("FAILED")
             .error("Syntax error")
-            .build(); // GH-90000
+            .build(); 
 
         assertThat(query.getStatus()).isEqualTo("FAILED");
-        assertThat(query.getError()).isNotNull(); // GH-90000
+        assertThat(query.getError()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle query caching")
-    void shouldHandleQueryCaching() { // GH-90000
-        QueryResult result = QueryResult.builder() // GH-90000
+    void shouldHandleQueryCaching() { 
+        QueryResult result = QueryResult.builder() 
             .queryId("query-123")
-            .rows(List.of(Map.of("name", "Product A", "price", 100))) // GH-90000
-            .rowCount(1) // GH-90000
-            .executionTimeMs(50L) // GH-90000
-            .build(); // GH-90000
+            .rows(List.of(Map.of("name", "Product A", "price", 100))) 
+            .rowCount(1) 
+            .executionTimeMs(50L) 
+            .build(); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(1); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getRowCount()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("Should handle query timeouts")
-    void shouldHandleQueryTimeouts() { // GH-90000
+    void shouldHandleQueryTimeouts() { 
         long timeoutMs = 5000L;
         long executionTimeMs = 6000L;
 
-        assertThat(executionTimeMs).isGreaterThan(timeoutMs); // GH-90000
+        assertThat(executionTimeMs).isGreaterThan(timeoutMs); 
     }
 }

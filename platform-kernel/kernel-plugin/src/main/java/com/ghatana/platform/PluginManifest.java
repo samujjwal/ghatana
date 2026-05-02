@@ -11,8 +11,15 @@ import java.util.Set;
 /**
  * Plugin manifest containing metadata and capabilities.
  *
+ * <p>The {@code configSchema} field carries a JSON Schema
+ * (as a {@code Map<String, Object>} property graph) that describes the
+ * configuration keys the plugin accepts. The platform validates any
+ * supplied plugin configuration against this schema during the install
+ * lifecycle step. Plugins that do not require configuration may omit it
+ * (defaults to empty map — no schema, no validation).</p>
+ *
  * @doc.type class
- * @doc.purpose Plugin manifest - metadata, capabilities, resource quotas, tier
+ * @doc.purpose Plugin manifest - metadata, capabilities, resource quotas, tier, config schema
  * @doc.layer platform
  * @doc.pattern ValueObject
  * @author Ghatana Platform Team
@@ -28,6 +35,8 @@ public final class PluginManifest {
     private final Set<PluginDependency> dependencies;
     private final PluginResourceQuota resourceQuotas;
     private final Map<String, Object> metadata;
+    /** JSON Schema property graph describing accepted plugin configuration keys. */
+    private final Map<String, Object> configSchema;
 
     private PluginManifest(Builder builder) {
         this.pluginId = Objects.requireNonNull(builder.pluginId, "pluginId");
@@ -38,6 +47,7 @@ public final class PluginManifest {
         this.dependencies = Set.copyOf(Objects.requireNonNullElse(builder.dependencies, Set.of()));
         this.resourceQuotas = Objects.requireNonNullElse(builder.resourceQuotas, PluginResourceQuota.defaults());
         this.metadata = Map.copyOf(Objects.requireNonNullElse(builder.metadata, Map.of()));
+        this.configSchema = Map.copyOf(Objects.requireNonNullElse(builder.configSchema, Map.of()));
     }
 
     /**
@@ -113,6 +123,19 @@ public final class PluginManifest {
     }
 
     /**
+     * Gets the config schema.
+     *
+     * <p>Returns a JSON Schema property graph that the platform uses to
+     * validate plugin configuration at install time. An empty map means
+     * the plugin accepts no configuration (or opts out of schema validation).</p>
+     *
+     * @return immutable JSON Schema property map (may be empty, never null)
+     */
+    public Map<String, Object> getConfigSchema() {
+        return configSchema;
+    }
+
+    /**
      * Checks if the plugin has a specific capability.
      *
      * @param capability the capability to check
@@ -143,6 +166,7 @@ public final class PluginManifest {
         private Set<PluginDependency> dependencies;
         private PluginResourceQuota resourceQuotas;
         private Map<String, Object> metadata;
+        private Map<String, Object> configSchema;
 
         private Builder() {}
 
@@ -183,6 +207,22 @@ public final class PluginManifest {
 
         public Builder metadata(Map<String, Object> metadata) {
             this.metadata = metadata;
+            return this;
+        }
+
+        /**
+         * Sets the JSON Schema property graph for config validation.
+         *
+         * <p>Include keys that describe accepted plugin config properties.
+         * The platform will validate against this schema at install time.
+         * Keys must not include any secret values — use references
+         * (e.g. {@code "$ref": "env:MY_SECRET"}) instead of literal values.</p>
+         *
+         * @param configSchema the JSON Schema property graph
+         * @return this builder
+         */
+        public Builder configSchema(Map<String, Object> configSchema) {
+            this.configSchema = configSchema;
             return this;
         }
 

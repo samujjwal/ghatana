@@ -520,353 +520,353 @@ class FullWorkflowE2ETest extends EventloopTestBase {
         Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId); 
         Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request); 
         Promise<CodeReviewResult> reviewCode(CodeReviewRequest request); 
-        Promise<AepEvent> routeEvent(AepEvent event); // GH-90000
-        Promise<Project> getProject(String projectId, String tenantId); // GH-90000
-        Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId); // GH-90000
-        Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId); // GH-90000
-        Promise<EvolveResult> evolve(EvolveRequest request); // GH-90000
+        Promise<AepEvent> routeEvent(AepEvent event); 
+        Promise<Project> getProject(String projectId, String tenantId); 
+        Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId); 
+        Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId); 
+        Promise<EvolveResult> evolve(EvolveRequest request); 
     }
 
-    record CreateProjectRequest(String tenantId, String projectName, String intent, List<String> techStack) { // GH-90000
-        static Builder builder() { return new Builder(); } // GH-90000
+    record CreateProjectRequest(String tenantId, String projectName, String intent, List<String> techStack) { 
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String tenantId, projectName, intent;
-            private List<String> techStack = List.of(); // GH-90000
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder projectName(String v) { projectName = v; return this; } // GH-90000
-            Builder intent(String v) { intent = v; return this; } // GH-90000
-            Builder techStack(List<String> v) { techStack = v; return this; } // GH-90000
-            CreateProjectRequest build() { return new CreateProjectRequest(tenantId, projectName, intent, techStack); } // GH-90000
+            private List<String> techStack = List.of(); 
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder projectName(String v) { projectName = v; return this; } 
+            Builder intent(String v) { intent = v; return this; } 
+            Builder techStack(List<String> v) { techStack = v; return this; } 
+            CreateProjectRequest build() { return new CreateProjectRequest(tenantId, projectName, intent, techStack); } 
         }
     }
 
-    record Project( // GH-90000
+    record Project( 
             String id, String name, String tenantId, String status, String currentPhase,
             List<String> completedPhases, List<String> techStack, Instant createdAt
     ) {}
 
-    record PhaseExecutionRequest( // GH-90000
+    record PhaseExecutionRequest( 
             String projectId, String phase, String tenantId, String agentId, Map<String, String> artifacts
     ) {
-        static Builder builder() { return new Builder(); } // GH-90000
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String projectId, phase, tenantId, agentId;
-            private Map<String, String> artifacts = Map.of(); // GH-90000
-            Builder projectId(String v) { projectId = v; return this; } // GH-90000
-            Builder phase(String v) { phase = v; return this; } // GH-90000
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder agentId(String v) { agentId = v; return this; } // GH-90000
-            Builder artifacts(Map<String, String> v) { artifacts = v; return this; } // GH-90000
-            PhaseExecutionRequest build() { return new PhaseExecutionRequest(projectId, phase, tenantId, agentId, artifacts); } // GH-90000
+            private Map<String, String> artifacts = Map.of(); 
+            Builder projectId(String v) { projectId = v; return this; } 
+            Builder phase(String v) { phase = v; return this; } 
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder agentId(String v) { agentId = v; return this; } 
+            Builder artifacts(Map<String, String> v) { artifacts = v; return this; } 
+            PhaseExecutionRequest build() { return new PhaseExecutionRequest(projectId, phase, tenantId, agentId, artifacts); } 
         }
     }
 
-    record PhaseResult(boolean success, String phase, Map<String, Object> artifacts, long executionTimeMs) {} // GH-90000
+    record PhaseResult(boolean success, String phase, Map<String, Object> artifacts, long executionTimeMs) {} 
 
-    record AgentRegistrationRequest(String tenantId, String agentConfigPath) { // GH-90000
-        static Builder builder() { return new Builder(); } // GH-90000
+    record AgentRegistrationRequest(String tenantId, String agentConfigPath) { 
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String tenantId, agentConfigPath;
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder agentConfigPath(String v) { agentConfigPath = v; return this; } // GH-90000
-            AgentRegistrationRequest build() { return new AgentRegistrationRequest(tenantId, agentConfigPath); } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder agentConfigPath(String v) { agentConfigPath = v; return this; } 
+            AgentRegistrationRequest build() { return new AgentRegistrationRequest(tenantId, agentConfigPath); } 
         }
     }
 
-    record AgentRegistrationResult(String agentId, String agentName, List<String> capabilities) {} // GH-90000
+    record AgentRegistrationResult(String agentId, String agentName, List<String> capabilities) {} 
 
-    record CreateWorkflowRequest( // GH-90000
+    record CreateWorkflowRequest( 
             String tenantId, String projectId, String name, String description, String objective
     ) {
-        static Builder builder() { return new Builder(); } // GH-90000
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String tenantId, projectId, name, description, objective;
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder projectId(String v) { projectId = v; return this; } // GH-90000
-            Builder name(String v) { name = v; return this; } // GH-90000
-            Builder description(String v) { description = v; return this; } // GH-90000
-            Builder objective(String v) { objective = v; return this; } // GH-90000
-            CreateWorkflowRequest build() { return new CreateWorkflowRequest(tenantId, projectId, name, description, objective); } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder projectId(String v) { projectId = v; return this; } 
+            Builder name(String v) { name = v; return this; } 
+            Builder description(String v) { description = v; return this; } 
+            Builder objective(String v) { objective = v; return this; } 
+            CreateWorkflowRequest build() { return new CreateWorkflowRequest(tenantId, projectId, name, description, objective); } 
         }
     }
 
-    record AiWorkflow(String id, String name, String status, int completedSteps) {} // GH-90000
+    record AiWorkflow(String id, String name, String status, int completedSteps) {} 
 
-    record AiPlan(String id, String status, List<String> steps) {} // GH-90000
+    record AiPlan(String id, String status, List<String> steps) {} 
 
-    record CodeGenerationRequest( // GH-90000
+    record CodeGenerationRequest( 
             String tenantId, String agentId, String language, String framework,
             String description, List<String> requirements
     ) {
-        static Builder builder() { return new Builder(); } // GH-90000
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String tenantId, agentId, language, framework, description;
-            private List<String> requirements = List.of(); // GH-90000
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder agentId(String v) { agentId = v; return this; } // GH-90000
-            Builder language(String v) { language = v; return this; } // GH-90000
-            Builder framework(String v) { framework = v; return this; } // GH-90000
-            Builder description(String v) { description = v; return this; } // GH-90000
-            Builder requirements(List<String> v) { requirements = v; return this; } // GH-90000
-            CodeGenerationRequest build() { return new CodeGenerationRequest(tenantId, agentId, language, framework, description, requirements); } // GH-90000
+            private List<String> requirements = List.of(); 
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder agentId(String v) { agentId = v; return this; } 
+            Builder language(String v) { language = v; return this; } 
+            Builder framework(String v) { framework = v; return this; } 
+            Builder description(String v) { description = v; return this; } 
+            Builder requirements(List<String> v) { requirements = v; return this; } 
+            CodeGenerationRequest build() { return new CodeGenerationRequest(tenantId, agentId, language, framework, description, requirements); } 
         }
     }
 
-    record CodeGenerationResult(boolean success, Map<String, String> generatedFiles, String language) {} // GH-90000
+    record CodeGenerationResult(boolean success, Map<String, String> generatedFiles, String language) {} 
 
-    record CodeReviewRequest(String tenantId, String agentId, String code, String language, String reviewType) { // GH-90000
-        static Builder builder() { return new Builder(); } // GH-90000
+    record CodeReviewRequest(String tenantId, String agentId, String code, String language, String reviewType) { 
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String tenantId, agentId, code, language, reviewType;
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder agentId(String v) { agentId = v; return this; } // GH-90000
-            Builder code(String v) { code = v; return this; } // GH-90000
-            Builder language(String v) { language = v; return this; } // GH-90000
-            Builder reviewType(String v) { reviewType = v; return this; } // GH-90000
-            CodeReviewRequest build() { return new CodeReviewRequest(tenantId, agentId, code, language, reviewType); } // GH-90000
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder agentId(String v) { agentId = v; return this; } 
+            Builder code(String v) { code = v; return this; } 
+            Builder language(String v) { language = v; return this; } 
+            Builder reviewType(String v) { reviewType = v; return this; } 
+            CodeReviewRequest build() { return new CodeReviewRequest(tenantId, agentId, code, language, reviewType); } 
         }
     }
 
-    record CodeReviewResult(boolean success, List<String> issues, int overallScore) {} // GH-90000
+    record CodeReviewResult(boolean success, List<String> issues, int overallScore) {} 
 
-    record AepEvent(String eventType, String tenantId, String correlationId, Map<String, Object> payload) { // GH-90000
-        static Builder builder() { return new Builder(); } // GH-90000
+    record AepEvent(String eventType, String tenantId, String correlationId, Map<String, Object> payload) { 
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String eventType, tenantId, correlationId;
-            private Map<String, Object> payload = Map.of(); // GH-90000
-            Builder eventType(String v) { eventType = v; return this; } // GH-90000
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder correlationId(String v) { correlationId = v; return this; } // GH-90000
-            Builder payload(Map<String, Object> v) { payload = v; return this; } // GH-90000
-            AepEvent build() { return new AepEvent(eventType, tenantId, correlationId, payload); } // GH-90000
+            private Map<String, Object> payload = Map.of(); 
+            Builder eventType(String v) { eventType = v; return this; } 
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder correlationId(String v) { correlationId = v; return this; } 
+            Builder payload(Map<String, Object> v) { payload = v; return this; } 
+            AepEvent build() { return new AepEvent(eventType, tenantId, correlationId, payload); } 
         }
     }
 
-    record ProjectMetrics( // GH-90000
+    record ProjectMetrics( 
             int totalPhases, int completedPhases, long totalExecutionTimeMs,
             int agentInvocations, int codeFilesGenerated, int testCoverage, int totalTests
     ) {}
 
-    record DeploymentHealthCheck(boolean healthy, long uptimeSeconds, int memoryUsageMb) {} // GH-90000
+    record DeploymentHealthCheck(boolean healthy, long uptimeSeconds, int memoryUsageMb) {} 
 
-    record EvolveRequest(String projectId, String tenantId, String agentId, List<String> newFeatures) { // GH-90000
-        static Builder builder() { return new Builder(); } // GH-90000
+    record EvolveRequest(String projectId, String tenantId, String agentId, List<String> newFeatures) { 
+        static Builder builder() { return new Builder(); } 
         static class Builder {
             private String projectId, tenantId, agentId;
-            private List<String> newFeatures = List.of(); // GH-90000
-            Builder projectId(String v) { projectId = v; return this; } // GH-90000
-            Builder tenantId(String v) { tenantId = v; return this; } // GH-90000
-            Builder agentId(String v) { agentId = v; return this; } // GH-90000
-            Builder newFeatures(List<String> v) { newFeatures = v; return this; } // GH-90000
-            EvolveRequest build() { return new EvolveRequest(projectId, tenantId, agentId, newFeatures); } // GH-90000
+            private List<String> newFeatures = List.of(); 
+            Builder projectId(String v) { projectId = v; return this; } 
+            Builder tenantId(String v) { tenantId = v; return this; } 
+            Builder agentId(String v) { agentId = v; return this; } 
+            Builder newFeatures(List<String> v) { newFeatures = v; return this; } 
+            EvolveRequest build() { return new EvolveRequest(projectId, tenantId, agentId, newFeatures); } 
         }
     }
 
-    record EvolveResult(boolean success, List<String> addedFeatures, List<String> modifiedFiles) {} // GH-90000
+    record EvolveResult(boolean success, List<String> addedFeatures, List<String> modifiedFiles) {} 
 
     static class MockFullWorkflowPlatform implements FullWorkflowPlatform {
-        private final Map<String, Project> projects = new ConcurrentHashMap<>(); // GH-90000
-        private final Map<String, Map<String, AgentRegistrationResult>> tenantAgents = new ConcurrentHashMap<>(); // GH-90000
-        private final Map<String, AiWorkflow> workflows = new ConcurrentHashMap<>(); // GH-90000
-        private final Map<String, AiPlan> plans = new ConcurrentHashMap<>(); // GH-90000
-        private final Map<String, ProjectMetrics> projectMetrics = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, Project> projects = new ConcurrentHashMap<>(); 
+        private final Map<String, Map<String, AgentRegistrationResult>> tenantAgents = new ConcurrentHashMap<>(); 
+        private final Map<String, AiWorkflow> workflows = new ConcurrentHashMap<>(); 
+        private final Map<String, AiPlan> plans = new ConcurrentHashMap<>(); 
+        private final Map<String, ProjectMetrics> projectMetrics = new ConcurrentHashMap<>(); 
 
         @Override
-        public Promise<Project> createProject(CreateProjectRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                String id = UUID.randomUUID().toString(); // GH-90000
-                Project project = new Project( // GH-90000
-                        id, request.projectName(), request.tenantId(), "CREATED", "PLANNING", // GH-90000
-                        List.of(), request.techStack(), Instant.now() // GH-90000
+        public Promise<Project> createProject(CreateProjectRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                String id = UUID.randomUUID().toString(); 
+                Project project = new Project( 
+                        id, request.projectName(), request.tenantId(), "CREATED", "PLANNING", 
+                        List.of(), request.techStack(), Instant.now() 
                 );
-                projects.put(id, project); // GH-90000
-                projectMetrics.put(id, new ProjectMetrics(6, 0, 0, 0, 0, 0, 0)); // GH-90000
+                projects.put(id, project); 
+                projectMetrics.put(id, new ProjectMetrics(6, 0, 0, 0, 0, 0, 0)); 
                 return project;
             });
         }
 
         @Override
-        public Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                String agentId = UUID.randomUUID().toString(); // GH-90000
-                AgentRegistrationResult result = switch (request.agentConfigPath()) { // GH-90000
-                    case "agents/java-expert.yaml" -> new AgentRegistrationResult( // GH-90000
-                            agentId, "Java Expert", List.of("code-analysis", "architecture-review") // GH-90000
+        public Promise<AgentRegistrationResult> registerAgent(AgentRegistrationRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                String agentId = UUID.randomUUID().toString(); 
+                AgentRegistrationResult result = switch (request.agentConfigPath()) { 
+                    case "agents/java-expert.yaml" -> new AgentRegistrationResult( 
+                            agentId, "Java Expert", List.of("code-analysis", "architecture-review") 
                     );
-                    case "agents/code-reviewer.yaml" -> new AgentRegistrationResult( // GH-90000
-                            agentId, "Code Reviewer", List.of("review", "analysis") // GH-90000
+                    case "agents/code-reviewer.yaml" -> new AgentRegistrationResult( 
+                            agentId, "Code Reviewer", List.of("review", "analysis") 
                     );
-                    default -> new AgentRegistrationResult(agentId, "Unknown Agent", List.of()); // GH-90000
+                    default -> new AgentRegistrationResult(agentId, "Unknown Agent", List.of()); 
                 };
-                tenantAgents.computeIfAbsent(request.tenantId(), k -> new ConcurrentHashMap<>()).put(agentId, result); // GH-90000
+                tenantAgents.computeIfAbsent(request.tenantId(), k -> new ConcurrentHashMap<>()).put(agentId, result); 
                 return result;
             });
         }
 
         @Override
-        public Promise<PhaseResult> executePhase(PhaseExecutionRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                long startTime = System.currentTimeMillis(); // GH-90000
-                Thread.sleep(50); // GH-90000
+        public Promise<PhaseResult> executePhase(PhaseExecutionRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                long startTime = System.currentTimeMillis(); 
+                Thread.sleep(50); 
 
-                Map<String, Object> artifacts = switch (request.phase()) { // GH-90000
-                    case "PLANNING" -> Map.of("requirements", "User stories", "architecture", "System design", "techStack", "Java, Spring Boot"); // GH-90000
-                    case "DESIGN" -> Map.of("apiSpec", "OpenAPI spec", "dataModel", "Entity models", "sequenceDiagram", "UML diagram"); // GH-90000
-                    case "IMPLEMENTATION" -> request.artifacts().isEmpty() ? // GH-90000
-                            Map.of("sourceCode", "Java/TS code", "buildConfig", "Gradle/npm") : // GH-90000
-                            Map.of("sourceCode", request.artifacts(), "buildConfig", "Gradle/npm"); // GH-90000
-                    case "TESTING" -> Map.of("testResults", "All passed", "coverageReport", "85%", "testMetrics", "100 tests passed"); // GH-90000
-                    case "DEPLOY" -> Map.of("dockerImage", "ghatana/auth:1.0.0", "k8sManifest", "k8s.yaml", "deploymentConfig", "config"); // GH-90000
-                    default -> Map.of(); // GH-90000
+                Map<String, Object> artifacts = switch (request.phase()) { 
+                    case "PLANNING" -> Map.of("requirements", "User stories", "architecture", "System design", "techStack", "Java, Spring Boot"); 
+                    case "DESIGN" -> Map.of("apiSpec", "OpenAPI spec", "dataModel", "Entity models", "sequenceDiagram", "UML diagram"); 
+                    case "IMPLEMENTATION" -> request.artifacts().isEmpty() ? 
+                            Map.of("sourceCode", "Java/TS code", "buildConfig", "Gradle/npm") : 
+                            Map.of("sourceCode", request.artifacts(), "buildConfig", "Gradle/npm"); 
+                    case "TESTING" -> Map.of("testResults", "All passed", "coverageReport", "85%", "testMetrics", "100 tests passed"); 
+                    case "DEPLOY" -> Map.of("dockerImage", "ghatana/auth:1.0.0", "k8sManifest", "k8s.yaml", "deploymentConfig", "config"); 
+                    default -> Map.of(); 
                 };
 
                 // Update project
-                Project current = projects.get(request.projectId()); // GH-90000
-                List<String> completed = new java.util.ArrayList<>(current.completedPhases()); // GH-90000
-                completed.add(request.phase()); // GH-90000
-                String newStatus = completed.size() >= 6 ? "COMPLETED" : "IN_PROGRESS"; // GH-90000
-                String nextPhase = completed.size() < 6 ? // GH-90000
-                        List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE").get(completed.size()) : // GH-90000
+                Project current = projects.get(request.projectId()); 
+                List<String> completed = new java.util.ArrayList<>(current.completedPhases()); 
+                completed.add(request.phase()); 
+                String newStatus = completed.size() >= 6 ? "COMPLETED" : "IN_PROGRESS"; 
+                String nextPhase = completed.size() < 6 ? 
+                        List.of("PLANNING", "DESIGN", "IMPLEMENTATION", "TESTING", "DEPLOY", "EVOLVE").get(completed.size()) : 
                         "COMPLETED";
 
-                projects.put(request.projectId(), new Project( // GH-90000
-                        current.id(), current.name(), current.tenantId(), newStatus, nextPhase, // GH-90000
-                        completed, current.techStack(), current.createdAt() // GH-90000
+                projects.put(request.projectId(), new Project( 
+                        current.id(), current.name(), current.tenantId(), newStatus, nextPhase, 
+                        completed, current.techStack(), current.createdAt() 
                 ));
 
                 // Update metrics
-                ProjectMetrics metrics = projectMetrics.get(request.projectId()); // GH-90000
-                projectMetrics.put(request.projectId(), new ProjectMetrics( // GH-90000
-                        6, completed.size(), metrics.totalExecutionTimeMs() + (System.currentTimeMillis() - startTime), // GH-90000
-                        metrics.agentInvocations() + 3, metrics.codeFilesGenerated() + 5, 85, metrics.totalTests() + 20 // GH-90000
+                ProjectMetrics metrics = projectMetrics.get(request.projectId()); 
+                projectMetrics.put(request.projectId(), new ProjectMetrics( 
+                        6, completed.size(), metrics.totalExecutionTimeMs() + (System.currentTimeMillis() - startTime), 
+                        metrics.agentInvocations() + 3, metrics.codeFilesGenerated() + 5, 85, metrics.totalTests() + 20 
                 ));
 
-                return new PhaseResult(true, request.phase(), artifacts, System.currentTimeMillis() - startTime); // GH-90000
+                return new PhaseResult(true, request.phase(), artifacts, System.currentTimeMillis() - startTime); 
             });
         }
 
         @Override
-        public Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                String id = UUID.randomUUID().toString(); // GH-90000
-                AiWorkflow workflow = new AiWorkflow(id, request.name(), "DRAFT", 0); // GH-90000
-                workflows.put(id, workflow); // GH-90000
+        public Promise<AiWorkflow> createWorkflow(CreateWorkflowRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                String id = UUID.randomUUID().toString(); 
+                AiWorkflow workflow = new AiWorkflow(id, request.name(), "DRAFT", 0); 
+                workflows.put(id, workflow); 
                 return workflow;
             });
         }
 
         @Override
-        public Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                String planId = UUID.randomUUID().toString(); // GH-90000
-                AiPlan plan = new AiPlan(planId, "DRAFT", List.of("step-1", "step-2", "step-3")); // GH-90000
-                plans.put(planId, plan); // GH-90000
+        public Promise<AiPlan> generatePlan(String workflowId, String tenantId, String objective) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                String planId = UUID.randomUUID().toString(); 
+                AiPlan plan = new AiPlan(planId, "DRAFT", List.of("step-1", "step-2", "step-3")); 
+                plans.put(planId, plan); 
                 return plan;
             });
         }
 
         @Override
-        public Promise<AiPlan> approvePlan(String planId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                AiPlan plan = plans.get(planId); // GH-90000
-                AiPlan updated = new AiPlan(planId, "APPROVED", plan.steps()); // GH-90000
-                plans.put(planId, updated); // GH-90000
+        public Promise<AiPlan> approvePlan(String planId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                AiPlan plan = plans.get(planId); 
+                AiPlan updated = new AiPlan(planId, "APPROVED", plan.steps()); 
+                plans.put(planId, updated); 
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", 1); // GH-90000
-                workflows.put(workflowId, updated); // GH-90000
+        public Promise<AiWorkflow> startWorkflow(String workflowId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                AiWorkflow workflow = workflows.get(workflowId); 
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", 1); 
+                workflows.put(workflowId, updated); 
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "PAUSED", workflow.completedSteps()); // GH-90000
-                workflows.put(workflowId, updated); // GH-90000
+        public Promise<AiWorkflow> pauseWorkflow(String workflowId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                AiWorkflow workflow = workflows.get(workflowId); 
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "PAUSED", workflow.completedSteps()); 
+                workflows.put(workflowId, updated); 
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", workflow.completedSteps()); // GH-90000
-                workflows.put(workflowId, updated); // GH-90000
+        public Promise<AiWorkflow> resumeWorkflow(String workflowId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                AiWorkflow workflow = workflows.get(workflowId); 
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "IN_PROGRESS", workflow.completedSteps()); 
+                workflows.put(workflowId, updated); 
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                AiWorkflow workflow = workflows.get(workflowId); // GH-90000
-                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "CANCELLED", workflow.completedSteps()); // GH-90000
-                workflows.put(workflowId, updated); // GH-90000
+        public Promise<AiWorkflow> cancelWorkflow(String workflowId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                AiWorkflow workflow = workflows.get(workflowId); 
+                AiWorkflow updated = new AiWorkflow(workflowId, workflow.name(), "CANCELLED", workflow.completedSteps()); 
+                workflows.put(workflowId, updated); 
                 return updated;
             });
         }
 
         @Override
-        public Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId) { // GH-90000
-            return Promise.of(workflows.get(workflowId)); // GH-90000
+        public Promise<AiWorkflow> getWorkflow(String workflowId, String tenantId) { 
+            return Promise.of(workflows.get(workflowId)); 
         }
 
         @Override
-        public Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                Map<String, String> files = new java.util.LinkedHashMap<>(); // GH-90000
-                files.put("AuthController.java", "public class AuthController { /* generated */ }"); // GH-90000
-                files.put("AuthService.java", "public class AuthService { /* generated */ }"); // GH-90000
-                return new CodeGenerationResult(true, files, request.language()); // GH-90000
+        public Promise<CodeGenerationResult> generateCode(CodeGenerationRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                Map<String, String> files = new java.util.LinkedHashMap<>(); 
+                files.put("AuthController.java", "public class AuthController { /* generated */ }"); 
+                files.put("AuthService.java", "public class AuthService { /* generated */ }"); 
+                return new CodeGenerationResult(true, files, request.language()); 
             });
         }
 
         @Override
-        public Promise<CodeReviewResult> reviewCode(CodeReviewRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                return new CodeReviewResult(true, List.of("Issue 1", "Issue 2"), 85); // GH-90000
+        public Promise<CodeReviewResult> reviewCode(CodeReviewRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                return new CodeReviewResult(true, List.of("Issue 1", "Issue 2"), 85); 
             });
         }
 
         @Override
-        public Promise<AepEvent> routeEvent(AepEvent event) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                String outputType = event.eventType().replace(".requested", ".completed"); // GH-90000
-                return new AepEvent(outputType, event.tenantId(), event.correlationId(), // GH-90000
-                        Map.of("status", "success")); // GH-90000
+        public Promise<AepEvent> routeEvent(AepEvent event) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                String outputType = event.eventType().replace(".requested", ".completed"); 
+                return new AepEvent(outputType, event.tenantId(), event.correlationId(), 
+                        Map.of("status", "success")); 
             });
         }
 
         @Override
-        public Promise<Project> getProject(String projectId, String tenantId) { // GH-90000
-            return Promise.of(projects.get(projectId)); // GH-90000
+        public Promise<Project> getProject(String projectId, String tenantId) { 
+            return Promise.of(projects.get(projectId)); 
         }
 
         @Override
-        public Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId) { // GH-90000
-            return Promise.of(projectMetrics.get(projectId)); // GH-90000
+        public Promise<ProjectMetrics> getProjectMetrics(String projectId, String tenantId) { 
+            return Promise.of(projectMetrics.get(projectId)); 
         }
 
         @Override
-        public Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                return new DeploymentHealthCheck(true, 300, 256); // GH-90000
+        public Promise<DeploymentHealthCheck> checkDeploymentHealth(String projectId, String tenantId) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                return new DeploymentHealthCheck(true, 300, 256); 
             });
         }
 
         @Override
-        public Promise<EvolveResult> evolve(EvolveRequest request) { // GH-90000
-            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { // GH-90000
-                return new EvolveResult(true, request.newFeatures(), List.of("file1.java", "file2.java")); // GH-90000
+        public Promise<EvolveResult> evolve(EvolveRequest request) { 
+            return Promise.ofBlocking(java.util.concurrent.ForkJoinPool.commonPool(), () -> { 
+                return new EvolveResult(true, request.newFeatures(), List.of("file1.java", "file2.java")); 
             });
         }
     }

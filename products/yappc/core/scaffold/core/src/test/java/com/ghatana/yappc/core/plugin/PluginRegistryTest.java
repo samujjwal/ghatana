@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,127 +42,127 @@ class PluginRegistryTest {
     private PluginMetadata metadata;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new PluginRegistry(); // GH-90000
-        mockPlugin = mock(YappcPlugin.class); // GH-90000
+    void setUp() { 
+        registry = new PluginRegistry(); 
+        mockPlugin = mock(YappcPlugin.class); 
 
-        metadata = PluginMetadata.builder() // GH-90000
+        metadata = PluginMetadata.builder() 
                 .id("test-plugin")
                 .name("Test Plugin")
                 .version("1.0.0")
-                .capabilities(List.of(PluginCapability.BUILD_SYSTEM)) // GH-90000
-                .supportedLanguages(List.of("java", "kotlin")) // GH-90000
+                .capabilities(List.of(PluginCapability.BUILD_SYSTEM)) 
+                .supportedLanguages(List.of("java", "kotlin")) 
                 .supportedBuildSystems(List.of("gradle"))
-                .build(); // GH-90000
+                .build(); 
 
-        when(mockPlugin.getMetadata()).thenReturn(metadata); // GH-90000
+        when(mockPlugin.getMetadata()).thenReturn(metadata); 
     }
 
     @Test
-    void testRegisterPlugin() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testRegisterPlugin() throws PluginException { 
+        registry.register(mockPlugin); 
 
         assertTrue(registry.isRegistered("test-plugin"));
-        assertEquals(1, registry.getPluginCount()); // GH-90000
+        assertEquals(1, registry.getPluginCount()); 
     }
 
     @Test
-    void testRegisterDuplicatePluginThrows() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testRegisterDuplicatePluginThrows() throws PluginException { 
+        registry.register(mockPlugin); 
 
-        assertThrows(PluginException.class, () -> { // GH-90000
-            registry.register(mockPlugin); // GH-90000
+        assertThrows(PluginException.class, () -> { 
+            registry.register(mockPlugin); 
         });
     }
 
     @Test
-    void testUnregisterPlugin() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testUnregisterPlugin() throws PluginException { 
+        registry.register(mockPlugin); 
         assertTrue(registry.unregister("test-plugin"));
         assertFalse(registry.isRegistered("test-plugin"));
-        assertEquals(0, registry.getPluginCount()); // GH-90000
+        assertEquals(0, registry.getPluginCount()); 
     }
 
     @Test
-    void testUnregisterNonExistentPlugin() { // GH-90000
+    void testUnregisterNonExistentPlugin() { 
         assertFalse(registry.unregister("non-existent"));
     }
 
     @Test
-    void testGetPlugin() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetPlugin() throws PluginException { 
+        registry.register(mockPlugin); 
 
         assertTrue(registry.getPlugin("test-plugin").isPresent());
         assertEquals(mockPlugin, registry.getPlugin("test-plugin").get());
     }
 
     @Test
-    void testGetNonExistentPlugin() { // GH-90000
+    void testGetNonExistentPlugin() { 
         assertTrue(registry.getPlugin("non-existent").isEmpty());
     }
 
     @Test
-    void testGetAllPlugins() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetAllPlugins() throws PluginException { 
+        registry.register(mockPlugin); 
 
-        List<YappcPlugin> plugins = registry.getAllPlugins(); // GH-90000
-        assertEquals(1, plugins.size()); // GH-90000
-        assertEquals(mockPlugin, plugins.get(0)); // GH-90000
+        List<YappcPlugin> plugins = registry.getAllPlugins(); 
+        assertEquals(1, plugins.size()); 
+        assertEquals(mockPlugin, plugins.get(0)); 
     }
 
     @Test
-    void testGetPluginsByCapability() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetPluginsByCapability() throws PluginException { 
+        registry.register(mockPlugin); 
 
-        List<YappcPlugin> plugins = registry.getPluginsByCapability(PluginCapability.BUILD_SYSTEM); // GH-90000
-        assertEquals(1, plugins.size()); // GH-90000
-        assertEquals(mockPlugin, plugins.get(0)); // GH-90000
+        List<YappcPlugin> plugins = registry.getPluginsByCapability(PluginCapability.BUILD_SYSTEM); 
+        assertEquals(1, plugins.size()); 
+        assertEquals(mockPlugin, plugins.get(0)); 
 
-        List<YappcPlugin> emptyList = registry.getPluginsByCapability(PluginCapability.ANALYZER); // GH-90000
-        assertTrue(emptyList.isEmpty()); // GH-90000
+        List<YappcPlugin> emptyList = registry.getPluginsByCapability(PluginCapability.ANALYZER); 
+        assertTrue(emptyList.isEmpty()); 
     }
 
     @Test
-    void testGetPluginsByLanguage() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetPluginsByLanguage() throws PluginException { 
+        registry.register(mockPlugin); 
 
         List<YappcPlugin> javaPlugins = registry.getPluginsByLanguage("java");
-        assertEquals(1, javaPlugins.size()); // GH-90000
+        assertEquals(1, javaPlugins.size()); 
 
         List<YappcPlugin> kotlinPlugins = registry.getPluginsByLanguage("kotlin");
-        assertEquals(1, kotlinPlugins.size()); // GH-90000
+        assertEquals(1, kotlinPlugins.size()); 
 
         List<YappcPlugin> pythonPlugins = registry.getPluginsByLanguage("python");
-        assertTrue(pythonPlugins.isEmpty()); // GH-90000
+        assertTrue(pythonPlugins.isEmpty()); 
     }
 
     @Test
-    void testGetPluginsByBuildSystem() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetPluginsByBuildSystem() throws PluginException { 
+        registry.register(mockPlugin); 
 
         List<YappcPlugin> gradlePlugins = registry.getPluginsByBuildSystem("gradle");
-        assertEquals(1, gradlePlugins.size()); // GH-90000
+        assertEquals(1, gradlePlugins.size()); 
 
         List<YappcPlugin> mavenPlugins = registry.getPluginsByBuildSystem("maven");
-        assertTrue(mavenPlugins.isEmpty()); // GH-90000
+        assertTrue(mavenPlugins.isEmpty()); 
     }
 
     @Test
-    void testClear() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
-        assertEquals(1, registry.getPluginCount()); // GH-90000
+    void testClear() throws PluginException { 
+        registry.register(mockPlugin); 
+        assertEquals(1, registry.getPluginCount()); 
 
-        registry.clear(); // GH-90000
-        assertEquals(0, registry.getPluginCount()); // GH-90000
+        registry.clear(); 
+        assertEquals(0, registry.getPluginCount()); 
         assertFalse(registry.isRegistered("test-plugin"));
     }
 
     @Test
-    void testGetAllMetadata() throws PluginException { // GH-90000
-        registry.register(mockPlugin); // GH-90000
+    void testGetAllMetadata() throws PluginException { 
+        registry.register(mockPlugin); 
 
-        List<PluginMetadata> metadataList = registry.getAllMetadata(); // GH-90000
-        assertEquals(1, metadataList.size()); // GH-90000
-        assertEquals(metadata, metadataList.get(0)); // GH-90000
+        List<PluginMetadata> metadataList = registry.getAllMetadata(); 
+        assertEquals(1, metadataList.size()); 
+        assertEquals(metadata, metadataList.get(0)); 
     }
 }

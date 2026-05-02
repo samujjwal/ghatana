@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.structural;
@@ -17,14 +17,14 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for architectural constraint compliance (SC002). // GH-90000
+ * Tests for architectural constraint compliance (SC002). 
  *
  * @doc.type class
  * @doc.purpose Architectural constraint compliance tests
  * @doc.layer product
  * @doc.pattern Structural Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("ArchitecturalConstraint – Constraint Compliance (SC002)")
 class ArchitecturalConstraintTest extends EventloopTestBase {
 
@@ -34,26 +34,26 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: domain_layer_independent")
-        void domainLayerIndependent() { // GH-90000
+        void domainLayerIndependent() { 
             // Domain layer should not depend on infrastructure
             boolean domainDependsOnInfra = false;
-            assertThat(domainDependsOnInfra).isFalse(); // GH-90000
+            assertThat(domainDependsOnInfra).isFalse(); 
         }
 
         @Test
         @DisplayName("[SC002]: application_layer_uses_domain")
-        void applicationLayerUsesDomain() { // GH-90000
+        void applicationLayerUsesDomain() { 
             // Application layer should only use domain layer
             boolean appUsesOnlyDomain = true;
-            assertThat(appUsesOnlyDomain).isTrue(); // GH-90000
+            assertThat(appUsesOnlyDomain).isTrue(); 
         }
 
         @Test
         @DisplayName("[SC002]: infrastructure_layer_isolated")
-        void infrastructureLayerIsolated() { // GH-90000
+        void infrastructureLayerIsolated() { 
             // Infrastructure implementations should be replaceable
             boolean infraIsReplaceable = true;
-            assertThat(infraIsReplaceable).isTrue(); // GH-90000
+            assertThat(infraIsReplaceable).isTrue(); 
         }
     }
 
@@ -63,18 +63,18 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: no_external_framework_leakage")
-        void noExternalFrameworkLeakage() { // GH-90000
+        void noExternalFrameworkLeakage() { 
             // External framework types should not appear in domain
             boolean frameworkLeaked = false;
-            assertThat(frameworkLeaked).isFalse(); // GH-90000
+            assertThat(frameworkLeaked).isFalse(); 
         }
 
         @Test
         @DisplayName("[SC002]: only_constructor_injection_used")
-        void onlyConstructorInjectionUsed() { // GH-90000
+        void onlyConstructorInjectionUsed() { 
             // Field injection should not be used
             boolean fieldInjectionUsed = false;
-            assertThat(fieldInjectionUsed).isFalse(); // GH-90000
+            assertThat(fieldInjectionUsed).isFalse(); 
         }
     }
 
@@ -84,9 +84,9 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: interfaces_named_correctly")
-        void interfacesNamedCorrectly() { // GH-90000
+        void interfacesNamedCorrectly() { 
             // Service interfaces should end with Service
-            List<String> serviceInterfaces = List.of( // GH-90000
+            List<String> serviceInterfaces = List.of( 
                 "EntityService", "QueryService", "EventService", "ReportService"
             );
 
@@ -95,13 +95,13 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: implementations_named_correctly")
-        void implementationsNamedCorrectly() { // GH-90000
+        void implementationsNamedCorrectly() { 
             // Implementations should indicate type
-            List<String> implementations = List.of( // GH-90000
+            List<String> implementations = List.of( 
                 "EntityServiceImpl", "PostgresEntityRepository", "ActivejHttpServer"
             );
 
-            assertThat(implementations).allMatch(name -> // GH-90000
+            assertThat(implementations).allMatch(name -> 
                 name.endsWith("Impl") ||
                 name.endsWith("Repository") ||
                 name.endsWith("Server") ||
@@ -111,9 +111,9 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: test_classes_follow_naming")
-        void testClassesFollowNaming() { // GH-90000
+        void testClassesFollowNaming() { 
             // Test classes should end with Test
-            List<String> testClasses = List.of( // GH-90000
+            List<String> testClasses = List.of( 
                 "EntityServiceTest", "QueryIntegrationTest", "BrainStateTransitionTest"
             );
 
@@ -127,24 +127,24 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: public_apis_have_doc_tags")
-        void publicApisHaveDocTags() { // GH-90000
+        void publicApisHaveDocTags() { 
             // Required tags: @doc.type, @doc.purpose, @doc.layer, @doc.pattern
-            Map<String, List<String>> requiredTags = Map.of( // GH-90000
-                "type", List.of("class", "interface", "enum"), // GH-90000
-                "purpose", List.of(), // GH-90000
-                "layer", List.of("product", "platform", "infrastructure"), // GH-90000
-                "pattern", List.of() // GH-90000
+            Map<String, List<String>> requiredTags = Map.of( 
+                "type", List.of("class", "interface", "enum"), 
+                "purpose", List.of(), 
+                "layer", List.of("product", "platform", "infrastructure"), 
+                "pattern", List.of() 
             );
 
-            assertThat(requiredTags).containsKeys("type", "purpose", "layer", "pattern"); // GH-90000
+            assertThat(requiredTags).containsKeys("type", "purpose", "layer", "pattern"); 
         }
 
         @Test
         @DisplayName("[SC002]: complex_methods_have_javadoc")
-        void complexMethodsHaveJavadoc() { // GH-90000
+        void complexMethodsHaveJavadoc() { 
             // Methods with complexity > 10 should have documentation
             boolean complexMethodsDocumented = true;
-            assertThat(complexMethodsDocumented).isTrue(); // GH-90000
+            assertThat(complexMethodsDocumented).isTrue(); 
         }
     }
 
@@ -154,18 +154,18 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: all_async_returns_promise")
-        void allAsyncReturnsPromise() { // GH-90000
+        void allAsyncReturnsPromise() { 
             // Async methods should return Promise<T>
             boolean nonPromiseAsync = false;
-            assertThat(nonPromiseAsync).isFalse(); // GH-90000
+            assertThat(nonPromiseAsync).isFalse(); 
         }
 
         @Test
         @DisplayName("[SC002]: no_blocking_in_eventloop")
-        void noBlockingInEventloop() { // GH-90000
+        void noBlockingInEventloop() { 
             // Eventloop thread should never block
             boolean blockingDetected = false;
-            assertThat(blockingDetected).isFalse(); // GH-90000
+            assertThat(blockingDetected).isFalse(); 
         }
     }
 
@@ -175,18 +175,18 @@ class ArchitecturalConstraintTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[SC002]: domain_exceptions_in_domain_layer")
-        void domainExceptionsInDomainLayer() { // GH-90000
+        void domainExceptionsInDomainLayer() { 
             // Domain exceptions should not depend on framework
             boolean frameworkExceptionInDomain = false;
-            assertThat(frameworkExceptionInDomain).isFalse(); // GH-90000
+            assertThat(frameworkExceptionInDomain).isFalse(); 
         }
 
         @Test
         @DisplayName("[SC002]: checked_exceptions_for_recoverable")
-        void checkedExceptionsForRecoverable() { // GH-90000
+        void checkedExceptionsForRecoverable() { 
             // Recoverable errors should use checked exceptions
             boolean uncheckedForRecoverable = false;
-            assertThat(uncheckedForRecoverable).isFalse(); // GH-90000
+            assertThat(uncheckedForRecoverable).isFalse(); 
         }
     }
 }

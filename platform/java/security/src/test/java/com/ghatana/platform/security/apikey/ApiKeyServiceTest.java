@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Unit Test
  */
 @DisplayName("ApiKeyService")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class ApiKeyServiceTest {
 
     @Mock
@@ -40,8 +40,8 @@ class ApiKeyServiceTest {
     private ApiKeyService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new ApiKeyService(apiKeyRepository); // GH-90000
+    void setUp() { 
+        service = new ApiKeyService(apiKeyRepository); 
     }
 
     @Nested
@@ -50,28 +50,28 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should create an API key with generated key value")
-        void shouldCreateWithGeneratedKey() { // GH-90000
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+        void shouldCreateWithGeneratedKey() { 
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
-            Instant expiry = Instant.now().plus(30, ChronoUnit.DAYS); // GH-90000
-            ApiKey result = service.createApiKey("Test Key", "A test key", "owner-1", expiry); // GH-90000
+            Instant expiry = Instant.now().plus(30, ChronoUnit.DAYS); 
+            ApiKey result = service.createApiKey("Test Key", "A test key", "owner-1", expiry); 
 
             assertThat(result.getKey()).startsWith("ak_");
             assertThat(result.getName()).isEqualTo("Test Key");
             assertThat(result.getDescription()).isEqualTo("A test key");
             assertThat(result.getOwner()).isEqualTo("owner-1");
-            assertThat(result.getExpiresAt()).isEqualTo(expiry); // GH-90000
+            assertThat(result.getExpiresAt()).isEqualTo(expiry); 
         }
 
         @Test
         @DisplayName("should persist the created API key")
-        void shouldPersist() { // GH-90000
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+        void shouldPersist() { 
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
-            service.createApiKey("Key", "Desc", "owner", null); // GH-90000
+            service.createApiKey("Key", "Desc", "owner", null); 
 
-            ArgumentCaptor<ApiKey> captor = ArgumentCaptor.forClass(ApiKey.class); // GH-90000
-            verify(apiKeyRepository).save(captor.capture()); // GH-90000
+            ArgumentCaptor<ApiKey> captor = ArgumentCaptor.forClass(ApiKey.class); 
+            verify(apiKeyRepository).save(captor.capture()); 
             assertThat(captor.getValue().getKey()).startsWith("ak_");
         }
     }
@@ -82,7 +82,7 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should return API key when found")
-        void shouldReturnWhenFound() { // GH-90000
+        void shouldReturnWhenFound() { 
             ApiKey expected = ApiKey.builder().key("ak_test123").name("Existing").build();
             when(apiKeyRepository.findByKey("ak_test123")).thenReturn(Optional.of(expected));
 
@@ -92,11 +92,11 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should throw ResourceNotFoundException when not found")
-        void shouldThrowWhenNotFound() { // GH-90000
-            when(apiKeyRepository.findByKey(anyString())).thenReturn(Optional.empty()); // GH-90000
+        void shouldThrowWhenNotFound() { 
+            when(apiKeyRepository.findByKey(anyString())).thenReturn(Optional.empty()); 
 
             assertThatThrownBy(() -> service.getApiKeyByKey("nonexistent"))
-                    .isInstanceOf(ResourceNotFoundException.class); // GH-90000
+                    .isInstanceOf(ResourceNotFoundException.class); 
         }
     }
 
@@ -106,57 +106,57 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should return valid API key and update lastUsed")
-        void shouldReturnValidKey() { // GH-90000
-            ApiKey validKey = ApiKey.builder() // GH-90000
+        void shouldReturnValidKey() { 
+            ApiKey validKey = ApiKey.builder() 
                     .key("ak_valid")
-                    .enabled(true) // GH-90000
-                    .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS)) // GH-90000
-                    .build(); // GH-90000
+                    .enabled(true) 
+                    .expiresAt(Instant.now().plus(1, ChronoUnit.DAYS)) 
+                    .build(); 
             when(apiKeyRepository.findByKey("ak_valid")).thenReturn(Optional.of(validKey));
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
             ApiKey result = service.validateApiKey("ak_valid");
 
-            assertThat(result.getLastUsedAt()).isNotNull(); // GH-90000
-            verify(apiKeyRepository).save(validKey); // GH-90000
+            assertThat(result.getLastUsedAt()).isNotNull(); 
+            verify(apiKeyRepository).save(validKey); 
         }
 
         @Test
         @DisplayName("should throw ServiceException for invalid key string")
-        void shouldThrowForInvalidKey() { // GH-90000
+        void shouldThrowForInvalidKey() { 
             when(apiKeyRepository.findByKey("bad")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.validateApiKey("bad"))
-                    .isInstanceOf(ServiceException.class) // GH-90000
+                    .isInstanceOf(ServiceException.class) 
                     .hasMessage("Invalid API key");
         }
 
         @Test
         @DisplayName("should throw ServiceException for expired key")
-        void shouldThrowForExpiredKey() { // GH-90000
-            ApiKey expired = ApiKey.builder() // GH-90000
+        void shouldThrowForExpiredKey() { 
+            ApiKey expired = ApiKey.builder() 
                     .key("ak_expired")
-                    .enabled(true) // GH-90000
-                    .expiresAt(Instant.now().minus(1, ChronoUnit.DAYS)) // GH-90000
-                    .build(); // GH-90000
+                    .enabled(true) 
+                    .expiresAt(Instant.now().minus(1, ChronoUnit.DAYS)) 
+                    .build(); 
             when(apiKeyRepository.findByKey("ak_expired")).thenReturn(Optional.of(expired));
 
             assertThatThrownBy(() -> service.validateApiKey("ak_expired"))
-                    .isInstanceOf(ServiceException.class) // GH-90000
+                    .isInstanceOf(ServiceException.class) 
                     .hasMessage("API key is not valid");
         }
 
         @Test
         @DisplayName("should throw ServiceException for disabled key")
-        void shouldThrowForDisabledKey() { // GH-90000
-            ApiKey disabled = ApiKey.builder() // GH-90000
+        void shouldThrowForDisabledKey() { 
+            ApiKey disabled = ApiKey.builder() 
                     .key("ak_disabled")
-                    .enabled(false) // GH-90000
-                    .build(); // GH-90000
+                    .enabled(false) 
+                    .build(); 
             when(apiKeyRepository.findByKey("ak_disabled")).thenReturn(Optional.of(disabled));
 
             assertThatThrownBy(() -> service.validateApiKey("ak_disabled"))
-                    .isInstanceOf(ServiceException.class) // GH-90000
+                    .isInstanceOf(ServiceException.class) 
                     .hasMessage("API key is not valid");
         }
     }
@@ -167,22 +167,22 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should update only non-null fields")
-        void shouldUpdateNonNullFields() { // GH-90000
-            ApiKey existing = ApiKey.builder() // GH-90000
+        void shouldUpdateNonNullFields() { 
+            ApiKey existing = ApiKey.builder() 
                     .id("id-1")
                     .key("ak_test")
                     .name("Old Name")
                     .description("Old Desc")
-                    .enabled(true) // GH-90000
-                    .build(); // GH-90000
+                    .enabled(true) 
+                    .build(); 
             when(apiKeyRepository.findById("id-1")).thenReturn(Optional.of(existing));
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
-            ApiKey result = service.updateApiKey("id-1", "New Name", null, null, false); // GH-90000
+            ApiKey result = service.updateApiKey("id-1", "New Name", null, null, false); 
 
             assertThat(result.getName()).isEqualTo("New Name");
             assertThat(result.getDescription()).isEqualTo("Old Desc");
-            assertThat(result.isEnabled()).isFalse(); // GH-90000
+            assertThat(result.isEnabled()).isFalse(); 
         }
     }
 
@@ -192,7 +192,7 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should delete when key exists")
-        void shouldDeleteExisting() { // GH-90000
+        void shouldDeleteExisting() { 
             when(apiKeyRepository.existsById("id-1")).thenReturn(true);
 
             service.deleteApiKey("id-1");
@@ -203,11 +203,11 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should throw ResourceNotFoundException when key not found")
-        void shouldThrowWhenNotFound() { // GH-90000
+        void shouldThrowWhenNotFound() { 
             when(apiKeyRepository.existsById("nonexistent")).thenReturn(false);
 
             assertThatThrownBy(() -> service.deleteApiKey("nonexistent"))
-                    .isInstanceOf(ResourceNotFoundException.class); // GH-90000
+                    .isInstanceOf(ResourceNotFoundException.class); 
         }
     }
 
@@ -217,24 +217,24 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should add role to existing key")
-        void shouldAddRole() { // GH-90000
+        void shouldAddRole() { 
             ApiKey key = ApiKey.builder().id("id-1").key("ak_test").build();
             when(apiKeyRepository.findById("id-1")).thenReturn(Optional.of(key));
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
-            ApiKey result = service.addRole("id-1", "ADMIN"); // GH-90000
+            ApiKey result = service.addRole("id-1", "ADMIN"); 
 
             assertThat(result.getRoles()).contains("ADMIN");
         }
 
         @Test
         @DisplayName("should add permission to existing key")
-        void shouldAddPermission() { // GH-90000
+        void shouldAddPermission() { 
             ApiKey key = ApiKey.builder().id("id-1").key("ak_test").build();
             when(apiKeyRepository.findById("id-1")).thenReturn(Optional.of(key));
-            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); // GH-90000
+            when(apiKeyRepository.save(any(ApiKey.class))).thenAnswer(inv -> inv.getArgument(0)); 
 
-            ApiKey result = service.addPermission("id-1", "event:read:all"); // GH-90000
+            ApiKey result = service.addPermission("id-1", "event:read:all"); 
 
             assertThat(result.getPermissions()).contains("event:read:all");
         }
@@ -246,14 +246,14 @@ class ApiKeyServiceTest {
 
         @Test
         @DisplayName("should return all keys for owner")
-        void shouldReturnForOwner() { // GH-90000
+        void shouldReturnForOwner() { 
             ApiKey k1 = ApiKey.builder().key("ak_1").owner("alice").build();
             ApiKey k2 = ApiKey.builder().key("ak_2").owner("alice").build();
             when(apiKeyRepository.findByOwner("alice")).thenReturn(List.of(k1, k2));
 
             List<ApiKey> result = service.getApiKeysByOwner("alice");
 
-            assertThat(result).hasSize(2); // GH-90000
+            assertThat(result).hasSize(2); 
         }
     }
 }

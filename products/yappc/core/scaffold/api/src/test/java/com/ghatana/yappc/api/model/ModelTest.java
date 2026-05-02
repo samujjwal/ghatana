@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -43,55 +43,55 @@ class ModelTest {
 
         @Test
         @DisplayName("Should build with required fields")
-        void shouldBuildWithRequiredFields() { // GH-90000
-            CreateRequest request = CreateRequest.builder() // GH-90000
+        void shouldBuildWithRequiredFields() { 
+            CreateRequest request = CreateRequest.builder() 
                     .projectName("my-project")
                     .packName("java-service-spring-gradle")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(request.getProjectName()).isEqualTo("my-project");
             assertThat(request.getPackName()).isEqualTo("java-service-spring-gradle");
-            assertThat(request.getVariables()).isEmpty(); // GH-90000
-            assertThat(request.isOverwrite()).isFalse(); // GH-90000
-            assertThat(request.isDryRun()).isFalse(); // GH-90000
+            assertThat(request.getVariables()).isEmpty(); 
+            assertThat(request.isOverwrite()).isFalse(); 
+            assertThat(request.isDryRun()).isFalse(); 
         }
 
         @Test
         @DisplayName("Should build with variables")
-        void shouldBuildWithVariables() { // GH-90000
-            CreateRequest request = CreateRequest.builder() // GH-90000
+        void shouldBuildWithVariables() { 
+            CreateRequest request = CreateRequest.builder() 
                     .projectName("my-project")
                     .packName("java-service-spring-gradle")
-                    .variable("packageName", "com.example") // GH-90000
-                    .variable("version", "1.0.0") // GH-90000
-                    .build(); // GH-90000
+                    .variable("packageName", "com.example") 
+                    .variable("version", "1.0.0") 
+                    .build(); 
 
-            assertThat(request.getVariables()) // GH-90000
-                    .hasSize(2) // GH-90000
-                    .containsEntry("packageName", "com.example") // GH-90000
-                    .containsEntry("version", "1.0.0"); // GH-90000
+            assertThat(request.getVariables()) 
+                    .hasSize(2) 
+                    .containsEntry("packageName", "com.example") 
+                    .containsEntry("version", "1.0.0"); 
         }
 
         @Test
         @DisplayName("Should compute project path correctly")
-        void shouldComputeProjectPath() { // GH-90000
-            CreateRequest request = CreateRequest.builder() // GH-90000
+        void shouldComputeProjectPath() { 
+            CreateRequest request = CreateRequest.builder() 
                     .projectName("my-project")
                     .packName("java-service-spring-gradle")
                     .outputPath(Paths.get("/workspace"))
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(request.getProjectPath()).isEqualTo(Paths.get("/workspace/my-project"));
         }
 
         @Test
         @DisplayName("Should throw on missing projectName")
-        void shouldThrowOnMissingProjectName() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    CreateRequest.builder() // GH-90000
+        void shouldThrowOnMissingProjectName() { 
+            assertThatThrownBy(() -> 
+                    CreateRequest.builder() 
                             .packName("java-service-spring-gradle")
-                            .build() // GH-90000
-            ).isInstanceOf(NullPointerException.class); // GH-90000
+                            .build() 
+            ).isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -101,26 +101,26 @@ class ModelTest {
 
         @Test
         @DisplayName("Should create success result")
-        void shouldCreateSuccessResult() { // GH-90000
-            CreateResult result = CreateResult.success( // GH-90000
+        void shouldCreateSuccessResult() { 
+            CreateResult result = CreateResult.success( 
                     Paths.get("/workspace/my-project"),
                     "java-service-spring-gradle",
-                    java.util.List.of("build.gradle", "src/main/java/App.java") // GH-90000
+                    java.util.List.of("build.gradle", "src/main/java/App.java") 
             );
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
             assertThat(result.getProjectPath()).isEqualTo(Paths.get("/workspace/my-project"));
             assertThat(result.getPackName()).isEqualTo("java-service-spring-gradle");
-            assertThat(result.getFilesCreated()).hasSize(2); // GH-90000
-            assertThat(result.getFileCount()).isEqualTo(2); // GH-90000
+            assertThat(result.getFilesCreated()).hasSize(2); 
+            assertThat(result.getFileCount()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Should create failure result")
-        void shouldCreateFailureResult() { // GH-90000
+        void shouldCreateFailureResult() { 
             CreateResult result = CreateResult.failure("Pack not found");
 
-            assertThat(result.isSuccess()).isFalse(); // GH-90000
+            assertThat(result.isSuccess()).isFalse(); 
             assertThat(result.getErrorMessage()).isEqualTo("Pack not found");
         }
     }
@@ -131,8 +131,8 @@ class ModelTest {
 
         @Test
         @DisplayName("Should build complete pack info")
-        void shouldBuildCompletePackInfo() { // GH-90000
-            PackInfo pack = PackInfo.builder() // GH-90000
+        void shouldBuildCompletePackInfo() { 
+            PackInfo pack = PackInfo.builder() 
                     .name("java-service-spring-gradle")
                     .version("1.0.0")
                     .description("Spring Boot service with Gradle")
@@ -140,27 +140,27 @@ class ModelTest {
                     .category("backend")
                     .platform("server")
                     .buildSystem("gradle")
-                    .templates(java.util.List.of("build.gradle.tmpl", "App.java.tmpl")) // GH-90000
-                    .requiredVariables(java.util.List.of("packageName", "projectName")) // GH-90000
-                    .build(); // GH-90000
+                    .templates(java.util.List.of("build.gradle.tmpl", "App.java.tmpl")) 
+                    .requiredVariables(java.util.List.of("packageName", "projectName")) 
+                    .build(); 
 
             assertThat(pack.getName()).isEqualTo("java-service-spring-gradle");
             assertThat(pack.getLanguage()).isEqualTo("java");
             assertThat(pack.getCategory()).isEqualTo("backend");
-            assertThat(pack.getTemplateCount()).isEqualTo(2); // GH-90000
+            assertThat(pack.getTemplateCount()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Should handle composition packs")
-        void shouldHandleCompositionPacks() { // GH-90000
-            PackInfo pack = PackInfo.builder() // GH-90000
+        void shouldHandleCompositionPacks() { 
+            PackInfo pack = PackInfo.builder() 
                     .name("fullstack-java-react")
-                    .isComposition(true) // GH-90000
-                    .composedPacks(java.util.List.of("java-service-spring-gradle", "typescript-react-vite")) // GH-90000
-                    .build(); // GH-90000
+                    .isComposition(true) 
+                    .composedPacks(java.util.List.of("java-service-spring-gradle", "typescript-react-vite")) 
+                    .build(); 
 
-            assertThat(pack.isComposition()).isTrue(); // GH-90000
-            assertThat(pack.getComposedPacks()).hasSize(2); // GH-90000
+            assertThat(pack.isComposition()).isTrue(); 
+            assertThat(pack.getComposedPacks()).hasSize(2); 
         }
     }
 
@@ -170,24 +170,24 @@ class ModelTest {
 
         @Test
         @DisplayName("Should create Maven dependency")
-        void shouldCreateMavenDependency() { // GH-90000
-            DependencyInfo dep = DependencyInfo.maven("org.slf4j", "slf4j-api", "2.0.9"); // GH-90000
+        void shouldCreateMavenDependency() { 
+            DependencyInfo dep = DependencyInfo.maven("org.slf4j", "slf4j-api", "2.0.9"); 
 
             assertThat(dep.groupId()).isEqualTo("org.slf4j");
             assertThat(dep.artifactId()).isEqualTo("slf4j-api");
             assertThat(dep.version()).isEqualTo("2.0.9");
-            assertThat(dep.type()).isEqualTo(DependencyInfo.DependencyType.MAVEN); // GH-90000
+            assertThat(dep.type()).isEqualTo(DependencyInfo.DependencyType.MAVEN); 
             assertThat(dep.getCoordinates()).isEqualTo("org.slf4j:slf4j-api:2.0.9");
         }
 
         @Test
         @DisplayName("Should create npm dependency")
-        void shouldCreateNpmDependency() { // GH-90000
-            DependencyInfo dep = DependencyInfo.npm("react", "18.0.0"); // GH-90000
+        void shouldCreateNpmDependency() { 
+            DependencyInfo dep = DependencyInfo.npm("react", "18.0.0"); 
 
             assertThat(dep.artifactId()).isEqualTo("react");
             assertThat(dep.version()).isEqualTo("18.0.0");
-            assertThat(dep.type()).isEqualTo(DependencyInfo.DependencyType.NPM); // GH-90000
+            assertThat(dep.type()).isEqualTo(DependencyInfo.DependencyType.NPM); 
             assertThat(dep.getCoordinates()).isEqualTo("react@18.0.0");
         }
     }
@@ -198,15 +198,15 @@ class ModelTest {
 
         @Test
         @DisplayName("Should create version mismatch conflict")
-        void shouldCreateVersionMismatchConflict() { // GH-90000
-            ConflictInfo conflict = ConflictInfo.versionMismatch( // GH-90000
+        void shouldCreateVersionMismatchConflict() { 
+            ConflictInfo conflict = ConflictInfo.versionMismatch( 
                     "slf4j-api",
                     "1.7.0", "pack-a",
                     "2.0.0", "pack-b"
             );
 
             assertThat(conflict.dependencyName()).isEqualTo("slf4j-api");
-            assertThat(conflict.type()).isEqualTo(ConflictInfo.ConflictType.VERSION_MISMATCH); // GH-90000
+            assertThat(conflict.type()).isEqualTo(ConflictInfo.ConflictType.VERSION_MISMATCH); 
             assertThat(conflict.resolution()).contains("2.0.0");
         }
     }

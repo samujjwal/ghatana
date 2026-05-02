@@ -21,11 +21,11 @@ class StepContractTest {
 
   @Test
   @DisplayName("should create StepContract with all fields")
-  void shouldCreateStepContract() { // GH-90000
-    List<String> capabilities = List.of("DATA_CLOUD", "EVENT_LOG"); // GH-90000
-    Map<String, String> metadata = Map.of("key", "value"); // GH-90000
+  void shouldCreateStepContract() { 
+    List<String> capabilities = List.of("DATA_CLOUD", "EVENT_LOG"); 
+    Map<String, String> metadata = Map.of("key", "value"); 
 
-    StepContract contract = new StepContract( // GH-90000
+    StepContract contract = new StepContract( 
         "test.step",
         "input-schema.json",
         "output-schema.json",
@@ -36,56 +36,56 @@ class StepContractTest {
     assertThat(contract.name()).isEqualTo("test.step");
     assertThat(contract.inputSchemaRef()).isEqualTo("input-schema.json");
     assertThat(contract.outputSchemaRef()).isEqualTo("output-schema.json");
-    assertThat(contract.requiredCapabilities()).isEqualTo(capabilities); // GH-90000
-    assertThat(contract.metadata()).isEqualTo(metadata); // GH-90000
+    assertThat(contract.requiredCapabilities()).isEqualTo(capabilities); 
+    assertThat(contract.metadata()).isEqualTo(metadata); 
   }
 
   @Test
   @DisplayName("capabilities should return requiredCapabilities")
-  void capabilitiesShouldReturnRequiredCapabilities() { // GH-90000
-    List<String> capabilities = List.of("CAP_1", "CAP_2"); // GH-90000
+  void capabilitiesShouldReturnRequiredCapabilities() { 
+    List<String> capabilities = List.of("CAP_1", "CAP_2"); 
 
-    StepContract contract = new StepContract( // GH-90000
+    StepContract contract = new StepContract( 
         "test.step", null, null, capabilities, null
     );
 
-    assertThat(contract.capabilities()).isEqualTo(capabilities); // GH-90000
-    assertThat(contract.capabilities()).isSameAs(contract.requiredCapabilities()); // GH-90000
+    assertThat(contract.capabilities()).isEqualTo(capabilities); 
+    assertThat(contract.capabilities()).isSameAs(contract.requiredCapabilities()); 
   }
 
   @Test
   @DisplayName("should handle null fields")
-  void shouldHandleNullFields() { // GH-90000
-    StepContract contract = new StepContract(null, null, null, null, null); // GH-90000
+  void shouldHandleNullFields() { 
+    StepContract contract = new StepContract(null, null, null, null, null); 
 
-    assertThat(contract.name()).isNull(); // GH-90000
-    assertThat(contract.inputSchemaRef()).isNull(); // GH-90000
-    assertThat(contract.outputSchemaRef()).isNull(); // GH-90000
-    assertThat(contract.requiredCapabilities()).isNull(); // GH-90000
-    assertThat(contract.metadata()).isNull(); // GH-90000
-    assertThat(contract.capabilities()).isNull(); // GH-90000
+    assertThat(contract.name()).isNull(); 
+    assertThat(contract.inputSchemaRef()).isNull(); 
+    assertThat(contract.outputSchemaRef()).isNull(); 
+    assertThat(contract.requiredCapabilities()).isNull(); 
+    assertThat(contract.metadata()).isNull(); 
+    assertThat(contract.capabilities()).isNull(); 
   }
 
   @Test
   @DisplayName("should implement equals correctly")
-  void shouldImplementEquals() { // GH-90000
+  void shouldImplementEquals() { 
     StepContract c1 = new StepContract("step", "in", "out", List.of("cap"), Map.of("k", "v"));
     StepContract c2 = new StepContract("step", "in", "out", List.of("cap"), Map.of("k", "v"));
     StepContract c3 = new StepContract("other", "in", "out", List.of("cap"), Map.of("k", "v"));
 
-    assertThat(c1).isEqualTo(c2); // GH-90000
-    assertThat(c1).isNotEqualTo(c3); // GH-90000
+    assertThat(c1).isEqualTo(c2); 
+    assertThat(c1).isNotEqualTo(c3); 
   }
 
   @Test
   @DisplayName("should handle empty collections")
-  void shouldHandleEmptyCollections() { // GH-90000
-    StepContract contract = new StepContract( // GH-90000
-        "step", "in", "out", List.of(), Map.of() // GH-90000
+  void shouldHandleEmptyCollections() { 
+    StepContract contract = new StepContract( 
+        "step", "in", "out", List.of(), Map.of() 
     );
 
-    assertThat(contract.requiredCapabilities()).isEmpty(); // GH-90000
-    assertThat(contract.metadata()).isEmpty(); // GH-90000
-    assertThat(contract.capabilities()).isEmpty(); // GH-90000
+    assertThat(contract.requiredCapabilities()).isEmpty(); 
+    assertThat(contract.metadata()).isEmpty(); 
+    assertThat(contract.capabilities()).isEmpty(); 
   }
 }

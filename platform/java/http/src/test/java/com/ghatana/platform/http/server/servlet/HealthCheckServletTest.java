@@ -27,70 +27,70 @@ class HealthCheckServletTest extends EventloopTestBase {
 
     @Test
     @DisplayName("/health returns 200 OK")
-    void healthEndpointReturns200() { // GH-90000
+    void healthEndpointReturns200() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
     }
 
     @Test
     @DisplayName("/health response body contains status UP")
-    void healthBodyContainsStatusUp() { // GH-90000
+    void healthBodyContainsStatusUp() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("\"status\":\"UP\""); // GH-90000
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); 
+        assertThat(body).contains("\"status\":\"UP\""); 
     }
 
     @Test
     @DisplayName("/health response body contains the service name")
-    void healthBodyContainsServiceName() { // GH-90000
+    void healthBodyContainsServiceName() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains(SERVICE); // GH-90000
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); 
+        assertThat(body).contains(SERVICE); 
     }
 
     @Test
     @DisplayName("/health response body contains the version")
-    void healthBodyContainsVersion() { // GH-90000
+    void healthBodyContainsVersion() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains(VERSION); // GH-90000
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); 
+        assertThat(body).contains(VERSION); 
     }
 
     @Test
     @DisplayName("/health response has application/json content type")
-    void healthResponseIsJson() { // GH-90000
+    void healthResponseIsJson() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/health").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        String contentType = response.getHeader(io.activej.http.HttpHeaders.CONTENT_TYPE); // GH-90000
+        String contentType = response.getHeader(io.activej.http.HttpHeaders.CONTENT_TYPE); 
         assertThat(contentType).contains("application/json");
     }
 
@@ -98,67 +98,67 @@ class HealthCheckServletTest extends EventloopTestBase {
 
     @Test
     @DisplayName("/readiness returns 200 OK")
-    void readinessEndpointReturns200() { // GH-90000
+    void readinessEndpointReturns200() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/readiness").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
     }
 
     @Test
     @DisplayName("/readiness response body contains status READY")
-    void readinessBodyContainsStatusReady() { // GH-90000
+    void readinessBodyContainsStatusReady() { 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .build(); 
 
         HttpRequest request = HttpRequest.get("http://localhost/readiness").build();
-        HttpResponse response = runPromise(() -> servlet.serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> servlet.serve(request)); 
 
-        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); // GH-90000
-        assertThat(body).contains("\"status\":\"READY\""); // GH-90000
+        String body = new String(response.getBody().asArray(), StandardCharsets.UTF_8); 
+        assertThat(body).contains("\"status\":\"READY\""); 
     }
 
     // ── Builder chaining ──────────────────────────────────────────────────────
 
     @Test
     @DisplayName("addHealthEndpoints returns builder for further route registration")
-    void addHealthEndpointsReturnsSameBuilder() { // GH-90000
-        // This verifies that routes can be added after health endpoints (fluent chaining) // GH-90000
+    void addHealthEndpointsReturnsSameBuilder() { 
+        // This verifies that routes can be added after health endpoints (fluent chaining) 
         RoutingServlet servlet = HealthCheckServlet
-                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) // GH-90000
-                .with(io.activej.http.HttpMethod.GET, "/ping", // GH-90000
-                        req -> io.activej.http.HttpResponse.ok200().toPromise()) // GH-90000
-                .build(); // GH-90000
+                .addHealthEndpoints(RoutingServlet.builder(eventloop()), SERVICE, VERSION) 
+                .with(io.activej.http.HttpMethod.GET, "/ping", 
+                        req -> io.activej.http.HttpResponse.ok200().toPromise()) 
+                .build(); 
 
         HttpRequest pingRequest = HttpRequest.get("http://localhost/ping").build();
-        HttpResponse pingResponse = runPromise(() -> servlet.serve(pingRequest)); // GH-90000
-        assertThat(pingResponse.getCode()).isEqualTo(200); // GH-90000
+        HttpResponse pingResponse = runPromise(() -> servlet.serve(pingRequest)); 
+        assertThat(pingResponse.getCode()).isEqualTo(200); 
 
         HttpRequest healthRequest = HttpRequest.get("http://localhost/health").build();
-        HttpResponse healthResponse = runPromise(() -> servlet.serve(healthRequest)); // GH-90000
-        assertThat(healthResponse.getCode()).isEqualTo(200); // GH-90000
+        HttpResponse healthResponse = runPromise(() -> servlet.serve(healthRequest)); 
+        assertThat(healthResponse.getCode()).isEqualTo(200); 
     }
 
     // ── Null guard ────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("null serviceName throws NullPointerException")
-    void nullServiceNameThrows() { // GH-90000
-        assertThatThrownBy(() -> HealthCheckServlet.addHealthEndpoints( // GH-90000
-                RoutingServlet.builder(eventloop()), null, VERSION)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void nullServiceNameThrows() { 
+        assertThatThrownBy(() -> HealthCheckServlet.addHealthEndpoints( 
+                RoutingServlet.builder(eventloop()), null, VERSION)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("null version throws NullPointerException")
-    void nullVersionThrows() { // GH-90000
-        assertThatThrownBy(() -> HealthCheckServlet.addHealthEndpoints( // GH-90000
-                RoutingServlet.builder(eventloop()), SERVICE, null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void nullVersionThrows() { 
+        assertThatThrownBy(() -> HealthCheckServlet.addHealthEndpoints( 
+                RoutingServlet.builder(eventloop()), SERVICE, null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 }

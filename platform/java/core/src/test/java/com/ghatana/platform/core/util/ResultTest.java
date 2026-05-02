@@ -13,46 +13,46 @@ class ResultTest {
 
     @Test
     @DisplayName("success should create a successful result")
-    void successShouldCreateSuccessfulResult() { // GH-90000
+    void successShouldCreateSuccessfulResult() { 
         Result<String, String> result = Result.success("value");
 
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(result.isFailure()).isFalse(); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
+        assertThat(result.isFailure()).isFalse(); 
         assertThat(result.get()).isEqualTo("value");
     }
 
     @Test
     @DisplayName("failure should create a failed result")
-    void failureShouldCreateFailedResult() { // GH-90000
+    void failureShouldCreateFailedResult() { 
         Result<String, String> result = Result.failure("error");
 
-        assertThat(result.isSuccess()).isFalse(); // GH-90000
-        assertThat(result.isFailure()).isTrue(); // GH-90000
+        assertThat(result.isSuccess()).isFalse(); 
+        assertThat(result.isFailure()).isTrue(); 
         assertThat(result.getError()).isEqualTo("error");
     }
 
     @Test
     @DisplayName("get on failure should throw NoSuchElementException")
-    void getOnFailureShouldThrow() { // GH-90000
+    void getOnFailureShouldThrow() { 
         Result<String, String> result = Result.failure("error");
 
-        assertThatThrownBy(result::get) // GH-90000
-                .isInstanceOf(NoSuchElementException.class) // GH-90000
+        assertThatThrownBy(result::get) 
+                .isInstanceOf(NoSuchElementException.class) 
                 .hasMessageContaining("error");
     }
 
     @Test
     @DisplayName("getError on success should throw NoSuchElementException")
-    void getErrorOnSuccessShouldThrow() { // GH-90000
+    void getErrorOnSuccessShouldThrow() { 
         Result<String, String> result = Result.success("value");
 
-        assertThatThrownBy(result::getError) // GH-90000
-                .isInstanceOf(NoSuchElementException.class); // GH-90000
+        assertThatThrownBy(result::getError) 
+                .isInstanceOf(NoSuchElementException.class); 
     }
 
     @Test
     @DisplayName("getOrElse should return value on success")
-    void getOrElseShouldReturnValueOnSuccess() { // GH-90000
+    void getOrElseShouldReturnValueOnSuccess() { 
         Result<String, String> result = Result.success("value");
 
         assertThat(result.getOrElse("default")).isEqualTo("value");
@@ -60,7 +60,7 @@ class ResultTest {
 
     @Test
     @DisplayName("getOrElse should return default on failure")
-    void getOrElseShouldReturnDefaultOnFailure() { // GH-90000
+    void getOrElseShouldReturnDefaultOnFailure() { 
         Result<String, String> result = Result.failure("error");
 
         assertThat(result.getOrElse("default")).isEqualTo("default");
@@ -68,121 +68,121 @@ class ResultTest {
 
     @Test
     @DisplayName("map should transform success value")
-    void mapShouldTransformSuccessValue() { // GH-90000
+    void mapShouldTransformSuccessValue() { 
         Result<String, String> result = Result.success("hello");
 
-        Result<Integer, String> mapped = result.map(String::length); // GH-90000
+        Result<Integer, String> mapped = result.map(String::length); 
 
-        assertThat(mapped.isSuccess()).isTrue(); // GH-90000
-        assertThat(mapped.get()).isEqualTo(5); // GH-90000
+        assertThat(mapped.isSuccess()).isTrue(); 
+        assertThat(mapped.get()).isEqualTo(5); 
     }
 
     @Test
     @DisplayName("map should not transform failure")
-    void mapShouldNotTransformFailure() { // GH-90000
+    void mapShouldNotTransformFailure() { 
         Result<String, String> result = Result.failure("error");
 
-        Result<Integer, String> mapped = result.map(String::length); // GH-90000
+        Result<Integer, String> mapped = result.map(String::length); 
 
-        assertThat(mapped.isFailure()).isTrue(); // GH-90000
+        assertThat(mapped.isFailure()).isTrue(); 
         assertThat(mapped.getError()).isEqualTo("error");
     }
 
     @Test
     @DisplayName("mapError should transform error")
-    void mapErrorShouldTransformError() { // GH-90000
+    void mapErrorShouldTransformError() { 
         Result<String, String> result = Result.failure("error");
 
-        Result<String, Integer> mapped = result.mapError(String::length); // GH-90000
+        Result<String, Integer> mapped = result.mapError(String::length); 
 
-        assertThat(mapped.isFailure()).isTrue(); // GH-90000
-        assertThat(mapped.getError()).isEqualTo(5); // GH-90000
+        assertThat(mapped.isFailure()).isTrue(); 
+        assertThat(mapped.getError()).isEqualTo(5); 
     }
 
     @Test
     @DisplayName("flatMap should chain successful results")
-    void flatMapShouldChainSuccessfulResults() { // GH-90000
+    void flatMapShouldChainSuccessfulResults() { 
         Result<String, String> result = Result.success("42");
 
-        Result<Integer, String> chained = result.flatMap(s -> { // GH-90000
+        Result<Integer, String> chained = result.flatMap(s -> { 
             try {
-                return Result.success(Integer.parseInt(s)); // GH-90000
-            } catch (NumberFormatException e) { // GH-90000
+                return Result.success(Integer.parseInt(s)); 
+            } catch (NumberFormatException e) { 
                 return Result.failure("Not a number");
             }
         });
 
-        assertThat(chained.isSuccess()).isTrue(); // GH-90000
-        assertThat(chained.get()).isEqualTo(42); // GH-90000
+        assertThat(chained.isSuccess()).isTrue(); 
+        assertThat(chained.get()).isEqualTo(42); 
     }
 
     @Test
     @DisplayName("flatMap should propagate failure")
-    void flatMapShouldPropagateFailure() { // GH-90000
+    void flatMapShouldPropagateFailure() { 
         Result<String, String> result = Result.failure("original error");
 
-        Result<Integer, String> chained = result.flatMap(s -> Result.success(Integer.parseInt(s))); // GH-90000
+        Result<Integer, String> chained = result.flatMap(s -> Result.success(Integer.parseInt(s))); 
 
-        assertThat(chained.isFailure()).isTrue(); // GH-90000
+        assertThat(chained.isFailure()).isTrue(); 
         assertThat(chained.getError()).isEqualTo("original error");
     }
 
     @Test
     @DisplayName("toOptional should return Optional with value on success")
-    void toOptionalShouldReturnOptionalWithValueOnSuccess() { // GH-90000
+    void toOptionalShouldReturnOptionalWithValueOnSuccess() { 
         Result<String, String> result = Result.success("value");
 
-        Optional<String> optional = result.toOptional(); // GH-90000
+        Optional<String> optional = result.toOptional(); 
 
         assertThat(optional).isPresent().contains("value");
     }
 
     @Test
     @DisplayName("toOptional should return empty Optional on failure")
-    void toOptionalShouldReturnEmptyOptionalOnFailure() { // GH-90000
+    void toOptionalShouldReturnEmptyOptionalOnFailure() { 
         Result<String, String> result = Result.failure("error");
 
-        Optional<String> optional = result.toOptional(); // GH-90000
+        Optional<String> optional = result.toOptional(); 
 
-        assertThat(optional).isEmpty(); // GH-90000
+        assertThat(optional).isEmpty(); 
     }
 
     @Test
     @DisplayName("ofNullable should create success for non-null value")
-    void ofNullableShouldCreateSuccessForNonNullValue() { // GH-90000
-        Result<String, String> result = Result.ofNullable("value", "was null"); // GH-90000
+    void ofNullableShouldCreateSuccessForNonNullValue() { 
+        Result<String, String> result = Result.ofNullable("value", "was null"); 
 
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
         assertThat(result.get()).isEqualTo("value");
     }
 
     @Test
     @DisplayName("ofNullable should create failure for null value")
-    void ofNullableShouldCreateFailureForNullValue() { // GH-90000
-        Result<String, String> result = Result.ofNullable(null, "was null"); // GH-90000
+    void ofNullableShouldCreateFailureForNullValue() { 
+        Result<String, String> result = Result.ofNullable(null, "was null"); 
 
-        assertThat(result.isFailure()).isTrue(); // GH-90000
+        assertThat(result.isFailure()).isTrue(); 
         assertThat(result.getError()).isEqualTo("was null");
     }
 
     @Test
     @DisplayName("of should catch exceptions and return failure")
-    void ofShouldCatchExceptionsAndReturnFailure() { // GH-90000
-        Result<Integer, Exception> result = Result.of(() -> { // GH-90000
+    void ofShouldCatchExceptionsAndReturnFailure() { 
+        Result<Integer, Exception> result = Result.of(() -> { 
             throw new RuntimeException("test error");
         });
 
-        assertThat(result.isFailure()).isTrue(); // GH-90000
-        assertThat(result.getError()).isInstanceOf(RuntimeException.class); // GH-90000
+        assertThat(result.isFailure()).isTrue(); 
+        assertThat(result.getError()).isInstanceOf(RuntimeException.class); 
         assertThat(result.getError().getMessage()).isEqualTo("test error");
     }
 
     @Test
     @DisplayName("of should return success for successful computation")
-    void ofShouldReturnSuccessForSuccessfulComputation() { // GH-90000
-        Result<Integer, Exception> result = Result.of(() -> 42); // GH-90000
+    void ofShouldReturnSuccessForSuccessfulComputation() { 
+        Result<Integer, Exception> result = Result.of(() -> 42); 
 
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(result.get()).isEqualTo(42); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
+        assertThat(result.get()).isEqualTo(42); 
     }
 }

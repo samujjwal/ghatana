@@ -31,29 +31,29 @@ class ScaffoldStepTest extends EventloopTestBase {
   private ScaffoldStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new ScaffoldStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new ScaffoldStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("implementation.scaffold");
   }
 
   @Test
   @DisplayName("Should scaffold codebase from implementation plan")
-  void shouldScaffoldCodebase() { // GH-90000
+  void shouldScaffoldCodebase() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("implementationPlanId", "plan-001"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("implementationPlanId", "plan-001"); 
+    context.put("tenantId", "tenant-abc"); 
+    context.put( 
         "units",
-        List.of( // GH-90000
-            Map.of( // GH-90000
+        List.of( 
+            Map.of( 
                 "unitId",
                 "u1",
                 "type",
@@ -64,7 +64,7 @@ class ScaffoldStepTest extends EventloopTestBase {
                 "products/api-gateway",
                 "repo",
                 "ghatana"),
-            Map.of( // GH-90000
+            Map.of( 
                 "unitId",
                 "u2",
                 "type",
@@ -76,16 +76,16 @@ class ScaffoldStepTest extends EventloopTestBase {
                 "repo",
                 "ghatana")));
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(dbClient.update(anyString(), any(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("implementationPlanId")).isEqualTo("plan-001");
   }
 }

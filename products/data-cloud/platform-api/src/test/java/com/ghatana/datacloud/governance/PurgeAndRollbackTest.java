@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.governance;
@@ -29,23 +29,23 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
     // ── Data model ────────────────────────────────────────────────────────────
 
-    record DataEntity(String id, String tenantId, String payload, Instant createdAt) {} // GH-90000
+    record DataEntity(String id, String tenantId, String payload, Instant createdAt) {} 
 
-    record PurgeSnapshot(String snapshotId, String tenantId, List<DataEntity> entities, Instant takenAt) {} // GH-90000
+    record PurgeSnapshot(String snapshotId, String tenantId, List<DataEntity> entities, Instant takenAt) {} 
 
     private PurgeManager purgeManager;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        purgeManager = new PurgeManager(); // GH-90000
+    void setUp() { 
+        purgeManager = new PurgeManager(); 
         // Seed some test data across two tenants
-        for (int i = 1; i <= 5; i++) { // GH-90000
-            purgeManager.insert(new DataEntity("entity-A-" + i, "tenant-A", // GH-90000
-                    "payload-" + i, Instant.now().minusSeconds(3600 * i))); // GH-90000
+        for (int i = 1; i <= 5; i++) { 
+            purgeManager.insert(new DataEntity("entity-A-" + i, "tenant-A", 
+                    "payload-" + i, Instant.now().minusSeconds(3600 * i))); 
         }
-        for (int i = 1; i <= 3; i++) { // GH-90000
-            purgeManager.insert(new DataEntity("entity-B-" + i, "tenant-B", // GH-90000
-                    "payload-" + i, Instant.now().minusSeconds(1800 * i))); // GH-90000
+        for (int i = 1; i <= 3; i++) { 
+            purgeManager.insert(new DataEntity("entity-B-" + i, "tenant-B", 
+                    "payload-" + i, Instant.now().minusSeconds(1800 * i))); 
         }
     }
 
@@ -53,39 +53,39 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
     @Test
     @DisplayName("purge removes all entities for the specified tenant")
-    void purgeRemovesAllEntitiesForTenant() { // GH-90000
+    void purgeRemovesAllEntitiesForTenant() { 
         assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
 
         PurgeResult result = purgeManager.purge("tenant-A");
 
-        assertThat(result.entitiesRemoved()).isEqualTo(5); // GH-90000
+        assertThat(result.entitiesRemoved()).isEqualTo(5); 
         assertThat(purgeManager.count("tenant-A")).isEqualTo(0);
     }
 
     @Test
     @DisplayName("purge does not affect other tenants' data")
-    void purgeDoesNotAffectOtherTenants() { // GH-90000
+    void purgeDoesNotAffectOtherTenants() { 
         purgeManager.purge("tenant-A");
         assertThat(purgeManager.count("tenant-B")).isEqualTo(3);
     }
 
     @Test
     @DisplayName("purge of a tenant with no data completes with zero removals")
-    void purgeOfEmptyTenantReturnsZero() { // GH-90000
+    void purgeOfEmptyTenantReturnsZero() { 
         PurgeResult result = purgeManager.purge("tenant-ghost");
-        assertThat(result.entitiesRemoved()).isEqualTo(0); // GH-90000
+        assertThat(result.entitiesRemoved()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("purge by cutoff timestamp removes only expired entities")
-    void purgeByTimestampRemovesOnlyExpiredEntities() { // GH-90000
+    void purgeByTimestampRemovesOnlyExpiredEntities() { 
         // Entity inserted 5+ hours ago should be purged; newer ones should survive
-        Instant cutoff = Instant.now().minusSeconds(4 * 3600); // 4 hours ago // GH-90000
+        Instant cutoff = Instant.now().minusSeconds(4 * 3600); // 4 hours ago 
 
-        PurgeResult result = purgeManager.purgeBefore("tenant-A", cutoff); // GH-90000
+        PurgeResult result = purgeManager.purgeBefore("tenant-A", cutoff); 
 
-        // entity-A-5 (5h ago) is before cutoff; entity-A-4 (4h ago) is right at/before too // GH-90000
-        assertThat(result.entitiesRemoved()).isGreaterThan(0); // GH-90000
+        // entity-A-5 (5h ago) is before cutoff; entity-A-4 (4h ago) is right at/before too 
+        assertThat(result.entitiesRemoved()).isGreaterThan(0); 
         assertThat(purgeManager.count("tenant-A")).isLessThan(5);
     }
 
@@ -93,18 +93,18 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
     @Test
     @DisplayName("snapshot taken before purge captures all entities for the tenant")
-    void snapshotCapturesAllEntities() { // GH-90000
+    void snapshotCapturesAllEntities() { 
         PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
 
-        assertThat(snapshot.snapshotId()).isNotBlank(); // GH-90000
+        assertThat(snapshot.snapshotId()).isNotBlank(); 
         assertThat(snapshot.tenantId()).isEqualTo("tenant-A");
-        assertThat(snapshot.entities()).hasSize(5); // GH-90000
-        assertThat(snapshot.takenAt()).isNotNull(); // GH-90000
+        assertThat(snapshot.entities()).hasSize(5); 
+        assertThat(snapshot.takenAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("snapshot does not remove entities from the store")
-    void snapshotDoesNotRemoveEntities() { // GH-90000
+    void snapshotDoesNotRemoveEntities() { 
         purgeManager.snapshot("tenant-A");
         assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
@@ -113,41 +113,41 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
     @Test
     @DisplayName("rollback after purge restores all entities from snapshot")
-    void rollbackRestoresEntitiesAfterPurge() { // GH-90000
+    void rollbackRestoresEntitiesAfterPurge() { 
         PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
 
         purgeManager.purge("tenant-A");
         assertThat(purgeManager.count("tenant-A")).isEqualTo(0);
 
-        purgeManager.restore(snapshot); // GH-90000
+        purgeManager.restore(snapshot); 
         assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
 
     @Test
     @DisplayName("rollback restores correct entity IDs and payloads")
-    void rollbackRestoresCorrectEntities() { // GH-90000
+    void rollbackRestoresCorrectEntities() { 
         PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
-        Set<String> originalIds = snapshot.entities().stream() // GH-90000
-                .map(DataEntity::id) // GH-90000
-                .collect(java.util.stream.Collectors.toSet()); // GH-90000
+        Set<String> originalIds = snapshot.entities().stream() 
+                .map(DataEntity::id) 
+                .collect(java.util.stream.Collectors.toSet()); 
 
         purgeManager.purge("tenant-A");
-        purgeManager.restore(snapshot); // GH-90000
+        purgeManager.restore(snapshot); 
 
         List<DataEntity> restored = purgeManager.findByTenant("tenant-A");
-        Set<String> restoredIds = restored.stream() // GH-90000
-                .map(DataEntity::id) // GH-90000
-                .collect(java.util.stream.Collectors.toSet()); // GH-90000
+        Set<String> restoredIds = restored.stream() 
+                .map(DataEntity::id) 
+                .collect(java.util.stream.Collectors.toSet()); 
 
-        assertThat(restoredIds).isEqualTo(originalIds); // GH-90000
+        assertThat(restoredIds).isEqualTo(originalIds); 
     }
 
     @Test
     @DisplayName("rollback does not affect other tenants")
-    void rollbackDoesNotAffectOtherTenants() { // GH-90000
+    void rollbackDoesNotAffectOtherTenants() { 
         PurgeSnapshot snapshotA = purgeManager.snapshot("tenant-A");
         purgeManager.purge("tenant-A");
-        purgeManager.restore(snapshotA); // GH-90000
+        purgeManager.restore(snapshotA); 
 
         // tenant-B was not touched
         assertThat(purgeManager.count("tenant-B")).isEqualTo(3);
@@ -155,65 +155,65 @@ class PurgeAndRollbackTest extends EventloopTestBase {
 
     @Test
     @DisplayName("restore of snapshot for already-populated tenant merges without duplicate IDs")
-    void restoreMergesWithoutDuplicates() { // GH-90000
+    void restoreMergesWithoutDuplicates() { 
         PurgeSnapshot snapshot = purgeManager.snapshot("tenant-A");
         // Do NOT purge — restore on top of existing data
-        purgeManager.restore(snapshot); // GH-90000
+        purgeManager.restore(snapshot); 
 
-        // After restore over existing data, count must remain 5 (no duplicates) // GH-90000
+        // After restore over existing data, count must remain 5 (no duplicates) 
         assertThat(purgeManager.count("tenant-A")).isEqualTo(5);
     }
 
-    // ── Purge manager implementation (for tests) ────────────────────────────── // GH-90000
+    // ── Purge manager implementation (for tests) ────────────────────────────── 
 
-    record PurgeResult(int entitiesRemoved) {} // GH-90000
+    record PurgeResult(int entitiesRemoved) {} 
 
     static class PurgeManager {
-        private final ConcurrentHashMap<String, DataEntity> store = new ConcurrentHashMap<>(); // GH-90000
+        private final ConcurrentHashMap<String, DataEntity> store = new ConcurrentHashMap<>(); 
 
-        void insert(DataEntity entity) { // GH-90000
-            store.put(entity.tenantId() + "|" + entity.id(), entity); // GH-90000
+        void insert(DataEntity entity) { 
+            store.put(entity.tenantId() + "|" + entity.id(), entity); 
         }
 
-        int count(String tenantId) { // GH-90000
-            return (int) store.values().stream() // GH-90000
-                    .filter(e -> e.tenantId().equals(tenantId)).count(); // GH-90000
+        int count(String tenantId) { 
+            return (int) store.values().stream() 
+                    .filter(e -> e.tenantId().equals(tenantId)).count(); 
         }
 
-        List<DataEntity> findByTenant(String tenantId) { // GH-90000
-            return store.values().stream() // GH-90000
-                    .filter(e -> e.tenantId().equals(tenantId)) // GH-90000
-                    .toList(); // GH-90000
+        List<DataEntity> findByTenant(String tenantId) { 
+            return store.values().stream() 
+                    .filter(e -> e.tenantId().equals(tenantId)) 
+                    .toList(); 
         }
 
-        PurgeResult purge(String tenantId) { // GH-90000
-            List<String> keys = store.entrySet().stream() // GH-90000
-                    .filter(entry -> entry.getValue().tenantId().equals(tenantId)) // GH-90000
-                    .map(Map.Entry::getKey) // GH-90000
-                    .toList(); // GH-90000
-            keys.forEach(store::remove); // GH-90000
-            return new PurgeResult(keys.size()); // GH-90000
+        PurgeResult purge(String tenantId) { 
+            List<String> keys = store.entrySet().stream() 
+                    .filter(entry -> entry.getValue().tenantId().equals(tenantId)) 
+                    .map(Map.Entry::getKey) 
+                    .toList(); 
+            keys.forEach(store::remove); 
+            return new PurgeResult(keys.size()); 
         }
 
-        PurgeResult purgeBefore(String tenantId, Instant cutoff) { // GH-90000
-            List<String> keys = store.entrySet().stream() // GH-90000
-                    .filter(e -> e.getValue().tenantId().equals(tenantId)) // GH-90000
-                    .filter(e -> e.getValue().createdAt().isBefore(cutoff)) // GH-90000
-                    .map(Map.Entry::getKey) // GH-90000
-                    .toList(); // GH-90000
-            keys.forEach(store::remove); // GH-90000
-            return new PurgeResult(keys.size()); // GH-90000
+        PurgeResult purgeBefore(String tenantId, Instant cutoff) { 
+            List<String> keys = store.entrySet().stream() 
+                    .filter(e -> e.getValue().tenantId().equals(tenantId)) 
+                    .filter(e -> e.getValue().createdAt().isBefore(cutoff)) 
+                    .map(Map.Entry::getKey) 
+                    .toList(); 
+            keys.forEach(store::remove); 
+            return new PurgeResult(keys.size()); 
         }
 
-        PurgeSnapshot snapshot(String tenantId) { // GH-90000
-            List<DataEntity> entities = findByTenant(tenantId); // GH-90000
-            return new PurgeSnapshot(UUID.randomUUID().toString(), tenantId, // GH-90000
-                    List.copyOf(entities), Instant.now()); // GH-90000
+        PurgeSnapshot snapshot(String tenantId) { 
+            List<DataEntity> entities = findByTenant(tenantId); 
+            return new PurgeSnapshot(UUID.randomUUID().toString(), tenantId, 
+                    List.copyOf(entities), Instant.now()); 
         }
 
-        void restore(PurgeSnapshot snapshot) { // GH-90000
-            snapshot.entities().forEach(entity -> // GH-90000
-                    store.put(entity.tenantId() + "|" + entity.id(), entity)); // GH-90000
+        void restore(PurgeSnapshot snapshot) { 
+            snapshot.entities().forEach(entity -> 
+                    store.put(entity.tenantId() + "|" + entity.id(), entity)); 
         }
     }
 }

@@ -26,200 +26,200 @@ class CrossModalAccuracyTest {
     private CrossModalFusionEngine engine;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = new CrossModalFusionEngine("crossmodal-accuracy-v1", DIM); // GH-90000
+    void setUp() { 
+        engine = new CrossModalFusionEngine("crossmodal-accuracy-v1", DIM); 
     }
 
     // ── Benchmark dataset fixtures ────────────────────────────────────────────
 
     @Test
     @DisplayName("high-quality benchmark fusion returns high confidence")
-    void highQualityBenchmarkHighConfidence() { // GH-90000
-        AudioFeatures audio = makeAudio(DIM, 0.95); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.92); // GH-90000
-        FusionResult result = engine.fuseAudioVisual(audio, visual); // GH-90000
+    void highQualityBenchmarkHighConfidence() { 
+        AudioFeatures audio = makeAudio(DIM, 0.95); 
+        VisualFeatures visual = makeVisual(DIM, 0.92); 
+        FusionResult result = engine.fuseAudioVisual(audio, visual); 
         // With both modalities > 0.9, fusion confidence should be > 0.5
-        assertThat(result.fusionConfidence()).isGreaterThan(0.5); // GH-90000
+        assertThat(result.fusionConfidence()).isGreaterThan(0.5); 
     }
 
     @Test
     @DisplayName("low-quality audio reduces fusion confidence compared to high-quality")
-    void lowQualityAudioReducesConfidence() { // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.9); // GH-90000
-        FusionResult highAudio = engine.fuseAudioVisual(makeAudio(DIM, 0.95), visual); // GH-90000
-        FusionResult lowAudio = engine.fuseAudioVisual(makeAudio(DIM, 0.2), visual); // GH-90000
-        assertThat(lowAudio.fusionConfidence()).isLessThanOrEqualTo(highAudio.fusionConfidence()); // GH-90000
+    void lowQualityAudioReducesConfidence() { 
+        VisualFeatures visual = makeVisual(DIM, 0.9); 
+        FusionResult highAudio = engine.fuseAudioVisual(makeAudio(DIM, 0.95), visual); 
+        FusionResult lowAudio = engine.fuseAudioVisual(makeAudio(DIM, 0.2), visual); 
+        assertThat(lowAudio.fusionConfidence()).isLessThanOrEqualTo(highAudio.fusionConfidence()); 
     }
 
     @Test
     @DisplayName("balanced modality weights when both have equal confidence")
-    void balancedWeightsForEqualConfidence() { // GH-90000
+    void balancedWeightsForEqualConfidence() { 
         double conf = 0.8;
-        AudioFeatures audio = makeAudio(DIM, conf); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, conf); // GH-90000
-        FusionResult result = engine.fuseAudioVisual(audio, visual); // GH-90000
+        AudioFeatures audio = makeAudio(DIM, conf); 
+        VisualFeatures visual = makeVisual(DIM, conf); 
+        FusionResult result = engine.fuseAudioVisual(audio, visual); 
         double audioW = result.modalityWeights().get("audio");
         double visualW = result.modalityWeights().get("visual");
-        assertThat(audioW).isCloseTo(visualW, within(0.01)); // GH-90000
+        assertThat(audioW).isCloseTo(visualW, within(0.01)); 
     }
 
     // ── Missing modality degradation ──────────────────────────────────────────
 
     @Test
     @DisplayName("missing audio produces lower confidence than full audio-visual fusion")
-    void missingAudioReducesConfidenceVsFullFusion() { // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
-        AudioFeatures fullAudio = makeAudio(DIM, 0.8); // GH-90000
-        AudioFeatures emptyAudio = new AudioFeatures(new double[0], 0.0); // GH-90000
-        FusionResult fullResult = engine.fuseAudioVisual(fullAudio, visual); // GH-90000
-        FusionResult degradedResult = engine.fuseAudioVisual(emptyAudio, visual); // GH-90000
-        assertThat(degradedResult.fusionConfidence()) // GH-90000
-                .isLessThanOrEqualTo(fullResult.fusionConfidence()); // GH-90000
+    void missingAudioReducesConfidenceVsFullFusion() { 
+        VisualFeatures visual = makeVisual(DIM, 0.8); 
+        AudioFeatures fullAudio = makeAudio(DIM, 0.8); 
+        AudioFeatures emptyAudio = new AudioFeatures(new double[0], 0.0); 
+        FusionResult fullResult = engine.fuseAudioVisual(fullAudio, visual); 
+        FusionResult degradedResult = engine.fuseAudioVisual(emptyAudio, visual); 
+        assertThat(degradedResult.fusionConfidence()) 
+                .isLessThanOrEqualTo(fullResult.fusionConfidence()); 
     }
 
     @Test
     @DisplayName("missing visual modality still produces valid fused embeddings")
-    void missingVisualProducesValidEmbeddings() { // GH-90000
-        AudioFeatures audio = makeAudio(DIM, 0.85); // GH-90000
-        VisualFeatures emptyVisual = new VisualFeatures(new double[0], new double[0], 0.0); // GH-90000
-        FusionResult result = engine.fuseAudioVisual(audio, emptyVisual); // GH-90000
-        assertThat(result.fusedEmbeddings()).hasSize(DIM); // GH-90000
-        assertThat(result.hadMissingModality()).isTrue(); // GH-90000
+    void missingVisualProducesValidEmbeddings() { 
+        AudioFeatures audio = makeAudio(DIM, 0.85); 
+        VisualFeatures emptyVisual = new VisualFeatures(new double[0], new double[0], 0.0); 
+        FusionResult result = engine.fuseAudioVisual(audio, emptyVisual); 
+        assertThat(result.fusedEmbeddings()).hasSize(DIM); 
+        assertThat(result.hadMissingModality()).isTrue(); 
     }
 
     @Test
     @DisplayName("missing text modality in text-image fusion still produces valid result")
-    void missingTextProducesValidTextImageFusion() { // GH-90000
-        TextFeatures emptyText = new TextFeatures(new double[0], "", 0.0); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
-        FusionResult result = engine.fuseTextImage(emptyText, visual); // GH-90000
-        assertThat(result.fusedEmbeddings()).hasSize(DIM); // GH-90000
-        assertThat(result.hadMissingModality()).isTrue(); // GH-90000
+    void missingTextProducesValidTextImageFusion() { 
+        TextFeatures emptyText = new TextFeatures(new double[0], "", 0.0); 
+        VisualFeatures visual = makeVisual(DIM, 0.8); 
+        FusionResult result = engine.fuseTextImage(emptyText, visual); 
+        assertThat(result.fusedEmbeddings()).hasSize(DIM); 
+        assertThat(result.hadMissingModality()).isTrue(); 
     }
 
     // ── Noise robustness ──────────────────────────────────────────────────────
 
     @Test
     @DisplayName("noisy audio embeddings produce a valid fusion result")
-    void noisyAudioEmbeddingsHandled() { // GH-90000
-        AudioFeatures noisy = makeNoisyAudio(DIM); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
-        FusionResult result = engine.fuseAudioVisual(noisy, visual); // GH-90000
-        assertThat(result.fusedEmbeddings()).hasSize(DIM); // GH-90000
-        assertThat(result.fusionConfidence()).isBetween(0.0, 1.0); // GH-90000
+    void noisyAudioEmbeddingsHandled() { 
+        AudioFeatures noisy = makeNoisyAudio(DIM); 
+        VisualFeatures visual = makeVisual(DIM, 0.8); 
+        FusionResult result = engine.fuseAudioVisual(noisy, visual); 
+        assertThat(result.fusedEmbeddings()).hasSize(DIM); 
+        assertThat(result.fusionConfidence()).isBetween(0.0, 1.0); 
     }
 
     @Test
     @DisplayName("noisy visual embeddings produce a valid fusion result")
-    void noisyVisualEmbeddingsHandled() { // GH-90000
-        AudioFeatures audio = makeAudio(DIM, 0.8); // GH-90000
-        VisualFeatures noisy = makeNoisyVisual(DIM); // GH-90000
-        FusionResult result = engine.fuseAudioVisual(audio, noisy); // GH-90000
-        assertThat(result.fusedEmbeddings()).hasSize(DIM); // GH-90000
+    void noisyVisualEmbeddingsHandled() { 
+        AudioFeatures audio = makeAudio(DIM, 0.8); 
+        VisualFeatures noisy = makeNoisyVisual(DIM); 
+        FusionResult result = engine.fuseAudioVisual(audio, noisy); 
+        assertThat(result.fusedEmbeddings()).hasSize(DIM); 
     }
 
     @Test
     @DisplayName("both modalities noisy still produces valid fusion")
-    void bothNoisyProducesValidFusion() { // GH-90000
-        AudioFeatures noisyAudio = makeNoisyAudio(DIM); // GH-90000
-        VisualFeatures noisyVisual = makeNoisyVisual(DIM); // GH-90000
-        assertThatCode(() -> engine.fuseAudioVisual(noisyAudio, noisyVisual)) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void bothNoisyProducesValidFusion() { 
+        AudioFeatures noisyAudio = makeNoisyAudio(DIM); 
+        VisualFeatures noisyVisual = makeNoisyVisual(DIM); 
+        assertThatCode(() -> engine.fuseAudioVisual(noisyAudio, noisyVisual)) 
+                .doesNotThrowAnyException(); 
     }
 
     // ── Temporal alignment accuracy ───────────────────────────────────────────
 
     @Test
     @DisplayName("audio-visual fusion is deterministic for identical inputs")
-    void fusionIsDeterministic() { // GH-90000
-        AudioFeatures audio = makeAudio(DIM, 0.85); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.75); // GH-90000
-        double[] fused1 = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); // GH-90000
-        double[] fused2 = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); // GH-90000
-        assertThat(fused1).containsExactly(fused2); // GH-90000
+    void fusionIsDeterministic() { 
+        AudioFeatures audio = makeAudio(DIM, 0.85); 
+        VisualFeatures visual = makeVisual(DIM, 0.75); 
+        double[] fused1 = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); 
+        double[] fused2 = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); 
+        assertThat(fused1).containsExactly(fused2); 
     }
 
     @Test
     @DisplayName("audio-visual fusion is commutative in terms of output dimension")
-    void fusionOutputDimensionStable() { // GH-90000
-        for (int trial = 0; trial < 5; trial++) { // GH-90000
-            AudioFeatures audio = makeAudio(DIM, 0.7 + trial * 0.05); // GH-90000
-            VisualFeatures visual = makeVisual(DIM, 0.8 - trial * 0.05); // GH-90000
-            FusionResult result = engine.fuseAudioVisual(audio, visual); // GH-90000
-            assertThat(result.fusedEmbeddings()).hasSize(DIM); // GH-90000
+    void fusionOutputDimensionStable() { 
+        for (int trial = 0; trial < 5; trial++) { 
+            AudioFeatures audio = makeAudio(DIM, 0.7 + trial * 0.05); 
+            VisualFeatures visual = makeVisual(DIM, 0.8 - trial * 0.05); 
+            FusionResult result = engine.fuseAudioVisual(audio, visual); 
+            assertThat(result.fusedEmbeddings()).hasSize(DIM); 
         }
     }
 
     // ── Embedding dimension variants ──────────────────────────────────────────
 
-    @ParameterizedTest(name = "dim={0}") // GH-90000
-    @ValueSource(ints = {16, 64, 128, 256}) // GH-90000
+    @ParameterizedTest(name = "dim={0}") 
+    @ValueSource(ints = {16, 64, 128, 256}) 
     @DisplayName("accuracy tests scale correctly across embedding dimensions")
-    void dimensionScaling(int dim) { // GH-90000
-        CrossModalFusionEngine e = new CrossModalFusionEngine("crossmodal-accuracy-v1", dim); // GH-90000
-        FusionResult result = e.fuseAudioVisual(makeAudio(dim, 0.85), makeVisual(dim, 0.75)); // GH-90000
-        assertThat(result.fusedEmbeddings()).hasSize(dim); // GH-90000
-        assertThat(result.fusionConfidence()).isBetween(0.0, 1.0); // GH-90000
+    void dimensionScaling(int dim) { 
+        CrossModalFusionEngine e = new CrossModalFusionEngine("crossmodal-accuracy-v1", dim); 
+        FusionResult result = e.fuseAudioVisual(makeAudio(dim, 0.85), makeVisual(dim, 0.75)); 
+        assertThat(result.fusedEmbeddings()).hasSize(dim); 
+        assertThat(result.fusionConfidence()).isBetween(0.0, 1.0); 
     }
 
     // ── Text-image accuracy ───────────────────────────────────────────────────
 
     @Test
     @DisplayName("high-confidence text-image fusion has confidence > 0.5")
-    void highConfidenceTextImageFusion() { // GH-90000
-        TextFeatures text = makeText(DIM, "caption text", 0.92); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.88); // GH-90000
-        FusionResult result = engine.fuseTextImage(text, visual); // GH-90000
-        assertThat(result.fusionConfidence()).isGreaterThan(0.5); // GH-90000
+    void highConfidenceTextImageFusion() { 
+        TextFeatures text = makeText(DIM, "caption text", 0.92); 
+        VisualFeatures visual = makeVisual(DIM, 0.88); 
+        FusionResult result = engine.fuseTextImage(text, visual); 
+        assertThat(result.fusionConfidence()).isGreaterThan(0.5); 
     }
 
     @Test
     @DisplayName("text-image fusion produces distinct output from audio-visual fusion")
-    void textImageDistinctFromAudioVisual() { // GH-90000
-        TextFeatures text = makeText(DIM, "image caption", 0.9); // GH-90000
-        VisualFeatures visual = makeVisual(DIM, 0.8); // GH-90000
-        AudioFeatures audio = makeAudio(DIM, 0.9); // GH-90000
-        double[] textImageFused = engine.fuseTextImage(text, visual).fusedEmbeddings(); // GH-90000
-        double[] audioVisualFused = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); // GH-90000
+    void textImageDistinctFromAudioVisual() { 
+        TextFeatures text = makeText(DIM, "image caption", 0.9); 
+        VisualFeatures visual = makeVisual(DIM, 0.8); 
+        AudioFeatures audio = makeAudio(DIM, 0.9); 
+        double[] textImageFused = engine.fuseTextImage(text, visual).fusedEmbeddings(); 
+        double[] audioVisualFused = engine.fuseAudioVisual(audio, visual).fusedEmbeddings(); 
         // Different input types should produce different outputs
-        assertThat(textImageFused).isNotEqualTo(audioVisualFused); // GH-90000
+        assertThat(textImageFused).isNotEqualTo(audioVisualFused); 
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static AudioFeatures makeAudio(int dim, double confidence) { // GH-90000
+    private static AudioFeatures makeAudio(int dim, double confidence) { 
         double[] emb = new double[dim];
-        for (int i = 0; i < dim; i++) emb[i] = (double) i / dim * confidence; // GH-90000
-        return new AudioFeatures(emb, confidence); // GH-90000
+        for (int i = 0; i < dim; i++) emb[i] = (double) i / dim * confidence; 
+        return new AudioFeatures(emb, confidence); 
     }
 
-    private static VisualFeatures makeVisual(int dim, double confidence) { // GH-90000
-        double[] emb = new double[dim];
-        double[] boxes = new double[4];
-        for (int i = 0; i < dim; i++) emb[i] = (1.0 - (double) i / dim) * confidence; // GH-90000
-        return new VisualFeatures(emb, boxes, confidence); // GH-90000
-    }
-
-    private static TextFeatures makeText(int dim, String text, double confidence) { // GH-90000
-        double[] emb = new double[dim];
-        for (int i = 0; i < dim; i++) emb[i] = Math.cos((double) i / dim) * confidence; // GH-90000
-        return new TextFeatures(emb, text, confidence); // GH-90000
-    }
-
-    private static AudioFeatures makeNoisyAudio(int dim) { // GH-90000
-        double[] emb = new double[dim];
-        for (int i = 0; i < dim; i++) emb[i] = (i % 7 == 0) ? Double.MIN_VALUE : (double) i / dim; // GH-90000
-        return new AudioFeatures(emb, 0.4); // GH-90000
-    }
-
-    private static VisualFeatures makeNoisyVisual(int dim) { // GH-90000
+    private static VisualFeatures makeVisual(int dim, double confidence) { 
         double[] emb = new double[dim];
         double[] boxes = new double[4];
-        for (int i = 0; i < dim; i++) emb[i] = (i % 5 == 0) ? 0.0 : (double) (dim - i) / dim; // GH-90000
-        return new VisualFeatures(emb, boxes, 0.3); // GH-90000
+        for (int i = 0; i < dim; i++) emb[i] = (1.0 - (double) i / dim) * confidence; 
+        return new VisualFeatures(emb, boxes, confidence); 
     }
 
-    private static org.assertj.core.data.Offset<Double> within(double d) { // GH-90000
-        return org.assertj.core.data.Offset.offset(d); // GH-90000
+    private static TextFeatures makeText(int dim, String text, double confidence) { 
+        double[] emb = new double[dim];
+        for (int i = 0; i < dim; i++) emb[i] = Math.cos((double) i / dim) * confidence; 
+        return new TextFeatures(emb, text, confidence); 
+    }
+
+    private static AudioFeatures makeNoisyAudio(int dim) { 
+        double[] emb = new double[dim];
+        for (int i = 0; i < dim; i++) emb[i] = (i % 7 == 0) ? Double.MIN_VALUE : (double) i / dim; 
+        return new AudioFeatures(emb, 0.4); 
+    }
+
+    private static VisualFeatures makeNoisyVisual(int dim) { 
+        double[] emb = new double[dim];
+        double[] boxes = new double[4];
+        for (int i = 0; i < dim; i++) emb[i] = (i % 5 == 0) ? 0.0 : (double) (dim - i) / dim; 
+        return new VisualFeatures(emb, boxes, 0.3); 
+    }
+
+    private static org.assertj.core.data.Offset<Double> within(double d) { 
+        return org.assertj.core.data.Offset.offset(d); 
     }
 }

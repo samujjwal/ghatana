@@ -24,76 +24,76 @@ import static org.mockito.Mockito.*;
 class PhaseOperatorTest extends EventloopTestBase {
 
     @Test
-    void shouldExecuteIntentPhase() { // GH-90000
+    void shouldExecuteIntentPhase() { 
         // GIVEN
-        IntentService intentService = mock(IntentService.class); // GH-90000
-        IntentSpec expectedSpec = IntentSpec.builder() // GH-90000
+        IntentService intentService = mock(IntentService.class); 
+        IntentSpec expectedSpec = IntentSpec.builder() 
                 .id("intent-123")
                 .productName("Test Product")
                 .description("Test product intent")
-                .goals(List.of()) // GH-90000
-                .personas(List.of()) // GH-90000
-                .constraints(List.of()) // GH-90000
-                .build(); // GH-90000
+                .goals(List.of()) 
+                .personas(List.of()) 
+                .constraints(List.of()) 
+                .build(); 
 
-        when(intentService.capture(any(IntentInput.class))) // GH-90000
-                .thenReturn(Promise.of(expectedSpec)); // GH-90000
+        when(intentService.capture(any(IntentInput.class))) 
+                .thenReturn(Promise.of(expectedSpec)); 
 
-        PhaseOperator operator = new PhaseOperator( // GH-90000
+        PhaseOperator operator = new PhaseOperator( 
                 PhaseType.INTENT, intentService, null, null, null, null, null, null, null);
 
-        IntentInput input = IntentInput.builder() // GH-90000
+        IntentInput input = IntentInput.builder() 
                 .rawText("Build an app")
                 .format("text")
-                .build(); // GH-90000
+                .build(); 
 
         // WHEN
-        Object result = runPromise(() -> operator.execute(input)); // GH-90000
+        Object result = runPromise(() -> operator.execute(input)); 
 
         // THEN
-        assertNotNull(result); // GH-90000
-        assertInstanceOf(IntentSpec.class, result); // GH-90000
-        assertEquals("intent-123", ((IntentSpec) result).id()); // GH-90000
-        verify(intentService, times(1)).capture(any(IntentInput.class)); // GH-90000
+        assertNotNull(result); 
+        assertInstanceOf(IntentSpec.class, result); 
+        assertEquals("intent-123", ((IntentSpec) result).id()); 
+        verify(intentService, times(1)).capture(any(IntentInput.class)); 
     }
 
     @Test
-    void shouldReturnOperatorId() { // GH-90000
+    void shouldReturnOperatorId() { 
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( // GH-90000
+        PhaseOperator operator = new PhaseOperator( 
                 PhaseType.SHAPE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        String operatorId = operator.getOperatorId(); // GH-90000
+        String operatorId = operator.getOperatorId(); 
 
         // THEN
-        assertEquals("yappc.phase.shape", operatorId); // GH-90000
+        assertEquals("yappc.phase.shape", operatorId); 
     }
 
     @Test
-    void shouldReturnMetadata() { // GH-90000
+    void shouldReturnMetadata() { 
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( // GH-90000
+        PhaseOperator operator = new PhaseOperator( 
                 PhaseType.VALIDATE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        Map<String, String> metadata = operator.getMetadata(); // GH-90000
+        Map<String, String> metadata = operator.getMetadata(); 
 
         // THEN
-        assertNotNull(metadata); // GH-90000
+        assertNotNull(metadata); 
         assertEquals("VALIDATE", metadata.get("phase"));
         assertEquals("yappc.phase.validate", metadata.get("operator_id"));
         assertEquals("1.0.0", metadata.get("version"));
     }
 
     @Test
-    void shouldHandleInvalidInputType() { // GH-90000
+    void shouldHandleInvalidInputType() { 
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( // GH-90000
-                PhaseType.INTENT, mock(IntentService.class), null, null, null, null, null, null, null); // GH-90000
+        PhaseOperator operator = new PhaseOperator( 
+                PhaseType.INTENT, mock(IntentService.class), null, null, null, null, null, null, null); 
 
         // WHEN/THEN
-        Exception e = assertThrows(Exception.class, () -> // GH-90000
+        Exception e = assertThrows(Exception.class, () -> 
                 runPromise(() -> operator.execute("invalid input")));
         assertTrue(e.getMessage().contains("Invalid input type"));
     }

@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AudioVideoCache Tests")
 class AudioVideoCacheTest {
 
@@ -32,18 +32,18 @@ class AudioVideoCacheTest {
 
     @Test
     @DisplayName("buildKey composes namespace tenant and id")
-    void buildKeyComposesNamespaceAndTenant() { // GH-90000
-        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); // GH-90000
+    void buildKeyComposesNamespaceAndTenant() { 
+        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); 
 
-        String key = cache.buildKey("tenant-1", "id-1"); // GH-90000
+        String key = cache.buildKey("tenant-1", "id-1"); 
 
         assertThat(key).isEqualTo("transcription:tenant-1:id-1");
     }
 
     @Test
     @DisplayName("get delegates to cache port")
-    void getDelegatesToPort() { // GH-90000
-        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); // GH-90000
+    void getDelegatesToPort() { 
+        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); 
         when(cachePort.get("k1")).thenReturn(Promise.of(Optional.of("value")));
 
         Optional<String> value = cache.get("k1").getResult();
@@ -54,20 +54,20 @@ class AudioVideoCacheTest {
 
     @Test
     @DisplayName("put with ttl delegates to cache port with ttl")
-    void putWithTtlDelegatesToPort() { // GH-90000
-        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); // GH-90000
-        Duration ttl = Duration.ofMinutes(5); // GH-90000
-        when(cachePort.put("k1", "v1", ttl)).thenReturn(Promise.complete()); // GH-90000
+    void putWithTtlDelegatesToPort() { 
+        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); 
+        Duration ttl = Duration.ofMinutes(5); 
+        when(cachePort.put("k1", "v1", ttl)).thenReturn(Promise.complete()); 
 
-        cache.put("k1", "v1", ttl).getResult(); // GH-90000
+        cache.put("k1", "v1", ttl).getResult(); 
 
-        verify(cachePort).put("k1", "v1", ttl); // GH-90000
+        verify(cachePort).put("k1", "v1", ttl); 
     }
 
     @Test
     @DisplayName("getOrLoad delegates loader function")
-    void getOrLoadDelegates() { // GH-90000
-        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); // GH-90000
+    void getOrLoadDelegates() { 
+        AudioVideoCache<String, String> cache = new AudioVideoCache<>(cachePort, "transcription"); 
         when(cachePort.getOrLoad(eq("k1"), any())).thenReturn(Promise.of("loaded"));
 
         String value = cache.getOrLoad("k1", k -> Promise.of("x")).getResult();

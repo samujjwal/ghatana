@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.validation.ai;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  */
 @DisplayName("ML Operator Generator Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class MLOperatorGeneratorTest extends EventloopTestBase {
 
     @Mock
@@ -47,162 +47,162 @@ class MLOperatorGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generates operators from event data")
-    void generatesOperatorsFromEventData() { // GH-90000
-        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
+    void generatesOperatorsFromEventData() { 
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); 
+        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); 
 
-        List<Event> events = createSampleEvents(); // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
-            .temperature(0.7) // GH-90000
-            .maxTokens(2000) // GH-90000
-            .confidenceThreshold(0.5) // GH-90000
-            .build(); // GH-90000
+        List<Event> events = createSampleEvents(); 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() 
+            .temperature(0.7) 
+            .maxTokens(2000) 
+            .confidenceThreshold(0.5) 
+            .build(); 
 
-        CompletionResult mockResult = CompletionResult.builder() // GH-90000
-            .text("[{\"type\":\"SEQ\",\"id\":\"pattern-1\",\"parameters\":{\"within\":\"PT5M\"},\"operands\":[]}]") // GH-90000
-            .tokensUsed(100) // GH-90000
-            .promptTokens(50) // GH-90000
-            .completionTokens(50) // GH-90000
+        CompletionResult mockResult = CompletionResult.builder() 
+            .text("[{\"type\":\"SEQ\",\"id\":\"pattern-1\",\"parameters\":{\"within\":\"PT5M\"},\"operands\":[]}]") 
+            .tokensUsed(100) 
+            .promptTokens(50) 
+            .completionTokens(50) 
             .finishReason("stop")
             .modelUsed("gpt-4")
-            .build(); // GH-90000
+            .build(); 
 
-        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
-            .thenReturn(Promise.of(mockResult)); // GH-90000
+        when(llmGateway.complete(any(CompletionRequest.class))) 
+            .thenReturn(Promise.of(mockResult)); 
 
-        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config)); // GH-90000
+        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config)); 
 
-        assertThat(operators).isNotEmpty(); // GH-90000
+        assertThat(operators).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("uses default system prompt")
-    void usesDefaultSystemPrompt() { // GH-90000
-        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
+    void usesDefaultSystemPrompt() { 
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); 
+        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); 
 
-        assertThat(generator).isNotNull(); // GH-90000
+        assertThat(generator).isNotNull(); 
     }
 
     @Test
     @DisplayName("uses custom system prompt")
-    void usesCustomSystemPrompt() { // GH-90000
+    void usesCustomSystemPrompt() { 
         String customPrompt = "You are a pattern detection expert.";
-        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics, customPrompt); // GH-90000
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); 
+        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics, customPrompt); 
 
-        assertThat(generator).isNotNull(); // GH-90000
+        assertThat(generator).isNotNull(); 
     }
 
     @Test
     @DisplayName("summarizes events correctly")
-    void summarizesEventsCorrectly() { // GH-90000
-        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
+    void summarizesEventsCorrectly() { 
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); 
+        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); 
 
-        List<Event> events = createSampleEvents(); // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); // GH-90000
+        List<Event> events = createSampleEvents(); 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); 
 
-        CompletionResult mockResult = CompletionResult.builder() // GH-90000
+        CompletionResult mockResult = CompletionResult.builder() 
             .text("[]")
-            .tokensUsed(10) // GH-90000
-            .promptTokens(5) // GH-90000
-            .completionTokens(5) // GH-90000
+            .tokensUsed(10) 
+            .promptTokens(5) 
+            .completionTokens(5) 
             .finishReason("stop")
             .modelUsed("gpt-4")
-            .build(); // GH-90000
+            .build(); 
 
-        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
-            .thenReturn(Promise.of(mockResult)); // GH-90000
+        when(llmGateway.complete(any(CompletionRequest.class))) 
+            .thenReturn(Promise.of(mockResult)); 
 
-        runPromise(() -> generator.generateOperators(events, config)); // GH-90000
+        runPromise(() -> generator.generateOperators(events, config)); 
 
-        assertThat(generator).isNotNull(); // GH-90000
+        assertThat(generator).isNotNull(); 
     }
 
     @Test
     @DisplayName("handles empty event list")
-    void handlesEmptyEventList() { // GH-90000
-        Metrics metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); // GH-90000
+    void handlesEmptyEventList() { 
+        Metrics metrics = new Metrics(new SimpleMeterRegistry()); 
+        MLOperatorGenerator generator = new MLOperatorGenerator(llmGateway, metrics); 
 
-        List<Event> events = List.of(); // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); // GH-90000
+        List<Event> events = List.of(); 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder().build(); 
 
-        CompletionResult mockResult = CompletionResult.builder() // GH-90000
+        CompletionResult mockResult = CompletionResult.builder() 
             .text("[]")
-            .tokensUsed(10) // GH-90000
-            .promptTokens(5) // GH-90000
-            .completionTokens(5) // GH-90000
+            .tokensUsed(10) 
+            .promptTokens(5) 
+            .completionTokens(5) 
             .finishReason("stop")
             .modelUsed("gpt-4")
-            .build(); // GH-90000
+            .build(); 
 
-        when(llmGateway.complete(any(CompletionRequest.class))) // GH-90000
-            .thenReturn(Promise.of(mockResult)); // GH-90000
+        when(llmGateway.complete(any(CompletionRequest.class))) 
+            .thenReturn(Promise.of(mockResult)); 
 
-        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config)); // GH-90000
+        List<OperatorSpec> operators = runPromise(() -> generator.generateOperators(events, config)); 
 
-        assertThat(operators).isNotNull(); // GH-90000
+        assertThat(operators).isNotNull(); 
     }
 
     @Test
     @DisplayName("config builder creates valid config")
-    void configBuilderCreatesValidConfig() { // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
+    void configBuilderCreatesValidConfig() { 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() 
             .model("gpt-4")
-            .temperature(0.5) // GH-90000
-            .maxTokens(1000) // GH-90000
-            .confidenceThreshold(0.8) // GH-90000
-            .build(); // GH-90000
+            .temperature(0.5) 
+            .maxTokens(1000) 
+            .confidenceThreshold(0.8) 
+            .build(); 
 
         assertThat(config.model()).isEqualTo("gpt-4");
-        assertThat(config.temperature()).isEqualTo(0.5); // GH-90000
-        assertThat(config.maxTokens()).isEqualTo(1000); // GH-90000
-        assertThat(config.confidenceThreshold()).isEqualTo(0.8); // GH-90000
+        assertThat(config.temperature()).isEqualTo(0.5); 
+        assertThat(config.maxTokens()).isEqualTo(1000); 
+        assertThat(config.confidenceThreshold()).isEqualTo(0.8); 
     }
 
     @Test
     @DisplayName("config clamps temperature to valid range")
-    void configClampsTemperatureToValidRange() { // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
-            .temperature(3.0) // GH-90000
-            .build(); // GH-90000
+    void configClampsTemperatureToValidRange() { 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() 
+            .temperature(3.0) 
+            .build(); 
 
-        assertThat(config.temperature()).isEqualTo(2.0); // GH-90000
+        assertThat(config.temperature()).isEqualTo(2.0); 
     }
 
     @Test
     @DisplayName("config clamps confidence to valid range")
-    void configClampsConfidenceToValidRange() { // GH-90000
-        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() // GH-90000
-            .confidenceThreshold(1.5) // GH-90000
-            .build(); // GH-90000
+    void configClampsConfidenceToValidRange() { 
+        MLOperatorGenerator.GenerationConfig config = MLOperatorGenerator.GenerationConfig.builder() 
+            .confidenceThreshold(1.5) 
+            .build(); 
 
-        assertThat(config.confidenceThreshold()).isEqualTo(1.0); // GH-90000
+        assertThat(config.confidenceThreshold()).isEqualTo(1.0); 
     }
 
-    private List<Event> createSampleEvents() { // GH-90000
-        return List.of( // GH-90000
-            createEvent("user.login", "event-1"), // GH-90000
-            createEvent("order.created", "event-2"), // GH-90000
-            createEvent("payment.success", "event-3") // GH-90000
+    private List<Event> createSampleEvents() { 
+        return List.of( 
+            createEvent("user.login", "event-1"), 
+            createEvent("order.created", "event-2"), 
+            createEvent("payment.success", "event-3") 
         );
     }
 
-    private Event createEvent(String type, String id) { // GH-90000
-        return GEvent.builder() // GH-90000
-            .id(EventId.create(id, type, "v1", "test-tenant")) // GH-90000
-            .time(EventTime.now()) // GH-90000
-            .stats(EventStats.builder() // GH-90000
-                .withProcessingTimeNanos(0) // GH-90000
-                .withSizeInBytes(16) // GH-90000
-                .withFieldCount(1) // GH-90000
-                .withTagCount(0) // GH-90000
-                .build()) // GH-90000
-            .relations(EventRelations.empty()) // GH-90000
-            .headers(Map.of()) // GH-90000
-            .payload(Map.of("test", "data")) // GH-90000
-            .build(); // GH-90000
+    private Event createEvent(String type, String id) { 
+        return GEvent.builder() 
+            .id(EventId.create(id, type, "v1", "test-tenant")) 
+            .time(EventTime.now()) 
+            .stats(EventStats.builder() 
+                .withProcessingTimeNanos(0) 
+                .withSizeInBytes(16) 
+                .withFieldCount(1) 
+                .withTagCount(0) 
+                .build()) 
+            .relations(EventRelations.empty()) 
+            .headers(Map.of()) 
+            .payload(Map.of("test", "data")) 
+            .build(); 
     }
 }

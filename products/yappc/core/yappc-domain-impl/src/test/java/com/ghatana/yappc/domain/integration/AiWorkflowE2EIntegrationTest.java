@@ -35,12 +35,12 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
     private static final String TENANT_ID = "test-tenant";
 
     @BeforeEach
-    void setUp() { // GH-90000
-        workflowRepository = new InMemoryAiWorkflowRepository(); // GH-90000
-        planRepository = new InMemoryAiPlanRepository(); // GH-90000
-        MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
-        agentRegistry = new AgentRegistry(metricsCollector); // GH-90000
-        workflowService = new AiWorkflowService(workflowRepository, planRepository, agentRegistry); // GH-90000
+    void setUp() { 
+        workflowRepository = new InMemoryAiWorkflowRepository(); 
+        planRepository = new InMemoryAiPlanRepository(); 
+        MetricsCollector metricsCollector = mock(MetricsCollector.class); 
+        agentRegistry = new AgentRegistry(metricsCollector); 
+        workflowService = new AiWorkflowService(workflowRepository, planRepository, agentRegistry); 
     }
 
     @Nested
@@ -49,10 +49,10 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create workflow in DRAFT state")
-        void shouldCreateWorkflowInDraftState() { // GH-90000
+        void shouldCreateWorkflowInDraftState() { 
             // GIVEN
             AiWorkflowService.CreateWorkflowRequest request =
-                    new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+                    new AiWorkflowService.CreateWorkflowRequest( 
                             TENANT_ID,
                             "Feature: Login Form",
                             "Create a login form with email and password fields",
@@ -61,97 +61,97 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
                     );
 
             // WHEN
-            AiWorkflowInstance workflow = runPromise( // GH-90000
-                    () -> workflowService.createWorkflow(request) // GH-90000
+            AiWorkflowInstance workflow = runPromise( 
+                    () -> workflowService.createWorkflow(request) 
             );
 
             // THEN
-            assertThat(workflow).isNotNull(); // GH-90000
-            assertThat(workflow.id()).isNotBlank(); // GH-90000
-            assertThat(workflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.DRAFT); // GH-90000
-            assertThat(workflow.tenantId()).isEqualTo(TENANT_ID); // GH-90000
+            assertThat(workflow).isNotNull(); 
+            assertThat(workflow.id()).isNotBlank(); 
+            assertThat(workflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.DRAFT); 
+            assertThat(workflow.tenantId()).isEqualTo(TENANT_ID); 
             assertThat(workflow.name()).isEqualTo("Feature: Login Form");
-            assertThat(workflow.type()).isEqualTo(AiWorkflowInstance.WorkflowType.FEATURE_DEVELOPMENT); // GH-90000
+            assertThat(workflow.type()).isEqualTo(AiWorkflowInstance.WorkflowType.FEATURE_DEVELOPMENT); 
         }
 
         @Test
         @DisplayName("should generate plan for workflow")
-        void shouldGeneratePlanForWorkflow() { // GH-90000
+        void shouldGeneratePlanForWorkflow() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Generate plan test");
 
             // WHEN
-            AiPlan plan = runPromise( // GH-90000
-                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Build a REST API") // GH-90000
+            AiPlan plan = runPromise( 
+                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Build a REST API") 
             );
 
             // THEN
-            assertThat(plan).isNotNull(); // GH-90000
-            assertThat(plan.workflowId()).isEqualTo(workflow.id()); // GH-90000
-            assertThat(plan.steps()).isNotEmpty(); // GH-90000
+            assertThat(plan).isNotNull(); 
+            assertThat(plan.workflowId()).isEqualTo(workflow.id()); 
+            assertThat(plan.steps()).isNotEmpty(); 
             assertThat(plan.objective()).isEqualTo("Build a REST API");
         }
 
         @Test
         @DisplayName("should approve plan and start workflow")
-        void shouldApprovePlanAndStartWorkflow() { // GH-90000
+        void shouldApprovePlanAndStartWorkflow() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Approve and start test");
-            AiPlan plan = runPromise( // GH-90000
-                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Test objective") // GH-90000
+            AiPlan plan = runPromise( 
+                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Test objective") 
             );
 
             // WHEN - Approve plan
-            AiPlan approvedPlan = runPromise( // GH-90000
-                    () -> workflowService.approvePlan(plan.id(), TENANT_ID, null) // GH-90000
+            AiPlan approvedPlan = runPromise( 
+                    () -> workflowService.approvePlan(plan.id(), TENANT_ID, null) 
             );
 
-            assertThat(approvedPlan.status()).isEqualTo(AiPlan.PlanStatus.APPROVED); // GH-90000
+            assertThat(approvedPlan.status()).isEqualTo(AiPlan.PlanStatus.APPROVED); 
 
             // AND - Start workflow
-            AiWorkflowInstance startedWorkflow = runPromise( // GH-90000
-                    () -> workflowService.startWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance startedWorkflow = runPromise( 
+                    () -> workflowService.startWorkflow(workflow.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(startedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); // GH-90000
+            assertThat(startedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); 
         }
 
         @Test
         @DisplayName("should handle workflow pause and resume")
-        void shouldHandleWorkflowPauseAndResume() { // GH-90000
+        void shouldHandleWorkflowPauseAndResume() { 
             // GIVEN - Start workflow
             AiWorkflowInstance workflow = createAndStartWorkflow("Pause resume test");
 
             // WHEN - Pause
-            AiWorkflowInstance pausedWorkflow = runPromise( // GH-90000
-                    () -> workflowService.pauseWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance pausedWorkflow = runPromise( 
+                    () -> workflowService.pauseWorkflow(workflow.id(), TENANT_ID) 
             );
 
-            assertThat(pausedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.PAUSED); // GH-90000
+            assertThat(pausedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.PAUSED); 
 
             // AND - Resume
-            AiWorkflowInstance resumedWorkflow = runPromise( // GH-90000
-                    () -> workflowService.resumeWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            AiWorkflowInstance resumedWorkflow = runPromise( 
+                    () -> workflowService.resumeWorkflow(workflow.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(resumedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); // GH-90000
+            assertThat(resumedWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.IN_PROGRESS); 
         }
 
         @Test
         @DisplayName("should handle workflow cancellation")
-        void shouldHandleWorkflowCancellation() { // GH-90000
+        void shouldHandleWorkflowCancellation() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Cancel test");
 
             // WHEN
-            AiWorkflowInstance cancelledWorkflow = runPromise( // GH-90000
-                    () -> workflowService.cancelWorkflow(workflow.id(), TENANT_ID, null, null) // GH-90000
+            AiWorkflowInstance cancelledWorkflow = runPromise( 
+                    () -> workflowService.cancelWorkflow(workflow.id(), TENANT_ID, null, null) 
             );
 
             // THEN
-            assertThat(cancelledWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED); // GH-90000
+            assertThat(cancelledWorkflow.status()).isEqualTo(AiWorkflowInstance.WorkflowStatus.CANCELLED); 
         }
     }
 
@@ -161,26 +161,26 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should modify plan steps before approval")
-        void shouldModifyPlanStepsBeforeApproval() { // GH-90000
+        void shouldModifyPlanStepsBeforeApproval() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Modify plan test");
-            AiPlan plan = runPromise( // GH-90000
-                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Refactor service") // GH-90000
+            AiPlan plan = runPromise( 
+                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Refactor service") 
             );
 
             // WHEN - Modify steps
-            List<AiPlan.PlanStep> modifiedSteps = List.of( // GH-90000
-                    new AiPlan.PlanStep( // GH-90000
+            List<AiPlan.PlanStep> modifiedSteps = List.of( 
+                    new AiPlan.PlanStep( 
                             "step-1",
                             "Analyze dependencies",
                             "Review all service dependencies",
                             AiPlan.PlanStep.StepType.CONTEXT_GATHERING,
                             0,
-                            List.of(), // GH-90000
+                            List.of(), 
                             "Identify constraints",
                             null, null, true, null
                     ),
-                    new AiPlan.PlanStep( // GH-90000
+                    new AiPlan.PlanStep( 
                             "step-2",
                             "Apply refactoring",
                             "Execute refactoring patterns",
@@ -192,30 +192,30 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
                     )
             );
 
-            AiPlan modifiedPlan = runPromise( // GH-90000
-                    () -> workflowService.modifyPlanSteps(plan.id(), TENANT_ID, modifiedSteps) // GH-90000
+            AiPlan modifiedPlan = runPromise( 
+                    () -> workflowService.modifyPlanSteps(plan.id(), TENANT_ID, modifiedSteps) 
             );
 
             // THEN
-            assertThat(modifiedPlan.status()).isEqualTo(AiPlan.PlanStatus.MODIFIED); // GH-90000
+            assertThat(modifiedPlan.status()).isEqualTo(AiPlan.PlanStatus.MODIFIED); 
         }
 
         @Test
         @DisplayName("should reject plan")
-        void shouldRejectPlan() { // GH-90000
+        void shouldRejectPlan() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Reject plan test");
-            AiPlan plan = runPromise( // GH-90000
-                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Generate docs") // GH-90000
+            AiPlan plan = runPromise( 
+                    () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Generate docs") 
             );
 
             // WHEN
-            AiPlan rejectedPlan = runPromise( // GH-90000
-                    () -> workflowService.rejectPlan(plan.id(), TENANT_ID, "Plan too complex", null) // GH-90000
+            AiPlan rejectedPlan = runPromise( 
+                    () -> workflowService.rejectPlan(plan.id(), TENANT_ID, "Plan too complex", null) 
             );
 
             // THEN
-            assertThat(rejectedPlan.status()).isEqualTo(AiPlan.PlanStatus.REJECTED); // GH-90000
+            assertThat(rejectedPlan.status()).isEqualTo(AiPlan.PlanStatus.REJECTED); 
         }
     }
 
@@ -225,79 +225,79 @@ class AiWorkflowE2EIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should list workflows by tenant")
-        void shouldListWorkflowsByTenant() { // GH-90000
+        void shouldListWorkflowsByTenant() { 
             // GIVEN - Create multiple workflows
             createTestWorkflow("Workflow A");
             createTestWorkflow("Workflow B");
             createTestWorkflow("Workflow C");
 
             // WHEN
-            List<AiWorkflowInstance> workflows = runPromise( // GH-90000
-                    () -> workflowService.listWorkflows(TENANT_ID, null, 10, 0) // GH-90000
+            List<AiWorkflowInstance> workflows = runPromise( 
+                    () -> workflowService.listWorkflows(TENANT_ID, null, 10, 0) 
             );
 
             // THEN
-            assertThat(workflows).hasSize(3); // GH-90000
+            assertThat(workflows).hasSize(3); 
         }
 
         @Test
         @DisplayName("should get workflow by ID")
-        void shouldGetWorkflowById() { // GH-90000
+        void shouldGetWorkflowById() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Get by ID test");
 
             // WHEN
-            Optional<AiWorkflowInstance> found = runPromise( // GH-90000
-                    () -> workflowService.getWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            Optional<AiWorkflowInstance> found = runPromise( 
+                    () -> workflowService.getWorkflow(workflow.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(found).isPresent(); // GH-90000
-            assertThat(found.get().id()).isEqualTo(workflow.id()); // GH-90000
+            assertThat(found).isPresent(); 
+            assertThat(found.get().id()).isEqualTo(workflow.id()); 
             assertThat(found.get().name()).isEqualTo("Get by ID test");
         }
 
         @Test
         @DisplayName("should delete workflow")
-        void shouldDeleteWorkflow() { // GH-90000
+        void shouldDeleteWorkflow() { 
             // GIVEN
             AiWorkflowInstance workflow = createTestWorkflow("Delete test");
 
             // WHEN
-            boolean deleted = runPromise( // GH-90000
-                    () -> workflowService.deleteWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            boolean deleted = runPromise( 
+                    () -> workflowService.deleteWorkflow(workflow.id(), TENANT_ID) 
             );
 
             // THEN
-            assertThat(deleted).isTrue(); // GH-90000
+            assertThat(deleted).isTrue(); 
 
-            Optional<AiWorkflowInstance> found = runPromise( // GH-90000
-                    () -> workflowService.getWorkflow(workflow.id(), TENANT_ID) // GH-90000
+            Optional<AiWorkflowInstance> found = runPromise( 
+                    () -> workflowService.getWorkflow(workflow.id(), TENANT_ID) 
             );
-            assertThat(found).isEmpty(); // GH-90000
+            assertThat(found).isEmpty(); 
         }
     }
 
     // ==================== HELPER METHODS ====================
 
-    private AiWorkflowInstance createTestWorkflow(String name) { // GH-90000
+    private AiWorkflowInstance createTestWorkflow(String name) { 
         AiWorkflowService.CreateWorkflowRequest request =
-                new AiWorkflowService.CreateWorkflowRequest( // GH-90000
+                new AiWorkflowService.CreateWorkflowRequest( 
                         TENANT_ID,
                         name,
                         "Test workflow: " + name,
                         AiWorkflowInstance.WorkflowType.FEATURE_DEVELOPMENT,
                         "test-user"
                 );
-        return runPromise(() -> workflowService.createWorkflow(request)); // GH-90000
+        return runPromise(() -> workflowService.createWorkflow(request)); 
     }
 
-    private AiWorkflowInstance createAndStartWorkflow(String name) { // GH-90000
-        AiWorkflowInstance workflow = createTestWorkflow(name); // GH-90000
-        AiPlan plan = runPromise( // GH-90000
-                () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Test objective for " + name) // GH-90000
+    private AiWorkflowInstance createAndStartWorkflow(String name) { 
+        AiWorkflowInstance workflow = createTestWorkflow(name); 
+        AiPlan plan = runPromise( 
+                () -> workflowService.generatePlan(workflow.id(), TENANT_ID, "Test objective for " + name) 
         );
-        runPromise(() -> workflowService.approvePlan(plan.id(), TENANT_ID, null)); // GH-90000
-        return runPromise(() -> workflowService.startWorkflow(workflow.id(), TENANT_ID)); // GH-90000
+        runPromise(() -> workflowService.approvePlan(plan.id(), TENANT_ID, null)); 
+        return runPromise(() -> workflowService.startWorkflow(workflow.id(), TENANT_ID)); 
     }
 }

@@ -28,8 +28,8 @@ class EntityValidationTest {
     private EntitySchemaValidator validator;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        validator = EntitySchemaValidator.create(true); // strict mode // GH-90000
+    void setUp() { 
+        validator = EntitySchemaValidator.create(true); // strict mode 
     }
 
     // =========================================================================
@@ -42,101 +42,101 @@ class EntityValidationTest {
 
         @Test
         @DisplayName("should validate STRING type")
-        void shouldValidateStringType() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldValidateStringType() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of("username", "john_doe")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of("username", "john_doe")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate NUMBER type")
-        void shouldValidateNumberType() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldValidateNumberType() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                 MetaField.builder().name("quantity").type(DataType.NUMBER).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "products", Map.of("quantity", 42)); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "products", Map.of("quantity", 42)); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate CURRENCY type")
-        void shouldValidateCurrencyType() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldValidateCurrencyType() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("total").type(DataType.CURRENCY).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("total", 99.99)); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("total", 99.99)); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate BOOLEAN type")
-        void shouldValidateBooleanType() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldValidateBooleanType() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("active").type(DataType.BOOLEAN).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of("active", true)); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of("active", true)); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate DATETIME type")
-        void shouldValidateDatetimeType() { // GH-90000
-            validator.registerSchema("tenant-1", "events", List.of( // GH-90000
+        void shouldValidateDatetimeType() { 
+            validator.registerSchema("tenant-1", "events", List.of( 
                 MetaField.builder().name("occurredAt").type(DataType.DATETIME).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "events", Map.of("occurredAt", System.currentTimeMillis())); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "events", Map.of("occurredAt", System.currentTimeMillis())); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate JSON type")
-        void shouldValidateJsonType() { // GH-90000
-            validator.registerSchema("tenant-1", "configs", List.of( // GH-90000
+        void shouldValidateJsonType() { 
+            validator.registerSchema("tenant-1", "configs", List.of( 
                 MetaField.builder().name("settings").type(DataType.JSON).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "configs", Map.of("settings", Map.of("key", "value"))); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "configs", Map.of("settings", Map.of("key", "value"))); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate ARRAY type")
-        void shouldValidateArrayType() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldValidateArrayType() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("items").type(DataType.ARRAY).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("items", List.of("item1", "item2"))); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("items", List.of("item1", "item2"))); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate EMAIL type")
-        void shouldValidateEmailType() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldValidateEmailType() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("email").type(DataType.EMAIL).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of("email", "user@example.com")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of("email", "user@example.com")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should validate UUID type")
-        void shouldValidateUuidType() { // GH-90000
-            validator.registerSchema("tenant-1", "entities", List.of( // GH-90000
+        void shouldValidateUuidType() { 
+            validator.registerSchema("tenant-1", "entities", List.of( 
                 MetaField.builder().name("entityId").type(DataType.UUID).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "entities", Map.of("entityId", "550e8400-e29b-41d4-a716-446655440000")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "entities", Map.of("entityId", "550e8400-e29b-41d4-a716-446655440000")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
     }
 
@@ -150,53 +150,53 @@ class EntityValidationTest {
 
         @Test
         @DisplayName("should fail when required field is null")
-        void shouldFailWhenRequiredFieldIsNull() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldFailWhenRequiredFieldIsNull() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("email").type(DataType.STRING).required(true).build()
             ));
 
-            Map<String, Object> entity = new HashMap<>(); // GH-90000
-            entity.put("email", null); // GH-90000
+            Map<String, Object> entity = new HashMap<>(); 
+            entity.put("email", null); 
 
-            ValidationResult result = validator.validate("tenant-1", "users", entity); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", entity); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); 
             assertThat(result.violations()).anyMatch(v -> v.contains("email") && v.contains("required"));
         }
 
         @Test
         @DisplayName("should fail when required field is missing")
-        void shouldFailWhenRequiredFieldIsMissing() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldFailWhenRequiredFieldIsMissing() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("email").type(DataType.STRING).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); 
         }
 
         @Test
         @DisplayName("should succeed when optional field is missing")
-        void shouldSucceedWhenOptionalFieldIsMissing() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldSucceedWhenOptionalFieldIsMissing() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("nickname").type(DataType.STRING).required(false).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should succeed when optional field is null")
-        void shouldSucceedWhenOptionalFieldIsNull() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldSucceedWhenOptionalFieldIsNull() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("nickname").type(DataType.STRING).required(false).build()
             ));
 
-            Map<String, Object> entity = new HashMap<>(); // GH-90000
-            entity.put("nickname", null); // GH-90000
+            Map<String, Object> entity = new HashMap<>(); 
+            entity.put("nickname", null); 
 
-            ValidationResult result = validator.validate("tenant-1", "users", entity); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", entity); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
     }
 
@@ -210,71 +210,71 @@ class EntityValidationTest {
 
         @Test
         @DisplayName("should validate multiple fields")
-        void shouldValidateMultipleFields() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldValidateMultipleFields() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build(),
                 MetaField.builder().name("email").type(DataType.EMAIL).required(true).build(),
                 MetaField.builder().name("age").type(DataType.NUMBER).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of( // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of( 
                 "username", "john_doe",
                 "email", "john@example.com",
                 "age", 30
             ));
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should report all violations")
-        void shouldReportAllViolations() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldReportAllViolations() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build(),
                 MetaField.builder().name("email").type(DataType.EMAIL).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); // GH-90000
-            assertThat(result.violations()).hasSizeGreaterThanOrEqualTo(2); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of()); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.FAILURE); 
+            assertThat(result.violations()).hasSizeGreaterThanOrEqualTo(2); 
         }
 
         @Test
         @DisplayName("should handle nested object validation")
-        void shouldHandleNestedValidation() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldHandleNestedValidation() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("customer").type(DataType.EMBEDDED).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( // GH-90000
-                "customer", Map.of("name", "John Doe", "id", "12345") // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( 
+                "customer", Map.of("name", "John Doe", "id", "12345") 
             ));
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle array field validation")
-        void shouldHandleArrayValidation() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldHandleArrayValidation() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("items").type(DataType.ARRAY).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( // GH-90000
-                "items", List.of("item1", "item2", "item3") // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( 
+                "items", List.of("item1", "item2", "item3") 
             ));
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle reference type")
-        void shouldHandleReferenceType() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldHandleReferenceType() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("customerId").type(DataType.REFERENCE).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of( 
                 "customerId", "550e8400-e29b-41d4-a716-446655440000"
             ));
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
     }
 
@@ -288,91 +288,91 @@ class EntityValidationTest {
 
         @Test
         @DisplayName("should handle empty string for non-required field")
-        void shouldHandleEmptyStringForOptional() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldHandleEmptyStringForOptional() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("nickname").type(DataType.STRING).required(false).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of("nickname", "")); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of("nickname", "")); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle zero value for numeric field")
-        void shouldHandleZeroValue() { // GH-90000
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+        void shouldHandleZeroValue() { 
+            validator.registerSchema("tenant-1", "products", List.of( 
                 MetaField.builder().name("quantity").type(DataType.NUMBER).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "products", Map.of("quantity", 0)); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "products", Map.of("quantity", 0)); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle false value for boolean field")
-        void shouldHandleFalseValue() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldHandleFalseValue() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("active").type(DataType.BOOLEAN).required(true).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "users", Map.of("active", false)); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "users", Map.of("active", false)); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle empty array")
-        void shouldHandleEmptyArray() { // GH-90000
-            validator.registerSchema("tenant-1", "orders", List.of( // GH-90000
+        void shouldHandleEmptyArray() { 
+            validator.registerSchema("tenant-1", "orders", List.of( 
                 MetaField.builder().name("items").type(DataType.ARRAY).required(false).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("items", List.of())); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "orders", Map.of("items", List.of())); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle empty object")
-        void shouldHandleEmptyObject() { // GH-90000
-            validator.registerSchema("tenant-1", "configs", List.of( // GH-90000
+        void shouldHandleEmptyObject() { 
+            validator.registerSchema("tenant-1", "configs", List.of( 
                 MetaField.builder().name("metadata").type(DataType.JSON).required(false).build()
             ));
 
-            ValidationResult result = validator.validate("tenant-1", "configs", Map.of("metadata", Map.of())); // GH-90000
-            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            ValidationResult result = validator.validate("tenant-1", "configs", Map.of("metadata", Map.of())); 
+            assertThat(result.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle multiple tenants")
-        void shouldHandleMultipleTenants() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldHandleMultipleTenants() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build()
             ));
-            validator.registerSchema("tenant-2", "users", List.of( // GH-90000
+            validator.registerSchema("tenant-2", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build()
             ));
 
-            ValidationResult result1 = validator.validate("tenant-1", "users", Map.of("username", "user1")); // GH-90000
-            ValidationResult result2 = validator.validate("tenant-2", "users", Map.of("username", "user2")); // GH-90000
+            ValidationResult result1 = validator.validate("tenant-1", "users", Map.of("username", "user1")); 
+            ValidationResult result2 = validator.validate("tenant-2", "users", Map.of("username", "user2")); 
 
-            assertThat(result1.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
-            assertThat(result2.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result1.state()).isEqualTo(ValidationResult.State.SUCCESS); 
+            assertThat(result2.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
 
         @Test
         @DisplayName("should handle multiple collections per tenant")
-        void shouldHandleMultipleCollections() { // GH-90000
-            validator.registerSchema("tenant-1", "users", List.of( // GH-90000
+        void shouldHandleMultipleCollections() { 
+            validator.registerSchema("tenant-1", "users", List.of( 
                 MetaField.builder().name("username").type(DataType.STRING).required(true).build()
             ));
-            validator.registerSchema("tenant-1", "products", List.of( // GH-90000
+            validator.registerSchema("tenant-1", "products", List.of( 
                 MetaField.builder().name("name").type(DataType.STRING).required(true).build()
             ));
 
-            ValidationResult result1 = validator.validate("tenant-1", "users", Map.of("username", "john")); // GH-90000
-            ValidationResult result2 = validator.validate("tenant-1", "products", Map.of("name", "widget")); // GH-90000
+            ValidationResult result1 = validator.validate("tenant-1", "users", Map.of("username", "john")); 
+            ValidationResult result2 = validator.validate("tenant-1", "products", Map.of("name", "widget")); 
 
-            assertThat(result1.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
-            assertThat(result2.state()).isEqualTo(ValidationResult.State.SUCCESS); // GH-90000
+            assertThat(result1.state()).isEqualTo(ValidationResult.State.SUCCESS); 
+            assertThat(result2.state()).isEqualTo(ValidationResult.State.SUCCESS); 
         }
     }
 }

@@ -1,0 +1,143 @@
+# Finance Product-to-Plugin Binding Manifest
+# Declares which platform plugins Finance binds to and the domain-specific configuration
+# provided for each. No platform kernel changes are needed to support these bindings.
+#
+# The platform plugin loader reads these manifests at startup and applies the
+# product-scoped configuration to each declared plugin.
+
+product: finance
+version: "1.0.0"
+description: "Finance plugin binding manifest — declares platform plugins used by Finance and their domain configuration"
+
+bindings:
+
+  - pluginId: risk-management-plugin
+    version: ">=1.2.0"
+    enabled: true
+    description: "Capital-markets risk management: market, credit, operational risk"
+    config:
+      evaluators:
+        - modelId: MARKET
+          description: "Evaluates market risk factors (volatility, position size, concentration, liquidity)"
+          factorKeys:
+            - volatility
+            - position_size
+            - concentration
+            - liquidity
+        - modelId: CREDIT
+          description: "Evaluates counterparty credit risk"
+          factorKeys:
+            - credit_score
+            - debt_ratio
+            - payment_history
+        - modelId: OPERATIONAL
+          description: "Evaluates operational risk across trading infrastructure"
+          factorKeys:
+            - system_downtime
+            - error_rate
+            - staff_turnover
+      defaultLimits:
+        max_position_size: 10000000
+        max_concentration: 0.25
+
+  - pluginId: compliance-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Financial regulatory compliance evaluation (MiFID II, EMIR, AML/KYC)"
+    config:
+      rulePack: finance-compliance-rules-v1
+      evaluationMode: STRICT
+      reportingSchedule: DAILY
+      regulatoryFrameworks:
+        - mifid-ii
+        - emir
+        - sftr
+        - aml
+        - kyc
+
+  - pluginId: fraud-detection-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Capital-markets fraud detection: velocity, anomaly, and AML signals"
+    config:
+      signals:
+        - id: finance.velocity.orders
+          description: "Unusually high order velocity for an actor"
+          weight: 0.8
+        - id: finance.wash-trading
+          description: "Potential wash-trading pattern detected"
+          weight: 0.95
+        - id: finance.layering
+          description: "Order layering spoofing pattern"
+          weight: 0.9
+        - id: finance.aml.structuring
+          description: "Transaction structuring below reporting threshold"
+          weight: 0.85
+      thresholds:
+        flagScore: 0.5
+        blockScore: 0.75
+
+  - pluginId: audit-trail-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Immutable audit trail for all trade orders, executions, and compliance events"
+    config:
+      retentionYears: 7
+      eventCategories:
+        - ORDER_PLACED
+        - ORDER_CANCELLED
+        - TRADE_EXECUTED
+        - RISK_LIMIT_BREACH
+        - COMPLIANCE_FLAG
+        - COMPLIANCE_OVERRIDE
+        - REPORT_SUBMITTED
+      sinkType: APPEND_ONLY_LOG
+      encryptAtRest: true
+
+  - pluginId: human-approval-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Human approval workflows for high-value and cross-border trades"
+    config:
+      workflows:
+        - id: finance.cross-border-trade-approval
+          description: "Approval for cross-border trades over threshold"
+          approvers: [compliance-officer]
+          slaMinutes: 30
+        - id: finance.risk-limit-override
+          description: "Approval for exceeding risk concentration limits"
+          approvers: [risk-officer, senior-trader]
+          slaMinutes: 10
+        - id: finance.compliance-override
+          description: "AML/KYC flag override approval"
+          approvers: [compliance-officer]
+          slaMinutes: 60
+
+  - pluginId: consent-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Delegated access consent for portfolio and data sharing with authorized parties"
+    config:
+      purposeVocabulary:
+        - id: finance.data-share.partner
+          label: "Share portfolio data with authorized partner institution"
+          revocable: true
+          expiryDays: 365
+          requiresExplicitGrant: true
+        - id: finance.reporting.regulator
+          label: "Regulatory reporting data access"
+          revocable: false
+        - id: finance.analytics.internal
+          label: "Internal analytics and risk modelling"
+          revocable: true
+          expiryDays: 90
+      auditLevel: FULL
+
+  - pluginId: ledger-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Finance platform billing and usage ledger"
+    config:
+      currency: USD
+      billingModel: per-trade
+      costCentre: finance-product

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.compliance;
@@ -29,37 +29,37 @@ class AepComplianceServiceIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("checkCompliance succeeds when broker and retention checks both pass")
-    void checkComplianceSucceedsWhenAllChecksPass() { // GH-90000
-        AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000
-            brokerCalled.set(true); // GH-90000
-            return Promise.complete(); // GH-90000
+    void checkComplianceSucceedsWhenAllChecksPass() { 
+        AtomicBoolean brokerCalled = new AtomicBoolean(false); 
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { 
+            brokerCalled.set(true); 
+            return Promise.complete(); 
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); // GH-90000
-        ComplianceService service = new ComplianceService(broker, retention); // GH-90000
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); 
+        ComplianceService service = new ComplianceService(broker, retention); 
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5))); // GH-90000
-        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics")); // GH-90000
+        runPromise(() -> retention.registerRetention("tenant-a", "data-1", Duration.ofMinutes(5))); 
+        runPromise(() -> service.checkCompliance("tenant-a", "subject-1", "data-1", "analytics")); 
 
-        assertThat(brokerCalled).isTrue(); // GH-90000
+        assertThat(brokerCalled).isTrue(); 
     }
 
     @Test
     @DisplayName("checkCompliance fails when retention has expired after access approval")
-    void checkComplianceFailsWhenRetentionExpired() { // GH-90000
-        AtomicBoolean brokerCalled = new AtomicBoolean(false); // GH-90000
-        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { // GH-90000
-            brokerCalled.set(true); // GH-90000
-            return Promise.complete(); // GH-90000
+    void checkComplianceFailsWhenRetentionExpired() { 
+        AtomicBoolean brokerCalled = new AtomicBoolean(false); 
+        DataAccessBroker broker = (tenantId, subjectId, dataId, purpose) -> { 
+            brokerCalled.set(true); 
+            return Promise.complete(); 
         };
-        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); // GH-90000
-        ComplianceService service = new ComplianceService(broker, retention); // GH-90000
+        InMemoryRetentionPolicyEnforcer retention = new InMemoryRetentionPolicyEnforcer(); 
+        ComplianceService service = new ComplianceService(broker, retention); 
 
-        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO)); // GH-90000
+        runPromise(() -> retention.registerRetention("tenant-a", "data-2", Duration.ZERO)); 
 
-        assertThatThrownBy(() -> // GH-90000
-            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics"))) // GH-90000
-            .isInstanceOf(RetentionExpiredException.class); // GH-90000
-        assertThat(brokerCalled).isTrue(); // GH-90000
+        assertThatThrownBy(() -> 
+            runPromise(() -> service.checkCompliance("tenant-a", "subject-2", "data-2", "analytics"))) 
+            .isInstanceOf(RetentionExpiredException.class); 
+        assertThat(brokerCalled).isTrue(); 
     }
 }

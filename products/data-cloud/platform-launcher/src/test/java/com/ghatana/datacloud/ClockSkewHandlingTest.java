@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud;
@@ -30,17 +30,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Validates TTL enforcement, timestamp handling, and retention window
  * calculations under various clock skew conditions.
  *
- * <p>Covers P3 gap — Clock Skew Handling (audit gap G-009): // GH-90000
+ * <p>Covers P3 gap — Clock Skew Handling (audit gap G-009): 
  * <ul>
  *   <li>TTL enforcement is not affected by client clock drift.</li>
  *   <li>Timestamp fields use ISO-8601 UTC normalisation.</li>
- *   <li>Retention window ({@code now() - createdAt > ttl}) is evaluated server-side.</li> // GH-90000
+ *   <li>Retention window ({@code now() - createdAt > ttl}) is evaluated server-side.</li> 
  *   <li>Operations using past/future timestamps are handled predictably.</li>
  *   <li>Timezone-naive timestamps are handled consistently.</li>
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Clock skew and timestamp handling tests (P3 gap closure, G-009) // GH-90000
+ * @doc.purpose Clock skew and timestamp handling tests (P3 gap closure, G-009) 
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -53,13 +53,13 @@ class ClockSkewHandlingTest extends EventloopTestBase {
     private DataCloudClient client;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        client = DataCloud.forTesting(); // GH-90000
+    void setUp() { 
+        client = DataCloud.forTesting(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        client.close(); // GH-90000
+    void tearDown() { 
+        client.close(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -72,52 +72,52 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity saved with explicit UTC timestamp is stored and queryable")
-        void entityWithUtcTimestamp_storedAndQueryable() throws Exception { // GH-90000
-            String utcTimestamp = Instant.now().toString(); // ISO-8601 UTC // GH-90000
+        void entityWithUtcTimestamp_storedAndQueryable() throws Exception { 
+            String utcTimestamp = Instant.now().toString(); // ISO-8601 UTC 
 
-            Entity saved = runPromise(() -> client.save(TENANT_ID, COLLECTION, // GH-90000
-                Map.of("createdAt", utcTimestamp, "value", "clock-test"))); // GH-90000
+            Entity saved = runPromise(() -> client.save(TENANT_ID, COLLECTION, 
+                Map.of("createdAt", utcTimestamp, "value", "clock-test"))); 
 
-            assertThat(saved).isNotNull(); // GH-90000
-            assertThat(saved.id()).isNotBlank(); // GH-90000
+            assertThat(saved).isNotNull(); 
+            assertThat(saved.id()).isNotBlank(); 
 
-            List<Entity> found = runPromise(() -> // GH-90000
-                client.query(TENANT_ID, COLLECTION, Query.all())); // GH-90000
-            assertThat(found).anyMatch(e -> e.id().equals(saved.id())); // GH-90000
+            List<Entity> found = runPromise(() -> 
+                client.query(TENANT_ID, COLLECTION, Query.all())); 
+            assertThat(found).anyMatch(e -> e.id().equals(saved.id())); 
         }
 
-        @ParameterizedTest(name = "timezone=''{0}''") // GH-90000
-        @ValueSource(strings = {"America/New_York", "Asia/Tokyo", "Europe/London", "UTC", "Pacific/Auckland"}) // GH-90000
+        @ParameterizedTest(name = "timezone=''{0}''") 
+        @ValueSource(strings = {"America/New_York", "Asia/Tokyo", "Europe/London", "UTC", "Pacific/Auckland"}) 
         @DisplayName("entity saved from various timezones is retrievable consistently")
-        void entityFromVariousTimezones_retrievableConsistently(String timezone) throws Exception { // GH-90000
-            ZonedDateTime zdt         = ZonedDateTime.now(ZoneId.of(timezone)); // GH-90000
-            String        localTs     = zdt.toString(); // GH-90000
-            String        tenantLocal = TENANT_ID + "-" + timezone.replace("/", "_"); // GH-90000
+        void entityFromVariousTimezones_retrievableConsistently(String timezone) throws Exception { 
+            ZonedDateTime zdt         = ZonedDateTime.now(ZoneId.of(timezone)); 
+            String        localTs     = zdt.toString(); 
+            String        tenantLocal = TENANT_ID + "-" + timezone.replace("/", "_"); 
 
-            Entity saved = runPromise(() -> // GH-90000
-                client.save(tenantLocal, COLLECTION, // GH-90000
-                    Map.of("localTimestamp", localTs, "timezone", timezone))); // GH-90000
+            Entity saved = runPromise(() -> 
+                client.save(tenantLocal, COLLECTION, 
+                    Map.of("localTimestamp", localTs, "timezone", timezone))); 
 
-            assertThat(saved.id()).isNotBlank(); // GH-90000
+            assertThat(saved.id()).isNotBlank(); 
 
             // Entity must be queryable regardless of the timezone used to write it
-            List<Entity> found = runPromise(() -> // GH-90000
-                client.query(tenantLocal, COLLECTION, Query.all())); // GH-90000
+            List<Entity> found = runPromise(() -> 
+                client.query(tenantLocal, COLLECTION, Query.all())); 
 
-            assertThat(found) // GH-90000
-                .as("Entity from timezone %s must be retrievable", timezone) // GH-90000
-                .anyMatch(e -> e.id().equals(saved.id())); // GH-90000
+            assertThat(found) 
+                .as("Entity from timezone %s must be retrievable", timezone) 
+                .anyMatch(e -> e.id().equals(saved.id())); 
         }
 
         @Test
         @DisplayName("two entities saved in quick succession have distinct IDs (no clock collision)")
-        void quickSuccession_entitiesHaveDistinctIds() throws Exception { // GH-90000
-            Entity e1 = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, Map.of("seq", 1))); // GH-90000
-            Entity e2 = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, Map.of("seq", 2))); // GH-90000
+        void quickSuccession_entitiesHaveDistinctIds() throws Exception { 
+            Entity e1 = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, Map.of("seq", 1))); 
+            Entity e2 = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, Map.of("seq", 2))); 
 
-            assertThat(e1.id()).isNotEqualTo(e2.id()); // GH-90000
+            assertThat(e1.id()).isNotEqualTo(e2.id()); 
         }
     }
 
@@ -131,53 +131,53 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity saved with past 'createdAt' — store is agnostic to client-skewed timestamps")
-        void pastCreatedAt_storeAgnosticToClientSkew() throws Exception { // GH-90000
+        void pastCreatedAt_storeAgnosticToClientSkew() throws Exception { 
             // Simulate a client with a 24-hour backward clock skew
-            String skewedTs = Instant.now().minus(Duration.ofHours(24)).toString(); // GH-90000
+            String skewedTs = Instant.now().minus(Duration.ofHours(24)).toString(); 
 
-            Entity saved = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, // GH-90000
-                    Map.of("createdAt", skewedTs, "value", "skewed"))); // GH-90000
+            Entity saved = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, 
+                    Map.of("createdAt", skewedTs, "value", "skewed"))); 
 
             // Store must accept the entity regardless of client-supplied timestamp
-            assertThat(saved.id()).isNotBlank(); // GH-90000
+            assertThat(saved.id()).isNotBlank(); 
 
-            // Entity must still be queryable (deletion is server-controlled, not client-clock-based) // GH-90000
-            List<Entity> found = runPromise(() -> // GH-90000
-                client.query(TENANT_ID, COLLECTION, Query.all())); // GH-90000
-            assertThat(found).anyMatch(e -> e.id().equals(saved.id())); // GH-90000
+            // Entity must still be queryable (deletion is server-controlled, not client-clock-based) 
+            List<Entity> found = runPromise(() -> 
+                client.query(TENANT_ID, COLLECTION, Query.all())); 
+            assertThat(found).anyMatch(e -> e.id().equals(saved.id())); 
         }
 
         @Test
         @DisplayName("entity saved with future 'createdAt' — store accepts without rejection")
-        void futureCreatedAt_acceptedByStore() throws Exception { // GH-90000
+        void futureCreatedAt_acceptedByStore() throws Exception { 
             // Simulate a client with 1-hour forward clock skew
-            String futureTs = Instant.now().plus(Duration.ofHours(1)).toString(); // GH-90000
+            String futureTs = Instant.now().plus(Duration.ofHours(1)).toString(); 
 
-            Entity saved = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, // GH-90000
-                    Map.of("createdAt", futureTs, "status", "future-entry"))); // GH-90000
+            Entity saved = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, 
+                    Map.of("createdAt", futureTs, "status", "future-entry"))); 
 
-            assertThat(saved.id()).isNotBlank(); // GH-90000
+            assertThat(saved.id()).isNotBlank(); 
         }
 
         @Test
         @DisplayName("retention window calculation uses server time, not client-supplied timestamps")
-        void retentionWindow_usesServerTime() throws Exception { // GH-90000
-            // Write an entity with a very old client timestamp (simulating max skew) // GH-90000
-            String ancientTs = Instant.EPOCH.toString(); // 1970-01-01 // GH-90000
+        void retentionWindow_usesServerTime() throws Exception { 
+            // Write an entity with a very old client timestamp (simulating max skew) 
+            String ancientTs = Instant.EPOCH.toString(); // 1970-01-01 
 
-            Entity saved = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, // GH-90000
-                    Map.of("createdAt", ancientTs, "retentionTest", true))); // GH-90000
+            Entity saved = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, 
+                    Map.of("createdAt", ancientTs, "retentionTest", true))); 
 
             // If server-side TTL were evaluated against the ancient client timestamp,
             // the entity would be considered expired immediately. Verify it is present.
-            List<Entity> found = runPromise(() -> // GH-90000
-                client.query(TENANT_ID, COLLECTION, Query.all())); // GH-90000
-            assertThat(found) // GH-90000
+            List<Entity> found = runPromise(() -> 
+                client.query(TENANT_ID, COLLECTION, Query.all())); 
+            assertThat(found) 
                 .as("Entity must not be auto-expired merely because client timestamp is in the past")
-                .anyMatch(e -> e.id().equals(saved.id())); // GH-90000
+                .anyMatch(e -> e.id().equals(saved.id())); 
         }
     }
 
@@ -191,40 +191,40 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entities saved sequentially are assigned monotonically increasing offsets")
-        void sequentialSaves_monotonicOffsets() throws Exception { // GH-90000
-            List<Long> offsets = new java.util.ArrayList<>(); // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
+        void sequentialSaves_monotonicOffsets() throws Exception { 
+            List<Long> offsets = new java.util.ArrayList<>(); 
+            for (int i = 0; i < 5; i++) { 
                 final int idx = i;
-                DataCloudClient.Offset off = runPromise(() -> // GH-90000
-                    client.appendEvent(TENANT_ID, // GH-90000
-                        DataCloudClient.Event.of("entity.created", Map.of("idx", idx)))); // GH-90000
-                offsets.add(off.value()); // GH-90000
+                DataCloudClient.Offset off = runPromise(() -> 
+                    client.appendEvent(TENANT_ID, 
+                        DataCloudClient.Event.of("entity.created", Map.of("idx", idx)))); 
+                offsets.add(off.value()); 
             }
 
             // Offsets must be strictly increasing
-            for (int i = 1; i < offsets.size(); i++) { // GH-90000
-                assertThat(offsets.get(i)) // GH-90000
-                    .as("Offset at position %d must be > offset at %d", i, i - 1) // GH-90000
-                    .isGreaterThan(offsets.get(i - 1)); // GH-90000
+            for (int i = 1; i < offsets.size(); i++) { 
+                assertThat(offsets.get(i)) 
+                    .as("Offset at position %d must be > offset at %d", i, i - 1) 
+                    .isGreaterThan(offsets.get(i - 1)); 
             }
         }
 
         @Test
         @DisplayName("concurrent event appends produce unique, monotonic offsets")
-        void concurrentAppends_uniqueOffsets() throws Exception { // GH-90000
+        void concurrentAppends_uniqueOffsets() throws Exception { 
             int eventCount = 20;
-            List<Long> offsets = new java.util.concurrent.CopyOnWriteArrayList<>(); // GH-90000
+            List<Long> offsets = new java.util.concurrent.CopyOnWriteArrayList<>(); 
 
             // Use the in-process client — no threading abstraction needed
-            for (int i = 0; i < eventCount; i++) { // GH-90000
+            for (int i = 0; i < eventCount; i++) { 
                 final int idx = i;
-                DataCloudClient.Offset off = runPromise(() -> // GH-90000
-                    client.appendEvent(TENANT_ID, DataCloudClient.Event.of("seq", Map.of("idx", idx)))); // GH-90000
-                offsets.add(off.value()); // GH-90000
+                DataCloudClient.Offset off = runPromise(() -> 
+                    client.appendEvent(TENANT_ID, DataCloudClient.Event.of("seq", Map.of("idx", idx)))); 
+                offsets.add(off.value()); 
             }
 
-            assertThat(offsets).hasSize(eventCount); // GH-90000
-            long distinctCount = offsets.stream().distinct().count(); // GH-90000
+            assertThat(offsets).hasSize(eventCount); 
+            long distinctCount = offsets.stream().distinct().count(); 
             assertThat(distinctCount).as("All offsets must be unique").isEqualTo(eventCount);
         }
     }
@@ -239,52 +239,52 @@ class ClockSkewHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity with timestamp at DST transition is stored correctly")
-        void entityAtDstBoundary_storedCorrectly() throws Exception { // GH-90000
+        void entityAtDstBoundary_storedCorrectly() throws Exception { 
             // 2026-03-08 02:00 US/Eastern is a DST transition — clocks spring forward
-            Instant dstTransition = ZonedDateTime.of(2026, 3, 8, 3, 0, 0, 0, // GH-90000
+            Instant dstTransition = ZonedDateTime.of(2026, 3, 8, 3, 0, 0, 0, 
                 ZoneId.of("America/New_York")).toInstant();
 
-            Entity saved = runPromise(() -> // GH-90000
-                client.save(TENANT_ID, COLLECTION, // GH-90000
-                    Map.of("eventTime", dstTransition.toString(), "dstTest", true))); // GH-90000
+            Entity saved = runPromise(() -> 
+                client.save(TENANT_ID, COLLECTION, 
+                    Map.of("eventTime", dstTransition.toString(), "dstTest", true))); 
 
-            assertThat(saved.id()).isNotBlank(); // GH-90000
+            assertThat(saved.id()).isNotBlank(); 
         }
 
         @Test
         @DisplayName("timestamp at Unix epoch boundary is handled without overflow")
-        void epochBoundaryTimestamp_noOverflow() throws Exception { // GH-90000
+        void epochBoundaryTimestamp_noOverflow() throws Exception { 
             // Test timestamps near common boundary values
-            List<Instant> boundaries = List.of( // GH-90000
+            List<Instant> boundaries = List.of( 
                 Instant.EPOCH,                                      // 1970-01-01T00:00:00Z
-                Instant.ofEpochSecond(Integer.MAX_VALUE),           // 2038 problem boundary // GH-90000
+                Instant.ofEpochSecond(Integer.MAX_VALUE),           // 2038 problem boundary 
                 Instant.parse("2026-01-01T00:00:00Z")              // Year boundary
             );
 
-            for (Instant boundary : boundaries) { // GH-90000
-                Entity saved = runPromise(() -> // GH-90000
-                    client.save(TENANT_ID, COLLECTION, // GH-90000
-                        Map.of("boundaryTs", boundary.toString()))); // GH-90000
-                assertThat(saved.id()) // GH-90000
-                    .as("Entity with boundary timestamp %s must be saved", boundary) // GH-90000
-                    .isNotBlank(); // GH-90000
+            for (Instant boundary : boundaries) { 
+                Entity saved = runPromise(() -> 
+                    client.save(TENANT_ID, COLLECTION, 
+                        Map.of("boundaryTs", boundary.toString()))); 
+                assertThat(saved.id()) 
+                    .as("Entity with boundary timestamp %s must be saved", boundary) 
+                    .isNotBlank(); 
             }
         }
 
         @Test
         @DisplayName("entity query returns results regardless of server-vs-client clock offset")
-        void queryResult_independentOfClockOffset() throws Exception { // GH-90000
+        void queryResult_independentOfClockOffset() throws Exception { 
             // Save some entities
-            for (int i = 0; i < 5; i++) { // GH-90000
+            for (int i = 0; i < 5; i++) { 
                 final int idx = i;
-                runPromise(() -> client.save(TENANT_ID, COLLECTION, Map.of("idx", idx))); // GH-90000
+                runPromise(() -> client.save(TENANT_ID, COLLECTION, Map.of("idx", idx))); 
             }
 
             // Query with no time filter — must always return all entities regardless of clock
-            List<Entity> results = runPromise(() -> // GH-90000
-                client.query(TENANT_ID, COLLECTION, Query.all())); // GH-90000
+            List<Entity> results = runPromise(() -> 
+                client.query(TENANT_ID, COLLECTION, Query.all())); 
 
-            assertThat(results).hasSize(5); // GH-90000
+            assertThat(results).hasSize(5); 
         }
     }
 }

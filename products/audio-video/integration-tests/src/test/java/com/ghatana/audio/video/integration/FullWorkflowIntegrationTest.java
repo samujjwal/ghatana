@@ -24,25 +24,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("integration")
 @Testcontainers
 @DisplayName("Full Workflow Integration Tests")
-class FullWorkflowIntegrationTest extends AudioVideoContainerBase { // GH-90000: gRPC stubs pending
+class FullWorkflowIntegrationTest extends AudioVideoContainerBase { : gRPC stubs pending
 
     @Test
     @DisplayName("STT service gRPC port is reachable before workflow")
-    void sttGrpcPort_isReachable() { // GH-90000
+    void sttGrpcPort_isReachable() { 
         assertThat(sttGrpcPort()).isGreaterThan(0);
         assertThat(sttHost()).isNotBlank();
     }
 
     @Test
     @DisplayName("TTS service gRPC port is reachable before workflow")
-    void ttsGrpcPort_isReachable() { // GH-90000
+    void ttsGrpcPort_isReachable() { 
         assertThat(ttsGrpcPort()).isGreaterThan(0);
         assertThat(ttsHost()).isNotBlank();
     }
 
     @Test
     @DisplayName("STT and TTS services share network for inter-service calls")
-    void sttAndTts_shareNetwork() { // GH-90000
+    void sttAndTts_shareNetwork() { 
         // DockerComposeContainer wires both services on the same internal network,
         // enabling service-name-based DNS resolution between them.
         assertThat(sttHost()).isEqualTo(ttsHost()); // both expose on the same host
@@ -51,13 +51,13 @@ class FullWorkflowIntegrationTest extends AudioVideoContainerBase { // GH-90000:
 
     @Test
     @DisplayName("STT HTTP health endpoint is mapped and reachable")
-    void sttHttpHealthPort_isMapped() { // GH-90000
+    void sttHttpHealthPort_isMapped() { 
         assertThat(serviceHttpPort(STT_SERVICE)).isGreaterThan(0);
     }
 
     @Test
     @DisplayName("TTS HTTP health endpoint is mapped and reachable")
-    void ttsHttpHealthPort_isMapped() { // GH-90000
+    void ttsHttpHealthPort_isMapped() { 
         assertThat(serviceHttpPort(TTS_SERVICE)).isGreaterThan(0);
     }
 }

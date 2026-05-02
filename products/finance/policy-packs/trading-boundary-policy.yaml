@@ -1,0 +1,150 @@
+# Finance Trading Boundary Policy Pack
+# Declares Finance-specific boundary rules that load into the generic platform BoundaryPolicyResolver.
+# No platform kernel changes are required to activate these rules.
+#
+# Rule schema: BoundaryPolicyRule { ruleId, scope, action, condition, outcome }
+# Outcomes: ALLOW | DENY | REQUIRE_CONSENT | REQUIRE_APPROVAL | AUDIT
+
+pack:
+  id: finance-trading-boundary-policy
+  name: "Finance Trading Boundary Policy Pack"
+  version: "1.0.0"
+  product: finance
+  description: "Capital-markets boundary access rules for trade orders, risk limits, compliance gates, and approval workflows"
+  schema-version: "1"
+
+rules:
+
+  # ── Trade order access ───────────────────────────────────────────────────────
+
+  - ruleId: FIN-BR-001
+    description: "Trade order placement restricted to authorized traders"
+    scope: finance.trade-processing
+    action: PLACE
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [trader, senior-trader, risk-officer, admin]
+    outcome: DENY
+
+  - ruleId: FIN-BR-002
+    description: "Order cancellation after settlement window requires compliance approval"
+    scope: finance.trade-processing
+    action: CANCEL
+    conditions:
+      - field: order.settlement-status
+        operator: EQ
+        value: PENDING_SETTLEMENT
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, admin]
+    outcome: REQUIRE_APPROVAL
+
+  - ruleId: FIN-BR-003
+    description: "Order reads accessible to portfolio managers and risk officers; audit for external reads"
+    scope: finance.trade-processing
+    action: READ
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [trader, senior-trader, portfolio-manager, risk-officer, compliance-officer, admin]
+    outcome: DENY
+
+  # ── Risk management rules ────────────────────────────────────────────────────
+
+  - ruleId: FIN-BR-010
+    description: "Risk limit breach write requires risk officer or admin"
+    scope: finance.risk-management
+    action: SET_LIMITS
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [risk-officer, admin]
+    outcome: DENY
+
+  - ruleId: FIN-BR-011
+    description: "Position exceeding concentration threshold requires senior trader approval"
+    scope: finance.risk-management
+    action: PLACE
+    conditions:
+      - field: risk.concentration
+        operator: GREATER_THAN
+        value: "0.25"
+    outcome: REQUIRE_APPROVAL
+
+  - ruleId: FIN-BR-012
+    description: "Risk report export requires audit trail"
+    scope: finance.risk-management
+    action: EXPORT
+    conditions:
+      - field: actor.role
+        operator: IN
+        values: [risk-officer, compliance-officer, admin]
+    outcome: ALLOW
+    audit: true
+
+  # ── Compliance gates ─────────────────────────────────────────────────────────
+
+  - ruleId: FIN-BR-020
+    description: "Regulatory report submission requires compliance officer role"
+    scope: finance.compliance-checking
+    action: SUBMIT
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, admin]
+    outcome: DENY
+
+  - ruleId: FIN-BR-021
+    description: "AML flag override must be approved by compliance officer and audited"
+    scope: finance.compliance-checking
+    action: OVERRIDE
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, admin]
+    outcome: DENY
+
+  - ruleId: FIN-BR-022
+    description: "Cross-border trade over threshold requires compliance pre-clearance"
+    scope: finance.trade-processing
+    action: PLACE
+    conditions:
+      - field: order.cross-border
+        operator: EQ
+        value: "true"
+      - field: order.notional-usd
+        operator: GREATER_THAN
+        value: "1000000"
+      - field: compliance.pre-cleared
+        operator: NOT_EQ
+        value: "true"
+    outcome: REQUIRE_APPROVAL
+
+  # ── Cross-scope isolation ────────────────────────────────────────────────────
+
+  - ruleId: FIN-BR-030
+    description: "Financial trade data must not flow outside finance scopes without compliance gate"
+    scope: finance.trade-processing
+    action: EXPORT
+    conditions:
+      - field: target.scope
+        operator: NOT_IN
+        values: [finance.risk-management, finance.compliance-checking, finance.portfolio-management]
+      - field: compliance.approved
+        operator: NOT_EQ
+        value: "true"
+    outcome: DENY
+
+  - ruleId: FIN-BR-031
+    description: "Portfolio analytics read by external actors requires data classification check"
+    scope: finance.portfolio-management
+    action: READ
+    conditions:
+      - field: actor.scope
+        operator: NOT_EQ
+        value: finance
+      - field: data.classification
+        operator: NOT_IN
+        values: [public, summary]
+    outcome: DENY

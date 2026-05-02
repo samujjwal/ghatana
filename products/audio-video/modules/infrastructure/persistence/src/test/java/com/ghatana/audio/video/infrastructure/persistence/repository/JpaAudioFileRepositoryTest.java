@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @doc.type class
- * @doc.purpose Unit tests for JpaAudioFileRepository (synchronous per AEP pattern) // GH-90000
+ * @doc.purpose Unit tests for JpaAudioFileRepository (synchronous per AEP pattern) 
  * @doc.layer test
  * @doc.pattern Test
  */
@@ -27,179 +27,179 @@ class JpaAudioFileRepositoryTest {
     private JpaAudioFileRepository repository;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Use in-memory H2 for unit tests
         emf = Persistence.createEntityManagerFactory("audio-video-test");
-        entityManager = emf.createEntityManager(); // GH-90000
-        repository = new JpaAudioFileRepository(entityManager); // GH-90000
+        entityManager = emf.createEntityManager(); 
+        repository = new JpaAudioFileRepository(entityManager); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (entityManager != null && entityManager.isOpen()) { // GH-90000
-            entityManager.close(); // GH-90000
+    void tearDown() { 
+        if (entityManager != null && entityManager.isOpen()) { 
+            entityManager.close(); 
         }
-        if (emf != null && emf.isOpen()) { // GH-90000
-            emf.close(); // GH-90000
+        if (emf != null && emf.isOpen()) { 
+            emf.close(); 
         }
     }
 
     @Test
     @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted")
-    void testSaveAudioFile() { // GH-90000
+    void testSaveAudioFile() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID userId = UUID.randomUUID(); // GH-90000
-        AudioFileEntity entity = new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        UUID userId = UUID.randomUUID(); 
+        AudioFileEntity entity = new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
             userId,
             "test-audio.mp3",
             "/storage/test.mp3",
             "mp3"
         );
-        entity.setDurationSeconds(120); // GH-90000
-        entity.setFileSizeBytes(1024L * 1024L); // GH-90000
+        entity.setDurationSeconds(120); 
+        entity.setFileSizeBytes(1024L * 1024L); 
 
         // WHEN
-        AudioFileEntity saved = repository.save(tenantId, entity); // GH-90000
+        AudioFileEntity saved = repository.save(tenantId, entity); 
 
         // THEN
-        assertThat(saved).isNotNull(); // GH-90000
-        assertThat(saved.getId()).isEqualTo(entity.getId()); // GH-90000
-        assertThat(saved.getTenantId()).isEqualTo(tenantId); // GH-90000
-        assertThat(saved.getStatus()).isEqualTo(AudioFileEntity.ProcessingStatus.PENDING); // GH-90000
+        assertThat(saved).isNotNull(); 
+        assertThat(saved.getId()).isEqualTo(entity.getId()); 
+        assertThat(saved.getTenantId()).isEqualTo(tenantId); 
+        assertThat(saved.getStatus()).isEqualTo(AudioFileEntity.ProcessingStatus.PENDING); 
     }
 
     @Test
     @DisplayName("GIVEN saved entity WHEN findById THEN returns entity")
-    void testFindById() { // GH-90000
+    void testFindById() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        AudioFileEntity entity = createTestAudioFile(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
+        var found = repository.findById(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().getId()).isEqualTo(entity.getId()); // GH-90000
-        assertThat(found.get().getFileName()).isEqualTo(entity.getFileName()); // GH-90000
+        assertThat(found).isPresent(); 
+        assertThat(found.get().getId()).isEqualTo(entity.getId()); 
+        assertThat(found.get().getFileName()).isEqualTo(entity.getFileName()); 
     }
 
     @Test
     @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty")
-    void testFindByIdWrongTenant() { // GH-90000
+    void testFindByIdWrongTenant() { 
         // GIVEN
         String tenantId = "tenant-123";
         String wrongTenant = "tenant-999";
-        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        AudioFileEntity entity = createTestAudioFile(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        var found = repository.findById(wrongTenant, entity.getId()); // GH-90000
+        var found = repository.findById(wrongTenant, entity.getId()); 
 
         // THEN
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(found).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant")
-    void testFindByTenantId() { // GH-90000
+    void testFindByTenantId() { 
         // GIVEN
         String tenantId1 = "tenant-123";
         String tenantId2 = "tenant-456";
 
-        AudioFileEntity entity1 = createTestAudioFile(tenantId1); // GH-90000
-        AudioFileEntity entity2 = createTestAudioFile(tenantId1); // GH-90000
-        AudioFileEntity entity3 = createTestAudioFile(tenantId2); // GH-90000
+        AudioFileEntity entity1 = createTestAudioFile(tenantId1); 
+        AudioFileEntity entity2 = createTestAudioFile(tenantId1); 
+        AudioFileEntity entity3 = createTestAudioFile(tenantId2); 
 
-        repository.save(tenantId1, entity1); // GH-90000
-        repository.save(tenantId1, entity2); // GH-90000
-        repository.save(tenantId2, entity3); // GH-90000
+        repository.save(tenantId1, entity1); 
+        repository.save(tenantId1, entity2); 
+        repository.save(tenantId2, entity3); 
 
         // WHEN
-        var found = repository.findByTenantId(tenantId1); // GH-90000
+        var found = repository.findByTenantId(tenantId1); 
 
         // THEN
-        assertThat(found).hasSize(2); // GH-90000
+        assertThat(found).hasSize(2); 
         assertThat(found).extracting("id").containsExactlyInAnyOrder(entity1.getId(), entity2.getId());
     }
 
     @Test
     @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted")
-    void testSoftDelete() { // GH-90000
+    void testSoftDelete() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        AudioFileEntity entity = createTestAudioFile(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        boolean deleted = repository.softDelete(tenantId, entity.getId()); // GH-90000
+        boolean deleted = repository.softDelete(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(deleted).isTrue(); // GH-90000
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(deleted).isTrue(); 
+        var found = repository.findById(tenantId, entity.getId()); 
+        assertThat(found).isEmpty(); 
 
-        var includingDeleted = repository.findAllByTenantIdIncludingDeleted(tenantId).stream() // GH-90000
-            .filter(audioFile -> audioFile.getId().equals(entity.getId())) // GH-90000
-            .findFirst(); // GH-90000
-        assertThat(includingDeleted).isPresent(); // GH-90000
-        assertThat(includingDeleted.get().isDeleted()).isTrue(); // GH-90000
-        assertThat(includingDeleted.get().getDeletedAt()).isNotNull(); // GH-90000
+        var includingDeleted = repository.findAllByTenantIdIncludingDeleted(tenantId).stream() 
+            .filter(audioFile -> audioFile.getId().equals(entity.getId())) 
+            .findFirst(); 
+        assertThat(includingDeleted).isPresent(); 
+        assertThat(includingDeleted.get().isDeleted()).isTrue(); 
+        assertThat(includingDeleted.get().getDeletedAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("GIVEN no entity WHEN softDelete THEN returns false")
-    void testSoftDeleteNotFound() { // GH-90000
+    void testSoftDeleteNotFound() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID nonExistentId = UUID.randomUUID(); // GH-90000
+        UUID nonExistentId = UUID.randomUUID(); 
 
         // WHEN
-        boolean deleted = repository.softDelete(tenantId, nonExistentId); // GH-90000
+        boolean deleted = repository.softDelete(tenantId, nonExistentId); 
 
         // THEN
-        assertThat(deleted).isFalse(); // GH-90000
+        assertThat(deleted).isFalse(); 
     }
 
     @Test
     @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed")
-    void testHardDelete() { // GH-90000
+    void testHardDelete() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity = createTestAudioFile(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
-        repository.softDelete(tenantId, entity.getId()); // GH-90000
+        AudioFileEntity entity = createTestAudioFile(tenantId); 
+        repository.save(tenantId, entity); 
+        repository.softDelete(tenantId, entity.getId()); 
 
         // WHEN
-        boolean deleted = repository.hardDelete(tenantId, entity.getId()); // GH-90000
+        boolean deleted = repository.hardDelete(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(deleted).isTrue(); // GH-90000
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(deleted).isTrue(); 
+        var found = repository.findById(tenantId, entity.getId()); 
+        assertThat(found).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN soft deleted user file WHEN findByUserId THEN excludes deleted records")
-    void testFindByUserIdExcludesSoftDeleted() { // GH-90000
+    void testFindByUserIdExcludesSoftDeleted() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID userId = UUID.randomUUID(); // GH-90000
+        UUID userId = UUID.randomUUID(); 
 
-        AudioFileEntity active = new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        AudioFileEntity active = new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
             userId,
             "active.mp3",
             "/storage/active.mp3",
             "mp3"
         );
-        AudioFileEntity deleted = new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        AudioFileEntity deleted = new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
             userId,
             "deleted.mp3",
@@ -207,60 +207,60 @@ class JpaAudioFileRepositoryTest {
             "mp3"
         );
 
-        repository.save(tenantId, active); // GH-90000
-        repository.save(tenantId, deleted); // GH-90000
-        repository.softDelete(tenantId, deleted.getId()); // GH-90000
+        repository.save(tenantId, active); 
+        repository.save(tenantId, deleted); 
+        repository.softDelete(tenantId, deleted.getId()); 
 
         // WHEN
-        var found = repository.findByUserId(tenantId, userId); // GH-90000
+        var found = repository.findByUserId(tenantId, userId); 
 
         // THEN
-        assertThat(found).hasSize(1); // GH-90000
-        assertThat(found.getFirst().getId()).isEqualTo(active.getId()); // GH-90000
-        assertThat(found.getFirst().isDeleted()).isFalse(); // GH-90000
+        assertThat(found).hasSize(1); 
+        assertThat(found.getFirst().getId()).isEqualTo(active.getId()); 
+        assertThat(found.getFirst().isDeleted()).isFalse(); 
     }
 
     @Test
     @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count")
-    void testCountByTenantId() { // GH-90000
+    void testCountByTenantId() { 
         // GIVEN
         String tenantId = "tenant-123";
-        repository.save(tenantId, createTestAudioFile(tenantId)); // GH-90000
-        repository.save(tenantId, createTestAudioFile(tenantId)); // GH-90000
+        repository.save(tenantId, createTestAudioFile(tenantId)); 
+        repository.save(tenantId, createTestAudioFile(tenantId)); 
 
         // WHEN
-        long count = repository.countByTenantId(tenantId); // GH-90000
+        long count = repository.countByTenantId(tenantId); 
 
         // THEN
-        assertThat(count).isEqualTo(2L); // GH-90000
+        assertThat(count).isEqualTo(2L); 
     }
 
     @Test
     @DisplayName("GIVEN soft deleted entity not counted WHEN countByTenantId")
-    void testCountByTenantIdExcludesDeleted() { // GH-90000
+    void testCountByTenantIdExcludesDeleted() { 
         // GIVEN
         String tenantId = "tenant-123";
-        AudioFileEntity entity1 = createTestAudioFile(tenantId); // GH-90000
-        AudioFileEntity entity2 = createTestAudioFile(tenantId); // GH-90000
-        repository.save(tenantId, entity1); // GH-90000
-        repository.save(tenantId, entity2); // GH-90000
-        repository.softDelete(tenantId, entity1.getId()); // GH-90000
+        AudioFileEntity entity1 = createTestAudioFile(tenantId); 
+        AudioFileEntity entity2 = createTestAudioFile(tenantId); 
+        repository.save(tenantId, entity1); 
+        repository.save(tenantId, entity2); 
+        repository.softDelete(tenantId, entity1.getId()); 
 
         // WHEN
-        long count = repository.countByTenantId(tenantId); // GH-90000
+        long count = repository.countByTenantId(tenantId); 
 
         // THEN - count excludes soft deleted
-        assertThat(count).isEqualTo(1L); // GH-90000
+        assertThat(count).isEqualTo(1L); 
     }
 
     // Helper methods
 
-    private AudioFileEntity createTestAudioFile(String tenantId) { // GH-90000
-        return new AudioFileEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+    private AudioFileEntity createTestAudioFile(String tenantId) { 
+        return new AudioFileEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
-            "test-audio-" + UUID.randomUUID() + ".mp3", // GH-90000
+            UUID.randomUUID(), 
+            "test-audio-" + UUID.randomUUID() + ".mp3", 
             "/storage/test.mp3",
             "mp3"
         );

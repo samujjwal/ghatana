@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  */
 
 package com.ghatana.agent.framework.config;
@@ -38,90 +38,90 @@ class AgentDefinitionTest {
 
         @Test
         @DisplayName("should build with required fields")
-        void shouldBuildWithRequiredFields() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldBuildWithRequiredFields() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .systemPrompt("You are a test agent.")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(def.getId()).isEqualTo("test-agent");
             assertThat(def.getVersion()).isEqualTo("1.0.0");
-            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC); 
             assertThat(def.getName()).isEqualTo("test-agent"); // defaults to id
             assertThat(def.getCanonicalId()).isEqualTo("test-agent:1.0.0");
         }
 
         @Test
         @DisplayName("should build with all fields")
-        void shouldBuildWithAllFields() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldBuildWithAllFields() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("fraud-detector")
                     .version("2.1.0")
                     .name("Fraud Detector")
                     .description("Detects fraudulent transactions")
-                    .type(AgentType.HYBRID) // GH-90000
+                    .type(AgentType.HYBRID) 
                     .subtype("RULE_LLM")
-                    .determinism(DeterminismGuarantee.CONFIG_SCOPED) // GH-90000
-                    .stateMutability(StateMutability.LOCAL_STATE) // GH-90000
-                    .failureMode(FailureMode.CIRCUIT_BREAKER) // GH-90000
+                    .determinism(DeterminismGuarantee.CONFIG_SCOPED) 
+                    .stateMutability(StateMutability.LOCAL_STATE) 
+                    .failureMode(FailureMode.CIRCUIT_BREAKER) 
                     .systemPrompt("You are a fraud detection agent.")
-                    .maxTokens(8192) // GH-90000
-                    .temperature(0.3) // GH-90000
-                    .inputContract(new IOContract("TransactionEvent", "JSON", null)) // GH-90000
-                    .outputContract(new IOContract("FraudAssessment", "JSON", null)) // GH-90000
-                    .addTool(new ToolDeclaration("lookupTransaction", "Look up transaction", // GH-90000
+                    .maxTokens(8192) 
+                    .temperature(0.3) 
+                    .inputContract(new IOContract("TransactionEvent", "JSON", null)) 
+                    .outputContract(new IOContract("FraudAssessment", "JSON", null)) 
+                    .addTool(new ToolDeclaration("lookupTransaction", "Look up transaction", 
                             Map.of("txId", ParameterSchema.requiredString("Transaction ID"))))
                     .addCapability("fraud-detection")
                     .addCapability("risk-scoring")
-                    .timeout(Duration.ofSeconds(10)) // GH-90000
-                    .maxCostPerCall(0.05) // GH-90000
-                    .maxRetries(5) // GH-90000
-                    .label("team", "security") // GH-90000
-                    .metadata("priority", "high") // GH-90000
-                    .build(); // GH-90000
+                    .timeout(Duration.ofSeconds(10)) 
+                    .maxCostPerCall(0.05) 
+                    .maxRetries(5) 
+                    .label("team", "security") 
+                    .metadata("priority", "high") 
+                    .build(); 
 
             assertThat(def.getName()).isEqualTo("Fraud Detector");
             assertThat(def.getCanonicalId()).isEqualTo("fraud-detector:2.1.0");
-            assertThat(def.getType()).isEqualTo(AgentType.HYBRID); // GH-90000
-            assertThat(def.getTools()).hasSize(1); // GH-90000
-            assertThat(def.getCapabilities()).containsExactlyInAnyOrder("fraud-detection", "risk-scoring"); // GH-90000
-            assertThat(def.getLabels()).containsEntry("team", "security"); // GH-90000
-            assertThat(def.getTimeout()).isEqualTo(Duration.ofSeconds(10)); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.HYBRID); 
+            assertThat(def.getTools()).hasSize(1); 
+            assertThat(def.getCapabilities()).containsExactlyInAnyOrder("fraud-detection", "risk-scoring"); 
+            assertThat(def.getLabels()).containsEntry("team", "security"); 
+            assertThat(def.getTimeout()).isEqualTo(Duration.ofSeconds(10)); 
         }
 
         @Test
         @DisplayName("should be immutable — collections are unmodifiable")
-        void shouldBeImmutable() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldBeImmutable() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("test")
                     .version("1.0.0")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .label("k", "v") // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .label("k", "v") 
+                    .build(); 
 
-            assertThatThrownBy(() -> def.getLabels().put("new", "value")) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
-            assertThatThrownBy(() -> def.getTools().add( // GH-90000
-                    new ToolDeclaration("x", "x", Map.of()))) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+            assertThatThrownBy(() -> def.getLabels().put("new", "value")) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
+            assertThatThrownBy(() -> def.getTools().add( 
+                    new ToolDeclaration("x", "x", Map.of()))) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
             assertThatThrownBy(() -> def.getCapabilities().add("new"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("should use equals/hashCode based on id+version")
-        void shouldUseEqualsOnIdVersion() { // GH-90000
-            AgentDefinition a = AgentDefinition.builder() // GH-90000
+        void shouldUseEqualsOnIdVersion() { 
+            AgentDefinition a = AgentDefinition.builder() 
                     .id("agent-a").version("1.0.0").type(AgentType.PROBABILISTIC)
                     .systemPrompt("A").build();
-            AgentDefinition b = AgentDefinition.builder() // GH-90000
+            AgentDefinition b = AgentDefinition.builder() 
                     .id("agent-a").version("1.0.0").type(AgentType.DETERMINISTIC)
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(a).isEqualTo(b); // GH-90000
-            assertThat(a.hashCode()).isEqualTo(b.hashCode()); // GH-90000
+            assertThat(a).isEqualTo(b); 
+            assertThat(a.hashCode()).isEqualTo(b.hashCode()); 
         }
     }
 
@@ -133,28 +133,28 @@ class AgentDefinitionTest {
     @DisplayName("AgentInstance")
     class AgentInstanceTests {
 
-        private AgentDefinition baseDefinition() { // GH-90000
-            return AgentDefinition.builder() // GH-90000
+        private AgentDefinition baseDefinition() { 
+            return AgentDefinition.builder() 
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .systemPrompt("You are a test agent.")
-                    .timeout(Duration.ofSeconds(30)) // GH-90000
-                    .maxTokens(4096) // GH-90000
-                    .temperature(0.7) // GH-90000
-                    .maxCostPerCall(0.10) // GH-90000
-                    .failureMode(FailureMode.FAIL_FAST) // GH-90000
-                    .label("env", "prod") // GH-90000
-                    .build(); // GH-90000
+                    .timeout(Duration.ofSeconds(30)) 
+                    .maxTokens(4096) 
+                    .temperature(0.7) 
+                    .maxCostPerCall(0.10) 
+                    .failureMode(FailureMode.FAIL_FAST) 
+                    .label("env", "prod") 
+                    .build(); 
         }
 
         @Test
         @DisplayName("should auto-generate instanceId from tenant+definition")
-        void shouldAutoGenerateInstanceId() { // GH-90000
-            AgentInstance inst = AgentInstance.builder() // GH-90000
+        void shouldAutoGenerateInstanceId() { 
+            AgentInstance inst = AgentInstance.builder() 
                     .tenantId("acme")
-                    .definition(baseDefinition()) // GH-90000
-                    .build(); // GH-90000
+                    .definition(baseDefinition()) 
+                    .build(); 
 
             assertThat(inst.getInstanceId()).isEqualTo("acme:test-agent:1.0.0");
             assertThat(inst.getTenantId()).isEqualTo("acme");
@@ -162,66 +162,66 @@ class AgentDefinitionTest {
 
         @Test
         @DisplayName("should fall back to definition values when no overrides")
-        void shouldFallBackToDefinitionDefaults() { // GH-90000
-            AgentInstance inst = AgentInstance.builder() // GH-90000
+        void shouldFallBackToDefinitionDefaults() { 
+            AgentInstance inst = AgentInstance.builder() 
                     .tenantId("acme")
-                    .definition(baseDefinition()) // GH-90000
-                    .build(); // GH-90000
+                    .definition(baseDefinition()) 
+                    .build(); 
 
-            assertThat(inst.getEffectiveTimeout()).isEqualTo(Duration.ofSeconds(30)); // GH-90000
-            assertThat(inst.getEffectiveTemperature()).isEqualTo(0.7); // GH-90000
-            assertThat(inst.getEffectiveMaxTokens()).isEqualTo(4096); // GH-90000
-            assertThat(inst.getEffectiveFailureMode()).isEqualTo(FailureMode.FAIL_FAST); // GH-90000
+            assertThat(inst.getEffectiveTimeout()).isEqualTo(Duration.ofSeconds(30)); 
+            assertThat(inst.getEffectiveTemperature()).isEqualTo(0.7); 
+            assertThat(inst.getEffectiveMaxTokens()).isEqualTo(4096); 
+            assertThat(inst.getEffectiveFailureMode()).isEqualTo(FailureMode.FAIL_FAST); 
         }
 
         @Test
         @DisplayName("should apply overrides over definition defaults")
-        void shouldApplyOverrides() { // GH-90000
-            AgentInstance inst = AgentInstance.builder() // GH-90000
+        void shouldApplyOverrides() { 
+            AgentInstance inst = AgentInstance.builder() 
                     .tenantId("globex")
-                    .definition(baseDefinition()) // GH-90000
-                    .overrides(AgentInstance.Overrides.builder() // GH-90000
+                    .definition(baseDefinition()) 
+                    .overrides(AgentInstance.Overrides.builder() 
                             .model("gpt-4o")
-                            .timeout(Duration.ofSeconds(60)) // GH-90000
-                            .temperature(0.1) // GH-90000
-                            .maxTokens(8192) // GH-90000
-                            .failureMode(FailureMode.CIRCUIT_BREAKER) // GH-90000
-                            .rateLimitPerSecond(100) // GH-90000
-                            .label("env", "staging") // GH-90000
-                            .featureFlag("beta-tools", true) // GH-90000
-                            .build() // GH-90000
+                            .timeout(Duration.ofSeconds(60)) 
+                            .temperature(0.1) 
+                            .maxTokens(8192) 
+                            .failureMode(FailureMode.CIRCUIT_BREAKER) 
+                            .rateLimitPerSecond(100) 
+                            .label("env", "staging") 
+                            .featureFlag("beta-tools", true) 
+                            .build() 
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(inst.getEffectiveModel()).isEqualTo("gpt-4o");
-            assertThat(inst.getEffectiveTimeout()).isEqualTo(Duration.ofSeconds(60)); // GH-90000
-            assertThat(inst.getEffectiveTemperature()).isEqualTo(0.1); // GH-90000
-            assertThat(inst.getEffectiveMaxTokens()).isEqualTo(8192); // GH-90000
-            assertThat(inst.getEffectiveFailureMode()).isEqualTo(FailureMode.CIRCUIT_BREAKER); // GH-90000
-            assertThat(inst.getEffectiveRateLimit()).isEqualTo(100); // GH-90000
+            assertThat(inst.getEffectiveTimeout()).isEqualTo(Duration.ofSeconds(60)); 
+            assertThat(inst.getEffectiveTemperature()).isEqualTo(0.1); 
+            assertThat(inst.getEffectiveMaxTokens()).isEqualTo(8192); 
+            assertThat(inst.getEffectiveFailureMode()).isEqualTo(FailureMode.CIRCUIT_BREAKER); 
+            assertThat(inst.getEffectiveRateLimit()).isEqualTo(100); 
             assertThat(inst.isFeatureEnabled("beta-tools")).isTrue();
             // Label override replaces definition's "env"
-            assertThat(inst.getEffectiveLabels()).containsEntry("env", "staging"); // GH-90000
+            assertThat(inst.getEffectiveLabels()).containsEntry("env", "staging"); 
         }
 
         @Test
         @DisplayName("should support hot reload via applyOverrides")
-        void shouldSupportHotReload() { // GH-90000
-            AgentInstance inst = AgentInstance.builder() // GH-90000
+        void shouldSupportHotReload() { 
+            AgentInstance inst = AgentInstance.builder() 
                     .tenantId("acme")
-                    .definition(baseDefinition()) // GH-90000
-                    .build(); // GH-90000
+                    .definition(baseDefinition()) 
+                    .build(); 
 
-            assertThat(inst.getEffectiveModel()).isNull(); // GH-90000
+            assertThat(inst.getEffectiveModel()).isNull(); 
 
             // Hot reload: switch to a different model
-            inst.applyOverrides(AgentInstance.Overrides.builder() // GH-90000
+            inst.applyOverrides(AgentInstance.Overrides.builder() 
                     .model("claude-3-opus")
-                    .build() // GH-90000
+                    .build() 
             );
 
             assertThat(inst.getEffectiveModel()).isEqualTo("claude-3-opus");
-            assertThat(inst.getLastUpdatedAt()).isAfter(inst.getCreatedAt()); // GH-90000
+            assertThat(inst.getLastUpdatedAt()).isAfter(inst.getCreatedAt()); 
         }
     }
 
@@ -235,138 +235,138 @@ class AgentDefinitionTest {
 
         @Test
         @DisplayName("should pass for a well-formed PROBABILISTIC definition")
-        void shouldPassForValidProbabilisticDefinition() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldPassForValidProbabilisticDefinition() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
                     .systemPrompt("You are helpful.")
-                    .build(); // GH-90000
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isTrue(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("should fail when PROBABILISTIC agent has no systemPrompt")
-        void shouldFailProbabilisticWithoutSystemPrompt() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldFailProbabilisticWithoutSystemPrompt() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("test-agent")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
-                    .build(); // GH-90000
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.errors()).anyMatch(e -> e.contains("[semantic]") && e.contains("systemPrompt"));
         }
 
         @Test
         @DisplayName("should fail when deterministic agent has systemPrompt")
-        void shouldFailDeterministicWithSystemPrompt() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldFailDeterministicWithSystemPrompt() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("det-agent")
                     .version("1.0.0")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
                     .systemPrompt("Should not be here")
-                    .build(); // GH-90000
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.errors()).anyMatch(e -> e.contains("[semantic]") && e.contains("DETERMINISTIC"));
         }
 
         @Test
         @DisplayName("should fail for excessive cost")
-        void shouldFailForExcessiveCost() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldFailForExcessiveCost() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("expensive")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
                     .systemPrompt("Costly agent")
-                    .maxCostPerCall(50.0) // GH-90000
-                    .build(); // GH-90000
+                    .maxCostPerCall(50.0) 
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.errors()).anyMatch(e -> e.contains("[cost]") && e.contains("maxCostPerCall"));
         }
 
         @Test
         @DisplayName("should fail for sensitive capabilities without security review")
-        void shouldFailForUnreviewedSensitiveCapabilities() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldFailForUnreviewedSensitiveCapabilities() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("dangerous")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
-                    .build(); // GH-90000
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
-            assertThat(result.errors()).anyMatch(e -> // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isFalse(); 
+            assertThat(result.errors()).anyMatch(e -> 
                     e.contains("[security]") && e.contains("execute-code"));
         }
 
         @Test
         @DisplayName("should pass for reviewed sensitive capabilities")
-        void shouldPassForReviewedSensitiveCapabilities() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldPassForReviewedSensitiveCapabilities() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("safe-executor")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
                     .systemPrompt("Code executor")
                     .addCapability("execute-code")
-                    .label("security.reviewed", "true") // GH-90000
-                    .build(); // GH-90000
+                    .label("security.reviewed", "true") 
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThat(result.isValid()).isTrue(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThat(result.isValid()).isTrue(); 
         }
 
         @Test
         @DisplayName("should validate AgentInstance with definition + overrides")
-        void shouldValidateInstanceWithOverrides() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldValidateInstanceWithOverrides() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("test")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
                     .subtype("llm")
                     .systemPrompt("test")
-                    .build(); // GH-90000
+                    .build(); 
 
-            AgentInstance inst = AgentInstance.builder() // GH-90000
+            AgentInstance inst = AgentInstance.builder() 
                     .tenantId("acme")
-                    .definition(def) // GH-90000
-                    .overrides(AgentInstance.Overrides.builder() // GH-90000
-                            .maxTokens(200_000)  // exceeds limit // GH-90000
-                            .build()) // GH-90000
-                    .build(); // GH-90000
+                    .definition(def) 
+                    .overrides(AgentInstance.Overrides.builder() 
+                            .maxTokens(200_000)  // exceeds limit 
+                            .build()) 
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(inst); // GH-90000
-            assertThat(result.isValid()).isFalse(); // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(inst); 
+            assertThat(result.isValid()).isFalse(); 
             assertThat(result.errors()).anyMatch(e -> e.contains("maxTokens") && e.contains("exceeds"));
         }
 
         @Test
         @DisplayName("throwIfInvalid should throw for invalid config")
-        void shouldThrowIfInvalid() { // GH-90000
-            AgentDefinition def = AgentDefinition.builder() // GH-90000
+        void shouldThrowIfInvalid() { 
+            AgentDefinition def = AgentDefinition.builder() 
                     .id("bad")
                     .version("1.0.0")
-                    .type(AgentType.PROBABILISTIC) // GH-90000
-                    .temperature(5.0) // out of range // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.PROBABILISTIC) 
+                    .temperature(5.0) // out of range 
+                    .build(); 
 
-            ValidationResult result = AgentDefinitionValidator.validate(def); // GH-90000
-            assertThatThrownBy(result::throwIfInvalid) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            ValidationResult result = AgentDefinitionValidator.validate(def); 
+            assertThatThrownBy(result::throwIfInvalid) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("validation failed");
         }
     }

@@ -28,18 +28,18 @@ class AudioVideoGrpcServerBaseTest {
 
     @Test
     @DisplayName("getPort: returns the configured port")
-    void getPort_returnsConfiguredPort() { // GH-90000
-        TestServer server = new TestServer(0); // 0 = ephemeral port // GH-90000
-        assertThat(server.getPort()).isEqualTo(0); // GH-90000
-        server.close(); // GH-90000
+    void getPort_returnsConfiguredPort() { 
+        TestServer server = new TestServer(0); // 0 = ephemeral port 
+        assertThat(server.getPort()).isEqualTo(0); 
+        server.close(); 
     }
 
     @Test
     @DisplayName("getServiceName: returns the configured service name")
-    void getServiceName_returnsConfiguredName() { // GH-90000
-        TestServer server = new TestServer(0); // GH-90000
+    void getServiceName_returnsConfiguredName() { 
+        TestServer server = new TestServer(0); 
         assertThat(server.getServiceName()).isEqualTo("test-service");
-        server.close(); // GH-90000
+        server.close(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -48,33 +48,33 @@ class AudioVideoGrpcServerBaseTest {
 
     @Test
     @DisplayName("start + close: server starts and shuts down cleanly")
-    void start_thenClose_shutsDownCleanly() throws IOException { // GH-90000
-        TestServer server = new TestServer(0); // GH-90000
-        server.start(); // GH-90000
+    void start_thenClose_shutsDownCleanly() throws IOException { 
+        TestServer server = new TestServer(0); 
+        server.start(); 
 
-        assertThat(server.isShutdown()).isFalse(); // GH-90000
+        assertThat(server.isShutdown()).isFalse(); 
 
-        server.close(); // GH-90000
-        assertThat(server.isShutdown()).isTrue(); // GH-90000
+        server.close(); 
+        assertThat(server.isShutdown()).isTrue(); 
     }
 
     @Test
     @DisplayName("close: idempotent — calling twice does not throw")
-    void close_calledTwice_doesNotThrow() throws IOException { // GH-90000
-        TestServer server = new TestServer(0); // GH-90000
-        server.start(); // GH-90000
+    void close_calledTwice_doesNotThrow() throws IOException { 
+        TestServer server = new TestServer(0); 
+        server.start(); 
 
-        server.close(); // GH-90000
-        assertThatCode(server::close).doesNotThrowAnyException(); // GH-90000
+        server.close(); 
+        assertThatCode(server::close).doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("isShutdown: returns true before start (server not yet running)")
-    void isShutdown_beforeStart_returnsFalse() { // GH-90000
-        TestServer server = new TestServer(0); // GH-90000
+    void isShutdown_beforeStart_returnsFalse() { 
+        TestServer server = new TestServer(0); 
         // Not started yet — server is built but not running; gRPC still reports "not shut down"
-        // The important thing is close() is safe to call before start() // GH-90000
-        assertThatCode(server::close).doesNotThrowAnyException(); // GH-90000
+        // The important thing is close() is safe to call before start() 
+        assertThatCode(server::close).doesNotThrowAnyException(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -89,8 +89,8 @@ class AudioVideoGrpcServerBaseTest {
      */
     private static final class TestServer extends AudioVideoGrpcServerBase {
 
-        TestServer(int port) { // GH-90000
-            super("test-service", port, new NoOpService(), java.util.List.of()); // GH-90000
+        TestServer(int port) { 
+            super("test-service", port, new NoOpService(), java.util.List.of()); 
         }
     }
 
@@ -102,11 +102,11 @@ class AudioVideoGrpcServerBaseTest {
     private static final class NoOpService implements BindableService {
 
         @Override
-        public ServerServiceDefinition bindService() { // GH-90000
-            return ServerServiceDefinition.builder( // GH-90000
+        public ServerServiceDefinition bindService() { 
+            return ServerServiceDefinition.builder( 
                     ServiceDescriptor.newBuilder("test.NoOpService")
-                            .build()) // GH-90000
-                    .build(); // GH-90000
+                            .build()) 
+                    .build(); 
         }
     }
 }

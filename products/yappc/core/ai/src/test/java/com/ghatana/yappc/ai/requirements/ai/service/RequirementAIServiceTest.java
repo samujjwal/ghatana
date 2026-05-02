@@ -55,9 +55,9 @@ class RequirementAIServiceTest extends EventloopTestBase {
     @Mock private MetricsCollector metricsCollector;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        service = new RequirementAIService( // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        service = new RequirementAIService( 
                 completionService,
                 embeddingService,
                 vectorStore,
@@ -67,120 +67,120 @@ class RequirementAIServiceTest extends EventloopTestBase {
         );
 
         // Default mocks
-        when(personaRepository.findById(anyString())).thenReturn(Promise.of(Optional.of(Persona.DEFAULT))); // GH-90000
+        when(personaRepository.findById(anyString())).thenReturn(Promise.of(Optional.of(Persona.DEFAULT))); 
         when(promptTemplateManager.getTemplate(anyString())).thenReturn(new PromptTemplate("template"));
 
         // Mock LLM response
-        CompletionResult mockResult = CompletionResult.builder() // GH-90000
+        CompletionResult mockResult = CompletionResult.builder() 
                 .text("Mock response")
-                .tokensUsed(10) // GH-90000
+                .tokensUsed(10) 
                 .modelUsed("test-model")
-                .build(); // GH-90000
-        when(completionService.complete(any(CompletionRequest.class))).thenReturn(Promise.of(mockResult)); // GH-90000
+                .build(); 
+        when(completionService.complete(any(CompletionRequest.class))).thenReturn(Promise.of(mockResult)); 
 
         // Mock Embedding response
-        when(embeddingService.createEmbedding(anyString())).thenReturn(Promise.of(new EmbeddingResult("test", new float[1536], "test-model"))); // GH-90000
+        when(embeddingService.createEmbedding(anyString())).thenReturn(Promise.of(new EmbeddingResult("test", new float[1536], "test-model"))); 
 
         // Mock Vector Search
-        when(vectorStore.search(any(), anyInt(), anyDouble(), any())).thenReturn(Promise.of(List.of())); // GH-90000
+        when(vectorStore.search(any(), anyInt(), anyDouble(), any())).thenReturn(Promise.of(List.of())); 
     }
 
     @Test
     @DisplayName("Should generate requirements (mocked)")
-    void shouldGenerateRequirements() { // GH-90000
+    void shouldGenerateRequirements() { 
         // GIVEN: Valid request
-        RequirementGenerationRequest request = RequirementGenerationRequest.builder() // GH-90000
+        RequirementGenerationRequest request = RequirementGenerationRequest.builder() 
                 .featureDescription("User authentication system")
                 .context("Mobile banking application")
-                .build(); // GH-90000
+                .build(); 
 
         // WHEN: Generate requirements
-        RequirementGenerationResponse response = runPromise(() // GH-90000
-                -> service.generateRequirements(request)); // GH-90000
+        RequirementGenerationResponse response = runPromise(() 
+                -> service.generateRequirements(request)); 
 
         // THEN: Response is not null
-        assertThat(response).isNotNull(); // GH-90000
+        assertThat(response).isNotNull(); 
         // Note: requirements list is empty because parsing is not implemented in service yet
     }
 
     @Test
     @DisplayName("Should search similar requirements (mocked)")
-    void shouldSearchSimilarRequirements() { // GH-90000
+    void shouldSearchSimilarRequirements() { 
         // GIVEN: Search query
         String query = "user authentication";
 
         // WHEN: Search
-        List<VectorSearchResult> results = runPromise(() // GH-90000
-                -> service.searchSimilarRequirements(query, 5)); // GH-90000
+        List<VectorSearchResult> results = runPromise(() 
+                -> service.searchSimilarRequirements(query, 5)); 
 
-        // THEN: Results returned (empty list from mock) // GH-90000
-        assertThat(results).isNotNull(); // GH-90000
+        // THEN: Results returned (empty list from mock) 
+        assertThat(results).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should improve requirement (mocked)")
-    void shouldImproveRequirement() { // GH-90000
+    void shouldImproveRequirement() { 
         // GIVEN: Simple requirement
         String requirement = "User can login";
 
         // WHEN: Improve
-        List<AISuggestion> suggestions = runPromise(() // GH-90000
-                -> service.improveRequirement(requirement)); // GH-90000
+        List<AISuggestion> suggestions = runPromise(() 
+                -> service.improveRequirement(requirement)); 
 
-        // THEN: Suggestions returned (empty list from mock parsing) // GH-90000
-        assertThat(suggestions).isNotNull(); // GH-90000
+        // THEN: Suggestions returned (empty list from mock parsing) 
+        assertThat(suggestions).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should extract acceptance criteria (mocked)")
-    void shouldExtractAcceptanceCriteria() { // GH-90000
+    void shouldExtractAcceptanceCriteria() { 
         // GIVEN: Requirement
         String requirement = "Users must be able to reset their password";
 
         // WHEN: Extract
-        List<String> criteria = runPromise(() // GH-90000
-                -> service.extractAcceptanceCriteria(requirement)); // GH-90000
+        List<String> criteria = runPromise(() 
+                -> service.extractAcceptanceCriteria(requirement)); 
 
         // THEN: Criteria returned
-        assertThat(criteria).isNotNull(); // GH-90000
+        assertThat(criteria).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should classify requirement (mocked)")
-    void shouldClassifyRequirement() { // GH-90000
+    void shouldClassifyRequirement() { 
         // GIVEN: Requirement
         String requirement = "System must validate user credentials";
 
         // WHEN: Classify
-        RequirementType classification = runPromise(() // GH-90000
-                -> service.classifyRequirement(requirement)); // GH-90000
+        RequirementType classification = runPromise(() 
+                -> service.classifyRequirement(requirement)); 
 
-        // THEN: Classification returned (default FUNCTIONAL) // GH-90000
-        assertThat(classification).isNotNull(); // GH-90000
+        // THEN: Classification returned (default FUNCTIONAL) 
+        assertThat(classification).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should validate quality (mocked)")
-    void shouldValidateQuality() { // GH-90000
+    void shouldValidateQuality() { 
         // GIVEN: Requirement
         String requirement = "User can login";
 
         // WHEN: Validate
-        RequirementQualityResult quality = runPromise(() // GH-90000
-                -> service.validateQuality(requirement)); // GH-90000
+        RequirementQualityResult quality = runPromise(() 
+                -> service.validateQuality(requirement)); 
 
         // THEN: Quality result returned
-        assertThat(quality).isNotNull(); // GH-90000
-        assertThat(quality.getScore()).isGreaterThanOrEqualTo(0.0); // GH-90000
+        assertThat(quality).isNotNull(); 
+        assertThat(quality.getScore()).isGreaterThanOrEqualTo(0.0); 
     }
 
     @Test
     @DisplayName("Should return health status")
-    void shouldReturnHealthStatus() { // GH-90000
+    void shouldReturnHealthStatus() { 
         // WHEN: Check health
-        Boolean isHealthy = runPromise(() -> service.healthCheck()); // GH-90000
+        Boolean isHealthy = runPromise(() -> service.healthCheck()); 
 
         // THEN: Boolean returned
-        assertThat(isHealthy).isNotNull(); // GH-90000
+        assertThat(isHealthy).isNotNull(); 
     }
 }

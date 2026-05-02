@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.metrics;
@@ -28,9 +28,9 @@ class PolicyAccuracyMetricsTest {
     private Metrics metrics;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        metrics = new Metrics(new SimpleMeterRegistry()); // GH-90000
-        collector = new PolicyAccuracyMetrics(metrics); // GH-90000
+    void setUp() { 
+        metrics = new Metrics(new SimpleMeterRegistry()); 
+        collector = new PolicyAccuracyMetrics(metrics); 
     }
 
     @Nested
@@ -39,65 +39,65 @@ class PolicyAccuracyMetricsTest {
 
         @Test
         @DisplayName("records true positive")
-        void recordsTruePositive() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
+        void recordsTruePositive() { 
+            collector.recordTruePositive("policy-1", "block"); 
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.truePositives()).isEqualTo(1); // GH-90000
-            assertThat(stats.falsePositives()).isEqualTo(0); // GH-90000
+            assertThat(stats.truePositives()).isEqualTo(1); 
+            assertThat(stats.falsePositives()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("records false positive")
-        void recordsFalsePositive() { // GH-90000
-            collector.recordFalsePositive("policy-1", "block"); // GH-90000
+        void recordsFalsePositive() { 
+            collector.recordFalsePositive("policy-1", "block"); 
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.falsePositives()).isEqualTo(1); // GH-90000
+            assertThat(stats.falsePositives()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("records false negative")
-        void recordsFalseNegative() { // GH-90000
+        void recordsFalseNegative() { 
             collector.recordFalseNegative("policy-1");
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.falseNegatives()).isEqualTo(1); // GH-90000
+            assertThat(stats.falseNegatives()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("records true negative")
-        void recordsTrueNegative() { // GH-90000
+        void recordsTrueNegative() { 
             collector.recordTrueNegative("policy-1");
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.trueNegatives()).isEqualTo(1); // GH-90000
+            assertThat(stats.trueNegatives()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("records policy promotion")
-        void recordsPolicyPromotion() { // GH-90000
-            collector.recordPolicyPromotion("policy-1", "auto"); // GH-90000
+        void recordsPolicyPromotion() { 
+            collector.recordPolicyPromotion("policy-1", "auto"); 
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.promotions()).isEqualTo(1); // GH-90000
-            assertThat(stats.demotions()).isEqualTo(0); // GH-90000
+            assertThat(stats.promotions()).isEqualTo(1); 
+            assertThat(stats.demotions()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("records policy demotion")
-        void recordsPolicyDemotion() { // GH-90000
-            collector.recordPolicyDemotion("policy-1", "low_accuracy"); // GH-90000
+        void recordsPolicyDemotion() { 
+            collector.recordPolicyDemotion("policy-1", "low_accuracy"); 
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.demotions()).isEqualTo(1); // GH-90000
+            assertThat(stats.demotions()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("tracks multiple policies separately")
-        void tracksMultiplePoliciesSeparately() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordTruePositive("policy-2", "warn"); // GH-90000
+        void tracksMultiplePoliciesSeparately() { 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordTruePositive("policy-2", "warn"); 
             
             assertThat(collector.getStats("policy-1").truePositives()).isEqualTo(1);
             assertThat(collector.getStats("policy-2").truePositives()).isEqualTo(1);
@@ -110,84 +110,84 @@ class PolicyAccuracyMetricsTest {
 
         @Test
         @DisplayName("calculates precision")
-        void calculatesPrecision() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordFalsePositive("policy-1", "block"); // GH-90000
+        void calculatesPrecision() { 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordFalsePositive("policy-1", "block"); 
             
             double precision = collector.getPrecision("policy-1");
-            assertThat(precision).isEqualTo(0.6666666666666666); // GH-90000
+            assertThat(precision).isEqualTo(0.6666666666666666); 
         }
 
         @Test
         @DisplayName("calculates recall")
-        void calculatesRecall() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
+        void calculatesRecall() { 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordTruePositive("policy-1", "block"); 
             collector.recordFalseNegative("policy-1");
             
             double recall = collector.getRecall("policy-1");
-            assertThat(recall).isEqualTo(0.6666666666666666); // GH-90000
+            assertThat(recall).isEqualTo(0.6666666666666666); 
         }
 
         @Test
         @DisplayName("calculates accuracy")
-        void calculatesAccuracy() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
+        void calculatesAccuracy() { 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordTruePositive("policy-1", "block"); 
             collector.recordTrueNegative("policy-1");
-            collector.recordFalsePositive("policy-1", "block"); // GH-90000
+            collector.recordFalsePositive("policy-1", "block"); 
             
             double accuracy = collector.getAccuracy("policy-1");
-            assertThat(accuracy).isEqualTo(0.75); // GH-90000
+            assertThat(accuracy).isEqualTo(0.75); 
         }
 
         @Test
         @DisplayName("calculates F1 score")
-        void calculatesF1Score() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
-            collector.recordFalsePositive("policy-1", "block"); // GH-90000
+        void calculatesF1Score() { 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordTruePositive("policy-1", "block"); 
+            collector.recordFalsePositive("policy-1", "block"); 
             collector.recordFalseNegative("policy-1");
             
             double f1 = collector.getF1Score("policy-1");
-            assertThat(f1).isEqualTo(0.6666666666666666); // GH-90000
+            assertThat(f1).isEqualTo(0.6666666666666666); 
         }
 
         @Test
         @DisplayName("calculates promotion success rate")
-        void calculatesPromotionSuccessRate() { // GH-90000
-            collector.recordPolicyPromotion("policy-1", "auto"); // GH-90000
-            collector.recordPolicyPromotion("policy-1", "auto"); // GH-90000
-            collector.recordPolicyDemotion("policy-1", "low_accuracy"); // GH-90000
+        void calculatesPromotionSuccessRate() { 
+            collector.recordPolicyPromotion("policy-1", "auto"); 
+            collector.recordPolicyPromotion("policy-1", "auto"); 
+            collector.recordPolicyDemotion("policy-1", "low_accuracy"); 
             
             double rate = collector.getPromotionSuccessRate("policy-1");
-            assertThat(rate).isEqualTo(0.5); // GH-90000
+            assertThat(rate).isEqualTo(0.5); 
         }
 
         @Test
         @DisplayName("perfect policy has 1.0 metrics")
-        void perfectPolicyHas10Metrics() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
+        void perfectPolicyHas10Metrics() { 
+            collector.recordTruePositive("policy-1", "block"); 
             collector.recordTrueNegative("policy-1");
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.precision()).isEqualTo(1.0); // GH-90000
-            assertThat(stats.recall()).isEqualTo(1.0); // GH-90000
-            assertThat(stats.f1Score()).isEqualTo(1.0); // GH-90000
-            assertThat(stats.accuracy()).isEqualTo(1.0); // GH-90000
+            assertThat(stats.precision()).isEqualTo(1.0); 
+            assertThat(stats.recall()).isEqualTo(1.0); 
+            assertThat(stats.f1Score()).isEqualTo(1.0); 
+            assertThat(stats.accuracy()).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("no decisions has 0.0 metrics")
-        void noDecisionsHas00Metrics() { // GH-90000
+        void noDecisionsHas00Metrics() { 
             double precision = collector.getPrecision("policy-1");
             double recall = collector.getRecall("policy-1");
             double accuracy = collector.getAccuracy("policy-1");
             
-            assertThat(precision).isEqualTo(0.0); // GH-90000
-            assertThat(recall).isEqualTo(0.0); // GH-90000
-            assertThat(accuracy).isEqualTo(0.0); // GH-90000
+            assertThat(precision).isEqualTo(0.0); 
+            assertThat(recall).isEqualTo(0.0); 
+            assertThat(accuracy).isEqualTo(0.0); 
         }
     }
 
@@ -197,36 +197,36 @@ class PolicyAccuracyMetricsTest {
 
         @Test
         @DisplayName("stats start at zero")
-        void statsStartAtZero() { // GH-90000
-            PolicyAccuracyMetrics.PolicyStats stats = new PolicyAccuracyMetrics.PolicyStats(); // GH-90000
+        void statsStartAtZero() { 
+            PolicyAccuracyMetrics.PolicyStats stats = new PolicyAccuracyMetrics.PolicyStats(); 
             
-            assertThat(stats.truePositives()).isEqualTo(0); // GH-90000
-            assertThat(stats.falsePositives()).isEqualTo(0); // GH-90000
-            assertThat(stats.falseNegatives()).isEqualTo(0); // GH-90000
-            assertThat(stats.trueNegatives()).isEqualTo(0); // GH-90000
-            assertThat(stats.promotions()).isEqualTo(0); // GH-90000
-            assertThat(stats.demotions()).isEqualTo(0); // GH-90000
+            assertThat(stats.truePositives()).isEqualTo(0); 
+            assertThat(stats.falsePositives()).isEqualTo(0); 
+            assertThat(stats.falseNegatives()).isEqualTo(0); 
+            assertThat(stats.trueNegatives()).isEqualTo(0); 
+            assertThat(stats.promotions()).isEqualTo(0); 
+            assertThat(stats.demotions()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("increment operations are thread-safe")
-        void incrementOperationsAreThreadSafe() throws InterruptedException { // GH-90000
-            PolicyAccuracyMetrics.PolicyStats stats = new PolicyAccuracyMetrics.PolicyStats(); // GH-90000
+        void incrementOperationsAreThreadSafe() throws InterruptedException { 
+            PolicyAccuracyMetrics.PolicyStats stats = new PolicyAccuracyMetrics.PolicyStats(); 
             
-            Thread t1 = new Thread(() -> { // GH-90000
-                for (int i = 0; i < 1000; i++) stats.incrementTruePositives(); // GH-90000
+            Thread t1 = new Thread(() -> { 
+                for (int i = 0; i < 1000; i++) stats.incrementTruePositives(); 
             });
-            Thread t2 = new Thread(() -> { // GH-90000
-                for (int i = 0; i < 1000; i++) stats.incrementFalsePositives(); // GH-90000
+            Thread t2 = new Thread(() -> { 
+                for (int i = 0; i < 1000; i++) stats.incrementFalsePositives(); 
             });
             
-            t1.start(); // GH-90000
-            t2.start(); // GH-90000
-            t1.join(); // GH-90000
-            t2.join(); // GH-90000
+            t1.start(); 
+            t2.start(); 
+            t1.join(); 
+            t2.join(); 
             
-            assertThat(stats.truePositives()).isEqualTo(1000); // GH-90000
-            assertThat(stats.falsePositives()).isEqualTo(1000); // GH-90000
+            assertThat(stats.truePositives()).isEqualTo(1000); 
+            assertThat(stats.falsePositives()).isEqualTo(1000); 
         }
     }
 
@@ -236,20 +236,20 @@ class PolicyAccuracyMetricsTest {
 
         @Test
         @DisplayName("returns empty stats for unknown policy")
-        void returnsEmptyStatsForUnknownPolicy() { // GH-90000
+        void returnsEmptyStatsForUnknownPolicy() { 
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("unknown");
             
-            assertThat(stats.truePositives()).isEqualTo(0); // GH-90000
-            assertThat(stats.falsePositives()).isEqualTo(0); // GH-90000
+            assertThat(stats.truePositives()).isEqualTo(0); 
+            assertThat(stats.falsePositives()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("returns stats for known policy")
-        void returnsStatsForKnownPolicy() { // GH-90000
-            collector.recordTruePositive("policy-1", "block"); // GH-90000
+        void returnsStatsForKnownPolicy() { 
+            collector.recordTruePositive("policy-1", "block"); 
             
             PolicyAccuracyMetrics.PolicyStats stats = collector.getStats("policy-1");
-            assertThat(stats.truePositives()).isEqualTo(1); // GH-90000
+            assertThat(stats.truePositives()).isEqualTo(1); 
         }
     }
 }

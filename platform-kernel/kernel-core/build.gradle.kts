@@ -25,3 +25,109 @@ dependencies {
 tasks.named("jacocoTestReport") {
     dependsOn("compileJava")
 }
+
+// ── Kernel Purity Gates ──────────────────────────────────────────────────────
+// These tasks enforce that no product-domain terms leak into kernel source,
+// resources, or documentation. Wired into the standard `check` lifecycle.
+
+tasks.register("checkKernelPurity") {
+    description = "Fails the build if product domain terms appear in kernel main sources."
+    group = "verification"
+    val srcDir = layout.projectDirectory.file("src/main/java").asFile
+    val projectDirPath = layout.projectDirectory.asFile
+    doLast {
+        val PRODUCT_TERMS = listOf(
+            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+        )
+        if (!srcDir.exists()) return@doLast
+        val violations = mutableListOf<String>()
+        srcDir.walkTopDown().filter { it.isFile && it.extension == "java" }.forEach { javaFile ->
+            val content = javaFile.readText()
+            PRODUCT_TERMS.forEach { term ->
+                val regex = Regex(term)
+                if (regex.containsMatchIn(content)) {
+                    violations += "${javaFile.relativeTo(projectDirPath)}: contains banned term '$term'"
+                }
+            }
+        }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Kernel purity violation — product domain terms found in main sources:\n" +
+                violations.joinToString("\n") { "  $it" }
+            )
+        }
+        logger.lifecycle("checkKernelPurity: PASSED — no product domain terms in main sources.")
+    }
+}
+
+tasks.register("checkKernelResourcePurity") {
+    description = "Fails the build if product domain terms appear in kernel resources."
+    group = "verification"
+    val resourceDir = layout.projectDirectory.file("src/main/resources").asFile
+    val projectDirPath = layout.projectDirectory.asFile
+    doLast {
+        val PRODUCT_TERMS = listOf(
+            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+        )
+        if (!resourceDir.exists()) return@doLast
+        val violations = mutableListOf<String>()
+        resourceDir.walkTopDown().filter { it.isFile }.forEach { resFile ->
+            val content = resFile.readText()
+            PRODUCT_TERMS.forEach { term ->
+                val regex = Regex(term)
+                if (regex.containsMatchIn(content)) {
+                    violations += "${resFile.relativeTo(projectDirPath)}: contains banned term '$term'"
+                }
+            }
+        }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Kernel resource purity violation — product domain terms found in resources:\n" +
+                violations.joinToString("\n") { "  $it" }
+            )
+        }
+        logger.lifecycle("checkKernelResourcePurity: PASSED — no product domain terms in resources.")
+    }
+}
+
+tasks.register("checkKernelDocsPurity") {
+    description = "Fails the build if product domain terms appear in kernel docs or examples."
+    group = "verification"
+    val docsDir = layout.projectDirectory.dir("../docs").asFile
+    val rootDirPath = layout.projectDirectory.dir("../..").asFile
+    doLast {
+        val PRODUCT_TERMS = listOf(
+            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+        )
+        if (!docsDir.exists()) return@doLast
+        val violations = mutableListOf<String>()
+        docsDir.walkTopDown()
+            .filter { it.isFile && (it.extension == "md" || it.extension == "txt" || it.extension == "yaml") }
+            .forEach { docFile ->
+                val content = docFile.readText()
+                PRODUCT_TERMS.forEach { term ->
+                    val regex = Regex(term)
+                    if (regex.containsMatchIn(content)) {
+                        violations += "${docFile.relativeTo(rootDirPath)}: contains banned term '$term'"
+                    }
+                }
+            }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Kernel docs purity violation — product domain terms found in kernel docs:\n" +
+                violations.joinToString("\n") { "  $it" }
+            )
+        }
+        logger.lifecycle("checkKernelDocsPurity: PASSED — no product domain terms in kernel docs.")
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkKernelPurity", "checkKernelResourcePurity")
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.pattern;
@@ -29,8 +29,8 @@ class PatternStateStoreTest extends EventloopTestBase {
     private InMemoryPatternStateStore<String> store;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new InMemoryPatternStateStore<>(); // GH-90000
+    void setUp() { 
+        store = new InMemoryPatternStateStore<>(); 
     }
 
     @Nested
@@ -39,28 +39,28 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("saves and loads state correctly")
-        void shouldSaveAndLoad() { // GH-90000
-            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v1")); // GH-90000
+        void shouldSaveAndLoad() { 
+            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v1")); 
 
-            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "pattern-a")); // GH-90000
+            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "pattern-a")); 
 
             assertThat(loaded).isPresent().hasValue("state-v1");
         }
 
         @Test
         @DisplayName("returns empty Optional when no state exists")
-        void shouldReturnEmptyWhenNotFound() { // GH-90000
-            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "nonexistent")); // GH-90000
-            assertThat(loaded).isEmpty(); // GH-90000
+        void shouldReturnEmptyWhenNotFound() { 
+            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "nonexistent")); 
+            assertThat(loaded).isEmpty(); 
         }
 
         @Test
         @DisplayName("overwrites previous state on subsequent save")
-        void shouldOverwriteOnSave() { // GH-90000
-            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v1")); // GH-90000
-            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v2")); // GH-90000
+        void shouldOverwriteOnSave() { 
+            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v1")); 
+            runPromise(() -> store.save("tenant-1", "pattern-a", "state-v2")); 
 
-            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "pattern-a")); // GH-90000
+            Optional<String> loaded = runPromise(() -> store.load("tenant-1", "pattern-a")); 
             assertThat(loaded).isPresent().hasValue("state-v2");
         }
     }
@@ -71,12 +71,12 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("different tenants with same patternId have separate state")
-        void shouldIsolateTenants() { // GH-90000
-            runPromise(() -> store.save("tenant-1", "pattern-a", "state-t1")); // GH-90000
-            runPromise(() -> store.save("tenant-2", "pattern-a", "state-t2")); // GH-90000
+        void shouldIsolateTenants() { 
+            runPromise(() -> store.save("tenant-1", "pattern-a", "state-t1")); 
+            runPromise(() -> store.save("tenant-2", "pattern-a", "state-t2")); 
 
-            Optional<String> t1 = runPromise(() -> store.load("tenant-1", "pattern-a")); // GH-90000
-            Optional<String> t2 = runPromise(() -> store.load("tenant-2", "pattern-a")); // GH-90000
+            Optional<String> t1 = runPromise(() -> store.load("tenant-1", "pattern-a")); 
+            Optional<String> t2 = runPromise(() -> store.load("tenant-2", "pattern-a")); 
 
             assertThat(t1).hasValue("state-t1");
             assertThat(t2).hasValue("state-t2");
@@ -84,13 +84,13 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deleting one tenant's state does not affect another")
-        void shouldNotCrossDeleteTenants() { // GH-90000
-            runPromise(() -> store.save("tenant-1", "p", "s1")); // GH-90000
-            runPromise(() -> store.save("tenant-2", "p", "s2")); // GH-90000
+        void shouldNotCrossDeleteTenants() { 
+            runPromise(() -> store.save("tenant-1", "p", "s1")); 
+            runPromise(() -> store.save("tenant-2", "p", "s2")); 
 
-            runPromise(() -> store.delete("tenant-1", "p")); // GH-90000
+            runPromise(() -> store.delete("tenant-1", "p")); 
 
-            assertThat(runPromise(() -> store.load("tenant-1", "p"))).isEmpty(); // GH-90000
+            assertThat(runPromise(() -> store.load("tenant-1", "p"))).isEmpty(); 
             assertThat(runPromise(() -> store.load("tenant-2", "p"))).hasValue("s2");
         }
     }
@@ -101,18 +101,18 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delete removes existing state")
-        void shouldDeleteExistingState() { // GH-90000
-            runPromise(() -> store.save("t", "p", "v")); // GH-90000
-            runPromise(() -> store.delete("t", "p")); // GH-90000
+        void shouldDeleteExistingState() { 
+            runPromise(() -> store.save("t", "p", "v")); 
+            runPromise(() -> store.delete("t", "p")); 
 
-            assertThat(runPromise(() -> store.exists("t", "p"))).isFalse(); // GH-90000
+            assertThat(runPromise(() -> store.exists("t", "p"))).isFalse(); 
         }
 
         @Test
         @DisplayName("delete on non-existent key is a no-op")
-        void shouldAllowDeleteOfMissingKey() { // GH-90000
-            runPromise(() -> store.delete("t", "missing")); // must not throw // GH-90000
-            assertThat(store.size()).isZero(); // GH-90000
+        void shouldAllowDeleteOfMissingKey() { 
+            runPromise(() -> store.delete("t", "missing")); // must not throw 
+            assertThat(store.size()).isZero(); 
         }
     }
 
@@ -122,15 +122,15 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns true after save")
-        void shouldExistAfterSave() { // GH-90000
-            runPromise(() -> store.save("t", "p", "v")); // GH-90000
-            assertThat(runPromise(() -> store.exists("t", "p"))).isTrue(); // GH-90000
+        void shouldExistAfterSave() { 
+            runPromise(() -> store.save("t", "p", "v")); 
+            assertThat(runPromise(() -> store.exists("t", "p"))).isTrue(); 
         }
 
         @Test
         @DisplayName("returns false when not saved")
-        void shouldNotExistBeforeSave() { // GH-90000
-            assertThat(runPromise(() -> store.exists("t", "unsaved"))).isFalse(); // GH-90000
+        void shouldNotExistBeforeSave() { 
+            assertThat(runPromise(() -> store.exists("t", "unsaved"))).isFalse(); 
         }
     }
 
@@ -140,23 +140,23 @@ class PatternStateStoreTest extends EventloopTestBase {
 
         @Test
         @DisplayName("save() rejects null tenantId")
-        void saveRejectsNullTenant() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> store.save(null, "p", "v"))) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+        void saveRejectsNullTenant() { 
+            assertThatThrownBy(() -> runPromise(() -> store.save(null, "p", "v"))) 
+                .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("save() rejects null state")
-        void saveRejectsNullState() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> store.save("t", "p", null))) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+        void saveRejectsNullState() { 
+            assertThatThrownBy(() -> runPromise(() -> store.save("t", "p", null))) 
+                .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("load() rejects null patternId")
-        void loadRejectsNullPattern() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> store.load("t", null))) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+        void loadRejectsNullPattern() { 
+            assertThatThrownBy(() -> runPromise(() -> store.load("t", null))) 
+                .isInstanceOf(NullPointerException.class); 
         }
     }
 }

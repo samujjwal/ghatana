@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.dr;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AepDisasterRecoveryService")
 class AepDisasterRecoveryServiceTest {
 
@@ -50,16 +50,16 @@ class AepDisasterRecoveryServiceTest {
     AepDisasterRecoveryService drService;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Use a manually controlled scheduler so tests don't wait for real time
-        scheduler = Executors.newSingleThreadScheduledExecutor(); // GH-90000
-        drService = new AepDisasterRecoveryService( // GH-90000
-                backupService, new SimpleMeterRegistry(), scheduler); // GH-90000
+        scheduler = Executors.newSingleThreadScheduledExecutor(); 
+        drService = new AepDisasterRecoveryService( 
+                backupService, new SimpleMeterRegistry(), scheduler); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        drService.shutdown(); // GH-90000
+    void tearDown() { 
+        drService.shutdown(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -68,18 +68,18 @@ class AepDisasterRecoveryServiceTest {
 
     @Test
     @DisplayName("should reject null backupService")
-    void rejectsNullBackupService() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                new AepDisasterRecoveryService(null, new SimpleMeterRegistry(), scheduler)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void rejectsNullBackupService() { 
+        assertThatThrownBy(() -> 
+                new AepDisasterRecoveryService(null, new SimpleMeterRegistry(), scheduler)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("should reject null MeterRegistry")
-    void rejectsNullMeterRegistry() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                new AepDisasterRecoveryService(backupService, null, scheduler)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void rejectsNullMeterRegistry() { 
+        assertThatThrownBy(() -> 
+                new AepDisasterRecoveryService(backupService, null, scheduler)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -92,36 +92,36 @@ class AepDisasterRecoveryServiceTest {
 
         @Test
         @DisplayName("should reject zero backupIntervalMinutes")
-        void rejectsZeroInterval() { // GH-90000
-            assertThatThrownBy(() -> new DRPolicy(0, 5, 120, BackupMode.FULL)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsZeroInterval() { 
+            assertThatThrownBy(() -> new DRPolicy(0, 5, 120, BackupMode.FULL)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("backupIntervalMinutes");
         }
 
         @Test
         @DisplayName("should reject zero retentionCount")
-        void rejectsZeroRetention() { // GH-90000
-            assertThatThrownBy(() -> new DRPolicy(60, 0, 120, BackupMode.FULL)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsZeroRetention() { 
+            assertThatThrownBy(() -> new DRPolicy(60, 0, 120, BackupMode.FULL)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("retentionCount");
         }
 
         @Test
         @DisplayName("standard() policy should be valid")
-        void standardPolicyIsValid() { // GH-90000
-            DRPolicy p = DRPolicy.standard(); // GH-90000
-            assertThat(p.backupIntervalMinutes()).isEqualTo(60); // GH-90000
-            assertThat(p.retentionCount()).isEqualTo(168); // GH-90000
-            assertThat(p.targetRPOMinutes()).isEqualTo(120); // GH-90000
-            assertThat(p.mode()).isEqualTo(BackupMode.FULL); // GH-90000
+        void standardPolicyIsValid() { 
+            DRPolicy p = DRPolicy.standard(); 
+            assertThat(p.backupIntervalMinutes()).isEqualTo(60); 
+            assertThat(p.retentionCount()).isEqualTo(168); 
+            assertThat(p.targetRPOMinutes()).isEqualTo(120); 
+            assertThat(p.mode()).isEqualTo(BackupMode.FULL); 
         }
 
         @Test
         @DisplayName("conservative() policy should be valid")
-        void conservativePolicyIsValid() { // GH-90000
-            DRPolicy p = DRPolicy.conservative(); // GH-90000
-            assertThat(p.backupIntervalMinutes()).isEqualTo(1440); // GH-90000
-            assertThat(p.retentionCount()).isEqualTo(30); // GH-90000
+        void conservativePolicyIsValid() { 
+            DRPolicy p = DRPolicy.conservative(); 
+            assertThat(p.backupIntervalMinutes()).isEqualTo(1440); 
+            assertThat(p.retentionCount()).isEqualTo(30); 
         }
     }
 
@@ -135,39 +135,39 @@ class AepDisasterRecoveryServiceTest {
 
         @Test
         @DisplayName("should mark tenant as scheduled after scheduleAutomatedBackups")
-        void tenantIsScheduledAfterCall() { // GH-90000
-            drService.scheduleAutomatedBackups("t1", DRPolicy.standard()); // GH-90000
+        void tenantIsScheduledAfterCall() { 
+            drService.scheduleAutomatedBackups("t1", DRPolicy.standard()); 
 
             assertThat(drService.isScheduled("t1")).isTrue();
         }
 
         @Test
         @DisplayName("should not mark unscheduled tenant as scheduled")
-        void unscheduledTenantNotScheduled() { // GH-90000
+        void unscheduledTenantNotScheduled() { 
             assertThat(drService.isScheduled("unknown-tenant")).isFalse();
         }
 
         @Test
         @DisplayName("stopAutomatedBackups should return true when schedule was active")
-        void stopReturnsTrueWhenActive() { // GH-90000
-            drService.scheduleAutomatedBackups("t1", DRPolicy.standard()); // GH-90000
+        void stopReturnsTrueWhenActive() { 
+            drService.scheduleAutomatedBackups("t1", DRPolicy.standard()); 
             boolean stopped = drService.stopAutomatedBackups("t1");
 
-            assertThat(stopped).isTrue(); // GH-90000
+            assertThat(stopped).isTrue(); 
             assertThat(drService.isScheduled("t1")).isFalse();
         }
 
         @Test
         @DisplayName("stopAutomatedBackups should return false when no schedule exists")
-        void stopReturnsFalseWhenNotScheduled() { // GH-90000
+        void stopReturnsFalseWhenNotScheduled() { 
             assertThat(drService.stopAutomatedBackups("no-such-tenant")).isFalse();
         }
 
         @Test
         @DisplayName("activePolicies should reflect all scheduled tenants")
-        void activePoliciesReflectsScheduled() { // GH-90000
-            DRPolicy policy = DRPolicy.standard(); // GH-90000
-            drService.scheduleAutomatedBackups("tenant-A", policy); // GH-90000
+        void activePoliciesReflectsScheduled() { 
+            DRPolicy policy = DRPolicy.standard(); 
+            drService.scheduleAutomatedBackups("tenant-A", policy); 
 
             assertThat(drService.activePolicies()).containsKey("tenant-A");
         }
@@ -183,57 +183,57 @@ class AepDisasterRecoveryServiceTest {
 
         @Test
         @DisplayName("should return no-backup status when backup list is empty")
-        void noBackupStatus() { // GH-90000
+        void noBackupStatus() { 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of()));
 
             DRStatus status = drService.getDRStatus("t1").getResult();
 
             assertThat(status.tenantId()).isEqualTo("t1");
-            assertThat(status.backupCount()).isEqualTo(0); // GH-90000
-            assertThat(status.hasCompleteBackup()).isFalse(); // GH-90000
-            assertThat(status.withinRPO()).isFalse(); // GH-90000
-            assertThat(status.lastBackupTime()).isNull(); // GH-90000
+            assertThat(status.backupCount()).isEqualTo(0); 
+            assertThat(status.hasCompleteBackup()).isFalse(); 
+            assertThat(status.withinRPO()).isFalse(); 
+            assertThat(status.lastBackupTime()).isNull(); 
         }
 
         @Test
         @DisplayName("should indicate within-RPO when last backup is recent")
-        void withinRPOForRecentBackup() { // GH-90000
-            Instant recentBackup = Instant.now().minusSeconds(30);  // 30 seconds ago // GH-90000
-            BackupMetadata meta = metadataWith("b1", "t1", recentBackup, "COMPLETE"); // GH-90000
+        void withinRPOForRecentBackup() { 
+            Instant recentBackup = Instant.now().minusSeconds(30);  // 30 seconds ago 
+            BackupMetadata meta = metadataWith("b1", "t1", recentBackup, "COMPLETE"); 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of(meta)));
 
-            // Register a policy with 120-minute RPO (no immediate backup fires since initialDelay = period) // GH-90000
-            drService.scheduleAutomatedBackups("t1", new DRPolicy(60, 7, 120, BackupMode.FULL)); // GH-90000
+            // Register a policy with 120-minute RPO (no immediate backup fires since initialDelay = period) 
+            drService.scheduleAutomatedBackups("t1", new DRPolicy(60, 7, 120, BackupMode.FULL)); 
 
             DRStatus status = drService.getDRStatus("t1").getResult();
 
-            assertThat(status.withinRPO()).isTrue(); // GH-90000
-            assertThat(status.backupCount()).isEqualTo(1); // GH-90000
-            assertThat(status.hasCompleteBackup()).isTrue(); // GH-90000
+            assertThat(status.withinRPO()).isTrue(); 
+            assertThat(status.backupCount()).isEqualTo(1); 
+            assertThat(status.hasCompleteBackup()).isTrue(); 
         }
 
         @Test
         @DisplayName("should indicate RPO breach when last backup is older than target")
-        void rpoBreach() { // GH-90000
+        void rpoBreach() { 
             // Backup from 200 minutes ago — beyond the 120-minute RPO
-            Instant oldBackup = Instant.now().minusSeconds(200 * 60); // GH-90000
-            BackupMetadata meta = metadataWith("b1", "t1", oldBackup, "COMPLETE"); // GH-90000
+            Instant oldBackup = Instant.now().minusSeconds(200 * 60); 
+            BackupMetadata meta = metadataWith("b1", "t1", oldBackup, "COMPLETE"); 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of(meta)));
 
-            drService.scheduleAutomatedBackups("t1", new DRPolicy(60, 7, 120, BackupMode.FULL)); // GH-90000
+            drService.scheduleAutomatedBackups("t1", new DRPolicy(60, 7, 120, BackupMode.FULL)); 
 
             DRStatus status = drService.getDRStatus("t1").getResult();
 
-            assertThat(status.withinRPO()).isFalse(); // GH-90000
-            assertThat(status.lastBackupTime()).isEqualTo(oldBackup); // GH-90000
+            assertThat(status.withinRPO()).isFalse(); 
+            assertThat(status.lastBackupTime()).isEqualTo(oldBackup); 
         }
 
         @Test
         @DisplayName("should reflect automation status in DR status")
-        void automationFlagInStatus() { // GH-90000
+        void automationFlagInStatus() { 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of()));
             DRStatus status = drService.getDRStatus("t1").getResult();
-            assertThat(status.automationActive()).isFalse(); // GH-90000
+            assertThat(status.automationActive()).isFalse(); 
         }
     }
 
@@ -247,62 +247,62 @@ class AepDisasterRecoveryServiceTest {
 
         @Test
         @DisplayName("should return not-recoverable when no backup exists")
-        void noBackupMeansNotRecoverable() { // GH-90000
+        void noBackupMeansNotRecoverable() { 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of()));
 
             DRTestResult result = drService.testRecoverability("t1").getResult();
 
-            assertThat(result.recoverable()).isFalse(); // GH-90000
-            assertThat(result.backupId()).isNull(); // GH-90000
+            assertThat(result.recoverable()).isFalse(); 
+            assertThat(result.backupId()).isNull(); 
             assertThat(result.message()).contains("No completed backup");
         }
 
         @Test
         @DisplayName("should return recoverable when latest backup verifies successfully")
-        void recoverableWhenVerificationPasses() { // GH-90000
-            BackupMetadata meta = metadataWith("b1", "t1", Instant.now(), "COMPLETE"); // GH-90000
+        void recoverableWhenVerificationPasses() { 
+            BackupMetadata meta = metadataWith("b1", "t1", Instant.now(), "COMPLETE"); 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of(meta)));
-            when(backupService.verifyBackup("t1", "b1")) // GH-90000
-                    .thenReturn(Promise.of(new VerificationResult("b1", true, 10, 10, null))); // GH-90000
+            when(backupService.verifyBackup("t1", "b1")) 
+                    .thenReturn(Promise.of(new VerificationResult("b1", true, 10, 10, null))); 
 
             DRTestResult result = drService.testRecoverability("t1").getResult();
 
-            assertThat(result.recoverable()).isTrue(); // GH-90000
+            assertThat(result.recoverable()).isTrue(); 
             assertThat(result.backupId()).isEqualTo("b1");
             assertThat(result.message()).contains("verified");
         }
 
         @Test
         @DisplayName("should return not-recoverable when verification fails")
-        void notRecoverableWhenVerificationFails() { // GH-90000
-            BackupMetadata meta = metadataWith("b1", "t1", Instant.now(), "COMPLETE"); // GH-90000
+        void notRecoverableWhenVerificationFails() { 
+            BackupMetadata meta = metadataWith("b1", "t1", Instant.now(), "COMPLETE"); 
             when(backupService.listBackups("t1")).thenReturn(Promise.of(List.of(meta)));
-            when(backupService.verifyBackup("t1", "b1")) // GH-90000
-                    .thenReturn(Promise.of(new VerificationResult("b1", false, 10, 8, "Count mismatch"))); // GH-90000
+            when(backupService.verifyBackup("t1", "b1")) 
+                    .thenReturn(Promise.of(new VerificationResult("b1", false, 10, 8, "Count mismatch"))); 
 
             DRTestResult result = drService.testRecoverability("t1").getResult();
 
-            assertThat(result.recoverable()).isFalse(); // GH-90000
+            assertThat(result.recoverable()).isFalse(); 
             assertThat(result.message()).isEqualTo("Count mismatch");
         }
 
         @Test
         @DisplayName("should skip FAILED backups and use latest COMPLETE backup")
-        void skipsFailedBackupsForVerification() { // GH-90000
-            Instant earlier = Instant.now().minusSeconds(3600); // GH-90000
-            Instant later   = Instant.now().minusSeconds(1800); // GH-90000
-            BackupMetadata failed   = metadataWith("b-fail", "t1", earlier, "FAILED"); // GH-90000
-            BackupMetadata complete = metadataWith("b-ok",   "t1", later,   "COMPLETE"); // GH-90000
+        void skipsFailedBackupsForVerification() { 
+            Instant earlier = Instant.now().minusSeconds(3600); 
+            Instant later   = Instant.now().minusSeconds(1800); 
+            BackupMetadata failed   = metadataWith("b-fail", "t1", earlier, "FAILED"); 
+            BackupMetadata complete = metadataWith("b-ok",   "t1", later,   "COMPLETE"); 
 
             when(backupService.listBackups("t1"))
-                    .thenReturn(Promise.of(List.of(failed, complete))); // GH-90000
-            when(backupService.verifyBackup("t1", "b-ok")) // GH-90000
-                    .thenReturn(Promise.of(new VerificationResult("b-ok", true, 5, 5, null))); // GH-90000
+                    .thenReturn(Promise.of(List.of(failed, complete))); 
+            when(backupService.verifyBackup("t1", "b-ok")) 
+                    .thenReturn(Promise.of(new VerificationResult("b-ok", true, 5, 5, null))); 
 
             DRTestResult result = drService.testRecoverability("t1").getResult();
 
             assertThat(result.backupId()).isEqualTo("b-ok");
-            assertThat(result.recoverable()).isTrue(); // GH-90000
+            assertThat(result.recoverable()).isTrue(); 
         }
     }
 
@@ -312,7 +312,7 @@ class AepDisasterRecoveryServiceTest {
 
     @Test
     @DisplayName("triggerImmediateBackup should delegate to createFullBackup")
-    void immediateBackupDelegatesToFull() { // GH-90000
+    void immediateBackupDelegatesToFull() { 
         BackupResult expected = successfulBackup("b-immediate");
         when(backupService.createFullBackup("t1")).thenReturn(Promise.of(expected));
 
@@ -326,14 +326,14 @@ class AepDisasterRecoveryServiceTest {
     //  Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private static BackupResult successfulBackup(String backupId) { // GH-90000
-        return new BackupResult( // GH-90000
+    private static BackupResult successfulBackup(String backupId) { 
+        return new BackupResult( 
                 backupId, "t1", "FULL", 42,
-                Instant.now(), Instant.now(), true, List.of()); // GH-90000
+                Instant.now(), Instant.now(), true, List.of()); 
     }
 
-    private static BackupMetadata metadataWith(String id, String tenantId, // GH-90000
+    private static BackupMetadata metadataWith(String id, String tenantId, 
                                                 Instant createdAt, String status) {
-        return new BackupMetadata(id, tenantId, "FULL", createdAt, 10, status, "aep_patterns", 1); // GH-90000
+        return new BackupMetadata(id, tenantId, "FULL", createdAt, 10, status, "aep_patterns", 1); 
     }
 }

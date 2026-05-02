@@ -1,5 +1,9 @@
 package com.ghatana.kernel.adapter.aep;
 
+import com.ghatana.kernel.bridge.AbstractKernelBridge;
+import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
+import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
+import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
 import com.ghatana.platform.core.client.AsyncClient;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
@@ -26,13 +30,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * </ul></p>
  *
  * @doc.type class
- * @doc.purpose Concrete AEP adapter for event streams and agent management
+ * @doc.purpose Concrete AEP adapter for event streams and agent management with kernel bridge infrastructure
  * @doc.layer adapter
  * @doc.pattern Adapter, Facade
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class AepKernelAdapterImpl implements AepKernelAdapter {
+public class AepKernelAdapterImpl extends AbstractKernelBridge implements AepKernelAdapter {
 
     private final AepClient aepClient;
     private final Map<String, SubscriptionImpl> activeSubscriptions = new ConcurrentHashMap<>();
@@ -43,11 +47,34 @@ public class AepKernelAdapterImpl implements AepKernelAdapter {
 
     /**
      * Creates a new AEP adapter with the given client.
+     * Uses no-op bridge ports — suitable for development and testing scaffolding.
      *
      * @param aepClient the AEP client for event/agent operations
      */
     public AepKernelAdapterImpl(AepClient aepClient) {
+        this(aepClient,
+                BridgeAuthorizationService.allowAll(),
+                BridgeAuditEmitter.noOp(),
+                BridgeHealthIndicator.noOp());
+    }
+
+    /**
+     * Creates a new AEP adapter with the given client and kernel bridge ports.
+     * This constructor wires production-grade authorization, audit, and health.
+     *
+     * @param aepClient       the AEP client for event/agent operations
+     * @param authService     authorization port — must not be {@code null}
+     * @param auditEmitter    audit emission port — must not be {@code null}
+     * @param healthIndicator health indicator port — must not be {@code null}
+     */
+    public AepKernelAdapterImpl(
+            AepClient aepClient,
+            BridgeAuthorizationService authService,
+            BridgeAuditEmitter auditEmitter,
+            BridgeHealthIndicator healthIndicator) {
+        super("aep-kernel-bridge", authService, auditEmitter, healthIndicator);
         this.aepClient = Objects.requireNonNull(aepClient, "aepClient cannot be null");
+        markStarted();
     }
 
     @Override
@@ -256,7 +283,7 @@ public class AepKernelAdapterImpl implements AepKernelAdapter {
 
     @Override
     public <T> Promise<T> wrapFuture(CompletableFuture<T> future) {
-        return Promise.ofFuture(future);
+        return wrapAsync(() -> future);
     }
 
     // ==================== Additional Utility Methods ====================

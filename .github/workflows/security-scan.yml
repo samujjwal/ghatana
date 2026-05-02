@@ -173,7 +173,7 @@ jobs:
                     :platform-kernel:kernel-core:spotbugsMain \
                     :platform-kernel:kernel-plugin:spotbugsMain \
                     :platform-plugins:plugin-audit-trail:spotbugsMain \
-                    :platform-plugins:plugin-billing-ledger:spotbugsMain \
+                    :platform-plugins:plugin-ledger:spotbugsMain \
                     :platform-plugins:plugin-consent:spotbugsMain \
                     -x test --continue || true
 
@@ -182,7 +182,7 @@ jobs:
                   ./gradlew \
                     :platform-kernel:kernel-core:pmdMain \
                     :platform-plugins:plugin-audit-trail:pmdMain \
-                    :platform-plugins:plugin-billing-ledger:pmdMain \
+                    :platform-plugins:plugin-ledger:pmdMain \
                     -x test --continue || true
 
             - name: Check for security anti-patterns

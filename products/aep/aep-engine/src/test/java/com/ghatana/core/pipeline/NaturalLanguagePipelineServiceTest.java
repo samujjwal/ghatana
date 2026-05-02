@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.core.pipeline;
@@ -28,8 +28,8 @@ class NaturalLanguagePipelineServiceTest {
     private NaturalLanguagePipelineService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new DefaultNaturalLanguagePipelineService(); // GH-90000
+    void setUp() { 
+        service = new DefaultNaturalLanguagePipelineService(); 
     }
 
     @Nested
@@ -38,51 +38,51 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("generates pipeline from fraud detection description")
-        void generatesPipelineFromFraudDetectionDescription() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void generatesPipelineFromFraudDetectionDescription() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create fraud detection pipeline for transactions",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.name()).contains("Fraud");
             assertThat(spec.eventType()).isEqualTo("transaction.created");
-            assertThat(spec.stages()).isNotEmpty(); // GH-90000
+            assertThat(spec.stages()).isNotEmpty(); 
             assertThat(spec.stages()).anyMatch(s -> s.type().equals("detect"));
         }
 
         @Test
         @DisplayName("generates pipeline from login security description")
-        void generatesPipelineFromLoginSecurityDescription() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void generatesPipelineFromLoginSecurityDescription() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create authentication and security pipeline for login events",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.name()).contains("Authentication");
             assertThat(spec.eventType()).isEqualTo("user.login");
-            assertThat(spec.stages()).isNotEmpty(); // GH-90000
+            assertThat(spec.stages()).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("generates pipeline from sensor monitoring description")
-        void generatesPipelineFromSensorMonitoringDescription() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void generatesPipelineFromSensorMonitoringDescription() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create sensor monitoring pipeline with aggregation",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.name()).contains("Sensor");
             assertThat(spec.eventType()).isEqualTo("sensor.reading");
-            assertThat(spec.stages()).isNotEmpty(); // GH-90000
+            assertThat(spec.stages()).isNotEmpty(); 
             assertThat(spec.stages()).anyMatch(s -> s.type().equals("aggregate"));
         }
 
         @Test
         @DisplayName("uses eventType from context if provided")
-        void usesEventTypeFromContextIfProvided() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void usesEventTypeFromContextIfProvided() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create detection pipeline",
-                Map.of("eventType", "custom.event") // GH-90000
+                Map.of("eventType", "custom.event") 
             );
 
             assertThat(spec.eventType()).isEqualTo("custom.event");
@@ -90,10 +90,10 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("includes validation stage")
-        void includesValidationStage() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void includesValidationStage() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create pipeline",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.stages()).anyMatch(s -> s.type().equals("validate"));
@@ -101,10 +101,10 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("includes logging stage")
-        void includesLoggingStage() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void includesLoggingStage() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create pipeline",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.stages()).anyMatch(s -> s.type().equals("log"));
@@ -112,31 +112,31 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("generates stage dependencies")
-        void generatesStageDependencies() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void generatesStageDependencies() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "Create fraud detection pipeline",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
-            // Validate stage should be first (no dependencies) // GH-90000
-            assertThat(spec.stages().get(0).dependencies()).isEmpty(); // GH-90000
+            // Validate stage should be first (no dependencies) 
+            assertThat(spec.stages().get(0).dependencies()).isEmpty(); 
             
             // Later stages should have dependencies
-            if (spec.stages().size() > 1) { // GH-90000
-                assertThat(spec.stages().get(1).dependencies()).isNotEmpty(); // GH-90000
+            if (spec.stages().size() > 1) { 
+                assertThat(spec.stages().get(1).dependencies()).isNotEmpty(); 
             }
         }
 
         @Test
         @DisplayName("handles empty description gracefully")
-        void handlesEmptyDescriptionGracefully() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( // GH-90000
+        void handlesEmptyDescriptionGracefully() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = service.generatePipeline( 
                 "",
-                Map.of() // GH-90000
+                Map.of() 
             );
 
             assertThat(spec.name()).isEqualTo("Generated Pipeline");
-            assertThat(spec.stages()).isNotEmpty(); // GH-90000
+            assertThat(spec.stages()).isNotEmpty(); 
         }
     }
 
@@ -146,49 +146,49 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("validates correct description")
-        void validatesCorrectDescription() { // GH-90000
-            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription( // GH-90000
+        void validatesCorrectDescription() { 
+            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription( 
                 "Create fraud detection pipeline for transactions"
             );
 
-            assertThat(result.valid()).isTrue(); // GH-90000
-            assertThat(result.errors()).isEmpty(); // GH-90000
+            assertThat(result.valid()).isTrue(); 
+            assertThat(result.errors()).isEmpty(); 
         }
 
         @Test
         @DisplayName("rejects null description")
-        void rejectsNullDescription() { // GH-90000
-            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription(null); // GH-90000
+        void rejectsNullDescription() { 
+            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription(null); 
 
-            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.valid()).isFalse(); 
             assertThat(result.errors()).contains("Description cannot be empty");
         }
 
         @Test
         @DisplayName("rejects empty description")
-        void rejectsEmptyDescription() { // GH-90000
+        void rejectsEmptyDescription() { 
             NaturalLanguagePipelineService.ValidationResult result = service.validateDescription("");
 
-            assertThat(result.valid()).isFalse(); // GH-90000
+            assertThat(result.valid()).isFalse(); 
             assertThat(result.errors()).contains("Description cannot be empty");
         }
 
         @Test
         @DisplayName("warns on short description")
-        void warnsOnShortDescription() { // GH-90000
+        void warnsOnShortDescription() { 
             NaturalLanguagePipelineService.ValidationResult result = service.validateDescription("test");
 
-            assertThat(result.valid()).isTrue(); // GH-90000
+            assertThat(result.valid()).isTrue(); 
             assertThat(result.warnings()).anyMatch(w -> w.contains("too short"));
         }
 
         @Test
         @DisplayName("warns on very long description")
-        void warnsOnVeryLongDescription() { // GH-90000
-            String longDesc = "a".repeat(600); // GH-90000
-            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription(longDesc); // GH-90000
+        void warnsOnVeryLongDescription() { 
+            String longDesc = "a".repeat(600); 
+            NaturalLanguagePipelineService.ValidationResult result = service.validateDescription(longDesc); 
 
-            assertThat(result.valid()).isTrue(); // GH-90000
+            assertThat(result.valid()).isTrue(); 
             assertThat(result.warnings()).anyMatch(w -> w.contains("very long"));
         }
     }
@@ -199,18 +199,18 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("spec has required fields")
-        void specHasRequiredFields() { // GH-90000
-            NaturalLanguagePipelineService.PipelineSpec spec = new NaturalLanguagePipelineService.PipelineSpec( // GH-90000
+        void specHasRequiredFields() { 
+            NaturalLanguagePipelineService.PipelineSpec spec = new NaturalLanguagePipelineService.PipelineSpec( 
                 "Test Pipeline",
                 "Test Description",
                 "test.event",
-                List.of() // GH-90000
+                List.of() 
             );
 
-            assertThat(spec.name()).isNotNull(); // GH-90000
-            assertThat(spec.description()).isNotNull(); // GH-90000
-            assertThat(spec.eventType()).isNotNull(); // GH-90000
-            assertThat(spec.stages()).isNotNull(); // GH-90000
+            assertThat(spec.name()).isNotNull(); 
+            assertThat(spec.description()).isNotNull(); 
+            assertThat(spec.eventType()).isNotNull(); 
+            assertThat(spec.stages()).isNotNull(); 
         }
     }
 
@@ -220,20 +220,20 @@ class NaturalLanguagePipelineServiceTest {
 
         @Test
         @DisplayName("stage spec has required fields")
-        void stageSpecHasRequiredFields() { // GH-90000
-            NaturalLanguagePipelineService.StageSpec spec = new NaturalLanguagePipelineService.StageSpec( // GH-90000
+        void stageSpecHasRequiredFields() { 
+            NaturalLanguagePipelineService.StageSpec spec = new NaturalLanguagePipelineService.StageSpec( 
                 "step-1",
                 "validate",
                 "Validation",
-                Map.of("check", true), // GH-90000
-                List.of() // GH-90000
+                Map.of("check", true), 
+                List.of() 
             );
 
-            assertThat(spec.id()).isNotNull(); // GH-90000
-            assertThat(spec.type()).isNotNull(); // GH-90000
-            assertThat(spec.name()).isNotNull(); // GH-90000
-            assertThat(spec.config()).isNotNull(); // GH-90000
-            assertThat(spec.dependencies()).isNotNull(); // GH-90000
+            assertThat(spec.id()).isNotNull(); 
+            assertThat(spec.type()).isNotNull(); 
+            assertThat(spec.name()).isNotNull(); 
+            assertThat(spec.config()).isNotNull(); 
+            assertThat(spec.dependencies()).isNotNull(); 
         }
     }
 }

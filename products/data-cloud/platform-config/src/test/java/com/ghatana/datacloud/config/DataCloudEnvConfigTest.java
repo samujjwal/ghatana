@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.config;
@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Unit tests for {@link DataCloudEnvConfig}.
  *
  * <p>Exercises every public accessor and error path without touching the system
- * environment, using {@link DataCloudEnvConfig#fromMap(Map)}. // GH-90000
+ * environment, using {@link DataCloudEnvConfig#fromMap(Map)}. 
  *
  * @doc.type class
  * @doc.purpose Unit tests for DataCloudEnvConfig
@@ -33,28 +33,28 @@ class DataCloudEnvConfigTest {
     class Get {
 
         @Test
-        void returnsDefaultWhenKeyAbsent() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
+        void returnsDefaultWhenKeyAbsent() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); 
             assertThat(config.get("SOME_KEY", "fallback")).isEqualTo("fallback");
         }
 
         @Test
-        void returnsValueWhenKeyPresent() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "value")); // GH-90000
+        void returnsValueWhenKeyPresent() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "value")); 
             assertThat(config.get("KEY", "fallback")).isEqualTo("value");
         }
 
         @Test
-        void returnsDefaultWhenValueIsBlank() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "   ")); // GH-90000
+        void returnsDefaultWhenValueIsBlank() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("KEY", "   ")); 
             assertThat(config.get("KEY", "fallback")).isEqualTo("fallback");
         }
 
         @Test
-        void returnsDefaultWhenValueIsEmpty() { // GH-90000
-            Map<String, String> env = new HashMap<>(); // GH-90000
-            env.put("KEY", ""); // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); // GH-90000
+        void returnsDefaultWhenValueIsEmpty() { 
+            Map<String, String> env = new HashMap<>(); 
+            env.put("KEY", ""); 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); 
             assertThat(config.get("KEY", "fallback")).isEqualTo("fallback");
         }
     }
@@ -64,30 +64,30 @@ class DataCloudEnvConfigTest {
     class GetInt {
 
         @Test
-        void returnsDefaultWhenKeyAbsent() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
-            assertThat(config.getInt("PORT", 9090)).isEqualTo(9090); // GH-90000
+        void returnsDefaultWhenKeyAbsent() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); 
+            assertThat(config.getInt("PORT", 9090)).isEqualTo(9090); 
         }
 
         @Test
-        void parsesIntegerValue() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "8080")); // GH-90000
-            assertThat(config.getInt("PORT", 9090)).isEqualTo(8080); // GH-90000
+        void parsesIntegerValue() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "8080")); 
+            assertThat(config.getInt("PORT", 9090)).isEqualTo(8080); 
         }
 
         @Test
-        void throwsForNonIntegerValue() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "not-a-number")); // GH-90000
-            assertThatThrownBy(() -> config.getInt("PORT", 9090)) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+        void throwsForNonIntegerValue() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "not-a-number")); 
+            assertThatThrownBy(() -> config.getInt("PORT", 9090)) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("PORT")
                 .hasMessageContaining("not-a-number");
         }
 
         @Test
-        void returnsDefaultWhenValueIsBlank() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "  ")); // GH-90000
-            assertThat(config.getInt("PORT", 42)).isEqualTo(42); // GH-90000
+        void returnsDefaultWhenValueIsBlank() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of("PORT", "  ")); 
+            assertThat(config.getInt("PORT", 42)).isEqualTo(42); 
         }
     }
 
@@ -96,27 +96,27 @@ class DataCloudEnvConfigTest {
     class Require {
 
         @Test
-        void returnsValueWhenPresent() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of("DC_SERVER_URL", "https://dc.example.com")); // GH-90000
+        void returnsValueWhenPresent() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of("DC_SERVER_URL", "https://dc.example.com")); 
             assertThat(config.require("DC_SERVER_URL")).isEqualTo("https://dc.example.com");
         }
 
         @Test
-        void throwsWhenKeyAbsent() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
+        void throwsWhenKeyAbsent() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); 
             assertThatThrownBy(() -> config.require("DC_SERVER_URL"))
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DC_SERVER_URL");
         }
 
         @Test
-        void throwsWhenValueIsBlank() { // GH-90000
-            Map<String, String> env = new HashMap<>(); // GH-90000
-            env.put("DC_SERVER_URL", "   "); // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); // GH-90000
+        void throwsWhenValueIsBlank() { 
+            Map<String, String> env = new HashMap<>(); 
+            env.put("DC_SERVER_URL", "   "); 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(env); 
             assertThatThrownBy(() -> config.require("DC_SERVER_URL"))
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DC_SERVER_URL");
         }
     }
@@ -125,81 +125,81 @@ class DataCloudEnvConfigTest {
     @DisplayName("typed accessors (defaults)")
     class TypedAccessorDefaults {
 
-        private final DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); // GH-90000
+        private final DataCloudEnvConfig config = DataCloudEnvConfig.fromMap(Map.of()); 
 
         @Test
-        void deploymentModeDefaultsToEmbedded() { // GH-90000
+        void deploymentModeDefaultsToEmbedded() { 
             assertThat(config.deploymentMode()).isEqualTo("EMBEDDED");
         }
 
         @Test
-        void serverUrlDefaultsToEmpty() { // GH-90000
-            assertThat(config.serverUrl()).isEmpty(); // GH-90000
+        void serverUrlDefaultsToEmpty() { 
+            assertThat(config.serverUrl()).isEmpty(); 
         }
 
         @Test
-        void clusterUrlsDefaultsToEmpty() { // GH-90000
-            assertThat(config.clusterUrls()).isEmpty(); // GH-90000
+        void clusterUrlsDefaultsToEmpty() { 
+            assertThat(config.clusterUrls()).isEmpty(); 
         }
 
         @Test
-        void pgUrlHasDefaultJdbcUrl() { // GH-90000
+        void pgUrlHasDefaultJdbcUrl() { 
             assertThat(config.pgUrl()).contains("postgresql").contains("5432");
         }
 
         @Test
-        void pgUserDefaultsToDatacloud() { // GH-90000
+        void pgUserDefaultsToDatacloud() { 
             assertThat(config.pgUser()).isEqualTo("datacloud");
         }
 
         @Test
-        void pgPasswordDefaultsToEmpty() { // GH-90000
-            assertThat(config.pgPassword()).isEmpty(); // GH-90000
+        void pgPasswordDefaultsToEmpty() { 
+            assertThat(config.pgPassword()).isEmpty(); 
         }
 
         @Test
-        void pgPoolSizeDefaultsTen() { // GH-90000
-            assertThat(config.pgPoolSize()).isEqualTo(10); // GH-90000
+        void pgPoolSizeDefaultsTen() { 
+            assertThat(config.pgPoolSize()).isEqualTo(10); 
         }
 
         @Test
-        void pgValidationTimeoutDefaultsFiveSeconds() { // GH-90000
-            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(5_000); // GH-90000
+        void pgValidationTimeoutDefaultsFiveSeconds() { 
+            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(5_000); 
         }
 
         @Test
-        void pgConnectionTestQueryDefaultsToSelectOne() { // GH-90000
+        void pgConnectionTestQueryDefaultsToSelectOne() { 
             assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT 1");
         }
 
         @Test
-        void pgLeakDetectionDefaultsToOneMinute() { // GH-90000
-            assertThat(config.pgLeakDetectionThresholdMillis()).isEqualTo(60_000); // GH-90000
+        void pgLeakDetectionDefaultsToOneMinute() { 
+            assertThat(config.pgLeakDetectionThresholdMillis()).isEqualTo(60_000); 
         }
 
         @Test
-        void redisHostDefaultsToLocalhost() { // GH-90000
+        void redisHostDefaultsToLocalhost() { 
             assertThat(config.redisHost()).isEqualTo("localhost");
         }
 
         @Test
-        void redisPortDefaultsTo6379() { // GH-90000
-            assertThat(config.redisPort()).isEqualTo(6379); // GH-90000
+        void redisPortDefaultsTo6379() { 
+            assertThat(config.redisPort()).isEqualTo(6379); 
         }
 
         @Test
-        void s3RegionDefaultsToUsEast1() { // GH-90000
+        void s3RegionDefaultsToUsEast1() { 
             assertThat(config.s3Region()).isEqualTo("us-east-1");
         }
 
         @Test
-        void s3ArchiveBucketHasDefault() { // GH-90000
-            assertThat(config.s3ArchiveBucket()).isNotBlank(); // GH-90000
+        void s3ArchiveBucketHasDefault() { 
+            assertThat(config.s3ArchiveBucket()).isNotBlank(); 
         }
 
         @Test
-        void isDevelopmentFalseByDefault() { // GH-90000
-            assertThat(config.isDevelopment()).isFalse(); // GH-90000
+        void isDevelopmentFalseByDefault() { 
+            assertThat(config.isDevelopment()).isFalse(); 
         }
     }
 
@@ -208,72 +208,72 @@ class DataCloudEnvConfigTest {
     class TypedAccessorOverrides {
 
         @Test
-        void deploymentModeNormalisedToUpperCase() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DC_DEPLOYMENT_MODE, "standalone")); // GH-90000
+        void deploymentModeNormalisedToUpperCase() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DC_DEPLOYMENT_MODE, "standalone")); 
             assertThat(config.deploymentMode()).isEqualTo("STANDALONE");
         }
 
         @Test
-        void serverUrlFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DC_SERVER_URL, "https://dc.prod.example.com")); // GH-90000
+        void serverUrlFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DC_SERVER_URL, "https://dc.prod.example.com")); 
             assertThat(config.serverUrl()).isEqualTo("https://dc.prod.example.com");
         }
 
         @Test
-        void pgPoolSizeParsedFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DATACLOUD_PG_POOL_SIZE, "20")); // GH-90000
-            assertThat(config.pgPoolSize()).isEqualTo(20); // GH-90000
+        void pgPoolSizeParsedFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DATACLOUD_PG_POOL_SIZE, "20")); 
+            assertThat(config.pgPoolSize()).isEqualTo(20); 
         }
 
         @Test
-        void pgValidationTimeoutParsedFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DATACLOUD_PG_VALIDATION_TIMEOUT_MS, "7500")); // GH-90000
-            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(7_500); // GH-90000
+        void pgValidationTimeoutParsedFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DATACLOUD_PG_VALIDATION_TIMEOUT_MS, "7500")); 
+            assertThat(config.pgValidationTimeoutMillis()).isEqualTo(7_500); 
         }
 
         @Test
-        void pgConnectionTestQueryParsedFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DATACLOUD_PG_CONNECTION_TEST_QUERY, "SELECT current_database()")); // GH-90000
+        void pgConnectionTestQueryParsedFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DATACLOUD_PG_CONNECTION_TEST_QUERY, "SELECT current_database()")); 
             assertThat(config.pgConnectionTestQuery()).isEqualTo("SELECT current_database()");
         }
 
         @Test
-        void pgLeakDetectionParsedFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DATACLOUD_PG_LEAK_DETECTION_MS, "120000")); // GH-90000
-            assertThat(config.pgLeakDetectionThresholdMillis()).isEqualTo(120_000); // GH-90000
+        void pgLeakDetectionParsedFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DATACLOUD_PG_LEAK_DETECTION_MS, "120000")); 
+            assertThat(config.pgLeakDetectionThresholdMillis()).isEqualTo(120_000); 
         }
 
         @Test
-        void redisPortParsedFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.REDIS_PORT, "6380")); // GH-90000
-            assertThat(config.redisPort()).isEqualTo(6380); // GH-90000
+        void redisPortParsedFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.REDIS_PORT, "6380")); 
+            assertThat(config.redisPort()).isEqualTo(6380); 
         }
 
         @Test
-        void isDevelopmentTrueWhenAppEnvIsDevelopment() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.APP_ENV, "development")); // GH-90000
-            assertThat(config.isDevelopment()).isTrue(); // GH-90000
+        void isDevelopmentTrueWhenAppEnvIsDevelopment() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.APP_ENV, "development")); 
+            assertThat(config.isDevelopment()).isTrue(); 
         }
 
         @Test
-        void isDevelopmentTrueIsCaseInsensitive() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.APP_ENV, "DEVELOPMENT")); // GH-90000
-            assertThat(config.isDevelopment()).isTrue(); // GH-90000
+        void isDevelopmentTrueIsCaseInsensitive() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.APP_ENV, "DEVELOPMENT")); 
+            assertThat(config.isDevelopment()).isTrue(); 
         }
 
         @Test
-        void authTokenFromEnv() { // GH-90000
-            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( // GH-90000
-                Map.of(DataCloudEnvConfig.DATACLOUD_HTTP_AUTH_TOKEN, "bearer-tok-abc")); // GH-90000
+        void authTokenFromEnv() { 
+            DataCloudEnvConfig config = DataCloudEnvConfig.fromMap( 
+                Map.of(DataCloudEnvConfig.DATACLOUD_HTTP_AUTH_TOKEN, "bearer-tok-abc")); 
             assertThat(config.authToken()).isEqualTo("bearer-tok-abc");
         }
     }

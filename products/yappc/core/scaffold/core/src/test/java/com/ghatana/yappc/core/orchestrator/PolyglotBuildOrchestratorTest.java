@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  */
 
 package com.ghatana.yappc.core.orchestrator;
@@ -30,89 +30,89 @@ class PolyglotBuildOrchestratorTest extends EventloopTestBase {
     private PolyglotBuildOrchestrator orchestrator;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        orchestrator = new PolyglotBuildOrchestrator(); // GH-90000
+    void setUp() { 
+        orchestrator = new PolyglotBuildOrchestrator(); 
     }
 
     @Test
-    void testOrchestrateBuildsWithNoDependencies() throws Exception { // GH-90000
-        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+    void testOrchestrateBuildsWithNoDependencies() throws Exception { 
+        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "service-a",
                         "python",
                         Paths.get("/project/service-a"),
-                        List.of(), // GH-90000
-                        Map.of()), // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+                        List.of(), 
+                        Map.of()), 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "service-b",
                         "go",
                         Paths.get("/project/service-b"),
-                        List.of(), // GH-90000
-                        Map.of())); // GH-90000
+                        List.of(), 
+                        Map.of())); 
 
-        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets)); // GH-90000
+        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets)); 
 
-        assertTrue(result.success()); // GH-90000
-        assertEquals(2, result.results().size()); // GH-90000
-        assertEquals(2, result.buildOrder().size()); // GH-90000
+        assertTrue(result.success()); 
+        assertEquals(2, result.results().size()); 
+        assertEquals(2, result.buildOrder().size()); 
     }
 
     @Test
-    void testOrchestrateBuildsWithDependencies() throws Exception { // GH-90000
-        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+    void testOrchestrateBuildsWithDependencies() throws Exception { 
+        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "library",
                         "rust",
                         Paths.get("/project/library"),
-                        List.of(), // GH-90000
-                        Map.of()), // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+                        List.of(), 
+                        Map.of()), 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "service",
                         "dotnet",
                         Paths.get("/project/service"),
                         List.of("library"),
-                        Map.of())); // GH-90000
+                        Map.of())); 
 
-        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets)); // GH-90000
+        PolyglotBuildOrchestrator.BuildOrchestrationResult result = runPromise(() -> orchestrator.orchestrateBuilds(targets)); 
 
-        assertTrue(result.success()); // GH-90000
-        assertEquals(2, result.results().size()); // GH-90000
-        assertEquals("library", result.buildOrder().get(0)); // GH-90000
-        assertEquals("service", result.buildOrder().get(1)); // GH-90000
+        assertTrue(result.success()); 
+        assertEquals(2, result.results().size()); 
+        assertEquals("library", result.buildOrder().get(0)); 
+        assertEquals("service", result.buildOrder().get(1)); 
     }
 
     @Test
-    void testBuildDependencyResolver() { // GH-90000
-        PolyglotBuildOrchestrator.BuildDependencyResolver resolver = new PolyglotBuildOrchestrator.BuildDependencyResolver(); // GH-90000
+    void testBuildDependencyResolver() { 
+        PolyglotBuildOrchestrator.BuildDependencyResolver resolver = new PolyglotBuildOrchestrator.BuildDependencyResolver(); 
 
-        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "c", "go", Paths.get("/c"), List.of("b"), Map.of()),
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "b", "python", Paths.get("/b"), List.of("a"), Map.of()),
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "a", "rust", Paths.get("/a"), List.of(), Map.of()));
 
-        List<PolyglotBuildOrchestrator.BuildTarget> ordered = resolver.resolveBuildOrder(targets); // GH-90000
+        List<PolyglotBuildOrchestrator.BuildTarget> ordered = resolver.resolveBuildOrder(targets); 
 
-        assertEquals(3, ordered.size()); // GH-90000
-        assertEquals("a", ordered.get(0).name()); // GH-90000
-        assertEquals("b", ordered.get(1).name()); // GH-90000
-        assertEquals("c", ordered.get(2).name()); // GH-90000
+        assertEquals(3, ordered.size()); 
+        assertEquals("a", ordered.get(0).name()); 
+        assertEquals("b", ordered.get(1).name()); 
+        assertEquals("c", ordered.get(2).name()); 
     }
 
     @Test
-    void testCircularDependencyDetection() { // GH-90000
-        PolyglotBuildOrchestrator.BuildDependencyResolver resolver = new PolyglotBuildOrchestrator.BuildDependencyResolver(); // GH-90000
+    void testCircularDependencyDetection() { 
+        PolyglotBuildOrchestrator.BuildDependencyResolver resolver = new PolyglotBuildOrchestrator.BuildDependencyResolver(); 
 
-        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( // GH-90000
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+        List<PolyglotBuildOrchestrator.BuildTarget> targets = List.of( 
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "a", "go", Paths.get("/a"), List.of("b"), Map.of()),
-                new PolyglotBuildOrchestrator.BuildTarget( // GH-90000
+                new PolyglotBuildOrchestrator.BuildTarget( 
                         "b", "python", Paths.get("/b"), List.of("a"), Map.of()));
 
-        assertThrows(IllegalStateException.class, () -> { // GH-90000
-            resolver.resolveBuildOrder(targets); // GH-90000
+        assertThrows(IllegalStateException.class, () -> { 
+            resolver.resolveBuildOrder(targets); 
         });
     }
 }

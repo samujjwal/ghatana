@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.infrastructure.storage;
@@ -23,7 +23,7 @@ class ClickHouseTimeSeriesConnectorTenantValidationTest {
 
     @Test
     @DisplayName("requireValidTenantId accepts Data Cloud safe tenant identifiers")
-    void requireValidTenantIdAcceptsSafeIdentifiers() { // GH-90000
+    void requireValidTenantIdAcceptsSafeIdentifiers() { 
         String tenantId = ClickHouseTimeSeriesConnector.requireValidTenantId("tenant.alpha-01:_prod");
 
         assertThat(tenantId).isEqualTo("tenant.alpha-01:_prod");
@@ -31,9 +31,9 @@ class ClickHouseTimeSeriesConnectorTenantValidationTest {
 
     @Test
     @DisplayName("requireValidTenantId rejects SQL injection payloads")
-    void requireValidTenantIdRejectsSqlInjectionPayloads() { // GH-90000
+    void requireValidTenantIdRejectsSqlInjectionPayloads() { 
         assertThatThrownBy(() -> ClickHouseTimeSeriesConnector.requireValidTenantId("tenant' OR 1=1 --"))
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("tenantId contains illegal characters");
     }
 }

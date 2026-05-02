@@ -17,115 +17,115 @@ class StorageTierTest {
 
     @Test
     @DisplayName("HOT is higher than WARM, COOL, COLD")
-    void hotIsHigherThanAll() { // GH-90000
-        assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); // GH-90000
-        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COOL)).isTrue(); // GH-90000
-        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COLD)).isTrue(); // GH-90000
+    void hotIsHigherThanAll() { 
+        assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); 
+        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COOL)).isTrue(); 
+        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COLD)).isTrue(); 
     }
 
     @Test
     @DisplayName("COLD is lower than HOT, WARM, COOL")
-    void coldIsLowerThanAll() { // GH-90000
-        assertThat(StorageTier.COLD.isLowerThan(StorageTier.HOT)).isTrue(); // GH-90000
-        assertThat(StorageTier.COLD.isLowerThan(StorageTier.WARM)).isTrue(); // GH-90000
-        assertThat(StorageTier.COLD.isLowerThan(StorageTier.COOL)).isTrue(); // GH-90000
+    void coldIsLowerThanAll() { 
+        assertThat(StorageTier.COLD.isLowerThan(StorageTier.HOT)).isTrue(); 
+        assertThat(StorageTier.COLD.isLowerThan(StorageTier.WARM)).isTrue(); 
+        assertThat(StorageTier.COLD.isLowerThan(StorageTier.COOL)).isTrue(); 
     }
 
     @Test
     @DisplayName("Same tier is neither higher nor lower")
-    void sameTierNotHigherOrLower() { // GH-90000
-        for (StorageTier tier : StorageTier.values()) { // GH-90000
-            assertThat(tier.isHigherThan(tier)).isFalse(); // GH-90000
-            assertThat(tier.isLowerThan(tier)).isFalse(); // GH-90000
+    void sameTierNotHigherOrLower() { 
+        for (StorageTier tier : StorageTier.values()) { 
+            assertThat(tier.isHigherThan(tier)).isFalse(); 
+            assertThat(tier.isLowerThan(tier)).isFalse(); 
         }
     }
 
     @Test
     @DisplayName("Ordering is transitive: HOT > WARM > COOL > COLD")
-    void orderingIsTransitive() { // GH-90000
-        assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); // GH-90000
-        assertThat(StorageTier.WARM.isHigherThan(StorageTier.COOL)).isTrue(); // GH-90000
-        assertThat(StorageTier.COOL.isHigherThan(StorageTier.COLD)).isTrue(); // GH-90000
+    void orderingIsTransitive() { 
+        assertThat(StorageTier.HOT.isHigherThan(StorageTier.WARM)).isTrue(); 
+        assertThat(StorageTier.WARM.isHigherThan(StorageTier.COOL)).isTrue(); 
+        assertThat(StorageTier.COOL.isHigherThan(StorageTier.COLD)).isTrue(); 
     }
 
     // ═══ Navigation ═══
 
     @Test
     @DisplayName("nextLowerTier traverses HOT→WARM→COOL→COLD→COLD")
-    void nextLowerTier_fullTraversal() { // GH-90000
-        assertThat(StorageTier.HOT.nextLowerTier()).isEqualTo(StorageTier.WARM); // GH-90000
-        assertThat(StorageTier.WARM.nextLowerTier()).isEqualTo(StorageTier.COOL); // GH-90000
-        assertThat(StorageTier.COOL.nextLowerTier()).isEqualTo(StorageTier.COLD); // GH-90000
-        assertThat(StorageTier.COLD.nextLowerTier()).isEqualTo(StorageTier.COLD); // GH-90000
+    void nextLowerTier_fullTraversal() { 
+        assertThat(StorageTier.HOT.nextLowerTier()).isEqualTo(StorageTier.WARM); 
+        assertThat(StorageTier.WARM.nextLowerTier()).isEqualTo(StorageTier.COOL); 
+        assertThat(StorageTier.COOL.nextLowerTier()).isEqualTo(StorageTier.COLD); 
+        assertThat(StorageTier.COLD.nextLowerTier()).isEqualTo(StorageTier.COLD); 
     }
 
     @Test
     @DisplayName("nextHigherTier traverses COLD→COOL→WARM→HOT→HOT")
-    void nextHigherTier_fullTraversal() { // GH-90000
-        assertThat(StorageTier.COLD.nextHigherTier()).isEqualTo(StorageTier.COOL); // GH-90000
-        assertThat(StorageTier.COOL.nextHigherTier()).isEqualTo(StorageTier.WARM); // GH-90000
-        assertThat(StorageTier.WARM.nextHigherTier()).isEqualTo(StorageTier.HOT); // GH-90000
-        assertThat(StorageTier.HOT.nextHigherTier()).isEqualTo(StorageTier.HOT); // GH-90000
+    void nextHigherTier_fullTraversal() { 
+        assertThat(StorageTier.COLD.nextHigherTier()).isEqualTo(StorageTier.COOL); 
+        assertThat(StorageTier.COOL.nextHigherTier()).isEqualTo(StorageTier.WARM); 
+        assertThat(StorageTier.WARM.nextHigherTier()).isEqualTo(StorageTier.HOT); 
+        assertThat(StorageTier.HOT.nextHigherTier()).isEqualTo(StorageTier.HOT); 
     }
 
     // ═══ Boundary methods ═══
 
     @Test
     @DisplayName("Only HOT is hottest")
-    void onlyHotIsHottest() { // GH-90000
-        assertThat(StorageTier.HOT.isHottest()).isTrue(); // GH-90000
-        assertThat(StorageTier.WARM.isHottest()).isFalse(); // GH-90000
-        assertThat(StorageTier.COOL.isHottest()).isFalse(); // GH-90000
-        assertThat(StorageTier.COLD.isHottest()).isFalse(); // GH-90000
+    void onlyHotIsHottest() { 
+        assertThat(StorageTier.HOT.isHottest()).isTrue(); 
+        assertThat(StorageTier.WARM.isHottest()).isFalse(); 
+        assertThat(StorageTier.COOL.isHottest()).isFalse(); 
+        assertThat(StorageTier.COLD.isHottest()).isFalse(); 
     }
 
     @Test
     @DisplayName("Only COLD is coldest")
-    void onlyColdIsColdest() { // GH-90000
-        assertThat(StorageTier.COLD.isColdest()).isTrue(); // GH-90000
-        assertThat(StorageTier.HOT.isColdest()).isFalse(); // GH-90000
-        assertThat(StorageTier.WARM.isColdest()).isFalse(); // GH-90000
-        assertThat(StorageTier.COOL.isColdest()).isFalse(); // GH-90000
+    void onlyColdIsColdest() { 
+        assertThat(StorageTier.COLD.isColdest()).isTrue(); 
+        assertThat(StorageTier.HOT.isColdest()).isFalse(); 
+        assertThat(StorageTier.WARM.isColdest()).isFalse(); 
+        assertThat(StorageTier.COOL.isColdest()).isFalse(); 
     }
 
     // ═══ Default tier ═══
 
     @Test
     @DisplayName("Default tier is WARM")
-    void defaultTierIsWarm() { // GH-90000
-        assertThat(StorageTier.defaultTier()).isEqualTo(StorageTier.WARM); // GH-90000
+    void defaultTierIsWarm() { 
+        assertThat(StorageTier.defaultTier()).isEqualTo(StorageTier.WARM); 
     }
 
     // ═══ Values completeness ═══
 
     @Test
     @DisplayName("Enum has exactly 4 tiers")
-    void exactlyFourTiers() { // GH-90000
-        assertThat(StorageTier.values()).hasSize(4); // GH-90000
+    void exactlyFourTiers() { 
+        assertThat(StorageTier.values()).hasSize(4); 
     }
 
     @ParameterizedTest
-    @EnumSource(StorageTier.class) // GH-90000
+    @EnumSource(StorageTier.class) 
     @DisplayName("nextLowerTier never returns null")
-    void nextLowerTier_neverNull(StorageTier tier) { // GH-90000
-        assertThat(tier.nextLowerTier()).isNotNull(); // GH-90000
+    void nextLowerTier_neverNull(StorageTier tier) { 
+        assertThat(tier.nextLowerTier()).isNotNull(); 
     }
 
     @ParameterizedTest
-    @EnumSource(StorageTier.class) // GH-90000
+    @EnumSource(StorageTier.class) 
     @DisplayName("nextHigherTier never returns null")
-    void nextHigherTier_neverNull(StorageTier tier) { // GH-90000
-        assertThat(tier.nextHigherTier()).isNotNull(); // GH-90000
+    void nextHigherTier_neverNull(StorageTier tier) { 
+        assertThat(tier.nextHigherTier()).isNotNull(); 
     }
 
     // ═══ Asymmetry ═══
 
     @Test
     @DisplayName("isHigherThan and isLowerThan are asymmetric")
-    void higherAndLowerAreAsymmetric() { // GH-90000
-        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COLD)).isTrue(); // GH-90000
-        assertThat(StorageTier.COLD.isHigherThan(StorageTier.HOT)).isFalse(); // GH-90000
-        assertThat(StorageTier.HOT.isLowerThan(StorageTier.COLD)).isFalse(); // GH-90000
-        assertThat(StorageTier.COLD.isLowerThan(StorageTier.HOT)).isTrue(); // GH-90000
+    void higherAndLowerAreAsymmetric() { 
+        assertThat(StorageTier.HOT.isHigherThan(StorageTier.COLD)).isTrue(); 
+        assertThat(StorageTier.COLD.isHigherThan(StorageTier.HOT)).isFalse(); 
+        assertThat(StorageTier.HOT.isLowerThan(StorageTier.COLD)).isFalse(); 
+        assertThat(StorageTier.COLD.isLowerThan(StorageTier.HOT)).isTrue(); 
     }
 }

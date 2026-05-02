@@ -46,211 +46,211 @@ class RustToolsRunnerTest {
     private static final int EXPECTED_PARTS_COUNT = 2;
 
     @Test
-    void testCargoCheckWithValidProject(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        commandRunner.when(List.of(CARGO, "check", MESSAGE_FORMAT_FLAG), result(0, "", "")); // GH-90000
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+    void testCargoCheckWithValidProject(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
+        commandRunner.when(List.of(CARGO, "check", MESSAGE_FORMAT_FLAG), result(0, "", "")); 
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
-        createMinimalCargoProject(tempDir, "fn main() { println!(\"Hello, world!\"); }\n"); // GH-90000
+        createMinimalCargoProject(tempDir, "fn main() { println!(\"Hello, world!\"); }\n"); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000); // GH-90000
-        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000); 
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); 
         // A valid project should have no errors
-        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for valid project"); // GH-90000
+        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for valid project"); 
     }
 
     @Test
-    void testCargoCheckWithError(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        commandRunner.when( // GH-90000
-                List.of(CARGO, "check", MESSAGE_FORMAT_FLAG), // GH-90000
-                result(1, "error[E0308]: mismatched types", "")); // GH-90000
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+    void testCargoCheckWithError(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
+        commandRunner.when( 
+                List.of(CARGO, "check", MESSAGE_FORMAT_FLAG), 
+                result(1, "error[E0308]: mismatched types", "")); 
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
-        createMinimalCargoProject(tempDir, "fn main() { let x: i32 = \"not a number\"; }\n"); // GH-90000
+        createMinimalCargoProject(tempDir, "fn main() { let x: i32 = \"not a number\"; }\n"); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000); // GH-90000
-        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); // GH-90000
-        assertFalse(diagnostics.isEmpty(), "Expected diagnostics for invalid code"); // GH-90000
-        assertTrue( // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.cargoCheck(tempDir, 30_000); 
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); 
+        assertFalse(diagnostics.isEmpty(), "Expected diagnostics for invalid code"); 
+        assertTrue( 
                 diagnostics.stream().anyMatch(d -> d.message().contains("mismatched types")),
                 "Expected type mismatch error");
     }
 
     @Test
-    void testClippy(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        commandRunner.when( // GH-90000
-                List.of(CARGO, "clippy", MESSAGE_FORMAT_FLAG, "--", "-D", "warnings"), // GH-90000
-                result(0, "warning[clippy::single_match]: consider using if let", "")); // GH-90000
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+    void testClippy(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
+        commandRunner.when( 
+                List.of(CARGO, "clippy", MESSAGE_FORMAT_FLAG, "--", "-D", "warnings"), 
+                result(0, "warning[clippy::single_match]: consider using if let", "")); 
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
-        createMinimalCargoProject( // GH-90000
+        createMinimalCargoProject( 
                 tempDir,
-                "fn main() {\n" // GH-90000
+                "fn main() {\n" 
                         + "    let x = 5;\n"
                         + "    if x == 5 {\n"
-                        + "        println!(\"x is 5\");\n" // GH-90000
+                        + "        println!(\"x is 5\");\n" 
                         + "    }\n"
                         + "}\n");
 
-        List<UnifiedDiagnostic> diagnostics = runner.clippy(tempDir, 30_000); // GH-90000
-        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.clippy(tempDir, 30_000); 
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); 
         // Clippy might not report warnings on all platforms/versions, so we can't assert on content
     }
 
     @Test
-    void testRustfmtWithValidCode(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        commandRunner.when(List.of(CARGO, "fmt", "--", CHECK_FLAG), result(0, "", "")); // GH-90000
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+    void testRustfmtWithValidCode(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
+        commandRunner.when(List.of(CARGO, "fmt", "--", CHECK_FLAG), result(0, "", "")); 
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
-        createMinimalCargoProject(tempDir, "fn main() {\n    println!(\"Hello, world!\");\n}\n"); // GH-90000
+        createMinimalCargoProject(tempDir, "fn main() {\n    println!(\"Hello, world!\");\n}\n"); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.rustfmt(tempDir, 30_000); // GH-90000
-        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); // GH-90000
-        assertTrue( // GH-90000
-                diagnostics.isEmpty(), "Expected no formatting issues for properly formatted code"); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.rustfmt(tempDir, 30_000); 
+        assertNotNull(diagnostics, DIAGNOSTICS_MESSAGE); 
+        assertTrue( 
+                diagnostics.isEmpty(), "Expected no formatting issues for properly formatted code"); 
     }
 
     @Test
-    void testRustfmtWithInvalidCode(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
-        commandRunner.when( // GH-90000
-                List.of(CARGO, "fmt", "--", CHECK_FLAG), result(1, "", "Diff in src/main.rs")); // GH-90000
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+    void testRustfmtWithInvalidCode(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
+        commandRunner.when( 
+                List.of(CARGO, "fmt", "--", CHECK_FLAG), result(1, "", "Diff in src/main.rs")); 
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
-        createMinimalCargoProject(tempDir, "fn main() {\nprintln!(\"Hello, world!\");\n}\n"); // GH-90000
+        createMinimalCargoProject(tempDir, "fn main() {\nprintln!(\"Hello, world!\");\n}\n"); 
 
-        List<UnifiedDiagnostic> checkDiags = runner.rustfmt(tempDir, 30_000); // GH-90000
-        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE); // GH-90000
+        List<UnifiedDiagnostic> checkDiags = runner.rustfmt(tempDir, 30_000); 
+        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE); 
 
         // Log the diagnostics we received
-        assertFalse(checkDiags.isEmpty(), "Expected formatting diagnostics for unformatted code"); // GH-90000
+        assertFalse(checkDiags.isEmpty(), "Expected formatting diagnostics for unformatted code"); 
     }
 
     @Test
-    void testTaploFormat(@TempDir Path tempDir) throws Exception { // GH-90000
-        FakeCommandRunner commandRunner = new FakeCommandRunner(); // GH-90000
+    void testTaploFormat(@TempDir Path tempDir) throws Exception { 
+        FakeCommandRunner commandRunner = new FakeCommandRunner(); 
         Path cargoToml = tempDir.resolve("Cargo.toml");
-        Files.writeString(cargoToml, "[package]\nname=\"test\"\nversion=\"0.1.0\"\n"); // GH-90000
+        Files.writeString(cargoToml, "[package]\nname=\"test\"\nversion=\"0.1.0\"\n"); 
 
         List<String> taploCheckCommand =
-                List.of( // GH-90000
+                List.of( 
                         "taplo",
                         "format",
                         "--config",
                         TAPLO_CONFIG,
                         "--check",
-                        cargoToml.toString()); // GH-90000
+                        cargoToml.toString()); 
         List<String> taploWriteCommand =
-                List.of("taplo", "format", "--config", TAPLO_CONFIG, cargoToml.toString()); // GH-90000
+                List.of("taplo", "format", "--config", TAPLO_CONFIG, cargoToml.toString()); 
 
-        commandRunner.when( // GH-90000
+        commandRunner.when( 
                 taploCheckCommand,
-                result(1, "", "Formatted: " + cargoToml + " (would be formatted)"), // GH-90000
-                result(0, "", "")); // GH-90000
-        commandRunner.when(taploWriteCommand, result(0, "", "")); // GH-90000
+                result(1, "", "Formatted: " + cargoToml + " (would be formatted)"), 
+                result(0, "", "")); 
+        commandRunner.when(taploWriteCommand, result(0, "", "")); 
 
-        RustToolsRunner runner = new RustToolsRunner(commandRunner); // GH-90000
+        RustToolsRunner runner = new RustToolsRunner(commandRunner); 
 
         // First check should report formatting issues
-        List<UnifiedDiagnostic> checkDiags = runner.taploFormat(tempDir, false, 30_000); // GH-90000
-        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE); // GH-90000
-        assertFalse(checkDiags.isEmpty(), "Expected formatting issues for poorly formatted TOML"); // GH-90000
-        assertEquals(1, checkDiags.size(), "Expected exactly one diagnostic for formatting issue"); // GH-90000
-        assertTrue( // GH-90000
+        List<UnifiedDiagnostic> checkDiags = runner.taploFormat(tempDir, false, 30_000); 
+        assertNotNull(checkDiags, DIAGNOSTICS_MESSAGE); 
+        assertFalse(checkDiags.isEmpty(), "Expected formatting issues for poorly formatted TOML"); 
+        assertEquals(1, checkDiags.size(), "Expected exactly one diagnostic for formatting issue"); 
+        assertTrue( 
                 checkDiags.get(0).message().contains("the file is not properly formatted")
                         || checkDiags.get(0).message().contains("needs formatting")
                         || checkDiags.get(0).message().contains("would be formatted"),
                 "Diagnostic should indicate formatting is needed. Actual message: "
-                        + checkDiags.get(0).message()); // GH-90000
+                        + checkDiags.get(0).message()); 
 
         // Then fix the issues
-        List<UnifiedDiagnostic> fixDiags = runner.taploFormat(tempDir, true, 30_000); // GH-90000
-        assertTrue(fixDiags.isEmpty(), "Expected no formatting issues after fixing: " + fixDiags); // GH-90000
+        List<UnifiedDiagnostic> fixDiags = runner.taploFormat(tempDir, true, 30_000); 
+        assertTrue(fixDiags.isEmpty(), "Expected no formatting issues after fixing: " + fixDiags); 
 
         // Verify the file was formatted with proper spacing
-        String formatted = Files.readString(cargoToml, StandardCharsets.UTF_8); // GH-90000
-        assertTrue( // GH-90000
-                formatted.contains("name = \"test\""), // GH-90000
+        String formatted = Files.readString(cargoToml, StandardCharsets.UTF_8); 
+        assertTrue( 
+                formatted.contains("name = \"test\""), 
                 "Expected proper formatting, got: " + formatted);
-        assertTrue( // GH-90000
-                formatted.contains("version = \"0.1.0\""), // GH-90000
+        assertTrue( 
+                formatted.contains("version = \"0.1.0\""), 
                 "Expected proper formatting, got: " + formatted);
 
         // Verify check passes after formatting
-        List<UnifiedDiagnostic> finalCheck = runner.taploFormat(tempDir, false, 30_000); // GH-90000
-        assertTrue( // GH-90000
-                finalCheck.isEmpty(), // GH-90000
+        List<UnifiedDiagnostic> finalCheck = runner.taploFormat(tempDir, false, 30_000); 
+        assertTrue( 
+                finalCheck.isEmpty(), 
                 "Expected no formatting issues after fix, but got: " + finalCheck);
     }
 
-    private static void createMinimalCargoProject(Path tempDir, String mainRsContent) // GH-90000
+    private static void createMinimalCargoProject(Path tempDir, String mainRsContent) 
             throws IOException {
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 tempDir.resolve("Cargo.toml"), "[package]\nname = \"test\"\nversion = \"0.1.0\"\n");
         Path srcDir = tempDir.resolve("src");
-        Files.createDirectories(srcDir); // GH-90000
+        Files.createDirectories(srcDir); 
         Files.writeString(srcDir.resolve("main.rs"), mainRsContent);
     }
 
-    private static ProcessExec.Result result(int exitCode, String out, String err) { // GH-90000
-        return new ProcessExec.Result(exitCode, out, err); // GH-90000
+    private static ProcessExec.Result result(int exitCode, String out, String err) { 
+        return new ProcessExec.Result(exitCode, out, err); 
     }
 
     private static final class FakeCommandRunner implements RustToolsRunner.CommandRunner {
-        private final Map<List<String>, Deque<ProcessExec.Result>> responses = new HashMap<>(); // GH-90000
+        private final Map<List<String>, Deque<ProcessExec.Result>> responses = new HashMap<>(); 
 
-        void when(List<String> command, ProcessExec.Result... results) { // GH-90000
+        void when(List<String> command, ProcessExec.Result... results) { 
             responses
-                    .computeIfAbsent(List.copyOf(command), k -> new ArrayDeque<>()) // GH-90000
-                    .addAll(Arrays.asList(results)); // GH-90000
+                    .computeIfAbsent(List.copyOf(command), k -> new ArrayDeque<>()) 
+                    .addAll(Arrays.asList(results)); 
         }
 
         @Override
-        public ProcessExec.Result run( // GH-90000
+        public ProcessExec.Result run( 
                 Path cwd, Duration timeout, List<String> cmd, Map<String, String> env) {
-            Deque<ProcessExec.Result> queue = responses.get(List.copyOf(cmd)); // GH-90000
-            if (queue == null || queue.isEmpty()) { // GH-90000
-                fail("No fake response configured for command: " + String.join(" ", cmd)); // GH-90000
+            Deque<ProcessExec.Result> queue = responses.get(List.copyOf(cmd)); 
+            if (queue == null || queue.isEmpty()) { 
+                fail("No fake response configured for command: " + String.join(" ", cmd)); 
             }
-            ProcessExec.Result result = queue.removeFirst(); // GH-90000
+            ProcessExec.Result result = queue.removeFirst(); 
 
-            if (isTaploWriteCommand(cmd) && result.exitCode() == 0) { // GH-90000
-                applyTomlFormatting(cmd); // GH-90000
+            if (isTaploWriteCommand(cmd) && result.exitCode() == 0) { 
+                applyTomlFormatting(cmd); 
             }
 
             return result;
         }
 
-        private boolean isTaploWriteCommand(List<String> cmd) { // GH-90000
-            return cmd.size() >= 2 // GH-90000
-                    && "taplo".equals(cmd.get(0)) // GH-90000
-                    && "format".equals(cmd.get(1)) // GH-90000
+        private boolean isTaploWriteCommand(List<String> cmd) { 
+            return cmd.size() >= 2 
+                    && "taplo".equals(cmd.get(0)) 
+                    && "format".equals(cmd.get(1)) 
                     && !cmd.contains("--check");
         }
 
-        private void applyTomlFormatting(List<String> cmd) { // GH-90000
-            String fileArg = cmd.get(cmd.size() - 1); // GH-90000
-            Path filePath = Path.of(fileArg); // GH-90000
+        private void applyTomlFormatting(List<String> cmd) { 
+            String fileArg = cmd.get(cmd.size() - 1); 
+            Path filePath = Path.of(fileArg); 
             try {
-                String original = Files.readString(filePath, StandardCharsets.UTF_8); // GH-90000
-                StringBuilder formatted = new StringBuilder(); // GH-90000
+                String original = Files.readString(filePath, StandardCharsets.UTF_8); 
+                StringBuilder formatted = new StringBuilder(); 
                 for (String line : original.split("\\r?\\n")) {
-                    if (line.contains(EQUALS_SIGN)) { // GH-90000
-                        String[] parts = line.split(EQUALS_SIGN, EXPECTED_PARTS_COUNT); // GH-90000
-                        if (parts.length == EXPECTED_PARTS_COUNT) { // GH-90000
-                            String left = parts[0].trim(); // GH-90000
-                            String right = parts[1].trim(); // GH-90000
+                    if (line.contains(EQUALS_SIGN)) { 
+                        String[] parts = line.split(EQUALS_SIGN, EXPECTED_PARTS_COUNT); 
+                        if (parts.length == EXPECTED_PARTS_COUNT) { 
+                            String left = parts[0].trim(); 
+                            String right = parts[1].trim(); 
                             line = left + " = " + right;
                         }
                     }
-                    formatted.append(line).append('\n'); // GH-90000
+                    formatted.append(line).append('\n'); 
                 }
-                Files.writeString(filePath, formatted.toString(), StandardCharsets.UTF_8); // GH-90000
-            } catch (IOException e) { // GH-90000
-                fail("Failed to apply fake TOML formatting: " + e.getMessage()); // GH-90000
+                Files.writeString(filePath, formatted.toString(), StandardCharsets.UTF_8); 
+            } catch (IOException e) { 
+                fail("Failed to apply fake TOML formatting: " + e.getMessage()); 
             }
         }
     }

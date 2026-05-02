@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("PluginInstallHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class PluginInstallHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -50,49 +50,49 @@ class PluginInstallHandlerTest extends EventloopTestBase {
     private PluginInstallHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
-        lenient().when(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance")) // GH-90000
-            .thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new PluginInstallHandler(http, pluginRegistry, runtimePluginManager, metrics); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
+        lenient().when(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance")) 
+            .thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("list rejects missing tenant before plugin registry access")
-    void listRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void listRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleListPlugins(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleListPlugins(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(pluginRegistry, never()).getAllPlugins(); // GH-90000
-        verify(runtimePluginManager, never()).getAllPlugins(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(pluginRegistry, never()).getAllPlugins(); 
+        verify(runtimePluginManager, never()).getAllPlugins(); 
     }
 
     @Test
     @DisplayName("get rejects missing tenant before plugin lookup")
-    void getRejectsMissingTenant() { // GH-90000
+    void getRejectsMissingTenant() { 
         when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleGetPlugin(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleGetPlugin(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
         verify(pluginRegistry, never()).getPlugin("plugin-1");
         verify(runtimePluginManager, never()).getPlugin("plugin-1");
     }
 
     @Test
     @DisplayName("upgrade rejects missing tenant before reading body")
-    void upgradeRejectsMissingTenant() { // GH-90000
+    void upgradeRejectsMissingTenant() { 
         // Enable upgrade path so tenant validation is exercised before body loading.
-        handler.withPluginUpgradeEnabled(true); // GH-90000
+        handler.withPluginUpgradeEnabled(true); 
         when(request.getPathParameter("id")).thenReturn("plugin-1");
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleUpgradePlugin(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 }

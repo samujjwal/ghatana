@@ -17,34 +17,34 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("HybridStateStore — local-first reads, sync strategies")
 class HybridStateStoreTest extends EventloopTestBase {
 
-    private HybridStateStore<String, String> buildStore(SyncStrategy strategy) { // GH-90000
-        return HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(new InMemoryStateStore<>()) // GH-90000
-                .centralStore(new InMemoryStateStore<>()) // GH-90000
-                .syncStrategy(strategy) // GH-90000
-                .build(); // GH-90000
+    private HybridStateStore<String, String> buildStore(SyncStrategy strategy) { 
+        return HybridStateStore.<String, String>builder() 
+                .localStore(new InMemoryStateStore<>()) 
+                .centralStore(new InMemoryStateStore<>()) 
+                .syncStrategy(strategy) 
+                .build(); 
     }
 
     @Test
     @DisplayName("get on empty store returns empty Optional")
-    void getOnEmptyStoreReturnsEmpty() { // GH-90000
-        HybridStateStore<String, String> store = buildStore(SyncStrategy.IMMEDIATE); // GH-90000
+    void getOnEmptyStoreReturnsEmpty() { 
+        HybridStateStore<String, String> store = buildStore(SyncStrategy.IMMEDIATE); 
         Optional<String> result = runPromise(() -> store.get("missing"));
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("IMMEDIATE strategy writes to both local and central")
-    void immediateStrategyWritesToBothStores() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.IMMEDIATE) // GH-90000
-                .build(); // GH-90000
+    void immediateStrategyWritesToBothStores() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.IMMEDIATE) 
+                .build(); 
 
-        store.put("key", "val"); // GH-90000
+        store.put("key", "val"); 
 
         assertThat(runPromise(() -> local.get("key"))).hasValue("val");
         assertThat(runPromise(() -> central.get("key"))).hasValue("val");
@@ -52,16 +52,16 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("BATCHED strategy writes only to local store")
-    void batchedStrategyWritesOnlyToLocal() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.BATCHED) // GH-90000
-                .build(); // GH-90000
+    void batchedStrategyWritesOnlyToLocal() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.BATCHED) 
+                .build(); 
 
-        store.put("key", "val"); // GH-90000
+        store.put("key", "val"); 
 
         assertThat(runPromise(() -> local.get("key"))).hasValue("val");
         assertThat(runPromise(() -> central.get("key"))).isEmpty();
@@ -69,16 +69,16 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("NONE strategy writes only to local store")
-    void noneStrategyWritesOnlyToLocal() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.NONE) // GH-90000
-                .build(); // GH-90000
+    void noneStrategyWritesOnlyToLocal() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.NONE) 
+                .build(); 
 
-        store.put("key", "val"); // GH-90000
+        store.put("key", "val"); 
 
         assertThat(runPromise(() -> local.get("key"))).hasValue("val");
         assertThat(runPromise(() -> central.get("key"))).isEmpty();
@@ -86,16 +86,16 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("get falls back to central store when local cache miss")
-    void getFallsBackToCentralOnLocalMiss() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        central.put("remote-key", "from-central"); // GH-90000
+    void getFallsBackToCentralOnLocalMiss() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        central.put("remote-key", "from-central"); 
 
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.BATCHED) // GH-90000
-                .build(); // GH-90000
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.BATCHED) 
+                .build(); 
 
         Optional<String> result = runPromise(() -> store.get("remote-key"));
         assertThat(result).hasValue("from-central");
@@ -103,16 +103,16 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("get populates local cache from central on first access")
-    void getPopulatesLocalCacheFromCentral() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        central.put("k", "v"); // GH-90000
+    void getPopulatesLocalCacheFromCentral() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        central.put("k", "v"); 
 
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.BATCHED) // GH-90000
-                .build(); // GH-90000
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.BATCHED) 
+                .build(); 
 
         runPromise(() -> store.get("k")); // populates local cache
 
@@ -122,17 +122,17 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("local value takes priority over central when both present")
-    void localTakesPriorityOverCentral() { // GH-90000
-        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); // GH-90000
-        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); // GH-90000
-        local.put("key", "local-value"); // GH-90000
-        central.put("key", "central-value"); // GH-90000
+    void localTakesPriorityOverCentral() { 
+        InMemoryStateStore<String, String> local = new InMemoryStateStore<>(); 
+        InMemoryStateStore<String, String> central = new InMemoryStateStore<>(); 
+        local.put("key", "local-value"); 
+        central.put("key", "central-value"); 
 
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(local) // GH-90000
-                .centralStore(central) // GH-90000
-                .syncStrategy(SyncStrategy.BATCHED) // GH-90000
-                .build(); // GH-90000
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(local) 
+                .centralStore(central) 
+                .syncStrategy(SyncStrategy.BATCHED) 
+                .build(); 
 
         Optional<String> result = runPromise(() -> store.get("key"));
         assertThat(result).hasValue("local-value");
@@ -140,40 +140,40 @@ class HybridStateStoreTest extends EventloopTestBase {
 
     @Test
     @DisplayName("getSyncStrategy returns configured strategy")
-    void getSyncStrategyReturnsConfiguredStrategy() { // GH-90000
-        HybridStateStore<String, String> store = buildStore(SyncStrategy.IMMEDIATE); // GH-90000
-        assertThat(store.getSyncStrategy()).isEqualTo(SyncStrategy.IMMEDIATE); // GH-90000
+    void getSyncStrategyReturnsConfiguredStrategy() { 
+        HybridStateStore<String, String> store = buildStore(SyncStrategy.IMMEDIATE); 
+        assertThat(store.getSyncStrategy()).isEqualTo(SyncStrategy.IMMEDIATE); 
     }
 
     @Test
     @DisplayName("builder requires localStore")
-    void builderRequiresLocalStore() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                HybridStateStore.<String, String>builder() // GH-90000
-                        .centralStore(new InMemoryStateStore<>()) // GH-90000
-                        .build()) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+    void builderRequiresLocalStore() { 
+        assertThatThrownBy(() -> 
+                HybridStateStore.<String, String>builder() 
+                        .centralStore(new InMemoryStateStore<>()) 
+                        .build()) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("localStore");
     }
 
     @Test
     @DisplayName("builder requires centralStore")
-    void builderRequiresCentralStore() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                HybridStateStore.<String, String>builder() // GH-90000
-                        .localStore(new InMemoryStateStore<>()) // GH-90000
-                        .build()) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+    void builderRequiresCentralStore() { 
+        assertThatThrownBy(() -> 
+                HybridStateStore.<String, String>builder() 
+                        .localStore(new InMemoryStateStore<>()) 
+                        .build()) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("centralStore");
     }
 
     @Test
     @DisplayName("default sync strategy is BATCHED when not set")
-    void defaultSyncStrategyIsBatched() { // GH-90000
-        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() // GH-90000
-                .localStore(new InMemoryStateStore<>()) // GH-90000
-                .centralStore(new InMemoryStateStore<>()) // GH-90000
-                .build(); // GH-90000
-        assertThat(store.getSyncStrategy()).isEqualTo(SyncStrategy.BATCHED); // GH-90000
+    void defaultSyncStrategyIsBatched() { 
+        HybridStateStore<String, String> store = HybridStateStore.<String, String>builder() 
+                .localStore(new InMemoryStateStore<>()) 
+                .centralStore(new InMemoryStateStore<>()) 
+                .build(); 
+        assertThat(store.getSyncStrategy()).isEqualTo(SyncStrategy.BATCHED); 
     }
 }

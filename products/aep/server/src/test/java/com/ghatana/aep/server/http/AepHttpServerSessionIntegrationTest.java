@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.http;
@@ -38,7 +38,7 @@ class AepHttpServerSessionIntegrationTest {
 
     private static final String SESSION_HEADER = "X-AEP-Session";
 
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     private AepEngine engine;
     private AepHttpServer server;
@@ -46,64 +46,64 @@ class AepHttpServerSessionIntegrationTest {
     private int port;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        httpClient = HttpClient.newBuilder().build(); // GH-90000
-        server = new AepHttpServer(engine, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+    void setUp() throws Exception { 
+        engine = Aep.forTesting(); 
+        port = findFreePort(); 
+        httpClient = HttpClient.newBuilder().build(); 
+        server = new AepHttpServer(engine, port); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) { // GH-90000
-            server.stop(); // GH-90000
+    void tearDown() { 
+        if (server != null) { 
+            server.stop(); 
         }
-        if (engine != null) { // GH-90000
-            engine.close(); // GH-90000
+        if (engine != null) { 
+            engine.close(); 
         }
     }
 
     @Test
     @DisplayName("POST /api/v1/session rejects unauthenticated requests")
-    void postSessionRejectsUnauthenticatedRequests() throws Exception { // GH-90000
-        HttpResponse<String> sessionResponse = post("/api/v1/session", ""); // GH-90000
+    void postSessionRejectsUnauthenticatedRequests() throws Exception { 
+        HttpResponse<String> sessionResponse = post("/api/v1/session", ""); 
 
-        assertThat(sessionResponse.statusCode()).isEqualTo(401); // GH-90000
-        assertThat(sessionResponse.headers().firstValue(SESSION_HEADER)).isEmpty(); // GH-90000
+        assertThat(sessionResponse.statusCode()).isEqualTo(401); 
+        assertThat(sessionResponse.headers().firstValue(SESSION_HEADER)).isEmpty(); 
         @SuppressWarnings("unchecked")
-        Map<String, Object> sessionBody = mapper.readValue(sessionResponse.body(), Map.class); // GH-90000
-        assertThat(sessionBody).containsEntry("error", "Unauthorized"); // GH-90000
-        assertThat(String.valueOf(sessionBody.get("message"))).contains("Verified JWT required"); // GH-90000
+        Map<String, Object> sessionBody = mapper.readValue(sessionResponse.body(), Map.class); 
+        assertThat(sessionBody).containsEntry("error", "Unauthorized"); 
+        assertThat(String.valueOf(sessionBody.get("message"))).contains("Verified JWT required"); 
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder() // GH-90000
-            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)); // GH-90000
-        if (!body.isEmpty()) { // GH-90000
-            requestBuilder.header("Content-Type", "application/json"); // GH-90000
+    private HttpResponse<String> post(String path, String body) throws Exception { 
+        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder() 
+            .POST(HttpRequest.BodyPublishers.ofString(body)) 
+            .uri(URI.create("http://127.0.0.1:" + port + path)); 
+        if (!body.isEmpty()) { 
+            requestBuilder.header("Content-Type", "application/json"); 
         }
-        return httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString()); // GH-90000
+        return httpClient.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); 
     }
 }

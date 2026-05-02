@@ -16,19 +16,19 @@ import java.lang.annotation.Target;
  */
 public class NativeDependencySupport {
 
-    @Target({ElementType.TYPE, ElementType.METHOD}) // GH-90000
-    @Retention(RetentionPolicy.RUNTIME) // GH-90000
-    @ExtendWith(NativeDependencyCondition.class) // GH-90000
+    @Target({ElementType.TYPE, ElementType.METHOD}) 
+    @Retention(RetentionPolicy.RUNTIME) 
+    @ExtendWith(NativeDependencyCondition.class) 
     public @interface RequireNative {
         /**
          * Required native dependency type.
          */
-        NativeType value() default NativeType.ANY; // GH-90000
+        NativeType value() default NativeType.ANY; 
 
         /**
          * Optional custom disable reason displayed by JUnit.
          */
-        String message() default "Native dependencies not available"; // GH-90000
+        String message() default "Native dependencies not available"; 
     }
 
     public enum NativeType {
@@ -40,30 +40,30 @@ public class NativeDependencySupport {
     public static class NativeDependencyCondition implements ExecutionCondition {
 
         @Override
-        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) { // GH-90000
-            RequireNative annotation = context.getElement() // GH-90000
-                .map(el -> el.getAnnotation(RequireNative.class)) // GH-90000
-                .orElse(null); // GH-90000
+        public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) { 
+            RequireNative annotation = context.getElement() 
+                .map(el -> el.getAnnotation(RequireNative.class)) 
+                .orElse(null); 
 
-            if (annotation == null) { // GH-90000
+            if (annotation == null) { 
                 return ConditionEvaluationResult.enabled("No @RequireNative annotation");
             }
 
-            NativeType requiredType = annotation.value(); // GH-90000
-            String customMessage = annotation.message(); // GH-90000
+            NativeType requiredType = annotation.value(); 
+            String customMessage = annotation.message(); 
 
-            if (isNativeAvailable(requiredType)) { // GH-90000
+            if (isNativeAvailable(requiredType)) { 
                 return ConditionEvaluationResult.enabled("Native dependencies available");
             } else {
-                String message = String.format("%s: %s not available", // GH-90000
+                String message = String.format("%s: %s not available", 
                     customMessage, requiredType);
-                return ConditionEvaluationResult.disabled(message); // GH-90000
+                return ConditionEvaluationResult.disabled(message); 
             }
         }
     }
 
-    private static boolean isNativeAvailable(NativeType type) { // GH-90000
-        switch (type) { // GH-90000
+    private static boolean isNativeAvailable(NativeType type) { 
+        switch (type) { 
             case WHISPER_CPP:
                 return isClassAvailable("com.ghatana.stt.core.whisper.WhisperCppAdapter");
             case COQUI_TTS:
@@ -76,17 +76,17 @@ public class NativeDependencySupport {
         }
     }
 
-    private static boolean isClassAvailable(String className) { // GH-90000
+    private static boolean isClassAvailable(String className) { 
         try {
-            Class<?> clazz = Class.forName(className); // GH-90000
+            Class<?> clazz = Class.forName(className); 
             try {
                 java.lang.reflect.Field field = clazz.getDeclaredField("NATIVE_LIBRARY_AVAILABLE");
-                field.setAccessible(true); // GH-90000
-                return field.getBoolean(null); // GH-90000
-            } catch (NoSuchFieldException | IllegalAccessException e) { // GH-90000
+                field.setAccessible(true); 
+                return field.getBoolean(null); 
+            } catch (NoSuchFieldException | IllegalAccessException e) { 
                 return true;
             }
-        } catch (ClassNotFoundException | NoClassDefFoundError | UnsatisfiedLinkError e) { // GH-90000
+        } catch (ClassNotFoundException | NoClassDefFoundError | UnsatisfiedLinkError e) { 
             return false;
         }
     }

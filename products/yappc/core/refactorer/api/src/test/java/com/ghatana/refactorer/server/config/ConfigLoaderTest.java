@@ -23,16 +23,16 @@ import org.junit.jupiter.api.io.TempDir;
 class ConfigLoaderTest {
 
     @AfterEach
-    void clearConfigFileOverride() { // GH-90000
+    void clearConfigFileOverride() { 
         System.clearProperty("config.file");
-        ConfigFactory.invalidateCaches(); // GH-90000
+        ConfigFactory.invalidateCaches(); 
     }
 
     @Test
-    void load_wrapsInvalidConfigurationInTypedException(@TempDir Path tempDir) // GH-90000
+    void load_wrapsInvalidConfigurationInTypedException(@TempDir Path tempDir) 
             throws IOException {
         Path configFile = tempDir.resolve("invalid.conf");
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 configFile,
                 """
                 server {
@@ -44,14 +44,14 @@ class ConfigLoaderTest {
                   audience = \"audience\"
                 }
                 """);
-        System.setProperty("config.file", configFile.toString()); // GH-90000
-        ConfigFactory.invalidateCaches(); // GH-90000
+        System.setProperty("config.file", configFile.toString()); 
+        ConfigFactory.invalidateCaches(); 
 
         RefactorerOperationException exception =
-                assertThrows(RefactorerOperationException.class, ConfigLoader::load); // GH-90000
+                assertThrows(RefactorerOperationException.class, ConfigLoader::load); 
 
-        assertEquals("Configuration loading failed", exception.getMessage()); // GH-90000
-        assertInstanceOf(IllegalArgumentException.class, exception.getCause()); // GH-90000
+        assertEquals("Configuration loading failed", exception.getMessage()); 
+        assertInstanceOf(IllegalArgumentException.class, exception.getCause()); 
         assertTrue(exception.getCause().getMessage().contains("Invalid HTTP port"));
     }
 }

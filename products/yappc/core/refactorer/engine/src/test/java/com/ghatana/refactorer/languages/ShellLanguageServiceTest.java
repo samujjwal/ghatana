@@ -28,28 +28,28 @@ class ShellLanguageServiceTest extends EventloopTestBase {
     private ShellLanguageService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        service = new ShellLanguageService(); // GH-90000
+    void setUp() { 
+        service = new ShellLanguageService(); 
     }
 
     @Test
-    void supportsShouldRecogniseCommonExtensions() { // GH-90000
+    void supportsShouldRecogniseCommonExtensions() { 
         assertThat(service.supports(Path.of("script.sh"))).isTrue();
         assertThat(service.supports(Path.of("script.bash"))).isTrue();
         assertThat(service.supports(Path.of("script.txt"))).isFalse();
     }
 
     @Test
-    void diagnoseShouldReturnEmptyList() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> service.diagnose(null, List.of())); // GH-90000
-        assertThat(diagnostics).isEmpty(); // GH-90000
+    void diagnoseShouldReturnEmptyList() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> service.diagnose(null, List.of())); 
+        assertThat(diagnostics).isEmpty(); 
     }
 
     @Test
-    void planFixesShouldReturnEmptyList() { // GH-90000
-        List<?> fixes = runPromise( // GH-90000
-                () -> service.planFixes((UnifiedDiagnostic) null, (PolyfixProjectContext) null)); // GH-90000
-        assertThat(fixes).isEmpty(); // GH-90000
+    void planFixesShouldReturnEmptyList() { 
+        List<?> fixes = runPromise( 
+                () -> service.planFixes((UnifiedDiagnostic) null, (PolyfixProjectContext) null)); 
+        assertThat(fixes).isEmpty(); 
     }
 }

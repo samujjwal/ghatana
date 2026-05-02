@@ -21,43 +21,43 @@ class RealRuntimeSafetyTest {
 
     @Test
     @DisplayName("Should enforce resource limits")
-    void shouldEnforceResourceLimits() { // GH-90000
+    void shouldEnforceResourceLimits() { 
         long maxMemoryBytes = 512 * 1024 * 1024; // 512MB
-        assertThat(maxMemoryBytes).isPositive(); // GH-90000
+        assertThat(maxMemoryBytes).isPositive(); 
     }
 
     @Test
     @DisplayName("Should enforce execution timeouts")
-    void shouldEnforceExecutionTimeouts() { // GH-90000
+    void shouldEnforceExecutionTimeouts() { 
         long timeoutMs = 30000; // 30 seconds
-        assertThat(timeoutMs).isPositive(); // GH-90000
+        assertThat(timeoutMs).isPositive(); 
     }
 
     @Test
     @DisplayName("Should prevent unsafe operations")
-    void shouldPreventUnsafeOperations() { // GH-90000
+    void shouldPreventUnsafeOperations() { 
         boolean safe = true;
-        assertThat(safe).isTrue(); // GH-90000
+        assertThat(safe).isTrue(); 
     }
 
     @Test
     @DisplayName("Should validate agent permissions")
-    void shouldValidateAgentPermissions() { // GH-90000
+    void shouldValidateAgentPermissions() { 
         String permission = "read:entities";
-        assertThat(permission).isNotNull(); // GH-90000
+        assertThat(permission).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle agent isolation")
-    void shouldHandleAgentIsolation() { // GH-90000
+    void shouldHandleAgentIsolation() { 
         boolean isolated = true;
-        assertThat(isolated).isTrue(); // GH-90000
+        assertThat(isolated).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle safety violation logging")
-    void shouldHandleSafetyViolationLogging() { // GH-90000
+    void shouldHandleSafetyViolationLogging() { 
         String violationId = "violation-123";
-        assertThat(violationId).isNotNull(); // GH-90000
+        assertThat(violationId).isNotNull(); 
     }
 }

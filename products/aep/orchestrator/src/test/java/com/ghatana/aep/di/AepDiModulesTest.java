@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.di;
@@ -79,7 +79,7 @@ import redis.clients.jedis.JedisPool;
  *   <li>Interface-to-implementation bindings are correct</li>
  *   <li>Singleton semantics are maintained</li>
  *   <li>Module composition works with proper dependency resolution</li>
- *   <li>Shared dependencies (Eventloop, ExecutorService, MeterRegistry) propagate correctly</li> // GH-90000
+ *   <li>Shared dependencies (Eventloop, ExecutorService, MeterRegistry) propagate correctly</li> 
  *   <li>Builder-created services receive all dependencies</li>
  *   <li>Named bindings resolve correctly for connectors</li>
  * </ul>
@@ -97,88 +97,88 @@ class AepDiModulesTest {
 
         @Test
         @DisplayName("provides PipelineExecutionEngine as singleton")
-        void providesPipelineExecutionEngine() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesPipelineExecutionEngine() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            PipelineExecutionEngine engine = injector.getInstance(PipelineExecutionEngine.class); // GH-90000
+            PipelineExecutionEngine engine = injector.getInstance(PipelineExecutionEngine.class); 
 
-            assertThat(engine).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PipelineExecutionEngine.class)) // GH-90000
+            assertThat(engine).isNotNull(); 
+            assertThat(injector.getInstance(PipelineExecutionEngine.class)) 
                     .as("should return same singleton instance")
-                    .isSameAs(engine); // GH-90000
+                    .isSameAs(engine); 
         }
 
         @Test
         @DisplayName("provides OperatorCatalog bound to UnifiedOperatorCatalog")
-        void providesOperatorCatalog() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesOperatorCatalog() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            OperatorCatalog catalog = injector.getInstance(OperatorCatalog.class); // GH-90000
+            OperatorCatalog catalog = injector.getInstance(OperatorCatalog.class); 
 
-            assertThat(catalog).isNotNull(); // GH-90000
-            assertThat(catalog).isInstanceOf(UnifiedOperatorCatalog.class); // GH-90000
+            assertThat(catalog).isNotNull(); 
+            assertThat(catalog).isInstanceOf(UnifiedOperatorCatalog.class); 
         }
 
         @Test
         @DisplayName("provides Eventloop")
-        void providesEventloop() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesEventloop() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            Eventloop eventloop = injector.getInstance(Eventloop.class); // GH-90000
+            Eventloop eventloop = injector.getInstance(Eventloop.class); 
 
-            assertThat(eventloop).isNotNull(); // GH-90000
+            assertThat(eventloop).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ExecutorService with daemon threads")
-        void providesExecutorService() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesExecutorService() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            ExecutorService executor = injector.getInstance(ExecutorService.class); // GH-90000
+            ExecutorService executor = injector.getInstance(ExecutorService.class); 
 
-            assertThat(executor).isNotNull(); // GH-90000
-            assertThat(executor.isShutdown()).isFalse(); // GH-90000
+            assertThat(executor).isNotNull(); 
+            assertThat(executor.isShutdown()).isFalse(); 
 
-            executor.shutdown(); // GH-90000
+            executor.shutdown(); 
         }
 
         @Test
         @DisplayName("provides ScheduledExecutorService with daemon threads")
-        void providesScheduledExecutorService() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesScheduledExecutorService() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            ScheduledExecutorService scheduler = injector.getInstance(ScheduledExecutorService.class); // GH-90000
+            ScheduledExecutorService scheduler = injector.getInstance(ScheduledExecutorService.class); 
 
-            assertThat(scheduler).isNotNull(); // GH-90000
-            assertThat(scheduler.isShutdown()).isFalse(); // GH-90000
+            assertThat(scheduler).isNotNull(); 
+            assertThat(scheduler.isShutdown()).isFalse(); 
 
-            scheduler.shutdown(); // GH-90000
+            scheduler.shutdown(); 
         }
 
         @Test
         @DisplayName("provides all 5 bindings")
-        void providesAllBindings() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void providesAllBindings() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            assertThat(injector.getInstance(PipelineExecutionEngine.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(OperatorCatalog.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(Eventloop.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ExecutorService.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(ScheduledExecutorService.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(PipelineExecutionEngine.class)).isNotNull(); 
+            assertThat(injector.getInstance(OperatorCatalog.class)).isNotNull(); 
+            assertThat(injector.getInstance(Eventloop.class)).isNotNull(); 
+            assertThat(injector.getInstance(ExecutorService.class)).isNotNull(); 
+            assertThat(injector.getInstance(ScheduledExecutorService.class)).isNotNull(); 
 
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("Eventloop is singleton across injections")
-        void eventloopIsSingleton() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule()); // GH-90000
+        void eventloopIsSingleton() { 
+            Injector injector = Injector.of(new AepCoreModule()); 
 
-            Eventloop e1 = injector.getInstance(Eventloop.class); // GH-90000
-            Eventloop e2 = injector.getInstance(Eventloop.class); // GH-90000
+            Eventloop e1 = injector.getInstance(Eventloop.class); 
+            Eventloop e2 = injector.getInstance(Eventloop.class); 
 
-            assertThat(e1).isSameAs(e2); // GH-90000
+            assertThat(e1).isSameAs(e2); 
         }
     }
 
@@ -190,92 +190,92 @@ class AepDiModulesTest {
     @DisplayName("AepOrchestrationModule")
     class AepOrchestrationModuleTests {
 
-        private Injector createOrchestrationInjector() { // GH-90000
-            return Injector.of(orchestrationStubModule(), new AepOrchestrationModule()); // GH-90000
+        private Injector createOrchestrationInjector() { 
+            return Injector.of(orchestrationStubModule(), new AepOrchestrationModule()); 
         }
 
         @Test
         @DisplayName("provides OrchestratorConfig with defaults")
-        void providesOrchestratorConfig() { // GH-90000
-            Injector injector = createOrchestrationInjector(); // GH-90000
+        void providesOrchestratorConfig() { 
+            Injector injector = createOrchestrationInjector(); 
 
-            OrchestratorConfig config = injector.getInstance(OrchestratorConfig.class); // GH-90000
+            OrchestratorConfig config = injector.getInstance(OrchestratorConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("fails fast when no LLM provider env is configured")
-        void failsFastWhenNoLlmProviderEnvConfigured() { // GH-90000
-            assertThatCode(() -> AepOrchestrationModule.createLlmProvider(Map.of(), mock(MetricsCollector.class))) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+        void failsFastWhenNoLlmProviderEnvConfigured() { 
+            assertThatCode(() -> AepOrchestrationModule.createLlmProvider(Map.of(), mock(MetricsCollector.class))) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("No LLM provider configured for AEP");
         }
 
         @Test
         @DisplayName("fails fast when Ollama host is not a valid absolute URL")
-        void failsFastWhenOllamaHostIsInvalid() { // GH-90000
-            assertThatCode(() -> AepOrchestrationModule.createLlmProvider( // GH-90000
-                    Map.of("AEP_OLLAMA_HOST", "not-a-url"), // GH-90000
-                    mock(MetricsCollector.class))) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+        void failsFastWhenOllamaHostIsInvalid() { 
+            assertThatCode(() -> AepOrchestrationModule.createLlmProvider( 
+                    Map.of("AEP_OLLAMA_HOST", "not-a-url"), 
+                    mock(MetricsCollector.class))) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("AEP_OLLAMA_HOST")
                     .hasMessageContaining("valid absolute URL");
         }
 
         @Test
         @DisplayName("creates LLM provider when OpenAI config is valid")
-        void createsLlmProviderWhenOpenAiConfigIsValid() { // GH-90000
-            LlmProvider provider = AepOrchestrationModule.createLlmProvider( // GH-90000
-                    Map.of( // GH-90000
+        void createsLlmProviderWhenOpenAiConfigIsValid() { 
+            LlmProvider provider = AepOrchestrationModule.createLlmProvider( 
+                    Map.of( 
                             "AEP_OPENAI_API_KEY", "test-key",
                             "AEP_OPENAI_MODEL", "gpt-4o-mini"
                     ),
-                    mock(MetricsCollector.class)); // GH-90000
+                    mock(MetricsCollector.class)); 
 
-            assertThat(provider).isNotNull(); // GH-90000
+            assertThat(provider).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides PipelineCache with MetricsCollector dependency")
-        void providesPipelineCache() { // GH-90000
-            Injector injector = createOrchestrationInjector(); // GH-90000
+        void providesPipelineCache() { 
+            Injector injector = createOrchestrationInjector(); 
 
-            PipelineCache cache = injector.getInstance(PipelineCache.class); // GH-90000
+            PipelineCache cache = injector.getInstance(PipelineCache.class); 
 
-            assertThat(cache).isNotNull(); // GH-90000
+            assertThat(cache).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ExecutionQueue bound to CheckpointAwareExecutionQueue")
-        void providesExecutionQueue() { // GH-90000
-            Injector injector = createOrchestrationInjector(); // GH-90000
+        void providesExecutionQueue() { 
+            Injector injector = createOrchestrationInjector(); 
 
-            ExecutionQueue queue = injector.getInstance(ExecutionQueue.class); // GH-90000
+            ExecutionQueue queue = injector.getInstance(ExecutionQueue.class); 
 
-            assertThat(queue).isNotNull(); // GH-90000
-            assertThat(queue).isInstanceOf(CheckpointAwareExecutionQueue.class); // GH-90000
+            assertThat(queue).isNotNull(); 
+            assertThat(queue).isInstanceOf(CheckpointAwareExecutionQueue.class); 
         }
 
         @Test
         @DisplayName("provides Orchestrator with all 6 dependencies wired")
-        void providesOrchestrator() { // GH-90000
-            Injector injector = createOrchestrationInjector(); // GH-90000
+        void providesOrchestrator() { 
+            Injector injector = createOrchestrationInjector(); 
 
-            Orchestrator orchestrator = injector.getInstance(Orchestrator.class); // GH-90000
+            Orchestrator orchestrator = injector.getInstance(Orchestrator.class); 
 
-            assertThat(orchestrator).isNotNull(); // GH-90000
+            assertThat(orchestrator).isNotNull(); 
         }
 
         @Test
         @DisplayName("Orchestrator is singleton")
-        void orchestratorIsSingleton() { // GH-90000
-            Injector injector = createOrchestrationInjector(); // GH-90000
+        void orchestratorIsSingleton() { 
+            Injector injector = createOrchestrationInjector(); 
 
-            Orchestrator o1 = injector.getInstance(Orchestrator.class); // GH-90000
-            Orchestrator o2 = injector.getInstance(Orchestrator.class); // GH-90000
+            Orchestrator o1 = injector.getInstance(Orchestrator.class); 
+            Orchestrator o2 = injector.getInstance(Orchestrator.class); 
 
-            assertThat(o1).isSameAs(o2); // GH-90000
+            assertThat(o1).isSameAs(o2); 
         }
     }
 
@@ -287,52 +287,52 @@ class AepDiModulesTest {
     @DisplayName("AepPatternModule")
     class AepPatternModuleTests {
 
-        private Injector createPatternInjector() { // GH-90000
-            return Injector.of(new ObservabilityModule(), new AepPatternModule()); // GH-90000
+        private Injector createPatternInjector() { 
+            return Injector.of(new ObservabilityModule(), new AepPatternModule()); 
         }
 
         @Test
         @DisplayName("provides OperatorRegistry as singleton")
-        void providesOperatorRegistry() { // GH-90000
-            Injector injector = createPatternInjector(); // GH-90000
+        void providesOperatorRegistry() { 
+            Injector injector = createPatternInjector(); 
 
-            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); // GH-90000
+            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); 
 
-            assertThat(registry).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(OperatorRegistry.class)).isSameAs(registry); // GH-90000
+            assertThat(registry).isNotNull(); 
+            assertThat(injector.getInstance(OperatorRegistry.class)).isSameAs(registry); 
         }
 
         @Test
         @DisplayName("provides PatternCompiler with registry and meter dependencies")
-        void providesPatternCompiler() { // GH-90000
-            Injector injector = createPatternInjector(); // GH-90000
+        void providesPatternCompiler() { 
+            Injector injector = createPatternInjector(); 
 
-            PatternCompiler compiler = injector.getInstance(PatternCompiler.class); // GH-90000
+            PatternCompiler compiler = injector.getInstance(PatternCompiler.class); 
 
-            assertThat(compiler).isNotNull(); // GH-90000
+            assertThat(compiler).isNotNull(); 
         }
 
         @Test
         @DisplayName("PatternCompiler receives OperatorRegistry from same injector")
-        void patternCompilerUsesInjectedRegistry() { // GH-90000
-            Injector injector = createPatternInjector(); // GH-90000
+        void patternCompilerUsesInjectedRegistry() { 
+            Injector injector = createPatternInjector(); 
 
             // Both should be present and non-null
-            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); // GH-90000
-            PatternCompiler compiler = injector.getInstance(PatternCompiler.class); // GH-90000
+            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); 
+            PatternCompiler compiler = injector.getInstance(PatternCompiler.class); 
 
-            assertThat(registry).isNotNull(); // GH-90000
-            assertThat(compiler).isNotNull(); // GH-90000
+            assertThat(registry).isNotNull(); 
+            assertThat(compiler).isNotNull(); 
         }
 
         @Test
         @DisplayName("MeterRegistry is resolved from ObservabilityModule")
-        void meterRegistryFromObservabilityModule() { // GH-90000
-            Injector injector = createPatternInjector(); // GH-90000
+        void meterRegistryFromObservabilityModule() { 
+            Injector injector = createPatternInjector(); 
 
-            MeterRegistry meterRegistry = injector.getInstance(MeterRegistry.class); // GH-90000
+            MeterRegistry meterRegistry = injector.getInstance(MeterRegistry.class); 
 
-            assertThat(meterRegistry).isNotNull(); // GH-90000
+            assertThat(meterRegistry).isNotNull(); 
         }
     }
 
@@ -342,76 +342,76 @@ class AepDiModulesTest {
 
     @Nested
     @DisplayName("AepConnectorModule")
-    @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "RABBITMQ_USERNAME", matches = ".+") // GH-90000
+    @org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "RABBITMQ_USERNAME", matches = ".+") 
     class AepConnectorModuleTests {
 
-        private Injector createConnectorInjector() { // GH-90000
-            return Injector.of(new AepCoreModule(), new AepConnectorModule()); // GH-90000
+        private Injector createConnectorInjector() { 
+            return Injector.of(new AepCoreModule(), new AepConnectorModule()); 
         }
 
         // ─── Config bindings ────────────────────────────────────
 
         @Test
         @DisplayName("provides KafkaConsumerConfig with defaults")
-        void providesKafkaConsumerConfig() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesKafkaConsumerConfig() { 
+            Injector injector = createConnectorInjector(); 
 
-            KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); // GH-90000
+            KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
             assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092");
             assertThat(config.getGroupId()).isEqualTo("aep-consumer-group");
         }
 
         @Test
         @DisplayName("provides KafkaProducerConfig with defaults")
-        void providesKafkaProducerConfig() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesKafkaProducerConfig() { 
+            Injector injector = createConnectorInjector(); 
 
-            KafkaProducerConfig config = injector.getInstance(KafkaProducerConfig.class); // GH-90000
+            KafkaProducerConfig config = injector.getInstance(KafkaProducerConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
             assertThat(config.getBootstrapServers()).isEqualTo("localhost:9092");
         }
 
         @Test
         @DisplayName("provides RabbitMQConfig with defaults")
-        void providesRabbitMQConfig() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesRabbitMQConfig() { 
+            Injector injector = createConnectorInjector(); 
 
-            RabbitMQConfig config = injector.getInstance(RabbitMQConfig.class); // GH-90000
+            RabbitMQConfig config = injector.getInstance(RabbitMQConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides SqsConfig with defaults")
-        void providesSqsConfig() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesSqsConfig() { 
+            Injector injector = createConnectorInjector(); 
 
-            SqsConfig config = injector.getInstance(SqsConfig.class); // GH-90000
+            SqsConfig config = injector.getInstance(SqsConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides S3Config with defaults")
-        void providesS3Config() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesS3Config() { 
+            Injector injector = createConnectorInjector(); 
 
-            S3Config config = injector.getInstance(S3Config.class); // GH-90000
+            S3Config config = injector.getInstance(S3Config.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides HttpIngressConfig with defaults")
-        void providesHttpIngressConfig() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesHttpIngressConfig() { 
+            Injector injector = createConnectorInjector(); 
 
-            HttpIngressConfig config = injector.getInstance(HttpIngressConfig.class); // GH-90000
+            HttpIngressConfig config = injector.getInstance(HttpIngressConfig.class); 
 
-            assertThat(config).isNotNull(); // GH-90000
+            assertThat(config).isNotNull(); 
             assertThat(config.getEndpoint()).isEqualTo("http://localhost:8080/events");
         }
 
@@ -419,129 +419,129 @@ class AepDiModulesTest {
 
         @Test
         @DisplayName("provides Kafka consumer via @Named('kafka')")
-        void providesKafkaConsumer() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesKafkaConsumer() { 
+            Injector injector = createConnectorInjector(); 
 
-            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka")); // GH-90000
+            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka")); 
 
-            assertThat(consumer).isNotNull(); // GH-90000
-            assertThat(consumer).isInstanceOf(KafkaConsumerStrategy.class); // GH-90000
+            assertThat(consumer).isNotNull(); 
+            assertThat(consumer).isInstanceOf(KafkaConsumerStrategy.class); 
         }
 
         @Test
         @DisplayName("provides Kafka producer via @Named('kafka')")
-        void providesKafkaProducer() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesKafkaProducer() { 
+            Injector injector = createConnectorInjector(); 
 
-            QueueProducerStrategy producer = injector.getInstance(Key.of(QueueProducerStrategy.class, "kafka")); // GH-90000
+            QueueProducerStrategy producer = injector.getInstance(Key.of(QueueProducerStrategy.class, "kafka")); 
 
-            assertThat(producer).isNotNull(); // GH-90000
-            assertThat(producer).isInstanceOf(KafkaProducerStrategy.class); // GH-90000
+            assertThat(producer).isNotNull(); 
+            assertThat(producer).isInstanceOf(KafkaProducerStrategy.class); 
         }
 
         @Test
         @DisplayName("provides RabbitMQ consumer via @Named('rabbitmq')")
-        void providesRabbitMQConsumer() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesRabbitMQConsumer() { 
+            Injector injector = createConnectorInjector(); 
 
-            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "rabbitmq")); // GH-90000
+            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "rabbitmq")); 
 
-            assertThat(consumer).isNotNull(); // GH-90000
-            assertThat(consumer).isInstanceOf(RabbitMQConsumerStrategy.class); // GH-90000
+            assertThat(consumer).isNotNull(); 
+            assertThat(consumer).isInstanceOf(RabbitMQConsumerStrategy.class); 
         }
 
         @Test
         @DisplayName("provides SQS consumer via @Named('sqs')")
-        void providesSqsConsumer() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesSqsConsumer() { 
+            Injector injector = createConnectorInjector(); 
 
-            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "sqs")); // GH-90000
+            QueueConsumerStrategy consumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "sqs")); 
 
-            assertThat(consumer).isNotNull(); // GH-90000
-            assertThat(consumer).isInstanceOf(SqsConsumerStrategy.class); // GH-90000
+            assertThat(consumer).isNotNull(); 
+            assertThat(consumer).isInstanceOf(SqsConsumerStrategy.class); 
         }
 
         @Test
         @DisplayName("provides SQS producer via @Named('sqs')")
-        void providesSqsProducer() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesSqsProducer() { 
+            Injector injector = createConnectorInjector(); 
 
-            QueueProducerStrategy producer = injector.getInstance(Key.of(QueueProducerStrategy.class, "sqs")); // GH-90000
+            QueueProducerStrategy producer = injector.getInstance(Key.of(QueueProducerStrategy.class, "sqs")); 
 
-            assertThat(producer).isNotNull(); // GH-90000
-            assertThat(producer).isInstanceOf(SqsProducerStrategy.class); // GH-90000
+            assertThat(producer).isNotNull(); 
+            assertThat(producer).isInstanceOf(SqsProducerStrategy.class); 
         }
 
         @Test
         @DisplayName("provides S3StorageStrategy bound to DefaultS3StorageStrategy")
-        void providesS3StorageStrategy() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesS3StorageStrategy() { 
+            Injector injector = createConnectorInjector(); 
 
-            S3StorageStrategy strategy = injector.getInstance(S3StorageStrategy.class); // GH-90000
+            S3StorageStrategy strategy = injector.getInstance(S3StorageStrategy.class); 
 
-            assertThat(strategy).isNotNull(); // GH-90000
-            assertThat(strategy).isInstanceOf(DefaultS3StorageStrategy.class); // GH-90000
+            assertThat(strategy).isNotNull(); 
+            assertThat(strategy).isInstanceOf(DefaultS3StorageStrategy.class); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("provides HttpIngressStrategy")
-        void providesHttpIngressStrategy() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void providesHttpIngressStrategy() { 
+            Injector injector = createConnectorInjector(); 
 
-            HttpIngressStrategy strategy = injector.getInstance(HttpIngressStrategy.class); // GH-90000
+            HttpIngressStrategy strategy = injector.getInstance(HttpIngressStrategy.class); 
 
-            assertThat(strategy).isNotNull(); // GH-90000
+            assertThat(strategy).isNotNull(); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("all strategies share same Eventloop")
-        void strategiesShareEventloop() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void strategiesShareEventloop() { 
+            Injector injector = createConnectorInjector(); 
 
-            Eventloop eventloop = injector.getInstance(Eventloop.class); // GH-90000
+            Eventloop eventloop = injector.getInstance(Eventloop.class); 
 
-            assertThat(eventloop).isNotNull(); // GH-90000
+            assertThat(eventloop).isNotNull(); 
             // All strategies created with same eventloop from AepCoreModule
         }
 
         @Test
         @DisplayName("all 6 configs and 7 strategies are provided")
-        void allBindingsPresent() { // GH-90000
-            Injector injector = createConnectorInjector(); // GH-90000
+        void allBindingsPresent() { 
+            Injector injector = createConnectorInjector(); 
 
             // 6 configs
-            assertThat(injector.getInstance(KafkaConsumerConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(KafkaProducerConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(RabbitMQConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(SqsConfig.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(S3Config.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(HttpIngressConfig.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(KafkaConsumerConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(KafkaProducerConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(RabbitMQConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(SqsConfig.class)).isNotNull(); 
+            assertThat(injector.getInstance(S3Config.class)).isNotNull(); 
+            assertThat(injector.getInstance(HttpIngressConfig.class)).isNotNull(); 
 
-            // 7 strategies (5 named + 2 direct) // GH-90000
-            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka"))) // GH-90000
-                    .isNotNull(); // GH-90000
-            assertThat(injector.getInstance(Key.of(QueueProducerStrategy.class, "kafka"))) // GH-90000
-                    .isNotNull(); // GH-90000
-            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "rabbitmq"))) // GH-90000
-                    .isNotNull(); // GH-90000
-            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "sqs"))) // GH-90000
-                    .isNotNull(); // GH-90000
-            assertThat(injector.getInstance(Key.of(QueueProducerStrategy.class, "sqs"))) // GH-90000
-                    .isNotNull(); // GH-90000
-            assertThat(injector.getInstance(S3StorageStrategy.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(HttpIngressStrategy.class)).isNotNull(); // GH-90000
+            // 7 strategies (5 named + 2 direct) 
+            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka"))) 
+                    .isNotNull(); 
+            assertThat(injector.getInstance(Key.of(QueueProducerStrategy.class, "kafka"))) 
+                    .isNotNull(); 
+            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "rabbitmq"))) 
+                    .isNotNull(); 
+            assertThat(injector.getInstance(Key.of(QueueConsumerStrategy.class, "sqs"))) 
+                    .isNotNull(); 
+            assertThat(injector.getInstance(Key.of(QueueProducerStrategy.class, "sqs"))) 
+                    .isNotNull(); 
+            assertThat(injector.getInstance(S3StorageStrategy.class)).isNotNull(); 
+            assertThat(injector.getInstance(HttpIngressStrategy.class)).isNotNull(); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
     }
 
@@ -557,78 +557,78 @@ class AepDiModulesTest {
          * Creates an injector with AepIngressModule and eagerly creates JedisPool
          * to trigger the Redis health check. Skips the test if Redis is unavailable.
          */
-        private Injector createIngressInjector() { // GH-90000
-            Module coreStub = ModuleBuilder.create() // GH-90000
-                    .bind(Eventloop.class) // GH-90000
-                    .toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                    .build(); // GH-90000
+        private Injector createIngressInjector() { 
+            Module coreStub = ModuleBuilder.create() 
+                    .bind(Eventloop.class) 
+                    .toInstance(Eventloop.builder().withCurrentThread().build()) 
+                    .build(); 
             try {
-                Injector injector = Injector.of(coreStub, new AepIngressModule()); // GH-90000
-                injector.getInstance(JedisPool.class); // eagerly triggers verifyRedisReachable // GH-90000
+                Injector injector = Injector.of(coreStub, new AepIngressModule()); 
+                injector.getInstance(JedisPool.class); // eagerly triggers verifyRedisReachable 
                 return injector;
-            } catch (Exception e) { // GH-90000
-                Assumptions.assumeTrue( // GH-90000
-                        false, "Skipping: Redis unavailable for AepIngressModule test — " + e.getMessage()); // GH-90000
+            } catch (Exception e) { 
+                Assumptions.assumeTrue( 
+                        false, "Skipping: Redis unavailable for AepIngressModule test — " + e.getMessage()); 
                 throw new AssertionError("unreachable"); // satisfies compiler
             }
         }
 
         @Test
         @DisplayName("provides JedisPool")
-        void providesJedisPool() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            JedisPool pool = injector.getInstance(JedisPool.class); // GH-90000
-            assertThat(pool).isNotNull(); // GH-90000
-            pool.close(); // GH-90000
+        void providesJedisPool() { 
+            Injector injector = createIngressInjector(); 
+            JedisPool pool = injector.getInstance(JedisPool.class); 
+            assertThat(pool).isNotNull(); 
+            pool.close(); 
         }
 
         @Test
         @DisplayName("provides RateLimitStorage bound to RedisRateLimitStorage")
-        void providesRateLimitStorage() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            RateLimitStorage storage = injector.getInstance(RateLimitStorage.class); // GH-90000
-            assertThat(storage).isNotNull(); // GH-90000
-            assertThat(storage).isInstanceOf(RedisRateLimitStorage.class); // GH-90000
-            injector.getInstance(JedisPool.class).close(); // GH-90000
+        void providesRateLimitStorage() { 
+            Injector injector = createIngressInjector(); 
+            RateLimitStorage storage = injector.getInstance(RateLimitStorage.class); 
+            assertThat(storage).isNotNull(); 
+            assertThat(storage).isInstanceOf(RedisRateLimitStorage.class); 
+            injector.getInstance(JedisPool.class).close(); 
         }
 
         @Test
         @DisplayName("provides IdempotencyService")
-        void providesIdempotencyService() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            IdempotencyService service = injector.getInstance(IdempotencyService.class); // GH-90000
-            assertThat(service).isNotNull(); // GH-90000
-            injector.getInstance(JedisPool.class).close(); // GH-90000
+        void providesIdempotencyService() { 
+            Injector injector = createIngressInjector(); 
+            IdempotencyService service = injector.getInstance(IdempotencyService.class); 
+            assertThat(service).isNotNull(); 
+            injector.getInstance(JedisPool.class).close(); 
         }
 
         @Test
         @DisplayName("provides HealthController with Eventloop")
-        void providesHealthController() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            HealthController controller = injector.getInstance(HealthController.class); // GH-90000
-            assertThat(controller).isNotNull(); // GH-90000
-            injector.getInstance(JedisPool.class).close(); // GH-90000
+        void providesHealthController() { 
+            Injector injector = createIngressInjector(); 
+            HealthController controller = injector.getInstance(HealthController.class); 
+            assertThat(controller).isNotNull(); 
+            injector.getInstance(JedisPool.class).close(); 
         }
 
         @Test
         @DisplayName("RateLimitStorage and IdempotencyService share same JedisPool")
-        void shareJedisPool() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            JedisPool pool1 = injector.getInstance(JedisPool.class); // GH-90000
-            JedisPool pool2 = injector.getInstance(JedisPool.class); // GH-90000
+        void shareJedisPool() { 
+            Injector injector = createIngressInjector(); 
+            JedisPool pool1 = injector.getInstance(JedisPool.class); 
+            JedisPool pool2 = injector.getInstance(JedisPool.class); 
             assertThat(pool1).as("JedisPool should be singleton").isSameAs(pool2);
-            pool1.close(); // GH-90000
+            pool1.close(); 
         }
 
         @Test
         @DisplayName("all 4 bindings are provided")
-        void allBindingsPresent() { // GH-90000
-            Injector injector = createIngressInjector(); // GH-90000
-            assertThat(injector.getInstance(JedisPool.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(RateLimitStorage.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(IdempotencyService.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(HealthController.class)).isNotNull(); // GH-90000
-            injector.getInstance(JedisPool.class).close(); // GH-90000
+        void allBindingsPresent() { 
+            Injector injector = createIngressInjector(); 
+            assertThat(injector.getInstance(JedisPool.class)).isNotNull(); 
+            assertThat(injector.getInstance(RateLimitStorage.class)).isNotNull(); 
+            assertThat(injector.getInstance(IdempotencyService.class)).isNotNull(); 
+            assertThat(injector.getInstance(HealthController.class)).isNotNull(); 
+            injector.getInstance(JedisPool.class).close(); 
         }
     }
 
@@ -642,116 +642,116 @@ class AepDiModulesTest {
 
         @Test
         @DisplayName("provides BusinessIntelligenceService")
-        void providesBusinessIntelligenceService() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesBusinessIntelligenceService() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            BusinessIntelligenceService service = injector.getInstance(BusinessIntelligenceService.class); // GH-90000
+            BusinessIntelligenceService service = injector.getInstance(BusinessIntelligenceService.class); 
 
-            assertThat(service).isNotNull(); // GH-90000
+            assertThat(service).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides PredictiveAnalyticsEngine")
-        void providesPredictiveAnalyticsEngine() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesPredictiveAnalyticsEngine() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            PredictiveAnalyticsEngine engine = injector.getInstance(PredictiveAnalyticsEngine.class); // GH-90000
+            PredictiveAnalyticsEngine engine = injector.getInstance(PredictiveAnalyticsEngine.class); 
 
-            assertThat(engine).isNotNull(); // GH-90000
+            assertThat(engine).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides PatternPerformanceAnalyzer")
-        void providesPatternPerformanceAnalyzer() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesPatternPerformanceAnalyzer() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            PatternPerformanceAnalyzer analyzer = injector.getInstance(PatternPerformanceAnalyzer.class); // GH-90000
+            PatternPerformanceAnalyzer analyzer = injector.getInstance(PatternPerformanceAnalyzer.class); 
 
-            assertThat(analyzer).isNotNull(); // GH-90000
+            assertThat(analyzer).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides KPIAggregator")
-        void providesKPIAggregator() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesKPIAggregator() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            KPIAggregator aggregator = injector.getInstance(KPIAggregator.class); // GH-90000
+            KPIAggregator aggregator = injector.getInstance(KPIAggregator.class); 
 
-            assertThat(aggregator).isNotNull(); // GH-90000
+            assertThat(aggregator).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides RealTimeAnomalyDetectionEngine")
-        void providesRealTimeAnomalyDetectionEngine() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesRealTimeAnomalyDetectionEngine() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            RealTimeAnomalyDetectionEngine engine = injector.getInstance(RealTimeAnomalyDetectionEngine.class); // GH-90000
+            RealTimeAnomalyDetectionEngine engine = injector.getInstance(RealTimeAnomalyDetectionEngine.class); 
 
-            assertThat(engine).isNotNull(); // GH-90000
+            assertThat(engine).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides IntelligentPredictiveAlerting")
-        void providesIntelligentPredictiveAlerting() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesIntelligentPredictiveAlerting() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            IntelligentPredictiveAlerting alerting = injector.getInstance(IntelligentPredictiveAlerting.class); // GH-90000
+            IntelligentPredictiveAlerting alerting = injector.getInstance(IntelligentPredictiveAlerting.class); 
 
-            assertThat(alerting).isNotNull(); // GH-90000
+            assertThat(alerting).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides AdvancedTimeSeriesForecaster")
-        void providesAdvancedTimeSeriesForecaster() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesAdvancedTimeSeriesForecaster() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            AdvancedTimeSeriesForecaster forecaster = injector.getInstance(AdvancedTimeSeriesForecaster.class); // GH-90000
+            AdvancedTimeSeriesForecaster forecaster = injector.getInstance(AdvancedTimeSeriesForecaster.class); 
 
-            assertThat(forecaster).isNotNull(); // GH-90000
+            assertThat(forecaster).isNotNull(); 
         }
 
         @Test
         @DisplayName("all 7 analytics sub-services are provided as singletons")
-        void allAnalyticsSubservicesAreSingletons() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void allAnalyticsSubservicesAreSingletons() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            assertThat(injector.getInstance(BusinessIntelligenceService.class)) // GH-90000
-                    .isSameAs(injector.getInstance(BusinessIntelligenceService.class)); // GH-90000
-            assertThat(injector.getInstance(PredictiveAnalyticsEngine.class)) // GH-90000
-                    .isSameAs(injector.getInstance(PredictiveAnalyticsEngine.class)); // GH-90000
-            assertThat(injector.getInstance(PatternPerformanceAnalyzer.class)) // GH-90000
-                    .isSameAs(injector.getInstance(PatternPerformanceAnalyzer.class)); // GH-90000
-            assertThat(injector.getInstance(KPIAggregator.class)).isSameAs(injector.getInstance(KPIAggregator.class)); // GH-90000
-            assertThat(injector.getInstance(RealTimeAnomalyDetectionEngine.class)) // GH-90000
-                    .isSameAs(injector.getInstance(RealTimeAnomalyDetectionEngine.class)); // GH-90000
-            assertThat(injector.getInstance(IntelligentPredictiveAlerting.class)) // GH-90000
-                    .isSameAs(injector.getInstance(IntelligentPredictiveAlerting.class)); // GH-90000
-            assertThat(injector.getInstance(AdvancedTimeSeriesForecaster.class)) // GH-90000
-                    .isSameAs(injector.getInstance(AdvancedTimeSeriesForecaster.class)); // GH-90000
+            assertThat(injector.getInstance(BusinessIntelligenceService.class)) 
+                    .isSameAs(injector.getInstance(BusinessIntelligenceService.class)); 
+            assertThat(injector.getInstance(PredictiveAnalyticsEngine.class)) 
+                    .isSameAs(injector.getInstance(PredictiveAnalyticsEngine.class)); 
+            assertThat(injector.getInstance(PatternPerformanceAnalyzer.class)) 
+                    .isSameAs(injector.getInstance(PatternPerformanceAnalyzer.class)); 
+            assertThat(injector.getInstance(KPIAggregator.class)).isSameAs(injector.getInstance(KPIAggregator.class)); 
+            assertThat(injector.getInstance(RealTimeAnomalyDetectionEngine.class)) 
+                    .isSameAs(injector.getInstance(RealTimeAnomalyDetectionEngine.class)); 
+            assertThat(injector.getInstance(IntelligentPredictiveAlerting.class)) 
+                    .isSameAs(injector.getInstance(IntelligentPredictiveAlerting.class)); 
+            assertThat(injector.getInstance(AdvancedTimeSeriesForecaster.class)) 
+                    .isSameAs(injector.getInstance(AdvancedTimeSeriesForecaster.class)); 
         }
 
         @Test
         @DisplayName("provides AnalyticsEngine with all sub-services wired")
-        void providesAnalyticsEngine() { // GH-90000
-            Injector injector = createMinimalObservabilityInjector(); // GH-90000
+        void providesAnalyticsEngine() { 
+            Injector injector = createMinimalObservabilityInjector(); 
 
-            AnalyticsEngine engine = injector.getInstance(AnalyticsEngine.class); // GH-90000
+            AnalyticsEngine engine = injector.getInstance(AnalyticsEngine.class); 
 
-            assertThat(engine).isNotNull(); // GH-90000
+            assertThat(engine).isNotNull(); 
         }
 
-        private Injector createMinimalObservabilityInjector() { // GH-90000
+        private Injector createMinimalObservabilityInjector() { 
             // AnalyticsEngine @Provides requires EventCloud, Eventloop, MetricsCollector
             // — ActiveJ validates ALL bindings eagerly at Injector creation
-            Module stubs = ModuleBuilder.create() // GH-90000
-                    .bind(EventCloud.class) // GH-90000
-                    .toInstance(mock(EventCloud.class)) // GH-90000
-                    .bind(Eventloop.class) // GH-90000
-                    .toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                    .bind(MetricsCollector.class) // GH-90000
-                    .toInstance(mock(MetricsCollector.class)) // GH-90000
-                    .build(); // GH-90000
-            return Injector.of(stubs, new AepObservabilityModule()); // GH-90000
+            Module stubs = ModuleBuilder.create() 
+                    .bind(EventCloud.class) 
+                    .toInstance(mock(EventCloud.class)) 
+                    .bind(Eventloop.class) 
+                    .toInstance(Eventloop.builder().withCurrentThread().build()) 
+                    .bind(MetricsCollector.class) 
+                    .toInstance(mock(MetricsCollector.class)) 
+                    .build(); 
+            return Injector.of(stubs, new AepObservabilityModule()); 
         }
     }
 
@@ -765,102 +765,102 @@ class AepDiModulesTest {
 
         @Test
         @DisplayName("AepCoreModule + AepPatternModule compose correctly")
-        void coreAndPatternCompose() { // GH-90000
-            Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); // GH-90000
+        void coreAndPatternCompose() { 
+            Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); 
 
             // Core bindings
-            assertThat(injector.getInstance(PipelineExecutionEngine.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(OperatorCatalog.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(PipelineExecutionEngine.class)).isNotNull(); 
+            assertThat(injector.getInstance(OperatorCatalog.class)).isNotNull(); 
 
-            // Pattern bindings (that depend on MeterRegistry from ObservabilityModule) // GH-90000
-            assertThat(injector.getInstance(OperatorRegistry.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(PatternCompiler.class)).isNotNull(); // GH-90000
+            // Pattern bindings (that depend on MeterRegistry from ObservabilityModule) 
+            assertThat(injector.getInstance(OperatorRegistry.class)).isNotNull(); 
+            assertThat(injector.getInstance(PatternCompiler.class)).isNotNull(); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("AepCoreModule + AepConnectorModule compose correctly")
-        void coreAndConnectorCompose() { // GH-90000
-            Injector injector = Injector.of(new AepCoreModule(), new AepConnectorModule()); // GH-90000
+        void coreAndConnectorCompose() { 
+            Injector injector = Injector.of(new AepCoreModule(), new AepConnectorModule()); 
 
             // Connector strategies use Eventloop from AepCoreModule
-            Eventloop eventloop = injector.getInstance(Eventloop.class); // GH-90000
-            assertThat(eventloop).isNotNull(); // GH-90000
+            Eventloop eventloop = injector.getInstance(Eventloop.class); 
+            assertThat(eventloop).isNotNull(); 
 
-            QueueConsumerStrategy kafkaConsumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka")); // GH-90000
-            assertThat(kafkaConsumer).isNotNull(); // GH-90000
+            QueueConsumerStrategy kafkaConsumer = injector.getInstance(Key.of(QueueConsumerStrategy.class, "kafka")); 
+            assertThat(kafkaConsumer).isNotNull(); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("AepCoreModule + AepIngressModule compose correctly")
-        void coreAndIngressCompose() { // GH-90000
+        void coreAndIngressCompose() { 
             // AepIngressModule performs a Redis startup health check — skip if Redis is unavailable.
             Injector injector;
             try {
-                injector = Injector.of(new AepCoreModule(), new AepIngressModule()); // GH-90000
-                injector.getInstance(JedisPool.class); // eagerly trigger verifyRedisReachable // GH-90000
-            } catch (Exception e) { // GH-90000
-                Assumptions.assumeTrue( // GH-90000
-                        false, "Skipping: Redis unavailable for AepIngressModule composition — " + e.getMessage()); // GH-90000
+                injector = Injector.of(new AepCoreModule(), new AepIngressModule()); 
+                injector.getInstance(JedisPool.class); // eagerly trigger verifyRedisReachable 
+            } catch (Exception e) { 
+                Assumptions.assumeTrue( 
+                        false, "Skipping: Redis unavailable for AepIngressModule composition — " + e.getMessage()); 
                 return;
             }
 
             // Ingress uses Eventloop from AepCoreModule
-            assertThat(injector.getInstance(HealthController.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(RateLimitStorage.class)).isNotNull(); // GH-90000
-            assertThat(injector.getInstance(IdempotencyService.class)).isNotNull(); // GH-90000
+            assertThat(injector.getInstance(HealthController.class)).isNotNull(); 
+            assertThat(injector.getInstance(RateLimitStorage.class)).isNotNull(); 
+            assertThat(injector.getInstance(IdempotencyService.class)).isNotNull(); 
 
             // Cleanup
-            injector.getInstance(JedisPool.class).close(); // GH-90000
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(JedisPool.class).close(); 
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("full module stack creates valid injector")
-        void fullModuleStack() { // GH-90000
+        void fullModuleStack() { 
             // External stubs for orchestration — MetricsCollector comes from ObservabilityModule
-            Module orchExternalStubs = ModuleBuilder.create() // GH-90000
-                    .bind(AgentRegistryClient.class) // GH-90000
-                    .toInstance(mock(AgentRegistryClient.class)) // GH-90000
-                    .bind(PipelineRegistryClient.class) // GH-90000
-                    .toInstance(mock(PipelineRegistryClient.class)) // GH-90000
-                    .bind(SpecFormatLoader.class) // GH-90000
-                    .toInstance(mock(SpecFormatLoader.class)) // GH-90000
-                    .bind(PipelineCheckpointRepository.class) // GH-90000
-                    .toInstance(mock(PipelineCheckpointRepository.class)) // GH-90000
-                    .bind(StepCheckpointRepository.class) // GH-90000
-                    .toInstance(mock(StepCheckpointRepository.class)) // GH-90000
-                    .build(); // GH-90000
+            Module orchExternalStubs = ModuleBuilder.create() 
+                    .bind(AgentRegistryClient.class) 
+                    .toInstance(mock(AgentRegistryClient.class)) 
+                    .bind(PipelineRegistryClient.class) 
+                    .toInstance(mock(PipelineRegistryClient.class)) 
+                    .bind(SpecFormatLoader.class) 
+                    .toInstance(mock(SpecFormatLoader.class)) 
+                    .bind(PipelineCheckpointRepository.class) 
+                    .toInstance(mock(PipelineCheckpointRepository.class)) 
+                    .bind(StepCheckpointRepository.class) 
+                    .toInstance(mock(StepCheckpointRepository.class)) 
+                    .build(); 
 
-            assertThatCode(() -> { // GH-90000
-                        Injector injector = Injector.of( // GH-90000
-                                new ObservabilityModule(), // GH-90000
-                                new AepCoreModule(), // GH-90000
-                                new AepPatternModule(), // GH-90000
-                                new AepConnectorModule(), // GH-90000
+            assertThatCode(() -> { 
+                        Injector injector = Injector.of( 
+                                new ObservabilityModule(), 
+                                new AepCoreModule(), 
+                                new AepPatternModule(), 
+                                new AepConnectorModule(), 
                                 orchExternalStubs,
-                                new AepOrchestrationModule()); // GH-90000
+                                new AepOrchestrationModule()); 
 
                         // Verify cross-module dependency: Orchestrator depends on MetricsCollector
-                        // (ObservabilityModule) // GH-90000
-                        assertThat(injector.getInstance(Orchestrator.class)).isNotNull(); // GH-90000
-                        assertThat(injector.getInstance(PatternCompiler.class)).isNotNull(); // GH-90000
-                        assertThat(injector.getInstance(PipelineExecutionEngine.class)) // GH-90000
-                                .isNotNull(); // GH-90000
+                        // (ObservabilityModule) 
+                        assertThat(injector.getInstance(Orchestrator.class)).isNotNull(); 
+                        assertThat(injector.getInstance(PatternCompiler.class)).isNotNull(); 
+                        assertThat(injector.getInstance(PipelineExecutionEngine.class)) 
+                                .isNotNull(); 
 
                         // Cleanup
-                        injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-                        injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+                        injector.getInstance(ExecutorService.class).shutdown(); 
+                        injector.getInstance(ScheduledExecutorService.class).shutdown(); 
                     })
-                    .doesNotThrowAnyException(); // GH-90000
+                    .doesNotThrowAnyException(); 
         }
     }
 
@@ -874,96 +874,96 @@ class AepDiModulesTest {
 
         @Test
         @DisplayName("modules can be instantiated multiple times")
-        void multipleInstances() { // GH-90000
-            AepCoreModule m1 = new AepCoreModule(); // GH-90000
-            AepCoreModule m2 = new AepCoreModule(); // GH-90000
+        void multipleInstances() { 
+            AepCoreModule m1 = new AepCoreModule(); 
+            AepCoreModule m2 = new AepCoreModule(); 
 
-            Injector i1 = Injector.of(m1); // GH-90000
-            Injector i2 = Injector.of(m2); // GH-90000
+            Injector i1 = Injector.of(m1); 
+            Injector i2 = Injector.of(m2); 
 
-            PipelineExecutionEngine e1 = i1.getInstance(PipelineExecutionEngine.class); // GH-90000
-            PipelineExecutionEngine e2 = i2.getInstance(PipelineExecutionEngine.class); // GH-90000
+            PipelineExecutionEngine e1 = i1.getInstance(PipelineExecutionEngine.class); 
+            PipelineExecutionEngine e2 = i2.getInstance(PipelineExecutionEngine.class); 
 
-            assertThat(e1).isNotNull(); // GH-90000
-            assertThat(e2).isNotNull(); // GH-90000
-            assertThat(e1).isNotSameAs(e2); // GH-90000
+            assertThat(e1).isNotNull(); 
+            assertThat(e2).isNotNull(); 
+            assertThat(e1).isNotSameAs(e2); 
 
             // Cleanup
-            i1.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            i1.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
-            i2.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            i2.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            i1.getInstance(ExecutorService.class).shutdown(); 
+            i1.getInstance(ScheduledExecutorService.class).shutdown(); 
+            i2.getInstance(ExecutorService.class).shutdown(); 
+            i2.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("connector config can be overridden by custom module")
-        void configOverride() { // GH-90000
-            KafkaConsumerConfig custom = KafkaConsumerConfig.builder() // GH-90000
+        void configOverride() { 
+            KafkaConsumerConfig custom = KafkaConsumerConfig.builder() 
                     .bootstrapServers("custom-broker:9093")
                     .groupId("custom-group")
                     .topics(java.util.List.of("custom-topic"))
-                    .batchSize(50) // GH-90000
-                    .build(); // GH-90000
+                    .batchSize(50) 
+                    .build(); 
 
             // Verify custom config is properly built and injectable via module binding
-            Module customModule = ModuleBuilder.create() // GH-90000
-                    .bind(KafkaConsumerConfig.class) // GH-90000
-                    .toInstance(custom) // GH-90000
-                    .build(); // GH-90000
+            Module customModule = ModuleBuilder.create() 
+                    .bind(KafkaConsumerConfig.class) 
+                    .toInstance(custom) 
+                    .build(); 
 
-            Injector injector = Injector.of(customModule); // GH-90000
+            Injector injector = Injector.of(customModule); 
 
-            KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); // GH-90000
+            KafkaConsumerConfig config = injector.getInstance(KafkaConsumerConfig.class); 
             assertThat(config.getBootstrapServers()).isEqualTo("custom-broker:9093");
             assertThat(config.getGroupId()).isEqualTo("custom-group");
         }
 
         @Test
         @DisplayName("OperatorCatalog and OperatorRegistry are distinct types")
-        void catalogAndRegistryDistinct() { // GH-90000
-            Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); // GH-90000
+        void catalogAndRegistryDistinct() { 
+            Injector injector = Injector.of(new ObservabilityModule(), new AepCoreModule(), new AepPatternModule()); 
 
-            OperatorCatalog catalog = injector.getInstance(OperatorCatalog.class); // GH-90000
-            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); // GH-90000
+            OperatorCatalog catalog = injector.getInstance(OperatorCatalog.class); 
+            OperatorRegistry registry = injector.getInstance(OperatorRegistry.class); 
 
             // Different types entirely
-            assertThat(catalog).isNotNull(); // GH-90000
-            assertThat(registry).isNotNull(); // GH-90000
-            assertThat(catalog).isNotSameAs(registry); // GH-90000
-            assertThat(catalog.getClass()).isNotEqualTo(registry.getClass()); // GH-90000
+            assertThat(catalog).isNotNull(); 
+            assertThat(registry).isNotNull(); 
+            assertThat(catalog).isNotSameAs(registry); 
+            assertThat(catalog.getClass()).isNotEqualTo(registry.getClass()); 
 
             // Cleanup
-            injector.getInstance(ExecutorService.class).shutdown(); // GH-90000
-            injector.getInstance(ScheduledExecutorService.class).shutdown(); // GH-90000
+            injector.getInstance(ExecutorService.class).shutdown(); 
+            injector.getInstance(ScheduledExecutorService.class).shutdown(); 
         }
 
         @Test
         @DisplayName("AepObservabilityModule analytics sub-services have correct interface bindings")
-        void analyticsInterfaceBindings() { // GH-90000
-            Module stubs = ModuleBuilder.create() // GH-90000
-                    .bind(EventCloud.class) // GH-90000
-                    .toInstance(mock(EventCloud.class)) // GH-90000
-                    .bind(Eventloop.class) // GH-90000
-                    .toInstance(Eventloop.builder().withCurrentThread().build()) // GH-90000
-                    .bind(MetricsCollector.class) // GH-90000
-                    .toInstance(mock(MetricsCollector.class)) // GH-90000
-                    .build(); // GH-90000
-            Injector injector = Injector.of(stubs, new AepObservabilityModule()); // GH-90000
+        void analyticsInterfaceBindings() { 
+            Module stubs = ModuleBuilder.create() 
+                    .bind(EventCloud.class) 
+                    .toInstance(mock(EventCloud.class)) 
+                    .bind(Eventloop.class) 
+                    .toInstance(Eventloop.builder().withCurrentThread().build()) 
+                    .bind(MetricsCollector.class) 
+                    .toInstance(mock(MetricsCollector.class)) 
+                    .build(); 
+            Injector injector = Injector.of(stubs, new AepObservabilityModule()); 
 
             // Verify all are bound to their interfaces, not concrete types
-            assertThat(injector.getInstance(BusinessIntelligenceService.class)) // GH-90000
-                    .isInstanceOf(BusinessIntelligenceService.class); // GH-90000
-            assertThat(injector.getInstance(PredictiveAnalyticsEngine.class)) // GH-90000
-                    .isInstanceOf(PredictiveAnalyticsEngine.class); // GH-90000
-            assertThat(injector.getInstance(PatternPerformanceAnalyzer.class)) // GH-90000
-                    .isInstanceOf(PatternPerformanceAnalyzer.class); // GH-90000
-            assertThat(injector.getInstance(KPIAggregator.class)).isInstanceOf(KPIAggregator.class); // GH-90000
-            assertThat(injector.getInstance(RealTimeAnomalyDetectionEngine.class)) // GH-90000
-                    .isInstanceOf(RealTimeAnomalyDetectionEngine.class); // GH-90000
-            assertThat(injector.getInstance(IntelligentPredictiveAlerting.class)) // GH-90000
-                    .isInstanceOf(IntelligentPredictiveAlerting.class); // GH-90000
-            assertThat(injector.getInstance(AdvancedTimeSeriesForecaster.class)) // GH-90000
-                    .isInstanceOf(AdvancedTimeSeriesForecaster.class); // GH-90000
+            assertThat(injector.getInstance(BusinessIntelligenceService.class)) 
+                    .isInstanceOf(BusinessIntelligenceService.class); 
+            assertThat(injector.getInstance(PredictiveAnalyticsEngine.class)) 
+                    .isInstanceOf(PredictiveAnalyticsEngine.class); 
+            assertThat(injector.getInstance(PatternPerformanceAnalyzer.class)) 
+                    .isInstanceOf(PatternPerformanceAnalyzer.class); 
+            assertThat(injector.getInstance(KPIAggregator.class)).isInstanceOf(KPIAggregator.class); 
+            assertThat(injector.getInstance(RealTimeAnomalyDetectionEngine.class)) 
+                    .isInstanceOf(RealTimeAnomalyDetectionEngine.class); 
+            assertThat(injector.getInstance(IntelligentPredictiveAlerting.class)) 
+                    .isInstanceOf(IntelligentPredictiveAlerting.class); 
+            assertThat(injector.getInstance(AdvancedTimeSeriesForecaster.class)) 
+                    .isInstanceOf(AdvancedTimeSeriesForecaster.class); 
         }
     }
 
@@ -975,76 +975,76 @@ class AepDiModulesTest {
     @DisplayName("AepLearningModule")
     class AepLearningModuleTests {
 
-        private Injector buildInjector() { // GH-90000
-            Module schedulerStub = ModuleBuilder.create() // GH-90000
-                    .bind(ScheduledExecutorService.class) // GH-90000
-                    .toInstance(mock(ScheduledExecutorService.class)) // GH-90000
-                    .build(); // GH-90000
-            return Injector.of(schedulerStub, new AepLearningModule()); // GH-90000
+        private Injector buildInjector() { 
+            Module schedulerStub = ModuleBuilder.create() 
+                    .bind(ScheduledExecutorService.class) 
+                    .toInstance(mock(ScheduledExecutorService.class)) 
+                    .build(); 
+            return Injector.of(schedulerStub, new AepLearningModule()); 
         }
 
         @Test
         @DisplayName("provides HumanReviewQueue bound to InMemoryHumanReviewQueue")
-        void providesHumanReviewQueue() { // GH-90000
-            var injector = buildInjector(); // GH-90000
-            var queue = injector.getInstance(com.ghatana.agent.learning.review.HumanReviewQueue.class); // GH-90000
-            assertThat(queue).isNotNull(); // GH-90000
-            assertThat(queue).isInstanceOf(com.ghatana.agent.learning.review.InMemoryHumanReviewQueue.class); // GH-90000
+        void providesHumanReviewQueue() { 
+            var injector = buildInjector(); 
+            var queue = injector.getInstance(com.ghatana.agent.learning.review.HumanReviewQueue.class); 
+            assertThat(queue).isNotNull(); 
+            assertThat(queue).isInstanceOf(com.ghatana.agent.learning.review.InMemoryHumanReviewQueue.class); 
         }
 
         @Test
         @DisplayName("provides ConflictResolver bound to EntrenchmentConflictResolver")
-        void providesConflictResolver() { // GH-90000
-            var injector = buildInjector(); // GH-90000
-            var resolver = injector.getInstance(com.ghatana.agent.learning.consolidation.ConflictResolver.class); // GH-90000
-            assertThat(resolver).isNotNull(); // GH-90000
-            assertThat(resolver) // GH-90000
-                    .isInstanceOf(com.ghatana.agent.learning.consolidation.EntrenchmentConflictResolver.class); // GH-90000
+        void providesConflictResolver() { 
+            var injector = buildInjector(); 
+            var resolver = injector.getInstance(com.ghatana.agent.learning.consolidation.ConflictResolver.class); 
+            assertThat(resolver).isNotNull(); 
+            assertThat(resolver) 
+                    .isInstanceOf(com.ghatana.agent.learning.consolidation.EntrenchmentConflictResolver.class); 
         }
 
         @Test
         @DisplayName("provides ConsolidationPipeline")
-        void providesConsolidationPipeline() { // GH-90000
-            var injector = buildInjector(); // GH-90000
-            var pipeline = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class); // GH-90000
-            assertThat(pipeline).isNotNull(); // GH-90000
+        void providesConsolidationPipeline() { 
+            var injector = buildInjector(); 
+            var pipeline = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class); 
+            assertThat(pipeline).isNotNull(); 
         }
 
         @Test
         @DisplayName("provides ConsolidationScheduler with AEP_SYSTEM agent id")
-        void providesConsolidationScheduler() { // GH-90000
-            var injector = buildInjector(); // GH-90000
-            var scheduler = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class); // GH-90000
-            assertThat(scheduler).isNotNull(); // GH-90000
+        void providesConsolidationScheduler() { 
+            var injector = buildInjector(); 
+            var scheduler = injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class); 
+            assertThat(scheduler).isNotNull(); 
         }
 
         @Test
         @DisplayName("singleton semantics: same HumanReviewQueue instance returned twice")
-        void humanReviewQueueIsSingleton() { // GH-90000
-            var injector = buildInjector(); // GH-90000
+        void humanReviewQueueIsSingleton() { 
+            var injector = buildInjector(); 
             var type = com.ghatana.agent.learning.review.HumanReviewQueue.class;
-            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type)); // GH-90000
+            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type)); 
         }
 
         @Test
         @DisplayName("singleton semantics: same ConsolidationPipeline instance returned twice")
-        void consolidationPipelineIsSingleton() { // GH-90000
-            var injector = buildInjector(); // GH-90000
+        void consolidationPipelineIsSingleton() { 
+            var injector = buildInjector(); 
             var type = com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class;
-            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type)); // GH-90000
+            assertThat(injector.getInstance(type)).isSameAs(injector.getInstance(type)); 
         }
 
         @Test
         @DisplayName("all learning bindings can be instantiated without exception")
-        void allBindingsInstantiateCleanly() { // GH-90000
-            assertThatCode(() -> { // GH-90000
-                        var injector = buildInjector(); // GH-90000
-                        injector.getInstance(com.ghatana.agent.learning.review.HumanReviewQueue.class); // GH-90000
-                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConflictResolver.class); // GH-90000
-                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class); // GH-90000
-                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class); // GH-90000
+        void allBindingsInstantiateCleanly() { 
+            assertThatCode(() -> { 
+                        var injector = buildInjector(); 
+                        injector.getInstance(com.ghatana.agent.learning.review.HumanReviewQueue.class); 
+                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConflictResolver.class); 
+                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationPipeline.class); 
+                        injector.getInstance(com.ghatana.agent.learning.consolidation.ConsolidationScheduler.class); 
                     })
-                    .doesNotThrowAnyException(); // GH-90000
+                    .doesNotThrowAnyException(); 
         }
     }
 
@@ -1056,20 +1056,20 @@ class AepDiModulesTest {
      * Creates a module with mocked external dependencies for the orchestration
      * module. Uses Mockito mocks since these interfaces have many abstract methods.
      */
-    private static Module orchestrationStubModule() { // GH-90000
-        return ModuleBuilder.create() // GH-90000
-                .bind(MetricsCollector.class) // GH-90000
-                .toInstance(mock(MetricsCollector.class)) // GH-90000
-                .bind(AgentRegistryClient.class) // GH-90000
-                .toInstance(mock(AgentRegistryClient.class)) // GH-90000
-                .bind(PipelineRegistryClient.class) // GH-90000
-                .toInstance(mock(PipelineRegistryClient.class)) // GH-90000
-                .bind(SpecFormatLoader.class) // GH-90000
-                .toInstance(mock(SpecFormatLoader.class)) // GH-90000
-                .bind(PipelineCheckpointRepository.class) // GH-90000
-                .toInstance(mock(PipelineCheckpointRepository.class)) // GH-90000
-                .bind(StepCheckpointRepository.class) // GH-90000
-                .toInstance(mock(StepCheckpointRepository.class)) // GH-90000
-                .build(); // GH-90000
+    private static Module orchestrationStubModule() { 
+        return ModuleBuilder.create() 
+                .bind(MetricsCollector.class) 
+                .toInstance(mock(MetricsCollector.class)) 
+                .bind(AgentRegistryClient.class) 
+                .toInstance(mock(AgentRegistryClient.class)) 
+                .bind(PipelineRegistryClient.class) 
+                .toInstance(mock(PipelineRegistryClient.class)) 
+                .bind(SpecFormatLoader.class) 
+                .toInstance(mock(SpecFormatLoader.class)) 
+                .bind(PipelineCheckpointRepository.class) 
+                .toInstance(mock(PipelineCheckpointRepository.class)) 
+                .bind(StepCheckpointRepository.class) 
+                .toInstance(mock(StepCheckpointRepository.class)) 
+                .build(); 
     }
 }

@@ -214,7 +214,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
         }, "config-watch-shutdown"));
 
         // ── Build secured API servlet with auth + RBAC + rate limiting ───
-        AsyncServlet apiServlet = buildApiServlet(eventloop,
+        AsyncServlet apiServlet = buildApiServlet(injector, eventloop,
                 intentController, shapeController, generationController,
                 validationController, advancePhaseUseCase, aepPublisher,
                 humanApprovalService, workflowService);
@@ -303,6 +303,7 @@ public class YappcLifecycleService extends UnifiedApplicationLauncher {
      * This servlet is passed through the auth filter before being mounted on the outer router.
      */
     private AsyncServlet buildApiServlet(
+            Injector injector,
             io.activej.eventloop.Eventloop eventloop,
             IntentApiController intentController,
             ShapeApiController shapeController,

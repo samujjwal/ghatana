@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Integration Test
  */
 @DisplayName("AI Call Path Integration Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AICallPathTest extends EventloopTestBase {
 
     @Mock
@@ -43,40 +43,40 @@ class AICallPathTest extends EventloopTestBase {
     private AIMetricsCollector metricsCollector;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        metricsCollector = new AIMetricsCollector(new SimpleMeterRegistry()); // GH-90000
-        service = YAPPCAIService.builder() // GH-90000
-            .router(router) // GH-90000
-            .metricsCollector(metricsCollector) // GH-90000
-            .build(); // GH-90000
+    void setUp() { 
+        metricsCollector = new AIMetricsCollector(new SimpleMeterRegistry()); 
+        service = YAPPCAIService.builder() 
+            .router(router) 
+            .metricsCollector(metricsCollector) 
+            .build(); 
 
-        lenient().when(router.initialize()).thenReturn(Promise.of(null)); // GH-90000
-        lenient().when(router.shutdown()).thenReturn(Promise.of(null)); // GH-90000
+        lenient().when(router.initialize()).thenReturn(Promise.of(null)); 
+        lenient().when(router.shutdown()).thenReturn(Promise.of(null)); 
     }
 
     // ── initialize ────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("initialize delegates to router and marks service ready")
-    void initialize_delegatesToRouter() { // GH-90000
-        runPromise(() -> service.initialize()); // GH-90000
-        verify(router).initialize(); // GH-90000
+    void initialize_delegatesToRouter() { 
+        runPromise(() -> service.initialize()); 
+        verify(router).initialize(); 
     }
 
     // ── generateCode ──────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("generateCode routes CODE_GENERATION request and returns content")
-    void generateCode_routesRequest_returnsContent() { // GH-90000
-        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "public class Foo {}"); // GH-90000
-        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
-        runPromise(() -> service.initialize()); // GH-90000
+    void generateCode_routesRequest_returnsContent() { 
+        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "public class Foo {}"); 
+        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); 
+        runPromise(() -> service.initialize()); 
 
         String code = runPromise(() -> service.generateCode("Generate a Foo class"));
 
         assertThat(code).contains("class Foo");
-        verify(router).route(argThat(req -> // GH-90000
-            req.getTaskType() == TaskType.CODE_GENERATION && // GH-90000
+        verify(router).route(argThat(req -> 
+            req.getTaskType() == TaskType.CODE_GENERATION && 
             req.getPrompt().contains("Generate a Foo class")));
     }
 
@@ -84,41 +84,41 @@ class AICallPathTest extends EventloopTestBase {
 
     @Test
     @DisplayName("analyzeCode routes CODE_ANALYSIS request and parses summary")
-    void analyzeCode_routesRequest_parsesSummary() { // GH-90000
-        AIResponse fakeResponse = buildResponse("CODE_ANALYSIS", "No issues found. Code structure is clear, naming is consistent, and there are no security or performance concerns in this snippet."); // GH-90000
-        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
-        runPromise(() -> service.initialize()); // GH-90000
+    void analyzeCode_routesRequest_parsesSummary() { 
+        AIResponse fakeResponse = buildResponse("CODE_ANALYSIS", "No issues found. Code structure is clear, naming is consistent, and there are no security or performance concerns in this snippet."); 
+        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); 
+        runPromise(() -> service.initialize()); 
 
         YAPPCAIService.CodeAnalysis analysis = runPromise(() -> service.analyzeCode("int x = 0;"));
 
         assertThat(analysis.getSummary()).contains("No issues found.");
-        verify(router).route(argThat(req -> req.getTaskType() == TaskType.CODE_ANALYSIS)); // GH-90000
+        verify(router).route(argThat(req -> req.getTaskType() == TaskType.CODE_ANALYSIS)); 
     }
 
     // ── generateTests ─────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("generateTests routes TEST_GENERATION request and returns trimmed code")
-    void generateTests_routesRequest_returnsCode() { // GH-90000
-        AIResponse fakeResponse = buildResponse("TEST_GENERATION", // GH-90000
-            "@Test void shouldPass() { assertThat(1).isEqualTo(1); }"); // GH-90000
-        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
-        runPromise(() -> service.initialize()); // GH-90000
+    void generateTests_routesRequest_returnsCode() { 
+        AIResponse fakeResponse = buildResponse("TEST_GENERATION", 
+            "@Test void shouldPass() { assertThat(1).isEqualTo(1); }"); 
+        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); 
+        runPromise(() -> service.initialize()); 
 
         String tests = runPromise(() -> service.generateTests("class under test"));
 
         assertThat(tests).contains("shouldPass");
-        verify(router).route(argThat(req -> req.getTaskType() == TaskType.TEST_GENERATION)); // GH-90000
+        verify(router).route(argThat(req -> req.getTaskType() == TaskType.TEST_GENERATION)); 
     }
 
     // ── error propagation ─────────────────────────────────────────────────────
 
     @Test
     @DisplayName("generateCode propagates router failure as Promise exception")
-    void generateCode_propagatesRouterFailure() { // GH-90000
-        when(router.route(any())) // GH-90000
+    void generateCode_propagatesRouterFailure() { 
+        when(router.route(any())) 
             .thenReturn(Promise.ofException(new RuntimeException("LLM timeout")));
-        runPromise(() -> service.initialize()); // GH-90000
+        runPromise(() -> service.initialize()); 
 
         assertThatThrownBy(() -> runPromise(() -> service.generateCode("anything")))
             .hasMessageContaining("LLM timeout");
@@ -126,10 +126,10 @@ class AICallPathTest extends EventloopTestBase {
 
     @Test
     @DisplayName("service not initialized throws IllegalStateException")
-    void notInitialized_throwsIllegalState() { // GH-90000
-        // NOTE: do NOT call service.initialize() here // GH-90000
+    void notInitialized_throwsIllegalState() { 
+        // NOTE: do NOT call service.initialize() here 
         assertThatThrownBy(() -> runPromise(() -> service.generateCode("anything")))
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("not initialized");
     }
 
@@ -137,39 +137,39 @@ class AICallPathTest extends EventloopTestBase {
 
     @Test
     @DisplayName("successful call records LLM call metric via AIMetricsCollector")
-    void successfulCall_recordsMetric() { // GH-90000
-        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "public class GeneratedService { public String run() { return \"ok\"; } }"); // GH-90000
-        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); // GH-90000
+    void successfulCall_recordsMetric() { 
+        AIResponse fakeResponse = buildResponse("CODE_GENERATION", "public class GeneratedService { public String run() { return \"ok\"; } }"); 
+        when(router.route(any())).thenReturn(Promise.of(fakeResponse)); 
 
         // Use a spy to verify metric recording without stubbing all internals
-        AIMetricsCollector spyCollector = spy(new AIMetricsCollector(new SimpleMeterRegistry())); // GH-90000
-        YAPPCAIService monitoredService = YAPPCAIService.builder() // GH-90000
-            .router(router) // GH-90000
-            .metricsCollector(spyCollector) // GH-90000
-            .build(); // GH-90000
+        AIMetricsCollector spyCollector = spy(new AIMetricsCollector(new SimpleMeterRegistry())); 
+        YAPPCAIService monitoredService = YAPPCAIService.builder() 
+            .router(router) 
+            .metricsCollector(spyCollector) 
+            .build(); 
 
-        runPromise(() -> monitoredService.initialize()); // GH-90000
+        runPromise(() -> monitoredService.initialize()); 
         runPromise(() -> monitoredService.generateCode("test"));
 
-        verify(spyCollector).recordLlmCall( // GH-90000
-            anyString(), anyString(), anyString(), // GH-90000
-            eq(true), anyLong(), anyInt(), anyInt(), anyDouble()); // GH-90000
+        verify(spyCollector).recordLlmCall( 
+            anyString(), anyString(), anyString(), 
+            eq(true), anyLong(), anyInt(), anyInt(), anyDouble()); 
     }
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    private static AIResponse buildResponse(String modelId, String content) { // GH-90000
-        return AIResponse.builder() // GH-90000
+    private static AIResponse buildResponse(String modelId, String content) { 
+        return AIResponse.builder() 
             .requestId("req-test")
-            .modelId(modelId) // GH-90000
-            .content(content) // GH-90000
-            .metrics(AIResponse.ResponseMetrics.builder() // GH-90000
-                .latencyMs(42) // GH-90000
-                .promptTokens(30) // GH-90000
-                .completionTokens(20) // GH-90000
-                .cost(0.001) // GH-90000
-                .build()) // GH-90000
-            .cacheHit(false) // GH-90000
-            .build(); // GH-90000
+            .modelId(modelId) 
+            .content(content) 
+            .metrics(AIResponse.ResponseMetrics.builder() 
+                .latencyMs(42) 
+                .promptTokens(30) 
+                .completionTokens(20) 
+                .cost(0.001) 
+                .build()) 
+            .cacheHit(false) 
+            .build(); 
     }
 }

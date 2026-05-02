@@ -41,21 +41,15 @@ public class DefaultRetentionPolicyResolver implements RetentionPolicyResolver {
     }
 
     /**
-     * Creates a resolver with standard regulatory retention mappings.
+     * Creates a resolver with an empty compliance-tag-to-retention map.
      *
-     * <p>Standard mappings:</p>
-     * <ul>
-     *   <li>{@code sebon} (securities regulator) → 10 years</li>
-     *   <li>{@code nepal-2081} (healthcare directive) → 25 years</li>
-     *   <li>{@code gdpr} → 7 years</li>
-     * </ul>
+     * <p>The default retention of 7 years applies when no compliance tags match.
+     * Products supply their own compliance tags and register retention durations
+     * via {@link #DefaultRetentionPolicyResolver(java.util.Map)} in their pack configuration.
+     * Regulatory-framework tags belong in product packs, not in the platform kernel.</p>
      */
     public static DefaultRetentionPolicyResolver withStandardMappings() {
-        return new DefaultRetentionPolicyResolver(Map.of(
-                "sebon", 10,
-                "nepal-2081", 25,
-                "gdpr", 7
-        ));
+        return new DefaultRetentionPolicyResolver(Map.of());
     }
 
     @Override

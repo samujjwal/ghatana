@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("DataCloudMemoryNamespaceRepository")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-ns-test";
@@ -55,26 +55,26 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
     private DataCloudMemoryNamespaceRepository repo;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        repo = new DataCloudMemoryNamespaceRepository(dataCloud, TENANT_ID); // GH-90000
+    void setUp() { 
+        repo = new DataCloudMemoryNamespaceRepository(dataCloud, TENANT_ID); 
     }
 
     // ─────────────────── helpers ──────────────────────────────────────────────
 
-    private MemoryNamespace episodicNs(String nsId) { // GH-90000
-        return MemoryNamespace.of(nsId, TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Episodic Log", NOW); // GH-90000
+    private MemoryNamespace episodicNs(String nsId) { 
+        return MemoryNamespace.of(nsId, TENANT_ID, AGENT_ID, MemoryScope.EPISODIC, "Episodic Log", NOW); 
     }
 
-    private Map<String, Object> namespaceDataMap(MemoryNamespace ns) { // GH-90000
-        Map<String, Object> m = new java.util.HashMap<>(); // GH-90000
-        m.put("namespaceId",      ns.namespaceId()); // GH-90000
-        m.put("tenantId",         ns.tenantId()); // GH-90000
-        m.put("agentId",          ns.agentId()); // GH-90000
-        m.put("scope",            ns.scope().name()); // GH-90000
-        m.put("label",            ns.label()); // GH-90000
-        m.put("promotionEnabled", String.valueOf(ns.promotionEnabled())); // GH-90000
-        m.put("createdAt",        ns.createdAt().toString()); // GH-90000
-        m.put("updatedAt",        ns.updatedAt().toString()); // GH-90000
+    private Map<String, Object> namespaceDataMap(MemoryNamespace ns) { 
+        Map<String, Object> m = new java.util.HashMap<>(); 
+        m.put("namespaceId",      ns.namespaceId()); 
+        m.put("tenantId",         ns.tenantId()); 
+        m.put("agentId",          ns.agentId()); 
+        m.put("scope",            ns.scope().name()); 
+        m.put("label",            ns.label()); 
+        m.put("promotionEnabled", String.valueOf(ns.promotionEnabled())); 
+        m.put("createdAt",        ns.createdAt().toString()); 
+        m.put("updatedAt",        ns.updatedAt().toString()); 
         return m;
     }
 
@@ -86,16 +86,16 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rejects null dataCloud")
-        void rejectsNullDataCloud() { // GH-90000
-            assertThatThrownBy(() -> new DataCloudMemoryNamespaceRepository(null, TENANT_ID)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullDataCloud() { 
+            assertThatThrownBy(() -> new DataCloudMemoryNamespaceRepository(null, TENANT_ID)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("rejects null tenantId")
-        void rejectsNullTenantId() { // GH-90000
-            assertThatThrownBy(() -> new DataCloudMemoryNamespaceRepository(dataCloud, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullTenantId() { 
+            assertThatThrownBy(() -> new DataCloudMemoryNamespaceRepository(dataCloud, null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -107,33 +107,33 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delegates to createEntity and returns the original namespace")
-        void delegatesToCreateEntity() { // GH-90000
+        void delegatesToCreateEntity() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
-            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(mockEntity)); // GH-90000
+            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); 
+            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) 
+                    .thenReturn(Promise.of(mockEntity)); 
 
-            MemoryNamespace saved = runPromise(() -> repo.save(ns)); // GH-90000
+            MemoryNamespace saved = runPromise(() -> repo.save(ns)); 
 
-            assertThat(saved).isSameAs(ns); // GH-90000
-            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any()); // GH-90000
+            assertThat(saved).isSameAs(ns); 
+            verify(dataCloud).createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any()); 
         }
 
         @Test
         @DisplayName("serialises scope and label into data map")
-        void serialisesScopeAndLabel() { // GH-90000
+        void serialisesScopeAndLabel() { 
             MemoryNamespace ns = episodicNs("ns-42");
-            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
-            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class); // GH-90000
-            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), captor.capture())) // GH-90000
-                    .thenReturn(Promise.of(mockEntity)); // GH-90000
+            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); 
+            ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class); 
+            when(dataCloud.createEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), captor.capture())) 
+                    .thenReturn(Promise.of(mockEntity)); 
 
-            runPromise(() -> repo.save(ns)); // GH-90000
+            runPromise(() -> repo.save(ns)); 
 
-            Map<String, Object> data = captor.getValue(); // GH-90000
-            assertThat(data).containsEntry("namespaceId", "ns-42"); // GH-90000
-            assertThat(data).containsEntry("scope", "EPISODIC"); // GH-90000
-            assertThat(data).containsEntry("label", "Episodic Log"); // GH-90000
+            Map<String, Object> data = captor.getValue(); 
+            assertThat(data).containsEntry("namespaceId", "ns-42"); 
+            assertThat(data).containsEntry("scope", "EPISODIC"); 
+            assertThat(data).containsEntry("label", "Episodic Log"); 
         }
     }
 
@@ -145,28 +145,28 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns deserialized namespace when entity found")
-        void returnsDeserializedNamespace() { // GH-90000
+        void returnsDeserializedNamespace() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            when(mockEntity.getData()).thenReturn(namespaceDataMap(ns)); // GH-90000
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any(QuerySpecInterface.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of(mockEntity))); // GH-90000
+            when(mockEntity.getData()).thenReturn(namespaceDataMap(ns)); 
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any(QuerySpecInterface.class))) 
+                    .thenReturn(Promise.of(List.of(mockEntity))); 
 
             Optional<MemoryNamespace> found = runPromise(() -> repo.findById("ns-1"));
 
-            assertThat(found).isPresent(); // GH-90000
+            assertThat(found).isPresent(); 
             assertThat(found.get().namespaceId()).isEqualTo("ns-1");
-            assertThat(found.get().scope()).isEqualTo(MemoryScope.EPISODIC); // GH-90000
+            assertThat(found.get().scope()).isEqualTo(MemoryScope.EPISODIC); 
         }
 
         @Test
         @DisplayName("returns empty when no entity found")
-        void returnsEmptyWhenNotFound() { // GH-90000
-            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void returnsEmptyWhenNotFound() { 
+            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class))) 
+                    .thenReturn(Promise.of(List.of())); 
 
             Optional<MemoryNamespace> found = runPromise(() -> repo.findById("missing"));
 
-            assertThat(found).isEmpty(); // GH-90000
+            assertThat(found).isEmpty(); 
         }
     }
 
@@ -178,17 +178,17 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns all namespaces for an agent")
-        void returnsAllNamespaces() { // GH-90000
+        void returnsAllNamespaces() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            EntityInterface e1 = mock(EntityInterface.class); // GH-90000
-            when(e1.getData()).thenReturn(namespaceDataMap(ns)); // GH-90000
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of(e1))); // GH-90000
+            EntityInterface e1 = mock(EntityInterface.class); 
+            when(e1.getData()).thenReturn(namespaceDataMap(ns)); 
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) 
+                    .thenReturn(Promise.of(List.of(e1))); 
 
-            List<MemoryNamespace> results = runPromise(() -> repo.findByAgent(AGENT_ID, TENANT_ID)); // GH-90000
+            List<MemoryNamespace> results = runPromise(() -> repo.findByAgent(AGENT_ID, TENANT_ID)); 
 
-            assertThat(results).hasSize(1); // GH-90000
-            assertThat(results.getFirst().agentId()).isEqualTo(AGENT_ID); // GH-90000
+            assertThat(results).hasSize(1); 
+            assertThat(results.getFirst().agentId()).isEqualTo(AGENT_ID); 
         }
     }
 
@@ -200,17 +200,17 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns matching namespace for agent and scope")
-        void returnsMatchingNamespace() { // GH-90000
+        void returnsMatchingNamespace() { 
             MemoryNamespace ns = episodicNs("ns-1");
-            when(mockEntity.getData()).thenReturn(namespaceDataMap(ns)); // GH-90000
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of(mockEntity))); // GH-90000
+            when(mockEntity.getData()).thenReturn(namespaceDataMap(ns)); 
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) 
+                    .thenReturn(Promise.of(List.of(mockEntity))); 
 
-            Optional<MemoryNamespace> result = runPromise( // GH-90000
-                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.EPISODIC, TENANT_ID)); // GH-90000
+            Optional<MemoryNamespace> result = runPromise( 
+                    () -> repo.findByAgentAndScope(AGENT_ID, MemoryScope.EPISODIC, TENANT_ID)); 
 
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get().scope()).isEqualTo(MemoryScope.EPISODIC); // GH-90000
+            assertThat(result).isPresent(); 
+            assertThat(result.get().scope()).isEqualTo(MemoryScope.EPISODIC); 
         }
     }
 
@@ -222,27 +222,27 @@ class DataCloudMemoryNamespaceRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns true when entity deleted")
-        void returnsTrueOnDelete() { // GH-90000
-            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); // GH-90000
-            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of(mockEntity))); // GH-90000
-            when(dataCloud.deleteEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any(UUID.class))) // GH-90000
-                    .thenReturn(Promise.of(null)); // GH-90000
+        void returnsTrueOnDelete() { 
+            when(mockEntity.getId()).thenReturn(UUID.randomUUID()); 
+            when(dataCloud.queryEntities(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any())) 
+                    .thenReturn(Promise.of(List.of(mockEntity))); 
+            when(dataCloud.deleteEntity(eq(TENANT_ID), eq(DataCloudMemoryNamespaceRepository.COLLECTION), any(UUID.class))) 
+                    .thenReturn(Promise.of(null)); 
 
-            boolean deleted = runPromise(() -> repo.delete("ns-1", TENANT_ID)); // GH-90000
+            boolean deleted = runPromise(() -> repo.delete("ns-1", TENANT_ID)); 
 
-            assertThat(deleted).isTrue(); // GH-90000
+            assertThat(deleted).isTrue(); 
         }
 
         @Test
         @DisplayName("returns false when entity not found")
-        void returnsFalseWhenNotFound() { // GH-90000
-            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void returnsFalseWhenNotFound() { 
+            when(dataCloud.queryEntities(any(), any(), any(QuerySpecInterface.class))) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            boolean deleted = runPromise(() -> repo.delete("no-such", TENANT_ID)); // GH-90000
+            boolean deleted = runPromise(() -> repo.delete("no-such", TENANT_ID)); 
 
-            assertThat(deleted).isFalse(); // GH-90000
+            assertThat(deleted).isFalse(); 
         }
     }
 }

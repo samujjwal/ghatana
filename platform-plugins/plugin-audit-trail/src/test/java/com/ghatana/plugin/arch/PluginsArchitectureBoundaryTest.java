@@ -13,18 +13,30 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 /**
  * ArchUnit dependency-direction conformance tests for platform-plugins.
  *
- * <p>These tests enforce the forbidden dependency directions:</p>
+ * <p>These tests enforce the forbidden dependency directions documented in
+ * {@code docs/PLUGIN_PURITY_RULES.md}:</p>
  * <ul>
- *   <li>ARCH-010: {@code platform-plugins} SPI interfaces must not import product packages</li>
- *   <li>ARCH-011: plugin implementations must not import product packages</li>
- *   <li>ARCH-012: plugin implementations must not import across plugin boundaries
- *       (e.g. audit plugin must not import billing plugin)</li>
+ *   <li>ARCH-010: no plugin imports from any product package.</li>
+ *   <li>ARCH-011 through ARCH-017: no plugin implementation imports from any other
+ *       plugin's implementation package — plugins must be independently loadable.</li>
+ * </ul>
+ *
+ * <p>The canonical plugin packages are:</p>
+ * <ul>
+ *   <li>{@code com.ghatana.plugin.audit}</li>
+ *   <li>{@code com.ghatana.plugin.compliance}</li>
+ *   <li>{@code com.ghatana.plugin.consent}</li>
+ *   <li>{@code com.ghatana.plugin.fraud}</li>
+ *   <li>{@code com.ghatana.plugin.approval}</li>
+ *   <li>{@code com.ghatana.plugin.ledger}</li>
+ *   <li>{@code com.ghatana.plugin.risk}</li>
  * </ul>
  *
  * @doc.type class
- * @doc.purpose ArchUnit dependency-direction tests for platform-plugins boundary
+ * @doc.purpose ArchUnit dependency-direction isolation tests for platform-plugins
  * @doc.layer platform
  * @doc.pattern ArchitecturalTest
+ * @since 1.3.0
  */
 @DisplayName("platform-plugins architectural boundary rules")
 class PluginsArchitectureBoundaryTest {
@@ -49,36 +61,142 @@ class PluginsArchitectureBoundaryTest {
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.finance..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.yappc..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.aep..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.datacloud..")
                 .as("ARCH-010: platform-plugins must not depend on any product package — " +
                     "plugins are product-agnostic shared infrastructure");
 
         rule.check(pluginClasses);
     }
 
-    // ── ARCH-011: audit plugin must not import billing plugin ─────────────────
+    // ── ARCH-011: audit plugin impl isolation ────────────────────────────────
 
     @Test
-    @DisplayName("ARCH-011: audit plugin must not import billing plugin classes")
-    void auditPluginMustNotDependOnBillingPlugin() {
+    @DisplayName("ARCH-011: audit plugin must not import impl classes from any other plugin")
+    void auditPluginImplIsolation() {
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.ghatana.plugin.audit..")
-                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.billing..")
-                .as("ARCH-011: audit plugin must not depend on billing plugin — " +
-                    "plugins must be independently usable");
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-011: audit plugin must be independently loadable — " +
+                    "it must not depend on any other plugin's implementation");
 
         rule.check(pluginClasses);
     }
 
-    // ── ARCH-012: billing plugin must not import fraud plugin ─────────────────
+    // ── ARCH-012: compliance plugin impl isolation ────────────────────────────
 
     @Test
-    @DisplayName("ARCH-012: billing plugin must not import fraud-detection plugin classes")
-    void billingPluginMustNotDependOnFraudPlugin() {
+    @DisplayName("ARCH-012: compliance plugin must not import impl classes from other plugins")
+    void compliancePluginImplIsolation() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("com.ghatana.plugin.billing..")
-                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
-                .as("ARCH-012: billing plugin must not depend on fraud-detection plugin")
-                .allowEmptyShould(true); // Allow when billing plugin is not in current module
+                .that().resideInAPackage("com.ghatana.plugin.compliance..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-012: compliance plugin must be independently loadable — " +
+                    "it must not depend on consent, fraud, approval, ledger, or risk plugin implementations")
+                .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── ARCH-013: consent plugin impl isolation ───────────────────────────────
+
+    @Test
+    @DisplayName("ARCH-013: consent plugin must not import impl classes from other plugins")
+    void consentPluginImplIsolation() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin.consent..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-013: consent plugin must be independently loadable — " +
+                    "it must not depend on compliance, fraud, approval, ledger, or risk plugin implementations")
+                .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── ARCH-014: fraud detection plugin impl isolation ───────────────────────
+
+    @Test
+    @DisplayName("ARCH-014: fraud detection plugin must not import impl classes from other plugins")
+    void fraudDetectionPluginImplIsolation() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin.fraud..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-014: fraud detection plugin must be independently loadable — " +
+                    "it must not depend on compliance, consent, approval, ledger, or risk plugin implementations")
+                .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── ARCH-015: human approval plugin impl isolation ────────────────────────
+
+    @Test
+    @DisplayName("ARCH-015: human approval plugin must not import impl classes from other plugins")
+    void humanApprovalPluginImplIsolation() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin.approval..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-015: human approval plugin must be independently loadable — " +
+                    "it must not depend on compliance, consent, fraud, ledger, or risk plugin implementations")
+                .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── ARCH-016: ledger plugin impl isolation ────────────────────────────────
+
+    @Test
+    @DisplayName("ARCH-016: ledger plugin must not import impl classes from other plugins")
+    void ledgerPluginImplIsolation() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin.ledger..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.risk..")
+                .as("ARCH-016: ledger plugin must be independently loadable — " +
+                    "it must not depend on compliance, consent, fraud, approval, or risk plugin implementations")
+                .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── ARCH-017: risk management plugin impl isolation ───────────────────────
+
+    @Test
+    @DisplayName("ARCH-017: risk management plugin must not import impl classes from other plugins")
+    void riskManagementPluginImplIsolation() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin.risk..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.compliance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.consent..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.fraud..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.approval..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.plugin.ledger..")
+                .as("ARCH-017: risk management plugin must be independently loadable — " +
+                    "it must not depend on compliance, consent, fraud, approval, or ledger plugin implementations")
+                .allowEmptyShould(true);
 
         rule.check(pluginClasses);
     }

@@ -26,11 +26,11 @@ import static org.mockito.Mockito.*;
  * @doc.pattern IntegrationTest
  *
  * Tests:
- * - Event publishing for all operation types (single key, pattern, bulk delete) // GH-90000
+ * - Event publishing for all operation types (single key, pattern, bulk delete) 
  * - Cross-service event propagation
- * - Event deduplication (avoid re-processing own events) // GH-90000
+ * - Event deduplication (avoid re-processing own events) 
  * - Concurrent event publishing
- * - Error handling (non-blocking failures) // GH-90000
+ * - Error handling (non-blocking failures) 
  * - End-to-end distributed cache synchronization
  *
  * All tests use mock message bus to simulate real Kafka/RabbitMQ behavior.
@@ -50,20 +50,20 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        publishedEvents = new ArrayList<>(); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        objectMapper = new ObjectMapper(); 
+        publishedEvents = new ArrayList<>(); 
 
         // Setup publisher
-        publisher = new CacheInvalidationEventPublisher( // GH-90000
+        publisher = new CacheInvalidationEventPublisher( 
             messageBus,
             "TutorPutorContentCacheService",
             "tenant:123"
         );
 
         // Setup subscriber
-        subscriber = new CacheInvalidationEventSubscriber( // GH-90000
+        subscriber = new CacheInvalidationEventSubscriber( 
             messageBus,
             cacheBackend,
             "DataCloudQueryCacheService"  // Different service to simulate cross-service sync
@@ -71,10 +71,10 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         // Mock message bus to capture published events
         when(messageBus.publish(eq("cache-invalidation-events"), any()))
-            .thenAnswer(invocation -> { // GH-90000
-                Object event = invocation.getArgument(1); // GH-90000
-                publishedEvents.add(event); // GH-90000
-                return Promise.complete(); // GH-90000
+            .thenAnswer(invocation -> { 
+                Object event = invocation.getArgument(1); 
+                publishedEvents.add(event); 
+                return Promise.complete(); 
             });
     }
 
@@ -84,41 +84,41 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should publish single key deletion event")
-        void shouldPublishSingleKeyDeleteEvent() { // GH-90000
-            runPromise(() -> publisher.publishSingleKeyDelete("content:generated:123", "trace:id:1")); // GH-90000
+        void shouldPublishSingleKeyDeleteEvent() { 
+            runPromise(() -> publisher.publishSingleKeyDelete("content:generated:123", "trace:id:1")); 
 
-            assertThat(publishedEvents) // GH-90000
-                .hasSize(1) // GH-90000
-                .anySatisfy(event -> { // GH-90000
-                    assertThat(event) // GH-90000
-                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); // GH-90000
+            assertThat(publishedEvents) 
+                .hasSize(1) 
+                .anySatisfy(event -> { 
+                    assertThat(event) 
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); 
                     CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
-                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; // GH-90000
-                    assertThat(invalidationEvent.operationType) // GH-90000
-                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.SINGLE_KEY_DELETE); // GH-90000
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; 
+                    assertThat(invalidationEvent.operationType) 
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.SINGLE_KEY_DELETE); 
                     assertThat(invalidationEvent.cacheKey).isEqualTo("content:generated:123");
                 });
         }
 
         @Test
         @DisplayName("should include correlation ID in published event")
-        void shouldIncludeCorrelationId() { // GH-90000
+        void shouldIncludeCorrelationId() { 
             String correlationId = "trace:request:789";
-            runPromise(() -> publisher.publishSingleKeyDelete("cache:key", correlationId)); // GH-90000
+            runPromise(() -> publisher.publishSingleKeyDelete("cache:key", correlationId)); 
 
-            assertThat(publishedEvents).hasSize(1); // GH-90000
+            assertThat(publishedEvents).hasSize(1); 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
 
         @Test
         @DisplayName("should handle multiple rapid single key deletions")
-        void shouldHandleMultipleRapidDeletions() { // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
+        void shouldHandleMultipleRapidDeletions() { 
+            for (int i = 0; i < 100; i++) { 
                 final int index = i;
-                runPromise(() -> publisher.publishSingleKeyDelete("cache:key:" + index, "trace:" + index)); // GH-90000
+                runPromise(() -> publisher.publishSingleKeyDelete("cache:key:" + index, "trace:" + index)); 
             }
 
-            assertThat(publishedEvents).hasSize(100); // GH-90000
+            assertThat(publishedEvents).hasSize(100); 
             verify(messageBus, times(100)).publish(eq("cache-invalidation-events"), any());
         }
     }
@@ -129,26 +129,26 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should publish pattern deletion event with key count")
-        void shouldPublishPatternDeleteEvent() { // GH-90000
-            runPromise(() -> publisher.publishPatternDelete("learning-path:user:100:*", 25, "trace:id:2")); // GH-90000
+        void shouldPublishPatternDeleteEvent() { 
+            runPromise(() -> publisher.publishPatternDelete("learning-path:user:100:*", 25, "trace:id:2")); 
 
-            assertThat(publishedEvents) // GH-90000
-                .hasSize(1) // GH-90000
-                .anySatisfy(event -> { // GH-90000
-                    assertThat(event) // GH-90000
-                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); // GH-90000
+            assertThat(publishedEvents) 
+                .hasSize(1) 
+                .anySatisfy(event -> { 
+                    assertThat(event) 
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); 
                     CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
-                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; // GH-90000
-                    assertThat(invalidationEvent.operationType) // GH-90000
-                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.PATTERN_DELETE); // GH-90000
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; 
+                    assertThat(invalidationEvent.operationType) 
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.PATTERN_DELETE); 
                     assertThat(invalidationEvent.cacheKey).isEqualTo("learning-path:user:100:*");
-                    assertThat(invalidationEvent.keyCount).isEqualTo(25); // GH-90000
+                    assertThat(invalidationEvent.keyCount).isEqualTo(25); 
                 });
         }
 
         @Test
         @DisplayName("should support various glob patterns")
-        void shouldSupportVariousPatterns() { // GH-90000
+        void shouldSupportVariousPatterns() { 
             String[] patterns = {
                 "content:*",
                 "learning-path:user:*:*",
@@ -156,20 +156,20 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
                 "aggregate:*:*"
             };
 
-            for (String pattern : patterns) { // GH-90000
-                runPromise(() -> publisher.publishPatternDelete(pattern, 10, "trace:pattern")); // GH-90000
+            for (String pattern : patterns) { 
+                runPromise(() -> publisher.publishPatternDelete(pattern, 10, "trace:pattern")); 
             }
 
-            assertThat(publishedEvents).hasSize(4); // GH-90000
+            assertThat(publishedEvents).hasSize(4); 
         }
 
         @Test
         @DisplayName("should include correct key count in event")
-        void shouldIncludeCorrectKeyCount() { // GH-90000
+        void shouldIncludeCorrectKeyCount() { 
             long keyCount = 150;
-            runPromise(() -> publisher.publishPatternDelete("dataset:*", keyCount, "trace:pattern:keys")); // GH-90000
+            runPromise(() -> publisher.publishPatternDelete("dataset:*", keyCount, "trace:pattern:keys")); 
 
-            assertThat(publishedEvents).hasSize(1); // GH-90000
+            assertThat(publishedEvents).hasSize(1); 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
     }
@@ -180,30 +180,30 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should publish bulk deletion event")
-        void shouldPublishBulkDeleteEvent() { // GH-90000
-            runPromise(() -> publisher.publishBulkDelete("tenant:456:offboarding", 5000, "trace:bulk:1")); // GH-90000
+        void shouldPublishBulkDeleteEvent() { 
+            runPromise(() -> publisher.publishBulkDelete("tenant:456:offboarding", 5000, "trace:bulk:1")); 
 
-            assertThat(publishedEvents) // GH-90000
-                .hasSize(1) // GH-90000
-                .anySatisfy(event -> { // GH-90000
-                    assertThat(event) // GH-90000
-                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); // GH-90000
+            assertThat(publishedEvents) 
+                .hasSize(1) 
+                .anySatisfy(event -> { 
+                    assertThat(event) 
+                        .isInstanceOf(CacheInvalidationEventPublisher.CacheInvalidationEvent.class); 
                     CacheInvalidationEventPublisher.CacheInvalidationEvent invalidationEvent =
-                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; // GH-90000
-                    assertThat(invalidationEvent.operationType) // GH-90000
-                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.BULK_DELETE); // GH-90000
+                        (CacheInvalidationEventPublisher.CacheInvalidationEvent) event; 
+                    assertThat(invalidationEvent.operationType) 
+                        .isEqualTo(CacheInvalidationEventPublisher.OperationType.BULK_DELETE); 
                     assertThat(invalidationEvent.cacheKey).isEqualTo("tenant:456:offboarding");
-                    assertThat(invalidationEvent.keyCount).isEqualTo(5000); // GH-90000
+                    assertThat(invalidationEvent.keyCount).isEqualTo(5000); 
                 });
         }
 
         @Test
         @DisplayName("should handle large bulk deletion events")
-        void shouldHandleLargeBulkDeletion() { // GH-90000
+        void shouldHandleLargeBulkDeletion() { 
             long largeKeyCount = 100_000;
-            runPromise(() -> publisher.publishBulkDelete("migration:schema:v1:to:v2", largeKeyCount, "trace:migration")); // GH-90000
+            runPromise(() -> publisher.publishBulkDelete("migration:schema:v1:to:v2", largeKeyCount, "trace:migration")); 
 
-            assertThat(publishedEvents).hasSize(1); // GH-90000
+            assertThat(publishedEvents).hasSize(1); 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
     }
@@ -214,52 +214,52 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should apply single key deletion from received event")
-        void shouldApplySingleKeyDeletion() { // GH-90000
-            AtomicBoolean eventProcessed = new AtomicBoolean(false); // GH-90000
+        void shouldApplySingleKeyDeletion() { 
+            AtomicBoolean eventProcessed = new AtomicBoolean(false); 
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenAnswer(invocation -> { // GH-90000
-                    eventProcessed.set(true); // GH-90000
-                    return Promise.complete(); // GH-90000
+                .thenAnswer(invocation -> { 
+                    eventProcessed.set(true); 
+                    return Promise.complete(); 
                 });
 
-            runPromise(() -> subscriber.start()); // GH-90000
+            runPromise(() -> subscriber.start()); 
 
             verify(messageBus).subscribe(eq("cache-invalidation-events"), any());
-            assertThat(eventProcessed).isTrue(); // GH-90000
+            assertThat(eventProcessed).isTrue(); 
         }
 
         @Test
         @DisplayName("should apply pattern deletion from received event")
-        void shouldApplyPatternDeletion() { // GH-90000
+        void shouldApplyPatternDeletion() { 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenAnswer(invocation -> { // GH-90000
+                .thenAnswer(invocation -> { 
                     when(cacheBackend.deletePattern("learning-path:user:100:*")).thenReturn(25);
-                    return Promise.complete(); // GH-90000
+                    return Promise.complete(); 
                 });
 
-            runPromise(() -> subscriber.start()); // GH-90000
+            runPromise(() -> subscriber.start()); 
 
             verify(messageBus).subscribe(eq("cache-invalidation-events"), any());
         }
 
         @Test
         @DisplayName("should skip events from own service (avoid duplicate processing)")
-        void shouldSkipOwnServiceEvents() { // GH-90000
+        void shouldSkipOwnServiceEvents() { 
             // Create publisher with same source as subscriber
-            CacheInvalidationEventPublisher sameSourcePublisher = new CacheInvalidationEventPublisher( // GH-90000
+            CacheInvalidationEventPublisher sameSourcePublisher = new CacheInvalidationEventPublisher( 
                 messageBus,
                 "DataCloudQueryCacheService",  // Same as subscriber's serviceSource
                 "tenant:123"
             );
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenReturn(Promise.complete()); // GH-90000
+                .thenReturn(Promise.complete()); 
 
-            runPromise(() -> subscriber.start()); // GH-90000
+            runPromise(() -> subscriber.start()); 
 
             // Verify that deleteKey would NOT be called since event source matches
-            verify(cacheBackend, never()).deleteKey(anyString()); // GH-90000
+            verify(cacheBackend, never()).deleteKey(anyString()); 
         }
     }
 
@@ -269,58 +269,58 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should propagate events between different services")
-        void shouldPropagateBetweenServices() { // GH-90000
+        void shouldPropagateBetweenServices() { 
             // Service A publishes event
-            CacheInvalidationEventPublisher publisherA = new CacheInvalidationEventPublisher( // GH-90000
+            CacheInvalidationEventPublisher publisherA = new CacheInvalidationEventPublisher( 
                 messageBus, "ServiceA", "tenant:123"
             );
 
             // Service B subscribes
-            CacheInvalidationEventSubscriber subscriberB = new CacheInvalidationEventSubscriber( // GH-90000
+            CacheInvalidationEventSubscriber subscriberB = new CacheInvalidationEventSubscriber( 
                 messageBus, cacheBackend, "ServiceB"
             );
 
             // Service A publishes
-            runPromise(() -> publisherA.publishSingleKeyDelete("cache:key:1", "trace:cross:1")); // GH-90000
+            runPromise(() -> publisherA.publishSingleKeyDelete("cache:key:1", "trace:cross:1")); 
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenReturn(Promise.complete()); // GH-90000
+                .thenReturn(Promise.complete()); 
 
-            runPromise(() -> subscriberB.start()); // GH-90000
+            runPromise(() -> subscriberB.start()); 
 
-            assertThat(publishedEvents).hasSize(1); // GH-90000
+            assertThat(publishedEvents).hasSize(1); 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
 
         @Test
         @DisplayName("should handle events from multiple services concurrently")
-        void shouldHandleMultipleServicesConcurrently() throws InterruptedException { // GH-90000
+        void shouldHandleMultipleServicesConcurrently() throws InterruptedException { 
             int serviceCount = 5;
             Thread[] threads = new Thread[serviceCount];
 
-            for (int s = 0; s < serviceCount; s++) { // GH-90000
+            for (int s = 0; s < serviceCount; s++) { 
                 final int serviceId = s;
-                threads[s] = new Thread(() -> { // GH-90000
-                    CacheInvalidationEventPublisher servicePublisher = new CacheInvalidationEventPublisher( // GH-90000
+                threads[s] = new Thread(() -> { 
+                    CacheInvalidationEventPublisher servicePublisher = new CacheInvalidationEventPublisher( 
                         messageBus, "Service" + serviceId, "tenant:123"
                     );
 
-                    for (int op = 0; op < 20; op++) { // GH-90000
+                    for (int op = 0; op < 20; op++) { 
                         final int operation = op;
-                        runPromise(() -> servicePublisher.publishSingleKeyDelete( // GH-90000
+                        runPromise(() -> servicePublisher.publishSingleKeyDelete( 
                             "key:service:" + serviceId + ":op:" + operation,
                             "trace:" + serviceId + ":" + operation
                         ));
                     }
                 });
-                threads[s].start(); // GH-90000
+                threads[s].start(); 
             }
 
-            for (Thread t : threads) { // GH-90000
-                t.join(); // GH-90000
+            for (Thread t : threads) { 
+                t.join(); 
             }
 
-            assertThat(publishedEvents).hasSize(serviceCount * 20); // GH-90000
+            assertThat(publishedEvents).hasSize(serviceCount * 20); 
         }
     }
 
@@ -330,49 +330,49 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle message bus publish failures gracefully")
-        void shouldHandlePublishFailureGracefully() { // GH-90000
+        void shouldHandlePublishFailureGracefully() { 
             when(messageBus.publish(eq("cache-invalidation-events"), any()))
                 .thenReturn(Promise.ofException(new RuntimeException("Bus unavailable")));
 
             // Should not throw exception
-            assertThatCode(() -> publisher.publishSingleKeyDelete("cache:key", "trace:error") // GH-90000
-                .whenComplete(($, $$) -> { })) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> publisher.publishSingleKeyDelete("cache:key", "trace:error") 
+                .whenComplete(($, $$) -> { })) 
+                .doesNotThrowAnyException(); 
 
-            clearFatalError(); // GH-90000
+            clearFatalError(); 
 
             verify(messageBus).publish(eq("cache-invalidation-events"), any());
         }
 
         @Test
         @DisplayName("should handle cache backend deletion failures in subscriber")
-        void shouldHandleBackendFailureGracefully() { // GH-90000
+        void shouldHandleBackendFailureGracefully() { 
             doThrow(new RuntimeException("Cache connection lost"))
-                .when(cacheBackend).deleteKey(anyString()); // GH-90000
+                .when(cacheBackend).deleteKey(anyString()); 
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenAnswer(invocation -> { // GH-90000
+                .thenAnswer(invocation -> { 
                     // Simulate backend failure during event processing
-                    return Promise.complete(); // GH-90000
+                    return Promise.complete(); 
                 });
 
             // Should not throw exception
-            assertThatCode(() -> runPromise(() -> subscriber.start())) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> runPromise(() -> subscriber.start())) 
+                .doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("should handle malformed events gracefully")
-        void shouldHandleMalformedEvents() { // GH-90000
+        void shouldHandleMalformedEvents() { 
             // Publish invalid event
-            publishedEvents.add(new InvalidEvent()); // GH-90000
+            publishedEvents.add(new InvalidEvent()); 
 
             when(messageBus.subscribe(eq("cache-invalidation-events"), any()))
-                .thenReturn(Promise.complete()); // GH-90000
+                .thenReturn(Promise.complete()); 
 
             // Should not throw exception
-            assertThatCode(() -> runPromise(() -> subscriber.start())) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> runPromise(() -> subscriber.start())) 
+                .doesNotThrowAnyException(); 
         }
     }
 
@@ -382,40 +382,40 @@ class CacheInvalidationEventIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle 1000 rapid publications")
-        void shouldHandle1000RapidPublications() { // GH-90000
-            long startTime = System.currentTimeMillis(); // GH-90000
+        void shouldHandle1000RapidPublications() { 
+            long startTime = System.currentTimeMillis(); 
 
-            for (int i = 0; i < 1000; i++) { // GH-90000
+            for (int i = 0; i < 1000; i++) { 
                 final int index = i;
-                runPromise(() -> publisher.publishSingleKeyDelete("cache:perf:key:" + index, "trace:perf")); // GH-90000
+                runPromise(() -> publisher.publishSingleKeyDelete("cache:perf:key:" + index, "trace:perf")); 
             }
 
-            long elapsedMs = System.currentTimeMillis() - startTime; // GH-90000
+            long elapsedMs = System.currentTimeMillis() - startTime; 
 
-            assertThat(publishedEvents).hasSize(1000); // GH-90000
-            assertThat(elapsedMs).isLessThan(5000);  // Should complete in < 5 seconds // GH-90000
+            assertThat(publishedEvents).hasSize(1000); 
+            assertThat(elapsedMs).isLessThan(5000);  // Should complete in < 5 seconds 
 
-            System.out.println("1000 publications - elapsed: " + elapsedMs + "ms"); // GH-90000
+            System.out.println("1000 publications - elapsed: " + elapsedMs + "ms"); 
         }
 
         @Test
         @DisplayName("should maintain performance with mixed operation types")
-        void shouldMaintainPerformanceWithMixedOps() { // GH-90000
-            long startTime = System.currentTimeMillis(); // GH-90000
+        void shouldMaintainPerformanceWithMixedOps() { 
+            long startTime = System.currentTimeMillis(); 
 
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 final int index = i;
-                runPromise(() -> publisher.publishSingleKeyDelete("key:" + index, "trace:" + index)); // GH-90000
-                runPromise(() -> publisher.publishPatternDelete("pattern:*", 10, "trace:" + index)); // GH-90000
-                runPromise(() -> publisher.publishBulkDelete("bulk:" + index, 100, "trace:" + index)); // GH-90000
+                runPromise(() -> publisher.publishSingleKeyDelete("key:" + index, "trace:" + index)); 
+                runPromise(() -> publisher.publishPatternDelete("pattern:*", 10, "trace:" + index)); 
+                runPromise(() -> publisher.publishBulkDelete("bulk:" + index, 100, "trace:" + index)); 
             }
 
-            long elapsedMs = System.currentTimeMillis() - startTime; // GH-90000
+            long elapsedMs = System.currentTimeMillis() - startTime; 
 
-            assertThat(publishedEvents).hasSize(300);  // 100 each of 3 types // GH-90000
-            assertThat(elapsedMs).isLessThan(3000); // GH-90000
+            assertThat(publishedEvents).hasSize(300);  // 100 each of 3 types 
+            assertThat(elapsedMs).isLessThan(3000); 
 
-            System.out.println("300 mixed operations - elapsed: " + elapsedMs + "ms"); // GH-90000
+            System.out.println("300 mixed operations - elapsed: " + elapsedMs + "ms"); 
         }
     }
 

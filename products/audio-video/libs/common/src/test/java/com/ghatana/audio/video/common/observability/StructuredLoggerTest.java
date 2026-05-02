@@ -21,38 +21,38 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("StructuredLogger")
 class StructuredLoggerTest {
 
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(StructuredLoggerTest.class); // GH-90000
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(StructuredLoggerTest.class); 
 
-    // ─── newCorrelationId() ─────────────────────────────────────────────────── // GH-90000
+    // ─── newCorrelationId() ─────────────────────────────────────────────────── 
 
     @Test
     @DisplayName("newCorrelationId() returns 8-char non-blank string")
-    void newCorrelationId_returnsEightChars() { // GH-90000
-        String id = StructuredLogger.newCorrelationId(); // GH-90000
+    void newCorrelationId_returnsEightChars() { 
+        String id = StructuredLogger.newCorrelationId(); 
 
-        assertThat(id).hasSize(8).doesNotContainAnyWhitespaces(); // GH-90000
+        assertThat(id).hasSize(8).doesNotContainAnyWhitespaces(); 
     }
 
     @Test
     @DisplayName("two successive newCorrelationId() calls return different values")
-    void newCorrelationId_uniqueValues() { // GH-90000
-        assertThat(StructuredLogger.newCorrelationId()) // GH-90000
-                .isNotEqualTo(StructuredLogger.newCorrelationId()); // GH-90000
+    void newCorrelationId_uniqueValues() { 
+        assertThat(StructuredLogger.newCorrelationId()) 
+                .isNotEqualTo(StructuredLogger.newCorrelationId()); 
     }
 
-    // ─── withContext(Runnable) ──────────────────────────────────────────────── // GH-90000
+    // ─── withContext(Runnable) ──────────────────────────────────────────────── 
 
     @Test
     @DisplayName("withContext(Runnable) sets MDC keys while block runs")
-    void withContext_runnable_setsMdcDuringExecution() { // GH-90000
-        AtomicReference<String> capturedCid = new AtomicReference<>(); // GH-90000
-        AtomicReference<String> capturedSvc = new AtomicReference<>(); // GH-90000
-        AtomicReference<String> capturedOp  = new AtomicReference<>(); // GH-90000
+    void withContext_runnable_setsMdcDuringExecution() { 
+        AtomicReference<String> capturedCid = new AtomicReference<>(); 
+        AtomicReference<String> capturedSvc = new AtomicReference<>(); 
+        AtomicReference<String> capturedOp  = new AtomicReference<>(); 
 
-        StructuredLogger.withContext("abc12345", "stt-service", "transcribe", () -> { // GH-90000
-            capturedCid.set(MDC.get(StructuredLogger.MDC_CORRELATION_ID)); // GH-90000
-            capturedSvc.set(MDC.get(StructuredLogger.MDC_SERVICE)); // GH-90000
-            capturedOp.set(MDC.get(StructuredLogger.MDC_OPERATION)); // GH-90000
+        StructuredLogger.withContext("abc12345", "stt-service", "transcribe", () -> { 
+            capturedCid.set(MDC.get(StructuredLogger.MDC_CORRELATION_ID)); 
+            capturedSvc.set(MDC.get(StructuredLogger.MDC_SERVICE)); 
+            capturedOp.set(MDC.get(StructuredLogger.MDC_OPERATION)); 
         });
 
         assertThat(capturedCid.get()).isEqualTo("abc12345");
@@ -62,84 +62,84 @@ class StructuredLoggerTest {
 
     @Test
     @DisplayName("withContext(Runnable) clears MDC keys after block completes")
-    void withContext_runnable_clearsMdcAfterExecution() { // GH-90000
-        StructuredLogger.withContext("abc12345", "stt-service", "transcribe", () -> { // GH-90000
+    void withContext_runnable_clearsMdcAfterExecution() { 
+        StructuredLogger.withContext("abc12345", "stt-service", "transcribe", () -> { 
             // no-op
         });
 
-        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); // GH-90000
-        assertThat(MDC.get(StructuredLogger.MDC_SERVICE)).isNull(); // GH-90000
-        assertThat(MDC.get(StructuredLogger.MDC_OPERATION)).isNull(); // GH-90000
+        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); 
+        assertThat(MDC.get(StructuredLogger.MDC_SERVICE)).isNull(); 
+        assertThat(MDC.get(StructuredLogger.MDC_OPERATION)).isNull(); 
     }
 
     @Test
     @DisplayName("withContext(Runnable) clears MDC even when block throws")
-    void withContext_runnable_clearsMdcOnException() { // GH-90000
+    void withContext_runnable_clearsMdcOnException() { 
         try {
-            StructuredLogger.withContext("err-id", "vision-service", "detect", () -> { // GH-90000
+            StructuredLogger.withContext("err-id", "vision-service", "detect", () -> { 
                 throw new RuntimeException("simulated failure");
             });
-        } catch (RuntimeException ignored) { // GH-90000
+        } catch (RuntimeException ignored) { 
             // expected
         }
 
-        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); // GH-90000
+        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); 
     }
 
-    // ─── withContext(Supplier) ──────────────────────────────────────────────── // GH-90000
+    // ─── withContext(Supplier) ──────────────────────────────────────────────── 
 
     @Test
     @DisplayName("withContext(Supplier) returns the supplier result")
-    void withContext_supplier_returnsResult() { // GH-90000
-        String result = StructuredLogger.withContext("abc", "svc", "op", () -> "hello"); // GH-90000
+    void withContext_supplier_returnsResult() { 
+        String result = StructuredLogger.withContext("abc", "svc", "op", () -> "hello"); 
 
         assertThat(result).isEqualTo("hello");
     }
 
     @Test
     @DisplayName("withContext(Supplier) clears MDC after returning result")
-    void withContext_supplier_clearsMdcAfterReturn() { // GH-90000
-        StructuredLogger.withContext("abc", "svc", "op", () -> "result"); // GH-90000
+    void withContext_supplier_clearsMdcAfterReturn() { 
+        StructuredLogger.withContext("abc", "svc", "op", () -> "result"); 
 
-        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); // GH-90000
+        assertThat(MDC.get(StructuredLogger.MDC_CORRELATION_ID)).isNull(); 
     }
 
-    // ─── log methods — smoke tests (no assertion on log output, just verify no NPE) ── // GH-90000
+    // ─── log methods — smoke tests (no assertion on log output, just verify no NPE) ── 
 
     @Test
     @DisplayName("logStarted() does not throw")
-    void logStarted_doesNotThrow() { // GH-90000
-        StructuredLogger.logStarted(LOG, "transcribe"); // GH-90000
+    void logStarted_doesNotThrow() { 
+        StructuredLogger.logStarted(LOG, "transcribe"); 
     }
 
     @Test
     @DisplayName("logSucceeded() does not throw")
-    void logSucceeded_doesNotThrow() { // GH-90000
-        StructuredLogger.logSucceeded(LOG, "transcribe", 42L); // GH-90000
+    void logSucceeded_doesNotThrow() { 
+        StructuredLogger.logSucceeded(LOG, "transcribe", 42L); 
     }
 
     @Test
     @DisplayName("logFailed() with retryable error does not throw")
-    void logFailed_retryableError_doesNotThrow() { // GH-90000
-        StructuredLogger.logFailed(LOG, "transcribe", // GH-90000
-                new com.ghatana.media.common.InferenceError("timeout", null, true)); // GH-90000
+    void logFailed_retryableError_doesNotThrow() { 
+        StructuredLogger.logFailed(LOG, "transcribe", 
+                new com.ghatana.media.common.InferenceError("timeout", null, true)); 
     }
 
     @Test
     @DisplayName("logFailed() with non-retryable error does not throw")
-    void logFailed_nonRetryableError_doesNotThrow() { // GH-90000
+    void logFailed_nonRetryableError_doesNotThrow() { 
         StructuredLogger.logFailed(LOG, "transcribe", new ValidationError("bad input"));
     }
 
     @Test
     @DisplayName("logFailed() with null throwable does not throw")
-    void logFailed_nullThrowable_doesNotThrow() { // GH-90000
-        StructuredLogger.logFailed(LOG, "transcribe", null); // GH-90000
+    void logFailed_nullThrowable_doesNotThrow() { 
+        StructuredLogger.logFailed(LOG, "transcribe", null); 
     }
 
     @Test
     @DisplayName("logInvalid() does not throw")
-    void logInvalid_doesNotThrow() { // GH-90000
-        StructuredLogger.logInvalid(LOG, "transcribe", "audio data empty"); // GH-90000
+    void logInvalid_doesNotThrow() { 
+        StructuredLogger.logInvalid(LOG, "transcribe", "audio data empty"); 
     }
 }

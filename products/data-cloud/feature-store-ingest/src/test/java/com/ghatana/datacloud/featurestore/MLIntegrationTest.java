@@ -23,57 +23,57 @@ class MLIntegrationTest {
 
     @Test
     @DisplayName("Should integrate with ML models")
-    void shouldIntegrateWithMlModels() { // GH-90000
-        Map<String, Object> payload = Map.of("age", 25, "income", 50000.0); // GH-90000
+    void shouldIntegrateWithMlModels() { 
+        Map<String, Object> payload = Map.of("age", 25, "income", 50000.0); 
 
-        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload).isNotEmpty(); 
         assertThat(payload).containsKey("age");
         assertThat(payload).containsKey("income");
     }
 
     @Test
     @DisplayName("Should handle model training")
-    void shouldHandleModelTraining() { // GH-90000
-        Map<String, Object> trainingData = Map.of("feature1", 1.0, "feature2", 2.0); // GH-90000
+    void shouldHandleModelTraining() { 
+        Map<String, Object> trainingData = Map.of("feature1", 1.0, "feature2", 2.0); 
 
-        assertThat(trainingData).isNotEmpty(); // GH-90000
+        assertThat(trainingData).isNotEmpty(); 
         assertThat(trainingData).containsKey("feature1");
     }
 
     @Test
     @DisplayName("Should handle model inference")
-    void shouldHandleModelInference() { // GH-90000
-        Map<String, Object> payload = Map.of("input", 100); // GH-90000
+    void shouldHandleModelInference() { 
+        Map<String, Object> payload = Map.of("input", 100); 
 
-        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload).isNotEmpty(); 
         assertThat(payload).containsKey("input");
     }
 
     @Test
     @DisplayName("Should handle feature extraction")
-    void shouldHandleFeatureExtraction() { // GH-90000
-        Map<String, Object> payload = Map.of("name", "test", "value", 123); // GH-90000
+    void shouldHandleFeatureExtraction() { 
+        Map<String, Object> payload = Map.of("name", "test", "value", 123); 
 
-        assertThat(payload).isNotEmpty(); // GH-90000
+        assertThat(payload).isNotEmpty(); 
         assertThat(payload).containsKey("name");
         assertThat(payload).containsKey("value");
     }
 
     @Test
     @DisplayName("Should handle model versioning")
-    void shouldHandleModelVersioning() { // GH-90000
+    void shouldHandleModelVersioning() { 
         String modelVersion = "v1.0.0";
         String[] parts = modelVersion.split("\\.");
 
-        assertThat(parts).hasSize(3); // GH-90000
+        assertThat(parts).hasSize(3); 
         assertThat(parts[0]).isEqualTo("v1");
     }
 
     @Test
     @DisplayName("Should handle ML failures")
-    void shouldHandleMlFailures() { // GH-90000
-        Map<String, Object> emptyPayload = Map.of(); // GH-90000
+    void shouldHandleMlFailures() { 
+        Map<String, Object> emptyPayload = Map.of(); 
 
-        assertThat(emptyPayload).isEmpty(); // GH-90000
+        assertThat(emptyPayload).isEmpty(); 
     }
 }

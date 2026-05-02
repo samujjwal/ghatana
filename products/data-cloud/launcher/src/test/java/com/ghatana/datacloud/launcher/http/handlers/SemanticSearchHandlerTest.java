@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("SemanticSearchHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class SemanticSearchHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -56,32 +56,32 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
     private SemanticSearchHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper()); // GH-90000
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new SemanticSearchHandler(vectorPlugin, client, http, new ObjectMapper()); 
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("similar-entities rejects missing tenant before vector lookup")
-    void similarEntitiesRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void similarEntitiesRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleSimilarEntities(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleSimilarEntities(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(vectorPlugin, never()).findSimilar(any(), any(Integer.class), any(Boolean.class), any()); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(vectorPlugin, never()).findSimilar(any(), any(Integer.class), any(Boolean.class), any()); 
     }
 
     @Test
     @DisplayName("collection rag rejects missing tenant before reading body")
-    void collectionRagRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void collectionRagRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleCollectionRag(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleCollectionRag(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
-        verify(vectorPlugin, never()).search(any()); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
+        verify(vectorPlugin, never()).search(any()); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -104,14 +104,14 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
         private SemanticSearchHandler realHandler;
 
         @BeforeEach
-        void setUpRealHandler() { // GH-90000
+        void setUpRealHandler() { 
             realPlugin = new VectorMemoryPlugin();
-            realHandler = new SemanticSearchHandler(realPlugin, client, http, new ObjectMapper()); // GH-90000
+            realHandler = new SemanticSearchHandler(realPlugin, client, http, new ObjectMapper()); 
         }
 
         @Test
         @DisplayName("non-UUID entity ID is translated to deterministic UUID via nameUUIDFromBytes")
-        void nonUuidEntityIdIsTranslatedToDeterministicUuid() { // GH-90000
+        void nonUuidEntityIdIsTranslatedToDeterministicUuid() { 
             String externalId = "my-entity-non-uuid-id";
             DataCloudClient.Entity entity = new DataCloudClient.Entity(
                     externalId, "col", Map.of("key", "val"),
@@ -123,13 +123,13 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
             Optional<DataRecord> retrieved = runPromise(
                     () -> realPlugin.retrieve(expectedKey.toString(), "tenant-1"));
 
-            assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getId()).isEqualTo(expectedKey); // GH-90000
+            assertThat(retrieved).isPresent(); 
+            assertThat(retrieved.get().getId()).isEqualTo(expectedKey); 
         }
 
         @Test
         @DisplayName("valid UUID entity ID is stored under that exact UUID")
-        void uuidEntityIdStoredUnderSameUuid() { // GH-90000
+        void uuidEntityIdStoredUnderSameUuid() { 
             UUID entityUuid = UUID.randomUUID();
             DataCloudClient.Entity entity = new DataCloudClient.Entity(
                     entityUuid.toString(), "col", Map.of(),
@@ -140,13 +140,13 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
             Optional<DataRecord> retrieved = runPromise(
                     () -> realPlugin.retrieve(entityUuid.toString(), "tenant-1"));
 
-            assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getId()).isEqualTo(entityUuid); // GH-90000
+            assertThat(retrieved).isPresent(); 
+            assertThat(retrieved.get().getId()).isEqualTo(entityUuid); 
         }
 
         @Test
         @DisplayName("indexEntity preserves original entity ID in sourceEntityId metadata")
-        void indexEntityPreservesSourceEntityIdInMetadata() { // GH-90000
+        void indexEntityPreservesSourceEntityIdInMetadata() { 
             String externalId = "external-entity-preserve";
             DataCloudClient.Entity entity = new DataCloudClient.Entity(
                     externalId, "col", Map.of(),
@@ -158,13 +158,13 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
             Optional<DataRecord> retrieved = runPromise(
                     () -> realPlugin.retrieve(expectedKey.toString(), "tenant-1"));
 
-            assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get().getMetadata()).containsEntry("sourceEntityId", externalId); // GH-90000
+            assertThat(retrieved).isPresent(); 
+            assertThat(retrieved.get().getMetadata()).containsEntry("sourceEntityId", externalId); 
         }
 
         @Test
         @DisplayName("deleteEntity applies same UUID translation as indexEntity – record is removed")
-        void deleteEntityAppliesSameUuidTranslationAsIndexEntity() { // GH-90000
+        void deleteEntityAppliesSameUuidTranslationAsIndexEntity() { 
             String externalId = "entity-to-delete";
             DataCloudClient.Entity entity = new DataCloudClient.Entity(
                     externalId, "col", Map.of(),
@@ -174,13 +174,13 @@ class SemanticSearchHandlerTest extends EventloopTestBase {
 
             UUID expectedKey = UUID.nameUUIDFromBytes(externalId.getBytes(StandardCharsets.UTF_8));
             assertThat(runPromise(() -> realPlugin.retrieve(expectedKey.toString(), "tenant-1")))
-                    .isPresent(); // record exists before delete // GH-90000
+                    .isPresent(); // record exists before delete 
 
             runPromise(() -> realHandler.deleteEntity("tenant-1", externalId));
 
             Optional<DataRecord> afterDelete = runPromise(
                     () -> realPlugin.retrieve(expectedKey.toString(), "tenant-1"));
-            assertThat(afterDelete).isEmpty(); // GH-90000
+            assertThat(afterDelete).isEmpty(); 
         }
     }
 }

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("DeploymentRiskAssessor Tests")
 class DeploymentRiskAssessorTest extends EventloopTestBase {
 
@@ -23,290 +23,290 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("assess parses AI deployment recommendation")
-  void assessParsesAiDeploymentRecommendation() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn( // GH-90000
-            Promise.of( // GH-90000
+  void assessParsesAiDeploymentRecommendation() { 
+    when(aiService.reason(anyString(), anyMap())) 
+        .thenReturn( 
+            Promise.of( 
                 "{\"riskScore\":7.6,\"strategy\":\"CANARY\",\"rationale\":\"Moderate risk due to impact\",\"riskFactors\":[\"impact\"],\"requiresApproval\":true,\"canaryPercent\":10}"));
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(6)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.03, 0.82))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(6)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.03, 0.82))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 220, 40, List.of("api", "db"), false))); // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
+                        "project-a", "tenant-a", 220, 40, List.of("api", "db"), false))); 
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
-    assertThat(risk.riskScore()).isEqualTo(7.6); // GH-90000
-    assertThat(risk.requiresApproval()).isTrue(); // GH-90000
-    assertThat(risk.aiGenerated()).isTrue(); // GH-90000
-    assertThat(risk.canaryPercent()).isEqualTo(10); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); 
+    assertThat(risk.riskScore()).isEqualTo(7.6); 
+    assertThat(risk.requiresApproval()).isTrue(); 
+    assertThat(risk.aiGenerated()).isTrue(); 
+    assertThat(risk.canaryPercent()).isEqualTo(10); 
   }
 
   @Test
   @DisplayName("assess falls back to blue green for breaking API changes")
-  void assessFallsBackToBlueGreenForBreakingApiChanges() { // GH-90000
+  void assessFallsBackToBlueGreenForBreakingApiChanges() { 
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(" "));
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(2)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.95))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(2)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.95))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
                         "project-a", "tenant-a", 50, 10, List.of("api"), true)));
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.BLUE_GREEN); // GH-90000
-    assertThat(risk.requiresApproval()).isTrue(); // GH-90000
-    assertThat(risk.aiGenerated()).isFalse(); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.BLUE_GREEN); 
+    assertThat(risk.requiresApproval()).isTrue(); 
+    assertThat(risk.aiGenerated()).isFalse(); 
   }
 
   @Test
   @DisplayName("assess falls back to canary when AI response is malformed and coverage is low")
-  void assessFallsBackToCanaryWhenAiResponseIsMalformedAndCoverageIsLow() { // GH-90000
+  void assessFallsBackToCanaryWhenAiResponseIsMalformedAndCoverageIsLow() { 
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("not-json"));
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(7)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.08, 0.55))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(7)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.08, 0.55))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
                         null, null, -10, -5, null, false)));
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
-    assertThat(risk.riskFactors()).contains("elevated-recent-failure-rate", "low-test-coverage", "high-downstream-impact"); // GH-90000
-    assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-    assertThat(risk.canaryPercent()).isEqualTo(5); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); 
+    assertThat(risk.riskFactors()).contains("elevated-recent-failure-rate", "low-test-coverage", "high-downstream-impact"); 
+    assertThat(risk.aiGenerated()).isFalse(); 
+    assertThat(risk.canaryPercent()).isEqualTo(5); 
   }
 
   @Test
   @DisplayName("assess falls back to immediate for low risk changes")
-  void assessFallsBackToImmediateForLowRiskChanges() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"strategy\":\"INVALID\"}")); // GH-90000
+  void assessFallsBackToImmediateForLowRiskChanges() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"strategy\":\"INVALID\"}")); 
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(0)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.0, 1.0))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(0)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.0, 1.0))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 5, 1, List.of(), false))); // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
+                        "project-a", "tenant-a", 5, 1, List.of(), false))); 
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); // GH-90000
-    assertThat(risk.canaryPercent()).isZero(); // GH-90000
-    assertThat(risk.riskScore()).isLessThan(4.0); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); 
+    assertThat(risk.canaryPercent()).isZero(); 
+    assertThat(risk.riskScore()).isLessThan(4.0); 
   }
 
   @Test
   @DisplayName("assess defaults missing AI fields and non array factors")
-  void assessDefaultsMissingAiFieldsAndNonArrayFactors() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn( // GH-90000
-            Promise.of( // GH-90000
+  void assessDefaultsMissingAiFieldsAndNonArrayFactors() { 
+    when(aiService.reason(anyString(), anyMap())) 
+        .thenReturn( 
+            Promise.of( 
                 "{\"riskScore\":5.2,\"strategy\":\"\",\"rationale\":\"\",\"riskFactors\":\"impact\"}"));
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(1)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.92))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(1)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.92))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
                         "project-a", "tenant-a", 60, 20, List.of("svc"), false)));
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); 
     assertThat(risk.rationale()).isEqualTo("AI generated recommendation");
-    assertThat(risk.riskFactors()).isEmpty(); // GH-90000
-    assertThat(risk.canaryPercent()).isZero(); // GH-90000
-    assertThat(risk.aiGenerated()).isTrue(); // GH-90000
+    assertThat(risk.riskFactors()).isEmpty(); 
+    assertThat(risk.canaryPercent()).isZero(); 
+    assertThat(risk.aiGenerated()).isTrue(); 
   }
 
     @Test
     @DisplayName("assess falls back when AI response is null")
-    void assessFallsBackWhenAiResponseIsNull() { // GH-90000
-        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
+    void assessFallsBackWhenAiResponseIsNull() { 
+        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(null)); 
 
         DeploymentRiskAssessor assessor =
-                new DeploymentRiskAssessor( // GH-90000
+                new DeploymentRiskAssessor( 
                         aiService,
-                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(1)), // GH-90000
-                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.91))); // GH-90000
+                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(1)), 
+                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.91))); 
 
         DeploymentRiskAssessor.DeploymentRisk risk =
-                runPromise( // GH-90000
-                        () -> // GH-90000
-                                assessor.assess( // GH-90000
-                                        new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+                runPromise( 
+                        () -> 
+                                assessor.assess( 
+                                        new DeploymentRiskAssessor.DeploymentRequest( 
                                                 "project-a", "tenant-a", 30, 10, List.of("svc"), false)));
 
-        assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); // GH-90000
+        assertThat(risk.aiGenerated()).isFalse(); 
+        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); 
     }
 
   @Test
   @DisplayName("assess falls back when AI score is invalid and supports rolling strategy")
-  void assessFallsBackWhenAiScoreIsInvalidAndSupportsRollingStrategy() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
+  void assessFallsBackWhenAiScoreIsInvalidAndSupportsRollingStrategy() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); 
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(3)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.02, 0.88))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(3)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.02, 0.88))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 180, 90, List.of("api", "worker"), false))); // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
+                        "project-a", "tenant-a", 180, 90, List.of("api", "worker"), false))); 
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); // GH-90000
-    assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-    assertThat(risk.requiresApproval()).isFalse(); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); 
+    assertThat(risk.aiGenerated()).isFalse(); 
+    assertThat(risk.requiresApproval()).isFalse(); 
   }
 
   @Test
   @DisplayName("assess falls back when AI strategy is invalid despite valid risk score")
-  void assessFallsBackWhenAiStrategyIsInvalidDespiteValidRiskScore() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())) // GH-90000
-        .thenReturn(Promise.of("{\"riskScore\":6.4,\"strategy\":\"SIDEWAYS\"}")); // GH-90000
+  void assessFallsBackWhenAiStrategyIsInvalidDespiteValidRiskScore() { 
+    when(aiService.reason(anyString(), anyMap())) 
+        .thenReturn(Promise.of("{\"riskScore\":6.4,\"strategy\":\"SIDEWAYS\"}")); 
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(3)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.88))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(3)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.88))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 180, 60, List.of("api", "worker"), false))); // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
+                        "project-a", "tenant-a", 180, 60, List.of("api", "worker"), false))); 
 
-    assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); // GH-90000
+    assertThat(risk.aiGenerated()).isFalse(); 
+        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.IMMEDIATE); 
   }
 
   @Test
   @DisplayName("assess requires approval for very high non breaking fallback risk")
-  void assessRequiresApprovalForVeryHighNonBreakingFallbackRisk() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
+  void assessRequiresApprovalForVeryHighNonBreakingFallbackRisk() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); 
 
     DeploymentRiskAssessor assessor =
-        new DeploymentRiskAssessor( // GH-90000
+        new DeploymentRiskAssessor( 
             aiService,
-            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(10)), // GH-90000
-            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.09, 0.2))); // GH-90000
+            (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(10)), 
+            projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.09, 0.2))); 
 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                assessor.assess( // GH-90000
-                    new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
-                        "project-a", "tenant-a", 700, 250, List.of("api", "worker", "db"), false))); // GH-90000
+        runPromise( 
+            () -> 
+                assessor.assess( 
+                    new DeploymentRiskAssessor.DeploymentRequest( 
+                        "project-a", "tenant-a", 700, 250, List.of("api", "worker", "db"), false))); 
 
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
-    assertThat(risk.requiresApproval()).isTrue(); // GH-90000
-    assertThat(risk.riskScore()).isGreaterThanOrEqualTo(8.0); // GH-90000
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); 
+    assertThat(risk.requiresApproval()).isTrue(); 
+    assertThat(risk.riskScore()).isGreaterThanOrEqualTo(8.0); 
   }
 
     @Test
     @DisplayName("assess falls back to canary when score alone is high")
-    void assessFallsBackToCanaryWhenScoreAloneIsHigh() { // GH-90000
-        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
+    void assessFallsBackToCanaryWhenScoreAloneIsHigh() { 
+        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); 
 
         DeploymentRiskAssessor assessor =
-                new DeploymentRiskAssessor( // GH-90000
+                new DeploymentRiskAssessor( 
                         aiService,
-                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(8)), // GH-90000
-                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.95))); // GH-90000
+                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(8)), 
+                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.95))); 
 
         DeploymentRiskAssessor.DeploymentRisk risk =
-                runPromise( // GH-90000
-                        () -> // GH-90000
-                                assessor.assess( // GH-90000
-                                        new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+                runPromise( 
+                        () -> 
+                                assessor.assess( 
+                                        new DeploymentRiskAssessor.DeploymentRequest( 
                                                 "project-a",
                                                 "tenant-a",
                                                 600,
                                                 200,
-                                                List.of("api", "worker", "db", "jobs"), // GH-90000
+                                                List.of("api", "worker", "db", "jobs"), 
                                                 false)));
 
-        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
-        assertThat(risk.aiGenerated()).isFalse(); // GH-90000
-        assertThat(risk.requiresApproval()).isFalse(); // GH-90000
-        assertThat(risk.riskScore()).isGreaterThanOrEqualTo(7.0); // GH-90000
+        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); 
+        assertThat(risk.aiGenerated()).isFalse(); 
+        assertThat(risk.requiresApproval()).isFalse(); 
+        assertThat(risk.riskScore()).isGreaterThanOrEqualTo(7.0); 
     }
 
     @Test
     @DisplayName("assess falls back to canary when low coverage alone crosses the threshold")
-    void assessFallsBackToCanaryWhenLowCoverageAloneCrossesTheThreshold() { // GH-90000
-        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); // GH-90000
+    void assessFallsBackToCanaryWhenLowCoverageAloneCrossesTheThreshold() { 
+        when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of("{\"riskScore\":-1}")); 
 
         DeploymentRiskAssessor assessor =
-                new DeploymentRiskAssessor( // GH-90000
+                new DeploymentRiskAssessor( 
                         aiService,
-                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(2)), // GH-90000
-                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.6))); // GH-90000
+                        (modules, tenantId) -> Promise.of(new DeploymentRiskAssessor.DeploymentImpact(2)), 
+                        projectId -> Promise.of(new DeploymentRiskAssessor.DeploymentMetrics(0.01, 0.6))); 
 
         DeploymentRiskAssessor.DeploymentRisk risk =
-                runPromise( // GH-90000
-                        () -> // GH-90000
-                                assessor.assess( // GH-90000
-                                        new DeploymentRiskAssessor.DeploymentRequest( // GH-90000
+                runPromise( 
+                        () -> 
+                                assessor.assess( 
+                                        new DeploymentRiskAssessor.DeploymentRequest( 
                                                 "project-a", "tenant-a", 80, 20, List.of("api"), false)));
 
-        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); // GH-90000
-        assertThat(risk.aiGenerated()).isFalse(); // GH-90000
+        assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.CANARY); 
+        assertThat(risk.aiGenerated()).isFalse(); 
         assertThat(risk.riskFactors()).contains("low-test-coverage");
-        assertThat(risk.riskScore()).isLessThan(7.0); // GH-90000
+        assertThat(risk.riskScore()).isLessThan(7.0); 
     }
 
   @Test
   @DisplayName("deployment records normalize invalid values")
-  void deploymentRecordsNormalizeInvalidValues() { // GH-90000
+  void deploymentRecordsNormalizeInvalidValues() { 
     DeploymentRiskAssessor.DeploymentRisk risk =
-        new DeploymentRiskAssessor.DeploymentRisk(12.0, null, null, null, false, -3, false); // GH-90000
+        new DeploymentRiskAssessor.DeploymentRisk(12.0, null, null, null, false, -3, false); 
     DeploymentRiskAssessor.DeploymentSignals signals =
-        new DeploymentRiskAssessor.DeploymentSignals(500, 20, 3, 6, 0.07, 0.65, true); // GH-90000
+        new DeploymentRiskAssessor.DeploymentSignals(500, 20, 3, 6, 0.07, 0.65, true); 
 
-    assertThat(risk.riskScore()).isEqualTo(10.0); // GH-90000
-    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); // GH-90000
-    assertThat(risk.rationale()).isEmpty(); // GH-90000
-    assertThat(risk.riskFactors()).isEmpty(); // GH-90000
-    assertThat(risk.canaryPercent()).isZero(); // GH-90000
+    assertThat(risk.riskScore()).isEqualTo(10.0); 
+    assertThat(risk.strategy()).isEqualTo(DeploymentRiskAssessor.DeploymentStrategy.ROLLING); 
+    assertThat(risk.rationale()).isEmpty(); 
+    assertThat(risk.riskFactors()).isEmpty(); 
+    assertThat(risk.canaryPercent()).isZero(); 
 
-    assertThat(signals.riskFactors()) // GH-90000
-        .contains( // GH-90000
+    assertThat(signals.riskFactors()) 
+        .contains( 
             "breaking-api-changes",
             "elevated-recent-failure-rate",
             "low-test-coverage",
@@ -316,10 +316,10 @@ class DeploymentRiskAssessorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("deployment signals omit factors when thresholds are not met")
-  void deploymentSignalsOmitFactorsWhenThresholdsAreNotMet() { // GH-90000
+  void deploymentSignalsOmitFactorsWhenThresholdsAreNotMet() { 
     DeploymentRiskAssessor.DeploymentSignals signals =
-        new DeploymentRiskAssessor.DeploymentSignals(50, 10, 1, 1, 0.01, 0.95, false); // GH-90000
+        new DeploymentRiskAssessor.DeploymentSignals(50, 10, 1, 1, 0.01, 0.95, false); 
 
-    assertThat(signals.riskFactors()).isEmpty(); // GH-90000
+    assertThat(signals.riskFactors()).isEmpty(); 
   }
 }

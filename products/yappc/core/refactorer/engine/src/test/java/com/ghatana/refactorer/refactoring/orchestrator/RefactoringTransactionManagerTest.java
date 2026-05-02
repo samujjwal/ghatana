@@ -30,154 +30,154 @@ class RefactoringTransactionManagerTest {
     private final String testContent = "Test content";
 
     @BeforeEach
-    void setUp() throws IOException { // GH-90000
-        transactionManager = new RefactoringTransactionManager(); // GH-90000
+    void setUp() throws IOException { 
+        transactionManager = new RefactoringTransactionManager(); 
         testFile = tempDir.resolve("test.txt");
-        Files.writeString(testFile, testContent); // GH-90000
+        Files.writeString(testFile, testContent); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
+    void tearDown() { 
         // Clean up any remaining backup files
         try {
-            transactionManager.cleanupOldBackups(); // GH-90000
-        } catch (IOException e) { // GH-90000
+            transactionManager.cleanupOldBackups(); 
+        } catch (IOException e) { 
             // Ignore cleanup errors in teardown
-            System.err.println("Warning: Error during cleanup in tearDown: " + e.getMessage()); // GH-90000
+            System.err.println("Warning: Error during cleanup in tearDown: " + e.getMessage()); 
         }
     }
 
     @Test
-    void testTransactionLifecycle() throws IOException { // GH-90000
+    void testTransactionLifecycle() throws IOException { 
         // Start a transaction
-        String transactionId = transactionManager.beginTransaction(); // GH-90000
-        assertNotNull(transactionId); // GH-90000
+        String transactionId = transactionManager.beginTransaction(); 
+        assertNotNull(transactionId); 
 
         // Register a file with the transaction
-        transactionManager.registerFile(transactionId, testFile); // GH-90000
+        transactionManager.registerFile(transactionId, testFile); 
 
         // Modify the file
         String modifiedContent = "Modified content";
-        Files.writeString(testFile, modifiedContent); // GH-90000
-        assertEquals(modifiedContent, Files.readString(testFile)); // GH-90000
+        Files.writeString(testFile, modifiedContent); 
+        assertEquals(modifiedContent, Files.readString(testFile)); 
 
         // Rollback the transaction
-        transactionManager.rollbackTransaction(transactionId); // GH-90000
+        transactionManager.rollbackTransaction(transactionId); 
 
         // Verify the file was restored
-        assertEquals(testContent, Files.readString(testFile)); // GH-90000
+        assertEquals(testContent, Files.readString(testFile)); 
     }
 
     @Test
-    void testCommitTransaction() throws IOException { // GH-90000
-        String transactionId = transactionManager.beginTransaction(); // GH-90000
-        transactionManager.registerFile(transactionId, testFile); // GH-90000
+    void testCommitTransaction() throws IOException { 
+        String transactionId = transactionManager.beginTransaction(); 
+        transactionManager.registerFile(transactionId, testFile); 
 
         // Modify the file
         String modifiedContent = "Modified content";
-        Files.writeString(testFile, modifiedContent); // GH-90000
+        Files.writeString(testFile, modifiedContent); 
 
         // Commit the transaction
-        transactionManager.commitTransaction(transactionId); // GH-90000
+        transactionManager.commitTransaction(transactionId); 
 
         // Verify the file was not restored
-        assertEquals(modifiedContent, Files.readString(testFile)); // GH-90000
+        assertEquals(modifiedContent, Files.readString(testFile)); 
     }
 
     @Test
-    void testMultipleFilesInTransaction() throws IOException { // GH-90000
+    void testMultipleFilesInTransaction() throws IOException { 
         // Create a second test file
         Path testFile2 = tempDir.resolve("test2.txt");
         String testContent2 = "Test content 2";
-        Files.writeString(testFile2, testContent2); // GH-90000
+        Files.writeString(testFile2, testContent2); 
 
-        String transactionId = transactionManager.beginTransaction(); // GH-90000
+        String transactionId = transactionManager.beginTransaction(); 
 
         // Register both files
-        transactionManager.registerFile(transactionId, testFile); // GH-90000
-        transactionManager.registerFile(transactionId, testFile2); // GH-90000
+        transactionManager.registerFile(transactionId, testFile); 
+        transactionManager.registerFile(transactionId, testFile2); 
 
         // Modify both files
         String modifiedContent = "Modified content";
-        Files.writeString(testFile, modifiedContent); // GH-90000
-        Files.writeString(testFile2, modifiedContent); // GH-90000
+        Files.writeString(testFile, modifiedContent); 
+        Files.writeString(testFile2, modifiedContent); 
 
         // Rollback and verify both files were restored
-        transactionManager.rollbackTransaction(transactionId); // GH-90000
-        assertEquals(testContent, Files.readString(testFile)); // GH-90000
-        assertEquals(testContent2, Files.readString(testFile2)); // GH-90000
+        transactionManager.rollbackTransaction(transactionId); 
+        assertEquals(testContent, Files.readString(testFile)); 
+        assertEquals(testContent2, Files.readString(testFile2)); 
     }
 
     @Test
-    void testNonexistentFile() { // GH-90000
-        String transactionId = transactionManager.beginTransaction(); // GH-90000
+    void testNonexistentFile() { 
+        String transactionId = transactionManager.beginTransaction(); 
         Path nonExistentFile = tempDir.resolve("nonexistent.txt");
 
         // Should not throw when registering a non-existent file
-        assertDoesNotThrow(() -> transactionManager.registerFile(transactionId, nonExistentFile)); // GH-90000
+        assertDoesNotThrow(() -> transactionManager.registerFile(transactionId, nonExistentFile)); 
 
         // Should handle rollback gracefully
-        assertDoesNotThrow(() -> transactionManager.rollbackTransaction(transactionId)); // GH-90000
+        assertDoesNotThrow(() -> transactionManager.rollbackTransaction(transactionId)); 
     }
 
     @Test
-    void testCleanupOldBackups() throws IOException { // GH-90000
+    void testCleanupOldBackups() throws IOException { 
         // Create some backup files under the working directory
-        String suffix = deriveBackupSuffix(); // GH-90000
+        String suffix = deriveBackupSuffix(); 
         Path cwd = Path.of(".").toAbsolutePath().normalize();
         Path backupDir = cwd.resolve(".polyfix/backups");
-        Path backup1 = backupDir.resolve("test.txt.123" + suffix); // GH-90000
-        Path backup2 = backupDir.resolve("test.txt.456" + suffix); // GH-90000
+        Path backup1 = backupDir.resolve("test.txt.123" + suffix); 
+        Path backup2 = backupDir.resolve("test.txt.456" + suffix); 
 
-        Files.createDirectories(backupDir); // GH-90000
-        Files.createFile(backup1); // GH-90000
-        Files.createFile(backup2); // GH-90000
+        Files.createDirectories(backupDir); 
+        Files.createFile(backup1); 
+        Files.createFile(backup2); 
 
         // Run cleanup
-        transactionManager.cleanupOldBackups(); // GH-90000
+        transactionManager.cleanupOldBackups(); 
 
         // Verify backups were deleted
-        assertFalse(Files.exists(backup1)); // GH-90000
-        assertFalse(Files.exists(backup2)); // GH-90000
+        assertFalse(Files.exists(backup1)); 
+        assertFalse(Files.exists(backup2)); 
     }
 
-    private String deriveBackupSuffix() throws IOException { // GH-90000
+    private String deriveBackupSuffix() throws IOException { 
         Path probeFile = tempDir.resolve("probe.txt");
-        Files.writeString(probeFile, "probe"); // GH-90000
-        String transactionId = transactionManager.beginTransaction(); // GH-90000
-        transactionManager.registerFile(transactionId, probeFile); // GH-90000
+        Files.writeString(probeFile, "probe"); 
+        String transactionId = transactionManager.beginTransaction(); 
+        transactionManager.registerFile(transactionId, probeFile); 
 
         Path backupsDir = probeFile.getParent().resolve(".polyfix/backups");
-        try (var stream = Files.list(backupsDir)) { // GH-90000
+        try (var stream = Files.list(backupsDir)) { 
             String suffix =
-                    stream.findFirst() // GH-90000
-                            .map(path -> path.getFileName().toString()) // GH-90000
-                            .map(name -> name.replace("probe.txt." + transactionId, "")) // GH-90000
+                    stream.findFirst() 
+                            .map(path -> path.getFileName().toString()) 
+                            .map(name -> name.replace("probe.txt." + transactionId, "")) 
                             .orElse(".polyfix.bak");
-            transactionManager.rollbackTransaction(transactionId); // GH-90000
+            transactionManager.rollbackTransaction(transactionId); 
             return suffix;
         }
     }
 
     @Test
-    void testConcurrentTransactions() throws InterruptedException, IOException { // GH-90000
+    void testConcurrentTransactions() throws InterruptedException, IOException { 
         // Test that transactions are isolated
-        String tx1 = transactionManager.beginTransaction(); // GH-90000
-        String tx2 = transactionManager.beginTransaction(); // GH-90000
+        String tx1 = transactionManager.beginTransaction(); 
+        String tx2 = transactionManager.beginTransaction(); 
 
         // Register same file in both transactions
-        transactionManager.registerFile(tx1, testFile); // GH-90000
-        transactionManager.registerFile(tx2, testFile); // GH-90000
+        transactionManager.registerFile(tx1, testFile); 
+        transactionManager.registerFile(tx2, testFile); 
 
         // Modify file in first transaction
         String tx1Content = "TX1 content";
-        Files.writeString(testFile, tx1Content); // GH-90000
+        Files.writeString(testFile, tx1Content); 
 
         // Rollback first transaction, commit second
-        transactionManager.rollbackTransaction(tx1); // GH-90000
-        transactionManager.commitTransaction(tx2); // GH-90000
+        transactionManager.rollbackTransaction(tx1); 
+        transactionManager.commitTransaction(tx2); 
 
         // File should be restored to original content after both transactions
-        assertEquals(testContent, Files.readString(testFile)); // GH-90000
+        assertEquals(testContent, Files.readString(testFile)); 
     }
 }

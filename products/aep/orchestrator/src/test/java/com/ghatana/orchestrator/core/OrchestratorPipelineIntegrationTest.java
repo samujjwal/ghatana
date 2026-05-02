@@ -56,18 +56,18 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
     private Orchestrator orchestratorWithPlanning;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
 
-        PipelineCache pipelineCache = new PipelineCache(Duration.ofMinutes(10), metricsCollector); // GH-90000
-        OrchestratorConfig config = new OrchestratorConfig(); // GH-90000
-        config.setRefreshInterval(Duration.ofMinutes(5)); // GH-90000
+        PipelineCache pipelineCache = new PipelineCache(Duration.ofMinutes(10), metricsCollector); 
+        OrchestratorConfig config = new OrchestratorConfig(); 
+        config.setRefreshInterval(Duration.ofMinutes(5)); 
 
-        orchestrator = new Orchestrator( // GH-90000
+        orchestrator = new Orchestrator( 
                 pipelineCache, agentRegistryClient, pipelineRegistryClient, config, metricsCollector, specFormatLoader);
 
-        PipelineCache pipelineCachePlanning = new PipelineCache(Duration.ofMinutes(10), metricsCollector); // GH-90000
-        orchestratorWithPlanning = new Orchestrator( // GH-90000
+        PipelineCache pipelineCachePlanning = new PipelineCache(Duration.ofMinutes(10), metricsCollector); 
+        orchestratorWithPlanning = new Orchestrator( 
                 pipelineCachePlanning,
                 agentRegistryClient,
                 pipelineRegistryClient,
@@ -79,43 +79,43 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("deployPipeline succeeds when all referenced agents are active")
-    void shouldDeployPipelineWhenAgentsAreActive() { // GH-90000
-        OrchestratorPipelineEntity pipeline = pipeline("pipe-1", "agent-1"); // GH-90000
+    void shouldDeployPipelineWhenAgentsAreActive() { 
+        OrchestratorPipelineEntity pipeline = pipeline("pipe-1", "agent-1"); 
         when(pipelineRegistryClient.getPipeline("pipe-1")).thenReturn(Promise.of(Optional.of(pipeline)));
         when(agentRegistryClient.getAgent("agent-1"))
-                .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-1", "Agent 1", "active")))); // GH-90000
+                .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-1", "Agent 1", "active")))); 
 
         OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-1"));
 
-        assertEquals("pipe-1", deployed.id); // GH-90000
+        assertEquals("pipe-1", deployed.id); 
         verify(metricsCollector).incrementCounter("orch.pipeline.deployed");
     }
 
     @Test
     @DisplayName("deployPipeline returns null when referenced agent is missing")
-    void shouldRejectPipelineWhenAgentIsMissing() { // GH-90000
-        OrchestratorPipelineEntity pipeline = pipeline("pipe-missing", "missing-agent"); // GH-90000
+    void shouldRejectPipelineWhenAgentIsMissing() { 
+        OrchestratorPipelineEntity pipeline = pipeline("pipe-missing", "missing-agent"); 
         when(pipelineRegistryClient.getPipeline("pipe-missing")).thenReturn(Promise.of(Optional.of(pipeline)));
         when(agentRegistryClient.getAgent("missing-agent")).thenReturn(Promise.of(Optional.empty()));
 
         OrchestratorPipelineEntity deployed = runPromise(() -> orchestrator.deployPipeline("pipe-missing"));
 
-        assertNull(deployed); // GH-90000
+        assertNull(deployed); 
         verify(metricsCollector).incrementCounter("orch.pipeline.validation.failed");
     }
 
     @Test
     @DisplayName("undeployPipeline removes deployed pipeline")
-    void shouldUndeployPipeline() { // GH-90000
-        OrchestratorPipelineEntity pipeline = pipeline("pipe-2", "agent-2"); // GH-90000
+    void shouldUndeployPipeline() { 
+        OrchestratorPipelineEntity pipeline = pipeline("pipe-2", "agent-2"); 
         when(pipelineRegistryClient.getPipeline("pipe-2")).thenReturn(Promise.of(Optional.of(pipeline)));
         when(agentRegistryClient.getAgent("agent-2"))
-                .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-2", "Agent 2", "active")))); // GH-90000
+                .thenReturn(Promise.of(Optional.of(new AgentRegistryClient.AgentInfo("agent-2", "Agent 2", "active")))); 
 
         runPromise(() -> orchestrator.deployPipeline("pipe-2"));
         Boolean removed = runPromise(() -> orchestrator.undeployPipeline("pipe-2"));
 
-        assertTrue(removed); // GH-90000
+        assertTrue(removed); 
         verify(metricsCollector).incrementCounter("orch.pipeline.undeployed");
     }
 
@@ -127,49 +127,49 @@ class OrchestratorPipelineIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("compilePlan delegates to PlanCompiler")
-        void compilePlanDelegatesToCompiler() { // GH-90000
-            PlanGraph expectedGraph = PlanGraph.of( // GH-90000
-                    "p1", "agent-1", "Do something", List.of(PlannedAction.simple("a1", "Step 1", ActionClass.READ))); // GH-90000
+        void compilePlanDelegatesToCompiler() { 
+            PlanGraph expectedGraph = PlanGraph.of( 
+                    "p1", "agent-1", "Do something", List.of(PlannedAction.simple("a1", "Step 1", ActionClass.READ))); 
             when(planCompiler.compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any()))
-                    .thenReturn(Promise.of(expectedGraph)); // GH-90000
+                    .thenReturn(Promise.of(expectedGraph)); 
 
             PlanGraph graph =
-                    runPromise(() -> orchestratorWithPlanning.compilePlan("agent-1", "tenant-1", "Do something")); // GH-90000
+                    runPromise(() -> orchestratorWithPlanning.compilePlan("agent-1", "tenant-1", "Do something")); 
 
             assertThat(graph.planId()).isEqualTo("p1");
-            assertThat(graph.actions()).hasSize(1); // GH-90000
+            assertThat(graph.actions()).hasSize(1); 
             verify(planCompiler).compile(eq("agent-1"), eq("tenant-1"), eq("Do something"), any());
         }
 
         @Test
         @DisplayName("compilePlan throws when PlanCompiler is not configured")
-        void compilePlanThrowsWhenNoPlanCompiler() { // GH-90000
-            assertThatThrownBy(() -> runPromise(() -> orchestrator.compilePlan("a", "t", "Obj"))) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+        void compilePlanThrowsWhenNoPlanCompiler() { 
+            assertThatThrownBy(() -> runPromise(() -> orchestrator.compilePlan("a", "t", "Obj"))) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("PlanCompiler is not configured");
         }
 
         @Test
         @DisplayName("hasPlanCompiler returns true when compiler is set")
-        void hasPlanCompilerTrueWhenSet() { // GH-90000
-            assertThat(orchestratorWithPlanning.hasPlanCompiler()).isTrue(); // GH-90000
+        void hasPlanCompilerTrueWhenSet() { 
+            assertThat(orchestratorWithPlanning.hasPlanCompiler()).isTrue(); 
         }
 
         @Test
         @DisplayName("hasPlanCompiler returns false when no compiler is set")
-        void hasPlanCompilerFalseWhenNotSet() { // GH-90000
-            assertThat(orchestrator.hasPlanCompiler()).isFalse(); // GH-90000
+        void hasPlanCompilerFalseWhenNotSet() { 
+            assertThat(orchestrator.hasPlanCompiler()).isFalse(); 
         }
     }
 
-    private static OrchestratorPipelineEntity pipeline(String id, String agentId) { // GH-90000
-        OrchestratorPipelineEntity entity = new OrchestratorPipelineEntity(); // GH-90000
+    private static OrchestratorPipelineEntity pipeline(String id, String agentId) { 
+        OrchestratorPipelineEntity entity = new OrchestratorPipelineEntity(); 
         entity.id = id;
         entity.name = "Pipeline " + id;
         entity.description = "test pipeline";
         entity.version = "1.0.0";
-        entity.createdAt = Instant.now(); // GH-90000
-        entity.updatedAt = Instant.now(); // GH-90000
+        entity.createdAt = Instant.now(); 
+        entity.updatedAt = Instant.now(); 
         entity.createdBy = "test";
         entity.status = "active";
         entity.config = "{\"steps\":[{\"agentId\":\"" + agentId + "\"}]}";

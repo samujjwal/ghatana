@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.database.connection;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConnectionPoolExpansionTest extends EventloopTestBase {
 
     // ============================================
-    // HIGH CONCURRENCY SCENARIOS (3 tests) // GH-90000
+    // HIGH CONCURRENCY SCENARIOS (3 tests) 
     // ============================================
 
     @Nested
@@ -40,69 +40,69 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Handles 100 concurrent connection requests")
-        void handleHighConcurrencyLoad() { // GH-90000
+        void handleHighConcurrencyLoad() { 
             int poolSize = 20;
             int concurrentRequests = 100;
-            AtomicInteger successfulAcquisitions = new AtomicInteger(0); // GH-90000
-            AtomicInteger failedAcquisitions = new AtomicInteger(0); // GH-90000
+            AtomicInteger successfulAcquisitions = new AtomicInteger(0); 
+            AtomicInteger failedAcquisitions = new AtomicInteger(0); 
 
-            for (int i = 0; i < concurrentRequests; i++) { // GH-90000
-                if (successfulAcquisitions.get() < poolSize) { // GH-90000
-                    successfulAcquisitions.incrementAndGet(); // GH-90000
+            for (int i = 0; i < concurrentRequests; i++) { 
+                if (successfulAcquisitions.get() < poolSize) { 
+                    successfulAcquisitions.incrementAndGet(); 
                 } else {
-                    failedAcquisitions.incrementAndGet(); // GH-90000
+                    failedAcquisitions.incrementAndGet(); 
                 }
             }
 
-            assertThat(successfulAcquisitions.get()).isEqualTo(poolSize); // GH-90000
-            assertThat(failedAcquisitions.get()).isEqualTo(concurrentRequests - poolSize); // GH-90000
+            assertThat(successfulAcquisitions.get()).isEqualTo(poolSize); 
+            assertThat(failedAcquisitions.get()).isEqualTo(concurrentRequests - poolSize); 
         }
 
         @Test
         @DisplayName("Maintains correct count under rapid acquire/release cycles")
-        void rapidAcquireReleaseCycles() { // GH-90000
+        void rapidAcquireReleaseCycles() { 
             int poolSize = 5;
-            AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
+            AtomicInteger available = new AtomicInteger(poolSize); 
 
             // Rapid cycle: acquire and release same connection many times
-            for (int batch = 0; batch < 10; batch++) { // GH-90000
+            for (int batch = 0; batch < 10; batch++) { 
                 // Acquire all
-                for (int i = 0; i < poolSize; i++) { // GH-90000
-                    if (available.get() > 0) { // GH-90000
-                        available.decrementAndGet(); // GH-90000
+                for (int i = 0; i < poolSize; i++) { 
+                    if (available.get() > 0) { 
+                        available.decrementAndGet(); 
                     }
                 }
 
-                assertThat(available.get()).isZero(); // GH-90000
+                assertThat(available.get()).isZero(); 
 
                 // Release all
-                for (int i = 0; i < poolSize; i++) { // GH-90000
-                    available.incrementAndGet(); // GH-90000
+                for (int i = 0; i < poolSize; i++) { 
+                    available.incrementAndGet(); 
                 }
 
-                assertThat(available.get()).isEqualTo(poolSize); // GH-90000
+                assertThat(available.get()).isEqualTo(poolSize); 
             }
         }
 
         @Test
         @DisplayName("Prevents over-release of connections")
-        void preventOverRelease() { // GH-90000
+        void preventOverRelease() { 
             int poolSize = 5;
-            AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
+            AtomicInteger available = new AtomicInteger(poolSize); 
 
             // Try to release more than pool size
-            for (int i = 0; i < poolSize + 5; i++) { // GH-90000
-                if (available.get() < poolSize) { // GH-90000
-                    available.incrementAndGet(); // GH-90000
+            for (int i = 0; i < poolSize + 5; i++) { 
+                if (available.get() < poolSize) { 
+                    available.incrementAndGet(); 
                 }
             }
 
-            assertThat(available.get()).isEqualTo(poolSize); // GH-90000
+            assertThat(available.get()).isEqualTo(poolSize); 
         }
     }
 
     // ============================================
-    // POOL SIZE CONSTRAINTS (2 tests) // GH-90000
+    // POOL SIZE CONSTRAINTS (2 tests) 
     // ============================================
 
     @Nested
@@ -111,43 +111,43 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Enforces maximum pool size limit")
-        void enforceMaxPoolSize() { // GH-90000
+        void enforceMaxPoolSize() { 
             int maxPoolSize = 10;
-            AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
+            AtomicInteger activeConnections = new AtomicInteger(0); 
 
             // Try to acquire beyond max
-            for (int i = 0; i < 20; i++) { // GH-90000
-                if (activeConnections.get() < maxPoolSize) { // GH-90000
-                    activeConnections.incrementAndGet(); // GH-90000
+            for (int i = 0; i < 20; i++) { 
+                if (activeConnections.get() < maxPoolSize) { 
+                    activeConnections.incrementAndGet(); 
                 }
             }
 
-            assertThat(activeConnections.get()).isEqualTo(maxPoolSize); // GH-90000
+            assertThat(activeConnections.get()).isEqualTo(maxPoolSize); 
         }
 
         @Test
         @DisplayName("Grows pool dynamically up to max size")
-        void dynamicPoolGrowth() { // GH-90000
+        void dynamicPoolGrowth() { 
             int maxPoolSize = 15;
-            AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
-            List<Integer> growthTrace = new ArrayList<>(); // GH-90000
+            AtomicInteger activeConnections = new AtomicInteger(0); 
+            List<Integer> growthTrace = new ArrayList<>(); 
 
             // Request connections gradually
-            for (int i = 0; i < 20; i++) { // GH-90000
-                if (activeConnections.get() < maxPoolSize) { // GH-90000
-                    activeConnections.incrementAndGet(); // GH-90000
-                    growthTrace.add(activeConnections.get()); // GH-90000
+            for (int i = 0; i < 20; i++) { 
+                if (activeConnections.get() < maxPoolSize) { 
+                    activeConnections.incrementAndGet(); 
+                    growthTrace.add(activeConnections.get()); 
                 }
             }
 
-            assertThat(activeConnections.get()).isEqualTo(maxPoolSize); // GH-90000
-            assertThat(growthTrace).isNotEmpty(); // GH-90000
-            assertThat(growthTrace.get(growthTrace.size() - 1)).isEqualTo(maxPoolSize); // GH-90000
+            assertThat(activeConnections.get()).isEqualTo(maxPoolSize); 
+            assertThat(growthTrace).isNotEmpty(); 
+            assertThat(growthTrace.get(growthTrace.size() - 1)).isEqualTo(maxPoolSize); 
         }
     }
 
     // ============================================
-    // RECOVERY AND RESILIENCE (2 tests) // GH-90000
+    // RECOVERY AND RESILIENCE (2 tests) 
     // ============================================
 
     @Nested
@@ -156,55 +156,55 @@ class ConnectionPoolExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Recovers from temporary exhaustion")
-        void recoveryFromExhaustion() { // GH-90000
+        void recoveryFromExhaustion() { 
             int poolSize = 5;
-            AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
-            AtomicBoolean wasExhausted = new AtomicBoolean(false); // GH-90000
+            AtomicInteger available = new AtomicInteger(poolSize); 
+            AtomicBoolean wasExhausted = new AtomicBoolean(false); 
 
             // Exhaust pool
-            for (int i = 0; i < poolSize; i++) { // GH-90000
-                available.decrementAndGet(); // GH-90000
+            for (int i = 0; i < poolSize; i++) { 
+                available.decrementAndGet(); 
             }
-            wasExhausted.set(available.get() == 0); // GH-90000
+            wasExhausted.set(available.get() == 0); 
 
-            // Try to use when exhausted (should fail) // GH-90000
-            boolean canAcquire = available.get() > 0; // GH-90000
-            assertThat(canAcquire).isFalse(); // GH-90000
+            // Try to use when exhausted (should fail) 
+            boolean canAcquire = available.get() > 0; 
+            assertThat(canAcquire).isFalse(); 
 
             // Release a connection
-            available.incrementAndGet(); // GH-90000
+            available.incrementAndGet(); 
 
             // Should be able to acquire again
-            canAcquire = available.get() > 0; // GH-90000
-            assertThat(canAcquire).isTrue(); // GH-90000
-            assertThat(wasExhausted.get()).isTrue(); // GH-90000
+            canAcquire = available.get() > 0; 
+            assertThat(canAcquire).isTrue(); 
+            assertThat(wasExhausted.get()).isTrue(); 
         }
 
         @Test
         @DisplayName("Tracks connection state transitions accurately")
-        void connectionStateTransitions() { // GH-90000
+        void connectionStateTransitions() { 
             int poolSize = 3;
-            AtomicInteger available = new AtomicInteger(poolSize); // GH-90000
-            AtomicInteger stateTransitions = new AtomicInteger(0); // GH-90000
+            AtomicInteger available = new AtomicInteger(poolSize); 
+            AtomicInteger stateTransitions = new AtomicInteger(0); 
 
             // Transition 1: Acquire
-            available.decrementAndGet(); // GH-90000
-            stateTransitions.incrementAndGet(); // GH-90000
+            available.decrementAndGet(); 
+            stateTransitions.incrementAndGet(); 
 
-            assertThat(available.get()).isEqualTo(poolSize - 1); // GH-90000
+            assertThat(available.get()).isEqualTo(poolSize - 1); 
 
             // Transition 2: Acquire again
-            available.decrementAndGet(); // GH-90000
-            stateTransitions.incrementAndGet(); // GH-90000
+            available.decrementAndGet(); 
+            stateTransitions.incrementAndGet(); 
 
-            assertThat(available.get()).isEqualTo(poolSize - 2); // GH-90000
+            assertThat(available.get()).isEqualTo(poolSize - 2); 
 
             // Transition 3: Release
-            available.incrementAndGet(); // GH-90000
-            stateTransitions.incrementAndGet(); // GH-90000
+            available.incrementAndGet(); 
+            stateTransitions.incrementAndGet(); 
 
-            assertThat(available.get()).isEqualTo(poolSize - 1); // GH-90000
-            assertThat(stateTransitions.get()).isEqualTo(3); // GH-90000
+            assertThat(available.get()).isEqualTo(poolSize - 1); 
+            assertThat(stateTransitions.get()).isEqualTo(3); 
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  *
  * Task 4.9 — Security Hardening: Tenant isolation verification for AgentFramework.
  * Ensures agent registration, context propagation, and configuration are tenant-scoped.
@@ -48,13 +48,13 @@ class AgentTenantIsolationTest extends EventloopTestBase {
     private static final String TENANT_C = "tenant-gamma";
 
     @BeforeEach
-    void setUp() { // GH-90000
-        TenantContext.clear(); // GH-90000
+    void setUp() { 
+        TenantContext.clear(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        TenantContext.clear(); // GH-90000
+    void tearDown() { 
+        TenantContext.clear(); 
     }
 
     // =========================================================================
@@ -67,18 +67,18 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("AgentContext carries tenantId through processing")
-        void contextCarriesTenantId() { // GH-90000
-            AgentContext ctx = createAgentContext(TENANT_A); // GH-90000
-            assertThat(ctx.getTenantId()).isEqualTo(TENANT_A); // GH-90000
+        void contextCarriesTenantId() { 
+            AgentContext ctx = createAgentContext(TENANT_A); 
+            assertThat(ctx.getTenantId()).isEqualTo(TENANT_A); 
         }
 
         @Test
         @DisplayName("AgentContext for different tenants are independent")
-        void contextsIndependent() { // GH-90000
-            AgentContext ctxA = createAgentContext(TENANT_A); // GH-90000
-            AgentContext ctxB = createAgentContext(TENANT_B); // GH-90000
+        void contextsIndependent() { 
+            AgentContext ctxA = createAgentContext(TENANT_A); 
+            AgentContext ctxB = createAgentContext(TENANT_B); 
 
-            assertThat(ctxA.getTenantId()).isNotEqualTo(ctxB.getTenantId()); // GH-90000
+            assertThat(ctxA.getTenantId()).isNotEqualTo(ctxB.getTenantId()); 
         }
 
         @Test
@@ -111,21 +111,21 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Agent can access tenantId from context during processing")
-        void agentAccessesTenantDuringProcessing() { // GH-90000
-            AtomicReference<String> capturedTenantId = new AtomicReference<>(); // GH-90000
+        void agentAccessesTenantDuringProcessing() { 
+            AtomicReference<String> capturedTenantId = new AtomicReference<>(); 
 
             TypedAgent<String, String> spyAgent = new TestTypedAgent("spy-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    capturedTenantId.set(ctx.getTenantId()); // GH-90000
-                    return Promise.of(AgentResult.success("done", "spy-agent", Duration.ZERO)); // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    capturedTenantId.set(ctx.getTenantId()); 
+                    return Promise.of(AgentResult.success("done", "spy-agent", Duration.ZERO)); 
                 }
             };
 
-            AgentContext ctx = createAgentContext(TENANT_A); // GH-90000
-            spyAgent.process(ctx, "test-input"); // GH-90000
+            AgentContext ctx = createAgentContext(TENANT_A); 
+            spyAgent.process(ctx, "test-input"); 
 
-            assertThat(capturedTenantId.get()).isEqualTo(TENANT_A); // GH-90000
+            assertThat(capturedTenantId.get()).isEqualTo(TENANT_A); 
         }
     }
 
@@ -139,20 +139,20 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Agents registered are globally visible (shared platform registry)")
-        void registryIsGlobalSharedResource() { // GH-90000
+        void registryIsGlobalSharedResource() { 
             // Agent registry is a global platform resource — agents are shared infrastructure.
-            // Tenant isolation is at the EXECUTION level (via AgentContext), not registration. // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
+            // Tenant isolation is at the EXECUTION level (via AgentContext), not registration. 
+            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); 
 
             TypedAgent<String, String> agentA = new TestTypedAgent("fraud-detector");
-            AgentConfig configA = AgentConfig.builder() // GH-90000
+            AgentConfig configA = AgentConfig.builder() 
                     .agentId("fraud-detector")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .timeout(Duration.ofSeconds(5)) // GH-90000
-                    .build(); // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .timeout(Duration.ofSeconds(5)) 
+                    .build(); 
 
             // register returns Promise<Void> — run inside eventloop per architecture mandate
-            runPromise(() -> registry.register(agentA, configA)); // GH-90000
+            runPromise(() -> registry.register(agentA, configA)); 
 
             Set<String> ids = runPromise(registry::listAgentIds);
             Optional<TypedAgent<String, String>> resolved = runPromise(() -> registry.resolve("fraud-detector"));
@@ -166,18 +166,18 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Multiple agents can be registered and resolved independently")
-        void multipleAgentResolution() { // GH-90000
-            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); // GH-90000
+        void multipleAgentResolution() { 
+            InMemoryAgentRegistry registry = new InMemoryAgentRegistry(); 
 
             TypedAgent<String, String> agent1 = new TestTypedAgent("agent-1");
             TypedAgent<String, String> agent2 = new TestTypedAgent("agent-2");
 
-            runPromise(() -> registry.register(agent1, AgentConfig.builder() // GH-90000
+            runPromise(() -> registry.register(agent1, AgentConfig.builder() 
                     .agentId("agent-1").type(AgentType.DETERMINISTIC)
-                    .timeout(Duration.ofSeconds(5)).build())); // GH-90000
-            runPromise(() -> registry.register(agent2, AgentConfig.builder() // GH-90000
+                    .timeout(Duration.ofSeconds(5)).build())); 
+            runPromise(() -> registry.register(agent2, AgentConfig.builder() 
                     .agentId("agent-2").type(AgentType.PROBABILISTIC)
-                    .timeout(Duration.ofSeconds(5)).build())); // GH-90000
+                    .timeout(Duration.ofSeconds(5)).build())); 
 
             Set<String> ids = runPromise(registry::listAgentIds);
             Optional<TypedAgent<String, String>> resolvedAgent1 = runPromise(() -> registry.resolve("agent-1"));
@@ -199,55 +199,55 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Agent execution within TenantContext scope sees correct tenant")
-        void agentExecutionInScope() throws Exception { // GH-90000
-            AtomicReference<String> capturedTenant = new AtomicReference<>(); // GH-90000
+        void agentExecutionInScope() throws Exception { 
+            AtomicReference<String> capturedTenant = new AtomicReference<>(); 
             TypedAgent<String, String> agent = new TestTypedAgent("scoped-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    capturedTenant.set(ctx.getTenantId()); // GH-90000
-                    return Promise.of(AgentResult.success("ok", "scoped-agent", Duration.ZERO)); // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    capturedTenant.set(ctx.getTenantId()); 
+                    return Promise.of(AgentResult.success("ok", "scoped-agent", Duration.ZERO)); 
                 }
             };
 
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
-            try (AutoCloseable scope = TenantContext.scope(principalA)) { // GH-90000
-                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); // GH-90000
-                agent.process(ctx, "input"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalA)) { 
+                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); 
+                agent.process(ctx, "input"); 
             }
 
-            assertThat(capturedTenant.get()).isEqualTo(TENANT_A); // GH-90000
+            assertThat(capturedTenant.get()).isEqualTo(TENANT_A); 
         }
 
         @Test
         @DisplayName("Agent execution scope switches tenant correctly between calls")
-        void scopeSwitchBetweenCalls() throws Exception { // GH-90000
-            List<String> capturedTenants = Collections.synchronizedList(new ArrayList<>()); // GH-90000
+        void scopeSwitchBetweenCalls() throws Exception { 
+            List<String> capturedTenants = Collections.synchronizedList(new ArrayList<>()); 
             TypedAgent<String, String> agent = new TestTypedAgent("multi-tenant-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    capturedTenants.add(ctx.getTenantId()); // GH-90000
-                    return Promise.of(AgentResult.success("ok", "multi-tenant-agent", Duration.ZERO)); // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    capturedTenants.add(ctx.getTenantId()); 
+                    return Promise.of(AgentResult.success("ok", "multi-tenant-agent", Duration.ZERO)); 
                 }
             };
 
             // Execute for tenant A
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
-            try (AutoCloseable scope = TenantContext.scope(principalA)) { // GH-90000
-                agent.process(createAgentContext(TenantContext.getCurrentTenantId()), "input-a"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalA)) { 
+                agent.process(createAgentContext(TenantContext.getCurrentTenantId()), "input-a"); 
             }
 
             // Execute for tenant B
             Principal principalB = new Principal("bob", List.of("admin"), TENANT_B);
-            try (AutoCloseable scope = TenantContext.scope(principalB)) { // GH-90000
-                agent.process(createAgentContext(TenantContext.getCurrentTenantId()), "input-b"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalB)) { 
+                agent.process(createAgentContext(TenantContext.getCurrentTenantId()), "input-b"); 
             }
 
-            assertThat(capturedTenants).containsExactly(TENANT_A, TENANT_B); // GH-90000
+            assertThat(capturedTenants).containsExactly(TENANT_A, TENANT_B); 
         }
     }
 
     // =========================================================================
-    // 4. Agent Authorization (Role-Based) // GH-90000
+    // 4. Agent Authorization (Role-Based) 
     // =========================================================================
 
     @Nested
@@ -256,8 +256,8 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Principal roles determine agent access")
-        void principalRolesDetermineAccess() { // GH-90000
-            Principal admin = new Principal("admin-user", List.of("admin", "agent-executor"), TENANT_A); // GH-90000
+        void principalRolesDetermineAccess() { 
+            Principal admin = new Principal("admin-user", List.of("admin", "agent-executor"), TENANT_A); 
             Principal viewer = new Principal("viewer-user", List.of("viewer"), TENANT_A);
 
             // Admin can execute agents
@@ -269,7 +269,7 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Principal from different tenant with same role has separate identity")
-        void crossTenantRoleSeparation() { // GH-90000
+        void crossTenantRoleSeparation() { 
             Principal adminA = new Principal("admin", List.of("admin"), TENANT_A);
             Principal adminB = new Principal("admin", List.of("admin"), TENANT_B);
 
@@ -278,18 +278,18 @@ class AgentTenantIsolationTest extends EventloopTestBase {
             assertThat(adminB.hasRole("admin")).isTrue();
 
             // But they are NOT the same principal
-            assertThat(adminA).isNotEqualTo(adminB); // GH-90000
+            assertThat(adminA).isNotEqualTo(adminB); 
         }
 
         @Test
         @DisplayName("Service account principal can process across agent types")
-        void serviceAccountCrossAgentType() { // GH-90000
-            Principal svcAccount = new Principal("pipeline-orchestrator", // GH-90000
-                    List.of("processor", "admin"), TENANT_A); // GH-90000
+        void serviceAccountCrossAgentType() { 
+            Principal svcAccount = new Principal("pipeline-orchestrator", 
+                    List.of("processor", "admin"), TENANT_A); 
 
             assertThat(svcAccount.hasRole("processor")).isTrue();
             assertThat(svcAccount.hasRole("admin")).isTrue();
-            assertThat(svcAccount.getTenantId()).isEqualTo(TENANT_A); // GH-90000
+            assertThat(svcAccount.getTenantId()).isEqualTo(TENANT_A); 
         }
     }
 
@@ -303,35 +303,35 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("AgentConfig with properties carries tenant-scoped settings")
-        void configCarriesTenantSettings() { // GH-90000
-            AgentConfig config = AgentConfig.builder() // GH-90000
+        void configCarriesTenantSettings() { 
+            AgentConfig config = AgentConfig.builder() 
                     .agentId("fraud-detector")
-                    .type(AgentType.DETERMINISTIC) // GH-90000
-                    .timeout(Duration.ofSeconds(5)) // GH-90000
-                    .properties(Map.of( // GH-90000
+                    .type(AgentType.DETERMINISTIC) 
+                    .timeout(Duration.ofSeconds(5)) 
+                    .properties(Map.of( 
                             "allowedTenants", "tenant-alpha,tenant-beta",
                             "maxConcurrency", "10"
                     ))
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(config.getProperties()).containsEntry("allowedTenants", "tenant-alpha,tenant-beta"); // GH-90000
+            assertThat(config.getProperties()).containsEntry("allowedTenants", "tenant-alpha,tenant-beta"); 
         }
 
         @Test
         @DisplayName("AgentConfig labels can encode tenant affinity")
-        void configLabelsEncodeTenantAffinity() { // GH-90000
-            AgentConfig config = AgentConfig.builder() // GH-90000
+        void configLabelsEncodeTenantAffinity() { 
+            AgentConfig config = AgentConfig.builder() 
                     .agentId("regional-processor")
-                    .type(AgentType.REACTIVE) // GH-90000
-                    .timeout(Duration.ofSeconds(10)) // GH-90000
-                    .labels(Map.of( // GH-90000
+                    .type(AgentType.REACTIVE) 
+                    .timeout(Duration.ofSeconds(10)) 
+                    .labels(Map.of( 
                             "region", "us-west-2",
                             "tier", "premium",
                             "tenantScope", "tenant-alpha"
                     ))
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(config.getLabels()).containsEntry("tenantScope", "tenant-alpha"); // GH-90000
+            assertThat(config.getLabels()).containsEntry("tenantScope", "tenant-alpha"); 
         }
     }
 
@@ -345,85 +345,85 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Concurrent agent executions for different tenants do not interfere")
-        void concurrentAgentExecutionIsolation() throws Exception { // GH-90000
-            ConcurrentHashMap<String, List<String>> tenantResults = new ConcurrentHashMap<>(); // GH-90000
-            tenantResults.put(TENANT_A, Collections.synchronizedList(new ArrayList<>())); // GH-90000
-            tenantResults.put(TENANT_B, Collections.synchronizedList(new ArrayList<>())); // GH-90000
-            tenantResults.put(TENANT_C, Collections.synchronizedList(new ArrayList<>())); // GH-90000
+        void concurrentAgentExecutionIsolation() throws Exception { 
+            ConcurrentHashMap<String, List<String>> tenantResults = new ConcurrentHashMap<>(); 
+            tenantResults.put(TENANT_A, Collections.synchronizedList(new ArrayList<>())); 
+            tenantResults.put(TENANT_B, Collections.synchronizedList(new ArrayList<>())); 
+            tenantResults.put(TENANT_C, Collections.synchronizedList(new ArrayList<>())); 
 
             TypedAgent<String, String> agent = new TestTypedAgent("concurrent-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    tenantResults.get(ctx.getTenantId()).add(input); // GH-90000
-                    return Promise.of(AgentResult.success( // GH-90000
-                            ctx.getTenantId() + ":" + input, "concurrent-agent", Duration.ZERO)); // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    tenantResults.get(ctx.getTenantId()).add(input); 
+                    return Promise.of(AgentResult.success( 
+                            ctx.getTenantId() + ":" + input, "concurrent-agent", Duration.ZERO)); 
                 }
             };
 
             int opsPerTenant = 20;
-            ExecutorService executor = Executors.newFixedThreadPool(6); // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
-            List<Future<?>> futures = new ArrayList<>(); // GH-90000
+            ExecutorService executor = Executors.newFixedThreadPool(6); 
+            CountDownLatch latch = new CountDownLatch(1); 
+            List<Future<?>> futures = new ArrayList<>(); 
 
             String[] tenants = {TENANT_A, TENANT_B, TENANT_C};
-            for (String tenant : tenants) { // GH-90000
-                for (int i = 0; i < opsPerTenant; i++) { // GH-90000
+            for (String tenant : tenants) { 
+                for (int i = 0; i < opsPerTenant; i++) { 
                     final int idx = i;
-                    futures.add(executor.submit(() -> { // GH-90000
+                    futures.add(executor.submit(() -> { 
                         try {
-                            latch.await(); // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            latch.await(); 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                             return;
                         }
-                        AgentContext ctx = createAgentContext(tenant); // GH-90000
-                        agent.process(ctx, "input-" + idx); // GH-90000
+                        AgentContext ctx = createAgentContext(tenant); 
+                        agent.process(ctx, "input-" + idx); 
                     }));
                 }
             }
 
-            latch.countDown(); // GH-90000
-            for (Future<?> f : futures) { // GH-90000
-                f.get(10, TimeUnit.SECONDS); // GH-90000
+            latch.countDown(); 
+            for (Future<?> f : futures) { 
+                f.get(10, TimeUnit.SECONDS); 
             }
 
-            executor.shutdown(); // GH-90000
-            executor.awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+            executor.shutdown(); 
+            executor.awaitTermination(5, TimeUnit.SECONDS); 
 
             // Each tenant should have exactly its own results
-            for (String tenant : tenants) { // GH-90000
-                assertThat(tenantResults.get(tenant)).hasSize(opsPerTenant); // GH-90000
+            for (String tenant : tenants) { 
+                assertThat(tenantResults.get(tenant)).hasSize(opsPerTenant); 
             }
         }
 
         @Test
         @DisplayName("TenantContext is thread-safe across parallel agent executions")
-        void tenantContextThreadSafety() throws Exception { // GH-90000
+        void tenantContextThreadSafety() throws Exception { 
             int threads = 10;
-            ExecutorService executor = Executors.newFixedThreadPool(threads); // GH-90000
-            CyclicBarrier barrier = new CyclicBarrier(threads); // GH-90000
-            List<Future<String>> futures = new ArrayList<>(); // GH-90000
+            ExecutorService executor = Executors.newFixedThreadPool(threads); 
+            CyclicBarrier barrier = new CyclicBarrier(threads); 
+            List<Future<String>> futures = new ArrayList<>(); 
 
-            for (int i = 0; i < threads; i++) { // GH-90000
+            for (int i = 0; i < threads; i++) { 
                 final String tenantId = "agent-tenant-" + i;
-                futures.add(executor.submit(() -> { // GH-90000
-                    barrier.await(5, TimeUnit.SECONDS); // GH-90000
+                futures.add(executor.submit(() -> { 
+                    barrier.await(5, TimeUnit.SECONDS); 
                     Principal p = new Principal("svc-" + tenantId, List.of("processor"), tenantId);
-                    try (AutoCloseable scope = TenantContext.scope(p)) { // GH-90000
+                    try (AutoCloseable scope = TenantContext.scope(p)) { 
                         // Simulate some processing delay
-                        Thread.sleep(ThreadLocalRandom.current().nextInt(1, 5)); // GH-90000
-                        return TenantContext.getCurrentTenantId(); // GH-90000
+                        Thread.sleep(ThreadLocalRandom.current().nextInt(1, 5)); 
+                        return TenantContext.getCurrentTenantId(); 
                     }
                 }));
             }
 
-            for (int i = 0; i < threads; i++) { // GH-90000
-                assertThat(futures.get(i).get(10, TimeUnit.SECONDS)) // GH-90000
-                        .isEqualTo("agent-tenant-" + i); // GH-90000
+            for (int i = 0; i < threads; i++) { 
+                assertThat(futures.get(i).get(10, TimeUnit.SECONDS)) 
+                        .isEqualTo("agent-tenant-" + i); 
             }
 
-            executor.shutdown(); // GH-90000
-            executor.awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+            executor.shutdown(); 
+            executor.awaitTermination(5, TimeUnit.SECONDS); 
         }
     }
 
@@ -437,33 +437,33 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Complete agent lifecycle with tenant context propagation")
-        void completeLifecycle() throws Exception { // GH-90000
-            List<String> auditTrail = Collections.synchronizedList(new ArrayList<>()); // GH-90000
+        void completeLifecycle() throws Exception { 
+            List<String> auditTrail = Collections.synchronizedList(new ArrayList<>()); 
 
             TypedAgent<String, String> agent = new TestTypedAgent("lifecycle-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    auditTrail.add(ctx.getTenantId() + ":" + input); // GH-90000
-                    return Promise.of(AgentResult.success("processed", "lifecycle-agent", Duration.ZERO)); // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    auditTrail.add(ctx.getTenantId() + ":" + input); 
+                    return Promise.of(AgentResult.success("processed", "lifecycle-agent", Duration.ZERO)); 
                 }
             };
 
             // Tenant A workflow
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
-            try (AutoCloseable scope = TenantContext.scope(principalA)) { // GH-90000
-                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); // GH-90000
-                agent.process(ctx, "classify"); // GH-90000
-                agent.process(ctx, "route"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalA)) { 
+                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); 
+                agent.process(ctx, "classify"); 
+                agent.process(ctx, "route"); 
             }
 
             // Tenant B workflow
             Principal principalB = new Principal("bob", List.of("admin"), TENANT_B);
-            try (AutoCloseable scope = TenantContext.scope(principalB)) { // GH-90000
-                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); // GH-90000
-                agent.process(ctx, "detect"); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalB)) { 
+                AgentContext ctx = createAgentContext(TenantContext.getCurrentTenantId()); 
+                agent.process(ctx, "detect"); 
             }
 
-            assertThat(auditTrail).containsExactly( // GH-90000
+            assertThat(auditTrail).containsExactly( 
                     TENANT_A + ":classify",
                     TENANT_A + ":route",
                     TENANT_B + ":detect"
@@ -472,33 +472,33 @@ class AgentTenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Agent results are isolated per tenant context")
-        void agentResultsIsolated() throws Exception { // GH-90000
-            Map<String, AgentResult<String>> results = new ConcurrentHashMap<>(); // GH-90000
+        void agentResultsIsolated() throws Exception { 
+            Map<String, AgentResult<String>> results = new ConcurrentHashMap<>(); 
 
             TypedAgent<String, String> agent = new TestTypedAgent("result-agent") {
                 @Override
-                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-                    return Promise.of(AgentResult.success( // GH-90000
-                            "result-for-" + ctx.getTenantId(), // GH-90000
+                public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+                    return Promise.of(AgentResult.success( 
+                            "result-for-" + ctx.getTenantId(), 
                             "result-agent",
                             Duration.ZERO));
                 }
             };
 
             // Execute for each tenant
-            for (String tenant : List.of(TENANT_A, TENANT_B, TENANT_C)) { // GH-90000
+            for (String tenant : List.of(TENANT_A, TENANT_B, TENANT_C)) { 
                 Principal p = new Principal("svc", List.of("processor"), tenant);
-                try (AutoCloseable scope = TenantContext.scope(p)) { // GH-90000
-                    AgentContext ctx = createAgentContext(tenant); // GH-90000
-                    AgentResult<String> result = runPromise(() -> agent.process(ctx, "input")); // GH-90000
-                    results.put(tenant, result); // GH-90000
+                try (AutoCloseable scope = TenantContext.scope(p)) { 
+                    AgentContext ctx = createAgentContext(tenant); 
+                    AgentResult<String> result = runPromise(() -> agent.process(ctx, "input")); 
+                    results.put(tenant, result); 
                 }
             }
 
-            assertThat(results).hasSize(3); // GH-90000
-            assertThat(results.get(TENANT_A).getOutput()).isEqualTo("result-for-" + TENANT_A); // GH-90000
-            assertThat(results.get(TENANT_B).getOutput()).isEqualTo("result-for-" + TENANT_B); // GH-90000
-            assertThat(results.get(TENANT_C).getOutput()).isEqualTo("result-for-" + TENANT_C); // GH-90000
+            assertThat(results).hasSize(3); 
+            assertThat(results.get(TENANT_A).getOutput()).isEqualTo("result-for-" + TENANT_A); 
+            assertThat(results.get(TENANT_B).getOutput()).isEqualTo("result-for-" + TENANT_B); 
+            assertThat(results.get(TENANT_C).getOutput()).isEqualTo("result-for-" + TENANT_C); 
         }
     }
 
@@ -506,53 +506,53 @@ class AgentTenantIsolationTest extends EventloopTestBase {
     // Helpers
     // =========================================================================
 
-    private AgentContext createAgentContext(String tenantId) { // GH-90000
-        return AgentContext.builder() // GH-90000
-                .turnId(UUID.randomUUID().toString()) // GH-90000
+    private AgentContext createAgentContext(String tenantId) { 
+        return AgentContext.builder() 
+                .turnId(UUID.randomUUID().toString()) 
                 .agentId("test-agent")
-                .tenantId(tenantId) // GH-90000
-                .memoryStore(mock(MemoryStore.class)) // GH-90000
-                .build(); // GH-90000
+                .tenantId(tenantId) 
+                .memoryStore(mock(MemoryStore.class)) 
+                .build(); 
     }
 
     /**
-     * Minimal TypedAgent for testing. Override process() in tests. // GH-90000
+     * Minimal TypedAgent for testing. Override process() in tests. 
      */
     static class TestTypedAgent implements TypedAgent<String, String> {
         private final String agentId;
 
-        TestTypedAgent(String agentId) { // GH-90000
+        TestTypedAgent(String agentId) { 
             this.agentId = agentId;
         }
 
         @Override
-        public AgentDescriptor descriptor() { // GH-90000
-            return AgentDescriptor.builder() // GH-90000
-                    .agentId(agentId) // GH-90000
-                    .name(agentId) // GH-90000
-                    .type(AgentType.DETERMINISTIC) // GH-90000
+        public AgentDescriptor descriptor() { 
+            return AgentDescriptor.builder() 
+                    .agentId(agentId) 
+                    .name(agentId) 
+                    .type(AgentType.DETERMINISTIC) 
                     .capabilities(Set.of("test"))
-                    .build(); // GH-90000
+                    .build(); 
         }
 
         @Override
-        public Promise<Void> initialize(AgentConfig config) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> initialize(AgentConfig config) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<AgentResult<String>> process(AgentContext ctx, String input) { // GH-90000
-            return Promise.of(AgentResult.success(input, agentId, Duration.ZERO)); // GH-90000
+        public Promise<AgentResult<String>> process(AgentContext ctx, String input) { 
+            return Promise.of(AgentResult.success(input, agentId, Duration.ZERO)); 
         }
 
         @Override
-        public Promise<HealthStatus> healthCheck() { // GH-90000
+        public Promise<HealthStatus> healthCheck() { 
             return Promise.of(HealthStatus.healthy("Agent is healthy"));
         }
 
         @Override
-        public Promise<Void> shutdown() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> shutdown() { 
+            return Promise.complete(); 
         }
     }
 }

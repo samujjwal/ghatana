@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.http.server.servlet;
@@ -30,12 +30,12 @@ class RoutingServletExpansionTest extends EventloopTestBase {
     private RoutingServlet servlet;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        servlet = new RoutingServlet(); // GH-90000
+    void setUp() { 
+        servlet = new RoutingServlet(); 
     }
 
     // ============================================
-    // MANY ROUTES HANDLING (2 tests) // GH-90000
+    // MANY ROUTES HANDLING (2 tests) 
     // ============================================
 
     @Nested
@@ -44,33 +44,33 @@ class RoutingServletExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Registers and dispatches 100 routes correctly")
-        void manyRoutesRegistration() { // GH-90000
+        void manyRoutesRegistration() { 
             // Register 100 routes
-            for (int i = 0; i < 100; i++) { // GH-90000
+            for (int i = 0; i < 100; i++) { 
                 final int index = i;
-                servlet.addRoute(HttpMethod.GET, "/api/v1/resource/" + i, // GH-90000
-                        req -> HttpResponse.ok200().build()); // GH-90000
+                servlet.addRoute(HttpMethod.GET, "/api/v1/resource/" + i, 
+                        req -> HttpResponse.ok200().build()); 
             }
 
-            assertThat(servlet.getRouteCount()).isEqualTo(100); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(100); 
         }
 
         @Test
         @DisplayName("Handles multiple HTTP methods on different paths")
-        void multipleMethodsMultiplePaths() { // GH-90000
+        void multipleMethodsMultiplePaths() { 
             // Add various method/path combinations
-            servlet.addRoute(HttpMethod.GET, "/users", req -> HttpResponse.ok200().build()); // GH-90000
-            servlet.addRoute(HttpMethod.POST, "/users", req -> HttpResponse.ofCode(201).build()); // GH-90000
-            servlet.addRoute(HttpMethod.PUT, "/users/123", req -> HttpResponse.ok200().build()); // GH-90000
-            servlet.addRoute(HttpMethod.DELETE, "/users/123", req -> HttpResponse.ofCode(204).build()); // GH-90000
-            servlet.addRoute(HttpMethod.PATCH, "/users/123", req -> HttpResponse.ok200().build()); // GH-90000
+            servlet.addRoute(HttpMethod.GET, "/users", req -> HttpResponse.ok200().build()); 
+            servlet.addRoute(HttpMethod.POST, "/users", req -> HttpResponse.ofCode(201).build()); 
+            servlet.addRoute(HttpMethod.PUT, "/users/123", req -> HttpResponse.ok200().build()); 
+            servlet.addRoute(HttpMethod.DELETE, "/users/123", req -> HttpResponse.ofCode(204).build()); 
+            servlet.addRoute(HttpMethod.PATCH, "/users/123", req -> HttpResponse.ok200().build()); 
 
-            assertThat(servlet.getRouteCount()).isEqualTo(5); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(5); 
         }
     }
 
     // ============================================
-    // ASYNC ROUTE HANDLING (2 tests) // GH-90000
+    // ASYNC ROUTE HANDLING (2 tests) 
     // ============================================
 
     @Nested
@@ -79,30 +79,30 @@ class RoutingServletExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Handles async routes with promise-based responses")
-        void asyncRoutesWithPromises() { // GH-90000
-            servlet.addAsyncRoute(HttpMethod.GET, "/status", // GH-90000
-                    req -> Promise.of(HttpResponse.ok200().build())); // GH-90000
-            servlet.addAsyncRoute(HttpMethod.POST, "/process", // GH-90000
-                    req -> Promise.of(HttpResponse.ofCode(202).build())); // GH-90000
+        void asyncRoutesWithPromises() { 
+            servlet.addAsyncRoute(HttpMethod.GET, "/status", 
+                    req -> Promise.of(HttpResponse.ok200().build())); 
+            servlet.addAsyncRoute(HttpMethod.POST, "/process", 
+                    req -> Promise.of(HttpResponse.ofCode(202).build())); 
 
-            assertThat(servlet.getRouteCount()).isEqualTo(2); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Executes many async routes sequentially")
-        void manyAsyncRoutes() { // GH-90000
-            for (int i = 0; i < 50; i++) { // GH-90000
+        void manyAsyncRoutes() { 
+            for (int i = 0; i < 50; i++) { 
                 final int index = i;
-                servlet.addAsyncRoute(HttpMethod.GET, "/async/" + i, // GH-90000
-                        req -> Promise.of(HttpResponse.ok200().build())); // GH-90000
+                servlet.addAsyncRoute(HttpMethod.GET, "/async/" + i, 
+                        req -> Promise.of(HttpResponse.ok200().build())); 
             }
 
-            assertThat(servlet.getRouteCount()).isEqualTo(50); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(50); 
         }
     }
 
     // ============================================
-    // MIXED SYNC/ASYNC ROUTES (2 tests) // GH-90000
+    // MIXED SYNC/ASYNC ROUTES (2 tests) 
     // ============================================
 
     @Nested
@@ -111,28 +111,28 @@ class RoutingServletExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Handles mixture of sync and async routes")
-        void mixedSyncAsyncRoutes() { // GH-90000
-            servlet.addRoute(HttpMethod.GET, "/sync/1", req -> HttpResponse.ok200().build()); // GH-90000
-            servlet.addAsyncRoute(HttpMethod.GET, "/async/1", // GH-90000
-                    req -> Promise.of(HttpResponse.ok200().build())); // GH-90000
-            servlet.addRoute(HttpMethod.POST, "/sync/2", req -> HttpResponse.ofCode(201).build()); // GH-90000
-            servlet.addAsyncRoute(HttpMethod.POST, "/async/2", // GH-90000
-                    req -> Promise.of(HttpResponse.ofCode(201).build())); // GH-90000
+        void mixedSyncAsyncRoutes() { 
+            servlet.addRoute(HttpMethod.GET, "/sync/1", req -> HttpResponse.ok200().build()); 
+            servlet.addAsyncRoute(HttpMethod.GET, "/async/1", 
+                    req -> Promise.of(HttpResponse.ok200().build())); 
+            servlet.addRoute(HttpMethod.POST, "/sync/2", req -> HttpResponse.ofCode(201).build()); 
+            servlet.addAsyncRoute(HttpMethod.POST, "/async/2", 
+                    req -> Promise.of(HttpResponse.ofCode(201).build())); 
 
-            assertThat(servlet.getRouteCount()).isEqualTo(4); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(4); 
         }
 
         @Test
         @DisplayName("Maintains route count with alternating sync/async additions")
-        void alternatingAdditions() { // GH-90000
-            for (int i = 0; i < 25; i++) { // GH-90000
-                servlet.addRoute(HttpMethod.GET, "/sync/" + i, // GH-90000
-                        req -> HttpResponse.ok200().build()); // GH-90000
-                servlet.addAsyncRoute(HttpMethod.GET, "/async/" + i, // GH-90000
-                        req -> Promise.of(HttpResponse.ok200().build())); // GH-90000
+        void alternatingAdditions() { 
+            for (int i = 0; i < 25; i++) { 
+                servlet.addRoute(HttpMethod.GET, "/sync/" + i, 
+                        req -> HttpResponse.ok200().build()); 
+                servlet.addAsyncRoute(HttpMethod.GET, "/async/" + i, 
+                        req -> Promise.of(HttpResponse.ok200().build())); 
             }
 
-            assertThat(servlet.getRouteCount()).isEqualTo(50); // GH-90000
+            assertThat(servlet.getRouteCount()).isEqualTo(50); 
         }
     }
 }

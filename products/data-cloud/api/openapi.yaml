@@ -4185,6 +4185,36 @@ paths:
                   event: heartbeat
                   data: {"ts":"2025-01-01T00:00:00Z"}
 
+  /events/notifications:
+    get:
+      summary: Server-Sent Events stream — notifications (legacy path)
+      operationId: eventsNotificationsGet
+      tags: [sse, events]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE stream of notifications.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+  /api/v1/events/notifications:
+    get:
+      summary: Server-Sent Events stream — notifications
+      operationId: apiV1EventsNotificationsGet
+      tags: [sse, events]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: SSE stream of notifications.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
   # ── Entity extended endpoints (search, export, anomalies, batch, SSE) ──────
 
   /api/v1/entities/{collection}/search:
@@ -6575,6 +6605,190 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Sync status. }
+
+  # ── Data Fabric connectors (frontend compatibility aliases) ─────────────────
+
+  /data-fabric/connectors:
+    get:
+      summary: List registered data source connectors (frontend alias)
+      operationId: dataFabricConnectorsGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+      responses:
+        "200": { description: Connector list. }
+    post:
+      summary: Register a new data source connector (frontend alias)
+      operationId: dataFabricConnectorsPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+      responses:
+        "201": { description: Connector registered. }
+        "400": { description: Invalid payload. }
+
+  /data-fabric/connectors/{connectionId}:
+    get:
+      summary: Get a connector by ID (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector details. }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      summary: Update a connector (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdPut
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectionRegistrationRequest'
+      responses:
+        "200": { description: Connector updated. }
+    delete:
+      summary: Delete a connector (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdDelete
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector deleted. }
+        "501": { description: Delete connector not implemented. }
+
+  /data-fabric/connectors/{connectionId}/test:
+    post:
+      summary: Test a connector connection (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdTestPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Test result. }
+
+  /data-fabric/connectors/{connectionId}/disable:
+    post:
+      summary: Disable a connector (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdDisablePost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector disabled. }
+
+  /data-fabric/connectors/{connectionId}/enable:
+    post:
+      summary: Enable a connector (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdEnablePost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector enabled. }
+
+  /data-fabric/connectors/{connectionId}/statistics:
+    get:
+      summary: Get connector statistics (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdStatisticsGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Connector statistics. }
+
+  /data-fabric/connectors/{connectionId}/sync:
+    post:
+      summary: Trigger a connector sync (frontend alias)
+      operationId: dataFabricConnectorsConnectionIdSyncPost
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+        - name: connectionId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Sync status. }
+
+  # ── User activity tracking ───────────────────────────────────────────────────
+
+  /api/v1/user-activity/recent:
+    get:
+      summary: Get recent user activity
+      operationId: apiV1UserActivityRecentGet
+      tags: [user-activity]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Recent activity list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  additionalProperties: true
+
+  /api/v1/user-activity/log:
+    post:
+      summary: Log a user activity event
+      operationId: apiV1UserActivityLogPost
+      tags: [user-activity]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Activity logged successfully.
 
   # ── Agent catalog ────────────────────────────────────────────────────────
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
 /**
  * Integration tests for Data-Cloud HTTP event endpoints.
  *
- * <p>Covers: POST /api/v1/events (append), GET /api/v1/events (query), // GH-90000
+ * <p>Covers: POST /api/v1/events (append), GET /api/v1/events (query), 
  * event-type filtering, tenant propagation, and negative paths.
  *
  * @doc.type class
@@ -50,18 +50,18 @@ class DataCloudHttpServerEventTest {
     private DataCloudClient mockClient;
     private DataCloudHttpServer server;
     private int port;
-    private final HttpClient httpClient = HttpClient.newBuilder().build(); // GH-90000
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final HttpClient httpClient = HttpClient.newBuilder().build(); 
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        mockClient = mock(DataCloudClient.class); // GH-90000
-        port = findFreePort(); // GH-90000
+    void setUp() throws Exception { 
+        mockClient = mock(DataCloudClient.class); 
+        port = findFreePort(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -74,105 +74,105 @@ class DataCloudHttpServerEventTest {
 
         @Test
         @DisplayName("returns 200 with event id when client appends successfully")
-        void appendEvent_validRequest_returns200() throws Exception { // GH-90000
-            when(mockClient.appendEvent(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); // GH-90000
+        void appendEvent_validRequest_returns200() throws Exception { 
+            when(mockClient.appendEvent(anyString(), any())) 
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(1))); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
-                    Map.of("type", "order.placed", // GH-90000
-                            "payload", Map.of("orderId", "ORD-001", "amount", 99.99))); // GH-90000
+            HttpResponse<String> resp = postJson("/api/v1/events", 
+                    Map.of("type", "order.placed", 
+                            "payload", Map.of("orderId", "ORD-001", "amount", 99.99))); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("eventType")).isEqualTo("order.placed");
             assertThat(body.get("offset")).isNotNull();
         }
 
         @Test
         @DisplayName("returns 400 when event type is missing")
-        void appendEvent_missingType_returns400() throws Exception { // GH-90000
-            startServer(); // GH-90000
+        void appendEvent_missingType_returns400() throws Exception { 
+            startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
-                    Map.of("payload", Map.of("orderId", "ORD-001"))); // GH-90000
+            HttpResponse<String> resp = postJson("/api/v1/events", 
+                    Map.of("payload", Map.of("orderId", "ORD-001"))); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("message")).isNotNull();
         }
 
         @Test
         @DisplayName("returns 400 when event type is blank")
-        void appendEvent_blankType_returns400() throws Exception { // GH-90000
-            startServer(); // GH-90000
+        void appendEvent_blankType_returns400() throws Exception { 
+            startServer(); 
 
-            HttpResponse<String> resp = postJson("/api/v1/events", // GH-90000
-                    Map.of("type", "  ", "payload", Map.of())); // GH-90000
+            HttpResponse<String> resp = postJson("/api/v1/events", 
+                    Map.of("type", "  ", "payload", Map.of())); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("propagates tenant from X-Tenant-ID header to client call")
-        void appendEvent_withTenantHeader_calledWithTenant() throws Exception { // GH-90000
-            when(mockClient.appendEvent(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(DataCloudClient.Offset.of(2))); // GH-90000
+        void appendEvent_withTenantHeader_calledWithTenant() throws Exception { 
+            when(mockClient.appendEvent(anyString(), any())) 
+                    .thenReturn(Promise.of(DataCloudClient.Offset.of(2))); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                    .POST(HttpRequest.BodyPublishers.ofString( // GH-90000
+            HttpRequest req = HttpRequest.newBuilder() 
+                    .POST(HttpRequest.BodyPublishers.ofString( 
                             "{\"type\":\"user.login\",\"payload\":{\"userId\":\"u1\"}}"))
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) // GH-90000
-                    .header("Content-Type", "application/json") // GH-90000
-                    .header("X-Tenant-ID", "acme-corp") // GH-90000
-                    .build(); // GH-90000
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) 
+                    .header("Content-Type", "application/json") 
+                    .header("X-Tenant-ID", "acme-corp") 
+                    .build(); 
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            verify(mockClient).appendEvent(anyString(), any()); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            verify(mockClient).appendEvent(anyString(), any()); 
         }
 
         @Test
         @DisplayName("returns 415 when Content-Type is not application/json")
-        void appendEvent_wrongContentType_returns415() throws Exception { // GH-90000
-            startServer(); // GH-90000
+        void appendEvent_wrongContentType_returns415() throws Exception { 
+            startServer(); 
 
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
+            HttpRequest req = HttpRequest.newBuilder() 
                     .POST(HttpRequest.BodyPublishers.ofString("type=order.placed"))
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) // GH-90000
-                    .header("Content-Type", "application/x-www-form-urlencoded") // GH-90000
-                    .build(); // GH-90000
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) 
+                    .header("Content-Type", "application/x-www-form-urlencoded") 
+                    .build(); 
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-            assertThat(resp.statusCode()).isEqualTo(415); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(415); 
         }
 
     @Test
     @DisplayName("returns 401 before content-type validation when API key enforcement is enabled")
-    void appendEvent_missingApiKey_returns401BeforeContentTypeValidation() throws Exception { // GH-90000
+    void appendEvent_missingApiKey_returns401BeforeContentTypeValidation() throws Exception { 
         ApiKeyResolver resolver =
             apiKey ->
-                Optional.ofNullable(apiKey) // GH-90000
-                    .filter("valid-key"::equals) // GH-90000
+                Optional.ofNullable(apiKey) 
+                    .filter("valid-key"::equals) 
                     .map(key -> new Principal("event-service", List.of("writer"), "tenant-1"));
 
-        server = new DataCloudHttpServer(mockClient, port) // GH-90000
-            .withApiKeyResolver(resolver); // GH-90000
-        server.start(); // GH-90000
+        server = new DataCloudHttpServer(mockClient, port) 
+            .withApiKeyResolver(resolver); 
+        server.start(); 
 
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
+        HttpRequest req = HttpRequest.newBuilder() 
             .POST(HttpRequest.BodyPublishers.ofString("type=order.placed"))
-            .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) // GH-90000
-            .header("Content-Type", "application/x-www-form-urlencoded") // GH-90000
-            .build(); // GH-90000
-        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+            .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) 
+            .header("Content-Type", "application/x-www-form-urlencoded") 
+            .build(); 
+        HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-        assertThat(resp.statusCode()).isEqualTo(401); // GH-90000
+        assertThat(resp.statusCode()).isEqualTo(401); 
     }
     }
 
@@ -186,96 +186,96 @@ class DataCloudHttpServerEventTest {
 
         @Test
         @DisplayName("returns 200 with event list when events exist")
-        void queryEvents_withEvents_returns200WithList() throws Exception { // GH-90000
-            List<DataCloudClient.Event> events = List.of( // GH-90000
-                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-1")), // GH-90000
-                    DataCloudClient.Event.of("order.shipped", Map.of("orderId", "ORD-1"))); // GH-90000
-            when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(events)); // GH-90000
+        void queryEvents_withEvents_returns200WithList() throws Exception { 
+            List<DataCloudClient.Event> events = List.of( 
+                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-1")), 
+                    DataCloudClient.Event.of("order.shipped", Map.of("orderId", "ORD-1"))); 
+            when(mockClient.queryEvents(anyString(), any())) 
+                    .thenReturn(Promise.of(events)); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
             HttpResponse<String> resp = get("/api/v1/events");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             @SuppressWarnings("unchecked")
             List<?> items = (List<?>) body.get("events");
-            assertThat(items).hasSize(2); // GH-90000
+            assertThat(items).hasSize(2); 
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
         }
 
         @Test
         @DisplayName("returns 200 with empty list when no events present")
-        void queryEvents_noEvents_returnsEmptyList() throws Exception { // GH-90000
-            when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void queryEvents_noEvents_returnsEmptyList() throws Exception { 
+            when(mockClient.queryEvents(anyString(), any())) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
             HttpResponse<String> resp = get("/api/v1/events");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat((List<?>) body.get("events")).isEmpty();
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
         }
 
         @Test
         @DisplayName("passes event-type filter to client when ?type= is specified")
-        void queryEvents_withTypeFilter_queriesClient() throws Exception { // GH-90000
-            List<DataCloudClient.Event> filtered = List.of( // GH-90000
-                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-X"))); // GH-90000
-            when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(filtered)); // GH-90000
+        void queryEvents_withTypeFilter_queriesClient() throws Exception { 
+            List<DataCloudClient.Event> filtered = List.of( 
+                    DataCloudClient.Event.of("order.placed", Map.of("orderId", "ORD-X"))); 
+            when(mockClient.queryEvents(anyString(), any())) 
+                    .thenReturn(Promise.of(filtered)); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
             HttpResponse<String> resp = get("/api/v1/events?type=order.placed");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat((List<?>) body.get("events")).hasSize(1);
-            verify(mockClient).queryEvents(anyString(), any(DataCloudClient.EventQuery.class)); // GH-90000
+            verify(mockClient).queryEvents(anyString(), any(DataCloudClient.EventQuery.class)); 
         }
 
         @Test
         @DisplayName("returns 200 with tenant metadata when X-Tenant-ID header provided")
-        void queryEvents_withTenant_includesMetadata() throws Exception { // GH-90000
-            when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void queryEvents_withTenant_includesMetadata() throws Exception { 
+            when(mockClient.queryEvents(anyString(), any())) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
-            HttpRequest req = HttpRequest.newBuilder() // GH-90000
-                    .GET() // GH-90000
-                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) // GH-90000
-                    .header("X-Tenant-ID", "beta-tenant") // GH-90000
-                    .build(); // GH-90000
-            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+            HttpRequest req = HttpRequest.newBuilder() 
+                    .GET() 
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/events")) 
+                    .header("X-Tenant-ID", "beta-tenant") 
+                    .build(); 
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("tenantId")).isNotNull();
         }
 
         @Test
         @DisplayName("response includes timestamp metadata")
-        void queryEvents_always_includesTimestamp() throws Exception { // GH-90000
-            when(mockClient.queryEvents(anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void queryEvents_always_includesTimestamp() throws Exception { 
+            when(mockClient.queryEvents(anyString(), any())) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            startServer(); // GH-90000
+            startServer(); 
 
             HttpResponse<String> resp = get("/api/v1/events");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked")
-            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("timestamp")).isNotNull();
         }
     }
@@ -284,47 +284,47 @@ class DataCloudHttpServerEventTest {
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
-    private void startServer() throws Exception { // GH-90000
-        server = new DataCloudHttpServer(mockClient, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+    private void startServer() throws Exception { 
+        server = new DataCloudHttpServer(mockClient, port); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
-    private HttpResponse<String> get(String path) throws Exception { // GH-90000
-        return httpClient.send( // GH-90000
-                HttpRequest.newBuilder().GET() // GH-90000
-                        .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-                        .build(), // GH-90000
-                HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> get(String path) throws Exception { 
+        return httpClient.send( 
+                HttpRequest.newBuilder().GET() 
+                        .uri(URI.create("http://127.0.0.1:" + port + path)) 
+                        .build(), 
+                HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> postJson(String path, Object body) throws Exception { // GH-90000
-        String json = mapper.writeValueAsString(body); // GH-90000
-        return httpClient.send( // GH-90000
-                HttpRequest.newBuilder() // GH-90000
-                        .POST(HttpRequest.BodyPublishers.ofString(json)) // GH-90000
-                        .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-                        .header("Content-Type", "application/json") // GH-90000
-                        .build(), // GH-90000
-                HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> postJson(String path, Object body) throws Exception { 
+        String json = mapper.writeValueAsString(body); 
+        return httpClient.send( 
+                HttpRequest.newBuilder() 
+                        .POST(HttpRequest.BodyPublishers.ofString(json)) 
+                        .uri(URI.create("http://127.0.0.1:" + port + path)) 
+                        .header("Content-Type", "application/json") 
+                        .build(), 
+                HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); 
     }
 }

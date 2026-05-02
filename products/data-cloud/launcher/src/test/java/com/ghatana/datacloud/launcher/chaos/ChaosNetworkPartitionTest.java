@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.chaos;
@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Chaos tests for network partition and cascading failure scenarios (Gap 006) // GH-90000
+ * @doc.purpose Chaos tests for network partition and cascading failure scenarios (Gap 006) 
  * @doc.layer product
  * @doc.pattern Chaos Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("Chaos – Network Partition &amp; Cascading Failure")
 class ChaosNetworkPartitionTest extends EventloopTestBase {
 
@@ -60,8 +60,8 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
     private NetworkChaosHarness harness;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        harness = new NetworkChaosHarness(client); // GH-90000
+    void setUp() { 
+        harness = new NetworkChaosHarness(client); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -74,55 +74,55 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should buffer events when Kafka is unreachable")
-        void shouldBufferEventsWhenKafkaUnreachable() throws Exception { // GH-90000
-            harness.partitionKafka(); // GH-90000
+        void shouldBufferEventsWhenKafkaUnreachable() throws Exception { 
+            harness.partitionKafka(); 
 
-            List<String> eventIds = harness.publishEvents(TENANT_ID, 5); // GH-90000
+            List<String> eventIds = harness.publishEvents(TENANT_ID, 5); 
 
-            // Events must be buffered (not lost) when Kafka is unavailable // GH-90000
-            assertThat(eventIds).hasSize(5); // GH-90000
-            assertThat(harness.getBufferedEventCount()).isEqualTo(5); // GH-90000
-            assertThat(harness.getPersistedEventCount()).isEqualTo(0); // GH-90000
+            // Events must be buffered (not lost) when Kafka is unavailable 
+            assertThat(eventIds).hasSize(5); 
+            assertThat(harness.getBufferedEventCount()).isEqualTo(5); 
+            assertThat(harness.getPersistedEventCount()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("should drain buffer and persist events after Kafka reconnects")
-        void shouldDrainBufferAfterKafkaReconnects() throws Exception { // GH-90000
-            harness.partitionKafka(); // GH-90000
-            harness.publishEvents(TENANT_ID, 3); // GH-90000
+        void shouldDrainBufferAfterKafkaReconnects() throws Exception { 
+            harness.partitionKafka(); 
+            harness.publishEvents(TENANT_ID, 3); 
 
             // Heal partition — buffer should drain
-            harness.healKafka(); // GH-90000
-            harness.triggerBufferDrain(); // GH-90000
+            harness.healKafka(); 
+            harness.triggerBufferDrain(); 
 
-            assertThat(harness.getBufferedEventCount()).isEqualTo(0); // GH-90000
-            assertThat(harness.getPersistedEventCount()).isEqualTo(3); // GH-90000
+            assertThat(harness.getBufferedEventCount()).isEqualTo(0); 
+            assertThat(harness.getPersistedEventCount()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("should preserve event ordering after buffer drain")
-        void shouldPreserveEventOrderingAfterDrain() throws Exception { // GH-90000
-            harness.partitionKafka(); // GH-90000
-            List<String> published = harness.publishEvents(TENANT_ID, 4); // GH-90000
+        void shouldPreserveEventOrderingAfterDrain() throws Exception { 
+            harness.partitionKafka(); 
+            List<String> published = harness.publishEvents(TENANT_ID, 4); 
 
-            harness.healKafka(); // GH-90000
-            List<String> drained = harness.triggerOrderedBufferDrain(); // GH-90000
+            harness.healKafka(); 
+            List<String> drained = harness.triggerOrderedBufferDrain(); 
 
             // Order must be preserved FIFO
-            assertThat(drained).isEqualTo(published); // GH-90000
+            assertThat(drained).isEqualTo(published); 
         }
 
         @Test
         @DisplayName("partial Kafka write — acks only for some events — remainder buffered")
-        void partialKafkaWrite_remainderBuffered() throws Exception { // GH-90000
-            harness.setPartialKafkaWriteFailureRate(0.5); // 50% failure rate // GH-90000
+        void partialKafkaWrite_remainderBuffered() throws Exception { 
+            harness.setPartialKafkaWriteFailureRate(0.5); // 50% failure rate 
 
-            List<String> ids = harness.publishEvents(TENANT_ID, 10); // GH-90000
+            List<String> ids = harness.publishEvents(TENANT_ID, 10); 
 
-            // All IDs must be accounted for (either persisted or buffered, none lost) // GH-90000
-            int total = harness.getPersistedEventCount() + harness.getBufferedEventCount(); // GH-90000
-            assertThat(total).isEqualTo(10); // GH-90000
-            assertThat(ids).hasSize(10); // GH-90000
+            // All IDs must be accounted for (either persisted or buffered, none lost) 
+            int total = harness.getPersistedEventCount() + harness.getBufferedEventCount(); 
+            assertThat(total).isEqualTo(10); 
+            assertThat(ids).hasSize(10); 
         }
     }
 
@@ -136,13 +136,13 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity write during DB disconnect → fails with IOException")
-        void entityWrite_dbDisconnected_throwsIOException() { // GH-90000
-            harness.partitionDatabase(); // GH-90000
+        void entityWrite_dbDisconnected_throwsIOException() { 
+            harness.partitionDatabase(); 
 
-            assertThatThrownBy(() -> runPromise(() -> harness.writeEntityOrFail(TENANT_ID, "id-1"))) // GH-90000
-                .isInstanceOf(Exception.class) // GH-90000
-                .satisfies(e -> // GH-90000
-                    assertThat(e instanceof IOException || e.getCause() instanceof IOException // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> harness.writeEntityOrFail(TENANT_ID, "id-1"))) 
+                .isInstanceOf(Exception.class) 
+                .satisfies(e -> 
+                    assertThat(e instanceof IOException || e.getCause() instanceof IOException 
                         || e.getMessage().contains("connection") || e.getMessage().contains("partition"))
                         .as("Expected IOException or connection-related error").isTrue()
                 );
@@ -150,31 +150,31 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("entity writes resume automatically after DB reconnects")
-        void entityWrites_resumeAfterDbReconnects() throws Exception { // GH-90000
-            harness.partitionDatabase(); // GH-90000
+        void entityWrites_resumeAfterDbReconnects() throws Exception { 
+            harness.partitionDatabase(); 
 
             // Write fails while partitioned
             try {
-                runPromise(() -> harness.writeEntityOrFail(TENANT_ID, "id-1")); // GH-90000
-            } catch (Exception ignored) { // GH-90000
+                runPromise(() -> harness.writeEntityOrFail(TENANT_ID, "id-1")); 
+            } catch (Exception ignored) { 
                 // Expected
             }
 
             // Heal DB
-            harness.healDatabase(); // GH-90000
+            harness.healDatabase(); 
 
             // Write should now succeed
-            String result = runPromise(() -> harness.writeEntity(TENANT_ID, "id-2")); // GH-90000
+            String result = runPromise(() -> harness.writeEntity(TENANT_ID, "id-2")); 
             assertThat(result).isEqualTo("id-2");
         }
 
         @Test
         @DisplayName("read operations fail fast during DB outage and report error clearly")
-        void readOperations_dbDown_failFast() { // GH-90000
-            harness.partitionDatabase(); // GH-90000
+        void readOperations_dbDown_failFast() { 
+            harness.partitionDatabase(); 
 
-            assertThatThrownBy(() -> runPromise(() -> harness.readEntityOrFail(TENANT_ID, "id-1"))) // GH-90000
-                .isInstanceOf(Exception.class); // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> harness.readEntityOrFail(TENANT_ID, "id-1"))) 
+                .isInstanceOf(Exception.class); 
         }
     }
 
@@ -188,42 +188,42 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("writes to partitioned region fail; other region unaffected")
-        void partitionedRegion_fails_healthyRegionUnaffected() throws Exception { // GH-90000
-            harness.partitionRegion(REGION_B); // GH-90000
+        void partitionedRegion_fails_healthyRegionUnaffected() throws Exception { 
+            harness.partitionRegion(REGION_B); 
 
             // Region A still works
-            String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); // GH-90000
+            String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); 
             assertThat(resultA).isEqualTo("id-a");
 
             // Region B is partitioned
-            assertThatThrownBy(() -> runPromise(() -> harness.writeToRegion(REGION_B, "id-b"))) // GH-90000
-                .isInstanceOf(Exception.class); // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> harness.writeToRegion(REGION_B, "id-b"))) 
+                .isInstanceOf(Exception.class); 
         }
 
         @Test
         @DisplayName("both regions recover after partition healed")
-        void bothRegions_recover_afterPartitionHealed() throws Exception { // GH-90000
-            harness.partitionRegion(REGION_B); // GH-90000
+        void bothRegions_recover_afterPartitionHealed() throws Exception { 
+            harness.partitionRegion(REGION_B); 
 
             // Heal
-            harness.healRegion(REGION_B); // GH-90000
+            harness.healRegion(REGION_B); 
 
-            String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); // GH-90000
-            String resultB = runPromise(() -> harness.writeToRegion(REGION_B, "id-b")); // GH-90000
+            String resultA = runPromise(() -> harness.writeToRegion(REGION_A, "id-a")); 
+            String resultB = runPromise(() -> harness.writeToRegion(REGION_B, "id-b")); 
             assertThat(resultA).isEqualTo("id-a");
             assertThat(resultB).isEqualTo("id-b");
         }
 
         @Test
         @DisplayName("no data cross-contamination between regions during partition")
-        void noDataCrossContamination_duringPartition() throws Exception { // GH-90000
-            harness.partitionRegion(REGION_B); // GH-90000
+        void noDataCrossContamination_duringPartition() throws Exception { 
+            harness.partitionRegion(REGION_B); 
 
-            runPromise(() -> harness.writeToRegion(REGION_A, "exclusive-to-a")); // GH-90000
+            runPromise(() -> harness.writeToRegion(REGION_A, "exclusive-to-a")); 
 
             // Data written to Region A must not appear in Region B's store
-            long regionBCount = harness.getRegionRecordCount(REGION_B); // GH-90000
-            assertThat(regionBCount).isZero(); // GH-90000
+            long regionBCount = harness.getRegionRecordCount(REGION_B); 
+            assertThat(regionBCount).isZero(); 
         }
     }
 
@@ -237,25 +237,25 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Kafka failure alone does not cascade to entity CRUD")
-        void kafkaFailure_doesNotCascadeToEntityCrud() throws Exception { // GH-90000
-            harness.partitionKafka(); // GH-90000
+        void kafkaFailure_doesNotCascadeToEntityCrud() throws Exception { 
+            harness.partitionKafka(); 
 
-            // Entity writes should still work (events buffered, not blocking) // GH-90000
-            String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-1")); // GH-90000
+            // Entity writes should still work (events buffered, not blocking) 
+            String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-1")); 
             assertThat(entityId).isEqualTo("id-1");
         }
 
         @Test
         @DisplayName("analytics query timeout does not block entity writes")
-        void analyticsTimeout_doesNotBlockEntityWrites() throws Exception { // GH-90000
-            harness.injectAnalyticsTimeout(100); // 100 ms timeout // GH-90000
+        void analyticsTimeout_doesNotBlockEntityWrites() throws Exception { 
+            harness.injectAnalyticsTimeout(100); // 100 ms timeout 
 
             // Analytics query fails
-            assertThatThrownBy(() -> runPromise(harness::runAnalyticsQuery)) // GH-90000
-                .isInstanceOf(Exception.class); // GH-90000
+            assertThatThrownBy(() -> runPromise(harness::runAnalyticsQuery)) 
+                .isInstanceOf(Exception.class); 
 
             // Entity writes must still work
-            String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-safe")); // GH-90000
+            String entityId = runPromise(() -> harness.writeEntity(TENANT_ID, "id-safe")); 
             assertThat(entityId).isEqualTo("id-safe");
         }
     }
@@ -274,102 +274,102 @@ class ChaosNetworkPartitionTest extends EventloopTestBase {
         private double  kafkaFailureRate = 0.0;
         private long    analyticsTimeoutMs = Long.MAX_VALUE;
 
-        private final List<String> buffer    = new ArrayList<>(); // GH-90000
-        private final List<String> persisted = new ArrayList<>(); // GH-90000
-        private final List<String> regionAStore = new ArrayList<>(); // GH-90000
+        private final List<String> buffer    = new ArrayList<>(); 
+        private final List<String> persisted = new ArrayList<>(); 
+        private final List<String> regionAStore = new ArrayList<>(); 
         private final java.util.Map<String, Integer> regionCounts =
-            new java.util.HashMap<>(); // GH-90000
+            new java.util.HashMap<>(); 
         private int entityCounter = 0;
 
-        NetworkChaosHarness(DataCloudClient client) { // GH-90000
+        NetworkChaosHarness(DataCloudClient client) { 
             this.client = client;
         }
 
-        void partitionKafka()   { kafkaPartitioned = true; } // GH-90000
-        void healKafka()        { kafkaPartitioned = false; } // GH-90000
-        void partitionDatabase()   { dbPartitioned = true; } // GH-90000
-        void healDatabase()        { dbPartitioned = false; } // GH-90000
-        void partitionRegion(String region)  { this.partitionedRegion = region; } // GH-90000
-        void healRegion(String region)       { if (region.equals(partitionedRegion)) partitionedRegion = null; } // GH-90000
-        void setPartialKafkaWriteFailureRate(double rate) { this.kafkaFailureRate = rate; } // GH-90000
-        void injectAnalyticsTimeout(long ms) { this.analyticsTimeoutMs = ms; } // GH-90000
+        void partitionKafka()   { kafkaPartitioned = true; } 
+        void healKafka()        { kafkaPartitioned = false; } 
+        void partitionDatabase()   { dbPartitioned = true; } 
+        void healDatabase()        { dbPartitioned = false; } 
+        void partitionRegion(String region)  { this.partitionedRegion = region; } 
+        void healRegion(String region)       { if (region.equals(partitionedRegion)) partitionedRegion = null; } 
+        void setPartialKafkaWriteFailureRate(double rate) { this.kafkaFailureRate = rate; } 
+        void injectAnalyticsTimeout(long ms) { this.analyticsTimeoutMs = ms; } 
 
-        List<String> publishEvents(String tenantId, int count) { // GH-90000
-            List<String> ids = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < count; i++) { // GH-90000
-                String id = tenantId + "-event-" + (buffer.size() + persisted.size() + i); // GH-90000
+        List<String> publishEvents(String tenantId, int count) { 
+            List<String> ids = new ArrayList<>(); 
+            for (int i = 0; i < count; i++) { 
+                String id = tenantId + "-event-" + (buffer.size() + persisted.size() + i); 
                 boolean fail = kafkaPartitioned
-                    || (kafkaFailureRate > 0 && Math.random() < kafkaFailureRate); // GH-90000
-                if (fail) { // GH-90000
-                    buffer.add(id); // GH-90000
+                    || (kafkaFailureRate > 0 && Math.random() < kafkaFailureRate); 
+                if (fail) { 
+                    buffer.add(id); 
                 } else {
-                    persisted.add(id); // GH-90000
+                    persisted.add(id); 
                 }
-                ids.add(id); // GH-90000
+                ids.add(id); 
             }
             return ids;
         }
 
-        void triggerBufferDrain() { // GH-90000
-            if (!kafkaPartitioned) { // GH-90000
-                persisted.addAll(buffer); // GH-90000
-                buffer.clear(); // GH-90000
+        void triggerBufferDrain() { 
+            if (!kafkaPartitioned) { 
+                persisted.addAll(buffer); 
+                buffer.clear(); 
             }
         }
 
-        List<String> triggerOrderedBufferDrain() { // GH-90000
-            List<String> drained = new ArrayList<>(buffer); // GH-90000
-            if (!kafkaPartitioned) { // GH-90000
-                persisted.addAll(drained); // GH-90000
-                buffer.clear(); // GH-90000
+        List<String> triggerOrderedBufferDrain() { 
+            List<String> drained = new ArrayList<>(buffer); 
+            if (!kafkaPartitioned) { 
+                persisted.addAll(drained); 
+                buffer.clear(); 
             }
             return drained;
         }
 
-        int getBufferedEventCount()   { return buffer.size(); } // GH-90000
-        int getPersistedEventCount()  { return persisted.size(); } // GH-90000
+        int getBufferedEventCount()   { return buffer.size(); } 
+        int getPersistedEventCount()  { return persisted.size(); } 
 
-        Promise<String> writeEntityOrFail(String tenantId, String id) { // GH-90000
-            if (dbPartitioned) { // GH-90000
+        Promise<String> writeEntityOrFail(String tenantId, String id) { 
+            if (dbPartitioned) { 
                 return Promise.ofException(new IOException("DB partition: connection refused"));
             }
-            return Promise.of(id); // GH-90000
+            return Promise.of(id); 
         }
 
-        Promise<String> writeEntity(String tenantId, String id) { // GH-90000
-            if (dbPartitioned) { // GH-90000
+        Promise<String> writeEntity(String tenantId, String id) { 
+            if (dbPartitioned) { 
                 return Promise.ofException(new IOException("DB partition: connection refused"));
             }
             entityCounter++;
-            return Promise.of(id); // GH-90000
+            return Promise.of(id); 
         }
 
-        Promise<String> readEntityOrFail(String tenantId, String id) { // GH-90000
-            if (dbPartitioned) { // GH-90000
+        Promise<String> readEntityOrFail(String tenantId, String id) { 
+            if (dbPartitioned) { 
                 return Promise.ofException(new IOException("DB partition: connection refused"));
             }
-            return Promise.of(id); // GH-90000
+            return Promise.of(id); 
         }
 
-        Promise<String> writeToRegion(String region, String id) { // GH-90000
-            if (region.equals(partitionedRegion)) { // GH-90000
-                return Promise.ofException(new IOException("Region " + region + " is partitioned")); // GH-90000
+        Promise<String> writeToRegion(String region, String id) { 
+            if (region.equals(partitionedRegion)) { 
+                return Promise.ofException(new IOException("Region " + region + " is partitioned")); 
             }
-            regionCounts.merge(region, 1, Integer::sum); // GH-90000
-            if (REGION_A.equals(region)) regionAStore.add(id); // GH-90000
-            return Promise.of(id); // GH-90000
+            regionCounts.merge(region, 1, Integer::sum); 
+            if (REGION_A.equals(region)) regionAStore.add(id); 
+            return Promise.of(id); 
         }
 
-        long getRegionRecordCount(String region) { // GH-90000
-            return regionCounts.getOrDefault(region, 0); // GH-90000
+        long getRegionRecordCount(String region) { 
+            return regionCounts.getOrDefault(region, 0); 
         }
 
-        Promise<Object> runAnalyticsQuery() { // GH-90000
-            if (analyticsTimeoutMs < Long.MAX_VALUE) { // GH-90000
-                return Promise.ofException(new TimeoutException( // GH-90000
+        Promise<Object> runAnalyticsQuery() { 
+            if (analyticsTimeoutMs < Long.MAX_VALUE) { 
+                return Promise.ofException(new TimeoutException( 
                     "Analytics query timed out after " + analyticsTimeoutMs + " ms"));
             }
-            return Promise.of(new Object()); // GH-90000
+            return Promise.of(new Object()); 
         }
     }
 }

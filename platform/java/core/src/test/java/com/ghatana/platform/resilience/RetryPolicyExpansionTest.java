@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.resilience;
@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class RetryPolicyExpansionTest extends EventloopTestBase {
 
     // ============================================
-    // MAX RETRY ENFORCEMENT (2 tests) // GH-90000
+    // MAX RETRY ENFORCEMENT (2 tests) 
     // ============================================
 
     @Nested
@@ -38,41 +38,41 @@ class RetryPolicyExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Respects max retry limit and stops retrying")
-        void maxRetryLimit() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(2) // GH-90000
-                    .initialDelay(Duration.ofMillis(1)) // GH-90000
-                    .build(); // GH-90000
+        void maxRetryLimit() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(2) 
+                    .initialDelay(Duration.ofMillis(1)) 
+                    .build(); 
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { 
+                attempts.incrementAndGet(); 
                 return Promise.ofException(new RuntimeException("always-fail"));
-            }))).isInstanceOf(RuntimeException.class); // GH-90000
+            }))).isInstanceOf(RuntimeException.class); 
 
             // 1 initial + 2 retries = 3 total attempts
-            assertThat(attempts.get()).isEqualTo(3); // GH-90000
+            assertThat(attempts.get()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("Zero retries means only initial attempt")
-        void zeroRetries() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(0) // GH-90000
-                    .build(); // GH-90000
+        void zeroRetries() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(0) 
+                    .build(); 
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { 
+                attempts.incrementAndGet(); 
                 return Promise.ofException(new RuntimeException("fail"));
-            }))).isInstanceOf(RuntimeException.class); // GH-90000
+            }))).isInstanceOf(RuntimeException.class); 
 
-            assertThat(attempts.get()).isEqualTo(1); // Only initial attempt // GH-90000
+            assertThat(attempts.get()).isEqualTo(1); // Only initial attempt 
         }
     }
 
     // ============================================
-    // RETRY PREDICATES AND FILTERING (2 tests) // GH-90000
+    // RETRY PREDICATES AND FILTERING (2 tests) 
     // ============================================
 
     @Nested
@@ -81,47 +81,47 @@ class RetryPolicyExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Retries only when predicate returns true")
-        void selectiveRetryPredicate() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(3) // GH-90000
-                    .initialDelay(Duration.ofMillis(1)) // GH-90000
-                    .retryIf(e -> e instanceof IllegalStateException) // GH-90000
-                    .build(); // GH-90000
+        void selectiveRetryPredicate() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(3) 
+                    .initialDelay(Duration.ofMillis(1)) 
+                    .retryIf(e -> e instanceof IllegalStateException) 
+                    .build(); 
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                int attempt = attempts.incrementAndGet(); // GH-90000
-                if (attempt < 3) { // GH-90000
-                    return Promise.ofException(new IllegalStateException("retry-me-" + attempt)); // GH-90000
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { 
+                int attempt = attempts.incrementAndGet(); 
+                if (attempt < 3) { 
+                    return Promise.ofException(new IllegalStateException("retry-me-" + attempt)); 
                 }
                 return Promise.of("success");
             }));
 
             assertThat(result).isEqualTo("success");
-            assertThat(attempts.get()).isEqualTo(3); // GH-90000
+            assertThat(attempts.get()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("Non-matching exceptions fail immediately without retry")
-        void nonMatchingExceptionFails() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(3) // GH-90000
-                    .initialDelay(Duration.ofMillis(1)) // GH-90000
-                    .retryIf(e -> e instanceof IllegalStateException) // GH-90000
-                    .build(); // GH-90000
+        void nonMatchingExceptionFails() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(3) 
+                    .initialDelay(Duration.ofMillis(1)) 
+                    .retryIf(e -> e instanceof IllegalStateException) 
+                    .build(); 
 
-            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            assertThatThrownBy(() -> runPromise(() -> policy.execute(eventloop(), () -> { 
+                attempts.incrementAndGet(); 
                 return Promise.ofException(new IllegalArgumentException("non-retryable"));
-            }))).isInstanceOf(IllegalArgumentException.class); // GH-90000
+            }))).isInstanceOf(IllegalArgumentException.class); 
 
-            assertThat(attempts.get()).isEqualTo(1); // No retries // GH-90000
+            assertThat(attempts.get()).isEqualTo(1); // No retries 
         }
     }
 
     // ============================================
-    // DELAY AND BACKOFF BEHAVIOR (2 tests) // GH-90000
+    // DELAY AND BACKOFF BEHAVIOR (2 tests) 
     // ============================================
 
     @Nested
@@ -130,49 +130,49 @@ class RetryPolicyExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Initial delay is applied between retries")
-        void initialDelayApplied() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            long startTime = System.currentTimeMillis(); // GH-90000
+        void initialDelayApplied() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            long startTime = System.currentTimeMillis(); 
 
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(2) // GH-90000
-                    .initialDelay(Duration.ofMillis(50)) // GH-90000
-                    .build(); // GH-90000
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(2) 
+                    .initialDelay(Duration.ofMillis(50)) 
+                    .build(); 
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                int attempt = attempts.incrementAndGet(); // GH-90000
-                if (attempt < 2) { // GH-90000
-                    return Promise.ofException(new RuntimeException("fail-" + attempt)); // GH-90000
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { 
+                int attempt = attempts.incrementAndGet(); 
+                if (attempt < 2) { 
+                    return Promise.ofException(new RuntimeException("fail-" + attempt)); 
                 }
                 return Promise.of("delayed-success");
             }));
 
-            long elapsed = System.currentTimeMillis() - startTime; // GH-90000
+            long elapsed = System.currentTimeMillis() - startTime; 
             assertThat(result).isEqualTo("delayed-success");
-            // Should have taken at least some delay time (accounting for execution variance) // GH-90000
-            assertThat(attempts.get()).isEqualTo(2); // GH-90000
+            // Should have taken at least some delay time (accounting for execution variance) 
+            assertThat(attempts.get()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Successful operation returns immediately without delay")
-        void successNoDelay() { // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(3) // GH-90000
-                    .initialDelay(Duration.ofMillis(500)) // GH-90000
-                    .build(); // GH-90000
+        void successNoDelay() { 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(3) 
+                    .initialDelay(Duration.ofMillis(500)) 
+                    .build(); 
 
-            long startTime = System.currentTimeMillis(); // GH-90000
+            long startTime = System.currentTimeMillis(); 
             String result = runPromise(() -> policy.execute(eventloop(), () -> Promise.of("immediate")));
-            long elapsed = System.currentTimeMillis() - startTime; // GH-90000
+            long elapsed = System.currentTimeMillis() - startTime; 
 
             assertThat(result).isEqualTo("immediate");
             // Should complete quickly without waiting for retry delay
-            assertThat(elapsed).isLessThan(200); // GH-90000
+            assertThat(elapsed).isLessThan(200); 
         }
     }
 
     // ============================================
-    // MULTIPLE EXCEPTION TYPES (1 test) // GH-90000
+    // MULTIPLE EXCEPTION TYPES (1 test) 
     // ============================================
 
     @Nested
@@ -181,26 +181,26 @@ class RetryPolicyExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Complex predicate handles multiple exception types")
-        void complexExceptionPredicate() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            RetryPolicy policy = RetryPolicy.builder() // GH-90000
-                    .maxRetries(2) // GH-90000
-                    .initialDelay(Duration.ofMillis(1)) // GH-90000
-                    .retryIf(e -> e instanceof RuntimeException || e instanceof IllegalStateException) // GH-90000
-                    .build(); // GH-90000
+        void complexExceptionPredicate() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            RetryPolicy policy = RetryPolicy.builder() 
+                    .maxRetries(2) 
+                    .initialDelay(Duration.ofMillis(1)) 
+                    .retryIf(e -> e instanceof RuntimeException || e instanceof IllegalStateException) 
+                    .build(); 
 
-            String result = runPromise(() -> policy.execute(eventloop(), () -> { // GH-90000
-                int attempt = attempts.incrementAndGet(); // GH-90000
-                if (attempt == 1) { // GH-90000
+            String result = runPromise(() -> policy.execute(eventloop(), () -> { 
+                int attempt = attempts.incrementAndGet(); 
+                if (attempt == 1) { 
                     return Promise.ofException(new RuntimeException("runtime-error"));
-                } else if (attempt == 2) { // GH-90000
+                } else if (attempt == 2) { 
                     return Promise.ofException(new IllegalStateException("state-error"));
                 }
                 return Promise.of("got-through");
             }));
 
             assertThat(result).isEqualTo("got-through");
-            assertThat(attempts.get()).isEqualTo(3); // GH-90000
+            assertThat(attempts.get()).isEqualTo(3); 
         }
     }
 }

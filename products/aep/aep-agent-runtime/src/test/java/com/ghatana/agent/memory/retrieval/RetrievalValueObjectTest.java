@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.memory.retrieval;
@@ -36,38 +36,38 @@ class RetrievalValueObjectTest {
 
         @Test
         @DisplayName("builder defaults: k=10, hybridAlpha=0.7, includeSimilarityScores=true")
-        void builderDefaults() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void builderDefaults() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("find my recent notes")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(request.getQuery()).isEqualTo("find my recent notes");
-            assertThat(request.getK()).isEqualTo(10); // GH-90000
-            assertThat(request.getHybridAlpha()).isEqualTo(0.7); // GH-90000
-            assertThat(request.isIncludeSimilarityScores()).isTrue(); // GH-90000
-            assertThat(request.isIncludeExplanation()).isFalse(); // GH-90000
-            assertThat(request.getFilters()).isEmpty(); // GH-90000
+            assertThat(request.getK()).isEqualTo(10); 
+            assertThat(request.getHybridAlpha()).isEqualTo(0.7); 
+            assertThat(request.isIncludeSimilarityScores()).isTrue(); 
+            assertThat(request.isIncludeExplanation()).isFalse(); 
+            assertThat(request.getFilters()).isEmpty(); 
         }
 
         @Test
         @DisplayName("builder accepts custom k value")
-        void customKValue() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void customKValue() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
-                    .k(25) // GH-90000
-                    .build(); // GH-90000
+                    .k(25) 
+                    .build(); 
 
-            assertThat(request.getK()).isEqualTo(25); // GH-90000
+            assertThat(request.getK()).isEqualTo(25); 
         }
 
         @Test
         @DisplayName("builder accepts tenantId and agentId")
-        void tenantAndAgentId() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void tenantAndAgentId() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
                     .tenantId("acme")
                     .agentId("agent-001")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(request.getTenantId()).isEqualTo("acme");
             assertThat(request.getAgentId()).isEqualTo("agent-001");
@@ -75,61 +75,61 @@ class RetrievalValueObjectTest {
 
         @Test
         @DisplayName("builder accepts custom filters map")
-        void customFilters() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void customFilters() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
-                    .filters(Map.of("tier", "working")) // GH-90000
-                    .build(); // GH-90000
+                    .filters(Map.of("tier", "working")) 
+                    .build(); 
 
-            assertThat(request.getFilters()).containsEntry("tier", "working"); // GH-90000
+            assertThat(request.getFilters()).containsEntry("tier", "working"); 
         }
 
         @Test
         @DisplayName("builder accepts time range")
-        void timeRange() { // GH-90000
+        void timeRange() { 
             Instant start = Instant.parse("2024-01-01T00:00:00Z");
             Instant end = Instant.parse("2024-12-31T23:59:59Z");
 
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
-                    .startTime(start) // GH-90000
-                    .endTime(end) // GH-90000
-                    .build(); // GH-90000
+                    .startTime(start) 
+                    .endTime(end) 
+                    .build(); 
 
-            assertThat(request.getStartTime()).isEqualTo(start); // GH-90000
-            assertThat(request.getEndTime()).isEqualTo(end); // GH-90000
+            assertThat(request.getStartTime()).isEqualTo(start); 
+            assertThat(request.getEndTime()).isEqualTo(end); 
         }
 
         @Test
         @DisplayName("includeExplanation can be set to true")
-        void includeExplanationTrue() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void includeExplanationTrue() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
-                    .includeExplanation(true) // GH-90000
-                    .build(); // GH-90000
+                    .includeExplanation(true) 
+                    .build(); 
 
-            assertThat(request.isIncludeExplanation()).isTrue(); // GH-90000
+            assertThat(request.isIncludeExplanation()).isTrue(); 
         }
 
         @Test
         @DisplayName("pure-dense alpha (1.0) can be set")
-        void pureDenseAlpha() { // GH-90000
-            RetrievalRequest request = RetrievalRequest.builder() // GH-90000
+        void pureDenseAlpha() { 
+            RetrievalRequest request = RetrievalRequest.builder() 
                     .query("q")
-                    .hybridAlpha(1.0) // GH-90000
-                    .build(); // GH-90000
+                    .hybridAlpha(1.0) 
+                    .build(); 
 
-            assertThat(request.getHybridAlpha()).isEqualTo(1.0); // GH-90000
+            assertThat(request.getHybridAlpha()).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("equals and hashCode work for identical builders")
-        void equalsAndHashCode() { // GH-90000
+        void equalsAndHashCode() { 
             RetrievalRequest r1 = RetrievalRequest.builder().query("q").k(5).build();
             RetrievalRequest r2 = RetrievalRequest.builder().query("q").k(5).build();
 
-            assertThat(r1).isEqualTo(r2); // GH-90000
-            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); // GH-90000
+            assertThat(r1).isEqualTo(r2); 
+            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); 
         }
     }
 
@@ -143,33 +143,33 @@ class RetrievalValueObjectTest {
 
         @Test
         @DisplayName("builder creates result with correct fields")
-        void builderCreatesResult() { // GH-90000
-            RetrievalResult result = RetrievalResult.builder() // GH-90000
-                    .items(List.of()) // GH-90000
-                    .totalCandidates(100) // GH-90000
-                    .retrievalTimeMs(42) // GH-90000
+        void builderCreatesResult() { 
+            RetrievalResult result = RetrievalResult.builder() 
+                    .items(List.of()) 
+                    .totalCandidates(100) 
+                    .retrievalTimeMs(42) 
                     .strategyUsed("hybrid")
                     .explanation("Used BM25 + dense retrieval")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(result.getItems()).isEmpty(); // GH-90000
-            assertThat(result.getTotalCandidates()).isEqualTo(100); // GH-90000
-            assertThat(result.getRetrievalTimeMs()).isEqualTo(42); // GH-90000
+            assertThat(result.getItems()).isEmpty(); 
+            assertThat(result.getTotalCandidates()).isEqualTo(100); 
+            assertThat(result.getRetrievalTimeMs()).isEqualTo(42); 
             assertThat(result.getStrategyUsed()).isEqualTo("hybrid");
             assertThat(result.getExplanation()).isEqualTo("Used BM25 + dense retrieval");
         }
 
         @Test
         @DisplayName("explanation can be null")
-        void explanationCanBeNull() { // GH-90000
-            RetrievalResult result = RetrievalResult.builder() // GH-90000
-                    .items(List.of()) // GH-90000
-                    .totalCandidates(0) // GH-90000
-                    .retrievalTimeMs(0) // GH-90000
+        void explanationCanBeNull() { 
+            RetrievalResult result = RetrievalResult.builder() 
+                    .items(List.of()) 
+                    .totalCandidates(0) 
+                    .retrievalTimeMs(0) 
                     .strategyUsed("bm25")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(result.getExplanation()).isNull(); // GH-90000
+            assertThat(result.getExplanation()).isNull(); 
         }
     }
 
@@ -183,30 +183,30 @@ class RetrievalValueObjectTest {
 
         @Test
         @DisplayName("builder creates explanation with defaults")
-        void builderDefaults() { // GH-90000
-            RetrievalExplanation explanation = RetrievalExplanation.builder() // GH-90000
+        void builderDefaults() { 
+            RetrievalExplanation explanation = RetrievalExplanation.builder() 
                     .retrievalStrategy("hybrid")
-                    .candidatesScanned(50) // GH-90000
-                    .scores(Map.of("item-1", Map.of("bm25", 0.8))) // GH-90000
-                    .build(); // GH-90000
+                    .candidatesScanned(50) 
+                    .scores(Map.of("item-1", Map.of("bm25", 0.8))) 
+                    .build(); 
 
             assertThat(explanation.getRetrievalStrategy()).isEqualTo("hybrid");
-            assertThat(explanation.getCandidatesScanned()).isEqualTo(50); // GH-90000
-            assertThat(explanation.getFiltersApplied()).isEmpty(); // default // GH-90000
-            assertThat(explanation.getRerankerInputs()).isEmpty(); // default // GH-90000
+            assertThat(explanation.getCandidatesScanned()).isEqualTo(50); 
+            assertThat(explanation.getFiltersApplied()).isEmpty(); // default 
+            assertThat(explanation.getRerankerInputs()).isEmpty(); // default 
         }
 
         @Test
         @DisplayName("filtersApplied can be set")
-        void filtersApplied() { // GH-90000
-            RetrievalExplanation explanation = RetrievalExplanation.builder() // GH-90000
+        void filtersApplied() { 
+            RetrievalExplanation explanation = RetrievalExplanation.builder() 
                     .retrievalStrategy("bm25")
-                    .candidatesScanned(20) // GH-90000
-                    .scores(Map.of()) // GH-90000
-                    .filtersApplied(List.of("tier=working", "before=2025-01-01")) // GH-90000
-                    .build(); // GH-90000
+                    .candidatesScanned(20) 
+                    .scores(Map.of()) 
+                    .filtersApplied(List.of("tier=working", "before=2025-01-01")) 
+                    .build(); 
 
-            assertThat(explanation.getFiltersApplied()).containsExactly("tier=working", "before=2025-01-01"); // GH-90000
+            assertThat(explanation.getFiltersApplied()).containsExactly("tier=working", "before=2025-01-01"); 
         }
     }
 
@@ -220,61 +220,61 @@ class RetrievalValueObjectTest {
 
         @Test
         @DisplayName("builder defaults: maxTokens=4000, groupByTier=true, format=MARKDOWN")
-        void builderDefaults() { // GH-90000
-            InjectionConfig config = InjectionConfig.builder().build(); // GH-90000
+        void builderDefaults() { 
+            InjectionConfig config = InjectionConfig.builder().build(); 
 
-            assertThat(config.getMaxTokens()).isEqualTo(4000); // GH-90000
-            assertThat(config.isGroupByTier()).isTrue(); // GH-90000
-            assertThat(config.isIncludeProvenance()).isTrue(); // GH-90000
-            assertThat(config.isIncludeConfidence()).isTrue(); // GH-90000
-            assertThat(config.isIncludeConflictMarkers()).isTrue(); // GH-90000
-            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.MARKDOWN); // GH-90000
+            assertThat(config.getMaxTokens()).isEqualTo(4000); 
+            assertThat(config.isGroupByTier()).isTrue(); 
+            assertThat(config.isIncludeProvenance()).isTrue(); 
+            assertThat(config.isIncludeConfidence()).isTrue(); 
+            assertThat(config.isIncludeConflictMarkers()).isTrue(); 
+            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.MARKDOWN); 
         }
 
         @Test
         @DisplayName("format can be set to JSON")
-        void formatJsonOverride() { // GH-90000
-            InjectionConfig config = InjectionConfig.builder() // GH-90000
-                    .format(InjectionConfig.Format.JSON) // GH-90000
-                    .build(); // GH-90000
+        void formatJsonOverride() { 
+            InjectionConfig config = InjectionConfig.builder() 
+                    .format(InjectionConfig.Format.JSON) 
+                    .build(); 
 
-            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.JSON); // GH-90000
+            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.JSON); 
         }
 
         @Test
         @DisplayName("format can be set to XML")
-        void formatXmlOverride() { // GH-90000
-            InjectionConfig config = InjectionConfig.builder() // GH-90000
-                    .format(InjectionConfig.Format.XML) // GH-90000
-                    .build(); // GH-90000
+        void formatXmlOverride() { 
+            InjectionConfig config = InjectionConfig.builder() 
+                    .format(InjectionConfig.Format.XML) 
+                    .build(); 
 
-            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.XML); // GH-90000
+            assertThat(config.getFormat()).isEqualTo(InjectionConfig.Format.XML); 
         }
 
         @Test
         @DisplayName("maxTokens can be overridden")
-        void maxTokensOverride() { // GH-90000
-            InjectionConfig config = InjectionConfig.builder() // GH-90000
-                    .maxTokens(2000) // GH-90000
-                    .build(); // GH-90000
+        void maxTokensOverride() { 
+            InjectionConfig config = InjectionConfig.builder() 
+                    .maxTokens(2000) 
+                    .build(); 
 
-            assertThat(config.getMaxTokens()).isEqualTo(2000); // GH-90000
+            assertThat(config.getMaxTokens()).isEqualTo(2000); 
         }
 
         @Test
         @DisplayName("groupByTier can be disabled")
-        void groupByTierDisabled() { // GH-90000
-            InjectionConfig config = InjectionConfig.builder() // GH-90000
-                    .groupByTier(false) // GH-90000
-                    .build(); // GH-90000
+        void groupByTierDisabled() { 
+            InjectionConfig config = InjectionConfig.builder() 
+                    .groupByTier(false) 
+                    .build(); 
 
-            assertThat(config.isGroupByTier()).isFalse(); // GH-90000
+            assertThat(config.isGroupByTier()).isFalse(); 
         }
 
         @Test
         @DisplayName("Format enum has three values: MARKDOWN, XML, JSON")
-        void formatEnumValues() { // GH-90000
-            assertThat(InjectionConfig.Format.values()).containsExactlyInAnyOrder( // GH-90000
+        void formatEnumValues() { 
+            assertThat(InjectionConfig.Format.values()).containsExactlyInAnyOrder( 
                     InjectionConfig.Format.MARKDOWN,
                     InjectionConfig.Format.XML,
                     InjectionConfig.Format.JSON

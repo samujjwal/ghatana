@@ -27,25 +27,25 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
-  TestCodeGeneratorTest() { // GH-90000
-    MockitoAnnotations.openMocks(this); // GH-90000
+  TestCodeGeneratorTest() { 
+    MockitoAnnotations.openMocks(this); 
   }
 
   @TempDir Path tempDir;
 
   @Test
   @DisplayName("generateTestCode builds compilable junit fallback tests")
-  void generateTestCodeBuildsCompilableJunitFallbackTests() throws IOException { // GH-90000
-    TestCodeGenerator generator = new TestCodeGenerator(); // GH-90000
+  void generateTestCodeBuildsCompilableJunitFallbackTests() throws IOException { 
+    TestCodeGenerator generator = new TestCodeGenerator(); 
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "CalculatorService",
-                    "package com.example; public class CalculatorService { public CalculatorService() {} }", // GH-90000
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    "package com.example; public class CalculatorService { public CalculatorService() {} }", 
+                    List.of( 
+                        new TestScenario( 
                             "handles valid requests",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "a valid input exists",
@@ -55,25 +55,25 @@ class TestCodeGeneratorTest extends EventloopTestBase {
                     TestCodeGenerator.TestFramework.JUNIT5));
 
     assertThat(artifact.fileName()).isEqualTo("CalculatorServiceTest.java");
-    assertThat(artifact.sourceCode()).contains("@DisplayName(\"handles valid requests\")"); // GH-90000
+    assertThat(artifact.sourceCode()).contains("@DisplayName(\"handles valid requests\")"); 
 
-    compileJavaSource(tempDir, artifact.sourceCode(), "CalculatorServiceTest.java", // GH-90000
-        "package com.example; public class CalculatorService { public CalculatorService() {} }"); // GH-90000
+    compileJavaSource(tempDir, artifact.sourceCode(), "CalculatorServiceTest.java", 
+        "package com.example; public class CalculatorService { public CalculatorService() {} }"); 
   }
 
   @Test
   @DisplayName("generateTestCode builds vitest fallback tests")
-  void generateTestCodeBuildsVitestFallbackTests() { // GH-90000
-    TestCodeGenerator generator = new TestCodeGenerator(); // GH-90000
+  void generateTestCodeBuildsVitestFallbackTests() { 
+    TestCodeGenerator generator = new TestCodeGenerator(); 
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "WidgetStore",
                     "export class WidgetStore {}",
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    List.of( 
+                        new TestScenario( 
                             "creates the store",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "a fixture exists",
@@ -89,20 +89,20 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateTestCode prefers AI output and strips markdown fences")
-  void generateTestCodePrefersAiOutputAndStripsMarkdownFences() { // GH-90000
-    when(aiService.generateTests(anyString(), anyMap())) // GH-90000
+  void generateTestCodePrefersAiOutputAndStripsMarkdownFences() { 
+    when(aiService.generateTests(anyString(), anyMap())) 
         .thenReturn(Promise.of("```java\nclass GeneratedTest {}\n```"));
 
-    TestCodeGenerator generator = new TestCodeGenerator(aiService); // GH-90000
+    TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "Generated",
                     "public class Generated {}",
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    List.of( 
+                        new TestScenario( 
                             "uses ai",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "ai is available",
@@ -112,24 +112,24 @@ class TestCodeGeneratorTest extends EventloopTestBase {
                     TestCodeGenerator.TestFramework.JUNIT5));
 
     assertThat(artifact.sourceCode()).isEqualTo("class GeneratedTest {}");
-    verify(aiService).generateTests(anyString(), anyMap()); // GH-90000
+    verify(aiService).generateTests(anyString(), anyMap()); 
   }
 
   @Test
   @DisplayName("generateTestCode falls back when AI returns blank source")
-  void generateTestCodeFallsBackWhenAiReturnsBlankSource() { // GH-90000
+  void generateTestCodeFallsBackWhenAiReturnsBlankSource() { 
     when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of("   "));
 
-    TestCodeGenerator generator = new TestCodeGenerator(aiService); // GH-90000
+    TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "FallbackSubject",
-                    "public class FallbackSubject { public FallbackSubject() {} }", // GH-90000
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    "public class FallbackSubject { public FallbackSubject() {} }", 
+                    List.of( 
+                        new TestScenario( 
                             "fallback scenario",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "state is ready",
@@ -143,25 +143,25 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generateTestCode handles null AI output and generated subject fallback")
-    void generateTestCodeHandlesNullAiOutputAndGeneratedSubjectFallback() { // GH-90000
-        when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of(null)); // GH-90000
+    void generateTestCodeHandlesNullAiOutputAndGeneratedSubjectFallback() { 
+        when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of(null)); 
 
-        TestCodeGenerator generator = new TestCodeGenerator(aiService); // GH-90000
+        TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
         TestCodeGenerator.GeneratedTestArtifact artifact =
-                runPromise( // GH-90000
-                        () -> // GH-90000
-                                generator.generateTestCode( // GH-90000
+                runPromise( 
+                        () -> 
+                                generator.generateTestCode( 
                                         "",
                                         null,
-                                        List.of( // GH-90000
-                                                new TestScenario( // GH-90000
+                                        List.of( 
+                                                new TestScenario( 
                                                         "!!!",
                                                         TestScenario.ScenarioCategory.HAPPY_PATH,
                                                         "state exists",
                                                         "generation runs",
                                                         "fallback naming is used",
-                                                        List.of())), // GH-90000
+                                                        List.of())), 
                                         TestCodeGenerator.TestFramework.JUNIT5));
 
         assertThat(artifact.fileName()).isEqualTo("GeneratedSubjectTest.java");
@@ -170,25 +170,25 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generateTestCode preserves fenced output without newline delimiter")
-    void generateTestCodePreservesFencedOutputWithoutNewlineDelimiter() { // GH-90000
+    void generateTestCodePreservesFencedOutputWithoutNewlineDelimiter() { 
         when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of("```java```"));
 
-        TestCodeGenerator generator = new TestCodeGenerator(aiService); // GH-90000
+        TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
         TestCodeGenerator.GeneratedTestArtifact artifact =
-                runPromise( // GH-90000
-                        () -> // GH-90000
-                                generator.generateTestCode( // GH-90000
+                runPromise( 
+                        () -> 
+                                generator.generateTestCode( 
                                         "InlineFence",
                                         "public class InlineFence {}",
-                                        List.of( // GH-90000
-                                                new TestScenario( // GH-90000
+                                        List.of( 
+                                                new TestScenario( 
                                                         "returns fenced text",
                                                         TestScenario.ScenarioCategory.HAPPY_PATH,
                                                         "ai responds",
                                                         "sanitization runs",
                                                         "text is preserved",
-                                                        List.of())), // GH-90000
+                                                        List.of())), 
                                         TestCodeGenerator.TestFramework.JUNIT5));
 
         assertThat(artifact.sourceCode()).isEqualTo("```java```");
@@ -196,58 +196,58 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateTestCode handles partial fences extracted types and null vitest source")
-  void generateTestCodeHandlesPartialFencesExtractedTypesAndNullVitestSource() { // GH-90000
-    when(aiService.generateTests(anyString(), anyMap())) // GH-90000
+  void generateTestCodeHandlesPartialFencesExtractedTypesAndNullVitestSource() { 
+    when(aiService.generateTests(anyString(), anyMap())) 
         .thenReturn(Promise.of("```java\nclass PartialFence {}"))
         .thenReturn(Promise.of(""))
         .thenReturn(Promise.of(""));
 
-    TestCodeGenerator generator = new TestCodeGenerator(aiService); // GH-90000
+    TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
     TestCodeGenerator.GeneratedTestArtifact partialFenceArtifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "PartialFence",
                     "public class PartialFence {}",
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    List.of( 
+                        new TestScenario( 
                             "partial fence",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "ai returns a partial fence",
                             "sanitization runs",
                             "text stays intact",
-                            List.of())), // GH-90000
+                            List.of())), 
                     TestCodeGenerator.TestFramework.JUNIT5));
     TestCodeGenerator.GeneratedTestArtifact extractedTypeArtifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "",
                     "package demo.sample; public class ExtractedType {}",
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    List.of( 
+                        new TestScenario( 
                             "extract type",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "class source exists",
                             "fallback generation runs",
                             "type name is extracted",
-                            List.of())), // GH-90000
+                            List.of())), 
                     TestCodeGenerator.TestFramework.JUNIT5));
     TestCodeGenerator.GeneratedTestArtifact vitestArtifact =
-        runPromise( // GH-90000
-            () -> // GH-90000
-                generator.generateTestCode( // GH-90000
+        runPromise( 
+            () -> 
+                generator.generateTestCode( 
                     "VitestFallback",
                     null,
-                    List.of( // GH-90000
-                        new TestScenario( // GH-90000
+                    List.of( 
+                        new TestScenario( 
                             "vitest fallback",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "source is absent",
                             "vitest fallback runs",
                             "package extraction handles null source",
-                            List.of())), // GH-90000
+                            List.of())), 
                     TestCodeGenerator.TestFramework.VITEST));
 
     assertThat(partialFenceArtifact.sourceCode()).startsWith("```java");
@@ -258,40 +258,40 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("private extraction helpers handle null and non-null source")
-  void privateExtractionHelpersHandleNullAndNonNullSource() throws Exception { // GH-90000
-    TestCodeGenerator generator = new TestCodeGenerator(); // GH-90000
+  void privateExtractionHelpersHandleNullAndNonNullSource() throws Exception { 
+    TestCodeGenerator generator = new TestCodeGenerator(); 
     Method extractPackageLine =
-        TestCodeGenerator.class.getDeclaredMethod("extractPackageLine", String.class); // GH-90000
+        TestCodeGenerator.class.getDeclaredMethod("extractPackageLine", String.class); 
     Method extractPackageName =
-        TestCodeGenerator.class.getDeclaredMethod("extractPackageName", String.class); // GH-90000
+        TestCodeGenerator.class.getDeclaredMethod("extractPackageName", String.class); 
     Method extractClassName =
-        TestCodeGenerator.class.getDeclaredMethod("extractClassName", String.class); // GH-90000
-    extractPackageLine.setAccessible(true); // GH-90000
-    extractPackageName.setAccessible(true); // GH-90000
-    extractClassName.setAccessible(true); // GH-90000
+        TestCodeGenerator.class.getDeclaredMethod("extractClassName", String.class); 
+    extractPackageLine.setAccessible(true); 
+    extractPackageName.setAccessible(true); 
+    extractClassName.setAccessible(true); 
 
-    assertThat((String) extractPackageLine.invoke(generator, new Object[] {null})).isEmpty(); // GH-90000
-    assertThat((String) extractPackageLine.invoke(generator, "package demo.reflect; class Box {}")) // GH-90000
+    assertThat((String) extractPackageLine.invoke(generator, new Object[] {null})).isEmpty(); 
+    assertThat((String) extractPackageLine.invoke(generator, "package demo.reflect; class Box {}")) 
         .isEqualTo("package demo.reflect;");
-    assertThat((String) extractPackageName.invoke(generator, new Object[] {null})).isEmpty(); // GH-90000
-    assertThat((String) extractPackageName.invoke(generator, "package demo.reflect; class Box {}")) // GH-90000
+    assertThat((String) extractPackageName.invoke(generator, new Object[] {null})).isEmpty(); 
+    assertThat((String) extractPackageName.invoke(generator, "package demo.reflect; class Box {}")) 
         .isEqualTo("demo.reflect");
-    assertThat((String) extractClassName.invoke(generator, new Object[] {null})) // GH-90000
+    assertThat((String) extractClassName.invoke(generator, new Object[] {null})) 
         .isEqualTo("GeneratedSubject");
-    assertThat((String) extractClassName.invoke(generator, "public class ReflectedType {}")) // GH-90000
+    assertThat((String) extractClassName.invoke(generator, "public class ReflectedType {}")) 
         .isEqualTo("ReflectedType");
   }
 
-  private void compileJavaSource(Path tempDir, String testSource, String testFileName, String subjectSource) // GH-90000
+  private void compileJavaSource(Path tempDir, String testSource, String testFileName, String subjectSource) 
       throws IOException {
     Path sourceDir = tempDir.resolve("src");
     Files.createDirectories(sourceDir.resolve("com/example"));
     Files.writeString(sourceDir.resolve("com/example/CalculatorService.java"), subjectSource);
-    Files.writeString(sourceDir.resolve("com/example/" + testFileName), testSource); // GH-90000
+    Files.writeString(sourceDir.resolve("com/example/" + testFileName), testSource); 
 
-    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler(); // GH-90000
+    JavaCompiler compiler = ToolProvider.getSystemJavaCompiler(); 
     int result =
-        compiler.run( // GH-90000
+        compiler.run( 
             null,
             null,
             null,
@@ -300,8 +300,8 @@ class TestCodeGeneratorTest extends EventloopTestBase {
             "-d",
             tempDir.resolve("classes").toString(),
             sourceDir.resolve("com/example/CalculatorService.java").toString(),
-            sourceDir.resolve("com/example/" + testFileName).toString()); // GH-90000
+            sourceDir.resolve("com/example/" + testFileName).toString()); 
 
-    assertThat(result).isZero(); // GH-90000
+    assertThat(result).isZero(); 
   }
 }

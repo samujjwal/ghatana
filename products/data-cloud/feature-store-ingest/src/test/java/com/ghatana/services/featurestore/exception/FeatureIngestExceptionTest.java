@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.services.featurestore.exception;
@@ -27,31 +27,31 @@ class FeatureIngestExceptionTest {
 
         @Test
         @DisplayName("constructor sets message and category")
-        void constructorSetsMessageAndCategory() { // GH-90000
-            FeatureIngestException ex = new FeatureIngestException( // GH-90000
+        void constructorSetsMessageAndCategory() { 
+            FeatureIngestException ex = new FeatureIngestException( 
                     "Offset advance failed", FeatureIngestException.ErrorCategory.OFFSET_FAILURE);
 
             assertThat(ex.getMessage()).isEqualTo("Offset advance failed");
-            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.OFFSET_FAILURE); // GH-90000
-            assertThat(ex.getCause()).isNull(); // GH-90000
+            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.OFFSET_FAILURE); 
+            assertThat(ex.getCause()).isNull(); 
         }
 
         @Test
         @DisplayName("cause constructor preserves cause")
-        void causeConstructorPreservesCause() { // GH-90000
+        void causeConstructorPreservesCause() { 
             RuntimeException root = new RuntimeException("connection refused");
-            FeatureIngestException ex = new FeatureIngestException( // GH-90000
+            FeatureIngestException ex = new FeatureIngestException( 
                     "Store unavailable", FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE, root);
 
             assertThat(ex.getMessage()).isEqualTo("Store unavailable");
-            assertThat(ex.getCause()).isSameAs(root); // GH-90000
-            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE); // GH-90000
+            assertThat(ex.getCause()).isSameAs(root); 
+            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE); 
         }
 
         @Test
         @DisplayName("ErrorCategory enum has all four expected values")
-        void errorCategoryEnumValues() { // GH-90000
-            assertThat(FeatureIngestException.ErrorCategory.values()).containsExactlyInAnyOrder( // GH-90000
+        void errorCategoryEnumValues() { 
+            assertThat(FeatureIngestException.ErrorCategory.values()).containsExactlyInAnyOrder( 
                     FeatureIngestException.ErrorCategory.EXTRACTION_FAILURE,
                     FeatureIngestException.ErrorCategory.STORE_WRITE_FAILURE,
                     FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE,
@@ -61,11 +61,11 @@ class FeatureIngestExceptionTest {
 
         @Test
         @DisplayName("is a RuntimeException")
-        void isRuntimeException() { // GH-90000
-            FeatureIngestException ex = new FeatureIngestException( // GH-90000
+        void isRuntimeException() { 
+            FeatureIngestException ex = new FeatureIngestException( 
                     "test", FeatureIngestException.ErrorCategory.STORE_UNAVAILABLE);
 
-            assertThat(ex).isInstanceOf(RuntimeException.class); // GH-90000
+            assertThat(ex).isInstanceOf(RuntimeException.class); 
         }
     }
 
@@ -75,35 +75,35 @@ class FeatureIngestExceptionTest {
 
         @Test
         @DisplayName("constructor sets all fields and category to STORE_WRITE_FAILURE")
-        void constructorSetsAllFields() { // GH-90000
+        void constructorSetsAllFields() { 
             RuntimeException cause = new RuntimeException("timeout");
-            FeatureStoreWriteException ex = new FeatureStoreWriteException( // GH-90000
+            FeatureStoreWriteException ex = new FeatureStoreWriteException( 
                     "user_click_count", "tenant-123", 3, "Write failed after 3 attempts", cause);
 
             assertThat(ex.getFeatureName()).isEqualTo("user_click_count");
             assertThat(ex.getTenantId()).isEqualTo("tenant-123");
-            assertThat(ex.getAttemptCount()).isEqualTo(3); // GH-90000
+            assertThat(ex.getAttemptCount()).isEqualTo(3); 
             assertThat(ex.getMessage()).isEqualTo("Write failed after 3 attempts");
-            assertThat(ex.getCause()).isSameAs(cause); // GH-90000
-            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.STORE_WRITE_FAILURE); // GH-90000
+            assertThat(ex.getCause()).isSameAs(cause); 
+            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.STORE_WRITE_FAILURE); 
         }
 
         @Test
         @DisplayName("extends FeatureIngestException")
-        void extendsBaseException() { // GH-90000
-            FeatureStoreWriteException ex = new FeatureStoreWriteException( // GH-90000
-                    "feat", "tenant", 1, "msg", new RuntimeException()); // GH-90000
+        void extendsBaseException() { 
+            FeatureStoreWriteException ex = new FeatureStoreWriteException( 
+                    "feat", "tenant", 1, "msg", new RuntimeException()); 
 
-            assertThat(ex).isInstanceOf(FeatureIngestException.class); // GH-90000
+            assertThat(ex).isInstanceOf(FeatureIngestException.class); 
         }
 
         @Test
         @DisplayName("attempt count is zero when first attempt fails")
-        void attemptCountZeroOnFirstFailure() { // GH-90000
-            FeatureStoreWriteException ex = new FeatureStoreWriteException( // GH-90000
+        void attemptCountZeroOnFirstFailure() { 
+            FeatureStoreWriteException ex = new FeatureStoreWriteException( 
                     "feat", "t", 0, "immediate failure", null);
 
-            assertThat(ex.getAttemptCount()).isZero(); // GH-90000
+            assertThat(ex.getAttemptCount()).isZero(); 
         }
     }
 
@@ -113,34 +113,34 @@ class FeatureIngestExceptionTest {
 
         @Test
         @DisplayName("constructor sets eventId, tenantId, and EXTRACTION_FAILURE category")
-        void constructorSetsFields() { // GH-90000
+        void constructorSetsFields() { 
             RuntimeException cause = new RuntimeException("parse error");
-            FeatureExtractionException ex = new FeatureExtractionException( // GH-90000
+            FeatureExtractionException ex = new FeatureExtractionException( 
                     "evt-9872", "tenant-456", "Failed to extract feature vector", cause);
 
             assertThat(ex.getEventId()).isEqualTo("evt-9872");
             assertThat(ex.getTenantId()).isEqualTo("tenant-456");
             assertThat(ex.getMessage()).isEqualTo("Failed to extract feature vector");
-            assertThat(ex.getCause()).isSameAs(cause); // GH-90000
-            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.EXTRACTION_FAILURE); // GH-90000
+            assertThat(ex.getCause()).isSameAs(cause); 
+            assertThat(ex.getCategory()).isEqualTo(FeatureIngestException.ErrorCategory.EXTRACTION_FAILURE); 
         }
 
         @Test
         @DisplayName("extends FeatureIngestException")
-        void extendsBaseException() { // GH-90000
-            FeatureExtractionException ex = new FeatureExtractionException( // GH-90000
+        void extendsBaseException() { 
+            FeatureExtractionException ex = new FeatureExtractionException( 
                     "e", "t", "msg", null);
 
-            assertThat(ex).isInstanceOf(FeatureIngestException.class); // GH-90000
+            assertThat(ex).isInstanceOf(FeatureIngestException.class); 
         }
 
         @Test
         @DisplayName("cause can be null for unknown extraction failures")
-        void causeCanBeNull() { // GH-90000
-            FeatureExtractionException ex = new FeatureExtractionException( // GH-90000
+        void causeCanBeNull() { 
+            FeatureExtractionException ex = new FeatureExtractionException( 
                     "evt-x", "tenant-y", "no cause available", null);
 
-            assertThat(ex.getCause()).isNull(); // GH-90000
+            assertThat(ex.getCause()).isNull(); 
         }
     }
 }

@@ -62,42 +62,58 @@ class StandardCompliancePluginTest extends EventloopTestBase {
     void testMetadata() { 
         var metadata = compliancePlugin.metadata(); 
         assertThat(metadata.name()).isEqualTo("Compliance Plugin");
-        assertThat(metadata.version()).isEqualTo("1.0.0");
+        assertThat(metadata.version()).isEqualTo("1.2.0");
     }
 
     @Test
-    @DisplayName("Should evaluate compliance against SOX rules")
-    void testEvaluateCompliance_SOX() { 
+    @DisplayName("Should evaluate compliance against registered AUDIT_CONTROL rules")
+    void testEvaluateCompliance_AuditControl() { 
         runPromise(() -> compliancePlugin.initialize(mockContext) 
                 .then(v -> compliancePlugin.start())); 
+
+        List<CompliancePlugin.ComplianceRule> rules = Arrays.asList(
+            new CompliancePlugin.ComplianceRule("AC-001", "SEPARATION_OF_DUTIES",
+                "Operations require dual approval", CompliancePlugin.ComplianceRule.Severity.HIGH, "approval_required"),
+            new CompliancePlugin.ComplianceRule("AC-002", "AUDIT_TRAIL",
+                "All changes must be logged", CompliancePlugin.ComplianceRule.Severity.CRITICAL, "audit_required")
+        );
+        runPromise(() -> compliancePlugin.registerRuleSet("AUDIT_CONTROL", rules));
 
         CompliancePlugin.ComplianceContext context = new CompliancePlugin.ComplianceContext( 
             "entity1", "TRANSACTION", Map.of("approval", "true"), 
             "user1", Instant.now()); 
 
         Promise<CompliancePlugin.ComplianceResult> result =
-                compliancePlugin.evaluate("SOX", context); 
+                compliancePlugin.evaluate("AUDIT_CONTROL", context); 
         CompliancePlugin.ComplianceResult evaluation = runPromise(() -> result); 
 
-        assertThat(evaluation.ruleSetId()).isEqualTo("SOX");
+        assertThat(evaluation.ruleSetId()).isEqualTo("AUDIT_CONTROL");
         assertThat(evaluation.evaluatedAt()).isNotNull(); 
     }
 
     @Test
-    @DisplayName("Should evaluate compliance against HIPAA rules")
-    void testEvaluateCompliance_HIPAA() { 
+    @DisplayName("Should evaluate compliance against registered ACCESS_CONTROL rules")
+    void testEvaluateCompliance_AccessControl() { 
         runPromise(() -> compliancePlugin.initialize(mockContext) 
                 .then(v -> compliancePlugin.start())); 
 
+        List<CompliancePlugin.ComplianceRule> rules = Arrays.asList(
+            new CompliancePlugin.ComplianceRule("AC-010", "AUTHENTICATION_REQUIRED",
+                "Resource access requires authentication", CompliancePlugin.ComplianceRule.Severity.CRITICAL, "authentication_required"),
+            new CompliancePlugin.ComplianceRule("AC-011", "NEED_TO_KNOW",
+                "Access limited to authorised scope", CompliancePlugin.ComplianceRule.Severity.HIGH, "need_to_know")
+        );
+        runPromise(() -> compliancePlugin.registerRuleSet("ACCESS_CONTROL", rules));
+
         CompliancePlugin.ComplianceContext context = new CompliancePlugin.ComplianceContext( 
-            "patient1", "PHI_ACCESS", Map.of("auth", "token"), 
-            "doctor1", Instant.now()); 
+            "resource1", "DATA_ACCESS", Map.of("auth", "token"), 
+            "user1", Instant.now()); 
 
         Promise<CompliancePlugin.ComplianceResult> result =
-                compliancePlugin.evaluate("HIPAA", context); 
+                compliancePlugin.evaluate("ACCESS_CONTROL", context); 
         CompliancePlugin.ComplianceResult evaluation = runPromise(() -> result); 
 
-        assertThat(evaluation.ruleSetId()).isEqualTo("HIPAA");
+        assertThat(evaluation.ruleSetId()).isEqualTo("ACCESS_CONTROL");
     }
 
     @Test
@@ -135,7 +151,11 @@ class StandardCompliancePluginTest extends EventloopTestBase {
         CompliancePlugin.ComplianceContext context = new CompliancePlugin.ComplianceContext( 
             entityId, "TYPE", new java.util.HashMap<>(), "user1", Instant.now()); 
 
-        runPromise(() -> compliancePlugin.evaluate("GDPR", context)); 
+        runPromise(() -> compliancePlugin.registerRuleSet("CONSENT_CONTROL", List.of(
+            new CompliancePlugin.ComplianceRule("CC-001", "CONSENT_CHECK",
+                "Data processing requires consent", CompliancePlugin.ComplianceRule.Severity.CRITICAL, "consent_check")
+        )));
+        runPromise(() -> compliancePlugin.evaluate("CONSENT_CONTROL", context));
 
         Promise<List<CompliancePlugin.AuditEntry>> result =
                 compliancePlugin.getAuditTrail(entityId); 
@@ -152,7 +172,7 @@ class StandardCompliancePluginTest extends EventloopTestBase {
                 .then(v -> compliancePlugin.start())); 
 
         Promise<List<CompliancePlugin.ComplianceViolation>> result =
-                compliancePlugin.getActiveViolations("SOX");
+                compliancePlugin.getActiveViolations("AUDIT_CONTROL");
         List<CompliancePlugin.ComplianceViolation> violations = runPromise(() -> result); 
 
         assertThat(violations).isNotNull(); 

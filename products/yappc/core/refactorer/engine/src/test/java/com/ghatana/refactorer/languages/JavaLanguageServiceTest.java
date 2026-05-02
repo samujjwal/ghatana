@@ -21,7 +21,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles java language service test operations
@@ -39,63 +39,63 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
     private static final String TEST_JAVA = "Test.java";
 
     @BeforeEach
-    void setUpService() { // GH-90000
+    void setUpService() { 
         // Initialize service with Reactor from EventloopTestBase
-        javaService = new JavaLanguageService(eventloop()); // GH-90000
+        javaService = new JavaLanguageService(eventloop()); 
     }
 
     @Test
-    void testId() { // GH-90000
-        assertEquals("java", javaService.id()); // GH-90000
+    void testId() { 
+        assertEquals("java", javaService.id()); 
     }
 
     @Test
-    void testSupportsJavaFile() { // GH-90000
-        assertTrue(javaService.supports(Path.of(TEST_JAVA))); // GH-90000
-        assertTrue(javaService.supports(Path.of("src/main/java/com/example/" + TEST_JAVA))); // GH-90000
+    void testSupportsJavaFile() { 
+        assertTrue(javaService.supports(Path.of(TEST_JAVA))); 
+        assertTrue(javaService.supports(Path.of("src/main/java/com/example/" + TEST_JAVA))); 
     }
 
     @Test
-    void testDoesNotSupportNonJavaFiles() { // GH-90000
+    void testDoesNotSupportNonJavaFiles() { 
         assertFalse(javaService.supports(Path.of("test.py")));
         assertFalse(javaService.supports(Path.of("pom.xml")));
         assertFalse(javaService.supports(Path.of("src/main/resources/application.properties")));
     }
 
     @Test
-    void testDiagnoseEmptyProject() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> javaService.diagnose(projectContext, List.of())); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+    void testDiagnoseEmptyProject() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> javaService.diagnose(projectContext, List.of())); 
+        assertNotNull(diagnostics); 
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testDiagnoseValidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testDiagnoseValidJavaFile(@TempDir Path tempDir) throws Exception { 
         // Create a simple valid Java file
-        Path javaFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString( // GH-90000
+        Path javaFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString( 
                 javaFile,
                 """
             public class Test {
-                public static void main(String[] args) { // GH-90000
-                    System.out.println(\"Hello, World!\"); // GH-90000
+                public static void main(String[] args) { 
+                    System.out.println(\"Hello, World!\"); 
                 }
             }
             """);
 
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> javaService.diagnose(projectContext, List.of(javaFile))); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> javaService.diagnose(projectContext, List.of(javaFile))); 
+        assertNotNull(diagnostics); 
         // No errors expected in valid Java code
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testPlanFixes() { // GH-90000
+    void testPlanFixes() { 
         // Create a test diagnostic with required fields
         UnifiedDiagnostic diagnostic
-                = new UnifiedDiagnostic( // GH-90000
+                = new UnifiedDiagnostic( 
                         "test-tool", // tool
                         "test-rule", // rule
                         "Test message", // message
@@ -103,26 +103,26 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
                         1, // startLine
                         1, // startColumn
                         Severity.ERROR, // severity
-                        Map.of() // meta // GH-90000
+                        Map.of() // meta 
                 );
 
-        List<FixAction> fixes = runPromise( // GH-90000
-                () -> javaService.planFixes(diagnostic, projectContext)); // GH-90000
-        assertNotNull(fixes); // GH-90000
+        List<FixAction> fixes = runPromise( 
+                () -> javaService.planFixes(diagnostic, projectContext)); 
+        assertNotNull(fixes); 
         // Note: More specific assertions will be added once fix planning is implemented
     }
 
     @Test
-    void isEnabledWhenJavaIsInConfigShouldReturnTrue() { // GH-90000
+    void isEnabledWhenJavaIsInConfigShouldReturnTrue() { 
         // The base class sets up the config with "java" in the languages list
-        assertTrue(javaService.supports(Path.of(TEST_JAVA))); // GH-90000
+        assertTrue(javaService.supports(Path.of(TEST_JAVA))); 
     }
 
     @Test
-    void planFixesShouldReturnEmptyListByDefault() { // GH-90000
+    void planFixesShouldReturnEmptyListByDefault() { 
         // Create a test diagnostic with required fields
         UnifiedDiagnostic diagnostic
-                = new UnifiedDiagnostic( // GH-90000
+                = new UnifiedDiagnostic( 
                         "test-tool", // tool
                         "test-rule", // rule
                         "Test message", // message
@@ -130,22 +130,22 @@ class JavaLanguageServiceTest extends AbstractLanguageTest {
                         1, // startLine
                         1, // startColumn
                         Severity.ERROR, // severity
-                        Map.of() // meta // GH-90000
+                        Map.of() // meta 
                 );
 
-        List<FixAction> fixes = runPromise( // GH-90000
-                () -> javaService.planFixes(diagnostic, projectContext)); // GH-90000
-        assertThat(fixes).isEmpty(); // GH-90000
+        List<FixAction> fixes = runPromise( 
+                () -> javaService.planFixes(diagnostic, projectContext)); 
+        assertThat(fixes).isEmpty(); 
     }
 
     @Test
-    void initializeShouldNotThrow() { // GH-90000
+    void initializeShouldNotThrow() { 
         // The current LanguageService interface doesn't have an initialize method
         // This test is no longer needed
     }
 
     @Test
-    void shutdownShouldNotThrow() { // GH-90000
+    void shutdownShouldNotThrow() { 
         // The current LanguageService interface doesn't have a shutdown method
         // This test is no longer needed
     }

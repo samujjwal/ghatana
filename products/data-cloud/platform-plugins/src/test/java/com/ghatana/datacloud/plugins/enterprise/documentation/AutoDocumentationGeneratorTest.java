@@ -31,14 +31,14 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
     private SchemaDefinition sampleSchema;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        generator = new AutoDocumentationGenerator(); // GH-90000
-        sampleSchema = SchemaDefinition.builder() // GH-90000
-                .columns(List.of( // GH-90000
+    void setUp() { 
+        generator = new AutoDocumentationGenerator(); 
+        sampleSchema = SchemaDefinition.builder() 
+                .columns(List.of( 
                         SchemaColumn.builder().name("id").dataType("STRING").build(),
                         SchemaColumn.builder().name("amount").dataType("DECIMAL").build()
                 ))
-                .build(); // GH-90000
+                .build(); 
     }
 
     // =========================================================================
@@ -51,8 +51,8 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create generator without errors")
-        void shouldCreateGenerator() { // GH-90000
-            assertThatCode(() -> new AutoDocumentationGenerator()).doesNotThrowAnyException(); // GH-90000
+        void shouldCreateGenerator() { 
+            assertThatCode(() -> new AutoDocumentationGenerator()).doesNotThrowAnyException(); 
         }
     }
 
@@ -66,30 +66,30 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should generate documentation for a valid dataset schema")
-        void shouldGenerateDocumentation() { // GH-90000
-            DatasetDocumentation doc = runPromise(() -> // GH-90000
-                    generator.generateDocumentation("dataset-1", "Orders", sampleSchema, Map.of())); // GH-90000
+        void shouldGenerateDocumentation() { 
+            DatasetDocumentation doc = runPromise(() -> 
+                    generator.generateDocumentation("dataset-1", "Orders", sampleSchema, Map.of())); 
 
-            assertThat(doc).isNotNull(); // GH-90000
+            assertThat(doc).isNotNull(); 
             assertThat(doc.getDatasetId()).isEqualTo("dataset-1");
         }
 
         @Test
         @DisplayName("should include columns in generated documentation")
-        void shouldIncludeColumns() { // GH-90000
-            DatasetDocumentation doc = runPromise(() -> // GH-90000
-                    generator.generateDocumentation("dataset-2", "Orders", sampleSchema, Map.of())); // GH-90000
+        void shouldIncludeColumns() { 
+            DatasetDocumentation doc = runPromise(() -> 
+                    generator.generateDocumentation("dataset-2", "Orders", sampleSchema, Map.of())); 
 
-            assertThat(doc.getColumns()).isNotEmpty(); // GH-90000
+            assertThat(doc.getColumns()).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should set version to 1 on initial generation")
-        void shouldSetInitialVersion() { // GH-90000
-            DatasetDocumentation doc = runPromise(() -> // GH-90000
-                    generator.generateDocumentation("dataset-3", "Orders", sampleSchema, Map.of())); // GH-90000
+        void shouldSetInitialVersion() { 
+            DatasetDocumentation doc = runPromise(() -> 
+                    generator.generateDocumentation("dataset-3", "Orders", sampleSchema, Map.of())); 
 
-            assertThat(doc.getVersion()).isEqualTo(1); // GH-90000
+            assertThat(doc.getVersion()).isEqualTo(1); 
         }
     }
 
@@ -103,20 +103,20 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should retrieve previously generated documentation")
-        void shouldRetrievePreviouslyGeneratedDoc() { // GH-90000
-            runPromise(() -> generator.generateDocumentation("dataset-g", "Products", sampleSchema, Map.of())); // GH-90000
+        void shouldRetrievePreviouslyGeneratedDoc() { 
+            runPromise(() -> generator.generateDocumentation("dataset-g", "Products", sampleSchema, Map.of())); 
 
             DatasetDocumentation doc = runPromise(() -> generator.getDocumentation("dataset-g"));
-            assertThat(doc).isNotNull(); // GH-90000
+            assertThat(doc).isNotNull(); 
             assertThat(doc.getDatasetId()).isEqualTo("dataset-g");
         }
 
         @Test
         @DisplayName("should return null when documentation does not exist")
-        void shouldReturnNullForUnknownDataset() { // GH-90000
-            DatasetDocumentation doc = runPromise(() -> // GH-90000
+        void shouldReturnNullForUnknownDataset() { 
+            DatasetDocumentation doc = runPromise(() -> 
                     generator.getDocumentation("unknown-dataset"));
-            assertThat(doc).isNull(); // GH-90000
+            assertThat(doc).isNull(); 
         }
     }
 
@@ -130,12 +130,12 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return version history after documentation is created")
-        void shouldReturnVersionHistory() { // GH-90000
-            runPromise(() -> generator.generateDocumentation("dataset-h", "Orders", sampleSchema, Map.of())); // GH-90000
+        void shouldReturnVersionHistory() { 
+            runPromise(() -> generator.generateDocumentation("dataset-h", "Orders", sampleSchema, Map.of())); 
 
-            List<DocumentationVersion> history = runPromise(() -> // GH-90000
+            List<DocumentationVersion> history = runPromise(() -> 
                     generator.getVersionHistory("dataset-h"));
-            assertThat(history).isNotEmpty(); // GH-90000
+            assertThat(history).isNotEmpty(); 
         }
     }
 
@@ -149,20 +149,20 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return matching datasets for query")
-        void shouldReturnMatchingDatasets() { // GH-90000
-            runPromise(() -> generator.generateDocumentation("orders-2026", "Orders 2026", sampleSchema, Map.of())); // GH-90000
+        void shouldReturnMatchingDatasets() { 
+            runPromise(() -> generator.generateDocumentation("orders-2026", "Orders 2026", sampleSchema, Map.of())); 
 
-            List<SearchResult> results = runPromise(() -> // GH-90000
-                    generator.search("orders", 10)); // GH-90000
-            assertThat(results).isNotEmpty(); // GH-90000
+            List<SearchResult> results = runPromise(() -> 
+                    generator.search("orders", 10)); 
+            assertThat(results).isNotEmpty(); 
         }
 
         @Test
         @DisplayName("should return empty list when no match found")
-        void shouldReturnEmptyForNoMatch() { // GH-90000
-            List<SearchResult> results = runPromise(() -> // GH-90000
-                    generator.search("zzz-nonexistent-xyz", 10)); // GH-90000
-            assertThat(results).isEmpty(); // GH-90000
+        void shouldReturnEmptyForNoMatch() { 
+            List<SearchResult> results = runPromise(() -> 
+                    generator.search("zzz-nonexistent-xyz", 10)); 
+            assertThat(results).isEmpty(); 
         }
     }
 
@@ -176,11 +176,11 @@ class AutoDocumentationGeneratorTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should export documentation as non-empty Markdown string")
-        void shouldExportAsMarkdown() { // GH-90000
-            runPromise(() -> generator.generateDocumentation("dataset-md", "Orders", sampleSchema, Map.of())); // GH-90000
+        void shouldExportAsMarkdown() { 
+            runPromise(() -> generator.generateDocumentation("dataset-md", "Orders", sampleSchema, Map.of())); 
 
             String markdown = runPromise(() -> generator.exportAsMarkdown("dataset-md"));
-            assertThat(markdown).isNotBlank(); // GH-90000
+            assertThat(markdown).isNotBlank(); 
         }
     }
 }

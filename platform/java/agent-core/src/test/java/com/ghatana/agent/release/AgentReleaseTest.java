@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.release;
@@ -25,15 +25,15 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("AgentRelease")
 class AgentReleaseTest {
 
-    private static AgentRelease minimalRelease() { // GH-90000
-        return new AgentReleaseBuilder() // GH-90000
+    private static AgentRelease minimalRelease() { 
+        return new AgentReleaseBuilder() 
                 .agentId("agent-test-001")
                 .releaseVersion("1.0.0")
                 .redactionProfileId("rp-default")
                 .threatModelId("tm-default")
                 .addPermittedPurpose("agent.inference")
                 .capabilityMaturityProfile("L1")
-                .build(); // GH-90000
+                .build(); 
     }
 
     @Nested
@@ -42,53 +42,53 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("builder fails when agentId is missing")
-        void missingAgentId() { // GH-90000
-            assertThatThrownBy(() -> new AgentReleaseBuilder() // GH-90000
+        void missingAgentId() { 
+            assertThatThrownBy(() -> new AgentReleaseBuilder() 
                     .releaseVersion("1.0.0")
-                    .build()) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .build()) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("agentId");
         }
 
         @Test
         @DisplayName("builder fails when releaseVersion is missing")
-        void missingReleaseVersion() { // GH-90000
-            assertThatThrownBy(() -> new AgentReleaseBuilder() // GH-90000
+        void missingReleaseVersion() { 
+            assertThatThrownBy(() -> new AgentReleaseBuilder() 
                     .agentId("agent-001")
-                    .build()) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+                    .build()) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("releaseVersion");
         }
 
         @Test
         @DisplayName("builder assigns DRAFT as default state")
-        void defaultStateIsDraft() { // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
-            assertThat(release.state()).isEqualTo(AgentReleaseState.DRAFT); // GH-90000
+        void defaultStateIsDraft() { 
+            AgentRelease release = minimalRelease(); 
+            assertThat(release.state()).isEqualTo(AgentReleaseState.DRAFT); 
         }
 
         @Test
         @DisplayName("builder generates UUID for agentReleaseId when not set")
-        void generatesAgentReleaseId() { // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
-            assertThat(release.agentReleaseId()).isNotBlank(); // GH-90000
+        void generatesAgentReleaseId() { 
+            AgentRelease release = minimalRelease(); 
+            assertThat(release.agentReleaseId()).isNotBlank(); 
         }
 
         @Test
         @DisplayName("builder sets specVersion default to 1.0.0")
-        void defaultSpecVersion() { // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
+        void defaultSpecVersion() { 
+            AgentRelease release = minimalRelease(); 
             assertThat(release.specVersion()).isEqualTo("1.0.0");
         }
 
         @Test
         @DisplayName("builder with all optional fields")
-        void builderWithAllFields() { // GH-90000
-            AgentRelease release = new AgentReleaseBuilder() // GH-90000
+        void builderWithAllFields() { 
+            AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("2.0.0")
                     .specVersion("2.0.0")
-                    .state(AgentReleaseState.VALIDATED) // GH-90000
+                    .state(AgentReleaseState.VALIDATED) 
                     .specDigest("sha256:abc")
                     .policyPackId("pp-001")
                     .policyPackDigest("sha256:def")
@@ -104,11 +104,11 @@ class AgentReleaseTest {
                     .addPermittedPurpose("analytics")
                     .capabilityMaturityProfile("L2")
                     .createdBy("service-account@ghatana.ai")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(release.agentId()).isEqualTo("agent-001");
             assertThat(release.releaseVersion()).isEqualTo("2.0.0");
-            assertThat(release.state()).isEqualTo(AgentReleaseState.VALIDATED); // GH-90000
+            assertThat(release.state()).isEqualTo(AgentReleaseState.VALIDATED); 
             assertThat(release.policyPackId()).isEqualTo("pp-001");
             assertThat(release.compatibleRuntimeVersions()).containsExactly("aep-runtime:2.x");
             assertThat(release.dataClassesHandled()).contains("PII");
@@ -122,35 +122,35 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("valid DRAFT → VALIDATED transition returns new record")
-        void validTransition() { // GH-90000
-            AgentRelease draft = minimalRelease(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+        void validTransition() { 
+            AgentRelease draft = minimalRelease(); 
+            Instant now = Instant.now(); 
 
-            AgentRelease validated = draft.withState(AgentReleaseState.VALIDATED, now); // GH-90000
+            AgentRelease validated = draft.withState(AgentReleaseState.VALIDATED, now); 
 
-            assertThat(validated.state()).isEqualTo(AgentReleaseState.VALIDATED); // GH-90000
-            assertThat(validated.updatedAt()).isEqualTo(now); // GH-90000
-            assertThat(validated.agentReleaseId()).isEqualTo(draft.agentReleaseId()); // GH-90000
+            assertThat(validated.state()).isEqualTo(AgentReleaseState.VALIDATED); 
+            assertThat(validated.updatedAt()).isEqualTo(now); 
+            assertThat(validated.agentReleaseId()).isEqualTo(draft.agentReleaseId()); 
         }
 
         @Test
         @DisplayName("invalid transition throws IllegalStateException")
-        void invalidTransitionThrows() { // GH-90000
-            AgentRelease draft = minimalRelease(); // GH-90000
+        void invalidTransitionThrows() { 
+            AgentRelease draft = minimalRelease(); 
 
-            assertThatThrownBy(() -> draft.withState(AgentReleaseState.ACTIVE, Instant.now())) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> draft.withState(AgentReleaseState.ACTIVE, Instant.now())) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("DRAFT")
                     .hasMessageContaining("ACTIVE");
         }
 
         @Test
         @DisplayName("original record is unchanged after withState")
-        void originalUnchanged() { // GH-90000
-            AgentRelease draft = minimalRelease(); // GH-90000
-            draft.withState(AgentReleaseState.VALIDATED, Instant.now()); // GH-90000
+        void originalUnchanged() { 
+            AgentRelease draft = minimalRelease(); 
+            draft.withState(AgentReleaseState.VALIDATED, Instant.now()); 
 
-            assertThat(draft.state()).isEqualTo(AgentReleaseState.DRAFT); // GH-90000
+            assertThat(draft.state()).isEqualTo(AgentReleaseState.DRAFT); 
         }
     }
 
@@ -160,41 +160,41 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("ACTIVE release is dispatchable")
-        void activeIsDispatchable() { // GH-90000
-            AgentRelease release = new AgentReleaseBuilder() // GH-90000
+        void activeIsDispatchable() { 
+            AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.ACTIVE) // GH-90000
+                    .state(AgentReleaseState.ACTIVE) 
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(release.isDispatchable()).isTrue(); // GH-90000
+            assertThat(release.isDispatchable()).isTrue(); 
         }
 
         @Test
         @DisplayName("DRAFT release is not dispatchable")
-        void draftNotDispatchable() { // GH-90000
-            AgentRelease release = minimalRelease(); // GH-90000
-            assertThat(release.isDispatchable()).isFalse(); // GH-90000
+        void draftNotDispatchable() { 
+            AgentRelease release = minimalRelease(); 
+            assertThat(release.isDispatchable()).isFalse(); 
         }
 
         @Test
         @DisplayName("BLOCKED release is not dispatchable")
-        void blockedNotDispatchable() { // GH-90000
-            AgentRelease release = new AgentReleaseBuilder() // GH-90000
+        void blockedNotDispatchable() { 
+            AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
-                    .state(AgentReleaseState.BLOCKED) // GH-90000
+                    .state(AgentReleaseState.BLOCKED) 
                     .redactionProfileId("rp-test")
                     .threatModelId("tm-test")
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(release.isDispatchable()).isFalse(); // GH-90000
+            assertThat(release.isDispatchable()).isFalse(); 
         }
     }
 
@@ -204,8 +204,8 @@ class AgentReleaseTest {
 
         @Test
         @DisplayName("compatibleRuntimeVersions list is unmodifiable")
-        void runtimeVersionsUnmodifiable() { // GH-90000
-            AgentRelease release = new AgentReleaseBuilder() // GH-90000
+        void runtimeVersionsUnmodifiable() { 
+            AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
@@ -213,16 +213,16 @@ class AgentReleaseTest {
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
                     .addCompatibleRuntime("aep:2.x")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThatThrownBy(() -> release.compatibleRuntimeVersions().add("extra"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("dataClassesHandled set is unmodifiable")
-        void dataClassesUnmodifiable() { // GH-90000
-            AgentRelease release = new AgentReleaseBuilder() // GH-90000
+        void dataClassesUnmodifiable() { 
+            AgentRelease release = new AgentReleaseBuilder() 
                     .agentId("agent-001")
                     .releaseVersion("1.0.0")
                     .redactionProfileId("rp-test")
@@ -230,23 +230,23 @@ class AgentReleaseTest {
                     .addPermittedPurpose("test.purpose")
                     .capabilityMaturityProfile("L1")
                     .addDataClass("PII")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThatThrownBy(() -> release.dataClassesHandled().add("extra"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
     }
 
     @Test
     @DisplayName("record compact constructor rejects blank agentReleaseId")
-    void rejectsBlankReleaseId() { // GH-90000
-        assertThatThrownBy(() -> new AgentRelease( // GH-90000
+    void rejectsBlankReleaseId() { 
+        assertThatThrownBy(() -> new AgentRelease( 
                 "", "agentId", "1.0.0", "1.0.0", AgentReleaseState.DRAFT,
                 null, null, null, null, null, null,
-                List.of(), null, null, null, null, null, null, // GH-90000
-                Set.of(), Set.of(), null, // GH-90000
-                Instant.now(), Instant.now(), "user")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                List.of(), null, null, null, null, null, null, 
+                Set.of(), Set.of(), null, 
+                Instant.now(), Instant.now(), "user")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("agentReleaseId");
     }
 }

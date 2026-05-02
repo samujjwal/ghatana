@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.core.util;
@@ -20,28 +20,28 @@ class PlatformVersionTest {
 
     @Test
     @DisplayName("should load platform version from properties file")
-    void shouldLoadPlatformVersion() { // GH-90000
-        PlatformVersion version = PlatformVersion.get(); // GH-90000
-        assertThat(version.platformVersion()).isNotNull().isNotEmpty(); // GH-90000
+    void shouldLoadPlatformVersion() { 
+        PlatformVersion version = PlatformVersion.get(); 
+        assertThat(version.platformVersion()).isNotNull().isNotEmpty(); 
     }
 
     @Test
     @DisplayName("should load SDK version from properties file")
-    void shouldLoadSdkVersion() { // GH-90000
-        PlatformVersion version = PlatformVersion.get(); // GH-90000
-        assertThat(version.sdkVersion()).isNotNull().isNotEmpty(); // GH-90000
+    void shouldLoadSdkVersion() { 
+        PlatformVersion version = PlatformVersion.get(); 
+        assertThat(version.sdkVersion()).isNotNull().isNotEmpty(); 
     }
 
     @Test
     @DisplayName("should load instrumentation version from properties file")
-    void shouldLoadInstrumentationVersion() { // GH-90000
-        PlatformVersion version = PlatformVersion.get(); // GH-90000
-        assertThat(version.instrumentationVersion()).isNotNull().isNotEmpty(); // GH-90000
+    void shouldLoadInstrumentationVersion() { 
+        PlatformVersion version = PlatformVersion.get(); 
+        assertThat(version.instrumentationVersion()).isNotNull().isNotEmpty(); 
     }
 
     @Test
     @DisplayName("should return singleton instance")
-    void shouldReturnSingleton() { // GH-90000
-        assertThat(PlatformVersion.get()).isSameAs(PlatformVersion.get()); // GH-90000
+    void shouldReturnSingleton() { 
+        assertThat(PlatformVersion.get()).isSameAs(PlatformVersion.get()); 
     }
 }

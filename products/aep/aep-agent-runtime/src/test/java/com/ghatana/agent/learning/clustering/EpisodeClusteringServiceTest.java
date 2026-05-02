@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.learning.clustering;
@@ -25,138 +25,138 @@ class EpisodeClusteringServiceTest {
 
     @Test
     @DisplayName("clusters episodes with embeddings")
-    void clustersEpisodesWithEmbeddings() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
+    void clustersEpisodesWithEmbeddings() { 
+        EpisodeClusteringService service = new EpisodeClusteringService(); 
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f, 0.0f}), // GH-90000
-            createEpisode("ep2", new float[]{0.9f, 0.1f, 0.0f}), // GH-90000
-            createEpisode("ep3", new float[]{0.0f, 1.0f, 0.0f}), // GH-90000
-            createEpisode("ep4", new float[]{0.1f, 0.9f, 0.0f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f, 0.0f}), 
+            createEpisode("ep2", new float[]{0.9f, 0.1f, 0.0f}), 
+            createEpisode("ep3", new float[]{0.0f, 1.0f, 0.0f}), 
+            createEpisode("ep4", new float[]{0.1f, 0.9f, 0.0f}) 
         );
 
-        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); // GH-90000
+        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); 
 
-        assertThat(result.clusterCount()).isGreaterThan(0); // GH-90000
-        assertThat(result.totalEpisodes()).isGreaterThan(0); // GH-90000
-        assertThat(result.clusters()).isNotEmpty(); // GH-90000
+        assertThat(result.clusterCount()).isGreaterThan(0); 
+        assertThat(result.totalEpisodes()).isGreaterThan(0); 
+        assertThat(result.clusters()).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("handles episodes without embeddings")
-    void handlesEpisodesWithoutEmbeddings() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
+    void handlesEpisodesWithoutEmbeddings() { 
+        EpisodeClusteringService service = new EpisodeClusteringService(); 
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", null), // GH-90000
-            createEpisode("ep2", null) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", null), 
+            createEpisode("ep2", null) 
         );
 
-        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); // GH-90000
+        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); 
 
-        assertThat(result.clusterCount()).isEqualTo(0); // GH-90000
-        assertThat(result.totalEpisodes()).isEqualTo(0); // GH-90000
+        assertThat(result.clusterCount()).isEqualTo(0); 
+        assertThat(result.totalEpisodes()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("uses hierarchical clustering algorithm")
-    void usesHierarchicalClustering() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService( // GH-90000
+    void usesHierarchicalClustering() { 
+        EpisodeClusteringService service = new EpisodeClusteringService( 
             100, 0.5, EpisodeClusteringService.ClusteringAlgorithm.HIERARCHICAL);
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f}), // GH-90000
-            createEpisode("ep2", new float[]{0.9f, 0.1f}), // GH-90000
-            createEpisode("ep3", new float[]{0.0f, 1.0f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f}), 
+            createEpisode("ep2", new float[]{0.9f, 0.1f}), 
+            createEpisode("ep3", new float[]{0.0f, 1.0f}) 
         );
 
-        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); // GH-90000
+        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); 
 
-        assertThat(result.clusterCount()).isGreaterThan(0); // GH-90000
+        assertThat(result.clusterCount()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("uses k-means clustering algorithm")
-    void usesKMeansClustering() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService( // GH-90000
+    void usesKMeansClustering() { 
+        EpisodeClusteringService service = new EpisodeClusteringService( 
             100, 0.5, EpisodeClusteringService.ClusteringAlgorithm.K_MEANS);
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f}), // GH-90000
-            createEpisode("ep2", new float[]{0.9f, 0.1f}), // GH-90000
-            createEpisode("ep3", new float[]{0.0f, 1.0f}), // GH-90000
-            createEpisode("ep4", new float[]{0.1f, 0.9f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f}), 
+            createEpisode("ep2", new float[]{0.9f, 0.1f}), 
+            createEpisode("ep3", new float[]{0.0f, 1.0f}), 
+            createEpisode("ep4", new float[]{0.1f, 0.9f}) 
         );
 
-        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); // GH-90000
+        EpisodeClusteringService.ClusteringResult result = service.clusterEpisodes(episodes); 
 
-        assertThat(result.clusterCount()).isGreaterThan(0); // GH-90000
+        assertThat(result.clusterCount()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("retrieves clusters by ID")
-    void retrievesClustersById() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
+    void retrievesClustersById() { 
+        EpisodeClusteringService service = new EpisodeClusteringService(); 
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f}) 
         );
 
-        service.clusterEpisodes(episodes); // GH-90000
+        service.clusterEpisodes(episodes); 
 
-        List<EpisodeClusteringService.Cluster> clusters = service.getClusters(); // GH-90000
-        assertThat(clusters).hasSize(1); // GH-90000
+        List<EpisodeClusteringService.Cluster> clusters = service.getClusters(); 
+        assertThat(clusters).hasSize(1); 
 
-        EpisodeClusteringService.Cluster cluster = clusters.get(0); // GH-90000
-        assertThat(service.getCluster(cluster.id())).isPresent(); // GH-90000
+        EpisodeClusteringService.Cluster cluster = clusters.get(0); 
+        assertThat(service.getCluster(cluster.id())).isPresent(); 
     }
 
     @Test
     @DisplayName("clears clusters")
-    void clearsClusters() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService(); // GH-90000
+    void clearsClusters() { 
+        EpisodeClusteringService service = new EpisodeClusteringService(); 
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f}) 
         );
 
-        service.clusterEpisodes(episodes); // GH-90000
-        assertThat(service.getClusters()).hasSize(1); // GH-90000
+        service.clusterEpisodes(episodes); 
+        assertThat(service.getClusters()).hasSize(1); 
 
-        service.clearClusters(); // GH-90000
-        assertThat(service.getClusters()).isEmpty(); // GH-90000
+        service.clearClusters(); 
+        assertThat(service.getClusters()).isEmpty(); 
     }
 
     @Test
     @DisplayName("prunes clusters when over limit")
-    void prunesClustersWhenOverLimit() { // GH-90000
-        EpisodeClusteringService service = new EpisodeClusteringService(2, 0.5, EpisodeClusteringService.ClusteringAlgorithm.HIERARCHICAL); // GH-90000
+    void prunesClustersWhenOverLimit() { 
+        EpisodeClusteringService service = new EpisodeClusteringService(2, 0.5, EpisodeClusteringService.ClusteringAlgorithm.HIERARCHICAL); 
 
-        List<EnhancedEpisode> episodes = List.of( // GH-90000
-            createEpisode("ep1", new float[]{1.0f, 0.0f}), // GH-90000
-            createEpisode("ep2", new float[]{0.9f, 0.1f}), // GH-90000
-            createEpisode("ep3", new float[]{0.0f, 1.0f}), // GH-90000
-            createEpisode("ep4", new float[]{0.1f, 0.9f}), // GH-90000
-            createEpisode("ep5", new float[]{0.0f, 0.0f}) // GH-90000
+        List<EnhancedEpisode> episodes = List.of( 
+            createEpisode("ep1", new float[]{1.0f, 0.0f}), 
+            createEpisode("ep2", new float[]{0.9f, 0.1f}), 
+            createEpisode("ep3", new float[]{0.0f, 1.0f}), 
+            createEpisode("ep4", new float[]{0.1f, 0.9f}), 
+            createEpisode("ep5", new float[]{0.0f, 0.0f}) 
         );
 
-        service.clusterEpisodes(episodes); // GH-90000
+        service.clusterEpisodes(episodes); 
 
         // Should prune to max 2 clusters
-        assertThat(service.getClusters().size()).isLessThanOrEqualTo(2); // GH-90000
+        assertThat(service.getClusters().size()).isLessThanOrEqualTo(2); 
     }
 
     // Helper method
 
-    private EnhancedEpisode createEpisode(String id, float[] embedding) { // GH-90000
-        return EnhancedEpisode.builder() // GH-90000
-            .id(id) // GH-90000
+    private EnhancedEpisode createEpisode(String id, float[] embedding) { 
+        return EnhancedEpisode.builder() 
+            .id(id) 
             .agentId("agent-1")
-            .turnId("turn-" + id) // GH-90000
+            .turnId("turn-" + id) 
             .input("input")
             .output("output")
-            .embedding(embedding) // GH-90000
-            .createdAt(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .embedding(embedding) 
+            .createdAt(Instant.now()) 
+            .build(); 
     }
 }

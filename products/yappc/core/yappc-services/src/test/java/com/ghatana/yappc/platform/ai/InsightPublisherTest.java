@@ -16,71 +16,71 @@ class InsightPublisherTest extends EventloopTestBase {
 
   @Test
   @DisplayName("publish saves and broadcasts tenant insights")
-  void publishSavesAndBroadcastsTenantInsights() { // GH-90000
-    List<AIInsight> saved = new ArrayList<>(); // GH-90000
-    List<AIInsight> broadcast = new ArrayList<>(); // GH-90000
-    AtomicInteger metricCount = new AtomicInteger(-1); // GH-90000
+  void publishSavesAndBroadcastsTenantInsights() { 
+    List<AIInsight> saved = new ArrayList<>(); 
+    List<AIInsight> broadcast = new ArrayList<>(); 
+    AtomicInteger metricCount = new AtomicInteger(-1); 
 
     InsightPublisher publisher =
-        new InsightPublisher( // GH-90000
+        new InsightPublisher( 
             insights -> {
-              saved.addAll(insights); // GH-90000
-              return Promise.of(insights); // GH-90000
+              saved.addAll(insights); 
+              return Promise.of(insights); 
             },
-            (tenantId, insights) -> { // GH-90000
+            (tenantId, insights) -> { 
               assertThat(tenantId).isEqualTo("tenant-a");
-              broadcast.addAll(insights); // GH-90000
-              return Promise.complete(); // GH-90000
+              broadcast.addAll(insights); 
+              return Promise.complete(); 
             },
             metricCount::set);
 
     runPromise(() -> publisher.publish(List.of(insight("tenant-a"), insight("tenant-b")), "tenant-a"));
 
-    assertThat(saved).hasSize(1); // GH-90000
-    assertThat(broadcast).hasSize(1); // GH-90000
-    assertThat(metricCount.get()).isEqualTo(1); // GH-90000
+    assertThat(saved).hasSize(1); 
+    assertThat(broadcast).hasSize(1); 
+    assertThat(metricCount.get()).isEqualTo(1); 
   }
 
   @Test
   @DisplayName("publish records zero when no tenant insights are present")
-  void publishRecordsZeroWhenNoTenantInsightsPresent() { // GH-90000
-    AtomicInteger metricCount = new AtomicInteger(-1); // GH-90000
+  void publishRecordsZeroWhenNoTenantInsightsPresent() { 
+    AtomicInteger metricCount = new AtomicInteger(-1); 
 
     InsightPublisher publisher =
-        new InsightPublisher( // GH-90000
-            insights -> Promise.of(insights), // GH-90000
-            (tenantId, insights) -> Promise.complete(), // GH-90000
+        new InsightPublisher( 
+            insights -> Promise.of(insights), 
+            (tenantId, insights) -> Promise.complete(), 
             metricCount::set);
 
     runPromise(() -> publisher.publish(List.of(insight("tenant-b")), "tenant-a"));
 
-    assertThat(metricCount.get()).isZero(); // GH-90000
+    assertThat(metricCount.get()).isZero(); 
   }
 
   @Test
   @DisplayName("publish suppresses duplicate insights before save and broadcast")
-  void publishSuppressesDuplicateInsightsBeforeSaveAndBroadcast() { // GH-90000
-    List<AIInsight> saved = new ArrayList<>(); // GH-90000
-    AtomicInteger metricCount = new AtomicInteger(-1); // GH-90000
+  void publishSuppressesDuplicateInsightsBeforeSaveAndBroadcast() { 
+    List<AIInsight> saved = new ArrayList<>(); 
+    AtomicInteger metricCount = new AtomicInteger(-1); 
 
     InsightPublisher publisher =
-        new InsightPublisher( // GH-90000
+        new InsightPublisher( 
             insights -> {
-              saved.addAll(insights); // GH-90000
-              return Promise.of(insights); // GH-90000
+              saved.addAll(insights); 
+              return Promise.of(insights); 
             },
-            (tenantId, insights) -> Promise.complete(), // GH-90000
+            (tenantId, insights) -> Promise.complete(), 
             metricCount::set,
-            new InsightDeduplicator()); // GH-90000
+            new InsightDeduplicator()); 
 
     runPromise(() -> publisher.publish(List.of(insight("tenant-a"), insight("tenant-a")), "tenant-a"));
 
-    assertThat(saved).hasSize(1); // GH-90000
-    assertThat(metricCount.get()).isEqualTo(1); // GH-90000
+    assertThat(saved).hasSize(1); 
+    assertThat(metricCount.get()).isEqualTo(1); 
   }
 
-  private AIInsight insight(String tenantId) { // GH-90000
-    return new AIInsight( // GH-90000
+  private AIInsight insight(String tenantId) { 
+    return new AIInsight( 
         null,
         tenantId,
         null,

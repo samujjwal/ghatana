@@ -24,42 +24,42 @@ class TenantContextFilterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("extracts tenant from attached context before delegating")
-    void extractsTenantFromAttachedContextBeforeDelegating() { // GH-90000
-        TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); // GH-90000
+    void extractsTenantFromAttachedContextBeforeDelegating() { 
+        TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs").build();
         TenantResolver.attach(request, TenantContext.of("tenant-ctx", "user-1", Set.of("admin"), Map.of()));
         AsyncServlet next = ignoredRequest -> {
-            assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) // GH-90000
+            assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) 
                     .isEqualTo("tenant-ctx");
-            return Promise.of(HttpResponse.ok200().build()); // GH-90000
+            return Promise.of(HttpResponse.ok200().build()); 
         };
 
-        HttpResponse response = runPromise(() -> filter.filter(request, next)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.filter(request, next)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
         // After request completes, thread-local context should be cleared
-        String tenantAfter = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId(); // GH-90000
-        assertThat(tenantAfter).isNotNull(); // GH-90000
+        String tenantAfter = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId(); 
+        assertThat(tenantAfter).isNotNull(); 
     }
 
     @Test
     @DisplayName("falls back to header tenant id when no attached context exists")
-    void fallsBackToHeaderTenantId() { // GH-90000
-        TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); // GH-90000
+    void fallsBackToHeaderTenantId() { 
+        TenantContextFilter filter = new TenantContextFilter(request -> Promise.of(HttpResponse.ok200().build())); 
         HttpRequest request = HttpRequest.get("http://localhost/api/v1/jobs")
             .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-header")
-                .build(); // GH-90000
+                .build(); 
         AsyncServlet next = ignoredRequest -> {
-            assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) // GH-90000
+            assertThat(com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId()) 
                     .isEqualTo("tenant-header");
-            return Promise.of(HttpResponse.ok200().build()); // GH-90000
+            return Promise.of(HttpResponse.ok200().build()); 
         };
 
-        HttpResponse response = runPromise(() -> filter.filter(request, next)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.filter(request, next)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
         // After request completes, thread-local context should be cleared
-        String tenantAfter = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId(); // GH-90000
-        assertThat(tenantAfter).isNotNull(); // GH-90000
+        String tenantAfter = com.ghatana.platform.governance.security.TenantContext.getCurrentTenantId(); 
+        assertThat(tenantAfter).isNotNull(); 
     }
 }

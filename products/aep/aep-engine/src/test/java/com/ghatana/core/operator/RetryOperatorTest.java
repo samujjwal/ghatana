@@ -26,57 +26,57 @@ class RetryOperatorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("process() delays before retrying failed results")
-    void shouldDelayRetriesForFailedResults() { // GH-90000
-        UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
-        Event event = mock(Event.class); // GH-90000
-        AtomicInteger attempts = new AtomicInteger(); // GH-90000
+    void shouldDelayRetriesForFailedResults() { 
+        UnifiedOperator delegate = mock(UnifiedOperator.class); 
+        Event event = mock(Event.class); 
+        AtomicInteger attempts = new AtomicInteger(); 
 
-        when(delegate.process(event)).thenAnswer(invocation -> { // GH-90000
-            if (attempts.getAndIncrement() == 0) { // GH-90000
+        when(delegate.process(event)).thenAnswer(invocation -> { 
+            if (attempts.getAndIncrement() == 0) { 
                 return Promise.of(OperatorResult.failed("transient"));
             }
-            return Promise.of(OperatorResult.empty()); // GH-90000
+            return Promise.of(OperatorResult.empty()); 
         });
 
-        RetryOperator retryOperator = RetryOperator.builder() // GH-90000
-            .operator(delegate) // GH-90000
-            .maxRetries(1) // GH-90000
-            .initialDelay(Duration.ofMillis(40)) // GH-90000
-            .maxDelay(Duration.ofMillis(40)) // GH-90000
-            .jitterFactor(0.0) // GH-90000
-            .build(); // GH-90000
+        RetryOperator retryOperator = RetryOperator.builder() 
+            .operator(delegate) 
+            .maxRetries(1) 
+            .initialDelay(Duration.ofMillis(40)) 
+            .maxDelay(Duration.ofMillis(40)) 
+            .jitterFactor(0.0) 
+            .build(); 
 
-        long start = System.nanoTime(); // GH-90000
-        OperatorResult result = runPromise(() -> retryOperator.process(event)); // GH-90000
-        long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis(); // GH-90000
+        long start = System.nanoTime(); 
+        OperatorResult result = runPromise(() -> retryOperator.process(event)); 
+        long elapsedMillis = Duration.ofNanos(System.nanoTime() - start).toMillis(); 
 
-        assertThat(result.isSuccess()).isTrue(); // GH-90000
-        assertThat(attempts.get()).isEqualTo(2); // GH-90000
-        assertThat(elapsedMillis).isGreaterThanOrEqualTo(35L); // GH-90000
+        assertThat(result.isSuccess()).isTrue(); 
+        assertThat(attempts.get()).isEqualTo(2); 
+        assertThat(elapsedMillis).isGreaterThanOrEqualTo(35L); 
     }
 
     @Test
     @DisplayName("process() respects retry predicate for thrown exceptions")
-    void shouldRespectRetryPredicate() { // GH-90000
-        UnifiedOperator delegate = mock(UnifiedOperator.class); // GH-90000
-        Event event = mock(Event.class); // GH-90000
-        AtomicInteger attempts = new AtomicInteger(); // GH-90000
+    void shouldRespectRetryPredicate() { 
+        UnifiedOperator delegate = mock(UnifiedOperator.class); 
+        Event event = mock(Event.class); 
+        AtomicInteger attempts = new AtomicInteger(); 
 
-        when(delegate.process(event)).thenAnswer(invocation -> { // GH-90000
-            attempts.incrementAndGet(); // GH-90000
+        when(delegate.process(event)).thenAnswer(invocation -> { 
+            attempts.incrementAndGet(); 
             return Promise.ofException(new IllegalStateException("fatal"));
         });
 
-        RetryOperator retryOperator = RetryOperator.builder() // GH-90000
-            .operator(delegate) // GH-90000
-            .maxRetries(3) // GH-90000
-            .retryOn(ex -> false) // GH-90000
-            .build(); // GH-90000
+        RetryOperator retryOperator = RetryOperator.builder() 
+            .operator(delegate) 
+            .maxRetries(3) 
+            .retryOn(ex -> false) 
+            .build(); 
 
-        OperatorResult result = runPromise(() -> retryOperator.process(event)); // GH-90000
+        OperatorResult result = runPromise(() -> retryOperator.process(event)); 
 
-        assertThat(result.isSuccess()).isFalse(); // GH-90000
+        assertThat(result.isSuccess()).isFalse(); 
         assertThat(result.getErrorMessage()).contains("fatal");
-        assertThat(attempts.get()).isEqualTo(1); // GH-90000
+        assertThat(attempts.get()).isEqualTo(1); 
     }
 }

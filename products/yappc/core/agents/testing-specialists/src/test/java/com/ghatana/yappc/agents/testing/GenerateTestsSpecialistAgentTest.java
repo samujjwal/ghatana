@@ -28,14 +28,14 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
 
   @Mock private YAPPCAIService aiService;
 
-  GenerateTestsSpecialistAgentTest() { // GH-90000
-    MockitoAnnotations.openMocks(this); // GH-90000
+  GenerateTestsSpecialistAgentTest() { 
+    MockitoAnnotations.openMocks(this); 
   }
 
   @Test
   @DisplayName("generate tests generator uses specification and code generators")
-  void generateTestsGeneratorUsesSpecificationAndCodeGenerators() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( // GH-90000
+  void generateTestsGeneratorUsesSpecificationAndCodeGenerators() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( 
             "SCENARIO: handles valid request\n"
                 + "CATEGORY: HAPPY_PATH\n"
                 + "GIVEN: valid input\n"
@@ -44,28 +44,28 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
                 + "COVERAGE: main-flow"));
 
     TestSpecificationGenerator specificationGenerator =
-        new TestSpecificationGenerator(aiService); // GH-90000
-    TestCodeGenerator codeGenerator = new TestCodeGenerator(); // GH-90000
+        new TestSpecificationGenerator(aiService); 
+    TestCodeGenerator codeGenerator = new TestCodeGenerator(); 
     GenerateTestsSpecialistAgent.GenerateTestsGenerator generator =
-        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); // GH-90000
+        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); 
 
     GenerateTestsInput input =
-        new GenerateTestsInput( // GH-90000
+        new GenerateTestsInput( 
             "plan-1",
             List.of("primary path"),
             "unit",
             "java",
             "junit5",
             "SampleService",
-            "public class SampleService { public SampleService() {} }", // GH-90000
+            "public class SampleService { public SampleService() {} }", 
             List.of("service must return data"));
 
     StepResult<GenerateTestsOutput> result =
-    runPromise(() -> generator.generate(StepRequest.of("request-1", input), agentContext())); // GH-90000
+    runPromise(() -> generator.generate(StepRequest.of("request-1", input), agentContext())); 
 
     assertThat(result.output().generatedTestFiles()).containsExactly("SampleServiceTest.java");
-    assertThat(result.output().implementedScenarios()) // GH-90000
-      .containsExactly( // GH-90000
+    assertThat(result.output().implementedScenarios()) 
+      .containsExactly( 
         "handles valid request",
         "SampleService rejects invalid input",
         "SampleService respects boundary limits");
@@ -75,129 +75,129 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generate tests generator derives fallback scenarios and vitest output")
-  void generateTestsGeneratorDerivesFallbackScenariosAndVitestOutput() { // GH-90000
+  void generateTestsGeneratorDerivesFallbackScenariosAndVitestOutput() { 
     GenerateTestsSpecialistAgent.GenerateTestsGenerator generator =
-        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(); // GH-90000
+        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(); 
 
     GenerateTestsInput input =
-        new GenerateTestsInput( // GH-90000
+        new GenerateTestsInput( 
             "plan-2",
-            List.of("happy path", "reject invalid input", "honors limits"), // GH-90000
+            List.of("happy path", "reject invalid input", "honors limits"), 
             "unit",
             "typescript",
             "vitest");
 
     StepResult<GenerateTestsOutput> result =
-    runPromise(() -> generator.generate(StepRequest.of("request-2", input), agentContext())); // GH-90000
+    runPromise(() -> generator.generate(StepRequest.of("request-2", input), agentContext())); 
 
     assertThat(result.output().framework()).isEqualTo("VITEST");
-    assertThat(result.output().totalTests()).isEqualTo(3); // GH-90000
+    assertThat(result.output().totalTests()).isEqualTo(3); 
     assertThat(result.output().generatedTestFiles()).containsExactly("plan-2.test.ts");
   }
 
   @Test
   @DisplayName("generate tests input and output keep immutable copies and sensible defaults")
-  void generateTestsInputAndOutputKeepImmutableCopiesAndDefaults() { // GH-90000
+  void generateTestsInputAndOutputKeepImmutableCopiesAndDefaults() { 
     GenerateTestsInput input =
         new GenerateTestsInput("plan-3", List.of("case"), "unit", "java", "junit5");
     GenerateTestsInput classNamedInput =
-      new GenerateTestsInput("", null, "unit", null, null, "NamedSubject", null, null); // GH-90000
+      new GenerateTestsInput("", null, "unit", null, null, "NamedSubject", null, null); 
     GenerateTestsInput blankPlanInput =
       new GenerateTestsInput("", List.of("case"), "unit", null, null, "", null, null);
     GenerateTestsOutput output =
         new GenerateTestsOutput("plan-3", List.of("A.java"), 1, 10, "unit", 90.0);
     GenerateTestsOutput nullOutput =
-      new GenerateTestsOutput("plan-4", null, 0, 0, "unit", 0.0, null, null, "junit5"); // GH-90000
+      new GenerateTestsOutput("plan-4", null, 0, 0, "unit", 0.0, null, null, "junit5"); 
 
     assertThat(input.resolvedClassName()).isEqualTo("plan-3");
-    assertThat(input.requirements()).isEmpty(); // GH-90000
-    assertThat(classNamedInput.testCases()).isEmpty(); // GH-90000
+    assertThat(input.requirements()).isEmpty(); 
+    assertThat(classNamedInput.testCases()).isEmpty(); 
     assertThat(classNamedInput.resolvedClassName()).isEqualTo("NamedSubject");
     assertThat(blankPlanInput.resolvedClassName()).isEqualTo("GeneratedSubject");
     assertThat(new GenerateTestsInput(null, List.of("case"), "unit", null, null).resolvedClassName())
       .isEqualTo("GeneratedSubject");
-    assertThat(output.generatedSources()).isEmpty(); // GH-90000
-    assertThat(output.implementedScenarios()).isEmpty(); // GH-90000
+    assertThat(output.generatedSources()).isEmpty(); 
+    assertThat(output.implementedScenarios()).isEmpty(); 
     assertThat(output.framework()).isEqualTo("unknown");
-    assertThat(nullOutput.generatedTestFiles()).isEmpty(); // GH-90000
-    assertThat(nullOutput.generatedSources()).isEmpty(); // GH-90000
-    assertThat(nullOutput.implementedScenarios()).isEmpty(); // GH-90000
+    assertThat(nullOutput.generatedTestFiles()).isEmpty(); 
+    assertThat(nullOutput.generatedSources()).isEmpty(); 
+    assertThat(nullOutput.implementedScenarios()).isEmpty(); 
     }
 
     @Test
     @DisplayName("agent exposes memory store validation and perceive behavior")
-    void agentExposesMemoryStoreValidationAndPerceiveBehavior() { // GH-90000
-    MemoryStore memoryStore = new EventLogMemoryStore(); // GH-90000
+    void agentExposesMemoryStoreValidationAndPerceiveBehavior() { 
+    MemoryStore memoryStore = new EventLogMemoryStore(); 
     TestableGenerateTestsAgent agent =
-      new TestableGenerateTestsAgent( // GH-90000
+      new TestableGenerateTestsAgent( 
         memoryStore,
-        Map.of("testing.generateTests", new GenerateTestsSpecialistAgent.GenerateTestsGenerator())); // GH-90000
+        Map.of("testing.generateTests", new GenerateTestsSpecialistAgent.GenerateTestsGenerator())); 
 
     ValidationResult missingPlan =
       agent.validateInput(new GenerateTestsInput("", List.of("case"), "unit", "java", "junit5"));
     ValidationResult nullPlan =
       agent.validateInput(new GenerateTestsInput(null, List.of("case"), "unit", "java", "junit5"));
     ValidationResult missingCases =
-      agent.validateInput(new GenerateTestsInput("plan", List.of(), "unit", "java", "junit5")); // GH-90000
+      agent.validateInput(new GenerateTestsInput("plan", List.of(), "unit", "java", "junit5")); 
     ValidationResult nullCases =
-      agent.validateInput(new GenerateTestsInput("plan", null, "unit", "java", "junit5", null, null, null)); // GH-90000
+      agent.validateInput(new GenerateTestsInput("plan", null, "unit", "java", "junit5", null, null, null)); 
     ValidationResult valid =
       agent.validateInput(new GenerateTestsInput("plan", List.of("case"), "unit", "java", "junit5"));
     StepRequest<GenerateTestsInput> perceived =
-      agent.perceiveForTest( // GH-90000
+      agent.perceiveForTest( 
         StepRequest.of("perceive-1", new GenerateTestsInput("plan", List.of("case"), "unit", "java", "junit5")),
-        agentContext()); // GH-90000
+        agentContext()); 
 
-    assertThat(agent.memoryStoreForTest()).isSameAs(memoryStore); // GH-90000
-    assertThat(missingPlan.ok()).isFalse(); // GH-90000
-    assertThat(nullPlan.ok()).isFalse(); // GH-90000
-    assertThat(missingCases.ok()).isFalse(); // GH-90000
-    assertThat(nullCases.ok()).isFalse(); // GH-90000
-    assertThat(valid.ok()).isTrue(); // GH-90000
+    assertThat(agent.memoryStoreForTest()).isSameAs(memoryStore); 
+    assertThat(missingPlan.ok()).isFalse(); 
+    assertThat(nullPlan.ok()).isFalse(); 
+    assertThat(missingCases.ok()).isFalse(); 
+    assertThat(nullCases.ok()).isFalse(); 
+    assertThat(valid.ok()).isTrue(); 
     assertThat(perceived.input().testPlanId()).isEqualTo("plan");
     }
 
     @Test
     @DisplayName("generator covers fallback scenarios metadata and alternate coverage branches")
-    void generatorCoversFallbackScenariosMetadataAndAlternateCoverageBranches() { // GH-90000
-      TestSpecificationGenerator specificationGenerator = mock(TestSpecificationGenerator.class); // GH-90000
-    TestCodeGenerator codeGenerator = mock(TestCodeGenerator.class); // GH-90000
-      when(specificationGenerator.generateSpecifications(any())) // GH-90000
-        .thenReturn( // GH-90000
-          Promise.of( // GH-90000
-            List.of( // GH-90000
-              new TestScenario( // GH-90000
+    void generatorCoversFallbackScenariosMetadataAndAlternateCoverageBranches() { 
+      TestSpecificationGenerator specificationGenerator = mock(TestSpecificationGenerator.class); 
+    TestCodeGenerator codeGenerator = mock(TestCodeGenerator.class); 
+      when(specificationGenerator.generateSpecifications(any())) 
+        .thenReturn( 
+          Promise.of( 
+            List.of( 
+              new TestScenario( 
                 "generated from spec",
                 TestScenario.ScenarioCategory.HAPPY_PATH,
                 "source exists",
                 "scenario generation runs",
                 "spec-backed flow is used",
                 List.of("spec")))));
-    when(codeGenerator.generateTestCode(anyString(), any(), any(), any())) // GH-90000
-      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("DerivedTest.java", "", TestCodeGenerator.TestFramework.JUNIT5))) // GH-90000
-      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("RegexTest.java", "line1\nline2", TestCodeGenerator.TestFramework.JUNIT5))) // GH-90000
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("PerfTest.java", "line1", TestCodeGenerator.TestFramework.JUNIT5))) // GH-90000
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("SpecTest.ts", null, TestCodeGenerator.TestFramework.VITEST))) // GH-90000
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("NoMatchTest.java", "line", TestCodeGenerator.TestFramework.JUNIT5))); // GH-90000
+    when(codeGenerator.generateTestCode(anyString(), any(), any(), any())) 
+      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("DerivedTest.java", "", TestCodeGenerator.TestFramework.JUNIT5))) 
+      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("RegexTest.java", "line1\nline2", TestCodeGenerator.TestFramework.JUNIT5))) 
+        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("PerfTest.java", "line1", TestCodeGenerator.TestFramework.JUNIT5))) 
+        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("SpecTest.ts", null, TestCodeGenerator.TestFramework.VITEST))) 
+        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("NoMatchTest.java", "line", TestCodeGenerator.TestFramework.JUNIT5))); 
 
     GenerateTestsSpecialistAgent.GenerateTestsGenerator generator =
-        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); // GH-90000
+        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); 
 
     StepResult<GenerateTestsOutput> defaultResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-default",
-              new GenerateTestsInput("fallback-plan", List.of(), "custom", null, null)), // GH-90000
-            agentContext())); // GH-90000
+              new GenerateTestsInput("fallback-plan", List.of(), "custom", null, null)), 
+            agentContext())); 
     StepResult<GenerateTestsOutput> integrationResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-integration",
-              new GenerateTestsInput( // GH-90000
+              new GenerateTestsInput( 
                 "plan-integration",
                 List.of("case"),
                 "integration",
@@ -205,23 +205,23 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
                 "junit5",
                 null,
                 "public class RegexNamed {}",
-                List.of())), // GH-90000
-            agentContext())); // GH-90000
+                List.of())), 
+            agentContext())); 
     StepResult<GenerateTestsOutput> performanceResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-performance",
               new GenerateTestsInput("plan-performance", List.of("case"), "performance", "java", "junit5")),
-            agentContext())); // GH-90000
+            agentContext())); 
     StepResult<GenerateTestsOutput> specificationResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-specification",
-              new GenerateTestsInput( // GH-90000
+              new GenerateTestsInput( 
                 "plan-spec",
                 List.of("ignored case"),
                 "unit",
@@ -230,14 +230,14 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
                 "",
                 "   ",
                 List.of("req"))),
-            agentContext())); // GH-90000
+            agentContext())); 
     StepResult<GenerateTestsOutput> noMatchResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-nomatch",
-              new GenerateTestsInput( // GH-90000
+              new GenerateTestsInput( 
                 "plan-security",
                 List.of("case"),
                 "security",
@@ -245,65 +245,65 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
                 "junit5",
                 "",
                 "package demo;",
-                List.of())), // GH-90000
-            agentContext())); // GH-90000
+                List.of())), 
+            agentContext())); 
     StepResult<GenerateTestsOutput> javascriptResult =
-      runPromise( // GH-90000
-        () -> // GH-90000
-          generator.generate( // GH-90000
-            StepRequest.of( // GH-90000
+      runPromise( 
+        () -> 
+          generator.generate( 
+            StepRequest.of( 
               "request-javascript",
               new GenerateTestsInput("plan-js", List.of("case"), "unit", "javascript", null)),
-            agentContext())); // GH-90000
+            agentContext())); 
 
     assertThat(defaultResult.output().generatedTestFiles()).containsExactly("DerivedTest.java");
-    assertThat(defaultResult.output().totalTests()).isEqualTo(1); // GH-90000
-    assertThat(defaultResult.output().linesOfTestCode()).isZero(); // GH-90000
-    assertThat(defaultResult.output().estimatedCoverage()).isEqualTo(40.0); // GH-90000
-    assertThat(defaultResult.output().implementedScenarios()) // GH-90000
+    assertThat(defaultResult.output().totalTests()).isEqualTo(1); 
+    assertThat(defaultResult.output().linesOfTestCode()).isZero(); 
+    assertThat(defaultResult.output().estimatedCoverage()).isEqualTo(40.0); 
+    assertThat(defaultResult.output().implementedScenarios()) 
       .contains("fallback-plan can be instantiated");
     assertThat(integrationResult.output().generatedTestFiles()).containsExactly("RegexTest.java");
     assertThat(integrationResult.output().implementedScenarios()).contains("generated from spec");
-    assertThat(integrationResult.output().linesOfTestCode()).isEqualTo(2); // GH-90000
-    assertThat(integrationResult.output().estimatedCoverage()).isEqualTo(48.0); // GH-90000
-    assertThat(performanceResult.output().estimatedCoverage()).isEqualTo(5.0); // GH-90000
+    assertThat(integrationResult.output().linesOfTestCode()).isEqualTo(2); 
+    assertThat(integrationResult.output().estimatedCoverage()).isEqualTo(48.0); 
+    assertThat(performanceResult.output().estimatedCoverage()).isEqualTo(5.0); 
     assertThat(specificationResult.output().framework()).isEqualTo("VITEST");
-    assertThat(specificationResult.output().linesOfTestCode()).isZero(); // GH-90000
+    assertThat(specificationResult.output().linesOfTestCode()).isZero(); 
     assertThat(specificationResult.output().implementedScenarios()).contains("ignored case");
-    assertThat(noMatchResult.output().estimatedCoverage()).isEqualTo(5.0); // GH-90000
+    assertThat(noMatchResult.output().estimatedCoverage()).isEqualTo(5.0); 
     assertThat(javascriptResult.output().framework()).isEqualTo("JUNIT5");
     assertThat(runPromise(() -> generator.estimateCost(StepRequest.of("cost", new GenerateTestsInput("plan", List.of("case"), "unit", "java", "junit5")), agentContext())))
-      .isZero(); // GH-90000
+      .isZero(); 
     assertThat(generator.getMetadata().getName()).isEqualTo("GenerateTestsGenerator");
   }
 
-  private AgentContext agentContext() { // GH-90000
-    return AgentContext.builder() // GH-90000
+  private AgentContext agentContext() { 
+    return AgentContext.builder() 
         .agentId("GenerateTestsSpecialistAgent")
         .turnId("turn-1")
         .tenantId("tenant-1")
         .userId("system")
         .sessionId("testing")
-        .memoryStore(new EventLogMemoryStore()) // GH-90000
-        .config(Map.of()) // GH-90000
-        .remainingBudget(10.0) // GH-90000
-        .build(); // GH-90000
+        .memoryStore(new EventLogMemoryStore()) 
+        .config(Map.of()) 
+        .remainingBudget(10.0) 
+        .build(); 
   }
 
   private static final class TestableGenerateTestsAgent extends GenerateTestsSpecialistAgent {
-    private TestableGenerateTestsAgent( // GH-90000
+    private TestableGenerateTestsAgent( 
         MemoryStore memoryStore,
         Map<String, com.ghatana.agent.framework.api.OutputGenerator<?, ?>> generators) {
-      super(memoryStore, generators); // GH-90000
+      super(memoryStore, generators); 
     }
 
-    private MemoryStore memoryStoreForTest() { // GH-90000
-      return getMemoryStore(); // GH-90000
+    private MemoryStore memoryStoreForTest() { 
+      return getMemoryStore(); 
     }
 
-    private StepRequest<GenerateTestsInput> perceiveForTest( // GH-90000
+    private StepRequest<GenerateTestsInput> perceiveForTest( 
         StepRequest<GenerateTestsInput> request, AgentContext context) {
-      return perceive(request, context); // GH-90000
+      return perceive(request, context); 
     }
   }
 }

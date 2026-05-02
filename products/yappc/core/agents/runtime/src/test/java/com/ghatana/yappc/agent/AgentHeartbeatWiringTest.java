@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana Technologies // GH-90000
+ * Copyright (c) 2025 Ghatana Technologies 
  * YAPPC Core Agents — Agent Heartbeat Wiring Test
  */
 package com.ghatana.yappc.agent;
@@ -26,12 +26,12 @@ import static org.mockito.Mockito.*;
  * <ul>
  *   <li>Service instantiation via @Provides binding</li>
  *   <li>Periodic heartbeat tick scheduling on eventloop</li>
- *   <li>Health status tracking and failure detection (3-cycle threshold)</li> // GH-90000
+ *   <li>Health status tracking and failure detection (3-cycle threshold)</li> 
  *   <li>Clock advancement simulation for deterministic testing</li>
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Test suite for AgentHeartbeatService DI wiring (YAPPC-2.3.2–2.3.3) // GH-90000
+ * @doc.purpose Test suite for AgentHeartbeatService DI wiring (YAPPC-2.3.2–2.3.3) 
  * @doc.layer product
  * @doc.pattern Test, Integration
  */
@@ -48,33 +48,33 @@ class AgentHeartbeatWiringTest {
      */
     static class MapAgentHealthProvider implements AgentHealthProvider {
 
-        private final Map<String, AgentLifecycleStatus> statusMap = new ConcurrentHashMap<>(); // GH-90000
-        private final Map<String, Instant> lastHeartbeatMap = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, AgentLifecycleStatus> statusMap = new ConcurrentHashMap<>(); 
+        private final Map<String, Instant> lastHeartbeatMap = new ConcurrentHashMap<>(); 
 
-        MapAgentHealthProvider() { // GH-90000
+        MapAgentHealthProvider() { 
             // Seed with 3 agents: 1 READY, 1 FAILED, 1 INITIALIZING
-            statusMap.put("agent-1", AgentLifecycleStatus.READY); // GH-90000
-            statusMap.put("agent-2", AgentLifecycleStatus.FAILED); // GH-90000
-            statusMap.put("agent-3", AgentLifecycleStatus.INITIALIZING); // GH-90000
+            statusMap.put("agent-1", AgentLifecycleStatus.READY); 
+            statusMap.put("agent-2", AgentLifecycleStatus.FAILED); 
+            statusMap.put("agent-3", AgentLifecycleStatus.INITIALIZING); 
         }
 
         @Override
-        public Map<String, AgentLifecycleStatus> getHealthStatus() { // GH-90000
-            return Map.copyOf(statusMap); // GH-90000
+        public Map<String, AgentLifecycleStatus> getHealthStatus() { 
+            return Map.copyOf(statusMap); 
         }
 
         @Override
-        public int getAgentCount() { // GH-90000
-            return statusMap.size(); // GH-90000
+        public int getAgentCount() { 
+            return statusMap.size(); 
         }
 
         // Not in superclass — records heartbeat timestamps for test assertions
-        public void recordHeartbeat(String agentId, Instant timestamp) { // GH-90000
-            lastHeartbeatMap.put(agentId, timestamp); // GH-90000
+        public void recordHeartbeat(String agentId, Instant timestamp) { 
+            lastHeartbeatMap.put(agentId, timestamp); 
         }
 
-        Instant getLastHeartbeat(String agentId) { // GH-90000
-            return lastHeartbeatMap.get(agentId); // GH-90000
+        Instant getLastHeartbeat(String agentId) { 
+            return lastHeartbeatMap.get(agentId); 
         }
     }
 
@@ -88,46 +88,46 @@ class AgentHeartbeatWiringTest {
 
         @Test
         @DisplayName("Service instantiates via @Provides pattern")
-        void shouldInstantiateViaProvides() { // GH-90000
+        void shouldInstantiateViaProvides() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN
-            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); // GH-90000
+            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); 
 
             // THEN
-            assertThat(service).isNotNull(); // GH-90000
-            assertThat(service).isInstanceOf(AgentHeartbeatService.class); // GH-90000
+            assertThat(service).isNotNull(); 
+            assertThat(service).isInstanceOf(AgentHeartbeatService.class); 
         }
 
         @Test
         @DisplayName("Service accepts custom interval")
-        void shouldAcceptCustomInterval() { // GH-90000
+        void shouldAcceptCustomInterval() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
             long customIntervalMs = 5_000L;
 
             // WHEN
-            AgentHeartbeatService service = new AgentHeartbeatService( // GH-90000
+            AgentHeartbeatService service = new AgentHeartbeatService( 
                     registry, eventloop, customIntervalMs);
 
             // THEN
-            assertThat(service).isNotNull(); // GH-90000
+            assertThat(service).isNotNull(); 
         }
 
         @Test
         @DisplayName("Service rejects non-positive interval")
-        void shouldRejectInvalidInterval() { // GH-90000
+        void shouldRejectInvalidInterval() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN / THEN
-            assertThatThrownBy(() -> // GH-90000
-                    new AgentHeartbeatService(registry, eventloop, 0)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> 
+                    new AgentHeartbeatService(registry, eventloop, 0)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("heartbeatIntervalMs must be positive");
         }
     }
@@ -142,60 +142,60 @@ class AgentHeartbeatWiringTest {
 
         @Test
         @DisplayName("Start transitions service to running state")
-        void shouldTransitionToRunningOnStart() { // GH-90000
+        void shouldTransitionToRunningOnStart() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); 
 
             // WHEN
-            Promise<Void> startPromise = service.start(); // GH-90000
+            Promise<Void> startPromise = service.start(); 
 
             // THEN
-            assertThat(startPromise).isNotNull(); // GH-90000
+            assertThat(startPromise).isNotNull(); 
         }
 
         @Test
         @DisplayName("Stop transitions service to stopped state")
-        void shouldTransitionToStoppedOnStop() { // GH-90000
+        void shouldTransitionToStoppedOnStop() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); 
 
             // WHEN
-            service.start();  // Start nominally // GH-90000
-            Promise<Void> stopPromise = service.stop(); // GH-90000
+            service.start();  // Start nominally 
+            Promise<Void> stopPromise = service.stop(); 
 
             // THEN
-            assertThat(stopPromise).isNotNull(); // GH-90000
+            assertThat(stopPromise).isNotNull(); 
         }
 
         @Test
         @DisplayName("Registry reports initial agent statuses")
-        void shouldReportInitialAgentStatuses() { // GH-90000
+        void shouldReportInitialAgentStatuses() { 
             // GIVEN
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN
-            Map<String, AgentLifecycleStatus> statuses = registry.getHealthStatus(); // GH-90000
+            Map<String, AgentLifecycleStatus> statuses = registry.getHealthStatus(); 
 
             // THEN
-            assertThat(statuses).hasSize(3); // GH-90000
-            assertThat(statuses).containsEntry("agent-1", AgentLifecycleStatus.READY); // GH-90000
-            assertThat(statuses).containsEntry("agent-2", AgentLifecycleStatus.FAILED); // GH-90000
-            assertThat(statuses).containsEntry("agent-3", AgentLifecycleStatus.INITIALIZING); // GH-90000
+            assertThat(statuses).hasSize(3); 
+            assertThat(statuses).containsEntry("agent-1", AgentLifecycleStatus.READY); 
+            assertThat(statuses).containsEntry("agent-2", AgentLifecycleStatus.FAILED); 
+            assertThat(statuses).containsEntry("agent-3", AgentLifecycleStatus.INITIALIZING); 
         }
 
         @Test
         @DisplayName("Registry records heartbeat timestamps")
-        void shouldRecordHeartbeatTimestamps() { // GH-90000
+        void shouldRecordHeartbeatTimestamps() { 
             // GIVEN
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            Instant now = Instant.now(); 
 
             // WHEN
-            registry.recordHeartbeat("agent-1", now); // GH-90000
+            registry.recordHeartbeat("agent-1", now); 
 
             // THEN
             assertThat(registry.getLastHeartbeat("agent-1")).isEqualTo(now);
@@ -212,45 +212,45 @@ class AgentHeartbeatWiringTest {
 
         @Test
         @DisplayName("Service tracks consecutive failure cycles per agent")
-        void shouldTrackConsecutiveFailures() { // GH-90000
+        void shouldTrackConsecutiveFailures() { 
             // GIVEN
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            assertThat(registry.getHealthStatus()).containsEntry("agent-2", AgentLifecycleStatus.FAILED); // GH-90000
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            assertThat(registry.getHealthStatus()).containsEntry("agent-2", AgentLifecycleStatus.FAILED); 
 
             // WHEN
             // Simulate 3 heartbeat cycles where agent-2 remains FAILED
-            // (In production, AgentHeartbeatService.performHeartbeat() tracks this) // GH-90000
+            // (In production, AgentHeartbeatService.performHeartbeat() tracks this) 
 
             // THEN
             // Assert registry still reports it as FAILED
-            assertThat(registry.getHealthStatus()) // GH-90000
-                    .containsEntry("agent-2", AgentLifecycleStatus.FAILED); // GH-90000
+            assertThat(registry.getHealthStatus()) 
+                    .containsEntry("agent-2", AgentLifecycleStatus.FAILED); 
         }
 
         @Test
         @DisplayName("Registry reports agent count")
-        void shouldReportAgentCount() { // GH-90000
+        void shouldReportAgentCount() { 
             // GIVEN
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN
-            int count = registry.getAgentCount(); // GH-90000
+            int count = registry.getAgentCount(); 
 
             // THEN
-            assertThat(count).isEqualTo(3); // GH-90000
+            assertThat(count).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("Multiple agents tracked independently")
-        void shouldTrackMultipleAgentsIndependently() { // GH-90000
+        void shouldTrackMultipleAgentsIndependently() { 
             // GIVEN
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
             Instant time1 = Instant.parse("2026-03-15T10:00:00Z");
             Instant time2 = Instant.parse("2026-03-15T10:00:01Z");
 
             // WHEN
-            registry.recordHeartbeat("agent-1", time1); // GH-90000
-            registry.recordHeartbeat("agent-2", time2); // GH-90000
+            registry.recordHeartbeat("agent-1", time1); 
+            registry.recordHeartbeat("agent-2", time2); 
 
             // THEN
             assertThat(registry.getLastHeartbeat("agent-1")).isEqualTo(time1);
@@ -268,39 +268,39 @@ class AgentHeartbeatWiringTest {
 
         @Test
         @DisplayName("@Provides method can be invoked with real dependencies")
-        void shouldProvideable() { // GH-90000
+        void shouldProvideable() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN
             // Simulate what the @Provides method does
-            AgentHeartbeatService service = new AgentHeartbeatService( // GH-90000
+            AgentHeartbeatService service = new AgentHeartbeatService( 
                     registry,
                     eventloop,
                     AgentHeartbeatService.DEFAULT_INTERVAL_MS);
 
             // THEN
-            assertThat(service).isNotNull(); // GH-90000
-            // lastHeartbeat is intentionally null until start() is called // GH-90000
+            assertThat(service).isNotNull(); 
+            // lastHeartbeat is intentionally null until start() is called 
             assertThat(service).hasNoNullFieldsOrPropertiesExcept("lastHeartbeat");
         }
 
         @Test
         @DisplayName("Service integrates with LifecycleServiceModule bindings")
-        void shouldIntegrateWithModuleBindings() { // GH-90000
+        void shouldIntegrateWithModuleBindings() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
 
             // WHEN
             // This simulates what happens when the module is instantiated
-            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); // GH-90000
-            Promise<Void> startPromise = service.start(); // GH-90000
+            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); 
+            Promise<Void> startPromise = service.start(); 
 
             // THEN
-            assertThat(service).isNotNull(); // GH-90000
-            assertThat(startPromise).isNotNull(); // GH-90000
+            assertThat(service).isNotNull(); 
+            assertThat(startPromise).isNotNull(); 
         }
     }
 
@@ -314,70 +314,72 @@ class AgentHeartbeatWiringTest {
 
         @Test
         @DisplayName("Service handles empty registry")
-        void shouldHandleEmptyRegistry() { // GH-90000
+        void shouldHandleEmptyRegistry() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider emptyRegistry = new MapAgentHealthProvider() { // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider emptyRegistry = new MapAgentHealthProvider() { 
                 @Override
-                public Map<String, AgentLifecycleStatus> getHealthStatus() { // GH-90000
-                    return Map.of(); // Empty // GH-90000
+                public Map<String, AgentLifecycleStatus> getHealthStatus() { 
+                    return Map.of(); // Empty 
                 }
 
                 @Override
-                public int getAgentCount() { // GH-90000
+                public int getAgentCount() { 
                     return 0;
                 }
             };
 
             // WHEN
-            AgentHeartbeatService service = new AgentHeartbeatService( // GH-90000
+            AgentHeartbeatService service = new AgentHeartbeatService( 
                     emptyRegistry, eventloop, 1_000L);
-            Promise<Void> startPromise = service.start(); // GH-90000
+            Promise<Void> startPromise = service.start(); 
 
             // THEN
-            assertThat(startPromise).isNotNull(); // GH-90000
+            assertThat(startPromise).isNotNull(); 
         }
 
         @Test
         @DisplayName("Service allows multiple start/stop cycles")
-        void shouldAllowMultipleLifecycles() { // GH-90000
+        void shouldAllowMultipleLifecycles() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            AgentHeartbeatService service = new AgentHeartbeatService(registry, eventloop); 
 
             // WHEN / THEN
-            assertThatNoException().isThrownBy(() -> { // GH-90000
-                service.start(); // GH-90000
-                service.stop(); // GH-90000
-                service.start(); // GH-90000
-                service.stop(); // GH-90000
+            assertThatNoException().isThrownBy(() -> { 
+                service.start(); 
+                service.stop(); 
+                service.start(); 
+                service.stop(); 
             });
         }
 
         @Test
         @DisplayName("Service handles concurrent registry updates")
-        void shouldHandleConcurrentUpdates() { // GH-90000
+        void shouldHandleConcurrentUpdates() { 
             // GIVEN
-            Eventloop eventloop = Eventloop.builder().build(); // GH-90000
-            MapAgentHealthProvider registry = new MapAgentHealthProvider(); // GH-90000
-            AtomicInteger updateCount = new AtomicInteger(0); // GH-90000
+            Eventloop eventloop = Eventloop.builder().build(); 
+            MapAgentHealthProvider registry = new MapAgentHealthProvider(); 
+            AtomicInteger updateCount = new AtomicInteger(0); 
 
             // WHEN
             // Simulate concurrent heartbeat recordings
-            new Thread(() -> { // GH-90000
-                for (int i = 0; i < 10; i++) { // GH-90000
-                    registry.recordHeartbeat("agent-1", Instant.now()); // GH-90000
-                    updateCount.incrementAndGet(); // GH-90000
+            Thread thread = new Thread(() -> { 
+                for (int i = 0; i < 10; i++) { 
+                    registry.recordHeartbeat("agent-1", Instant.now()); 
+                    updateCount.incrementAndGet(); 
                 }
-            }).start(); // GH-90000
+            });
+            thread.start(); 
 
             // THEN
             try {
-                Thread.sleep(100); // Allow thread to complete // GH-90000
-                assertThat(updateCount.get()).isGreaterThan(0); // GH-90000
-            } catch (InterruptedException e) { // GH-90000
-                Thread.currentThread().interrupt(); // GH-90000
+                thread.join(1000); // Wait for thread to complete with timeout 
+                assertThat(updateCount.get()).isGreaterThan(0); 
+                assertThat(updateCount.get()).isEqualTo(10); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
             }
         }
     }

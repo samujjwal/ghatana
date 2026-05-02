@@ -31,9 +31,9 @@ class KafkaEventSinkTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null adapter throws NullPointerException")
-        void nullAdapter() { // GH-90000
-            assertThatThrownBy(() -> new KafkaEventSink(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullAdapter() { 
+            assertThatThrownBy(() -> new KafkaEventSink(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -43,21 +43,21 @@ class KafkaEventSinkTest extends EventloopTestBase {
 
         @Test
         @DisplayName("start completes successfully")
-        void startCompletes() { // GH-90000
-            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); // GH-90000
-            KafkaEventSink sink = new KafkaEventSink(adapter); // GH-90000
-            Void result = runPromise(sink::start); // GH-90000
-            assertThat(result).isNull(); // Promise<Void> completes // GH-90000
+        void startCompletes() { 
+            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); 
+            KafkaEventSink sink = new KafkaEventSink(adapter); 
+            Void result = runPromise(sink::start); 
+            assertThat(result).isNull(); // Promise<Void> completes 
         }
 
         @Test
         @DisplayName("stop calls adapter.close()")
-        void stopClosesAdapter() { // GH-90000
-            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); // GH-90000
-            KafkaEventSink sink = new KafkaEventSink(adapter); // GH-90000
-            runPromise(sink::start); // GH-90000
-            runPromise(sink::stop); // GH-90000
-            verify(adapter).close(); // GH-90000
+        void stopClosesAdapter() { 
+            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); 
+            KafkaEventSink sink = new KafkaEventSink(adapter); 
+            runPromise(sink::start); 
+            runPromise(sink::stop); 
+            verify(adapter).close(); 
         }
     }
 
@@ -67,51 +67,51 @@ class KafkaEventSinkTest extends EventloopTestBase {
 
         @Test
         @DisplayName("send before start returns failed Promise")
-        void sendBeforeStart() { // GH-90000
-            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); // GH-90000
-            KafkaEventSink sink = new KafkaEventSink(adapter); // GH-90000
-            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); // GH-90000
+        void sendBeforeStart() { 
+            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); 
+            KafkaEventSink sink = new KafkaEventSink(adapter); 
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); 
             TenantContext tenant = TenantContext.of("test-tenant");
 
             try {
-                runPromise(() -> sink.send(tenant, entry)); // GH-90000
+                runPromise(() -> sink.send(tenant, entry)); 
                 assertThat(false).as("expected exception").isTrue();
-            } catch (Exception e) { // GH-90000
-                assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
+            } catch (Exception e) { 
+                assertThat(e).isInstanceOf(IllegalStateException.class) 
                         .hasMessageContaining("sink not started");
             }
         }
 
         @Test
         @DisplayName("send after start delegates to adapter")
-        void sendDelegatesToAdapter() { // GH-90000
-            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); // GH-90000
-            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); // GH-90000
+        void sendDelegatesToAdapter() { 
+            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); 
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); 
             TenantContext tenant = TenantContext.of("test-tenant");
-            when(adapter.send(any())).thenReturn(Promise.complete()); // GH-90000
+            when(adapter.send(any())).thenReturn(Promise.complete()); 
 
-            KafkaEventSink sink = new KafkaEventSink(adapter); // GH-90000
-            runPromise(sink::start); // GH-90000
-            runPromise(() -> sink.send(tenant, entry)); // GH-90000
+            KafkaEventSink sink = new KafkaEventSink(adapter); 
+            runPromise(sink::start); 
+            runPromise(() -> sink.send(tenant, entry)); 
 
-            verify(adapter).send(entry); // GH-90000
+            verify(adapter).send(entry); 
         }
 
         @Test
         @DisplayName("send after stop returns failed Promise")
-        void sendAfterStop() { // GH-90000
-            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); // GH-90000
-            KafkaEventSink sink = new KafkaEventSink(adapter); // GH-90000
-            runPromise(sink::start); // GH-90000
-            runPromise(sink::stop); // GH-90000
+        void sendAfterStop() { 
+            KafkaProducerAdapter adapter = mock(KafkaProducerAdapter.class); 
+            KafkaEventSink sink = new KafkaEventSink(adapter); 
+            runPromise(sink::start); 
+            runPromise(sink::stop); 
 
-            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); // GH-90000
+            EventLogStore.EventEntry entry = mock(EventLogStore.EventEntry.class); 
             TenantContext tenant = TenantContext.of("test-tenant");
             try {
-                runPromise(() -> sink.send(tenant, entry)); // GH-90000
+                runPromise(() -> sink.send(tenant, entry)); 
                 assertThat(false).as("expected exception").isTrue();
-            } catch (Exception e) { // GH-90000
-                assertThat(e).isInstanceOf(IllegalStateException.class) // GH-90000
+            } catch (Exception e) { 
+                assertThat(e).isInstanceOf(IllegalStateException.class) 
                         .hasMessageContaining("sink not started");
             }
         }

@@ -24,9 +24,9 @@ class OpenAIServiceTest {
         public int value;
         public boolean active;
 
-        public TestSchema() {} // GH-90000
+        public TestSchema() {} 
 
-        public TestSchema(String name, int value, boolean active) { // GH-90000
+        public TestSchema(String name, int value, boolean active) { 
             this.name = name;
             this.value = value;
             this.active = active;
@@ -35,15 +35,15 @@ class OpenAIServiceTest {
 
     @Test
     @DisplayName("Should parse valid JSON response matching schema")
-    void shouldParseValidJsonResponse() { // GH-90000
-        assertDoesNotThrow(() -> { // GH-90000
+    void shouldParseValidJsonResponse() { 
+        assertDoesNotThrow(() -> { 
             // Placeholder until HTTP client mocking is added for structured output parsing.
         });
     }
 
     @Test
     @DisplayName("Should throw exception for invalid JSON")
-    void shouldThrowExceptionForInvalidJson() { // GH-90000
+    void shouldThrowExceptionForInvalidJson() { 
         // Test that invalid JSON throws RuntimeException
         // The implementation catches Jackson exceptions and wraps them
         // This would be tested with a mock HTTP client returning invalid JSON
@@ -51,7 +51,7 @@ class OpenAIServiceTest {
 
     @Test
     @DisplayName("Should throw exception for JSON missing required fields")
-    void shouldThrowExceptionForMissingRequiredFields() { // GH-90000
+    void shouldThrowExceptionForMissingRequiredFields() { 
         // Test that JSON missing required schema fields throws RuntimeException
         // For example, if schema requires "name" and "value" but JSON only has "name"
         // Jackson will throw an exception which is wrapped
@@ -59,7 +59,7 @@ class OpenAIServiceTest {
 
     @Test
     @DisplayName("Should throw exception for JSON with wrong field types")
-    void shouldThrowExceptionForWrongFieldTypes() { // GH-90000
+    void shouldThrowExceptionForWrongFieldTypes() { 
         // Test that JSON with wrong field types throws RuntimeException
         // For example, if schema expects "value" as int but JSON provides a string
         // Jackson will throw an exception which is wrapped

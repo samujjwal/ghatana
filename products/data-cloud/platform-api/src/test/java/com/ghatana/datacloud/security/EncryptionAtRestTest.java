@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.security;
@@ -20,14 +20,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for encryption at rest (S007). // GH-90000
+ * Tests for encryption at rest (S007). 
  *
  * @doc.type class
  * @doc.purpose Encryption at rest tests
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("EncryptionAtRest – Data Encryption (S007)")
 class EncryptionAtRestTest extends EventloopTestBase {
 
@@ -40,19 +40,19 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S007]: sensitive_data_encrypted_at_rest")
-        void sensitiveDataEncryptedAtRest() { // GH-90000
+        void sensitiveDataEncryptedAtRest() { 
             // Simulate encryption check
             String sensitiveData = "ssn:123-45-6789";
-            String encryptedData = encrypt(sensitiveData); // GH-90000
+            String encryptedData = encrypt(sensitiveData); 
 
-            assertThat(encryptedData).isNotEqualTo(sensitiveData); // GH-90000
+            assertThat(encryptedData).isNotEqualTo(sensitiveData); 
             assertThat(encryptedData).doesNotContain("123-45-6789");
         }
 
         @Test
         @DisplayName("[S007]: pii_fields_encrypted")
-        void piiFieldsEncrypted() { // GH-90000
-            Map<String, Object> userData = Map.of( // GH-90000
+        void piiFieldsEncrypted() { 
+            Map<String, Object> userData = Map.of( 
                 "id", "user-001",
                 "name", "John Doe",
                 "email", "john@example.com",
@@ -67,24 +67,24 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S007]: encryption_allows_decryption")
-        void encryptionAllowsDecryption() { // GH-90000
+        void encryptionAllowsDecryption() { 
             String original = "secret-data";
-            String encrypted = encrypt(original); // GH-90000
-            String decrypted = decrypt(encrypted); // GH-90000
+            String encrypted = encrypt(original); 
+            String decrypted = decrypt(encrypted); 
 
-            assertThat(decrypted).isEqualTo(original); // GH-90000
+            assertThat(decrypted).isEqualTo(original); 
         }
 
-        private String encrypt(String data) { // GH-90000
+        private String encrypt(String data) { 
             // Simulated encryption
             return "ENC(" + java.util.Base64.getEncoder().encodeToString(data.getBytes()) + ")";
         }
 
-        private String decrypt(String encrypted) { // GH-90000
+        private String decrypt(String encrypted) { 
             // Simulated decryption
             if (encrypted.startsWith("ENC(") && encrypted.endsWith(")")) {
-                String base64 = encrypted.substring(4, encrypted.length() - 1); // GH-90000
-                return new String(java.util.Base64.getDecoder().decode(base64)); // GH-90000
+                String base64 = encrypted.substring(4, encrypted.length() - 1); 
+                return new String(java.util.Base64.getDecoder().decode(base64)); 
             }
             return encrypted;
         }
@@ -96,16 +96,16 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S007]: key_rotation_supported")
-        void keyRotationSupported() { // GH-90000
+        void keyRotationSupported() { 
             boolean rotationSupported = true;
-            assertThat(rotationSupported).isTrue(); // GH-90000
+            assertThat(rotationSupported).isTrue(); 
         }
 
         @Test
         @DisplayName("[S007]: key_version_tracked")
-        void keyVersionTracked() { // GH-90000
+        void keyVersionTracked() { 
             int keyVersion = 2;
-            assertThat(keyVersion).isGreaterThan(0); // GH-90000
+            assertThat(keyVersion).isGreaterThan(0); 
         }
     }
 
@@ -115,22 +115,22 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S007]: encryption_operations_logged")
-        void encryptionOperationsLogged() { // GH-90000
-            AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() // GH-90000
+        void encryptionOperationsLogged() { 
+            AuditLogService.AuditEvent event = AuditLogService.AuditEvent.builder() 
                 .id("evt-001")
                 .tenantId("tenant-alpha")
-                .type(AuditLogService.EventType.CONFIG_CHANGE) // GH-90000
+                .type(AuditLogService.EventType.CONFIG_CHANGE) 
                 .action("encryption-key-rotation")
                 .resource("EncryptionKey")
-                .success(true) // GH-90000
-                .build(); // GH-90000
+                .success(true) 
+                .build(); 
 
-            when(auditLogService.log(any())) // GH-90000
-                .thenReturn(Promise.of((Void) null)); // GH-90000
+            when(auditLogService.log(any())) 
+                .thenReturn(Promise.of((Void) null)); 
 
-            runPromise(() -> auditLogService.log(event)); // GH-90000
+            runPromise(() -> auditLogService.log(event)); 
 
-            verify(auditLogService).log(any()); // GH-90000
+            verify(auditLogService).log(any()); 
         }
     }
 
@@ -140,20 +140,20 @@ class EncryptionAtRestTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[S007]: encryption_overhead_acceptable")
-        void encryptionOverheadAcceptable() { // GH-90000
-            long startTime = System.currentTimeMillis(); // GH-90000
+        void encryptionOverheadAcceptable() { 
+            long startTime = System.currentTimeMillis(); 
 
             // Simulate encryption operation
-            encryptDataBatch(1000); // GH-90000
+            encryptDataBatch(1000); 
 
-            long duration = System.currentTimeMillis() - startTime; // GH-90000
+            long duration = System.currentTimeMillis() - startTime; 
 
-            // Should complete within reasonable time (< 1 second for 1000 items) // GH-90000
-            assertThat(duration).isLessThan(1000); // GH-90000
+            // Should complete within reasonable time (< 1 second for 1000 items) 
+            assertThat(duration).isLessThan(1000); 
         }
 
-        private void encryptDataBatch(int count) { // GH-90000
-            for (int i = 0; i < count; i++) { // GH-90000
+        private void encryptDataBatch(int count) { 
+            for (int i = 0; i < count; i++) { 
                 // Simulated encryption
             }
         }

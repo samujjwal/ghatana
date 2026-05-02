@@ -1,0 +1,39 @@
+{
+  "pluginId": "com.ghatana.plugin.consent",
+  "version": "1.0.0",
+  "description": "Consent, authorization grant, delegation, revocation, and purpose-bound access lifecycle plugin. Generic — no product-specific consent semantics built in.",
+  "tier": "T1",
+  "capabilities": [
+    "consent:record",
+    "consent:verify",
+    "consent:revoke",
+    "consent:delegate",
+    "consent:query-history"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 128,
+    "maxCpuPercent": 10,
+    "maxThreads": 4
+  },
+  "configSchema": {
+    "defaultExpiryDays": {
+      "type": "number",
+      "required": false,
+      "description": "Default consent validity period in days. Products override per-purpose via binding manifest. Defaults to 730 (2 years)."
+    },
+    "revocationPropagationEnabled": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether consent revocation events are propagated to registered subscribers. Defaults to true."
+    },
+    "purposeExpiryOverrides": {
+      "type": "string",
+      "required": false,
+      "description": "JSON map of purpose-name to expiry-days overrides, e.g. '{\"marketing\": 365}'."
+    }
+  }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model;
@@ -35,30 +35,30 @@ class ValidityTest {
 
         @Test
         @DisplayName("Default confidence is 0.0")
-        void defaultConfidence_isZero() { // GH-90000
-            Validity v = Validity.builder().build(); // GH-90000
-            assertThat(v.getConfidence()).isEqualTo(0.0); // GH-90000
+        void defaultConfidence_isZero() { 
+            Validity v = Validity.builder().build(); 
+            assertThat(v.getConfidence()).isEqualTo(0.0); 
         }
 
         @Test
         @DisplayName("Default decayRate is 0.0 (no decay)")
-        void defaultDecayRate_isZero() { // GH-90000
-            Validity v = Validity.builder().build(); // GH-90000
-            assertThat(v.getDecayRate()).isEqualTo(0.0); // GH-90000
+        void defaultDecayRate_isZero() { 
+            Validity v = Validity.builder().build(); 
+            assertThat(v.getDecayRate()).isEqualTo(0.0); 
         }
 
         @Test
         @DisplayName("Default status is ACTIVE")
-        void defaultStatus_isActive() { // GH-90000
-            Validity v = Validity.builder().build(); // GH-90000
-            assertThat(v.getStatus()).isEqualTo(ValidityStatus.ACTIVE); // GH-90000
+        void defaultStatus_isActive() { 
+            Validity v = Validity.builder().build(); 
+            assertThat(v.getStatus()).isEqualTo(ValidityStatus.ACTIVE); 
         }
 
         @Test
         @DisplayName("Default lastVerified is null")
-        void defaultLastVerified_isNull() { // GH-90000
-            Validity v = Validity.builder().build(); // GH-90000
-            assertThat(v.getLastVerified()).isNull(); // GH-90000
+        void defaultLastVerified_isNull() { 
+            Validity v = Validity.builder().build(); 
+            assertThat(v.getLastVerified()).isNull(); 
         }
     }
 
@@ -72,29 +72,29 @@ class ValidityTest {
 
         @Test
         @DisplayName("Zero decayRate returns confidence unchanged")
-        void zeroDecayRate_returnsConfidenceUnchanged() { // GH-90000
-            Instant lastVerified = Instant.now().minus(7, ChronoUnit.DAYS); // GH-90000
-            Validity v = Validity.builder().confidence(0.8).decayRate(0.0) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            assertThat(v.effectiveConfidence(Instant.now())).isEqualTo(0.8); // GH-90000
+        void zeroDecayRate_returnsConfidenceUnchanged() { 
+            Instant lastVerified = Instant.now().minus(7, ChronoUnit.DAYS); 
+            Validity v = Validity.builder().confidence(0.8).decayRate(0.0) 
+                    .lastVerified(lastVerified).build(); 
+            assertThat(v.effectiveConfidence(Instant.now())).isEqualTo(0.8); 
         }
 
         @Test
         @DisplayName("Null lastVerified returns confidence unchanged regardless of decayRate")
-        void nullLastVerified_returnsConfidenceUnchanged() { // GH-90000
-            Validity v = Validity.builder().confidence(0.9).decayRate(0.5) // GH-90000
-                    .lastVerified(null).build(); // GH-90000
-            assertThat(v.effectiveConfidence(Instant.now())).isEqualTo(0.9); // GH-90000
+        void nullLastVerified_returnsConfidenceUnchanged() { 
+            Validity v = Validity.builder().confidence(0.9).decayRate(0.5) 
+                    .lastVerified(null).build(); 
+            assertThat(v.effectiveConfidence(Instant.now())).isEqualTo(0.9); 
         }
 
         @Test
         @DisplayName("Just-verified item: 0 days aged → full confidence retained")
-        void justVerified_retainsFullConfidence() { // GH-90000
-            Instant now = Instant.now(); // GH-90000
-            Validity v = Validity.builder().confidence(1.0).decayRate(0.5) // GH-90000
-                    .lastVerified(now).build(); // GH-90000
+        void justVerified_retainsFullConfidence() { 
+            Instant now = Instant.now(); 
+            Validity v = Validity.builder().confidence(1.0).decayRate(0.5) 
+                    .lastVerified(now).build(); 
             // age = 0 ms → effectiveConfidence = 1.0 * e^0 = 1.0
-            assertThat(v.effectiveConfidence(now)).isCloseTo(1.0, within(1e-6)); // GH-90000
+            assertThat(v.effectiveConfidence(now)).isCloseTo(1.0, within(1e-6)); 
         }
     }
 
@@ -108,45 +108,45 @@ class ValidityTest {
 
         @Test
         @DisplayName("After 1 day at decayRate=ln(2)≈0.693: confidence halves")
-        void oneDay_halveDecayRate_halvesConfidence() { // GH-90000
-            Instant lastVerified = Instant.now().minus(1, ChronoUnit.DAYS); // GH-90000
-            double decayRate = Math.log(2); // after 1 day confidence should halve // GH-90000
-            Validity v = Validity.builder().confidence(1.0).decayRate(decayRate) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            assertThat(v.effectiveConfidence(Instant.now())).isCloseTo(0.5, within(1e-3)); // GH-90000
+        void oneDay_halveDecayRate_halvesConfidence() { 
+            Instant lastVerified = Instant.now().minus(1, ChronoUnit.DAYS); 
+            double decayRate = Math.log(2); // after 1 day confidence should halve 
+            Validity v = Validity.builder().confidence(1.0).decayRate(decayRate) 
+                    .lastVerified(lastVerified).build(); 
+            assertThat(v.effectiveConfidence(Instant.now())).isCloseTo(0.5, within(1e-3)); 
         }
 
         @Test
         @DisplayName("After 10 days at decayRate=0.1: confidence ≈ 0.3679 (initial=1.0)")
-        void tenDays_decayOneTenth_correctFormula() { // GH-90000
-            Instant lastVerified = Instant.now().minus(10, ChronoUnit.DAYS); // GH-90000
-            Validity v = Validity.builder().confidence(1.0).decayRate(0.1) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            // 1.0 * e^(-0.1 * 10) = e^(-1) ≈ 0.3679 // GH-90000
-            assertThat(v.effectiveConfidence(Instant.now())).isCloseTo(Math.exp(-1), within(1e-3)); // GH-90000
+        void tenDays_decayOneTenth_correctFormula() { 
+            Instant lastVerified = Instant.now().minus(10, ChronoUnit.DAYS); 
+            Validity v = Validity.builder().confidence(1.0).decayRate(0.1) 
+                    .lastVerified(lastVerified).build(); 
+            // 1.0 * e^(-0.1 * 10) = e^(-1) ≈ 0.3679 
+            assertThat(v.effectiveConfidence(Instant.now())).isCloseTo(Math.exp(-1), within(1e-3)); 
         }
 
         @Test
         @DisplayName("After 100 days at decayRate=0.5: confidence approaches zero")
-        void veryOldItem_confidenceNearZero() { // GH-90000
-            Instant lastVerified = Instant.now().minus(100, ChronoUnit.DAYS); // GH-90000
-            Validity v = Validity.builder().confidence(1.0).decayRate(0.5) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            // 1.0 * e^(-50) ≈ 1.93e-22 // GH-90000
-            assertThat(v.effectiveConfidence(Instant.now())).isLessThan(0.001); // GH-90000
+        void veryOldItem_confidenceNearZero() { 
+            Instant lastVerified = Instant.now().minus(100, ChronoUnit.DAYS); 
+            Validity v = Validity.builder().confidence(1.0).decayRate(0.5) 
+                    .lastVerified(lastVerified).build(); 
+            // 1.0 * e^(-50) ≈ 1.93e-22 
+            assertThat(v.effectiveConfidence(Instant.now())).isLessThan(0.001); 
         }
 
         @Test
         @DisplayName("Proportional scaling: confidence=0.5 decays at same rate as confidence=1.0")
-        void proportionalScaling_conformsToFormula() { // GH-90000
-            Instant lastVerified = Instant.now().minus(5, ChronoUnit.DAYS); // GH-90000
-            Validity full = Validity.builder().confidence(1.0).decayRate(0.1) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            Validity half = Validity.builder().confidence(0.5).decayRate(0.1) // GH-90000
-                    .lastVerified(lastVerified).build(); // GH-90000
-            Instant now = Instant.now(); // GH-90000
-            assertThat(half.effectiveConfidence(now)) // GH-90000
-                    .isCloseTo(full.effectiveConfidence(now) / 2, within(1e-6)); // GH-90000
+        void proportionalScaling_conformsToFormula() { 
+            Instant lastVerified = Instant.now().minus(5, ChronoUnit.DAYS); 
+            Validity full = Validity.builder().confidence(1.0).decayRate(0.1) 
+                    .lastVerified(lastVerified).build(); 
+            Validity half = Validity.builder().confidence(0.5).decayRate(0.1) 
+                    .lastVerified(lastVerified).build(); 
+            Instant now = Instant.now(); 
+            assertThat(half.effectiveConfidence(now)) 
+                    .isCloseTo(full.effectiveConfidence(now) / 2, within(1e-6)); 
         }
     }
 
@@ -160,9 +160,9 @@ class ValidityTest {
 
         @Test
         @DisplayName("All four ValidityStatus values are present")
-        void allStatusValues_present() { // GH-90000
-            ValidityStatus[] values = ValidityStatus.values(); // GH-90000
-            assertThat(values).containsExactlyInAnyOrder( // GH-90000
+        void allStatusValues_present() { 
+            ValidityStatus[] values = ValidityStatus.values(); 
+            assertThat(values).containsExactlyInAnyOrder( 
                     ValidityStatus.ACTIVE,
                     ValidityStatus.STALE,
                     ValidityStatus.DEPRECATED,
@@ -171,9 +171,9 @@ class ValidityTest {
 
         @Test
         @DisplayName("STALE status can be set via builder")
-        void staleStatus_settableViaBuilder() { // GH-90000
-            Validity v = Validity.builder().status(ValidityStatus.STALE).build(); // GH-90000
-            assertThat(v.getStatus()).isEqualTo(ValidityStatus.STALE); // GH-90000
+        void staleStatus_settableViaBuilder() { 
+            Validity v = Validity.builder().status(ValidityStatus.STALE).build(); 
+            assertThat(v.getStatus()).isEqualTo(ValidityStatus.STALE); 
         }
     }
 }

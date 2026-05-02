@@ -47,19 +47,19 @@ import static org.mockito.Mockito.lenient;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose RabbitMQ integration tests for transcription messaging flow (AV-P0-04) // GH-90000
+ * @doc.purpose RabbitMQ integration tests for transcription messaging flow (AV-P0-04) 
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
 @Testcontainers
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("Transcription Messaging Integration Tests (AV-P0-04)")
 class TranscriptionMessagingIT extends EventloopTestBase {
 
     private static final int MAX_DELIVERY_ATTEMPTS = 2;
 
     @Container
-    static final RabbitMQContainer RABBIT = new RabbitMQContainer( // GH-90000
+    static final RabbitMQContainer RABBIT = new RabbitMQContainer( 
             DockerImageName.parse("rabbitmq:3.13-management-alpine"));
 
     @Mock
@@ -71,207 +71,207 @@ class TranscriptionMessagingIT extends EventloopTestBase {
     private String dlqName;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        lenient().doNothing().when(metricsCollector).incrementCounter(anyString(), any(String[].class)); // GH-90000
-        lenient().doNothing().when(metricsCollector).recordTimer(anyString(), anyLong(), any(String[].class)); // GH-90000
+    void setUp() throws Exception { 
+        lenient().doNothing().when(metricsCollector).incrementCounter(anyString(), any(String[].class)); 
+        lenient().doNothing().when(metricsCollector).recordTimer(anyString(), anyLong(), any(String[].class)); 
 
-        String queueSuffix = UUID.randomUUID().toString(); // GH-90000
+        String queueSuffix = UUID.randomUUID().toString(); 
         queueName = "av.jobs." + queueSuffix;
         dlqName = queueName + ".dlq";
         String deadLetterExchange = "dlx." + queueSuffix;
 
         // Declare queues with DLQ wiring via direct AMQP connection
-        ConnectionFactory factory = new ConnectionFactory(); // GH-90000
-        factory.setHost(RABBIT.getHost()); // GH-90000
-        factory.setPort(RABBIT.getAmqpPort()); // GH-90000
+        ConnectionFactory factory = new ConnectionFactory(); 
+        factory.setHost(RABBIT.getHost()); 
+        factory.setPort(RABBIT.getAmqpPort()); 
         factory.setUsername("guest");
         factory.setPassword("guest");
         factory.setVirtualHost("/");
-        try (Connection conn = factory.newConnection(); // GH-90000
-             com.rabbitmq.client.Channel ch = conn.createChannel()) { // GH-90000
-            ch.exchangeDeclare(deadLetterExchange, "direct", true); // GH-90000
-            ch.queueDeclare(dlqName, true, false, false, java.util.Map.of()); // GH-90000
-            ch.queueBind(dlqName, deadLetterExchange, queueName); // GH-90000
-            ch.queueDeclare(queueName, true, false, false, java.util.Map.of( // GH-90000
+        try (Connection conn = factory.newConnection(); 
+             com.rabbitmq.client.Channel ch = conn.createChannel()) { 
+            ch.exchangeDeclare(deadLetterExchange, "direct", true); 
+            ch.queueDeclare(dlqName, true, false, false, java.util.Map.of()); 
+            ch.queueBind(dlqName, deadLetterExchange, queueName); 
+            ch.queueDeclare(queueName, true, false, false, java.util.Map.of( 
                     "x-dead-letter-exchange", deadLetterExchange,
                     "x-dead-letter-routing-key", queueName
             ));
         }
 
-        RabbitMQConfig config = RabbitMQConfig.builder() // GH-90000
-                .host(RABBIT.getHost()) // GH-90000
-                .port(RABBIT.getAmqpPort()) // GH-90000
+        RabbitMQConfig config = RabbitMQConfig.builder() 
+                .host(RABBIT.getHost()) 
+                .port(RABBIT.getAmqpPort()) 
                 .username("guest")
                 .password("guest")
                 .virtualHost("/")
-                .queueName(queueName) // GH-90000
-                .maxDeliveryAttempts(MAX_DELIVERY_ATTEMPTS) // GH-90000
-                .build(); // GH-90000
+                .queueName(queueName) 
+                .maxDeliveryAttempts(MAX_DELIVERY_ATTEMPTS) 
+                .build(); 
 
-        producer = new TranscriptionJobProducer(queueName, // GH-90000
-                new com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQProducerStrategy(config), // GH-90000
+        producer = new TranscriptionJobProducer(queueName, 
+                new com.ghatana.platform.messaging.strategy.rabbitmq.RabbitMQProducerStrategy(config), 
                 metricsCollector);
 
-        consumer = new TranscriptionJobConsumer(queueName, // GH-90000
-                new RabbitMQConsumerStrategy(config), // GH-90000
+        consumer = new TranscriptionJobConsumer(queueName, 
+                new RabbitMQConsumerStrategy(config), 
                 metricsCollector);
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
+    void tearDown() { 
         try {
-            if (producer != null) runPromise(() -> producer.stop()); // GH-90000
-        } catch (Exception ignored) { // GH-90000
+            if (producer != null) runPromise(() -> producer.stop()); 
+        } catch (Exception ignored) { 
         }
         try {
-            if (consumer != null) runPromise(() -> consumer.stop()); // GH-90000
-        } catch (Exception ignored) { // GH-90000
+            if (consumer != null) runPromise(() -> consumer.stop()); 
+        } catch (Exception ignored) { 
         }
     }
 
     @Test
     @DisplayName("Should deliver message from producer to consumer (happy path)")
-    void shouldDeliverMessageRoundTrip() throws InterruptedException { // GH-90000
+    void shouldDeliverMessageRoundTrip() throws InterruptedException { 
         List<TranscriptionJobProducer.TranscriptionJobMessage> received =
-                Collections.synchronizedList(new ArrayList<>()); // GH-90000
-        CountDownLatch latch = new CountDownLatch(1); // GH-90000
+                Collections.synchronizedList(new ArrayList<>()); 
+        CountDownLatch latch = new CountDownLatch(1); 
 
-        consumer.setJobProcessor(job -> { // GH-90000
-            received.add(job); // GH-90000
-            latch.countDown(); // GH-90000
-            return Promise.complete(); // GH-90000
+        consumer.setJobProcessor(job -> { 
+            received.add(job); 
+            latch.countDown(); 
+            return Promise.complete(); 
         });
 
-        runPromise(() -> producer.start()); // GH-90000
-        runPromise(() -> consumer.start()); // GH-90000
+        runPromise(() -> producer.start()); 
+        runPromise(() -> consumer.start()); 
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
-                new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
-                        UUID.randomUUID(), "tenant-1", UUID.randomUUID(), "en", "m1", Instant.now()); // GH-90000
+                new TranscriptionJobProducer.TranscriptionJobMessage( 
+                        UUID.randomUUID(), "tenant-1", UUID.randomUUID(), "en", "m1", Instant.now()); 
 
-        String messageId = runPromise(() -> producer.submitJob(job)); // GH-90000
-        assertThat(messageId).isNotNull(); // GH-90000
+        String messageId = runPromise(() -> producer.submitJob(job)); 
+        assertThat(messageId).isNotNull(); 
 
-        boolean delivered = latch.await(10, TimeUnit.SECONDS); // GH-90000
-        assertThat(delivered).isTrue(); // GH-90000
-        assertThat(received).hasSize(1); // GH-90000
-        assertThat(received.get(0).jobId()).isEqualTo(job.jobId()); // GH-90000
+        boolean delivered = latch.await(10, TimeUnit.SECONDS); 
+        assertThat(delivered).isTrue(); 
+        assertThat(received).hasSize(1); 
+        assertThat(received.get(0).jobId()).isEqualTo(job.jobId()); 
         assertThat(received.get(0).tenantId()).isEqualTo("tenant-1");
     }
 
     @Test
     @DisplayName("Should re-deliver on consumer nack (retry path)")
-    void shouldRetryOnConsumerFailure() throws InterruptedException { // GH-90000
-        AtomicInteger deliveryCount = new AtomicInteger(0); // GH-90000
-        CountDownLatch latch = new CountDownLatch(2); // expect 2 deliveries // GH-90000
+    void shouldRetryOnConsumerFailure() throws InterruptedException { 
+        AtomicInteger deliveryCount = new AtomicInteger(0); 
+        CountDownLatch latch = new CountDownLatch(2); // expect 2 deliveries 
 
-        consumer.setJobProcessor(job -> { // GH-90000
-            int count = deliveryCount.incrementAndGet(); // GH-90000
-            latch.countDown(); // GH-90000
-            if (count == 1) { // GH-90000
+        consumer.setJobProcessor(job -> { 
+            int count = deliveryCount.incrementAndGet(); 
+            latch.countDown(); 
+            if (count == 1) { 
                 // Simulate failure on first delivery — triggers nack+requeue
                 return Promise.ofException(new RuntimeException("simulated processing failure"));
             }
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         });
 
-        runPromise(() -> producer.start()); // GH-90000
-        runPromise(() -> consumer.start()); // GH-90000
+        runPromise(() -> producer.start()); 
+        runPromise(() -> consumer.start()); 
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
-                new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
-                        UUID.randomUUID(), "tenant-retry", UUID.randomUUID(), "en", "m1", Instant.now()); // GH-90000
+                new TranscriptionJobProducer.TranscriptionJobMessage( 
+                        UUID.randomUUID(), "tenant-retry", UUID.randomUUID(), "en", "m1", Instant.now()); 
 
-        runPromise(() -> producer.submitJob(job)); // GH-90000
+        runPromise(() -> producer.submitJob(job)); 
 
-        boolean delivered = latch.await(15, TimeUnit.SECONDS); // GH-90000
-        assertThat(delivered).isTrue(); // GH-90000
-        assertThat(deliveryCount.get()).isGreaterThanOrEqualTo(2); // GH-90000
+        boolean delivered = latch.await(15, TimeUnit.SECONDS); 
+        assertThat(delivered).isTrue(); 
+        assertThat(deliveryCount.get()).isGreaterThanOrEqualTo(2); 
     }
 
     @Test
     @DisplayName("Should route poison messages to DLQ after max delivery count")
-    void shouldDeadLetterPoisonMessage() throws Exception { // GH-90000
-        AtomicInteger deliveryCount = new AtomicInteger(0); // GH-90000
+    void shouldDeadLetterPoisonMessage() throws Exception { 
+        AtomicInteger deliveryCount = new AtomicInteger(0); 
 
         // Consumer always fails → strategy retries up to MAX_DELIVERY_ATTEMPTS, then dead-letters
-        consumer.setJobProcessor(job -> { // GH-90000
-            deliveryCount.incrementAndGet(); // GH-90000
+        consumer.setJobProcessor(job -> { 
+            deliveryCount.incrementAndGet(); 
             return Promise.ofException(new RuntimeException("always fails — DLQ test"));
         });
 
         // Subscribe to DLQ via direct AMQP channel
-        ConnectionFactory factory = new ConnectionFactory(); // GH-90000
-        factory.setHost(RABBIT.getHost()); // GH-90000
-        factory.setPort(RABBIT.getAmqpPort()); // GH-90000
+        ConnectionFactory factory = new ConnectionFactory(); 
+        factory.setHost(RABBIT.getHost()); 
+        factory.setPort(RABBIT.getAmqpPort()); 
         factory.setUsername("guest");
         factory.setPassword("guest");
         factory.setVirtualHost("/");
 
-        List<String> dlqMessages = Collections.synchronizedList(new ArrayList<>()); // GH-90000
-        CountDownLatch dlqLatch = new CountDownLatch(1); // GH-90000
+        List<String> dlqMessages = Collections.synchronizedList(new ArrayList<>()); 
+        CountDownLatch dlqLatch = new CountDownLatch(1); 
 
-        Connection dlqConn = factory.newConnection(); // GH-90000
-        com.rabbitmq.client.Channel dlqChannel = dlqConn.createChannel(); // GH-90000
-        dlqChannel.basicConsume(dlqName, true, // GH-90000
-                (tag, delivery) -> { // GH-90000
-                    dlqMessages.add(new String(delivery.getBody(), StandardCharsets.UTF_8)); // GH-90000
-                    dlqLatch.countDown(); // GH-90000
+        Connection dlqConn = factory.newConnection(); 
+        com.rabbitmq.client.Channel dlqChannel = dlqConn.createChannel(); 
+        dlqChannel.basicConsume(dlqName, true, 
+                (tag, delivery) -> { 
+                    dlqMessages.add(new String(delivery.getBody(), StandardCharsets.UTF_8)); 
+                    dlqLatch.countDown(); 
                 },
                 tag -> {});
 
-        runPromise(() -> producer.start()); // GH-90000
-        runPromise(() -> consumer.start()); // GH-90000
+        runPromise(() -> producer.start()); 
+        runPromise(() -> consumer.start()); 
 
         TranscriptionJobProducer.TranscriptionJobMessage job =
-                new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
-                        UUID.randomUUID(), "tenant-dlq", UUID.randomUUID(), "en", "m1", Instant.now()); // GH-90000
+                new TranscriptionJobProducer.TranscriptionJobMessage( 
+                        UUID.randomUUID(), "tenant-dlq", UUID.randomUUID(), "en", "m1", Instant.now()); 
 
-        runPromise(() -> producer.submitJob(job)); // GH-90000
+        runPromise(() -> producer.submitJob(job)); 
 
-        boolean receivedInDlq = dlqLatch.await(30, TimeUnit.SECONDS); // GH-90000
-        assertThat(receivedInDlq).isTrue(); // GH-90000
-        assertThat(dlqMessages).hasSize(1); // GH-90000
-        assertThat(deliveryCount.get()).isEqualTo(MAX_DELIVERY_ATTEMPTS); // GH-90000
+        boolean receivedInDlq = dlqLatch.await(30, TimeUnit.SECONDS); 
+        assertThat(receivedInDlq).isTrue(); 
+        assertThat(dlqMessages).hasSize(1); 
+        assertThat(deliveryCount.get()).isEqualTo(MAX_DELIVERY_ATTEMPTS); 
 
-        dlqChannel.close(); // GH-90000
-        dlqConn.close(); // GH-90000
+        dlqChannel.close(); 
+        dlqConn.close(); 
     }
 
     @Test
     @DisplayName("Duplicate jobId should be processed idempotently via seen-set guard")
-    void shouldProcessDuplicateJobIdOnlyOnce() throws InterruptedException { // GH-90000
+    void shouldProcessDuplicateJobIdOnlyOnce() throws InterruptedException { 
         // Idempotency guard: consumer tracks seen job IDs in a concurrent set
-        java.util.Set<UUID> seen = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>()); // GH-90000
-        AtomicInteger processedCount = new AtomicInteger(0); // GH-90000
-        CountDownLatch latch = new CountDownLatch(1); // GH-90000
+        java.util.Set<UUID> seen = Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>()); 
+        AtomicInteger processedCount = new AtomicInteger(0); 
+        CountDownLatch latch = new CountDownLatch(1); 
 
-        consumer.setJobProcessor(job -> { // GH-90000
-            if (seen.add(job.jobId())) { // GH-90000
-                processedCount.incrementAndGet(); // GH-90000
-                latch.countDown(); // GH-90000
+        consumer.setJobProcessor(job -> { 
+            if (seen.add(job.jobId())) { 
+                processedCount.incrementAndGet(); 
+                latch.countDown(); 
             }
-            return Promise.complete(); // GH-90000
+            return Promise.complete(); 
         });
 
-        runPromise(() -> producer.start()); // GH-90000
-        runPromise(() -> consumer.start()); // GH-90000
+        runPromise(() -> producer.start()); 
+        runPromise(() -> consumer.start()); 
 
-        UUID jobId = UUID.randomUUID(); // GH-90000
+        UUID jobId = UUID.randomUUID(); 
         TranscriptionJobProducer.TranscriptionJobMessage job =
-                new TranscriptionJobProducer.TranscriptionJobMessage( // GH-90000
-                        jobId, "tenant-dedup", UUID.randomUUID(), "en", "m1", Instant.now()); // GH-90000
+                new TranscriptionJobProducer.TranscriptionJobMessage( 
+                        jobId, "tenant-dedup", UUID.randomUUID(), "en", "m1", Instant.now()); 
 
         // Submit same job twice
-        runPromise(() -> producer.submitJob(job)); // GH-90000
-        runPromise(() -> producer.submitJob(job)); // GH-90000
+        runPromise(() -> producer.submitJob(job)); 
+        runPromise(() -> producer.submitJob(job)); 
 
-        boolean delivered = latch.await(10, TimeUnit.SECONDS); // GH-90000
-        assertThat(delivered).isTrue(); // GH-90000
+        boolean delivered = latch.await(10, TimeUnit.SECONDS); 
+        assertThat(delivered).isTrue(); 
 
         // Allow a brief window for potential duplicate delivery
-        Thread.sleep(500); // GH-90000
-        assertThat(processedCount.get()).isEqualTo(1); // GH-90000
+        Thread.sleep(500); 
+        assertThat(processedCount.get()).isEqualTo(1); 
     }
 }
 

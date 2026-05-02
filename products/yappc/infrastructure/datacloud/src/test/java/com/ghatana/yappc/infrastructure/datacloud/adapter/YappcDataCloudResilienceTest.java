@@ -53,197 +53,197 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
     private static final String COLLECTION = "test-collection";
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        TenantContext.setCurrentTenantId(TENANT_ID); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        TenantContext.setCurrentTenantId(TENANT_ID); 
         
-        testEntity = new TestEntity(UUID.randomUUID(), "test-name"); // GH-90000
+        testEntity = new TestEntity(UUID.randomUUID(), "test-name"); 
     }
 
     @Test
     @DisplayName("Retry policy retries on failure and succeeds on third attempt")
-    void retryPolicy_retriesOnFailure_succeedsOnThirdAttempt() { // GH-90000
-        AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
+    void retryPolicy_retriesOnFailure_succeedsOnThirdAttempt() { 
+        AtomicInteger attemptCount = new AtomicInteger(0); 
         
-        when(mockClient.save(anyString(), anyString(), any())) // GH-90000
-                .thenAnswer(invocation -> { // GH-90000
-                    int attempt = attemptCount.incrementAndGet(); // GH-90000
-                    if (attempt < 3) { // GH-90000
+        when(mockClient.save(anyString(), anyString(), any())) 
+                .thenAnswer(invocation -> { 
+                    int attempt = attemptCount.incrementAndGet(); 
+                    if (attempt < 3) { 
                         return Promise.ofException(new RuntimeException("Simulated failure"));
                     }
-                    return Promise.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123"))); // GH-90000
+                    return Promise.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123"))); 
                 });
-        when(mockMapper.toEntityData(any())).thenReturn(Map.of("id", "id-123")); // GH-90000
-        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); // GH-90000
+        when(mockMapper.toEntityData(any())).thenReturn(Map.of("id", "id-123")); 
+        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); 
 
-        RetryPolicy retryPolicy = RetryPolicy.builder() // GH-90000
-                .maxRetries(3) // GH-90000
-                .initialDelay(Duration.ofMillis(10)) // GH-90000
-                .maxDelay(Duration.ofMillis(100)) // GH-90000
-                .build(); // GH-90000
+        RetryPolicy retryPolicy = RetryPolicy.builder() 
+                .maxRetries(3) 
+                .initialDelay(Duration.ofMillis(10)) 
+                .maxDelay(Duration.ofMillis(100)) 
+                .build(); 
 
-        Eventloop eventloop = eventloop(); // GH-90000
-        TestEntity result = runPromise(() ->  // GH-90000
-            retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of())) // GH-90000
-                .then(entity -> Promise.of(mockMapper.fromEntity(entity, TestEntity.class))) // GH-90000
+        Eventloop eventloop = eventloop(); 
+        TestEntity result = runPromise(() ->  
+            retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of())) 
+                .then(entity -> Promise.of(mockMapper.fromEntity(entity, TestEntity.class))) 
         );
 
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(attemptCount.get()).isEqualTo(3); // GH-90000
-        verify(mockClient, times(3)).save(anyString(), anyString(), any()); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(attemptCount.get()).isEqualTo(3); 
+        verify(mockClient, times(3)).save(anyString(), anyString(), any()); 
     }
 
     @Test
     @DisplayName("Retry policy fails after max retries exhausted")
-    void retryPolicy_failsAfterMaxRetries() { // GH-90000
-        AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
+    void retryPolicy_failsAfterMaxRetries() { 
+        AtomicInteger attemptCount = new AtomicInteger(0); 
         
-        when(mockClient.save(anyString(), anyString(), any())) // GH-90000
-                .thenAnswer(invocation -> { // GH-90000
-                    attemptCount.incrementAndGet(); // GH-90000
+        when(mockClient.save(anyString(), anyString(), any())) 
+                .thenAnswer(invocation -> { 
+                    attemptCount.incrementAndGet(); 
                     return Promise.ofException(new RuntimeException("Simulated failure"));
                 });
 
-        RetryPolicy retryPolicy = RetryPolicy.builder() // GH-90000
-                .maxRetries(2) // GH-90000
-                .initialDelay(Duration.ofMillis(10)) // GH-90000
-                .maxDelay(Duration.ofMillis(50)) // GH-90000
-                .build(); // GH-90000
+        RetryPolicy retryPolicy = RetryPolicy.builder() 
+                .maxRetries(2) 
+                .initialDelay(Duration.ofMillis(10)) 
+                .maxDelay(Duration.ofMillis(50)) 
+                .build(); 
 
-        Eventloop eventloop = eventloop(); // GH-90000
+        Eventloop eventloop = eventloop(); 
         
-        assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-            retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of())) // GH-90000
+        assertThatThrownBy(() -> runPromise(() ->  
+            retryPolicy.execute(eventloop, () -> mockClient.save(TENANT_ID, COLLECTION, Map.of())) 
         ))
-                .isInstanceOf(RuntimeException.class) // GH-90000
+                .isInstanceOf(RuntimeException.class) 
                 .hasMessageContaining("Simulated failure");
 
-        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries // GH-90000
+        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries 
     }
 
     @Test
     @DisplayName("Circuit breaker opens after failure threshold")
-    void circuitBreaker_opensAfterFailureThreshold() { // GH-90000
-        when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
+    void circuitBreaker_opensAfterFailureThreshold() { 
+        when(mockClient.findById(anyString(), anyString(), anyString())) 
                 .thenReturn(Promise.ofException(new RuntimeException("Simulated failure")));
 
         CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
-                .failureThreshold(3) // GH-90000
-                .successThreshold(2) // GH-90000
-                .resetTimeout(Duration.ofSeconds(1)) // GH-90000
-                .build(); // GH-90000
+                .failureThreshold(3) 
+                .successThreshold(2) 
+                .resetTimeout(Duration.ofSeconds(1)) 
+                .build(); 
 
-        Eventloop eventloop = eventloop(); // GH-90000
+        Eventloop eventloop = eventloop(); 
 
         // Execute failures until circuit opens
-        for (int i = 0; i < 3; i++) { // GH-90000
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                circuitBreaker.execute(eventloop, () -> mockClient.findById(TENANT_ID, COLLECTION, "id-123")) // GH-90000
+        for (int i = 0; i < 3; i++) { 
+            assertThatThrownBy(() -> runPromise(() ->  
+                circuitBreaker.execute(eventloop, () -> mockClient.findById(TENANT_ID, COLLECTION, "id-123")) 
             ))
-                    .isInstanceOf(RuntimeException.class); // GH-90000
+                    .isInstanceOf(RuntimeException.class); 
         }
 
         // Circuit should now be OPEN
-        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
+        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN); 
 
         // Next call should be rejected immediately
-        assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-            circuitBreaker.execute(eventloop, () -> mockClient.findById(TENANT_ID, COLLECTION, "id-123")) // GH-90000
+        assertThatThrownBy(() -> runPromise(() ->  
+            circuitBreaker.execute(eventloop, () -> mockClient.findById(TENANT_ID, COLLECTION, "id-123")) 
         ))
-                .isInstanceOf(CircuitBreaker.CircuitBreakerOpenException.class); // GH-90000
+                .isInstanceOf(CircuitBreaker.CircuitBreakerOpenException.class); 
     }
 
     @Test
     @DisplayName("Circuit breaker transitions to CLOSED after successful probes")
-    void circuitBreaker_transitionsToClosedAfterSuccessfulProbes() { // GH-90000
-        AtomicInteger callCount = new AtomicInteger(0); // GH-90000
+    void circuitBreaker_transitionsToClosedAfterSuccessfulProbes() { 
+        AtomicInteger callCount = new AtomicInteger(0); 
         
-        when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
-                .thenAnswer(invocation -> { // GH-90000
-                    int call = callCount.incrementAndGet(); // GH-90000
-                    if (call <= 3) { // GH-90000
+        when(mockClient.findById(anyString(), anyString(), anyString())) 
+                .thenAnswer(invocation -> { 
+                    int call = callCount.incrementAndGet(); 
+                    if (call <= 3) { 
                         return Promise.ofException(new RuntimeException("Simulated failure"));
                     }
-                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of()))); // GH-90000
+                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of()))); 
                 });
 
         CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
-                .failureThreshold(3) // GH-90000
-                .successThreshold(2) // GH-90000
-                .resetTimeout(Duration.ofMillis(100)) // GH-90000
-                .build(); // GH-90000
+                .failureThreshold(3) 
+                .successThreshold(2) 
+                .resetTimeout(Duration.ofMillis(100)) 
+                .build(); 
 
-        Eventloop eventloop = eventloop(); // GH-90000
+        Eventloop eventloop = eventloop(); 
 
         // Execute failures to open circuit
-        for (int i = 0; i < 3; i++) { // GH-90000
+        for (int i = 0; i < 3; i++) { 
             try {
-                runPromise(() -> circuitBreaker.execute(eventloop, () ->  // GH-90000
-                    mockClient.findById(TENANT_ID, COLLECTION, "id-123") // GH-90000
+                runPromise(() -> circuitBreaker.execute(eventloop, () ->  
+                    mockClient.findById(TENANT_ID, COLLECTION, "id-123") 
                 ));
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 // Expected failures
             }
         }
 
-        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN); // GH-90000
+        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN); 
 
         // Wait for reset timeout
         try {
-            Thread.sleep(150); // GH-90000
-        } catch (InterruptedException e) { // GH-90000
-            Thread.currentThread().interrupt(); // GH-90000
+            Thread.sleep(150); 
+        } catch (InterruptedException e) { 
+            Thread.currentThread().interrupt(); 
         }
 
         // Successful probes should close circuit
-        for (int i = 0; i < 2; i++) { // GH-90000
-            runPromise(() -> circuitBreaker.execute(eventloop, () ->  // GH-90000
-                mockClient.findById(TENANT_ID, COLLECTION, "id-123") // GH-90000
+        for (int i = 0; i < 2; i++) { 
+            runPromise(() -> circuitBreaker.execute(eventloop, () ->  
+                mockClient.findById(TENANT_ID, COLLECTION, "id-123") 
             ));
         }
 
-        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED); // GH-90000
+        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED); 
     }
 
     @Test
     @DisplayName("Repository uses retry policy and circuit breaker together")
-    void repository_usesRetryAndCircuitBreaker() { // GH-90000
-        AtomicInteger attemptCount = new AtomicInteger(0); // GH-90000
+    void repository_usesRetryAndCircuitBreaker() { 
+        AtomicInteger attemptCount = new AtomicInteger(0); 
         
-        when(mockClient.findById(anyString(), anyString(), anyString())) // GH-90000
-                .thenAnswer(invocation -> { // GH-90000
-                    int attempt = attemptCount.incrementAndGet(); // GH-90000
-                    if (attempt == 1) { // GH-90000
+        when(mockClient.findById(anyString(), anyString(), anyString())) 
+                .thenAnswer(invocation -> { 
+                    int attempt = attemptCount.incrementAndGet(); 
+                    if (attempt == 1) { 
                         return Promise.ofException(new RuntimeException("First failure"));
                     }
-                    if (attempt == 2) { // GH-90000
+                    if (attempt == 2) { 
                         return Promise.ofException(new RuntimeException("Second failure"));
                     }
-                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123")))); // GH-90000
+                    return Promise.of(Optional.of(DataCloudClient.Entity.of("id-123", COLLECTION, Map.of("id", "id-123")))); 
                 });
-        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); // GH-90000
+        when(mockMapper.fromEntity(any(), any())).thenReturn(testEntity); 
 
         CircuitBreaker circuitBreaker = CircuitBreaker.builder("test-circuit")
-                .failureThreshold(5) // GH-90000
-                .successThreshold(2) // GH-90000
-                .resetTimeout(Duration.ofSeconds(30)) // GH-90000
-                .build(); // GH-90000
+                .failureThreshold(5) 
+                .successThreshold(2) 
+                .resetTimeout(Duration.ofSeconds(30)) 
+                .build(); 
 
-        RetryPolicy retryPolicy = RetryPolicy.builder() // GH-90000
-                .maxRetries(2) // GH-90000
-                .initialDelay(Duration.ofMillis(10)) // GH-90000
-                .maxDelay(Duration.ofMillis(50)) // GH-90000
-                .build(); // GH-90000
+        RetryPolicy retryPolicy = RetryPolicy.builder() 
+                .maxRetries(2) 
+                .initialDelay(Duration.ofMillis(10)) 
+                .maxDelay(Duration.ofMillis(50)) 
+                .build(); 
 
-        YappcDataCloudRepository<TestEntity> repository = new YappcDataCloudRepository<>( // GH-90000
+        YappcDataCloudRepository<TestEntity> repository = new YappcDataCloudRepository<>( 
             mockClient, mockMapper, COLLECTION, TestEntity.class, null, null, retryPolicy, circuitBreaker);
 
-        Eventloop eventloop = eventloop(); // GH-90000
-        Optional<TestEntity> result = runPromise(() -> repository.findById(testEntity.getId())); // GH-90000
+        Eventloop eventloop = eventloop(); 
+        Optional<TestEntity> result = runPromise(() -> repository.findById(testEntity.getId())); 
 
-        assertThat(result).isPresent(); // GH-90000
-        assertThat(result.get().getId()).isEqualTo(testEntity.getId()); // GH-90000
-        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries // GH-90000
+        assertThat(result).isPresent(); 
+        assertThat(result.get().getId()).isEqualTo(testEntity.getId()); 
+        assertThat(attemptCount.get()).isEqualTo(3); // initial + 2 retries 
     }
 
     // Test entity implementation
@@ -251,17 +251,17 @@ class YappcDataCloudResilienceTest extends EventloopTestBase {
         private final UUID id;
         private final String name;
 
-        TestEntity(UUID id, String name) { // GH-90000
+        TestEntity(UUID id, String name) { 
             this.id = id;
             this.name = name;
         }
 
         @Override
-        public UUID getId() { // GH-90000
+        public UUID getId() { 
             return id;
         }
 
-        public String getName() { // GH-90000
+        public String getName() { 
             return name;
         }
     }

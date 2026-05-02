@@ -17,180 +17,180 @@ import java.util.UUID;
 */
 public class TestDataFixtures {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
+    private static final ObjectMapper objectMapper = new ObjectMapper(); 
 
     // User fixtures
-    public static ObjectNode createTestUser() { // GH-90000
-        ObjectNode user = objectMapper.createObjectNode(); // GH-90000
-        user.put("id", UUID.randomUUID().toString()); // GH-90000
-        user.put("email", "test-" + System.currentTimeMillis() + "@example.com"); // GH-90000
-        user.put("name", "Test User"); // GH-90000
-        user.put("role", "ADMIN"); // GH-90000
+    public static ObjectNode createTestUser() { 
+        ObjectNode user = objectMapper.createObjectNode(); 
+        user.put("id", UUID.randomUUID().toString()); 
+        user.put("email", "test-" + System.currentTimeMillis() + "@example.com"); 
+        user.put("name", "Test User"); 
+        user.put("role", "ADMIN"); 
         return user;
     }
 
-    public static ObjectNode createTestUser(String email, String name) { // GH-90000
-        ObjectNode user = objectMapper.createObjectNode(); // GH-90000
-        user.put("id", UUID.randomUUID().toString()); // GH-90000
-        user.put("email", email); // GH-90000
-        user.put("name", name); // GH-90000
-        user.put("role", "USER"); // GH-90000
+    public static ObjectNode createTestUser(String email, String name) { 
+        ObjectNode user = objectMapper.createObjectNode(); 
+        user.put("id", UUID.randomUUID().toString()); 
+        user.put("email", email); 
+        user.put("name", name); 
+        user.put("role", "USER"); 
         return user;
     }
 
     // Workspace fixtures
-    public static ObjectNode createTestWorkspace() { // GH-90000
-        ObjectNode workspace = objectMapper.createObjectNode(); // GH-90000
-        workspace.put("id", UUID.randomUUID().toString()); // GH-90000
-        workspace.put("name", "Test Workspace"); // GH-90000
-        workspace.put("description", "A test workspace"); // GH-90000
-        workspace.put("createdBy", UUID.randomUUID().toString()); // GH-90000
+    public static ObjectNode createTestWorkspace() { 
+        ObjectNode workspace = objectMapper.createObjectNode(); 
+        workspace.put("id", UUID.randomUUID().toString()); 
+        workspace.put("name", "Test Workspace"); 
+        workspace.put("description", "A test workspace"); 
+        workspace.put("createdBy", UUID.randomUUID().toString()); 
         return workspace;
     }
 
-    public static ObjectNode createTestWorkspace(String name) { // GH-90000
-        ObjectNode workspace = objectMapper.createObjectNode(); // GH-90000
-        workspace.put("id", UUID.randomUUID().toString()); // GH-90000
-        workspace.put("name", name); // GH-90000
-        workspace.put("description", "Workspace: " + name); // GH-90000
-        workspace.put("createdBy", UUID.randomUUID().toString()); // GH-90000
+    public static ObjectNode createTestWorkspace(String name) { 
+        ObjectNode workspace = objectMapper.createObjectNode(); 
+        workspace.put("id", UUID.randomUUID().toString()); 
+        workspace.put("name", name); 
+        workspace.put("description", "Workspace: " + name); 
+        workspace.put("createdBy", UUID.randomUUID().toString()); 
         return workspace;
     }
 
-    public static ObjectNode createCreateWorkspaceRequest(String name) { // GH-90000
-        ObjectNode request = objectMapper.createObjectNode(); // GH-90000
-        request.put("name", name); // GH-90000
-        request.put("description", "Workspace: " + name); // GH-90000
+    public static ObjectNode createCreateWorkspaceRequest(String name) { 
+        ObjectNode request = objectMapper.createObjectNode(); 
+        request.put("name", name); 
+        request.put("description", "Workspace: " + name); 
         return request;
     }
 
     // Project fixtures
-    public static ObjectNode createTestProject(String workspaceId) { // GH-90000
-        ObjectNode project = objectMapper.createObjectNode(); // GH-90000
-        project.put("id", UUID.randomUUID().toString()); // GH-90000
-        project.put("workspaceId", workspaceId); // GH-90000
-        project.put("name", "Test Project"); // GH-90000
-        project.put("description", "A test project"); // GH-90000
-        project.put("status", "ACTIVE"); // GH-90000
+    public static ObjectNode createTestProject(String workspaceId) { 
+        ObjectNode project = objectMapper.createObjectNode(); 
+        project.put("id", UUID.randomUUID().toString()); 
+        project.put("workspaceId", workspaceId); 
+        project.put("name", "Test Project"); 
+        project.put("description", "A test project"); 
+        project.put("status", "ACTIVE"); 
         return project;
     }
 
-    public static ObjectNode createTestProject(String workspaceId, String name) { // GH-90000
-        ObjectNode project = objectMapper.createObjectNode(); // GH-90000
-        project.put("id", UUID.randomUUID().toString()); // GH-90000
-        project.put("workspaceId", workspaceId); // GH-90000
-        project.put("name", name); // GH-90000
-        project.put("description", "Project: " + name); // GH-90000
-        project.put("status", "ACTIVE"); // GH-90000
+    public static ObjectNode createTestProject(String workspaceId, String name) { 
+        ObjectNode project = objectMapper.createObjectNode(); 
+        project.put("id", UUID.randomUUID().toString()); 
+        project.put("workspaceId", workspaceId); 
+        project.put("name", name); 
+        project.put("description", "Project: " + name); 
+        project.put("status", "ACTIVE"); 
         return project;
     }
 
-    public static ObjectNode createCreateProjectRequest(String name) { // GH-90000
-        ObjectNode request = objectMapper.createObjectNode(); // GH-90000
-        request.put("name", name); // GH-90000
-        request.put("description", "Project: " + name); // GH-90000
+    public static ObjectNode createCreateProjectRequest(String name) { 
+        ObjectNode request = objectMapper.createObjectNode(); 
+        request.put("name", name); 
+        request.put("description", "Project: " + name); 
         return request;
     }
 
     // Requirement fixtures
-    public static ObjectNode createTestRequirement(String projectId) { // GH-90000
-        ObjectNode requirement = objectMapper.createObjectNode(); // GH-90000
-        requirement.put("id", UUID.randomUUID().toString()); // GH-90000
-        requirement.put("projectId", projectId); // GH-90000
-        requirement.put("title", "Test Requirement"); // GH-90000
-        requirement.put("description", "A test requirement"); // GH-90000
-        requirement.put("type", "FUNCTIONAL"); // GH-90000
-        requirement.put("priority", "MUST_HAVE"); // GH-90000
-        requirement.put("status", "DRAFT"); // GH-90000
+    public static ObjectNode createTestRequirement(String projectId) { 
+        ObjectNode requirement = objectMapper.createObjectNode(); 
+        requirement.put("id", UUID.randomUUID().toString()); 
+        requirement.put("projectId", projectId); 
+        requirement.put("title", "Test Requirement"); 
+        requirement.put("description", "A test requirement"); 
+        requirement.put("type", "FUNCTIONAL"); 
+        requirement.put("priority", "MUST_HAVE"); 
+        requirement.put("status", "DRAFT"); 
         return requirement;
     }
 
-    public static ObjectNode createTestRequirement(String projectId, String title) { // GH-90000
-        ObjectNode requirement = objectMapper.createObjectNode(); // GH-90000
-        requirement.put("id", UUID.randomUUID().toString()); // GH-90000
-        requirement.put("projectId", projectId); // GH-90000
-        requirement.put("title", title); // GH-90000
-        requirement.put("description", "Requirement: " + title); // GH-90000
-        requirement.put("type", "FUNCTIONAL"); // GH-90000
-        requirement.put("priority", "SHOULD_HAVE"); // GH-90000
-        requirement.put("status", "DRAFT"); // GH-90000
+    public static ObjectNode createTestRequirement(String projectId, String title) { 
+        ObjectNode requirement = objectMapper.createObjectNode(); 
+        requirement.put("id", UUID.randomUUID().toString()); 
+        requirement.put("projectId", projectId); 
+        requirement.put("title", title); 
+        requirement.put("description", "Requirement: " + title); 
+        requirement.put("type", "FUNCTIONAL"); 
+        requirement.put("priority", "SHOULD_HAVE"); 
+        requirement.put("status", "DRAFT"); 
         return requirement;
     }
 
-    public static ObjectNode createCreateRequirementRequest(String title) { // GH-90000
-        ObjectNode request = objectMapper.createObjectNode(); // GH-90000
-        request.put("title", title); // GH-90000
-        request.put("description", "Requirement: " + title); // GH-90000
-        request.put("type", "FUNCTIONAL"); // GH-90000
-        request.put("priority", "SHOULD_HAVE"); // GH-90000
+    public static ObjectNode createCreateRequirementRequest(String title) { 
+        ObjectNode request = objectMapper.createObjectNode(); 
+        request.put("title", title); 
+        request.put("description", "Requirement: " + title); 
+        request.put("type", "FUNCTIONAL"); 
+        request.put("priority", "SHOULD_HAVE"); 
         return request;
     }
 
     // AI Suggestion fixtures
-    public static ObjectNode createTestAISuggestion(String requirementId) { // GH-90000
-        ObjectNode suggestion = objectMapper.createObjectNode(); // GH-90000
-        suggestion.put("id", UUID.randomUUID().toString()); // GH-90000
-        suggestion.put("requirementId", requirementId); // GH-90000
-        suggestion.put("content", "This is a test AI suggestion"); // GH-90000
-        suggestion.put("confidence", 0.85); // GH-90000
-        suggestion.put("source", "GPT-4"); // GH-90000
-        suggestion.put("type", "ENHANCEMENT"); // GH-90000
+    public static ObjectNode createTestAISuggestion(String requirementId) { 
+        ObjectNode suggestion = objectMapper.createObjectNode(); 
+        suggestion.put("id", UUID.randomUUID().toString()); 
+        suggestion.put("requirementId", requirementId); 
+        suggestion.put("content", "This is a test AI suggestion"); 
+        suggestion.put("confidence", 0.85); 
+        suggestion.put("source", "GPT-4"); 
+        suggestion.put("type", "ENHANCEMENT"); 
         return suggestion;
     }
 
     // Export fixtures
-    public static ObjectNode createExportRequest(String format, String... requirementIds) { // GH-90000
-        ObjectNode request = objectMapper.createObjectNode(); // GH-90000
-        request.put("format", format); // GH-90000
+    public static ObjectNode createExportRequest(String format, String... requirementIds) { 
+        ObjectNode request = objectMapper.createObjectNode(); 
+        request.put("format", format); 
         com.fasterxml.jackson.databind.node.ArrayNode idsArray = request.putArray("requirementIds");
-        for (String id : requirementIds) { // GH-90000
-            idsArray.add(id); // GH-90000
+        for (String id : requirementIds) { 
+            idsArray.add(id); 
         }
         return request;
     }
 
     // Authentication fixtures
-    public static ObjectNode createLoginRequest(String email, String password) { // GH-90000
-        ObjectNode request = objectMapper.createObjectNode(); // GH-90000
-        request.put("email", email); // GH-90000
-        request.put("password", password); // GH-90000
+    public static ObjectNode createLoginRequest(String email, String password) { 
+        ObjectNode request = objectMapper.createObjectNode(); 
+        request.put("email", email); 
+        request.put("password", password); 
         return request;
     }
 
-    public static ObjectNode createTestAuthToken() { // GH-90000
-        ObjectNode token = objectMapper.createObjectNode(); // GH-90000
-        token.put("accessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"); // GH-90000
-        token.put("refreshToken", "refresh-token"); // GH-90000
-        token.put("expiresIn", 3600); // GH-90000
+    public static ObjectNode createTestAuthToken() { 
+        ObjectNode token = objectMapper.createObjectNode(); 
+        token.put("accessToken", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"); 
+        token.put("refreshToken", "refresh-token"); 
+        token.put("expiresIn", 3600); 
         return token;
     }
 
     /**
      * Convert object to JSON string
      */
-    public static String toJson(Object obj) { // GH-90000
+    public static String toJson(Object obj) { 
         try {
-            return objectMapper.writeValueAsString(obj); // GH-90000
-        } catch (Exception e) { // GH-90000
-            throw new RuntimeException("Failed to serialize to JSON", e); // GH-90000
+            return objectMapper.writeValueAsString(obj); 
+        } catch (Exception e) { 
+            throw new RuntimeException("Failed to serialize to JSON", e); 
         }
     }
 
     /**
      * Parse JSON string to ObjectNode
      */
-    public static ObjectNode parseJson(String json) { // GH-90000
+    public static ObjectNode parseJson(String json) { 
         try {
-            return (ObjectNode) objectMapper.readTree(json); // GH-90000
-        } catch (Exception e) { // GH-90000
-            throw new RuntimeException("Failed to parse JSON", e); // GH-90000
+            return (ObjectNode) objectMapper.readTree(json); 
+        } catch (Exception e) { 
+            throw new RuntimeException("Failed to parse JSON", e); 
         }
     }
 
     /**
      * Create a new ObjectNode for building JSON objects
      */
-    public static ObjectNode createObjectNode() { // GH-90000
-        return objectMapper.createObjectNode(); // GH-90000
+    public static ObjectNode createObjectNode() { 
+        return objectMapper.createObjectNode(); 
     }
 }

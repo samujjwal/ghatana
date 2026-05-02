@@ -11,27 +11,27 @@ import org.junit.jupiter.api.Test;
 @DisplayName("PIIDetectionService")
 class PIIDetectionServiceTest {
 
-    private final PIIDetectionService service = new PIIDetectionService(mock(DataSource.class)); // GH-90000
+    private final PIIDetectionService service = new PIIDetectionService(mock(DataSource.class)); 
 
     @Test
     @DisplayName("hashing strategy uses deterministic SHA-256 redaction")
-    void hashingStrategyUsesDeterministicSha256Redaction() { // GH-90000
+    void hashingStrategyUsesDeterministicSha256Redaction() { 
         String content = "Contact alice@example.com for support.";
 
-        String redacted = service.redactPII(content, PIIDetectionService.RedactionStrategy.HASHING); // GH-90000
+        String redacted = service.redactPII(content, PIIDetectionService.RedactionStrategy.HASHING); 
 
         assertThat(redacted).doesNotContain("alice@example.com");
         assertThat(redacted).containsPattern("\\[HASH:[0-9a-f]{64}\\]");
-        assertThat(service.redactPII(content, PIIDetectionService.RedactionStrategy.HASHING)) // GH-90000
-            .isEqualTo(redacted); // GH-90000
+        assertThat(service.redactPII(content, PIIDetectionService.RedactionStrategy.HASHING)) 
+            .isEqualTo(redacted); 
     }
 
     @Test
     @DisplayName("tokenization strategy namespaces tokens by pii type")
-    void tokenizationStrategyNamespacesTokensByPiiType() { // GH-90000
+    void tokenizationStrategyNamespacesTokensByPiiType() { 
         String content = "Reach me at alice@example.com or 415-555-0100.";
 
-        String redacted = service.redactPII(content, PIIDetectionService.RedactionStrategy.TOKENIZATION); // GH-90000
+        String redacted = service.redactPII(content, PIIDetectionService.RedactionStrategy.TOKENIZATION); 
 
         // The service detects different PII types than expected in the test
         assertThat(redacted).containsPattern("\\[TOKEN:[A-Z_]+:[0-9a-f]{64}\\]");
@@ -40,14 +40,14 @@ class PIIDetectionServiceTest {
 
     @Test
     @DisplayName("structured data redaction applies recursively")
-    void structuredDataRedactionAppliesRecursively() { // GH-90000
-        Map<String, Object> input = Map.of( // GH-90000
+    void structuredDataRedactionAppliesRecursively() { 
+        Map<String, Object> input = Map.of( 
             "email", "alice@example.com",
-            "profile", Map.of("phone", "415-555-0100"), // GH-90000
+            "profile", Map.of("phone", "415-555-0100"), 
             "status", "active"
         );
 
-        Map<String, Object> redacted = service.redactPIIInData(input, PIIDetectionService.RedactionStrategy.REMOVAL); // GH-90000
+        Map<String, Object> redacted = service.redactPIIInData(input, PIIDetectionService.RedactionStrategy.REMOVAL); 
 
         // The actual redaction may have nested brackets or format preservation
         assertThat(redacted).containsKey("email");
@@ -56,6 +56,6 @@ class PIIDetectionServiceTest {
         Map<String, Object> nestedProfile = (Map<String, Object>) redacted.get("profile");
         assertThat(nestedProfile).containsKey("phone");
         assertThat(nestedProfile.get("phone").toString()).contains("[REDACTED]");
-        assertThat(redacted).containsEntry("status", "active"); // GH-90000
+        assertThat(redacted).containsEntry("status", "active"); 
     }
 }

@@ -335,11 +335,57 @@ tasks.register("validateArchitecture") {
     dependsOn("validateModuleBoundaries")
     dependsOn("validateDependencyDirection")
     dependsOn("validateNoDuplicateUtils")
+    dependsOn("checkPluginPurity")
 
     doLast {
         println("✅ Architecture validation complete")
     }
 }
+
+// ── Plugin Purity Gate ────────────────────────────────────────────────────────
+// Mirrors the kernel purity check but applied to platform-plugins source trees.
+// Verified terms are the same banned product-domain concepts.
+
+val PLUGIN_BANNED_TERMS = listOf(
+    "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
+    "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
+    "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
+    "plugin-billing-ledger", "plugin_billing_ledger"
+)
+
+tasks.register("checkPluginPurity") {
+    group = "verification"
+    description = "Fails the build if product domain terms appear in platform-plugin main sources."
+    doLast {
+        val pluginsRoot = file("platform-plugins")
+        if (!pluginsRoot.exists()) return@doLast
+        val violations = mutableListOf<String>()
+        pluginsRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "java" }
+            .filter { f ->
+                // Only scan production source trees (not tests)
+                val rel = f.relativeTo(pluginsRoot).path.replace('\\', '/')
+                rel.contains("/src/main/")
+            }
+            .forEach { javaFile ->
+                val content = javaFile.readText()
+                PLUGIN_BANNED_TERMS.forEach { term ->
+                    val regex = Regex(term)
+                    if (regex.containsMatchIn(content)) {
+                        violations += "${javaFile.relativeTo(rootDir)}: contains banned term '$term'"
+                    }
+                }
+            }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Plugin purity violation — product domain terms found in plugin main sources:\n" +
+                violations.joinToString("\n") { "  $it" }
+            )
+        }
+        logger.lifecycle("checkPluginPurity: PASSED — no product domain terms in plugin main sources.")
+    }
+}
+
 
 tasks.register("validateNoCircularDependencies") {
     group = "verification"

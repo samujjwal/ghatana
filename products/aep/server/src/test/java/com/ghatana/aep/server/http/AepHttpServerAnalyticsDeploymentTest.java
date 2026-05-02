@@ -39,19 +39,19 @@ class AepHttpServerAnalyticsDeploymentTest {
     private AepHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
-        port = findFreePort(); // GH-90000
-        httpClient = HttpClient.newBuilder().build(); // GH-90000
+    void setUp() throws Exception { 
+        engine = Aep.forTesting(); 
+        port = findFreePort(); 
+        httpClient = HttpClient.newBuilder().build(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
-        if (engine != null) engine.close(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
+        if (engine != null) engine.close(); 
     }
 
     // ==================== POST /api/v1/analytics/anomalies ====================
@@ -62,39 +62,39 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 200 with empty anomalies for empty input")
-        void detectAnomalies_emptyEvents_returns200() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void detectAnomalies_emptyEvents_returns200() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            String body = mapper.writeValueAsString(Map.of( // GH-90000
+            String body = mapper.writeValueAsString(Map.of( 
                 "tenantId", "tenant-1",
-                "events", List.of() // GH-90000
+                "events", List.of() 
             ));
-            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("anomalies");
         }
 
         @Test
         @DisplayName("returns 200 with anomaly results for valid events")
-        void detectAnomalies_withEvents_returns200() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void detectAnomalies_withEvents_returns200() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            String body = mapper.writeValueAsString(Map.of( // GH-90000
+            String body = mapper.writeValueAsString(Map.of( 
                 "tenantId", "tenant-1",
-                "events", List.of( // GH-90000
-                    Map.of("type", "cpu_spike", "payload", Map.of("value", 99.5)), // GH-90000
-                    Map.of("type", "memory_leak", "payload", Map.of("value", 85.0)) // GH-90000
+                "events", List.of( 
+                    Map.of("type", "cpu_spike", "payload", Map.of("value", 99.5)), 
+                    Map.of("type", "memory_leak", "payload", Map.of("value", 85.0)) 
                 )
             ));
-            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", body); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("anomalies");
             assertThat(respBody).containsKey("count");
@@ -102,14 +102,14 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 400 on malformed JSON body")
-        void detectAnomalies_malformedJson_returns400() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void detectAnomalies_malformedJson_returns400() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", "{bad json"); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/anomalies", "{bad json"); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
         }
     }
 
@@ -119,18 +119,18 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 503 when analytics store is not configured")
-        void markFalsePositive_withoutAnalyticsStore_returns503() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void markFalsePositive_withoutAnalyticsStore_returns503() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            String body = mapper.writeValueAsString(Map.of( // GH-90000
+            String body = mapper.writeValueAsString(Map.of( 
                 "reviewer", "ops-team",
                 "rationale", "Known deploy spike"
             ));
-            HttpResponse<String> resp = post("/api/v1/analytics/anomalies/anomaly-1/false-positive", body); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/anomalies/anomaly-1/false-positive", body); 
 
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(503); 
             @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody.get("message").toString()).contains("Analytics store not configured");
         }
@@ -144,26 +144,26 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 200 with forecast for valid time-series data")
-        void forecast_validData_returns200() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void forecast_validData_returns200() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            Instant now = Instant.now(); // GH-90000
-            String body = mapper.writeValueAsString(Map.of( // GH-90000
+            Instant now = Instant.now(); 
+            String body = mapper.writeValueAsString(Map.of( 
                 "tenantId", "tenant-1",
                 "metric", "cpu_usage",
-                "points", List.of( // GH-90000
-                    Map.of("timestamp", now.minusSeconds(300).toString(), "value", 45.0), // GH-90000
-                    Map.of("timestamp", now.minusSeconds(240).toString(), "value", 48.2), // GH-90000
-                    Map.of("timestamp", now.minusSeconds(180).toString(), "value", 52.1), // GH-90000
-                    Map.of("timestamp", now.minusSeconds(120).toString(), "value", 55.8), // GH-90000
-                    Map.of("timestamp", now.minusSeconds(60).toString(), "value", 60.0) // GH-90000
+                "points", List.of( 
+                    Map.of("timestamp", now.minusSeconds(300).toString(), "value", 45.0), 
+                    Map.of("timestamp", now.minusSeconds(240).toString(), "value", 48.2), 
+                    Map.of("timestamp", now.minusSeconds(180).toString(), "value", 52.1), 
+                    Map.of("timestamp", now.minusSeconds(120).toString(), "value", 55.8), 
+                    Map.of("timestamp", now.minusSeconds(60).toString(), "value", 60.0) 
                 )
             ));
-            HttpResponse<String> resp = post("/api/v1/analytics/forecast", body); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/forecast", body); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             @SuppressWarnings("unchecked") Map<String, Object> respBody = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(respBody).containsKey("metric");
             assertThat(respBody.get("metric")).isEqualTo("cpu_usage");
@@ -171,14 +171,14 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 400 on malformed JSON body")
-        void forecast_malformedJson_returns400() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void forecast_malformedJson_returns400() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post("/api/v1/analytics/forecast", "{bad json"); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/analytics/forecast", "{bad json"); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
         }
     }
 
@@ -190,33 +190,33 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 200 for valid deployment request")
-        void createDeployment_validRequest_returns200() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void createDeployment_validRequest_returns200() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            String body = mapper.writeValueAsString(Map.of( // GH-90000
+            String body = mapper.writeValueAsString(Map.of( 
                 "agentId", "agent-1",
                 "tenantId", "tenant-1",
                 "version", "1.0.0",
                 "environment", "staging"
             ));
-            HttpResponse<String> resp = post("/api/v1/deployments", body); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/deployments", body); 
 
             // Deployment adapter processes the request; we just verify it's accepted
-            assertThat(resp.statusCode()).isIn(200, 201, 400); // GH-90000
+            assertThat(resp.statusCode()).isIn(200, 201, 400); 
         }
 
         @Test
         @DisplayName("returns 400 on malformed JSON body")
-        void createDeployment_malformedJson_returns400() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void createDeployment_malformedJson_returns400() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post("/api/v1/deployments", "{bad json"); // GH-90000
+            HttpResponse<String> resp = post("/api/v1/deployments", "{bad json"); 
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
         }
     }
 
@@ -228,14 +228,14 @@ class AepHttpServerAnalyticsDeploymentTest {
 
         @Test
         @DisplayName("returns 400 when tenantId query parameter is missing")
-        void deleteDeployment_missingTenantId_returns400() throws Exception { // GH-90000
-            server = new AepHttpServer(engine, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void deleteDeployment_missingTenantId_returns400() throws Exception { 
+            server = new AepHttpServer(engine, port); 
+            server.start(); 
+            waitForServerReady(port); 
 
             HttpResponse<String> resp = delete("/api/v1/deployments/dep-1");
 
-            assertThat(resp.statusCode()).isEqualTo(400); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(400); 
             @SuppressWarnings("unchecked") Map<String, Object> body = (Map<String, Object>) mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("message").toString()).contains("tenantId");
         }
@@ -243,39 +243,39 @@ class AepHttpServerAnalyticsDeploymentTest {
 
     // ==================== Helpers ====================
 
-    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .header("Content-Type", "application/json") // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> post(String path, String body) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .POST(HttpRequest.BodyPublishers.ofString(body)) 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("Content-Type", "application/json") 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> delete(String path) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .DELETE() // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> delete(String path) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .DELETE() 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new AssertionError("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new AssertionError("Server did not start on port " + port + " within 5 s"); 
     }
 }

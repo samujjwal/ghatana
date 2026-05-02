@@ -19,46 +19,46 @@ class EbpfEventloopStallTracerTest {
     private EbpfEventloopStallTracer tracer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new SimpleMeterRegistry(); // GH-90000
-        tracer = new EbpfEventloopStallTracer(registry, Duration.ofMillis(50)); // GH-90000
+    void setUp() { 
+        registry = new SimpleMeterRegistry(); 
+        tracer = new EbpfEventloopStallTracer(registry, Duration.ofMillis(50)); 
     }
 
     @Test
-    void shouldRecordStallWhenThresholdExceeded() throws InterruptedException { // GH-90000
+    void shouldRecordStallWhenThresholdExceeded() throws InterruptedException { 
         // Given
-        Stopwatch sw = mock(Stopwatch.class); // GH-90000
-        when(sw.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS)).thenReturn(100L); // Over 50ms // GH-90000
+        Stopwatch sw = mock(Stopwatch.class); 
+        when(sw.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS)).thenReturn(100L); // Over 50ms 
 
         // When
-        tracer.onUpdateSelectedKeyDuration(sw); // GH-90000
+        tracer.onUpdateSelectedKeyDuration(sw); 
 
         // Then
         assertThat(registry.counter("eventloop.stall.count").count()).isEqualTo(1.0);
     }
 
     @Test
-    void shouldNotRecordStallWhenBelowThreshold() { // GH-90000
+    void shouldNotRecordStallWhenBelowThreshold() { 
         // Given
-        Stopwatch sw = mock(Stopwatch.class); // GH-90000
-        when(sw.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS)).thenReturn(20L); // Under 50ms // GH-90000
+        Stopwatch sw = mock(Stopwatch.class); 
+        when(sw.elapsed(java.util.concurrent.TimeUnit.MILLISECONDS)).thenReturn(20L); // Under 50ms 
 
         // When
-        tracer.onUpdateSelectedKeyDuration(sw); // GH-90000
+        tracer.onUpdateSelectedKeyDuration(sw); 
 
         // Then
         // The counter might not exist yet, or it's 0.
         assertThat(registry.find("eventloop.stall.count").counter())
-                .satisfiesAnyOf( // GH-90000
-                        counter -> assertThat(counter).isNull(), // GH-90000
-                        counter -> assertThat(counter.count()).isEqualTo(0.0) // GH-90000
+                .satisfiesAnyOf( 
+                        counter -> assertThat(counter).isNull(), 
+                        counter -> assertThat(counter.count()).isEqualTo(0.0) 
                 );
     }
 
     @Test
-    void shouldRecordOverdueTasks() { // GH-90000
+    void shouldRecordOverdueTasks() { 
         // When
-        tracer.onScheduledTaskOverdue(150L, false); // GH-90000
+        tracer.onScheduledTaskOverdue(150L, false); 
 
         // Then
         assertThat(registry.counter("eventloop.stall.count").count()).isEqualTo(1.0);

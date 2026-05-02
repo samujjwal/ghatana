@@ -1,0 +1,40 @@
+{
+  "pluginId": "com.ghatana.plugin.ledger",
+  "version": "1.2.0",
+  "description": "Double-entry ledger plugin for cross-scope accounting. Provides idempotent transaction posting, reversal, multi-currency support, and account management. Product-agnostic — no billing or finance semantics built in.",
+  "tier": "T1",
+  "capabilities": [
+    "ledger:post-transaction",
+    "ledger:reverse-transaction",
+    "ledger:get-status",
+    "ledger:create-account",
+    "ledger:get-balance",
+    "ledger:list-transactions"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 256,
+    "maxCpuPercent": 10,
+    "maxThreads": 8
+  },
+  "configSchema": {
+    "defaultCurrency": {
+      "type": "string",
+      "required": false,
+      "description": "Default ISO-4217 currency code used when a transaction does not specify one. Defaults to 'USD'."
+    },
+    "idempotencyWindowHours": {
+      "type": "number",
+      "required": false,
+      "description": "Hours within which duplicate transaction IDs are detected and deduplicated. Defaults to 24."
+    },
+    "enableReversalChain": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether reversal entries are linked to their originating entries for chain traceability. Defaults to true."
+    }
+  }
+}

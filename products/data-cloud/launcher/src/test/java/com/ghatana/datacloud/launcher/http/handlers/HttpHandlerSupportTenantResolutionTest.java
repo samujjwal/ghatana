@@ -24,8 +24,8 @@ class HttpHandlerSupportTenantResolutionTest {
     private static final String BASE_URL = "http://localhost";
     private static final String ORIGIN = "http://localhost:3000";
 
-    private final HttpHandlerSupport support = new HttpHandlerSupport( // GH-90000
-        new ObjectMapper(), // GH-90000
+    private final HttpHandlerSupport support = new HttpHandlerSupport( 
+        new ObjectMapper(), 
         ORIGIN,
         "GET,POST,PUT,DELETE,OPTIONS",
         "Content-Type,X-Tenant-Id",
@@ -34,50 +34,50 @@ class HttpHandlerSupportTenantResolutionTest {
 
     @Test
     @DisplayName("accepts valid tenant header and trims whitespace")
-    void acceptsValidTenantHeader() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") // GH-90000
+    void acceptsValidTenantHeader() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") 
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "  tenant-001  ")
-            .build(); // GH-90000
+            .build(); 
 
         assertThat(support.requireTenantIdOrFail(request)).isEqualTo("tenant-001");
     }
 
     @Test
     @DisplayName("uses tenantId query parameter when header is absent")
-    void usesTenantIdQueryParameter() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders?tenantId=query-tenant-7").build(); // GH-90000
+    void usesTenantIdQueryParameter() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders?tenantId=query-tenant-7").build(); 
 
         assertThat(support.requireTenantIdOrFail(request)).isEqualTo("query-tenant-7");
     }
 
     @Test
     @DisplayName("rejects invalid tenant identifier format from header")
-    void rejectsInvalidHeaderTenant() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") // GH-90000
+    void rejectsInvalidHeaderTenant() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") 
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant bad value")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(support.requireTenantIdOrFail(request)).isNull(); // GH-90000
-        assertThat(support.peekTenantId(request)).isNull(); // GH-90000
+        assertThat(support.requireTenantIdOrFail(request)).isNull(); 
+        assertThat(support.peekTenantId(request)).isNull(); 
     }
 
     @Test
     @DisplayName("rejects invalid tenant identifier format from query parameter")
-    void rejectsInvalidQueryTenant() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders?tenantId=tenant/'oops").build(); // GH-90000
+    void rejectsInvalidQueryTenant() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders?tenantId=tenant/'oops").build(); 
 
-        assertThat(support.requireTenantIdOrFail(request)).isNull(); // GH-90000
+        assertThat(support.requireTenantIdOrFail(request)).isNull(); 
     }
 
     @Test
     @DisplayName("prefers attached metadata tenant when already validated upstream")
-    void prefersAttachedMetadataTenant() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") // GH-90000
+    void prefersAttachedMetadataTenant() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") 
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "ignored-tenant")
-            .build(); // GH-90000
-        request.attach( // GH-90000
+            .build(); 
+        request.attach( 
             RequestMetadataAttachment.class,
-            new RequestMetadataAttachment( // GH-90000
+            new RequestMetadataAttachment( 
                 "req-1",
                 "metadata-tenant-42",
                 "trace-1",
@@ -94,53 +94,53 @@ class HttpHandlerSupportTenantResolutionTest {
 
     @Test
     @DisplayName("returns null when tenant is missing")
-    void returnsNullWhenTenantIsMissing() { // GH-90000
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders").build(); // GH-90000
+    void returnsNullWhenTenantIsMissing() { 
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders").build(); 
 
-        assertThat(support.requireTenantIdOrFail(request)).isNull(); // GH-90000
-        assertThat(support.peekTenantId(request)).isNull(); // GH-90000
+        assertThat(support.requireTenantIdOrFail(request)).isNull(); 
+        assertThat(support.peekTenantId(request)).isNull(); 
     }
 
     @Test
     @DisplayName("exposes strict tenant resolution flag")
-    void exposesStrictTenantResolutionFlag() { // GH-90000
-        assertThat(support.isStrictTenantResolution()).isTrue(); // GH-90000
+    void exposesStrictTenantResolutionFlag() { 
+        assertThat(support.isStrictTenantResolution()).isTrue(); 
     }
 
     @Test
     @DisplayName("maps NOT_FOUND envelope code to HTTP 404")
-    void mapsNotFoundEnvelopeTo404() { // GH-90000
-        ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-1"); // GH-90000
+    void mapsNotFoundEnvelopeTo404() { 
+        ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-1"); 
 
-        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); // GH-90000
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); 
 
-        assertThat(response.getCode()).isEqualTo(404); // GH-90000
+        assertThat(response.getCode()).isEqualTo(404); 
     }
 
     @Test
     @DisplayName("maps timeout envelope code to HTTP 504")
-    void mapsTimeoutEnvelopeTo504() { // GH-90000
-        ApiResponse envelope = ApiResponse.error("QUERY_TIMEOUT", "query timed out", "tenant-a", "req-2"); // GH-90000
+    void mapsTimeoutEnvelopeTo504() { 
+        ApiResponse envelope = ApiResponse.error("QUERY_TIMEOUT", "query timed out", "tenant-a", "req-2"); 
 
-        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); // GH-90000
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); 
 
-        assertThat(response.getCode()).isEqualTo(504); // GH-90000
+        assertThat(response.getCode()).isEqualTo(504); 
     }
 
     @Test
     @DisplayName("maps dependency unavailable envelope code to HTTP 503")
-    void mapsUnavailableEnvelopeTo503() { // GH-90000
-        ApiResponse envelope = ApiResponse.error("DEPENDENCY_UNAVAILABLE", "service unavailable", "tenant-a", "req-3"); // GH-90000
+    void mapsUnavailableEnvelopeTo503() { 
+        ApiResponse envelope = ApiResponse.error("DEPENDENCY_UNAVAILABLE", "service unavailable", "tenant-a", "req-3"); 
 
-        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); // GH-90000
+        HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); 
 
-        assertThat(response.getCode()).isEqualTo(503); // GH-90000
+        assertThat(response.getCode()).isEqualTo(503); 
     }
 
     @Test
     @DisplayName("adds request and trace headers to canonical envelope responses when tracing context is present")
-    void addsTraceHeadersToEnvelopeResponses() { // GH-90000
-        RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders( // GH-90000
+    void addsTraceHeadersToEnvelopeResponses() { 
+        RequestTraceSupport.setCurrent(new RequestTraceSupport.TraceHeaders( 
             "req-trace-1",
             "0123456789abcdef0123456789abcdef",
             "1111222233334444",
@@ -148,18 +148,18 @@ class HttpHandlerSupportTenantResolutionTest {
             true
         ));
         try {
-            ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-trace-1"); // GH-90000
+            ApiResponse envelope = ApiResponse.error("ENTITY_NOT_FOUND", "entity missing", "tenant-a", "req-trace-1"); 
 
-            HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); // GH-90000
+            HttpResponse response = support.envelopeResponse(envelope, new ObjectMapper()); 
 
-            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getCode()).isEqualTo(404); 
             assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isEqualTo("req-trace-1");
             assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("req-trace-1");
             assertThat(response.getHeader(HttpHeaders.of("traceparent")))
                 .isEqualTo("00-0123456789abcdef0123456789abcdef-1111222233334444-01");
             assertThat(response.getHeader(HttpHeaders.of("X-Parent-Span-Id"))).isEqualTo("aaaabbbbccccdddd");
         } finally {
-            RequestTraceSupport.clearCurrent(); // GH-90000
+            RequestTraceSupport.clearCurrent(); 
         }
     }
 }

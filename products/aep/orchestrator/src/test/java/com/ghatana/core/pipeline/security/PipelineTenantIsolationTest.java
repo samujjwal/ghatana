@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  *
  * Task 4.9 — Security Hardening: Tenant isolation verification for AEP pipelines.
  * Ensures pipeline execution, checkpoint storage, and context propagation
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.*;
  * <ul>
  *   <li>Checkpoint store: data never leaks between tenants</li>
  *   <li>Execution context: tenantId is mandatory and properly scoped</li>
- *   <li>TenantContext + Principal: scope() / clear() lifecycle</li> // GH-90000
+ *   <li>TenantContext + Principal: scope() / clear() lifecycle</li> 
  *   <li>Idempotency keys: per-tenant, not global</li>
  *   <li>Concurrent multi-tenant access: no cross-contamination under load</li>
  * </ul>
@@ -45,14 +45,14 @@ class PipelineTenantIsolationTest {
     private InMemoryCheckpointStore checkpointStore;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        checkpointStore = new InMemoryCheckpointStore(); // GH-90000
-        TenantContext.clear(); // GH-90000
+    void setUp() { 
+        checkpointStore = new InMemoryCheckpointStore(); 
+        TenantContext.clear(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        TenantContext.clear(); // GH-90000
+    void tearDown() { 
+        TenantContext.clear(); 
     }
 
     // =========================================================================
@@ -65,107 +65,107 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("Checkpoints created by tenant A are invisible to tenant B")
-        void checkpointsInvisibleAcrossTenants() { // GH-90000
+        void checkpointsInvisibleAcrossTenants() { 
             // Tenant A creates an execution
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a1", "idem-a1", Map.of("totalSteps", 3)); // GH-90000
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a1", "idem-a1", Map.of("totalSteps", 3)); 
 
             // Tenant B queries the same pipeline — should find nothing
-            List<PipelineCheckpoint> tenantBResults = checkpointStore.findByPipelineId(TENANT_B, PIPELINE_ID, 100); // GH-90000
-            assertThat(tenantBResults).isEmpty(); // GH-90000
+            List<PipelineCheckpoint> tenantBResults = checkpointStore.findByPipelineId(TENANT_B, PIPELINE_ID, 100); 
+            assertThat(tenantBResults).isEmpty(); 
 
             // Tenant A sees its own checkpoint
-            List<PipelineCheckpoint> tenantAResults = checkpointStore.findByPipelineId(TENANT_A, PIPELINE_ID, 100); // GH-90000
-            assertThat(tenantAResults).hasSize(1); // GH-90000
-            assertThat(tenantAResults.get(0).getTenantId()).isEqualTo(TENANT_A); // GH-90000
+            List<PipelineCheckpoint> tenantAResults = checkpointStore.findByPipelineId(TENANT_A, PIPELINE_ID, 100); 
+            assertThat(tenantAResults).hasSize(1); 
+            assertThat(tenantAResults.get(0).getTenantId()).isEqualTo(TENANT_A); 
         }
 
         @Test
         @DisplayName("Idempotency keys are scoped per-tenant")
-        void idempotencyKeysPerTenant() { // GH-90000
+        void idempotencyKeysPerTenant() { 
             String sharedKey = "order-12345";
 
             // Tenant A creates with a key
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", sharedKey, Map.of()); // GH-90000
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", sharedKey, Map.of()); 
 
-            // Same key, different tenant — should succeed (not duplicate) // GH-90000
-            assertThatCode(() -> checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", sharedKey, Map.of())) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+            // Same key, different tenant — should succeed (not duplicate) 
+            assertThatCode(() -> checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", sharedKey, Map.of())) 
+                    .doesNotThrowAnyException(); 
 
             // Same key, same tenant — should fail
-            assertThatThrownBy(() -> // GH-90000
-                            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a2", sharedKey, Map.of())) // GH-90000
-                    .isInstanceOf(RuntimeException.class) // GH-90000
+            assertThatThrownBy(() -> 
+                            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a2", sharedKey, Map.of())) 
+                    .isInstanceOf(RuntimeException.class) 
                     .hasMessageContaining("Duplicate execution");
         }
 
         @Test
         @DisplayName("isDuplicate checks are tenant-scoped")
-        void isDuplicateTenantScoped() { // GH-90000
+        void isDuplicateTenantScoped() { 
             String key = "unique-key-1";
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-1", key, Map.of()); // GH-90000
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-1", key, Map.of()); 
 
-            assertThat(checkpointStore.isDuplicate(TENANT_A, key)).isTrue(); // GH-90000
-            assertThat(checkpointStore.isDuplicate(TENANT_B, key)).isFalse(); // GH-90000
+            assertThat(checkpointStore.isDuplicate(TENANT_A, key)).isTrue(); 
+            assertThat(checkpointStore.isDuplicate(TENANT_B, key)).isFalse(); 
         }
 
         @Test
         @DisplayName("findByIdempotencyKey only returns matching tenant")
-        void findByIdempotencyKeyTenantScoped() { // GH-90000
+        void findByIdempotencyKeyTenantScoped() { 
             String key = "shared-idemp-key";
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", key, Map.of("source", "alpha")); // GH-90000
-            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", key, Map.of("source", "beta")); // GH-90000
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", key, Map.of("source", "alpha")); 
+            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", key, Map.of("source", "beta")); 
 
-            Optional<PipelineCheckpoint> resultA = checkpointStore.findByIdempotencyKey(TENANT_A, key); // GH-90000
-            assertThat(resultA).isPresent(); // GH-90000
-            assertThat(resultA.get().getTenantId()).isEqualTo(TENANT_A); // GH-90000
+            Optional<PipelineCheckpoint> resultA = checkpointStore.findByIdempotencyKey(TENANT_A, key); 
+            assertThat(resultA).isPresent(); 
+            assertThat(resultA.get().getTenantId()).isEqualTo(TENANT_A); 
 
-            Optional<PipelineCheckpoint> resultB = checkpointStore.findByIdempotencyKey(TENANT_B, key); // GH-90000
-            assertThat(resultB).isPresent(); // GH-90000
-            assertThat(resultB.get().getTenantId()).isEqualTo(TENANT_B); // GH-90000
+            Optional<PipelineCheckpoint> resultB = checkpointStore.findByIdempotencyKey(TENANT_B, key); 
+            assertThat(resultB).isPresent(); 
+            assertThat(resultB.get().getTenantId()).isEqualTo(TENANT_B); 
 
             // Non-existent tenant returns empty
-            Optional<PipelineCheckpoint> resultC = checkpointStore.findByIdempotencyKey(TENANT_C, key); // GH-90000
-            assertThat(resultC).isEmpty(); // GH-90000
+            Optional<PipelineCheckpoint> resultC = checkpointStore.findByIdempotencyKey(TENANT_C, key); 
+            assertThat(resultC).isEmpty(); 
         }
 
         @Test
         @DisplayName("Multiple tenants accumulate checkpoints independently")
-        void multipleTenantAccumulation() { // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
-                checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a-" + i, "key-a-" + i, Map.of()); // GH-90000
+        void multipleTenantAccumulation() { 
+            for (int i = 0; i < 5; i++) { 
+                checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a-" + i, "key-a-" + i, Map.of()); 
             }
-            for (int i = 0; i < 3; i++) { // GH-90000
-                checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b-" + i, "key-b-" + i, Map.of()); // GH-90000
+            for (int i = 0; i < 3; i++) { 
+                checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b-" + i, "key-b-" + i, Map.of()); 
             }
 
-            assertThat(checkpointStore.findByPipelineId(TENANT_A, PIPELINE_ID, 100)) // GH-90000
-                    .hasSize(5); // GH-90000
-            assertThat(checkpointStore.findByPipelineId(TENANT_B, PIPELINE_ID, 100)) // GH-90000
-                    .hasSize(3); // GH-90000
-            assertThat(checkpointStore.findByPipelineId(TENANT_C, PIPELINE_ID, 100)) // GH-90000
-                    .isEmpty(); // GH-90000
+            assertThat(checkpointStore.findByPipelineId(TENANT_A, PIPELINE_ID, 100)) 
+                    .hasSize(5); 
+            assertThat(checkpointStore.findByPipelineId(TENANT_B, PIPELINE_ID, 100)) 
+                    .hasSize(3); 
+            assertThat(checkpointStore.findByPipelineId(TENANT_C, PIPELINE_ID, 100)) 
+                    .isEmpty(); 
         }
 
         @Test
         @DisplayName("Checkpoint state updates do not affect other tenants' checkpoints")
-        void stateUpdatesTenantIsolated() { // GH-90000
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", "key-a", Map.of("totalSteps", 3)); // GH-90000
-            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", "key-b", Map.of("totalSteps", 5)); // GH-90000
+        void stateUpdatesTenantIsolated() { 
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "exec-a", "key-a", Map.of("totalSteps", 3)); 
+            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "exec-b", "key-b", Map.of("totalSteps", 5)); 
 
             // Update tenant A's checkpoint
-            checkpointStore.updateCheckpoint( // GH-90000
+            checkpointStore.updateCheckpoint( 
                     "exec-a",
                     "step-1",
                     "Filter",
                     PipelineCheckpointStatus.STEP_SUCCESS,
-                    Map.of("filtered", 100), // GH-90000
-                    Map.of("totalSteps", 3)); // GH-90000
+                    Map.of("filtered", 100), 
+                    Map.of("totalSteps", 3)); 
 
             // Tenant B's checkpoint should be untouched
             PipelineCheckpoint bCheckpoint =
                     checkpointStore.findByInstanceId("exec-b").orElseThrow();
-            assertThat(bCheckpoint.getCompletedSteps()).isZero(); // GH-90000
-            assertThat(bCheckpoint.getStatus()).isEqualTo(PipelineCheckpointStatus.CREATED); // GH-90000
+            assertThat(bCheckpoint.getCompletedSteps()).isZero(); 
+            assertThat(bCheckpoint.getStatus()).isEqualTo(PipelineCheckpointStatus.CREATED); 
         }
     }
 
@@ -179,38 +179,38 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("PipelineExecutionContext carries tenantId")
-        void contextCarriesTenantId() { // GH-90000
-            PipelineExecutionContext ctx = PipelineExecutionContext.builder() // GH-90000
-                    .pipelineId(PIPELINE_ID) // GH-90000
-                    .tenantId(TENANT_A) // GH-90000
-                    .operatorCatalog(new UnifiedOperatorCatalog()) // GH-90000
-                    .deadline(Duration.ofSeconds(30)) // GH-90000
-                    .build(); // GH-90000
+        void contextCarriesTenantId() { 
+            PipelineExecutionContext ctx = PipelineExecutionContext.builder() 
+                    .pipelineId(PIPELINE_ID) 
+                    .tenantId(TENANT_A) 
+                    .operatorCatalog(new UnifiedOperatorCatalog()) 
+                    .deadline(Duration.ofSeconds(30)) 
+                    .build(); 
 
-            assertThat(ctx.getTenantId()).isEqualTo(TENANT_A); // GH-90000
+            assertThat(ctx.getTenantId()).isEqualTo(TENANT_A); 
         }
 
         @Test
         @DisplayName("Two contexts with different tenants are independent")
-        void twoContextsIndependent() { // GH-90000
-            PipelineExecutionContext ctxA = PipelineExecutionContext.builder() // GH-90000
-                    .pipelineId(PIPELINE_ID) // GH-90000
-                    .tenantId(TENANT_A) // GH-90000
+        void twoContextsIndependent() { 
+            PipelineExecutionContext ctxA = PipelineExecutionContext.builder() 
+                    .pipelineId(PIPELINE_ID) 
+                    .tenantId(TENANT_A) 
                     .executionId("exec-a")
-                    .operatorCatalog(new UnifiedOperatorCatalog()) // GH-90000
-                    .deadline(Duration.ofSeconds(30)) // GH-90000
-                    .build(); // GH-90000
+                    .operatorCatalog(new UnifiedOperatorCatalog()) 
+                    .deadline(Duration.ofSeconds(30)) 
+                    .build(); 
 
-            PipelineExecutionContext ctxB = PipelineExecutionContext.builder() // GH-90000
-                    .pipelineId(PIPELINE_ID) // GH-90000
-                    .tenantId(TENANT_B) // GH-90000
+            PipelineExecutionContext ctxB = PipelineExecutionContext.builder() 
+                    .pipelineId(PIPELINE_ID) 
+                    .tenantId(TENANT_B) 
                     .executionId("exec-b")
-                    .operatorCatalog(new UnifiedOperatorCatalog()) // GH-90000
-                    .deadline(Duration.ofSeconds(30)) // GH-90000
-                    .build(); // GH-90000
+                    .operatorCatalog(new UnifiedOperatorCatalog()) 
+                    .deadline(Duration.ofSeconds(30)) 
+                    .build(); 
 
-            assertThat(ctxA.getTenantId()).isNotEqualTo(ctxB.getTenantId()); // GH-90000
-            assertThat(ctxA.getExecutionId()).isNotEqualTo(ctxB.getExecutionId()); // GH-90000
+            assertThat(ctxA.getTenantId()).isNotEqualTo(ctxB.getTenantId()); 
+            assertThat(ctxA.getExecutionId()).isNotEqualTo(ctxB.getExecutionId()); 
         }
     }
 
@@ -224,37 +224,37 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("scope() sets and restores tenant context")
-        void scopeSetsAndRestores() throws Exception { // GH-90000
+        void scopeSetsAndRestores() throws Exception { 
             assertThat(TenantContext.getCurrentTenantId()).isEqualTo("default-tenant");
 
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
-            try (AutoCloseable scope = TenantContext.scope(principalA)) { // GH-90000
-                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); // GH-90000
-                assertThat(TenantContext.current()).isPresent(); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalA)) { 
+                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); 
+                assertThat(TenantContext.current()).isPresent(); 
                 assertThat(TenantContext.current().get().getName()).isEqualTo("alice");
             }
 
             // After scope closes, back to default
             assertThat(TenantContext.getCurrentTenantId()).isEqualTo("default-tenant");
-            assertThat(TenantContext.current()).isEmpty(); // GH-90000
+            assertThat(TenantContext.current()).isEmpty(); 
         }
 
         @Test
         @DisplayName("Nested scopes restore previous tenant on exit")
-        void nestedScopesRestore() throws Exception { // GH-90000
+        void nestedScopesRestore() throws Exception { 
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
             Principal principalB = new Principal("bob", List.of("viewer"), TENANT_B);
 
-            try (AutoCloseable outerScope = TenantContext.scope(principalA)) { // GH-90000
-                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); // GH-90000
+            try (AutoCloseable outerScope = TenantContext.scope(principalA)) { 
+                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); 
 
-                try (AutoCloseable innerScope = TenantContext.scope(principalB)) { // GH-90000
-                    assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_B); // GH-90000
+                try (AutoCloseable innerScope = TenantContext.scope(principalB)) { 
+                    assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_B); 
                     assertThat(TenantContext.current().get().getName()).isEqualTo("bob");
                 }
 
                 // Inner scope closed — back to outer scope's tenant
-                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); // GH-90000
+                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); 
                 assertThat(TenantContext.current().get().getName()).isEqualTo("alice");
             }
 
@@ -263,25 +263,25 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("clear() removes all context")
-        void clearRemovesContext() { // GH-90000
-            TenantContext.setCurrentTenantId(TENANT_A); // GH-90000
-            assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); // GH-90000
+        void clearRemovesContext() { 
+            TenantContext.setCurrentTenantId(TENANT_A); 
+            assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_A); 
 
-            TenantContext.clear(); // GH-90000
+            TenantContext.clear(); 
             assertThat(TenantContext.getCurrentTenantId()).isEqualTo("default-tenant");
-            assertThat(TenantContext.current()).isEmpty(); // GH-90000
+            assertThat(TenantContext.current()).isEmpty(); 
         }
 
         @Test
         @DisplayName("Thread-local does not cross thread boundaries")
-        void threadLocalDoesNotCrossBoundaries() throws Exception { // GH-90000
+        void threadLocalDoesNotCrossBoundaries() throws Exception { 
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
-            TenantContext.scope(principalA); // GH-90000
+            TenantContext.scope(principalA); 
 
-            AtomicReference<String> otherThreadTenant = new AtomicReference<>(); // GH-90000
-            Thread thread = new Thread(() -> otherThreadTenant.set(TenantContext.getCurrentTenantId())); // GH-90000
-            thread.start(); // GH-90000
-            thread.join(5000); // GH-90000
+            AtomicReference<String> otherThreadTenant = new AtomicReference<>(); 
+            Thread thread = new Thread(() -> otherThreadTenant.set(TenantContext.getCurrentTenantId())); 
+            thread.start(); 
+            thread.join(5000); 
 
             // Other thread defaults to "default-tenant", not TENANT_A
             assertThat(otherThreadTenant.get()).isEqualTo("default-tenant");
@@ -289,29 +289,29 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("Explicit scope transfer to child thread works correctly")
-        void explicitScopeTransfer() throws Exception { // GH-90000
+        void explicitScopeTransfer() throws Exception { 
             Principal principalA = new Principal("alice", List.of("admin"), TENANT_A);
 
-            AtomicReference<String> childTenant = new AtomicReference<>(); // GH-90000
-            AtomicReference<String> childPrincipalName = new AtomicReference<>(); // GH-90000
+            AtomicReference<String> childTenant = new AtomicReference<>(); 
+            AtomicReference<String> childPrincipalName = new AtomicReference<>(); 
 
-            try (AutoCloseable scope = TenantContext.scope(principalA)) { // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(principalA)) { 
                 // Capture the principal for transfer
-                Principal captured = TenantContext.current().orElseThrow(); // GH-90000
+                Principal captured = TenantContext.current().orElseThrow(); 
 
-                Thread child = new Thread(() -> { // GH-90000
-                    try (AutoCloseable childScope = TenantContext.scope(captured)) { // GH-90000
-                        childTenant.set(TenantContext.getCurrentTenantId()); // GH-90000
-                        childPrincipalName.set(TenantContext.current().get().getName()); // GH-90000
-                    } catch (Exception e) { // GH-90000
-                        throw new RuntimeException(e); // GH-90000
+                Thread child = new Thread(() -> { 
+                    try (AutoCloseable childScope = TenantContext.scope(captured)) { 
+                        childTenant.set(TenantContext.getCurrentTenantId()); 
+                        childPrincipalName.set(TenantContext.current().get().getName()); 
+                    } catch (Exception e) { 
+                        throw new RuntimeException(e); 
                     }
                 });
-                child.start(); // GH-90000
-                child.join(5000); // GH-90000
+                child.start(); 
+                child.join(5000); 
             }
 
-            assertThat(childTenant.get()).isEqualTo(TENANT_A); // GH-90000
+            assertThat(childTenant.get()).isEqualTo(TENANT_A); 
             assertThat(childPrincipalName.get()).isEqualTo("alice");
         }
     }
@@ -326,28 +326,28 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("Principals with same name but different tenants are not equal")
-        void sameNameDifferentTenantNotEqual() { // GH-90000
+        void sameNameDifferentTenantNotEqual() { 
             Principal p1 = new Principal("alice", List.of("admin"), TENANT_A);
             Principal p2 = new Principal("alice", List.of("admin"), TENANT_B);
 
-            assertThat(p1).isNotEqualTo(p2); // GH-90000
-            assertThat(p1.hashCode()).isNotEqualTo(p2.hashCode()); // GH-90000
+            assertThat(p1).isNotEqualTo(p2); 
+            assertThat(p1.hashCode()).isNotEqualTo(p2.hashCode()); 
         }
 
         @Test
         @DisplayName("Principal roles are immutable")
-        void rolesImmutable() { // GH-90000
-            Principal p = new Principal("alice", List.of("admin", "editor"), TENANT_A); // GH-90000
+        void rolesImmutable() { 
+            Principal p = new Principal("alice", List.of("admin", "editor"), TENANT_A); 
 
             assertThatThrownBy(() -> p.getRoles().add("hacker")).isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
         @DisplayName("Principal carries tenant identity for TenantContext integration")
-        void principalCarriesTenantForContext() throws Exception { // GH-90000
+        void principalCarriesTenantForContext() throws Exception { 
             Principal p = new Principal("svc-pipeline", List.of("processor"), TENANT_B);
-            try (AutoCloseable scope = TenantContext.scope(p)) { // GH-90000
-                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_B); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(p)) { 
+                assertThat(TenantContext.getCurrentTenantId()).isEqualTo(TENANT_B); 
                 assertThat(TenantContext.current().get().hasRole("processor")).isTrue();
                 assertThat(TenantContext.current().get().hasRole("admin")).isFalse();
             }
@@ -364,74 +364,74 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("Concurrent checkpoint operations maintain tenant isolation")
-        void concurrentCheckpointIsolation() throws Exception { // GH-90000
+        void concurrentCheckpointIsolation() throws Exception { 
             int operationsPerTenant = 50;
-            ExecutorService executor = Executors.newFixedThreadPool(6); // GH-90000
-            CountDownLatch latch = new CountDownLatch(1); // GH-90000
-            List<Future<?>> futures = new ArrayList<>(); // GH-90000
+            ExecutorService executor = Executors.newFixedThreadPool(6); 
+            CountDownLatch latch = new CountDownLatch(1); 
+            List<Future<?>> futures = new ArrayList<>(); 
 
             String[] tenants = {TENANT_A, TENANT_B, TENANT_C};
-            for (String tenant : tenants) { // GH-90000
-                for (int i = 0; i < operationsPerTenant; i++) { // GH-90000
+            for (String tenant : tenants) { 
+                for (int i = 0; i < operationsPerTenant; i++) { 
                     final int idx = i;
-                    futures.add(executor.submit(() -> { // GH-90000
+                    futures.add(executor.submit(() -> { 
                         try {
-                            latch.await(); // Synchronize start // GH-90000
-                        } catch (InterruptedException e) { // GH-90000
-                            Thread.currentThread().interrupt(); // GH-90000
+                            latch.await(); // Synchronize start 
+                        } catch (InterruptedException e) { 
+                            Thread.currentThread().interrupt(); 
                             return;
                         }
-                        checkpointStore.createExecution( // GH-90000
-                                tenant, PIPELINE_ID, tenant + "-exec-" + idx, tenant + "-key-" + idx, Map.of()); // GH-90000
+                        checkpointStore.createExecution( 
+                                tenant, PIPELINE_ID, tenant + "-exec-" + idx, tenant + "-key-" + idx, Map.of()); 
                     }));
                 }
             }
 
-            latch.countDown(); // Release all threads // GH-90000
-            for (Future<?> f : futures) { // GH-90000
-                f.get(10, TimeUnit.SECONDS); // GH-90000
+            latch.countDown(); // Release all threads 
+            for (Future<?> f : futures) { 
+                f.get(10, TimeUnit.SECONDS); 
             }
 
-            executor.shutdown(); // GH-90000
-            executor.awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+            executor.shutdown(); 
+            executor.awaitTermination(5, TimeUnit.SECONDS); 
 
             // Each tenant should see exactly its own checkpoints
-            for (String tenant : tenants) { // GH-90000
-                List<PipelineCheckpoint> results = checkpointStore.findByPipelineId(tenant, PIPELINE_ID, 200); // GH-90000
-                assertThat(results).hasSize(operationsPerTenant).allSatisfy(cp -> assertThat(cp.getTenantId()) // GH-90000
-                        .isEqualTo(tenant)); // GH-90000
+            for (String tenant : tenants) { 
+                List<PipelineCheckpoint> results = checkpointStore.findByPipelineId(tenant, PIPELINE_ID, 200); 
+                assertThat(results).hasSize(operationsPerTenant).allSatisfy(cp -> assertThat(cp.getTenantId()) 
+                        .isEqualTo(tenant)); 
             }
         }
 
         @Test
         @DisplayName("Concurrent TenantContext scopes do not interfere across threads")
-        void concurrentTenantContextScopes() throws Exception { // GH-90000
+        void concurrentTenantContextScopes() throws Exception { 
             int threads = 10;
-            ExecutorService executor = Executors.newFixedThreadPool(threads); // GH-90000
-            CyclicBarrier barrier = new CyclicBarrier(threads); // GH-90000
-            List<Future<String>> futures = new ArrayList<>(); // GH-90000
+            ExecutorService executor = Executors.newFixedThreadPool(threads); 
+            CyclicBarrier barrier = new CyclicBarrier(threads); 
+            List<Future<String>> futures = new ArrayList<>(); 
 
-            for (int i = 0; i < threads; i++) { // GH-90000
+            for (int i = 0; i < threads; i++) { 
                 final String tenantId = "tenant-" + i;
                 final String principalName = "user-" + i;
-                futures.add(executor.submit(() -> { // GH-90000
-                    barrier.await(5, TimeUnit.SECONDS); // GH-90000
+                futures.add(executor.submit(() -> { 
+                    barrier.await(5, TimeUnit.SECONDS); 
                     Principal p = new Principal(principalName, List.of("viewer"), tenantId);
-                    try (AutoCloseable scope = TenantContext.scope(p)) { // GH-90000
+                    try (AutoCloseable scope = TenantContext.scope(p)) { 
                         // Small delay to increase chance of cross-contamination
-                        Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10)); // GH-90000
-                        return TenantContext.getCurrentTenantId(); // GH-90000
+                        Thread.sleep(ThreadLocalRandom.current().nextInt(1, 10)); 
+                        return TenantContext.getCurrentTenantId(); 
                     }
                 }));
             }
 
-            for (int i = 0; i < threads; i++) { // GH-90000
-                String result = futures.get(i).get(10, TimeUnit.SECONDS); // GH-90000
-                assertThat(result).isEqualTo("tenant-" + i); // GH-90000
+            for (int i = 0; i < threads; i++) { 
+                String result = futures.get(i).get(10, TimeUnit.SECONDS); 
+                assertThat(result).isEqualTo("tenant-" + i); 
             }
 
-            executor.shutdown(); // GH-90000
-            executor.awaitTermination(5, TimeUnit.SECONDS); // GH-90000
+            executor.shutdown(); 
+            executor.awaitTermination(5, TimeUnit.SECONDS); 
         }
     }
 
@@ -445,63 +445,63 @@ class PipelineTenantIsolationTest {
 
         @Test
         @DisplayName("Full pipeline lifecycle maintains tenant isolation")
-        void fullLifecycleIsolation() throws Exception { // GH-90000
+        void fullLifecycleIsolation() throws Exception { 
             Principal adminA = new Principal("admin-a", List.of("admin"), TENANT_A);
             Principal adminB = new Principal("admin-b", List.of("admin"), TENANT_B);
 
             // Tenant A: create, update, complete
-            try (AutoCloseable scope = TenantContext.scope(adminA)) { // GH-90000
-                String tenantId = TenantContext.getCurrentTenantId(); // GH-90000
-                checkpointStore.createExecution(tenantId, "pipeline-1", "exec-a", "order-1", Map.of("totalSteps", 2)); // GH-90000
-                checkpointStore.updateCheckpoint( // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(adminA)) { 
+                String tenantId = TenantContext.getCurrentTenantId(); 
+                checkpointStore.createExecution(tenantId, "pipeline-1", "exec-a", "order-1", Map.of("totalSteps", 2)); 
+                checkpointStore.updateCheckpoint( 
                         "exec-a",
                         "step-1",
                         "Validate",
                         PipelineCheckpointStatus.STEP_SUCCESS,
-                        Map.of(), // GH-90000
-                        Map.of("totalSteps", 2)); // GH-90000
-                checkpointStore.completeExecution("exec-a", PipelineCheckpointStatus.COMPLETED, Map.of("result", "ok")); // GH-90000
+                        Map.of(), 
+                        Map.of("totalSteps", 2)); 
+                checkpointStore.completeExecution("exec-a", PipelineCheckpointStatus.COMPLETED, Map.of("result", "ok")); 
             }
 
             // Tenant B: create, fail
-            try (AutoCloseable scope = TenantContext.scope(adminB)) { // GH-90000
-                String tenantId = TenantContext.getCurrentTenantId(); // GH-90000
-                checkpointStore.createExecution(tenantId, "pipeline-1", "exec-b", "order-2", Map.of("totalSteps", 3)); // GH-90000
-                checkpointStore.completeExecution( // GH-90000
-                        "exec-b", PipelineCheckpointStatus.FAILED, Map.of("error", "timeout")); // GH-90000
+            try (AutoCloseable scope = TenantContext.scope(adminB)) { 
+                String tenantId = TenantContext.getCurrentTenantId(); 
+                checkpointStore.createExecution(tenantId, "pipeline-1", "exec-b", "order-2", Map.of("totalSteps", 3)); 
+                checkpointStore.completeExecution( 
+                        "exec-b", PipelineCheckpointStatus.FAILED, Map.of("error", "timeout")); 
             }
 
             // Verify tenant A's view
-            List<PipelineCheckpoint> tenantAView = checkpointStore.findByPipelineId(TENANT_A, "pipeline-1", 100); // GH-90000
-            assertThat(tenantAView).hasSize(1); // GH-90000
-            assertThat(tenantAView.get(0).getStatus()).isEqualTo(PipelineCheckpointStatus.COMPLETED); // GH-90000
+            List<PipelineCheckpoint> tenantAView = checkpointStore.findByPipelineId(TENANT_A, "pipeline-1", 100); 
+            assertThat(tenantAView).hasSize(1); 
+            assertThat(tenantAView.get(0).getStatus()).isEqualTo(PipelineCheckpointStatus.COMPLETED); 
 
             // Verify tenant B's view
-            List<PipelineCheckpoint> tenantBView = checkpointStore.findByPipelineId(TENANT_B, "pipeline-1", 100); // GH-90000
-            assertThat(tenantBView).hasSize(1); // GH-90000
-            assertThat(tenantBView.get(0).getStatus()).isEqualTo(PipelineCheckpointStatus.FAILED); // GH-90000
+            List<PipelineCheckpoint> tenantBView = checkpointStore.findByPipelineId(TENANT_B, "pipeline-1", 100); 
+            assertThat(tenantBView).hasSize(1); 
+            assertThat(tenantBView.get(0).getStatus()).isEqualTo(PipelineCheckpointStatus.FAILED); 
 
             // Verify tenant C sees nothing
-            assertThat(checkpointStore.findByPipelineId(TENANT_C, "pipeline-1", 100)) // GH-90000
-                    .isEmpty(); // GH-90000
+            assertThat(checkpointStore.findByPipelineId(TENANT_C, "pipeline-1", 100)) 
+                    .isEmpty(); 
         }
 
         @Test
         @DisplayName("Cleanup of old checkpoints respects tenant boundaries implicitly")
-        void cleanupRespectsTimestamp() { // GH-90000
+        void cleanupRespectsTimestamp() { 
             // Create checkpoints at different times for different tenants
-            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "old-exec-a", "old-key-a", Map.of()); // GH-90000
-            checkpointStore.completeExecution("old-exec-a", PipelineCheckpointStatus.COMPLETED, Map.of()); // GH-90000
+            checkpointStore.createExecution(TENANT_A, PIPELINE_ID, "old-exec-a", "old-key-a", Map.of()); 
+            checkpointStore.completeExecution("old-exec-a", PipelineCheckpointStatus.COMPLETED, Map.of()); 
 
-            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "old-exec-b", "old-key-b", Map.of()); // GH-90000
-            checkpointStore.completeExecution("old-exec-b", PipelineCheckpointStatus.COMPLETED, Map.of()); // GH-90000
+            checkpointStore.createExecution(TENANT_B, PIPELINE_ID, "old-exec-b", "old-key-b", Map.of()); 
+            checkpointStore.completeExecution("old-exec-b", PipelineCheckpointStatus.COMPLETED, Map.of()); 
 
             // Cleanup all completed checkpoints completed before "far future"
-            int cleaned = checkpointStore.cleanupOldCheckpoints(Instant.now().plusSeconds(3600)); // GH-90000
-            assertThat(cleaned).isEqualTo(2); // GH-90000
+            int cleaned = checkpointStore.cleanupOldCheckpoints(Instant.now().plusSeconds(3600)); 
+            assertThat(cleaned).isEqualTo(2); 
 
             // Both tenants should now be empty
-            assertThat(checkpointStore.size()).isZero(); // GH-90000
+            assertThat(checkpointStore.size()).isZero(); 
         }
     }
 }

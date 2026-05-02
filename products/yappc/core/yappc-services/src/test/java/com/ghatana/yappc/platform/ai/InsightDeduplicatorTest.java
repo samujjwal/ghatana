@@ -16,29 +16,29 @@ class InsightDeduplicatorTest {
 
   @Test
   @DisplayName("filter suppresses duplicate insights inside the duplicate window")
-  void filterSuppressesDuplicateInsightsInsideDuplicateWindow() { // GH-90000
+  void filterSuppressesDuplicateInsightsInsideDuplicateWindow() { 
     InsightDeduplicator deduplicator =
-        new InsightDeduplicator( // GH-90000
-            Duration.ofMinutes(30), // GH-90000
+        new InsightDeduplicator( 
+            Duration.ofMinutes(30), 
             Clock.fixed(Instant.parse("2026-04-06T12:00:00Z"), ZoneOffset.UTC));
 
     List<AIInsight> firstPass = deduplicator.filter(List.of(insight("tenant-a"), insight("tenant-a")));
     List<AIInsight> secondPass = deduplicator.filter(List.of(insight("tenant-a")));
 
-    assertThat(firstPass).hasSize(1); // GH-90000
-    assertThat(secondPass).isEmpty(); // GH-90000
+    assertThat(firstPass).hasSize(1); 
+    assertThat(secondPass).isEmpty(); 
   }
 
   @Test
   @DisplayName("filter keeps distinct insight fingerprints")
-  void filterKeepsDistinctInsightFingerprints() { // GH-90000
-    InsightDeduplicator deduplicator = new InsightDeduplicator(); // GH-90000
+  void filterKeepsDistinctInsightFingerprints() { 
+    InsightDeduplicator deduplicator = new InsightDeduplicator(); 
 
     List<AIInsight> filtered =
-        deduplicator.filter( // GH-90000
-            List.of( // GH-90000
+        deduplicator.filter( 
+            List.of( 
                 insight("tenant-a"),
-                new AIInsight( // GH-90000
+                new AIInsight( 
                     "insight-2",
                     "tenant-a",
                     "project-a",
@@ -54,11 +54,11 @@ class InsightDeduplicatorTest {
                     Instant.parse("2026-04-06T12:00:00Z"),
                     false)));
 
-    assertThat(filtered).hasSize(2); // GH-90000
+    assertThat(filtered).hasSize(2); 
   }
 
-  private AIInsight insight(String tenantId) { // GH-90000
-    return new AIInsight( // GH-90000
+  private AIInsight insight(String tenantId) { 
+    return new AIInsight( 
         "insight-1",
         tenantId,
         "project-a",

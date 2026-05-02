@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.db;
@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
- * Unit tests for {@link AepConnectionPoolOptimizer} (AEP-004.4). // GH-90000
+ * Unit tests for {@link AepConnectionPoolOptimizer} (AEP-004.4). 
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AepConnectionPoolOptimizer — AEP-004.4")
 class AepConnectionPoolOptimizerTest {
 
@@ -36,97 +36,97 @@ class AepConnectionPoolOptimizerTest {
     private AepConnectionPoolOptimizer optimizer;
 
     @BeforeEach
-    void setUp() throws SQLException { // GH-90000
-        optimizer = AepConnectionPoolOptimizer.builder(mockDataSource) // GH-90000
-                .slowConnectionThreshold(Duration.ofMillis(50)) // GH-90000
-                .build(); // GH-90000
+    void setUp() throws SQLException { 
+        optimizer = AepConnectionPoolOptimizer.builder(mockDataSource) 
+                .slowConnectionThreshold(Duration.ofMillis(50)) 
+                .build(); 
 
-        lenient().when(mockDataSource.getConnection()).thenReturn(mockConnection); // GH-90000
+        lenient().when(mockDataSource.getConnection()).thenReturn(mockConnection); 
     }
 
     @Test
     @DisplayName("Successful borrows increment success counter")
-    void successfulBorrowsAreTracked() throws SQLException { // GH-90000
-        optimizer.getConnection(); // GH-90000
-        optimizer.getConnection(); // GH-90000
+    void successfulBorrowsAreTracked() throws SQLException { 
+        optimizer.getConnection(); 
+        optimizer.getConnection(); 
 
-        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
-        assertThat(stats.successfulBorrows()).isEqualTo(2); // GH-90000
-        assertThat(stats.totalBorrows()).isEqualTo(2); // GH-90000
-        assertThat(stats.failedBorrows()).isEqualTo(0); // GH-90000
+        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); 
+        assertThat(stats.successfulBorrows()).isEqualTo(2); 
+        assertThat(stats.totalBorrows()).isEqualTo(2); 
+        assertThat(stats.failedBorrows()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Failed borrow increments failure counter")
-    void failedBorrowIsTracked() throws SQLException { // GH-90000
+    void failedBorrowIsTracked() throws SQLException { 
         when(mockDataSource.getConnection()).thenThrow(new SQLException("pool exhausted"));
 
-        assertThatThrownBy(() -> optimizer.getConnection()) // GH-90000
-                .isInstanceOf(SQLException.class); // GH-90000
+        assertThatThrownBy(() -> optimizer.getConnection()) 
+                .isInstanceOf(SQLException.class); 
 
-        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
-        assertThat(stats.failedBorrows()).isEqualTo(1); // GH-90000
-        assertThat(stats.successfulBorrows()).isEqualTo(0); // GH-90000
+        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); 
+        assertThat(stats.failedBorrows()).isEqualTo(1); 
+        assertThat(stats.successfulBorrows()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Efficiency = 1.0 when all borrows succeed")
-    void efficiencyIsOneWhenAllSucceed() throws SQLException { // GH-90000
-        optimizer.getConnection(); // GH-90000
-        optimizer.getConnection(); // GH-90000
-        optimizer.getConnection(); // GH-90000
+    void efficiencyIsOneWhenAllSucceed() throws SQLException { 
+        optimizer.getConnection(); 
+        optimizer.getConnection(); 
+        optimizer.getConnection(); 
 
-        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
-        assertThat(stats.efficiency()).isEqualTo(1.0); // GH-90000
-        assertThat(stats.meetsTarget()).isTrue(); // GH-90000
+        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); 
+        assertThat(stats.efficiency()).isEqualTo(1.0); 
+        assertThat(stats.meetsTarget()).isTrue(); 
     }
 
     @Test
     @DisplayName("Efficiency < 1.0 when some borrows fail")
-    void efficiencyDropsWithFailures() throws SQLException { // GH-90000
+    void efficiencyDropsWithFailures() throws SQLException { 
         // 9 successes, 1 failure → efficiency = 0.90
-        for (int i = 0; i < 9; i++) { // GH-90000
-            optimizer.getConnection(); // GH-90000
+        for (int i = 0; i < 9; i++) { 
+            optimizer.getConnection(); 
         }
         when(mockDataSource.getConnection()).thenThrow(new SQLException("timeout"));
-        try { optimizer.getConnection(); } catch (SQLException ignored) {} // GH-90000
+        try { optimizer.getConnection(); } catch (SQLException ignored) {} 
 
-        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
-        assertThat(stats.efficiency()).isEqualTo(0.90); // GH-90000
-        assertThat(stats.meetsTarget()).isTrue(); // GH-90000
+        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); 
+        assertThat(stats.efficiency()).isEqualTo(0.90); 
+        assertThat(stats.meetsTarget()).isTrue(); 
     }
 
     @Test
     @DisplayName("Empty stats return efficiency 1.0 and meet target")
-    void emptyStatsReturnDefault() { // GH-90000
-        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); // GH-90000
-        assertThat(stats.totalBorrows()).isEqualTo(0); // GH-90000
-        assertThat(stats.efficiency()).isEqualTo(1.0); // GH-90000
-        assertThat(stats.meetsTarget()).isTrue(); // GH-90000
+    void emptyStatsReturnDefault() { 
+        AepConnectionPoolOptimizer.PoolStats stats = optimizer.stats(); 
+        assertThat(stats.totalBorrows()).isEqualTo(0); 
+        assertThat(stats.efficiency()).isEqualTo(1.0); 
+        assertThat(stats.meetsTarget()).isTrue(); 
     }
 
     @Test
     @DisplayName("asDataSource returns an instrumented DataSource")
-    void asDataSourceDelegates() throws SQLException { // GH-90000
-        DataSource ds = optimizer.asDataSource(); // GH-90000
-        ds.getConnection(); // GH-90000
+    void asDataSourceDelegates() throws SQLException { 
+        DataSource ds = optimizer.asDataSource(); 
+        ds.getConnection(); 
 
-        verify(mockDataSource).getConnection(); // GH-90000
-        assertThat(optimizer.stats().successfulBorrows()).isEqualTo(1); // GH-90000
+        verify(mockDataSource).getConnection(); 
+        assertThat(optimizer.stats().successfulBorrows()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("Builder rejects null delegate")
-    void builderRejectsNullDelegate() { // GH-90000
-        assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void builderRejectsNullDelegate() { 
+        assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("Builder rejects zero slow threshold")
-    void builderRejectsZeroThreshold() { // GH-90000
-        assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(mockDataSource) // GH-90000
-                .slowConnectionThreshold(Duration.ZERO)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void builderRejectsZeroThreshold() { 
+        assertThatThrownBy(() -> AepConnectionPoolOptimizer.builder(mockDataSource) 
+                .slowConnectionThreshold(Duration.ZERO)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 }

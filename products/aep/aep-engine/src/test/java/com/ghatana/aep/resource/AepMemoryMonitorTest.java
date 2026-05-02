@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.resource;
@@ -17,7 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link AepMemoryMonitor} (AEP-005.1). // GH-90000
+ * Unit tests for {@link AepMemoryMonitor} (AEP-005.1). 
  */
 @DisplayName("AepMemoryMonitor — AEP-005.1")
 class AepMemoryMonitorTest {
@@ -26,73 +26,73 @@ class AepMemoryMonitorTest {
     private AepMemoryMonitor monitor;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        mockBean = mock(MemoryMXBean.class); // GH-90000
+    void setUp() { 
+        mockBean = mock(MemoryMXBean.class); 
         // Heap: 800 MB used, 1024 MB max, 1024 MB committed
-        when(mockBean.getHeapMemoryUsage()) // GH-90000
-                .thenReturn(new MemoryUsage(0, 800 * 1024 * 1024L, 1024 * 1024 * 1024L, 1024 * 1024 * 1024L)); // GH-90000
-        when(mockBean.getNonHeapMemoryUsage()) // GH-90000
-                .thenReturn(new MemoryUsage(0, 100 * 1024 * 1024L, 256 * 1024 * 1024L, -1)); // GH-90000
+        when(mockBean.getHeapMemoryUsage()) 
+                .thenReturn(new MemoryUsage(0, 800 * 1024 * 1024L, 1024 * 1024 * 1024L, 1024 * 1024 * 1024L)); 
+        when(mockBean.getNonHeapMemoryUsage()) 
+                .thenReturn(new MemoryUsage(0, 100 * 1024 * 1024L, 256 * 1024 * 1024L, -1)); 
 
-        monitor = AepMemoryMonitor.builder() // GH-90000
-                .memoryBean(mockBean) // GH-90000
-                .samplingIntervalMs(100) // GH-90000
-                .heapWarningThreshold(0.80) // GH-90000
-                .build(); // GH-90000
+        monitor = AepMemoryMonitor.builder() 
+                .memoryBean(mockBean) 
+                .samplingIntervalMs(100) 
+                .heapWarningThreshold(0.80) 
+                .build(); 
     }
 
     @Test
     @DisplayName("Initial snapshot is empty sentinel")
-    void initialSnapshotIsEmpty() { // GH-90000
-        assertThat(monitor.currentSnapshot().isEmpty()).isTrue(); // GH-90000
-        assertThat(monitor.sampleCount()).isEqualTo(0); // GH-90000
+    void initialSnapshotIsEmpty() { 
+        assertThat(monitor.currentSnapshot().isEmpty()).isTrue(); 
+        assertThat(monitor.sampleCount()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("sample() updates snapshot with correct values")
-    void sampleUpdatesSnapshot() { // GH-90000
-        monitor.sample(); // GH-90000
+    void sampleUpdatesSnapshot() { 
+        monitor.sample(); 
 
-        AepMemoryMonitor.MemorySnapshot snap = monitor.currentSnapshot(); // GH-90000
-        assertThat(snap.isEmpty()).isFalse(); // GH-90000
-        assertThat(snap.heapUsedBytes()).isEqualTo(800 * 1024 * 1024L); // GH-90000
-        assertThat(snap.heapMaxBytes()).isEqualTo(1024 * 1024 * 1024L); // GH-90000
-        assertThat(snap.heapRatio()).isEqualTo(800.0 / 1024.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
-        assertThat(monitor.sampleCount()).isEqualTo(1); // GH-90000
+        AepMemoryMonitor.MemorySnapshot snap = monitor.currentSnapshot(); 
+        assertThat(snap.isEmpty()).isFalse(); 
+        assertThat(snap.heapUsedBytes()).isEqualTo(800 * 1024 * 1024L); 
+        assertThat(snap.heapMaxBytes()).isEqualTo(1024 * 1024 * 1024L); 
+        assertThat(snap.heapRatio()).isEqualTo(800.0 / 1024.0, org.assertj.core.data.Offset.offset(0.001)); 
+        assertThat(monitor.sampleCount()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("heapUsedMb and heapMaxMb helpers work correctly")
-    void heapMbHelpers() { // GH-90000
-        monitor.sample(); // GH-90000
-        AepMemoryMonitor.MemorySnapshot snap = monitor.currentSnapshot(); // GH-90000
-        assertThat(snap.heapUsedMb()).isCloseTo(800.0, org.assertj.core.data.Offset.offset(0.01)); // GH-90000
-        assertThat(snap.heapMaxMb()).isCloseTo(1024.0, org.assertj.core.data.Offset.offset(0.01)); // GH-90000
+    void heapMbHelpers() { 
+        monitor.sample(); 
+        AepMemoryMonitor.MemorySnapshot snap = monitor.currentSnapshot(); 
+        assertThat(snap.heapUsedMb()).isCloseTo(800.0, org.assertj.core.data.Offset.offset(0.01)); 
+        assertThat(snap.heapMaxMb()).isCloseTo(1024.0, org.assertj.core.data.Offset.offset(0.01)); 
     }
 
     @Test
     @DisplayName("sample() at >80% heap logs warning (no exception)")
-    void highHeapRatioDoesNotThrow() { // GH-90000
+    void highHeapRatioDoesNotThrow() { 
         // heap ratio = 800/1024 ≈ 78% → just below 80% threshold; use max=900MB to trigger warning
-        when(mockBean.getHeapMemoryUsage()) // GH-90000
-                .thenReturn(new MemoryUsage(0, 900 * 1024 * 1024L, 1000 * 1024 * 1024L, 1000 * 1024 * 1024L)); // GH-90000
+        when(mockBean.getHeapMemoryUsage()) 
+                .thenReturn(new MemoryUsage(0, 900 * 1024 * 1024L, 1000 * 1024 * 1024L, 1000 * 1024 * 1024L)); 
 
         // Should complete without exception
-        monitor.sample(); // GH-90000
-        assertThat(monitor.currentSnapshot().heapRatio()).isGreaterThan(0.80); // GH-90000
+        monitor.sample(); 
+        assertThat(monitor.currentSnapshot().heapRatio()).isGreaterThan(0.80); 
     }
 
     @Test
     @DisplayName("Builder rejects samplingIntervalMs <= 0")
-    void builderRejectsNonPositiveInterval() { // GH-90000
-        assertThatThrownBy(() -> AepMemoryMonitor.builder().samplingIntervalMs(0)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void builderRejectsNonPositiveInterval() { 
+        assertThatThrownBy(() -> AepMemoryMonitor.builder().samplingIntervalMs(0)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("Builder rejects heapWarningThreshold out of range")
-    void builderRejectsInvalidThreshold() { // GH-90000
-        assertThatThrownBy(() -> AepMemoryMonitor.builder().heapWarningThreshold(1.5)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+    void builderRejectsInvalidThreshold() { 
+        assertThatThrownBy(() -> AepMemoryMonitor.builder().heapWarningThreshold(1.5)) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 }

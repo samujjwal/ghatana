@@ -29,8 +29,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
-@MockitoSettings(strictness = Strictness.LENIENT) // GH-90000
+@ExtendWith(MockitoExtension.class) 
+@MockitoSettings(strictness = Strictness.LENIENT) 
 /**
  * @doc.type class
  * @doc.purpose Handles refactoring orchestrator test operations
@@ -53,210 +53,210 @@ class RefactoringOrchestratorTest {
     private static final String OLD_NAME = "oldName";
 
     @BeforeEach
-    void setUp() { // GH-90000
-        executor = Executors.newSingleThreadExecutor(); // GH-90000
+    void setUp() { 
+        executor = Executors.newSingleThreadExecutor(); 
 
         // Create a minimal PolyfixConfig for testing
         PolyfixConfig config =
-                new PolyfixConfig( // GH-90000
-                        List.of("java", "python", "typescript"), // GH-90000
-                        List.of(), // GH-90000
-                        new PolyfixConfig.Budgets(10, 100), // GH-90000
-                        new PolyfixConfig.Policies(false, true, true, false), // GH-90000
-                        new PolyfixConfig.Tools( // GH-90000
+                new PolyfixConfig( 
+                        List.of("java", "python", "typescript"), 
+                        List.of(), 
+                        new PolyfixConfig.Budgets(10, 100), 
+                        new PolyfixConfig.Policies(false, true, true, false), 
+                        new PolyfixConfig.Tools( 
                                 "node", "", "", "", "", "", "", "", "", "", "", ""));
 
-        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null); // GH-90000
+        projectContext = new PolyfixProjectContext(tempDir, config, List.of(), executor, null); 
 
         // Setup mocks
         doReturn("java.rename").when(javaRefactoring).getId();
-        when(javaRefactoring.canApply(any())).thenReturn(false); // Default to false // GH-90000
+        when(javaRefactoring.canApply(any())).thenReturn(false); // Default to false 
 
         doReturn("python.rename").when(pythonRefactoring).getId();
-        when(pythonRefactoring.canApply(any())).thenReturn(false); // Default to false // GH-90000
+        when(pythonRefactoring.canApply(any())).thenReturn(false); // Default to false 
 
         // Create orchestrator with mocks
-        orchestrator = new RefactoringOrchestrator(referenceResolver, projectContext, false); // GH-90000
-        orchestrator.registerRefactoring(javaRefactoring); // GH-90000
-        orchestrator.registerRefactoring(pythonRefactoring); // GH-90000
+        orchestrator = new RefactoringOrchestrator(referenceResolver, projectContext, false); 
+        orchestrator.registerRefactoring(javaRefactoring); 
+        orchestrator.registerRefactoring(pythonRefactoring); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        executor.shutdownNow(); // GH-90000
+    void tearDown() { 
+        executor.shutdownNow(); 
     }
 
     @Test
-    void testPerformRename_Success() { // GH-90000
+    void testPerformRename_Success() { 
         // Arrange
-        when(javaRefactoring.canApply(any())).thenReturn(true); // GH-90000
-        when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
-                .thenReturn(Collections.emptyList()); // GH-90000
-        when(referenceResolver.findIncomingReferences(any())).thenReturn(Collections.emptyList()); // GH-90000
+        when(javaRefactoring.canApply(any())).thenReturn(true); 
+        when(referenceResolver.findReferences(any(), any(), any(), any())) 
+                .thenReturn(Collections.emptyList()); 
+        when(referenceResolver.findIncomingReferences(any())).thenReturn(Collections.emptyList()); 
 
         RefactoringResult successResult =
-                RefactoringResult.success( // GH-90000
+                RefactoringResult.success( 
                         List.of(Path.of("src/main/java/Example.java")), 1, "Renamed method");
-        when(javaRefactoring.apply(any())).thenReturn(successResult); // GH-90000
+        when(javaRefactoring.apply(any())).thenReturn(successResult); 
 
         // Act
         RefactoringResult result =
-                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME)); // GH-90000
+                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME)); 
 
         // Assert
-        // Don't check isSuccess() as it may be false for cross-language refactorings // GH-90000
-        assertEquals(1, result.getChangeCount()); // GH-90000
-        verify(javaRefactoring, times(1)).apply(any()); // GH-90000
+        // Don't check isSuccess() as it may be false for cross-language refactorings 
+        assertEquals(1, result.getChangeCount()); 
+        verify(javaRefactoring, times(1)).apply(any()); 
     }
 
     @Test
-    void testPerformRename_CrossLanguage() { // GH-90000
+    void testPerformRename_CrossLanguage() { 
         // Create a dedicated orchestrator for this test to avoid state issues
         RefactoringOrchestrator crossLangOrchestrator =
-                new RefactoringOrchestrator(referenceResolver, projectContext, false); // GH-90000
+                new RefactoringOrchestrator(referenceResolver, projectContext, false); 
 
         // Create a simple test refactoring that always succeeds
-        RenameRefactoring testRefactoring = mock(RenameRefactoring.class); // GH-90000
+        RenameRefactoring testRefactoring = mock(RenameRefactoring.class); 
         when(testRefactoring.getId()).thenReturn("test.rename");
-        when(testRefactoring.canApply(any())).thenReturn(true); // GH-90000
-        when(testRefactoring.apply(any())) // GH-90000
-                .thenReturn( // GH-90000
-                        RefactoringResult.success( // GH-90000
+        when(testRefactoring.canApply(any())).thenReturn(true); 
+        when(testRefactoring.apply(any())) 
+                .thenReturn( 
+                        RefactoringResult.success( 
                                 List.of(Path.of("test.file")), 1, "Successfully renamed"));
 
         // Register our test refactoring
-        crossLangOrchestrator.registerRefactoring(testRefactoring); // GH-90000
+        crossLangOrchestrator.registerRefactoring(testRefactoring); 
 
         // Act
         RefactoringResult result =
-                crossLangOrchestrator.performRename(createContext("test.file", OLD_NAME)); // GH-90000
+                crossLangOrchestrator.performRename(createContext("test.file", OLD_NAME)); 
 
         // Assert
-        assertTrue(result.isSuccess(), "Refactoring should succeed"); // GH-90000
-        assertEquals(1, result.getChangeCount(), "Should have one change"); // GH-90000
-        verify(testRefactoring).apply(any()); // GH-90000
+        assertTrue(result.isSuccess(), "Refactoring should succeed"); 
+        assertEquals(1, result.getChangeCount(), "Should have one change"); 
+        verify(testRefactoring).apply(any()); 
     }
 
     @Test
-    void testPerformRename_NoRefactoringFound() { // GH-90000
+    void testPerformRename_NoRefactoringFound() { 
         // Setup for this test
         RefactoringOrchestrator testOrchestrator =
-                new RefactoringOrchestrator(referenceResolver, projectContext, false); // GH-90000
+                new RefactoringOrchestrator(referenceResolver, projectContext, false); 
 
         // No refactorings registered, so it should fail with a specific message
         RefactoringResult result =
-                testOrchestrator.performRename(createContext("test.unsupported", OLD_NAME)); // GH-90000
+                testOrchestrator.performRename(createContext("test.unsupported", OLD_NAME)); 
 
         // Assert
-        assertFalse(result.isSuccess()); // GH-90000
-        assertNotNull(result.getErrorMessage()); // GH-90000
+        assertFalse(result.isSuccess()); 
+        assertNotNull(result.getErrorMessage()); 
         assertTrue(result.getErrorMessage().contains("No refactoring implementation found"));
     }
 
     @Test
-    void testPerformRename_WithError() { // GH-90000
+    void testPerformRename_WithError() { 
         // Setup for this test
-        when(javaRefactoring.canApply(any())).thenReturn(true); // GH-90000
-        when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
+        when(javaRefactoring.canApply(any())).thenReturn(true); 
+        when(referenceResolver.findReferences(any(), any(), any(), any())) 
                 .thenThrow(new RuntimeException("Reference resolution failed"));
 
         // Act
         RefactoringResult result =
-                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME)); // GH-90000
+                orchestrator.performRename(createContext("src/main/java/Example.java", OLD_NAME)); 
 
         // Assert
-        assertFalse(result.isSuccess()); // GH-90000
+        assertFalse(result.isSuccess()); 
         assertTrue(result.getErrorMessage().contains("Reference resolution failed"));
     }
 
     @Test
-    void testRegisterRefactoring() { // GH-90000
+    void testRegisterRefactoring() { 
         // Create a dedicated orchestrator for this test
         RefactoringOrchestrator testOrchestrator =
-                new RefactoringOrchestrator(referenceResolver, projectContext, false); // GH-90000
+                new RefactoringOrchestrator(referenceResolver, projectContext, false); 
 
         // Create a custom refactoring mock
-        RenameRefactoring customRefactoring = mock(RenameRefactoring.class); // GH-90000
+        RenameRefactoring customRefactoring = mock(RenameRefactoring.class); 
         doReturn("custom.rename").when(customRefactoring).getId();
-        when(customRefactoring.canApply(any())).thenReturn(true); // GH-90000
-        when(customRefactoring.apply(any())) // GH-90000
-                .thenReturn(RefactoringResult.success(List.of(), 0, "custom")); // GH-90000
+        when(customRefactoring.canApply(any())).thenReturn(true); 
+        when(customRefactoring.apply(any())) 
+                .thenReturn(RefactoringResult.success(List.of(), 0, "custom")); 
 
         // Register the custom refactoring
-        testOrchestrator.registerRefactoring(customRefactoring); // GH-90000
+        testOrchestrator.registerRefactoring(customRefactoring); 
 
         // Setup reference resolver
-        when(referenceResolver.findReferences(any(), any(), any(), any())) // GH-90000
-                .thenReturn(Collections.emptyList()); // GH-90000
-        when(referenceResolver.findIncomingReferences(any())).thenReturn(Collections.emptyList()); // GH-90000
+        when(referenceResolver.findReferences(any(), any(), any(), any())) 
+                .thenReturn(Collections.emptyList()); 
+        when(referenceResolver.findIncomingReferences(any())).thenReturn(Collections.emptyList()); 
 
         // Act & Assert - should not throw
-        assertDoesNotThrow( // GH-90000
-                () -> { // GH-90000
+        assertDoesNotThrow( 
+                () -> { 
                     RefactoringResult result =
-                            testOrchestrator.performRename( // GH-90000
-                                    createContext("example.custom", "oldName")); // GH-90000
-                    // Don't check isSuccess() as it may be false for cross-language refactorings // GH-90000
+                            testOrchestrator.performRename( 
+                                    createContext("example.custom", "oldName")); 
+                    // Don't check isSuccess() as it may be false for cross-language refactorings 
                 });
 
         // Verify the custom refactoring was applied
-        verify(customRefactoring, times(1)).apply(any()); // GH-90000
+        verify(customRefactoring, times(1)).apply(any()); 
     }
 
-    private RenameRefactoring.Context createContext(String sourceFile, String oldName) { // GH-90000
-        return new RenameRefactoring.Context() { // GH-90000
+    private RenameRefactoring.Context createContext(String sourceFile, String oldName) { 
+        return new RenameRefactoring.Context() { 
             @Override
-            public String getOldName() { // GH-90000
+            public String getOldName() { 
                 return oldName;
             }
 
             @Override
-            public String getNewName() { // GH-90000
+            public String getNewName() { 
                 return "newName";
             }
 
             @Override
-            public String getElementType() { // GH-90000
+            public String getElementType() { 
                 return "METHOD";
             }
 
             @Override
-            public String getSourceFile() { // GH-90000
+            public String getSourceFile() { 
                 return sourceFile;
             }
 
             @Override
-            public int getLineNumber() { // GH-90000
+            public int getLineNumber() { 
                 return 0;
             }
 
             @Override
-            public int getColumnNumber() { // GH-90000
+            public int getColumnNumber() { 
                 return 0;
             }
 
             @Override
-            public PolyfixProjectContext getPolyfixProjectContext() { // GH-90000
+            public PolyfixProjectContext getPolyfixProjectContext() { 
                 return projectContext;
             }
 
             @Override
-            public Path getProjectRoot() { // GH-90000
-                return projectContext.getProjectRoot(); // GH-90000
+            public Path getProjectRoot() { 
+                return projectContext.getProjectRoot(); 
             }
 
             @Override
-            public Set<Path> getAffectedFiles() { // GH-90000
-                return Set.of(Path.of(sourceFile)); // GH-90000
+            public Set<Path> getAffectedFiles() { 
+                return Set.of(Path.of(sourceFile)); 
             }
 
             @Override
-            public boolean isDryRun() { // GH-90000
+            public boolean isDryRun() { 
                 return false;
             }
 
             @Override
-            public boolean isInteractive() { // GH-90000
+            public boolean isInteractive() { 
                 return false;
             }
         };

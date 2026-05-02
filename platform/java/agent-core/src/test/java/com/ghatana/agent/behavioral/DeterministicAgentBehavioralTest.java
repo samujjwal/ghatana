@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  */
 
 package com.ghatana.agent.behavioral;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * and state management.
  */
 @DisplayName("DeterministicAgent Behavioral Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class DeterministicAgentBehavioralTest {
 
     @Mock
@@ -40,13 +40,13 @@ class DeterministicAgentBehavioralTest {
     private DeterministicAgent agent;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        agentContext = AgentContext.builder() // GH-90000
+    void setUp() { 
+        agentContext = AgentContext.builder() 
                 .turnId("turn-1")
                 .agentId("det-agent")
                 .tenantId("tenant-1")
-                .memoryStore(memoryStore) // GH-90000
-                .build(); // GH-90000
+                .memoryStore(memoryStore) 
+                .build(); 
 
         agent = new DeterministicAgent("det-agent");
     }
@@ -61,189 +61,189 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Rule-based agent processes input and produces output")
-        void ruleBasedProcessing() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void ruleBasedProcessing() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Check Score")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("score", 80)) // GH-90000
-                    .action("result", "PASS") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("score", 80)) 
+                    .action("result", "PASS") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("score", 95); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("score", 95); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
-            assertThat(result.getOutput()).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.isSuccess()).isTrue(); 
+            assertThat(result.getOutput()).isNotNull(); 
         }
 
         @Test
         @DisplayName("Same input always produces same output (determinism)")
-        void deterministicOutputConsistency() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void deterministicOutputConsistency() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Status Check")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("status", "active")) // GH-90000
-                    .action("action", "process") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("status", "active")) 
+                    .action("action", "process") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("status", "active"); // GH-90000
+            Map<String, Object> input = Map.of("status", "active"); 
 
             // Run twice with same input
-            AgentResult<?> result1 = runPromise(() -> agent.process(agentContext, input)); // GH-90000
-            AgentResult<?> result2 = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            AgentResult<?> result1 = runPromise(() -> agent.process(agentContext, input)); 
+            AgentResult<?> result2 = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result1.getOutput()).isEqualTo(result2.getOutput()); // GH-90000
-            assertThat(result1.getStatus()).isEqualTo(result2.getStatus()); // GH-90000
+            assertThat(result1.getOutput()).isEqualTo(result2.getOutput()); 
+            assertThat(result1.getStatus()).isEqualTo(result2.getStatus()); 
         }
 
         @Test
         @DisplayName("Threshold evaluation produces correct activation state")
-        void thresholdProcessing() { // GH-90000
-            ThresholdEvaluator threshold = ThresholdEvaluator.builder() // GH-90000
+        void thresholdProcessing() { 
+            ThresholdEvaluator threshold = ThresholdEvaluator.builder() 
                     .id("temp")
                     .field("temperature")
-                    .activationThreshold(100.0) // GH-90000
-                    .upperBound(true) // GH-90000
-                    .build(); // GH-90000
+                    .activationThreshold(100.0) 
+                    .upperBound(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.THRESHOLD) // GH-90000
-                    .threshold(threshold) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.THRESHOLD) 
+                    .threshold(threshold) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
             // Test activation
-            Map<String, Object> hotInput = Map.of("temperature", 105.0); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, hotInput)); // GH-90000
+            Map<String, Object> hotInput = Map.of("temperature", 105.0); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, hotInput)); 
 
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("FSM transitions follow state machine rules")
-        void finiteStateMachineProcessing() { // GH-90000
-            FiniteStateMachine.FSMDefinition fsmDefinition = FiniteStateMachine.FSMDefinition.builder() // GH-90000
+        void finiteStateMachineProcessing() { 
+            FiniteStateMachine.FSMDefinition fsmDefinition = FiniteStateMachine.FSMDefinition.builder() 
                     .id("workflow")
                     .name("Workflow FSM")
                     .initialState("IDLE")
                     .state("IDLE").state("PROCESSING").state("DONE").state("FAILED")
-                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
+                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() 
                             .name("START").fromState("IDLE").toState("PROCESSING").build())
-                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
+                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() 
                             .name("COMPLETE").fromState("PROCESSING").toState("DONE").build())
-                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() // GH-90000
+                    .transition(FiniteStateMachine.FSMDefinition.Transition.builder() 
                             .name("ERROR").fromState("PROCESSING").toState("FAILED").build())
-                    .build(); // GH-90000
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.FSM) // GH-90000
-                    .fsmDefinition(fsmDefinition) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.FSM) 
+                    .fsmDefinition(fsmDefinition) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("entityId", "workflow-1", "event", "START"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("entityId", "workflow-1", "event", "START"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("Pattern matching correctly identifies patterns")
-        void patternMatchingProcessing() { // GH-90000
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.PATTERN) // GH-90000
-                    .patternMatchStrategy((situation, context) -> java.util.Optional.empty()) // GH-90000
-                    .build(); // GH-90000
+        void patternMatchingProcessing() { 
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.PATTERN) 
+                    .patternMatchStrategy((situation, context) -> java.util.Optional.empty()) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("text", "error-404-not-found"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("text", "error-404-not-found"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result).isNotNull(); // strategy returns empty → SKIPPED status // GH-90000
+            assertThat(result).isNotNull(); // strategy returns empty → SKIPPED status 
         }
 
         @Test
         @DisplayName("Multiple rules evaluate all matching rules in priority order")
-        void multipleRulesInPriorityOrder() { // GH-90000
-            Rule high = Rule.builder() // GH-90000
+        void multipleRulesInPriorityOrder() { 
+            Rule high = Rule.builder() 
                     .id("r-high")
                     .name("High Priority")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("severity", 7)) // GH-90000
-                    .action("action", "escalate") // GH-90000
-                    .terminal(false) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("severity", 7)) 
+                    .action("action", "escalate") 
+                    .terminal(false) 
+                    .build(); 
 
-            Rule medium = Rule.builder() // GH-90000
+            Rule medium = Rule.builder() 
                     .id("r-medium")
                     .name("Medium Priority")
-                    .priority(2) // GH-90000
-                    .condition(RuleCondition.gt("severity", 5)) // GH-90000
-                    .action("action", "notify") // GH-90000
-                    .terminal(false) // GH-90000
-                    .build(); // GH-90000
+                    .priority(2) 
+                    .condition(RuleCondition.gt("severity", 5)) 
+                    .action("action", "notify") 
+                    .terminal(false) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(high) // GH-90000
-                    .rule(medium) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(high) 
+                    .rule(medium) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("severity", 8); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("severity", 8); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            assertThat(result.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("No matching rules produces empty output")
-        void noMatchingRulesOutput() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void noMatchingRulesOutput() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Impossible")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "impossible")) // GH-90000
-                    .action("result", "never") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "impossible")) 
+                    .action("result", "never") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("x", "never"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("x", "never"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
             // Result should be successful but empty
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
     }
 
@@ -257,56 +257,56 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Deterministic agents always have confidence = 1.0")
-        void deterministicConfidence() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void deterministicConfidence() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("type", "test")) // GH-90000
-                    .action("result", "ok") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("type", "test")) 
+                    .action("result", "ok") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("type", "test"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("type", "test"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
             // Deterministic agents have complete confidence
-            assertThat(result.getConfidence()).isEqualTo(1.0); // GH-90000
+            assertThat(result.getConfidence()).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("Confidence score is always in valid range [0.0, 1.0]")
-        void confidenceInValidRange() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void confidenceInValidRange() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("value", 0)) // GH-90000
-                    .action("result", "ok") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("value", 0)) 
+                    .action("result", "ok") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            for (int i = 0; i < 10; i++) { // GH-90000
-                Map<String, Object> input = Map.of("value", i); // GH-90000
-                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            for (int i = 0; i < 10; i++) { 
+                Map<String, Object> input = Map.of("value", i); 
+                AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-                assertThat(result.getConfidence()) // GH-90000
-                        .isGreaterThanOrEqualTo(0.0) // GH-90000
-                        .isLessThanOrEqualTo(1.0); // GH-90000
+                assertThat(result.getConfidence()) 
+                        .isGreaterThanOrEqualTo(0.0) 
+                        .isLessThanOrEqualTo(1.0); 
             }
         }
     }
@@ -321,84 +321,84 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Explanation is non-empty for successful results")
-        void explanationNonEmpty() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void explanationNonEmpty() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Check Score")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("score", 75)) // GH-90000
-                    .action("result", "PASS") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("score", 75)) 
+                    .action("result", "PASS") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("score", 85); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("score", 85); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result.getExplanation()) // GH-90000
-                    .isNotNull() // GH-90000
-                    .isNotBlank(); // GH-90000
+            assertThat(result.getExplanation()) 
+                    .isNotNull() 
+                    .isNotBlank(); 
         }
 
         @Test
         @DisplayName("Explanation references the matching rule")
-        void explanationReferencesRule() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void explanationReferencesRule() { 
+            Rule rule = Rule.builder() 
                     .id("rule-audit")
                     .name("Audit Rule")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("amount", 1000)) // GH-90000
-                    .action("review", "mandatory") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("amount", 1000)) 
+                    .action("review", "mandatory") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("amount", 5000); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("amount", 5000); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
             // Explanation should contain rule info
-            String explanation = result.getExplanation(); // GH-90000
-            assertThat(explanation) // GH-90000
-                    .isNotNull() // GH-90000
-                    .isNotBlank(); // GH-90000
+            String explanation = result.getExplanation(); 
+            assertThat(explanation) 
+                    .isNotNull() 
+                    .isNotBlank(); 
         }
 
         @Test
         @DisplayName("Explanation contains decision reasoning")
-        void explanationContainsReasoning() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void explanationContainsReasoning() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("CPU Alert")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("cpu_usage", 90)) // GH-90000
-                    .action("alert", "critical") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("cpu_usage", 90)) 
+                    .action("alert", "critical") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("cpu_usage", 95.5); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("cpu_usage", 95.5); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result.getExplanation()) // GH-90000
-                    .contains("95.5", "90", "cpu") // GH-90000
+            assertThat(result.getExplanation()) 
+                    .contains("95.5", "90", "cpu") 
                     .doesNotContainIgnoringCase("high confidence")
                     .doesNotContainIgnoringCase("model");
         }
@@ -414,76 +414,76 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Agent initializes successfully with valid config")
-        void agentInitialization() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void agentInitialization() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "y")) // GH-90000
-                    .action("a", "b") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "y")) 
+                    .action("a", "b") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            Promise<Void> initPromise = agent.initialize(config); // GH-90000
-            assertThat(initPromise).isNotNull(); // GH-90000
+            Promise<Void> initPromise = agent.initialize(config); 
+            assertThat(initPromise).isNotNull(); 
 
-            runPromise(() -> initPromise);  // Should complete without error // GH-90000
+            runPromise(() -> initPromise);  // Should complete without error 
         }
 
         @Test
         @DisplayName("Agent metadata reflects configuration")
-        void agentMetadata() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void agentMetadata() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "y")) // GH-90000
-                    .action("a", "b") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "y")) 
+                    .action("a", "b") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            AgentDescriptor descriptor = agent.descriptor(); // GH-90000
-            assertThat(descriptor).isNotNull(); // GH-90000
-            assertThat(descriptor.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
-            assertThat(descriptor.getDeterminism()).isEqualTo(DeterminismGuarantee.FULL); // GH-90000
+            AgentDescriptor descriptor = agent.descriptor(); 
+            assertThat(descriptor).isNotNull(); 
+            assertThat(descriptor.getType()).isEqualTo(AgentType.DETERMINISTIC); 
+            assertThat(descriptor.getDeterminism()).isEqualTo(DeterminismGuarantee.FULL); 
         }
 
         @Test
         @DisplayName("Processing produces metrics")
-        void processingMetrics() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void processingMetrics() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "y")) // GH-90000
-                    .action("a", "b") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "y")) 
+                    .action("a", "b") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("x", "y"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("x", "y"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result.getMetrics()).isNotNull(); // GH-90000
-            assertThat(result.getProcessingTime()).isNotNull(); // GH-90000
+            assertThat(result.getMetrics()).isNotNull(); 
+            assertThat(result.getProcessingTime()).isNotNull(); 
         }
     }
 
@@ -497,102 +497,102 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Null input field is handled gracefully")
-        void nullFieldHandling() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void nullFieldHandling() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("field", "value")) // GH-90000
-                    .action("result", "match") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("field", "value")) 
+                    .action("result", "match") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("other", "value"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("other", "value"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
             // Should complete without exception
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("Empty rule set produces valid result")
-        void emptyRuleSet() { // GH-90000
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .build(); // GH-90000
+        void emptyRuleSet() { 
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("x", "y"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("x", "y"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("Large input maps are processed correctly")
-        void largeInputHandling() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void largeInputHandling() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("count", 5)) // GH-90000
-                    .action("result", "proceed") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("count", 5)) 
+                    .action("result", "proceed") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> largeInput = new HashMap<>(); // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
-                largeInput.put("field" + i, "value" + i); // GH-90000
+            Map<String, Object> largeInput = new HashMap<>(); 
+            for (int i = 0; i < 100; i++) { 
+                largeInput.put("field" + i, "value" + i); 
             }
-            largeInput.put("count", 10); // GH-90000
+            largeInput.put("count", 10); 
 
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, largeInput)); // GH-90000
-            assertThat(result.isSuccess()).isTrue(); // GH-90000
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, largeInput)); 
+            assertThat(result.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("Numeric comparisons handle different numeric types")
-        void numericTypeHandling() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void numericTypeHandling() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Numeric")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.gt("value", 50)) // GH-90000
-                    .action("result", "pass") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.gt("value", 50)) 
+                    .action("result", "pass") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
             // Test with double
-            AgentResult<?> doubleResult = runPromise(() -> // GH-90000
-                agent.process(agentContext, Map.of("value", 75.5))); // GH-90000
-            assertThat(doubleResult.isSuccess()).isTrue(); // GH-90000
+            AgentResult<?> doubleResult = runPromise(() -> 
+                agent.process(agentContext, Map.of("value", 75.5))); 
+            assertThat(doubleResult.isSuccess()).isTrue(); 
 
             // Test with int
-            AgentResult<?> intResult = runPromise(() -> // GH-90000
-                agent.process(agentContext, Map.of("value", 60))); // GH-90000
-            assertThat(intResult.isSuccess()).isTrue(); // GH-90000
+            AgentResult<?> intResult = runPromise(() -> 
+                agent.process(agentContext, Map.of("value", 60))); 
+            assertThat(intResult.isSuccess()).isTrue(); 
         }
     }
 
@@ -606,57 +606,57 @@ class DeterministicAgentBehavioralTest {
 
         @Test
         @DisplayName("Process returns Promise that resolves successfully")
-        void asyncProcessing() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void asyncProcessing() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "y")) // GH-90000
-                    .action("a", "b") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "y")) 
+                    .action("a", "b") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("x", "y"); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
+            Map<String, Object> input = Map.of("x", "y"); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
 
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
         }
 
         @Test
         @DisplayName("Processing completes within expected latency")
-        void processingLatency() { // GH-90000
-            Rule rule = Rule.builder() // GH-90000
+        void processingLatency() { 
+            Rule rule = Rule.builder() 
                     .id("r1")
                     .name("Test")
-                    .priority(1) // GH-90000
-                    .condition(RuleCondition.eq("x", "y")) // GH-90000
-                    .action("a", "b") // GH-90000
-                    .terminal(true) // GH-90000
-                    .build(); // GH-90000
+                    .priority(1) 
+                    .condition(RuleCondition.eq("x", "y")) 
+                    .action("a", "b") 
+                    .terminal(true) 
+                    .build(); 
 
-            DeterministicAgentConfig config = DeterministicAgentConfig.builder() // GH-90000
-                    .subtype(DeterministicSubtype.RULE_BASED) // GH-90000
-                    .rule(rule) // GH-90000
-                    .build(); // GH-90000
+            DeterministicAgentConfig config = DeterministicAgentConfig.builder() 
+                    .subtype(DeterministicSubtype.RULE_BASED) 
+                    .rule(rule) 
+                    .build(); 
 
-            runPromise(() -> agent.initialize(config)); // GH-90000
+            runPromise(() -> agent.initialize(config)); 
 
-            Map<String, Object> input = Map.of("x", "y"); // GH-90000
-            Instant start = Instant.now(); // GH-90000
-            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); // GH-90000
-            Instant end = Instant.now(); // GH-90000
+            Map<String, Object> input = Map.of("x", "y"); 
+            Instant start = Instant.now(); 
+            AgentResult<?> result = runPromise(() -> agent.process(agentContext, input)); 
+            Instant end = Instant.now(); 
 
-            Duration latency = Duration.between(start, end); // GH-90000
+            Duration latency = Duration.between(start, end); 
 
             // Deterministic should be sub-millisecond
-            assertThat(latency).isLessThan(Duration.ofMillis(100)); // GH-90000
+            assertThat(latency).isLessThan(Duration.ofMillis(100)); 
         }
     }
 
@@ -664,19 +664,19 @@ class DeterministicAgentBehavioralTest {
     // Helper Methods
     // ═══════════════════════════════════════════════════════════════════════════
 
-    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) { // GH-90000
-        var result = new Object() { T value; }; // GH-90000
-        var error = new Object() { Exception ex; }; // GH-90000
+    private <T> T runPromise(java.util.function.Supplier<Promise<T>> supplier) { 
+        var result = new Object() { T value; }; 
+        var error = new Object() { Exception ex; }; 
 
-        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); // GH-90000
-        eventloop.post(() -> supplier.get() // GH-90000
-                .whenResult(v -> result.value = v) // GH-90000
-                .whenException(e -> error.ex = (Exception) e)); // GH-90000
+        Eventloop eventloop = Eventloop.builder().withCurrentThread().build(); 
+        eventloop.post(() -> supplier.get() 
+                .whenResult(v -> result.value = v) 
+                .whenException(e -> error.ex = (Exception) e)); 
 
-        eventloop.run(); // GH-90000
+        eventloop.run(); 
 
-        if (error.ex != null) { // GH-90000
-            throw new RuntimeException(error.ex); // GH-90000
+        if (error.ex != null) { 
+            throw new RuntimeException(error.ex); 
         }
 
         return result.value;

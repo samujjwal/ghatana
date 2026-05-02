@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana. // GH-90000
+ * Copyright (c) 2026 Ghatana. 
  * All rights reserved.
  */
 package com.ghatana.platform.architecture;

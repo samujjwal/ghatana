@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.framework.learning.signal;
@@ -21,36 +21,36 @@ class LearningSignalTest {
 
         @Test
         @DisplayName("generates a non-blank signalId")
-        void generatesId() { // GH-90000
-            var s = LearningSignal.of("skill.success", "agent-1", "tenant-1", "corr-1", null); // GH-90000
-            assertThat(s.signalId()).isNotBlank(); // GH-90000
+        void generatesId() { 
+            var s = LearningSignal.of("skill.success", "agent-1", "tenant-1", "corr-1", null); 
+            assertThat(s.signalId()).isNotBlank(); 
         }
 
         @Test
         @DisplayName("sets all fields including emittedAt")
-        void setsAllFields() { // GH-90000
-            var s = LearningSignal.of("tool.failure", "agent-2", "t2", "c2", Map.of("tool", "search")); // GH-90000
+        void setsAllFields() { 
+            var s = LearningSignal.of("tool.failure", "agent-2", "t2", "c2", Map.of("tool", "search")); 
             assertThat(s.signalType()).isEqualTo("tool.failure");
             assertThat(s.sourceAgentId()).isEqualTo("agent-2");
             assertThat(s.tenantId()).isEqualTo("t2");
             assertThat(s.correlationId()).isEqualTo("c2");
-            assertThat(s.payload()).containsEntry("tool", "search"); // GH-90000
-            assertThat(s.emittedAt()).isNotNull(); // GH-90000
+            assertThat(s.payload()).containsEntry("tool", "search"); 
+            assertThat(s.emittedAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("null payload is treated as empty map")
-        void nullPayloadIsEmpty() { // GH-90000
-            var s = LearningSignal.of("sig", "a", "t", "c", null); // GH-90000
-            assertThat(s.payload()).isEmpty(); // GH-90000
+        void nullPayloadIsEmpty() { 
+            var s = LearningSignal.of("sig", "a", "t", "c", null); 
+            assertThat(s.payload()).isEmpty(); 
         }
 
         @Test
         @DisplayName("each call generates a unique signalId")
-        void uniqueIds() { // GH-90000
-            var s1 = LearningSignal.of("x", "a", "t", "c", null); // GH-90000
-            var s2 = LearningSignal.of("x", "a", "t", "c", null); // GH-90000
-            assertThat(s1.signalId()).isNotEqualTo(s2.signalId()); // GH-90000
+        void uniqueIds() { 
+            var s1 = LearningSignal.of("x", "a", "t", "c", null); 
+            var s2 = LearningSignal.of("x", "a", "t", "c", null); 
+            assertThat(s1.signalId()).isNotEqualTo(s2.signalId()); 
         }
     }
 
@@ -60,18 +60,18 @@ class LearningSignalTest {
 
         @Test
         @DisplayName("blank signalType throws")
-        void blankSignalType() { // GH-90000
-            assertThatThrownBy(() -> LearningSignal.of("  ", "a", "t", "c", null)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void blankSignalType() { 
+            assertThatThrownBy(() -> LearningSignal.of("  ", "a", "t", "c", null)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("signalType");
         }
 
         @Test
         @DisplayName("payload is immutable")
-        void payloadImmutable() { // GH-90000
-            var s = LearningSignal.of("sig", "a", "t", "c", Map.of("k", "v")); // GH-90000
-            assertThatThrownBy(() -> s.payload().put("x", "y")) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+        void payloadImmutable() { 
+            var s = LearningSignal.of("sig", "a", "t", "c", Map.of("k", "v")); 
+            assertThatThrownBy(() -> s.payload().put("x", "y")) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
     }
 
@@ -81,12 +81,12 @@ class LearningSignalTest {
 
         @Test
         @DisplayName("noOp router completes without error")
-        void noOpCompletes() throws Exception { // GH-90000
-            var router = LearningSignalRouter.noOp(); // GH-90000
-            var signal = LearningSignal.of("sig", "a", "t", "c", null); // GH-90000
-            var promise = router.route(signal); // GH-90000
+        void noOpCompletes() throws Exception { 
+            var router = LearningSignalRouter.noOp(); 
+            var signal = LearningSignal.of("sig", "a", "t", "c", null); 
+            var promise = router.route(signal); 
             // In a synchronous context the promise is already complete
-            assertThat(promise.isComplete()).isTrue(); // GH-90000
+            assertThat(promise.isComplete()).isTrue(); 
         }
     }
 }

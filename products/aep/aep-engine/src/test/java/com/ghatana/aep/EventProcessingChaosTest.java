@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep;
@@ -42,14 +42,14 @@ class EventProcessingChaosTest extends EventloopTestBase {
     private AepEngine engine;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = Aep.forTesting(); // GH-90000
+    void setUp() { 
+        engine = Aep.forTesting(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (engine != null) { // GH-90000
-            engine.close(); // GH-90000
+    void tearDown() { 
+        if (engine != null) { 
+            engine.close(); 
         }
     }
 
@@ -59,15 +59,15 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
         @Test
         @DisplayName("handles long-running operations with timeout")
-        void handlesLongRunningOperationsWithTimeout() { // GH-90000
+        void handlesLongRunningOperationsWithTimeout() { 
             String tenantId = "tenant-timeout";
             
             // Create a pipeline with a step that simulates long processing
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "slow-pipeline",
                 "Slow Processing Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("slow-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("slow-step", "register_pattern", Map.of( 
                         "name", "slow-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -79,26 +79,26 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
             // Submit with timeout - should complete or fail gracefully
             try {
-                engine.submitPipeline(tenantId, pipeline); // GH-90000
+                engine.submitPipeline(tenantId, pipeline); 
                 // If it completes, verify it's registered
-                List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-                assertThat(patterns).isNotEmpty(); // GH-90000
-            } catch (CompletionException e) { // GH-90000
+                List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+                assertThat(patterns).isNotEmpty(); 
+            } catch (CompletionException e) { 
                 // Timeout is acceptable - system should not crash
-                assertThat(e.getCause()).isInstanceOf(TimeoutException.class); // GH-90000
+                assertThat(e.getCause()).isInstanceOf(TimeoutException.class); 
             }
         }
 
         @Test
         @DisplayName("gracefully handles concurrent pipeline submissions")
-        void gracefullyHandlesConcurrentPipelineSubmissions() { // GH-90000
+        void gracefullyHandlesConcurrentPipelineSubmissions() { 
             String tenantId = "tenant-concurrent";
             
             // Submit multiple pipelines concurrently
-            AepEngine.Pipeline pipeline1 = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline1 = new AepEngine.Pipeline( 
                 "pipeline-1",
                 "Pipeline 1",
-                List.of(new AepEngine.PipelineStep("step1", "register_pattern", Map.of( // GH-90000
+                List.of(new AepEngine.PipelineStep("step1", "register_pattern", Map.of( 
                     "name", "pattern-1",
                     "patternType", "THRESHOLD",
                     "field", "value",
@@ -106,10 +106,10 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )))
             );
 
-            AepEngine.Pipeline pipeline2 = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline2 = new AepEngine.Pipeline( 
                 "pipeline-2",
                 "Pipeline 2",
-                List.of(new AepEngine.PipelineStep("step2", "register_pattern", Map.of( // GH-90000
+                List.of(new AepEngine.PipelineStep("step2", "register_pattern", Map.of( 
                     "name", "pattern-2",
                     "patternType", "THRESHOLD",
                     "field", "value",
@@ -118,12 +118,12 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Submit both - should not deadlock or crash
-            engine.submitPipeline(tenantId, pipeline1); // GH-90000
-            engine.submitPipeline(tenantId, pipeline2); // GH-90000
+            engine.submitPipeline(tenantId, pipeline1); 
+            engine.submitPipeline(tenantId, pipeline2); 
 
             // Verify both are registered
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).hasSize(2); // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).hasSize(2); 
         }
     }
 
@@ -133,49 +133,49 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
         @Test
         @DisplayName("handles null pipeline gracefully")
-        void handlesNullPipelineGracefully() { // GH-90000
+        void handlesNullPipelineGracefully() { 
             String tenantId = "tenant-null";
 
-            assertThatThrownBy(() -> engine.submitPipeline(tenantId, null)) // GH-90000
-                .isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, null)) 
+                .isInstanceOf(NullPointerException.class) 
                 .hasMessageContaining("null");
         }
 
         @Test
         @DisplayName("handles pipeline with invalid step type")
-        void handlesPipelineWithInvalidStepType() { // GH-90000
+        void handlesPipelineWithInvalidStepType() { 
             String tenantId = "tenant-invalid";
             
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "invalid-pipeline",
                 "Invalid Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("invalid-step", "nonexistent_operation", Map.of()) // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("invalid-step", "nonexistent_operation", Map.of()) 
                 )
             );
 
-            engine.submitPipeline(tenantId, pipeline); // GH-90000
+            engine.submitPipeline(tenantId, pipeline); 
 
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).isEmpty(); // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).isEmpty(); 
         }
 
         @Test
         @DisplayName("handles pipeline with circular dependencies")
-        void handlesPipelineWithCircularDependencies() { // GH-90000
+        void handlesPipelineWithCircularDependencies() { 
             String tenantId = "tenant-circular";
             
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "circular-pipeline",
                 "Circular Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("step1", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("step1", "register_pattern", Map.of( 
                         "name", "pattern-1",
                         "patternType", "THRESHOLD",
                         "field", "value",
                         "threshold", 10.0
                     ), List.of("step2")), // Depends on step2
-                    new AepEngine.PipelineStep("step2", "register_pattern", Map.of( // GH-90000
+                    new AepEngine.PipelineStep("step2", "register_pattern", Map.of( 
                         "name", "pattern-2",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -184,21 +184,21 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("cycles");
         }
 
         @Test
         @DisplayName("handles malformed pattern configuration")
-        void handlesMalformedPatternConfiguration() { // GH-90000
+        void handlesMalformedPatternConfiguration() { 
             String tenantId = "tenant-malformed";
             
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "malformed-pipeline",
                 "Malformed Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("malformed-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("malformed-step", "register_pattern", Map.of( 
                         "name", "", // Empty name
                         "patternType", "INVALID_TYPE", // Invalid type
                         "threshold", "not_a_number" // Invalid threshold type
@@ -207,8 +207,8 @@ class EventProcessingChaosTest extends EventloopTestBase {
             );
 
             // Should fail gracefully with validation error
-            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) // GH-90000
-                .isInstanceOf(CompletionException.class); // GH-90000
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, pipeline)) 
+                .isInstanceOf(CompletionException.class); 
         }
     }
 
@@ -218,66 +218,66 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
         @Test
         @DisplayName("handles high volume of pattern registrations")
-        void handlesHighVolumeOfPatternRegistrations() { // GH-90000
+        void handlesHighVolumeOfPatternRegistrations() { 
             String tenantId = "tenant-volume";
             
             // Register many patterns rapidly
-            for (int i = 0; i < 100; i++) { // GH-90000
-                AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            for (int i = 0; i < 100; i++) { 
+                AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                     "pipeline-" + i,
                     "Pipeline " + i,
-                    List.of( // GH-90000
-                        new AepEngine.PipelineStep("step-" + i, "register_pattern", Map.of( // GH-90000
+                    List.of( 
+                        new AepEngine.PipelineStep("step-" + i, "register_pattern", Map.of( 
                             "name", "pattern-" + i,
                             "patternType", "THRESHOLD",
                             "field", "value",
-                            "threshold", (double) i // GH-90000
+                            "threshold", (double) i 
                         ))
                     )
                 );
 
-                engine.submitPipeline(tenantId, pipeline); // GH-90000
+                engine.submitPipeline(tenantId, pipeline); 
             }
 
             // Verify all patterns are registered
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).hasSize(100); // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).hasSize(100); 
         }
 
         @Test
         @DisplayName("handles very long pipeline chains")
-        void handlesVeryLongPipelineChains() { // GH-90000
+        void handlesVeryLongPipelineChains() { 
             String tenantId = "tenant-long-chain";
             
             // Create a pipeline with a long chain of dependencies
-            List<AepEngine.PipelineStep> steps = new java.util.ArrayList<>(); // GH-90000
-            for (int i = 0; i < 50; i++) { // GH-90000
-                List<String> dependencies = i > 0 ? List.of("step-" + (i - 1)) : List.of(); // GH-90000
-                steps.add(new AepEngine.PipelineStep( // GH-90000
+            List<AepEngine.PipelineStep> steps = new java.util.ArrayList<>(); 
+            for (int i = 0; i < 50; i++) { 
+                List<String> dependencies = i > 0 ? List.of("step-" + (i - 1)) : List.of(); 
+                steps.add(new AepEngine.PipelineStep( 
                     "step-" + i,
                     "register_pattern",
-                    Map.of( // GH-90000
+                    Map.of( 
                         "name", "pattern-" + i,
                         "patternType", "THRESHOLD",
                         "field", "value",
-                        "threshold", (double) i // GH-90000
+                        "threshold", (double) i 
                     ),
                     dependencies
                 ));
             }
 
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "long-chain-pipeline",
                 "Long Chain Pipeline",
                 steps
             );
 
             // Should handle long chains without stack overflow
-            engine.submitPipeline(tenantId, pipeline); // GH-90000
+            engine.submitPipeline(tenantId, pipeline); 
 
             // Verify all patterns are registered
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).hasSize(50); // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).hasSize(50); 
         }
     }
 
@@ -287,15 +287,15 @@ class EventProcessingChaosTest extends EventloopTestBase {
 
         @Test
         @DisplayName("recovers from partial pipeline failure")
-        void recoversFromPartialPipelineFailure() { // GH-90000
+        void recoversFromPartialPipelineFailure() { 
             String tenantId = "tenant-recovery";
             
             // First pipeline succeeds
-            AepEngine.Pipeline goodPipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline goodPipeline = new AepEngine.Pipeline( 
                 "good-pipeline",
                 "Good Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("good-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("good-step", "register_pattern", Map.of( 
                         "name", "good-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -304,14 +304,14 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            engine.submitPipeline(tenantId, goodPipeline); // GH-90000
+            engine.submitPipeline(tenantId, goodPipeline); 
 
             // Second pipeline fails
-            AepEngine.Pipeline badPipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline badPipeline = new AepEngine.Pipeline( 
                 "bad-pipeline",
                 "Bad Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("bad-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("bad-step", "register_pattern", Map.of( 
                         "name", "",
                         "patternType", "INVALID_TYPE",
                         "threshold", "not_a_number"
@@ -319,15 +319,15 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            assertThatThrownBy(() -> engine.submitPipeline(tenantId, badPipeline)) // GH-90000
-                .isInstanceOf(CompletionException.class); // GH-90000
+            assertThatThrownBy(() -> engine.submitPipeline(tenantId, badPipeline)) 
+                .isInstanceOf(CompletionException.class); 
 
             // Third pipeline should still work - system is not corrupted
-            AepEngine.Pipeline recoveryPipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline recoveryPipeline = new AepEngine.Pipeline( 
                 "recovery-pipeline",
                 "Recovery Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("recovery-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("recovery-step", "register_pattern", Map.of( 
                         "name", "recovery-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -336,24 +336,24 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            engine.submitPipeline(tenantId, recoveryPipeline); // GH-90000
+            engine.submitPipeline(tenantId, recoveryPipeline); 
 
             // Verify good patterns are still registered
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).hasSize(2); // good-pattern and recovery-pattern // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).hasSize(2); // good-pattern and recovery-pattern 
         }
 
         @Test
         @DisplayName("handles engine restart gracefully")
-        void handlesEngineRestartGracefully() { // GH-90000
+        void handlesEngineRestartGracefully() { 
             String tenantId = "tenant-restart";
             
             // Register a pattern
-            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline pipeline = new AepEngine.Pipeline( 
                 "restart-pipeline",
                 "Restart Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("restart-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("restart-step", "register_pattern", Map.of( 
                         "name", "restart-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -362,18 +362,18 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            engine.submitPipeline(tenantId, pipeline); // GH-90000
+            engine.submitPipeline(tenantId, pipeline); 
 
             // Restart engine
-            engine.close(); // GH-90000
-            engine = Aep.forTesting(); // GH-90000
+            engine.close(); 
+            engine = Aep.forTesting(); 
 
             // System should be operational after restart
-            AepEngine.Pipeline newPipeline = new AepEngine.Pipeline( // GH-90000
+            AepEngine.Pipeline newPipeline = new AepEngine.Pipeline( 
                 "new-pipeline",
                 "New Pipeline",
-                List.of( // GH-90000
-                    new AepEngine.PipelineStep("new-step", "register_pattern", Map.of( // GH-90000
+                List.of( 
+                    new AepEngine.PipelineStep("new-step", "register_pattern", Map.of( 
                         "name", "new-pattern",
                         "patternType", "THRESHOLD",
                         "field", "value",
@@ -382,11 +382,11 @@ class EventProcessingChaosTest extends EventloopTestBase {
                 )
             );
 
-            engine.submitPipeline(tenantId, newPipeline); // GH-90000
+            engine.submitPipeline(tenantId, newPipeline); 
 
             // Verify new pattern is registered
-            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); // GH-90000
-            assertThat(patterns).hasSize(1); // Only new pattern (in-memory storage) // GH-90000
+            List<AepEngine.Pattern> patterns = runPromise(() -> engine.listPatterns(tenantId)); 
+            assertThat(patterns).hasSize(1); // Only new pattern (in-memory storage) 
         }
     }
 }

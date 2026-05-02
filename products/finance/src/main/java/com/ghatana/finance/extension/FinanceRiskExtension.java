@@ -107,7 +107,7 @@ public class FinanceRiskExtension extends AbstractKernelExtension {
      */
     public Promise<com.ghatana.plugin.risk.RiskManagementPlugin.RiskScore> calculateTradingRisk(
             String positionId, Map<String, Object> factors) {
-        return riskPlugin.calculateRisk(positionId, RiskManagementPlugin.RiskType.MARKET, factors);
+        return riskPlugin.calculateRisk(positionId, RiskManagementPlugin.RiskModelId.MARKET, factors);
     }
 
     /**
@@ -119,12 +119,12 @@ public class FinanceRiskExtension extends AbstractKernelExtension {
      * @return Promise completing when limits are set
      */
     public Promise<Void> setTradingLimits(String positionId, BigDecimal maxNotional, BigDecimal maxVaR) {
-        RiskManagementPlugin.RiskLimits limits = new RiskManagementPlugin.RiskLimits(
-            maxNotional,
-            maxNotional.multiply(BigDecimal.valueOf(10)), // Portfolio = 10x position
-            maxVaR,
-            BigDecimal.valueOf(0.25), // 25% max concentration
-            maxNotional.multiply(BigDecimal.valueOf(0.5)) // Max loss = 50% of position
+        Map<String, BigDecimal> limits = Map.of(
+            "max-notional", maxNotional,
+            "max-portfolio", maxNotional.multiply(BigDecimal.valueOf(10)), // Portfolio = 10x position
+            "max-var", maxVaR,
+            "max-concentration", BigDecimal.valueOf(0.25), // 25% max concentration
+            "max-loss", maxNotional.multiply(BigDecimal.valueOf(0.5)) // Max loss = 50% of position
         );
         return riskPlugin.setRiskLimits(positionId, limits);
     }

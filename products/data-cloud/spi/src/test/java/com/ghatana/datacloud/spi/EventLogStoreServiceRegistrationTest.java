@@ -13,7 +13,7 @@ class EventLogStoreServiceRegistrationTest {
 
     @Test
     @DisplayName("main classpath does not expose an EventLogStore service registration")
-    void mainClasspathDoesNotExposeAnEventLogStoreServiceRegistration() { // GH-90000
-        assertThat(ServiceLoader.load(EventLogStore.class).findFirst()).isEmpty(); // GH-90000
+    void mainClasspathDoesNotExposeAnEventLogStoreServiceRegistration() { 
+        assertThat(ServiceLoader.load(EventLogStore.class).findFirst()).isEmpty(); 
     }
 }

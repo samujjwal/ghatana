@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *   <li>Hash chain verification for tamper-evidence</li>
  *   <li>SHA-256 cryptographic hashing</li>
  *   <li>Export to multiple formats (JSON, CSV, XML)</li>
- *   <li>Regulatory compliance support (SOX, HIPAA, PCI-DSS)</li>
+ *   <li>Configurable retention for regulatory compliance via product-supplied rule packs</li>
  * </ul>
  *
  * <p>For production use, this should be backed by an immutable database like DataCloud.</p>

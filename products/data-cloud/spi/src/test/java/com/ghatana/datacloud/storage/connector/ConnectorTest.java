@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.storage.connector;
@@ -32,39 +32,39 @@ class ConnectorTest extends EventloopTestBase {
     enum ConnectorStatus { REGISTERED, ACTIVE, FAILED, DEACTIVATED }
 
     interface DataConnector {
-        String connectorId(); // GH-90000
-        boolean isHealthy(); // GH-90000
-        List<String> readBatch(int batchSize); // GH-90000
+        String connectorId(); 
+        boolean isHealthy(); 
+        List<String> readBatch(int batchSize); 
     }
 
-    record ConnectorState(DataConnector connector, ConnectorStatus status, String lastError) {} // GH-90000
+    record ConnectorState(DataConnector connector, ConnectorStatus status, String lastError) {} 
 
     private ConnectorRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new ConnectorRegistry(); // GH-90000
+    void setUp() { 
+        registry = new ConnectorRegistry(); 
     }
 
     // ── Registration ──────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("registered connector is available in REGISTERED status")
-    void registeredConnectorAvailableInRegisteredStatus() { // GH-90000
+    void registeredConnectorAvailableInRegisteredStatus() { 
         DataConnector conn = makeHealthyConnector("conn-1", List.of("record-1"));
-        registry.register(conn); // GH-90000
+        registry.register(conn); 
 
         assertThat(registry.status("conn-1")).isEqualTo(ConnectorStatus.REGISTERED);
     }
 
     @Test
     @DisplayName("registering same connector ID twice is rejected")
-    void registeringDuplicateConnectorIdIsRejected() { // GH-90000
-        DataConnector conn = makeHealthyConnector("conn-dup", List.of()); // GH-90000
-        registry.register(conn); // GH-90000
+    void registeringDuplicateConnectorIdIsRejected() { 
+        DataConnector conn = makeHealthyConnector("conn-dup", List.of()); 
+        registry.register(conn); 
 
-        assertThatThrownBy(() -> registry.register(conn)) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> registry.register(conn)) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("already registered");
     }
 
@@ -72,9 +72,9 @@ class ConnectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("healthy connector transitions to ACTIVE on activation")
-    void healthyConnectorTransitionsToActiveOnActivation() { // GH-90000
-        DataConnector conn = makeHealthyConnector("conn-act", List.of("r1", "r2")); // GH-90000
-        registry.register(conn); // GH-90000
+    void healthyConnectorTransitionsToActiveOnActivation() { 
+        DataConnector conn = makeHealthyConnector("conn-act", List.of("r1", "r2")); 
+        registry.register(conn); 
         registry.activate("conn-act");
 
         assertThat(registry.status("conn-act")).isEqualTo(ConnectorStatus.ACTIVE);
@@ -82,9 +82,9 @@ class ConnectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("activating an unhealthy connector sets status to FAILED")
-    void activatingUnhealthyConnectorSetsStatusToFailed() { // GH-90000
+    void activatingUnhealthyConnectorSetsStatusToFailed() { 
         DataConnector unhealthy = makeUnhealthyConnector("conn-sick");
-        registry.register(unhealthy); // GH-90000
+        registry.register(unhealthy); 
         registry.activate("conn-sick");
 
         assertThat(registry.status("conn-sick")).isEqualTo(ConnectorStatus.FAILED);
@@ -92,23 +92,23 @@ class ConnectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("active connector can read batches of data")
-    void activeConnectorCanReadBatches() { // GH-90000
-        DataConnector conn = makeHealthyConnector("conn-read", List.of("a", "b", "c")); // GH-90000
-        registry.register(conn); // GH-90000
+    void activeConnectorCanReadBatches() { 
+        DataConnector conn = makeHealthyConnector("conn-read", List.of("a", "b", "c")); 
+        registry.register(conn); 
         registry.activate("conn-read");
 
-        List<String> batch = registry.readBatch("conn-read", 2); // GH-90000
-        assertThat(batch).hasSize(2); // GH-90000
+        List<String> batch = registry.readBatch("conn-read", 2); 
+        assertThat(batch).hasSize(2); 
     }
 
     @Test
     @DisplayName("inactive connector cannot read data")
-    void inactiveConnectorCannotReadData() { // GH-90000
+    void inactiveConnectorCannotReadData() { 
         DataConnector conn = makeHealthyConnector("conn-inactive", List.of("x"));
-        registry.register(conn); // GH-90000
+        registry.register(conn); 
 
-        assertThatThrownBy(() -> registry.readBatch("conn-inactive", 10)) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> registry.readBatch("conn-inactive", 10)) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("not active");
     }
 
@@ -116,23 +116,23 @@ class ConnectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("error during read is captured and connector is marked FAILED")
-    void errorDuringReadCapturedAndConnectorMarkedFailed() { // GH-90000
-        AtomicInteger callCount = new AtomicInteger(0); // GH-90000
-        DataConnector flakyConn = new DataConnector() { // GH-90000
-            @Override public String connectorId() { return "conn-flaky"; } // GH-90000
-            @Override public boolean isHealthy() { return true; } // GH-90000
-            @Override public List<String> readBatch(int batchSize) { // GH-90000
-                callCount.incrementAndGet(); // GH-90000
+    void errorDuringReadCapturedAndConnectorMarkedFailed() { 
+        AtomicInteger callCount = new AtomicInteger(0); 
+        DataConnector flakyConn = new DataConnector() { 
+            @Override public String connectorId() { return "conn-flaky"; } 
+            @Override public boolean isHealthy() { return true; } 
+            @Override public List<String> readBatch(int batchSize) { 
+                callCount.incrementAndGet(); 
                 throw new RuntimeException("Simulated IO error");
             }
         };
 
-        registry.register(flakyConn); // GH-90000
+        registry.register(flakyConn); 
         registry.activate("conn-flaky");
 
         try {
-            registry.readBatch("conn-flaky", 10); // GH-90000
-        } catch (RuntimeException ignored) {} // GH-90000
+            registry.readBatch("conn-flaky", 10); 
+        } catch (RuntimeException ignored) {} 
 
         assertThat(registry.status("conn-flaky")).isEqualTo(ConnectorStatus.FAILED);
         assertThat(registry.lastError("conn-flaky")).contains("Simulated IO error");
@@ -142,118 +142,118 @@ class ConnectorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("primary connector failure triggers fallback connector read")
-    void primaryFailureTriggersFallback() { // GH-90000
+    void primaryFailureTriggersFallback() { 
         DataConnector primary = makeUnhealthyConnector("conn-primary");
         DataConnector fallback = makeHealthyConnector("conn-fallback", List.of("fallback-record"));
 
-        registry.register(primary); // GH-90000
-        registry.register(fallback); // GH-90000
+        registry.register(primary); 
+        registry.register(fallback); 
         registry.activate("conn-primary");
         registry.activate("conn-fallback");
-        registry.setFallback("conn-primary", "conn-fallback"); // GH-90000
+        registry.setFallback("conn-primary", "conn-fallback"); 
 
-        // Since primary is unhealthy(FAILED), read falls back to secondary // GH-90000
-        List<String> records = registry.readWithFallback("conn-primary", 10); // GH-90000
+        // Since primary is unhealthy(FAILED), read falls back to secondary 
+        List<String> records = registry.readWithFallback("conn-primary", 10); 
         assertThat(records).contains("fallback-record");
     }
 
     @Test
     @DisplayName("no fallback configured returns empty list when primary is failed")
-    void noFallbackConfiguredReturnsEmptyOnPrimaryFailure() { // GH-90000
+    void noFallbackConfiguredReturnsEmptyOnPrimaryFailure() { 
         DataConnector bad = makeUnhealthyConnector("conn-nobak");
-        registry.register(bad); // GH-90000
+        registry.register(bad); 
         registry.activate("conn-nobak");
 
-        List<String> records = registry.readWithFallback("conn-nobak", 10); // GH-90000
-        assertThat(records).isEmpty(); // GH-90000
+        List<String> records = registry.readWithFallback("conn-nobak", 10); 
+        assertThat(records).isEmpty(); 
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private DataConnector makeHealthyConnector(String id, List<String> data) { // GH-90000
-        return new DataConnector() { // GH-90000
-            @Override public String connectorId() { return id; } // GH-90000
-            @Override public boolean isHealthy() { return true; } // GH-90000
-            @Override public List<String> readBatch(int batchSize) { // GH-90000
-                return data.stream().limit(batchSize).toList(); // GH-90000
+    private DataConnector makeHealthyConnector(String id, List<String> data) { 
+        return new DataConnector() { 
+            @Override public String connectorId() { return id; } 
+            @Override public boolean isHealthy() { return true; } 
+            @Override public List<String> readBatch(int batchSize) { 
+                return data.stream().limit(batchSize).toList(); 
             }
         };
     }
 
-    private DataConnector makeUnhealthyConnector(String id) { // GH-90000
-        return new DataConnector() { // GH-90000
-            @Override public String connectorId() { return id; } // GH-90000
-            @Override public boolean isHealthy() { return false; } // GH-90000
-            @Override public List<String> readBatch(int batchSize) { // GH-90000
+    private DataConnector makeUnhealthyConnector(String id) { 
+        return new DataConnector() { 
+            @Override public String connectorId() { return id; } 
+            @Override public boolean isHealthy() { return false; } 
+            @Override public List<String> readBatch(int batchSize) { 
                 throw new RuntimeException("Unhealthy connector");
             }
         };
     }
 
-    // ── Connector registry implementation (for tests) ───────────────────────── // GH-90000
+    // ── Connector registry implementation (for tests) ───────────────────────── 
 
     static class ConnectorRegistry {
-        private final Map<String, ConnectorState> registry = new HashMap<>(); // GH-90000
-        private final Map<String, String> fallbacks = new HashMap<>(); // GH-90000
+        private final Map<String, ConnectorState> registry = new HashMap<>(); 
+        private final Map<String, String> fallbacks = new HashMap<>(); 
 
-        void register(DataConnector connector) { // GH-90000
-            if (registry.containsKey(connector.connectorId())) { // GH-90000
-                throw new IllegalStateException("Connector already registered: " + connector.connectorId()); // GH-90000
+        void register(DataConnector connector) { 
+            if (registry.containsKey(connector.connectorId())) { 
+                throw new IllegalStateException("Connector already registered: " + connector.connectorId()); 
             }
-            registry.put(connector.connectorId(), // GH-90000
-                    new ConnectorState(connector, ConnectorStatus.REGISTERED, null)); // GH-90000
+            registry.put(connector.connectorId(), 
+                    new ConnectorState(connector, ConnectorStatus.REGISTERED, null)); 
         }
 
-        void activate(String connectorId) { // GH-90000
-            ConnectorState state = require(connectorId); // GH-90000
-            ConnectorStatus newStatus = state.connector().isHealthy() // GH-90000
+        void activate(String connectorId) { 
+            ConnectorState state = require(connectorId); 
+            ConnectorStatus newStatus = state.connector().isHealthy() 
                     ? ConnectorStatus.ACTIVE : ConnectorStatus.FAILED;
             String error = newStatus == ConnectorStatus.FAILED ? "Connector health check failed" : null;
-            registry.put(connectorId, new ConnectorState(state.connector(), newStatus, error)); // GH-90000
+            registry.put(connectorId, new ConnectorState(state.connector(), newStatus, error)); 
         }
 
-        ConnectorStatus status(String connectorId) { // GH-90000
-            return require(connectorId).status(); // GH-90000
+        ConnectorStatus status(String connectorId) { 
+            return require(connectorId).status(); 
         }
 
-        String lastError(String connectorId) { // GH-90000
-            return require(connectorId).lastError(); // GH-90000
+        String lastError(String connectorId) { 
+            return require(connectorId).lastError(); 
         }
 
-        List<String> readBatch(String connectorId, int batchSize) { // GH-90000
-            ConnectorState state = require(connectorId); // GH-90000
-            if (state.status() != ConnectorStatus.ACTIVE) { // GH-90000
-                throw new IllegalStateException("Connector is not active: " + connectorId); // GH-90000
+        List<String> readBatch(String connectorId, int batchSize) { 
+            ConnectorState state = require(connectorId); 
+            if (state.status() != ConnectorStatus.ACTIVE) { 
+                throw new IllegalStateException("Connector is not active: " + connectorId); 
             }
             try {
-                return state.connector().readBatch(batchSize); // GH-90000
-            } catch (Exception e) { // GH-90000
-                registry.put(connectorId, // GH-90000
-                        new ConnectorState(state.connector(), ConnectorStatus.FAILED, e.getMessage())); // GH-90000
+                return state.connector().readBatch(batchSize); 
+            } catch (Exception e) { 
+                registry.put(connectorId, 
+                        new ConnectorState(state.connector(), ConnectorStatus.FAILED, e.getMessage())); 
                 throw e;
             }
         }
 
-        void setFallback(String primaryId, String fallbackId) { // GH-90000
-            fallbacks.put(primaryId, fallbackId); // GH-90000
+        void setFallback(String primaryId, String fallbackId) { 
+            fallbacks.put(primaryId, fallbackId); 
         }
 
-        List<String> readWithFallback(String connectorId, int batchSize) { // GH-90000
-            ConnectorState state = require(connectorId); // GH-90000
-            if (state.status() == ConnectorStatus.ACTIVE) { // GH-90000
-                try { return state.connector().readBatch(batchSize); } // GH-90000
-                catch (Exception ignored) {} // GH-90000
+        List<String> readWithFallback(String connectorId, int batchSize) { 
+            ConnectorState state = require(connectorId); 
+            if (state.status() == ConnectorStatus.ACTIVE) { 
+                try { return state.connector().readBatch(batchSize); } 
+                catch (Exception ignored) {} 
             }
-            String fallbackId = fallbacks.get(connectorId); // GH-90000
-            if (fallbackId == null) return List.of(); // GH-90000
-            ConnectorState fallbackState = registry.get(fallbackId); // GH-90000
-            if (fallbackState == null || fallbackState.status() != ConnectorStatus.ACTIVE) return List.of(); // GH-90000
-            return fallbackState.connector().readBatch(batchSize); // GH-90000
+            String fallbackId = fallbacks.get(connectorId); 
+            if (fallbackId == null) return List.of(); 
+            ConnectorState fallbackState = registry.get(fallbackId); 
+            if (fallbackState == null || fallbackState.status() != ConnectorStatus.ACTIVE) return List.of(); 
+            return fallbackState.connector().readBatch(batchSize); 
         }
 
-        private ConnectorState require(String id) { // GH-90000
-            ConnectorState s = registry.get(id); // GH-90000
-            if (s == null) throw new NoSuchElementException("Connector not found: " + id); // GH-90000
+        private ConnectorState require(String id) { 
+            ConnectorState s = registry.get(id); 
+            if (s == null) throw new NoSuchElementException("Connector not found: " + id); 
             return s;
         }
     }

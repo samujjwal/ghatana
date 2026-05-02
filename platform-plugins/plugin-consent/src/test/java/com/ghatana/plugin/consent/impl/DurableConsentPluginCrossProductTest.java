@@ -18,10 +18,10 @@ import static org.assertj.core.api.Assertions.*;
  *
  * <p>Verifies that:
  * <ul>
- *   <li>A consent grant for PHR data-sharing does NOT satisfy a Finance purpose query.</li>
- *   <li>A consent grant for Finance transactions does NOT satisfy a PHR medical-records query.</li>
- *   <li>Revocation is reflected immediately across both product domains.</li>
- *   <li>History is tenant-scoped per subjectId — different subjects have independent histories.</li>
+ *   <li>A consent grant for purpose A does NOT satisfy a purpose B query.</li>
+ *   <li>A consent grant for purpose B does NOT satisfy a purpose A query.</li>
+ *   <li>Revocation is reflected immediately across both purpose domains.</li>
+ *   <li>History is subject-scoped — different subjects have independent histories.</li>
  * </ul>
  *
  * @doc.type class
@@ -59,55 +59,55 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     // -------------------------------------------------------------------------
 
     @Test
-    @DisplayName("PHR consent grant must NOT satisfy a Finance purpose consent check")
-    void testPhrConsentDoesNotSatisfyFinancePurpose() { 
+    @DisplayName("purpose-A consent grant must NOT satisfy a purpose-B consent check")
+    void testPurposeAConsentDoesNotSatisfyPurposeBCheck() { 
         runPromise(() -> plugin.recordConsent( 
-                "patient-001", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
+                "entity-001", "domain-a.data-sharing", ConsentPlugin.ConsentAction.GRANT));
 
-        boolean phrConsent = runPromise(() -> 
-                plugin.verifyConsent("patient-001", "phr.data-sharing")); 
-        boolean financeConsent = runPromise(() -> 
-                plugin.verifyConsent("patient-001", "finance.transactions")); 
+        boolean domainAConsent = runPromise(() -> 
+                plugin.verifyConsent("entity-001", "domain-a.data-sharing")); 
+        boolean domainBConsent = runPromise(() -> 
+                plugin.verifyConsent("entity-001", "domain-b.transactions")); 
 
-        assertThat(phrConsent).isTrue(); 
-        assertThat(financeConsent).isFalse(); 
+        assertThat(domainAConsent).isTrue(); 
+        assertThat(domainBConsent).isFalse(); 
     }
 
     @Test
-    @DisplayName("Finance consent grant must NOT satisfy a PHR medical-records purpose check")
-    void testFinanceConsentDoesNotSatisfyPhrPurpose() { 
+    @DisplayName("purpose-B consent grant must NOT satisfy a purpose-A consent check")
+    void testPurposeBConsentDoesNotSatisfyPurposeACheck() { 
         runPromise(() -> plugin.recordConsent( 
-                "customer-001", "finance.transactions", ConsentPlugin.ConsentAction.GRANT));
+                "entity-002", "domain-b.transactions", ConsentPlugin.ConsentAction.GRANT));
 
-        boolean financeConsent = runPromise(() -> 
-                plugin.verifyConsent("customer-001", "finance.transactions")); 
-        boolean phrConsent = runPromise(() -> 
-                plugin.verifyConsent("customer-001", "phr.medical-records")); 
+        boolean domainBConsent = runPromise(() -> 
+                plugin.verifyConsent("entity-002", "domain-b.transactions")); 
+        boolean domainAConsent = runPromise(() -> 
+                plugin.verifyConsent("entity-002", "domain-a.medical-records")); 
 
-        assertThat(financeConsent).isTrue(); 
-        assertThat(phrConsent).isFalse(); 
+        assertThat(domainBConsent).isTrue(); 
+        assertThat(domainAConsent).isFalse(); 
     }
 
     @Test
-    @DisplayName("Revoking a PHR consent must not affect a separately granted Finance consent")
+    @DisplayName("Revoking a consent must not affect a separately granted consent for another purpose")
     void testRevocationIsPurposeScoped() { 
         runPromise(() -> plugin.recordConsent( 
-                "multi-consent-user", "phr.data-sharing", ConsentPlugin.ConsentAction.GRANT));
-        ConsentPlugin.ConsentRecord financeGrant = runPromise(() -> 
-                plugin.recordConsent("multi-consent-user", "finance.transactions", 
+                "multi-consent-user", "domain-a.data-sharing", ConsentPlugin.ConsentAction.GRANT));
+        ConsentPlugin.ConsentRecord domainBGrant = runPromise(() -> 
+                plugin.recordConsent("multi-consent-user", "domain-b.transactions", 
                         ConsentPlugin.ConsentAction.GRANT));
 
-        // Revoke PHR consent by withdrawing
+        // Revoke domain-a consent by withdrawing
         runPromise(() -> plugin.recordConsent( 
-                "multi-consent-user", "phr.data-sharing", ConsentPlugin.ConsentAction.WITHDRAW));
+                "multi-consent-user", "domain-a.data-sharing", ConsentPlugin.ConsentAction.WITHDRAW));
 
-        boolean phrAfterRevoke = runPromise(() -> 
-                plugin.verifyConsent("multi-consent-user", "phr.data-sharing")); 
-        boolean financeAfterRevoke = runPromise(() -> 
-                plugin.verifyConsent("multi-consent-user", "finance.transactions")); 
+        boolean domainAAfterRevoke = runPromise(() -> 
+                plugin.verifyConsent("multi-consent-user", "domain-a.data-sharing")); 
+        boolean domainBAfterRevoke = runPromise(() -> 
+                plugin.verifyConsent("multi-consent-user", "domain-b.transactions")); 
 
-        assertThat(phrAfterRevoke).isFalse(); 
-        assertThat(financeAfterRevoke).isTrue(); 
+        assertThat(domainAAfterRevoke).isFalse(); 
+        assertThat(domainBAfterRevoke).isTrue(); 
     }
 
     @Test
@@ -133,12 +133,12 @@ class DurableConsentPluginCrossProductTest extends EventloopTestBase {
     @DisplayName("revokeConsent by ID must update status to REVOKED")
     void testRevokeConsentById() { 
         ConsentPlugin.ConsentRecord record = runPromise(() -> 
-                plugin.recordConsent("subj-revoke", "phr.imaging", ConsentPlugin.ConsentAction.GRANT)); 
+                plugin.recordConsent("subj-revoke", "domain-a.imaging", ConsentPlugin.ConsentAction.GRANT)); 
 
         runPromise(() -> plugin.revokeConsent(record.consentId())); 
 
         ConsentPlugin.ConsentStatus status =
-                runPromise(() -> plugin.getCurrentConsent("subj-revoke", "phr.imaging")); 
+                runPromise(() -> plugin.getCurrentConsent("subj-revoke", "domain-a.imaging")); 
 
         assertThat(status).isEqualTo(ConsentPlugin.ConsentStatus.REVOKED); 
     }

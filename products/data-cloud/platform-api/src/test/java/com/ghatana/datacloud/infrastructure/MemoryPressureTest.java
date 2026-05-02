@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.infrastructure;
@@ -14,14 +14,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Tests for memory pressure handling (IE005). // GH-90000
+ * Tests for memory pressure handling (IE005). 
  *
  * @doc.type class
  * @doc.purpose Memory pressure handling tests
  * @doc.layer product
  * @doc.pattern Infrastructure Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("MemoryPressure – Memory Handling (IE005)")
 class MemoryPressureTest extends EventloopTestBase {
 
@@ -31,26 +31,26 @@ class MemoryPressureTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE005]: memory_usage_tracked")
-        void memoryUsageTracked() { // GH-90000
-            Runtime runtime = Runtime.getRuntime(); // GH-90000
-            long maxMemory = runtime.maxMemory(); // GH-90000
-            long totalMemory = runtime.totalMemory(); // GH-90000
-            long freeMemory = runtime.freeMemory(); // GH-90000
+        void memoryUsageTracked() { 
+            Runtime runtime = Runtime.getRuntime(); 
+            long maxMemory = runtime.maxMemory(); 
+            long totalMemory = runtime.totalMemory(); 
+            long freeMemory = runtime.freeMemory(); 
             long usedMemory = totalMemory - freeMemory;
 
-            assertThat(maxMemory).isGreaterThan(0); // GH-90000
-            assertThat(usedMemory).isGreaterThanOrEqualTo(0); // GH-90000
+            assertThat(maxMemory).isGreaterThan(0); 
+            assertThat(usedMemory).isGreaterThanOrEqualTo(0); 
         }
 
         @Test
         @DisplayName("[IE005]: memory_threshold_triggers_action")
-        void memoryThresholdTriggersAction() { // GH-90000
+        void memoryThresholdTriggersAction() { 
             double memoryThreshold = 0.85; // 85%
             double currentUsage = 0.90; // 90%
 
             boolean shouldTrigger = currentUsage > memoryThreshold;
 
-            assertThat(shouldTrigger).isTrue(); // GH-90000
+            assertThat(shouldTrigger).isTrue(); 
         }
     }
 
@@ -60,15 +60,15 @@ class MemoryPressureTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE005]: cache_evicted_under_pressure")
-        void cacheEvictedUnderPressure() { // GH-90000
+        void cacheEvictedUnderPressure() { 
             // When memory pressure detected, cache should be cleared
             boolean cacheEvicted = true;
-            assertThat(cacheEvicted).isTrue(); // GH-90000
+            assertThat(cacheEvicted).isTrue(); 
         }
 
         @Test
         @DisplayName("[IE005]: large_queries_rejected_under_pressure")
-        void largeQueriesRejectedUnderPressure() { // GH-90000
+        void largeQueriesRejectedUnderPressure() { 
             // Large operations should be rejected when memory is constrained
             boolean highMemoryPressure = true;
             int querySize = 1000000; // Large query
@@ -76,15 +76,15 @@ class MemoryPressureTest extends EventloopTestBase {
 
             boolean queryAccepted = !highMemoryPressure || querySize <= maxQuerySizeUnderPressure;
 
-            assertThat(queryAccepted).isFalse(); // GH-90000
+            assertThat(queryAccepted).isFalse(); 
         }
 
         @Test
         @DisplayName("[IE005]: streaming_preferred_over_buffering")
-        void streamingPreferredOverBuffering() { // GH-90000
+        void streamingPreferredOverBuffering() { 
             // Under memory pressure, streaming should be used instead of buffering
             boolean useStreaming = true;
-            assertThat(useStreaming).isTrue(); // GH-90000
+            assertThat(useStreaming).isTrue(); 
         }
     }
 
@@ -94,18 +94,18 @@ class MemoryPressureTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE005]: gc_hinted_when_needed")
-        void gcHintedWhenNeeded() { // GH-90000
+        void gcHintedWhenNeeded() { 
             // System can hint at GC when memory is low
             boolean gcHinted = true;
-            assertThat(gcHinted).isTrue(); // GH-90000
+            assertThat(gcHinted).isTrue(); 
         }
 
         @Test
         @DisplayName("[IE005]: soft_references_used_for_cache")
-        void softReferencesUsedForCache() { // GH-90000
+        void softReferencesUsedForCache() { 
             // Cache entries should use soft references
             boolean usesSoftReferences = true;
-            assertThat(usesSoftReferences).isTrue(); // GH-90000
+            assertThat(usesSoftReferences).isTrue(); 
         }
     }
 
@@ -115,18 +115,18 @@ class MemoryPressureTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE005]: resources_cleaned_up")
-        void resourcesCleanedUp() { // GH-90000
+        void resourcesCleanedUp() { 
             // Resources should be properly released
             boolean leakDetected = false;
-            assertThat(leakDetected).isFalse(); // GH-90000
+            assertThat(leakDetected).isFalse(); 
         }
 
         @Test
         @DisplayName("[IE005]: static_collections_not_unbounded")
-        void staticCollectionsNotUnbounded() { // GH-90000
+        void staticCollectionsNotUnbounded() { 
             // Static collections should have size limits
             int maxStaticCollectionSize = 10000;
-            assertThat(maxStaticCollectionSize).isGreaterThan(0); // GH-90000
+            assertThat(maxStaticCollectionSize).isGreaterThan(0); 
         }
     }
 
@@ -136,18 +136,18 @@ class MemoryPressureTest extends EventloopTestBase {
 
         @Test
         @DisplayName("[IE005]: object_pooling_used")
-        void objectPoolingUsed() { // GH-90000
+        void objectPoolingUsed() { 
             // Frequently created objects should be pooled
             boolean poolingEnabled = true;
-            assertThat(poolingEnabled).isTrue(); // GH-90000
+            assertThat(poolingEnabled).isTrue(); 
         }
 
         @Test
         @DisplayName("[IE005]: large_result_sets_streamed")
-        void largeResultSetsStreamed() { // GH-90000
+        void largeResultSetsStreamed() { 
             // Large results should not be fully materialized
             boolean streamingEnabled = true;
-            assertThat(streamingEnabled).isTrue(); // GH-90000
+            assertThat(streamingEnabled).isTrue(); 
         }
     }
 }

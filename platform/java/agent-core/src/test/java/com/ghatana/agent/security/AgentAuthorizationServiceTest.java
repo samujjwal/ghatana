@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  *
  * Task 4.9 — Security Hardening: Tests for AgentAuthorizationService.
  */
@@ -31,12 +31,12 @@ class AgentAuthorizationServiceTest {
     private AgentAuthorizationService authService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        authService = new AgentAuthorizationService(); // GH-90000
+    void setUp() { 
+        authService = new AgentAuthorizationService(); 
     }
 
     // =========================================================================
-    // 1. No-Policy (Open Access) // GH-90000
+    // 1. No-Policy (Open Access) 
     // =========================================================================
 
     @Nested
@@ -45,24 +45,24 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Any principal can execute agent with no policy defined")
-        void anyPrincipalAllowedWithNoPolicy() { // GH-90000
+        void anyPrincipalAllowedWithNoPolicy() { 
             Principal user = new Principal("alice", List.of("viewer"), TENANT_A);
-            assertThat(authService.isAuthorized(user, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(user, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("Null principal is always denied")
-        void nullPrincipalDenied() { // GH-90000
-            assertThat(authService.isAuthorized(null, AGENT_FRAUD)).isFalse(); // GH-90000
+        void nullPrincipalDenied() { 
+            assertThat(authService.isAuthorized(null, AGENT_FRAUD)).isFalse(); 
         }
 
         @Test
         @DisplayName("requireAuthorization with null principal throws")
-        void requireAuthWithNullPrincipalThrows() { // GH-90000
-            assertThatThrownBy(() -> authService.requireAuthorization(null, AGENT_FRAUD)) // GH-90000
-                    .isInstanceOf(AgentAuthorizationException.class) // GH-90000
+        void requireAuthWithNullPrincipalThrows() { 
+            assertThatThrownBy(() -> authService.requireAuthorization(null, AGENT_FRAUD)) 
+                    .isInstanceOf(AgentAuthorizationException.class) 
                     .hasMessageContaining("<anonymous>")
-                    .hasMessageContaining(AGENT_FRAUD); // GH-90000
+                    .hasMessageContaining(AGENT_FRAUD); 
         }
     }
 
@@ -76,37 +76,37 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Agent restricted to tenant A denies tenant B principal")
-        void tenantRestrictionDeniesWrongTenant() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void tenantRestrictionDeniesWrongTenant() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forTenants(TENANT_A)); 
 
             Principal tenantB = new Principal("bob", List.of("processor"), TENANT_B);
-            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isFalse(); 
         }
 
         @Test
         @DisplayName("Agent restricted to tenant A allows tenant A principal")
-        void tenantRestrictionAllowsCorrectTenant() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void tenantRestrictionAllowsCorrectTenant() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forTenants(TENANT_A)); 
 
             Principal tenantA = new Principal("alice", List.of("processor"), TENANT_A);
-            assertThat(authService.isAuthorized(tenantA, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(tenantA, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("Agent with multiple allowed tenants permits any listed tenant")
-        void multipleTenantRestriction() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forTenants(TENANT_A, TENANT_B)); // GH-90000
+        void multipleTenantRestriction() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forTenants(TENANT_A, TENANT_B)); 
 
             Principal tenantA = new Principal("alice", List.of("viewer"), TENANT_A);
             Principal tenantB = new Principal("bob", List.of("viewer"), TENANT_B);
             Principal tenantC = new Principal("charlie", List.of("viewer"), "tenant-gamma");
 
-            assertThat(authService.isAuthorized(tenantA, AGENT_FRAUD)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(tenantC, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(tenantA, AGENT_FRAUD)).isTrue(); 
+            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); 
+            assertThat(authService.isAuthorized(tenantC, AGENT_FRAUD)).isFalse(); 
         }
     }
 
@@ -120,37 +120,37 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Agent requiring 'processor' denies 'viewer'")
-        void roleRestrictionDeniesWrongRole() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
+        void roleRestrictionDeniesWrongRole() { 
+            authService.registerPolicy(AGENT_FRAUD, 
                     AgentAuthPolicy.forRoles("processor"));
 
             Principal viewer = new Principal("alice", List.of("viewer"), TENANT_A);
-            assertThat(authService.isAuthorized(viewer, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(viewer, AGENT_FRAUD)).isFalse(); 
         }
 
         @Test
         @DisplayName("Agent requiring 'processor' allows principal with that role")
-        void roleRestrictionAllowsCorrectRole() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
+        void roleRestrictionAllowsCorrectRole() { 
+            authService.registerPolicy(AGENT_FRAUD, 
                     AgentAuthPolicy.forRoles("processor"));
 
             Principal processor = new Principal("alice", List.of("processor"), TENANT_A);
-            assertThat(authService.isAuthorized(processor, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(processor, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("Agent with multiple required roles accepts any matching role")
-        void multipleRequiredRolesAnyMatch() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forRoles("processor", "operator")); // GH-90000
+        void multipleRequiredRolesAnyMatch() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forRoles("processor", "operator")); 
 
             Principal processor = new Principal("alice", List.of("processor"), TENANT_A);
             Principal operator = new Principal("bob", List.of("operator"), TENANT_A);
             Principal viewer = new Principal("charlie", List.of("viewer"), TENANT_A);
 
-            assertThat(authService.isAuthorized(processor, AGENT_FRAUD)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(operator, AGENT_FRAUD)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(viewer, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(processor, AGENT_FRAUD)).isTrue(); 
+            assertThat(authService.isAuthorized(operator, AGENT_FRAUD)).isTrue(); 
+            assertThat(authService.isAuthorized(viewer, AGENT_FRAUD)).isFalse(); 
         }
     }
 
@@ -164,17 +164,17 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Agent with explicit principal grants allows only named principals")
-        void explicitGrantsOnly() { // GH-90000
-            authService.registerPolicy(AGENT_CLASSIFIER, // GH-90000
-                    AgentAuthPolicy.forPrincipals("alice", "svc-pipeline")); // GH-90000
+        void explicitGrantsOnly() { 
+            authService.registerPolicy(AGENT_CLASSIFIER, 
+                    AgentAuthPolicy.forPrincipals("alice", "svc-pipeline")); 
 
             Principal alice = new Principal("alice", List.of("viewer"), TENANT_A);
             Principal svc = new Principal("svc-pipeline", List.of("processor"), TENANT_A);
             Principal bob = new Principal("bob", List.of("viewer"), TENANT_A);
 
-            assertThat(authService.isAuthorized(alice, AGENT_CLASSIFIER)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(svc, AGENT_CLASSIFIER)).isTrue(); // GH-90000
-            assertThat(authService.isAuthorized(bob, AGENT_CLASSIFIER)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(alice, AGENT_CLASSIFIER)).isTrue(); 
+            assertThat(authService.isAuthorized(svc, AGENT_CLASSIFIER)).isTrue(); 
+            assertThat(authService.isAuthorized(bob, AGENT_CLASSIFIER)).isFalse(); 
         }
     }
 
@@ -188,24 +188,24 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Admin role bypasses all restrictions")
-        void adminBypassesAllRestrictions() { // GH-90000
+        void adminBypassesAllRestrictions() { 
             // Very restrictive policy: only tenant A, only 'processor' role, only 'svc-agent'
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
+            authService.registerPolicy(AGENT_FRAUD, 
                     new AgentAuthPolicy(Set.of(TENANT_A), Set.of("processor"), Set.of("svc-agent")));
 
             // Admin from wrong tenant should still pass
             Principal admin = new Principal("super-admin", List.of("admin"), TENANT_B);
-            assertThat(authService.isAuthorized(admin, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(admin, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("Admin from any tenant bypasses tenant restrictions")
-        void adminBypassesTenantRestriction() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void adminBypassesTenantRestriction() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forTenants(TENANT_A)); 
 
             Principal adminB = new Principal("admin-b", List.of("admin"), TENANT_B);
-            assertThat(authService.isAuthorized(adminB, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(adminB, AGENT_FRAUD)).isTrue(); 
         }
     }
 
@@ -219,49 +219,49 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("Tenant + role restriction: must satisfy both")
-        void tenantAndRoleBothRequired() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    AgentAuthPolicy.forTenantsAndRoles( // GH-90000
+        void tenantAndRoleBothRequired() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    AgentAuthPolicy.forTenantsAndRoles( 
                             Set.of(TENANT_A), Set.of("processor")));
 
             // Correct tenant, wrong role → denied
             Principal viewerA = new Principal("alice", List.of("viewer"), TENANT_A);
-            assertThat(authService.isAuthorized(viewerA, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(viewerA, AGENT_FRAUD)).isFalse(); 
 
             // Wrong tenant, correct role → denied
             Principal processorB = new Principal("bob", List.of("processor"), TENANT_B);
-            assertThat(authService.isAuthorized(processorB, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(processorB, AGENT_FRAUD)).isFalse(); 
 
             // Correct tenant + correct role → allowed
             Principal processorA = new Principal("charlie", List.of("processor"), TENANT_A);
-            assertThat(authService.isAuthorized(processorA, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(processorA, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("Full combined policy: tenant + role + principal grants")
-        void fullCombinedPolicy() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, // GH-90000
-                    new AgentAuthPolicy( // GH-90000
-                            Set.of(TENANT_A),           // Only tenant A // GH-90000
+        void fullCombinedPolicy() { 
+            authService.registerPolicy(AGENT_FRAUD, 
+                    new AgentAuthPolicy( 
+                            Set.of(TENANT_A),           // Only tenant A 
                             Set.of("processor"),         // Must have processor role
                             Set.of("svc-fraud-engine")   // Must be this specific service
                     ));
 
             // All three conditions met → allowed
             Principal svc = new Principal("svc-fraud-engine", List.of("processor"), TENANT_A);
-            assertThat(authService.isAuthorized(svc, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(svc, AGENT_FRAUD)).isTrue(); 
 
             // Wrong principal name → denied
             Principal wrongName = new Principal("svc-other", List.of("processor"), TENANT_A);
-            assertThat(authService.isAuthorized(wrongName, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(wrongName, AGENT_FRAUD)).isFalse(); 
 
             // Wrong tenant → denied
             Principal wrongTenant = new Principal("svc-fraud-engine", List.of("processor"), TENANT_B);
-            assertThat(authService.isAuthorized(wrongTenant, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(wrongTenant, AGENT_FRAUD)).isFalse(); 
 
             // Wrong role → denied
             Principal wrongRole = new Principal("svc-fraud-engine", List.of("viewer"), TENANT_A);
-            assertThat(authService.isAuthorized(wrongRole, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(wrongRole, AGENT_FRAUD)).isFalse(); 
         }
     }
 
@@ -275,48 +275,48 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("registerPolicy replaces existing policy")
-        void registerReplaces() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
-            assertThat(authService.policyCount()).isEqualTo(1); // GH-90000
+        void registerReplaces() { 
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); 
+            assertThat(authService.policyCount()).isEqualTo(1); 
 
             // Replace with broader policy
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A, TENANT_B)); // GH-90000
-            assertThat(authService.policyCount()).isEqualTo(1); // GH-90000
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A, TENANT_B)); 
+            assertThat(authService.policyCount()).isEqualTo(1); 
 
             Principal tenantB = new Principal("bob", List.of("viewer"), TENANT_B);
-            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); // GH-90000
+            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("removePolicy reverts to open access")
-        void removeRevertsToOpen() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void removeRevertsToOpen() { 
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); 
 
             Principal tenantB = new Principal("bob", List.of("viewer"), TENANT_B);
-            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isFalse(); // GH-90000
+            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isFalse(); 
 
-            authService.removePolicy(AGENT_FRAUD); // GH-90000
-            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); // GH-90000
+            authService.removePolicy(AGENT_FRAUD); 
+            assertThat(authService.isAuthorized(tenantB, AGENT_FRAUD)).isTrue(); 
         }
 
         @Test
         @DisplayName("getPolicy returns Optional based on existence")
-        void getPolicyReturnsOptional() { // GH-90000
-            assertThat(authService.getPolicy(AGENT_FRAUD)).isEmpty(); // GH-90000
+        void getPolicyReturnsOptional() { 
+            assertThat(authService.getPolicy(AGENT_FRAUD)).isEmpty(); 
 
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
-            assertThat(authService.getPolicy(AGENT_FRAUD)).isPresent(); // GH-90000
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); 
+            assertThat(authService.getPolicy(AGENT_FRAUD)).isPresent(); 
         }
 
         @Test
         @DisplayName("clearPolicies removes all policies")
-        void clearRemovesAll() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void clearRemovesAll() { 
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); 
             authService.registerPolicy(AGENT_CLASSIFIER, AgentAuthPolicy.forRoles("processor"));
-            assertThat(authService.policyCount()).isEqualTo(2); // GH-90000
+            assertThat(authService.policyCount()).isEqualTo(2); 
 
-            authService.clearPolicies(); // GH-90000
-            assertThat(authService.policyCount()).isZero(); // GH-90000
+            authService.clearPolicies(); 
+            assertThat(authService.policyCount()).isZero(); 
         }
     }
 
@@ -330,25 +330,25 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("requireAuthorization passes silently when authorized")
-        void passesWhenAuthorized() { // GH-90000
+        void passesWhenAuthorized() { 
             Principal admin = new Principal("alice", List.of("admin"), TENANT_A);
-            assertThatCode(() -> authService.requireAuthorization(admin, AGENT_FRAUD)) // GH-90000
-                    .doesNotThrowAnyException(); // GH-90000
+            assertThatCode(() -> authService.requireAuthorization(admin, AGENT_FRAUD)) 
+                    .doesNotThrowAnyException(); 
         }
 
         @Test
         @DisplayName("requireAuthorization throws AgentAuthorizationException when denied")
-        void throwsWhenDenied() { // GH-90000
-            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); // GH-90000
+        void throwsWhenDenied() { 
+            authService.registerPolicy(AGENT_FRAUD, AgentAuthPolicy.forTenants(TENANT_A)); 
             Principal wrongTenant = new Principal("bob", List.of("viewer"), TENANT_B);
 
-            assertThatThrownBy(() -> authService.requireAuthorization(wrongTenant, AGENT_FRAUD)) // GH-90000
-                    .isInstanceOf(AgentAuthorizationException.class) // GH-90000
-                    .satisfies(ex -> { // GH-90000
-                        AgentAuthorizationException aex = (AgentAuthorizationException) ex; // GH-90000
+            assertThatThrownBy(() -> authService.requireAuthorization(wrongTenant, AGENT_FRAUD)) 
+                    .isInstanceOf(AgentAuthorizationException.class) 
+                    .satisfies(ex -> { 
+                        AgentAuthorizationException aex = (AgentAuthorizationException) ex; 
                         assertThat(aex.getPrincipalName()).isEqualTo("bob");
-                        assertThat(aex.getTenantId()).isEqualTo(TENANT_B); // GH-90000
-                        assertThat(aex.getAgentId()).isEqualTo(AGENT_FRAUD); // GH-90000
+                        assertThat(aex.getTenantId()).isEqualTo(TENANT_B); 
+                        assertThat(aex.getAgentId()).isEqualTo(AGENT_FRAUD); 
                     });
         }
     }
@@ -363,51 +363,51 @@ class AgentAuthorizationServiceTest {
 
         @Test
         @DisplayName("open() creates unrestricted policy")
-        void openPolicyUnrestricted() { // GH-90000
-            AgentAuthPolicy policy = AgentAuthPolicy.open(); // GH-90000
-            assertThat(policy.allowedTenants()).isEmpty(); // GH-90000
-            assertThat(policy.requiredRoles()).isEmpty(); // GH-90000
-            assertThat(policy.grantedPrincipals()).isEmpty(); // GH-90000
+        void openPolicyUnrestricted() { 
+            AgentAuthPolicy policy = AgentAuthPolicy.open(); 
+            assertThat(policy.allowedTenants()).isEmpty(); 
+            assertThat(policy.requiredRoles()).isEmpty(); 
+            assertThat(policy.grantedPrincipals()).isEmpty(); 
         }
 
         @Test
         @DisplayName("forTenants() creates tenant-restricted policy")
-        void forTenantsPolicy() { // GH-90000
-            AgentAuthPolicy policy = AgentAuthPolicy.forTenants(TENANT_A, TENANT_B); // GH-90000
-            assertThat(policy.allowedTenants()).containsExactlyInAnyOrder(TENANT_A, TENANT_B); // GH-90000
-            assertThat(policy.requiredRoles()).isEmpty(); // GH-90000
+        void forTenantsPolicy() { 
+            AgentAuthPolicy policy = AgentAuthPolicy.forTenants(TENANT_A, TENANT_B); 
+            assertThat(policy.allowedTenants()).containsExactlyInAnyOrder(TENANT_A, TENANT_B); 
+            assertThat(policy.requiredRoles()).isEmpty(); 
         }
 
         @Test
         @DisplayName("forRoles() creates role-restricted policy")
-        void forRolesPolicy() { // GH-90000
-            AgentAuthPolicy policy = AgentAuthPolicy.forRoles("processor", "admin"); // GH-90000
-            assertThat(policy.requiredRoles()).containsExactlyInAnyOrder("processor", "admin"); // GH-90000
-            assertThat(policy.allowedTenants()).isEmpty(); // GH-90000
+        void forRolesPolicy() { 
+            AgentAuthPolicy policy = AgentAuthPolicy.forRoles("processor", "admin"); 
+            assertThat(policy.requiredRoles()).containsExactlyInAnyOrder("processor", "admin"); 
+            assertThat(policy.allowedTenants()).isEmpty(); 
         }
 
         @Test
         @DisplayName("forPrincipals() creates principal-restricted policy")
-        void forPrincipalsPolicy() { // GH-90000
-            AgentAuthPolicy policy = AgentAuthPolicy.forPrincipals("alice", "bob"); // GH-90000
-            assertThat(policy.grantedPrincipals()).containsExactlyInAnyOrder("alice", "bob"); // GH-90000
+        void forPrincipalsPolicy() { 
+            AgentAuthPolicy policy = AgentAuthPolicy.forPrincipals("alice", "bob"); 
+            assertThat(policy.grantedPrincipals()).containsExactlyInAnyOrder("alice", "bob"); 
         }
 
         @Test
         @DisplayName("Null collections in policy are converted to empty sets")
-        void nullsConvertedToEmpty() { // GH-90000
-            AgentAuthPolicy policy = new AgentAuthPolicy(null, null, null); // GH-90000
-            assertThat(policy.allowedTenants()).isEmpty(); // GH-90000
-            assertThat(policy.requiredRoles()).isEmpty(); // GH-90000
-            assertThat(policy.grantedPrincipals()).isEmpty(); // GH-90000
+        void nullsConvertedToEmpty() { 
+            AgentAuthPolicy policy = new AgentAuthPolicy(null, null, null); 
+            assertThat(policy.allowedTenants()).isEmpty(); 
+            assertThat(policy.requiredRoles()).isEmpty(); 
+            assertThat(policy.grantedPrincipals()).isEmpty(); 
         }
 
         @Test
         @DisplayName("Policy sets are immutable")
-        void policySetsImmutable() { // GH-90000
-            AgentAuthPolicy policy = AgentAuthPolicy.forTenants(TENANT_A); // GH-90000
-            assertThatThrownBy(() -> policy.allowedTenants().add(TENANT_B)) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+        void policySetsImmutable() { 
+            AgentAuthPolicy policy = AgentAuthPolicy.forTenants(TENANT_A); 
+            assertThatThrownBy(() -> policy.allowedTenants().add(TENANT_B)) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
     }
 }

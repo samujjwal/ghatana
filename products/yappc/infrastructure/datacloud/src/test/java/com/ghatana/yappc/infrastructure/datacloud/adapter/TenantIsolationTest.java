@@ -42,13 +42,13 @@ import static org.mockito.Mockito.when;
  *   <li>Default-tenant fallback: when no explicit context is set, "default-tenant" is used.</li>
  * </ol>
  *
- * <p>Note: {@link TenantContext#getCurrentTenantId()} falls back to {@code "default-tenant"} when // GH-90000
+ * <p>Note: {@link TenantContext#getCurrentTenantId()} falls back to {@code "default-tenant"} when 
  * the ThreadLocal is empty; it never returns {@code null}. Consequently, the SecurityException path
- * in {@code resolveTenantId()} is only reachable if a caller explicitly sets a blank string via // GH-90000
- * {@link TenantContext#setCurrentTenantId(String)}. // GH-90000
+ * in {@code resolveTenantId()} is only reachable if a caller explicitly sets a blank string via 
+ * {@link TenantContext#setCurrentTenantId(String)}. 
  *
  * @doc.type class
- * @doc.purpose Tenant isolation integration tests for YappcDataCloudRepository (plan 4.4.3) // GH-90000
+ * @doc.purpose Tenant isolation integration tests for YappcDataCloudRepository (plan 4.4.3) 
  * @doc.layer infrastructure
  * @doc.pattern Test
  */
@@ -64,19 +64,19 @@ class TenantIsolationTest extends EventloopTestBase {
     private YappcDataCloudRepository<TestEntity> repository;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        YappcEntityMapper mapper = new YappcEntityMapper(objectMapper); // GH-90000
-        repository = new YappcDataCloudRepository<>( // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        ObjectMapper objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        YappcEntityMapper mapper = new YappcEntityMapper(objectMapper); 
+        repository = new YappcDataCloudRepository<>( 
                 client, mapper, "test_collection", TestEntity.class);
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        runBlocking(TenantContext::clear); // GH-90000
-        TenantContext.clear(); // GH-90000
+    void tearDown() { 
+        runBlocking(TenantContext::clear); 
+        TenantContext.clear(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -89,74 +89,74 @@ class TenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findAll under tenant-B returns empty when tenant-A owns the data")
-        void shouldReturnEmptyForDifferentTenant() { // GH-90000
+        void shouldReturnEmptyForDifferentTenant() { 
             // GIVEN — tenant-A saves an entity
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            DataCloudClient.Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId); // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            DataCloudClient.Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId); 
 
-            TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); // GH-90000
-            when(client.save(eq(TENANT_ALPHA), anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(alphaEntity)); // GH-90000
-            runPromise(() -> repository.save(new TestEntity(entityId, "alpha-item", 1))); // GH-90000
+            TenantContext.setCurrentTenantId(TENANT_ALPHA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); 
+            when(client.save(eq(TENANT_ALPHA), anyString(), any())) 
+                    .thenReturn(Promise.of(alphaEntity)); 
+            runPromise(() -> repository.save(new TestEntity(entityId, "alpha-item", 1))); 
 
             // WHEN — tenant-B switches context and queries findAll
-            TenantContext.setCurrentTenantId(TENANT_BETA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_BETA)); // GH-90000
-            when(client.query(eq(TENANT_BETA), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // tenant-B namespace has no data // GH-90000
+            TenantContext.setCurrentTenantId(TENANT_BETA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_BETA)); 
+            when(client.query(eq(TENANT_BETA), anyString(), any(DataCloudClient.Query.class))) 
+                    .thenReturn(Promise.of(List.of())); // tenant-B namespace has no data 
 
-            List<TestEntity> result = runPromise(() -> repository.findAll()); // GH-90000
+            List<TestEntity> result = runPromise(() -> repository.findAll()); 
 
             // THEN — result is empty; DataCloudClient was called with TENANT_BETA, not TENANT_ALPHA
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
 
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
-            verify(client).query( // GH-90000
-                    tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
-            assertThat(tenantCaptor.getValue()) // GH-90000
+            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
+            verify(client).query( 
+                    tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); 
+            assertThat(tenantCaptor.getValue()) 
                     .as("findAll must scope to the active tenant, not the writer's tenant")
-                    .isEqualTo(TENANT_BETA); // GH-90000
+                    .isEqualTo(TENANT_BETA); 
         }
 
         @Test
         @DisplayName("findAll under same tenant returns the saved entity")
-        void shouldReturnEntityForSameTenant() { // GH-90000
+        void shouldReturnEntityForSameTenant() { 
             // GIVEN — tenant-A saves and then queries under the same context
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            DataCloudClient.Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId); // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            DataCloudClient.Entity alphaEntity = makeEntity(TENANT_ALPHA, entityId); 
 
-            TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); // GH-90000
-            when(client.save(eq(TENANT_ALPHA), anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(alphaEntity)); // GH-90000
-            when(client.query(eq(TENANT_ALPHA), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of(alphaEntity))); // GH-90000
+            TenantContext.setCurrentTenantId(TENANT_ALPHA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); 
+            when(client.save(eq(TENANT_ALPHA), anyString(), any())) 
+                    .thenReturn(Promise.of(alphaEntity)); 
+            when(client.query(eq(TENANT_ALPHA), anyString(), any(DataCloudClient.Query.class))) 
+                    .thenReturn(Promise.of(List.of(alphaEntity))); 
 
-            runPromise(() -> repository.save(new TestEntity(entityId, "alpha-item", 1))); // GH-90000
+            runPromise(() -> repository.save(new TestEntity(entityId, "alpha-item", 1))); 
 
             // WHEN — same tenant queries findAll
-            List<TestEntity> result = runPromise(() -> repository.findAll()); // GH-90000
+            List<TestEntity> result = runPromise(() -> repository.findAll()); 
 
             // THEN — the entity is returned
-            assertThat(result).hasSize(1); // GH-90000
-            verify(client).query( // GH-90000
-                    eq(TENANT_ALPHA), anyString(), any(DataCloudClient.Query.class)); // GH-90000
+            assertThat(result).hasSize(1); 
+            verify(client).query( 
+                    eq(TENANT_ALPHA), anyString(), any(DataCloudClient.Query.class)); 
         }
 
         @Test
         @DisplayName("explicit blank tenant triggers SecurityException from resolveTenantId")
-        void shouldThrowSecurityExceptionForBlankTenant() { // GH-90000
-            // GIVEN — a blank tenant ID is explicitly set (simulates misconfigured filter) // GH-90000
+        void shouldThrowSecurityExceptionForBlankTenant() { 
+            // GIVEN — a blank tenant ID is explicitly set (simulates misconfigured filter) 
             TenantContext.setCurrentTenantId("   ");
             runBlocking(() -> TenantContext.setCurrentTenantId("   "));
 
             // WHEN / THEN — any repository operation throws SecurityException before hitting the DB
-            assertThat(runPromiseThrowing(() -> repository.findAll())) // GH-90000
-                    .isInstanceOfAny(SecurityException.class, RuntimeException.class) // GH-90000
-                    .satisfiesAnyOf( // GH-90000
-                            ex -> assertThat(ex).isInstanceOf(SecurityException.class), // GH-90000
-                            ex -> assertThat(ex.getCause()).isInstanceOf(SecurityException.class)); // GH-90000
+            assertThat(runPromiseThrowing(() -> repository.findAll())) 
+                    .isInstanceOfAny(SecurityException.class, RuntimeException.class) 
+                    .satisfiesAnyOf( 
+                            ex -> assertThat(ex).isInstanceOf(SecurityException.class), 
+                            ex -> assertThat(ex.getCause()).isInstanceOf(SecurityException.class)); 
         }
     }
 
@@ -170,76 +170,76 @@ class TenantIsolationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("save propagates TenantContext tenant ID to EntityRepository")
-        void savePropagatesTenantId() { // GH-90000
+        void savePropagatesTenantId() { 
             // GIVEN
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); // GH-90000
-            when(client.save(anyString(), anyString(), any())) // GH-90000
-                    .thenReturn(Promise.of(makeEntity(TENANT_ALPHA, entityId))); // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            TenantContext.setCurrentTenantId(TENANT_ALPHA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); 
+            when(client.save(anyString(), anyString(), any())) 
+                    .thenReturn(Promise.of(makeEntity(TENANT_ALPHA, entityId))); 
 
             // WHEN
-            runPromise(() -> repository.save(new TestEntity(entityId, "name", 0))); // GH-90000
+            runPromise(() -> repository.save(new TestEntity(entityId, "name", 0))); 
 
             // THEN — DataCloudClient.save received exactly TENANT_ALPHA
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
-            verify(client).save(tenantCaptor.capture(), anyString(), any()); // GH-90000
-            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); // GH-90000
+            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
+            verify(client).save(tenantCaptor.capture(), anyString(), any()); 
+            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); 
         }
 
         @Test
         @DisplayName("findById propagates TenantContext tenant ID to EntityRepository")
-        void findByIdPropagatesTenantId() { // GH-90000
+        void findByIdPropagatesTenantId() { 
             // GIVEN
-            TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); // GH-90000
-            when(client.findById(anyString(), anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+            TenantContext.setCurrentTenantId(TENANT_ALPHA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); 
+            when(client.findById(anyString(), anyString(), anyString())) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
             // WHEN
-            runPromise(() -> repository.findById(UUID.randomUUID())); // GH-90000
+            runPromise(() -> repository.findById(UUID.randomUUID())); 
 
             // THEN
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
-            verify(client).findById(tenantCaptor.capture(), anyString(), anyString()); // GH-90000
-            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); // GH-90000
+            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
+            verify(client).findById(tenantCaptor.capture(), anyString(), anyString()); 
+            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); 
         }
 
         @Test
         @DisplayName("deleteById propagates TenantContext tenant ID to EntityRepository")
-        void deleteByIdPropagatesTenantId() { // GH-90000
+        void deleteByIdPropagatesTenantId() { 
             // GIVEN
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            TenantContext.setCurrentTenantId(TENANT_ALPHA); // GH-90000
-            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); // GH-90000
-            when(client.delete(anyString(), anyString(), anyString())) // GH-90000
-                    .thenReturn(Promise.of(null)); // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            TenantContext.setCurrentTenantId(TENANT_ALPHA); 
+            runBlocking(() -> TenantContext.setCurrentTenantId(TENANT_ALPHA)); 
+            when(client.delete(anyString(), anyString(), anyString())) 
+                    .thenReturn(Promise.of(null)); 
 
             // WHEN
-            runPromise(() -> repository.deleteById(entityId)); // GH-90000
+            runPromise(() -> repository.deleteById(entityId)); 
 
             // THEN
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
-            verify(client).delete(tenantCaptor.capture(), anyString(), anyString()); // GH-90000
-            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); // GH-90000
+            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
+            verify(client).delete(tenantCaptor.capture(), anyString(), anyString()); 
+            assertThat(tenantCaptor.getValue()).isEqualTo(TENANT_ALPHA); 
         }
 
         @Test
         @DisplayName("when no tenant is explicitly set, 'default-tenant' fallback is used")
-        void noExplicitTenantUsesDefaultFallback() { // GH-90000
-            // GIVEN — TenantContext cleared; getCurrentTenantId() returns "default-tenant" // GH-90000
-            TenantContext.clear(); // GH-90000
-            when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void noExplicitTenantUsesDefaultFallback() { 
+            // GIVEN — TenantContext cleared; getCurrentTenantId() returns "default-tenant" 
+            TenantContext.clear(); 
+            when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
+                    .thenReturn(Promise.of(List.of())); 
 
             // WHEN
-            runPromise(() -> repository.findAll()); // GH-90000
+            runPromise(() -> repository.findAll()); 
 
             // THEN — the fallback sentinel is forwarded to DataCloudClient
-            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); // GH-90000
-            verify(client).query( // GH-90000
-                    tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
-            assertThat(tenantCaptor.getValue()) // GH-90000
+            ArgumentCaptor<String> tenantCaptor = ArgumentCaptor.forClass(String.class); 
+            verify(client).query( 
+                    tenantCaptor.capture(), anyString(), any(DataCloudClient.Query.class)); 
+            assertThat(tenantCaptor.getValue()) 
                     .as("TenantContext.getCurrentTenantId() defaults to 'default-tenant' when not set")
                     .isEqualTo("default-tenant");
         }
@@ -253,27 +253,27 @@ class TenantIsolationTest extends EventloopTestBase {
      * Runs a promise-returning callable and returns the exception that was thrown, without
      * failing the test if no exception is expected. Used to assert threw-cases cleanly.
      */
-    private Throwable runPromiseThrowing(java.util.concurrent.Callable<io.activej.promise.Promise<?>> callable) { // GH-90000
+    private Throwable runPromiseThrowing(java.util.concurrent.Callable<io.activej.promise.Promise<?>> callable) { 
         try {
             @SuppressWarnings("unchecked")
             java.util.concurrent.Callable<io.activej.promise.Promise<Object>> typed =
-                (java.util.concurrent.Callable<io.activej.promise.Promise<Object>>) (Object) callable; // GH-90000
-            runPromise(typed); // GH-90000
+                (java.util.concurrent.Callable<io.activej.promise.Promise<Object>>) (Object) callable; 
+            runPromise(typed); 
             return null;
-        } catch (Throwable t) { // GH-90000
+        } catch (Throwable t) { 
             return t;
         }
     }
 
-    private DataCloudClient.Entity makeEntity(String tenantId, UUID id) { // GH-90000
-        return DataCloudClient.Entity.of( // GH-90000
-                id.toString(), "test_collection", // GH-90000
-                Map.of("id", id.toString(), "name", "item", "value", 1)); // GH-90000
+    private DataCloudClient.Entity makeEntity(String tenantId, UUID id) { 
+        return DataCloudClient.Entity.of( 
+                id.toString(), "test_collection", 
+                Map.of("id", id.toString(), "name", "item", "value", 1)); 
     }
 
-    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { // GH-90000
+    record TestEntity(UUID id, String name, int value) implements Identifiable<UUID> { 
         @Override
-        public UUID getId() { // GH-90000
+        public UUID getId() { 
             return id;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -25,112 +25,112 @@ class DataCloudConfigValidatorTest {
 
     @Test
     @DisplayName("all-defaults (no env vars set) — passes validation")
-    void allDefaults_passesValidation() { // GH-90000
-        assertThatCode(() -> // GH-90000
-                DataCloudConfigValidator.builder().build().validate()) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void allDefaults_passesValidation() { 
+        assertThatCode(() -> 
+                DataCloudConfigValidator.builder().build().validate()) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("explicit valid ports — passes validation")
-    void explicitValidPorts_passesValidation() { // GH-90000
-        assertThatCode(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void explicitValidPorts_passesValidation() { 
+        assertThatCode(() -> 
+                DataCloudConfigValidator.builder() 
                         .httpPortStr("8080")
                         .grpcPortStr("9090")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+                        .build() 
+                        .validate()) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("DB enabled with all credentials — passes")
-    void dbEnabledWithAllCredentials_passes() { // GH-90000
-        assertThatCode(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .dbEnabled(true) // GH-90000
+    void dbEnabledWithAllCredentials_passes() { 
+        assertThatCode(() -> 
+                DataCloudConfigValidator.builder() 
+                        .dbEnabled(true) 
                         .dbUrl("jdbc:postgresql://localhost:5432/dc")
                         .dbUser("dc_user")
                         .dbPassword("s3cr3t")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+                        .build() 
+                        .validate()) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("AI enabled with all credentials — passes")
-    void aiEnabledWithAllCredentials_passes() { // GH-90000
-        assertThatCode(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .aiEnabled(true) // GH-90000
+    void aiEnabledWithAllCredentials_passes() { 
+        assertThatCode(() -> 
+                DataCloudConfigValidator.builder() 
+                        .aiEnabled(true) 
                         .dbUrl("jdbc:postgresql://localhost:5432/dc")
                         .dbUser("dc_user")
                         .dbPassword("s3cr3t")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+                        .build() 
+                        .validate()) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("Kafka enabled with bootstrap servers — passes")
-    void kafkaEnabledWithBootstrap_passes() { // GH-90000
-        assertThatCode(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .kafkaEnabled(true) // GH-90000
+    void kafkaEnabledWithBootstrap_passes() { 
+        assertThatCode(() -> 
+                DataCloudConfigValidator.builder() 
+                        .kafkaEnabled(true) 
                         .kafkaBootstrap("kafka:9092")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+                        .build() 
+                        .validate()) 
+                .doesNotThrowAnyException(); 
     }
 
     // ==================== Port violations ====================
 
     @Test
     @DisplayName("HTTP port out of range — fails with port violation")
-    void httpPortOutOfRange_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void httpPortOutOfRange_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .httpPortStr("99999")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_HTTP_PORT");
     }
 
     @Test
     @DisplayName("HTTP port not a number — fails")
-    void httpPortNotANumber_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void httpPortNotANumber_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .httpPortStr("not-a-port")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_HTTP_PORT");
     }
 
     @Test
     @DisplayName("HTTP and gRPC port collision — fails with collision message")
-    void httpAndGrpcPortCollision_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void httpAndGrpcPortCollision_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .httpPortStr("8080")
                         .grpcPortStr("8080")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("must not be the same");
     }
 
     @Test
     @DisplayName("gRPC port zero — fails")
-    void grpcPortZero_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void grpcPortZero_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .grpcPortStr("0")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_GRPC_PORT");
     }
 
@@ -138,25 +138,25 @@ class DataCloudConfigValidatorTest {
 
     @Test
     @DisplayName("max connections negative — fails")
-    void maxConnectionsNegative_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void maxConnectionsNegative_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .maxConnectionsStr("-1")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_MAX_CONNECTIONS");
     }
 
     @Test
     @DisplayName("max connections not a number — fails")
-    void maxConnectionsNotANumber_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void maxConnectionsNotANumber_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .maxConnectionsStr("many")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_MAX_CONNECTIONS");
     }
 
@@ -164,13 +164,13 @@ class DataCloudConfigValidatorTest {
 
     @Test
     @DisplayName("blank instance ID — fails")
-    void blankInstanceId_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void blankInstanceId_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .instanceId("   ")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_INSTANCE_ID");
     }
 
@@ -178,61 +178,61 @@ class DataCloudConfigValidatorTest {
 
     @Test
     @DisplayName("DB enabled but no URL — fails")
-    void dbEnabledNoUrl_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .dbEnabled(true) // GH-90000
+    void dbEnabledNoUrl_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .dbEnabled(true) 
                         .dbUser("user")
                         .dbPassword("pass")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_DB_URL");
     }
 
     @Test
     @DisplayName("DB enabled but no user — fails")
-    void dbEnabledNoUser_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .dbEnabled(true) // GH-90000
+    void dbEnabledNoUser_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .dbEnabled(true) 
                         .dbUrl("jdbc:postgresql://localhost/dc")
                         .dbPassword("pass")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_DB_USER");
     }
 
     @Test
     @DisplayName("AI enabled but no URL — fails")
-    void aiEnabledNoUrl_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .aiEnabled(true) // GH-90000
+    void aiEnabledNoUrl_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .aiEnabled(true) 
                         .dbUser("user")
                         .dbPassword("pass")
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_DB_URL");
     }
 
     @Test
     @DisplayName("Multiple violations reported together")
-    void multipleViolations_allReported() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
+    void multipleViolations_allReported() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
                         .httpPortStr("99999")          // violation 1
                         .maxConnectionsStr("-5")       // violation 2
-                        .dbEnabled(true)               // violation 3,4,5 (url, user, pass) // GH-90000
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
-                .satisfies(ex -> { // GH-90000
-                    String msg = ex.getMessage(); // GH-90000
+                        .dbEnabled(true)               // violation 3,4,5 (url, user, pass) 
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
+                .satisfies(ex -> { 
+                    String msg = ex.getMessage(); 
                     // Verify all violations are in the single exception
-                    org.assertj.core.api.Assertions.assertThat(msg) // GH-90000
+                    org.assertj.core.api.Assertions.assertThat(msg) 
                             .contains("DATACLOUD_HTTP_PORT")
                             .contains("DATACLOUD_MAX_CONNECTIONS")
                             .contains("DATACLOUD_DB_URL");
@@ -243,37 +243,37 @@ class DataCloudConfigValidatorTest {
 
     @Test
     @DisplayName("Kafka enabled but no bootstrap — fails")
-    void kafkaEnabledNoBootstrap_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .kafkaEnabled(true) // GH-90000
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+    void kafkaEnabledNoBootstrap_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .kafkaEnabled(true) 
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_KAFKA_BOOTSTRAP");
     }
 
     @Test
     @DisplayName("ClickHouse enabled but no host — fails")
-    void clickhouseEnabledNoHost_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .clickhouseEnabled(true) // GH-90000
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+    void clickhouseEnabledNoHost_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .clickhouseEnabled(true) 
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_CLICKHOUSE_HOST");
     }
 
     @Test
     @DisplayName("OpenSearch enabled but no host — fails")
-    void opensearchEnabledNoHost_fails() { // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                DataCloudConfigValidator.builder() // GH-90000
-                        .opensearchEnabled(true) // GH-90000
-                        .build() // GH-90000
-                        .validate()) // GH-90000
-                .isInstanceOf(IllegalStateException.class) // GH-90000
+    void opensearchEnabledNoHost_fails() { 
+        assertThatThrownBy(() -> 
+                DataCloudConfigValidator.builder() 
+                        .opensearchEnabled(true) 
+                        .build() 
+                        .validate()) 
+                .isInstanceOf(IllegalStateException.class) 
                 .hasMessageContaining("DATACLOUD_OPENSEARCH_HOST");
     }
 }

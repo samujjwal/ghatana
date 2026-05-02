@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -47,12 +47,12 @@ class DefaultTemplateServiceTest {
     private TemplateService templateService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        YappcConfig config = YappcConfig.builder() // GH-90000
+    void setUp() { 
+        YappcConfig config = YappcConfig.builder() 
                 .packsPath(tempDir.resolve("packs"))
-                .workspacePath(tempDir) // GH-90000
-                .build(); // GH-90000
-        templateService = new DefaultTemplateService(config); // GH-90000
+                .workspacePath(tempDir) 
+                .build(); 
+        templateService = new DefaultTemplateService(config); 
     }
 
     @Nested
@@ -61,25 +61,25 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should substitute simple variables")
-        void shouldSubstituteSimpleVariables() { // GH-90000
+        void shouldSubstituteSimpleVariables() { 
             String template = "Hello, {{name}}!";
-            Map<String, Object> variables = Map.of("name", "World"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "World"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("Hello, World!");
         }
 
         @Test
         @DisplayName("Should substitute multiple variables")
-        void shouldSubstituteMultipleVariables() { // GH-90000
+        void shouldSubstituteMultipleVariables() { 
             String template = "package {{packageName}};\n\npublic class {{className}} {}";
-            Map<String, Object> variables = Map.of( // GH-90000
+            Map<String, Object> variables = Map.of( 
                     "packageName", "com.example",
                     "className", "MyService"
             );
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).contains("package com.example;");
             assertThat(result).contains("public class MyService {}");
@@ -87,29 +87,29 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should handle missing variables as empty string")
-        void shouldHandleMissingVariablesAsEmptyString() { // GH-90000
+        void shouldHandleMissingVariablesAsEmptyString() { 
             String template = "Hello, {{name}}!";
-            Map<String, Object> variables = Map.of(); // GH-90000
+            Map<String, Object> variables = Map.of(); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("Hello, !");
         }
 
         @Test
         @DisplayName("Should handle null template")
-        void shouldHandleNullTemplate() { // GH-90000
-            String result = templateService.render(null, Map.of()); // GH-90000
+        void shouldHandleNullTemplate() { 
+            String result = templateService.render(null, Map.of()); 
 
-            assertThat(result).isNull(); // GH-90000
+            assertThat(result).isNull(); 
         }
 
         @Test
         @DisplayName("Should handle empty template")
-        void shouldHandleEmptyTemplate() { // GH-90000
-            String result = templateService.render("", Map.of()); // GH-90000
+        void shouldHandleEmptyTemplate() { 
+            String result = templateService.render("", Map.of()); 
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -119,87 +119,87 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should apply lowercase helper")
-        void shouldApplyLowercaseHelper() { // GH-90000
+        void shouldApplyLowercaseHelper() { 
             String template = "{{lowercase name}}";
-            Map<String, Object> variables = Map.of("name", "HELLO"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "HELLO"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("hello");
         }
 
         @Test
         @DisplayName("Should apply uppercase helper")
-        void shouldApplyUppercaseHelper() { // GH-90000
+        void shouldApplyUppercaseHelper() { 
             String template = "{{uppercase name}}";
-            Map<String, Object> variables = Map.of("name", "hello"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "hello"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("HELLO");
         }
 
         @Test
         @DisplayName("Should apply capitalize helper")
-        void shouldApplyCapitalizeHelper() { // GH-90000
+        void shouldApplyCapitalizeHelper() { 
             String template = "{{capitalize name}}";
-            Map<String, Object> variables = Map.of("name", "hello"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "hello"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("Hello");
         }
 
         @Test
         @DisplayName("Should apply camelCase helper")
-        void shouldApplyCamelCaseHelper() { // GH-90000
+        void shouldApplyCamelCaseHelper() { 
             String template = "{{camelCase name}}";
-            Map<String, Object> variables = Map.of("name", "my-service-name"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "my-service-name"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("myServiceName");
         }
 
         @Test
         @DisplayName("Should apply pascalCase helper")
-        void shouldApplyPascalCaseHelper() { // GH-90000
+        void shouldApplyPascalCaseHelper() { 
             String template = "{{pascalCase name}}";
-            Map<String, Object> variables = Map.of("name", "my-service-name"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "my-service-name"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("MyServiceName");
         }
 
         @Test
         @DisplayName("Should apply snakeCase helper")
-        void shouldApplySnakeCaseHelper() { // GH-90000
+        void shouldApplySnakeCaseHelper() { 
             String template = "{{snakeCase name}}";
-            Map<String, Object> variables = Map.of("name", "MyServiceName"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "MyServiceName"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("my_service_name");
         }
 
         @Test
         @DisplayName("Should apply kebabCase helper")
-        void shouldApplyKebabCaseHelper() { // GH-90000
+        void shouldApplyKebabCaseHelper() { 
             String template = "{{kebabCase name}}";
-            Map<String, Object> variables = Map.of("name", "MyServiceName"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "MyServiceName"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("my-service-name");
         }
 
         @Test
         @DisplayName("Should generate uuid")
-        void shouldGenerateUuid() { // GH-90000
+        void shouldGenerateUuid() { 
             String template = "id: {{uuid}}";
 
-            String result = templateService.render(template, Map.of()); // GH-90000
+            String result = templateService.render(template, Map.of()); 
 
             assertThat(result).startsWith("id: ");
             assertThat(result.substring(4)).matches("[a-f0-9-]{36}");
@@ -207,10 +207,10 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should generate date")
-        void shouldGenerateDate() { // GH-90000
+        void shouldGenerateDate() { 
             String template = "date: {{date}}";
 
-            String result = templateService.render(template, Map.of()); // GH-90000
+            String result = templateService.render(template, Map.of()); 
 
             assertThat(result).startsWith("date: ");
             assertThat(result.substring(6)).matches("\\d{4}-\\d{2}-\\d{2}");
@@ -223,14 +223,14 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should register and use custom helper")
-        void shouldRegisterAndUseCustomHelper() { // GH-90000
-            templateService.registerHelper("reverse", input -> // GH-90000
-                    new StringBuilder(input).reverse().toString()); // GH-90000
+        void shouldRegisterAndUseCustomHelper() { 
+            templateService.registerHelper("reverse", input -> 
+                    new StringBuilder(input).reverse().toString()); 
 
             String template = "{{reverse name}}";
-            Map<String, Object> variables = Map.of("name", "hello"); // GH-90000
+            Map<String, Object> variables = Map.of("name", "hello"); 
 
-            String result = templateService.render(template, variables); // GH-90000
+            String result = templateService.render(template, variables); 
 
             assertThat(result).isEqualTo("olleh");
         }
@@ -242,10 +242,10 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should list all built-in helpers")
-        void shouldListAllBuiltInHelpers() { // GH-90000
-            var helpers = templateService.getAvailableHelpers(); // GH-90000
+        void shouldListAllBuiltInHelpers() { 
+            var helpers = templateService.getAvailableHelpers(); 
 
-            assertThat(helpers).containsExactlyInAnyOrder( // GH-90000
+            assertThat(helpers).containsExactlyInAnyOrder( 
                     "lowercase", "uppercase", "capitalize",
                     "camelCase", "pascalCase", "snakeCase", "kebabCase",
                     "uuid", "now", "date"
@@ -259,22 +259,22 @@ class DefaultTemplateServiceTest {
 
         @Test
         @DisplayName("Should validate correct syntax")
-        void shouldValidateCorrectSyntax() { // GH-90000
+        void shouldValidateCorrectSyntax() { 
             String template = "Hello, {{name}}! Today is {{date}}.";
 
-            boolean valid = templateService.validateSyntax(template); // GH-90000
+            boolean valid = templateService.validateSyntax(template); 
 
-            assertThat(valid).isTrue(); // GH-90000
+            assertThat(valid).isTrue(); 
         }
 
         @Test
         @DisplayName("Should validate helper syntax")
-        void shouldValidateHelperSyntax() { // GH-90000
+        void shouldValidateHelperSyntax() { 
             String template = "Hello, {{uppercase name}}!";
 
-            boolean valid = templateService.validateSyntax(template); // GH-90000
+            boolean valid = templateService.validateSyntax(template); 
 
-            assertThat(valid).isTrue(); // GH-90000
+            assertThat(valid).isTrue(); 
         }
     }
 }

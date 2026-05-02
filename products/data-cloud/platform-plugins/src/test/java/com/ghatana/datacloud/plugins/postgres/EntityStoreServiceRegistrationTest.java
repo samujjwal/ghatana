@@ -13,10 +13,10 @@ class EntityStoreServiceRegistrationTest {
 
     @Test
     @DisplayName("platform plugins expose the PostgreSQL EntityStore via ServiceLoader")
-    void platformPluginsExposeThePostgresEntityStoreViaServiceLoader() { // GH-90000
-        assertThat(ServiceLoader.load(EntityStore.class).findFirst()) // GH-90000
-            .isPresent() // GH-90000
-            .get() // GH-90000
-            .isInstanceOf(PostgresEntityStore.class); // GH-90000
+    void platformPluginsExposeThePostgresEntityStoreViaServiceLoader() { 
+        assertThat(ServiceLoader.load(EntityStore.class).findFirst()) 
+            .isPresent() 
+            .get() 
+            .isInstanceOf(PostgresEntityStore.class); 
     }
 }

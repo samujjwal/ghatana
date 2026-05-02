@@ -22,10 +22,10 @@ class RetiredModuleGuardrailsTest {
 
     @Test
     @DisplayName("Retired shadow module roots stay deleted")
-    void retiredShadowModuleRootsStayDeleted() { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
+    void retiredShadowModuleRootsStayDeleted() { 
+        Path repoRoot = findRepoRoot(); 
 
-        List<String> retiredRoots = List.of( // GH-90000
+        List<String> retiredRoots = List.of( 
                 "platform/java/audio-video",
                 "platform/java/incident-response",
                 "platform/java/agent-memory",
@@ -36,53 +36,53 @@ class RetiredModuleGuardrailsTest {
                 "products/yappc/tools/validation-tests"
         );
 
-        for (String retiredRoot : retiredRoots) { // GH-90000
-            assertThat(repoRoot.resolve(retiredRoot)) // GH-90000
-                    .as("Retired root should stay deleted: %s", retiredRoot) // GH-90000
-                    .doesNotExist(); // GH-90000
+        for (String retiredRoot : retiredRoots) { 
+            assertThat(repoRoot.resolve(retiredRoot)) 
+                    .as("Retired root should stay deleted: %s", retiredRoot) 
+                    .doesNotExist(); 
         }
 
-        List<String> retiredDuplicateContracts = List.of( // GH-90000
+        List<String> retiredDuplicateContracts = List.of( 
             "products/virtual-org/engine/service/src/main/java/com/ghatana/virtualorg/events/EventEnvelope.java",
             "platform-kernel/kernel-core/src/main/java/com/ghatana/kernel/contracts/validator.disabled"
         );
 
-        for (String retiredContract : retiredDuplicateContracts) { // GH-90000
-            assertThat(repoRoot.resolve(retiredContract)) // GH-90000
-                .as("Retired duplicate contract should stay deleted: %s", retiredContract) // GH-90000
-                .doesNotExist(); // GH-90000
+        for (String retiredContract : retiredDuplicateContracts) { 
+            assertThat(repoRoot.resolve(retiredContract)) 
+                .as("Retired duplicate contract should stay deleted: %s", retiredContract) 
+                .doesNotExist(); 
         }
     }
 
     @Test
     @DisplayName("Root settings does not re-include retired modules")
-    void settingsDoesNotReincludeRetiredModules() throws IOException { // GH-90000
-        Path repoRoot = findRepoRoot(); // GH-90000
+    void settingsDoesNotReincludeRetiredModules() throws IOException { 
+        Path repoRoot = findRepoRoot(); 
 
-        List<String> forbiddenIncludes = List.of( // GH-90000
-                "include(\":platform:java:audio-video\")", // GH-90000
-                "include(\":platform:java:incident-response\")", // GH-90000
-                "include(\":platform:java:agent-memory\")", // GH-90000
-                "include(\":platform:java:distributed-cache\")", // GH-90000
-                "include(\":platform:java:security-analytics\")" // GH-90000
+        List<String> forbiddenIncludes = List.of( 
+                "include(\":platform:java:audio-video\")", 
+                "include(\":platform:java:incident-response\")", 
+                "include(\":platform:java:agent-memory\")", 
+                "include(\":platform:java:distributed-cache\")", 
+                "include(\":platform:java:security-analytics\")" 
         );
 
         String settingsFile = "settings.gradle.kts";
-        String content = Files.readString(repoRoot.resolve(settingsFile)); // GH-90000
-        for (String forbiddenInclude : forbiddenIncludes) { // GH-90000
-            assertThat(content) // GH-90000
-                    .as("%s must not contain retired include %s", settingsFile, forbiddenInclude) // GH-90000
-                    .doesNotContain(forbiddenInclude); // GH-90000
+        String content = Files.readString(repoRoot.resolve(settingsFile)); 
+        for (String forbiddenInclude : forbiddenIncludes) { 
+            assertThat(content) 
+                    .as("%s must not contain retired include %s", settingsFile, forbiddenInclude) 
+                    .doesNotContain(forbiddenInclude); 
         }
     }
 
-    private static Path findRepoRoot() { // GH-90000
+    private static Path findRepoRoot() { 
         Path cursor = Path.of(System.getProperty("user.dir")).toAbsolutePath();
-        while (cursor != null) { // GH-90000
+        while (cursor != null) { 
             if (Files.exists(cursor.resolve("settings.gradle.kts"))) {
                 return cursor;
             }
-            cursor = cursor.getParent(); // GH-90000
+            cursor = cursor.getParent(); 
         }
         throw new IllegalStateException("Could not locate repository root from user.dir");
     }

@@ -22,129 +22,129 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TaskServiceImplTest extends EventloopTestBase {
 
     @Test
-    void shouldExecuteTaskWithDependenciesAndEnrichInputs() { // GH-90000
+    void shouldExecuteTaskWithDependenciesAndEnrichInputs() { 
         // GIVEN
         String capability = "sdlc.execute";
 
-        AgentRegistry agentRegistry = new AgentRegistry(new NoopMetricsCollector()); // GH-90000
-        agentRegistry.register(new EchoAgent(capability)); // GH-90000
+        AgentRegistry agentRegistry = new AgentRegistry(new NoopMetricsCollector()); 
+        agentRegistry.register(new EchoAgent(capability)); 
 
-        TaskDefinition dep = TaskDefinition.builder() // GH-90000
+        TaskDefinition dep = TaskDefinition.builder() 
                 .id("dep-task")
                 .name("Dependency Task")
                 .description("Produces an intermediate output")
                 .domain("testing")
-                .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of(capability)) // GH-90000
-                .parameters(Map.of()) // GH-90000
-                .complexity(TaskComplexity.SIMPLE) // GH-90000
-                .dependencies(List.of()) // GH-90000
-                .metadata(Map.of()) // GH-90000
-                .build(); // GH-90000
+                .phase(SDLCPhase.IMPLEMENTATION) 
+                .requiredCapabilities(List.of(capability)) 
+                .parameters(Map.of()) 
+                .complexity(TaskComplexity.SIMPLE) 
+                .dependencies(List.of()) 
+                .metadata(Map.of()) 
+                .build(); 
 
-        TaskDefinition root = TaskDefinition.builder() // GH-90000
+        TaskDefinition root = TaskDefinition.builder() 
                 .id("root-task")
                 .name("Root Task")
                 .description("Consumes dependency output")
                 .domain("testing")
-                .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-                .requiredCapabilities(List.of(capability)) // GH-90000
-                .parameters(Map.of()) // GH-90000
-                .complexity(TaskComplexity.SIMPLE) // GH-90000
-                .dependencies(List.of(TaskDependency.required(dep.id(), "Needs dep output"))) // GH-90000
-                .metadata(Map.of()) // GH-90000
-                .build(); // GH-90000
+                .phase(SDLCPhase.IMPLEMENTATION) 
+                .requiredCapabilities(List.of(capability)) 
+                .parameters(Map.of()) 
+                .complexity(TaskComplexity.SIMPLE) 
+                .dependencies(List.of(TaskDependency.required(dep.id(), "Needs dep output"))) 
+                .metadata(Map.of()) 
+                .build(); 
 
-        TaskRegistry registry = new TaskRegistry(List.of()); // GH-90000
-        registry.register(dep); // GH-90000
-        registry.register(root); // GH-90000
+        TaskRegistry registry = new TaskRegistry(List.of()); 
+        registry.register(dep); 
+        registry.register(root); 
 
-        TaskOrchestrator orchestrator = new TaskOrchestrator(agentRegistry, new CapabilityMatcher()); // GH-90000
-        TaskServiceImpl taskService = new TaskServiceImpl(registry, orchestrator, new TaskValidator()); // GH-90000
+        TaskOrchestrator orchestrator = new TaskOrchestrator(agentRegistry, new CapabilityMatcher()); 
+        TaskServiceImpl taskService = new TaskServiceImpl(registry, orchestrator, new TaskValidator()); 
 
-        TaskExecutionContext context = TaskExecutionContext.builder() // GH-90000
+        TaskExecutionContext context = TaskExecutionContext.builder() 
                 .userId("u1")
                 .tenantId("t1")
                 .traceId("trace-1")
-                .metadata(Map.of()) // GH-90000
-                .build(); // GH-90000
+                .metadata(Map.of()) 
+                .build(); 
 
-        Map<String, Object> input = Map.of( // GH-90000
-                "depOutput", "@" + dep.id(), // GH-90000
+        Map<String, Object> input = Map.of( 
+                "depOutput", "@" + dep.id(), 
                 "note", "hello"
         );
 
         // WHEN
-        TaskResult<Map<String, Object>> result = runPromise(() -> // GH-90000
-            taskService.<Map<String, Object>, Map<String, Object>>executeTask(root.id(), input, context) // GH-90000
+        TaskResult<Map<String, Object>> result = runPromise(() -> 
+            taskService.<Map<String, Object>, Map<String, Object>>executeTask(root.id(), input, context) 
         );
 
         // THEN
-        assertThat(result.status()).isEqualTo(TaskExecutionStatus.COMPLETED); // GH-90000
-        assertThat(result.output()).isNotNull(); // GH-90000
+        assertThat(result.status()).isEqualTo(TaskExecutionStatus.COMPLETED); 
+        assertThat(result.output()).isNotNull(); 
 
         @SuppressWarnings("unchecked")
         Map<String, Object> returnedInput = (Map<String, Object>) result.output().get("input");
-        assertThat(returnedInput).isNotNull(); // GH-90000
+        assertThat(returnedInput).isNotNull(); 
         assertThat(returnedInput.get("note")).isEqualTo("hello");
 
         Object depOutput = returnedInput.get("depOutput");
-        assertThat(depOutput).isInstanceOf(Map.class); // GH-90000
+        assertThat(depOutput).isInstanceOf(Map.class); 
         assertThat(((Map<?, ?>) depOutput).get("taskId")).isEqualTo(dep.id());
     }
 
         @Test
-        void shouldFilterTaskHistoryByTenantId() { // GH-90000
+        void shouldFilterTaskHistoryByTenantId() { 
         String capability = "sdlc.execute";
 
-        AgentRegistry agentRegistry = new AgentRegistry(new NoopMetricsCollector()); // GH-90000
-        agentRegistry.register(new EchoAgent(capability)); // GH-90000
+        AgentRegistry agentRegistry = new AgentRegistry(new NoopMetricsCollector()); 
+        agentRegistry.register(new EchoAgent(capability)); 
 
-        TaskDefinition task = TaskDefinition.builder() // GH-90000
+        TaskDefinition task = TaskDefinition.builder() 
             .id("tenant-task")
             .name("Tenant Task")
             .description("Tenant-scoped history validation")
             .domain("testing")
-            .phase(SDLCPhase.IMPLEMENTATION) // GH-90000
-            .requiredCapabilities(List.of(capability)) // GH-90000
-            .parameters(Map.of()) // GH-90000
-            .complexity(TaskComplexity.SIMPLE) // GH-90000
-            .dependencies(List.of()) // GH-90000
-            .metadata(Map.of()) // GH-90000
-            .build(); // GH-90000
+            .phase(SDLCPhase.IMPLEMENTATION) 
+            .requiredCapabilities(List.of(capability)) 
+            .parameters(Map.of()) 
+            .complexity(TaskComplexity.SIMPLE) 
+            .dependencies(List.of()) 
+            .metadata(Map.of()) 
+            .build(); 
 
-        TaskRegistry registry = new TaskRegistry(List.of()); // GH-90000
-        registry.register(task); // GH-90000
+        TaskRegistry registry = new TaskRegistry(List.of()); 
+        registry.register(task); 
 
-        TaskOrchestrator orchestrator = new TaskOrchestrator(agentRegistry, new CapabilityMatcher()); // GH-90000
-        TaskServiceImpl taskService = new TaskServiceImpl(registry, orchestrator, new TaskValidator()); // GH-90000
+        TaskOrchestrator orchestrator = new TaskOrchestrator(agentRegistry, new CapabilityMatcher()); 
+        TaskServiceImpl taskService = new TaskServiceImpl(registry, orchestrator, new TaskValidator()); 
 
-        TaskExecutionContext tenantAContext = TaskExecutionContext.builder() // GH-90000
+        TaskExecutionContext tenantAContext = TaskExecutionContext.builder() 
             .userId("shared-user")
             .tenantId("tenant-a")
             .traceId("trace-a")
-            .metadata(Map.of()) // GH-90000
-            .build(); // GH-90000
+            .metadata(Map.of()) 
+            .build(); 
 
-        TaskExecutionContext tenantBContext = TaskExecutionContext.builder() // GH-90000
+        TaskExecutionContext tenantBContext = TaskExecutionContext.builder() 
             .userId("shared-user")
             .tenantId("tenant-b")
             .traceId("trace-b")
-            .metadata(Map.of()) // GH-90000
-            .build(); // GH-90000
+            .metadata(Map.of()) 
+            .build(); 
 
-        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-a"), tenantAContext)); // GH-90000
-        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-b"), tenantBContext)); // GH-90000
+        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-a"), tenantAContext)); 
+        runPromise(() -> taskService.executeTask(task.id(), Map.of("k", "v-b"), tenantBContext)); 
 
-        TaskHistoryFilter tenantAFilter = TaskHistoryFilter.builder() // GH-90000
+        TaskHistoryFilter tenantAFilter = TaskHistoryFilter.builder() 
             .tenantId("tenant-a")
             .userId("shared-user")
-            .limit(50) // GH-90000
-            .build(); // GH-90000
+            .limit(50) 
+            .build(); 
 
-        List<TaskExecution> filtered = runPromise(() -> taskService.getTaskHistory(tenantAFilter)); // GH-90000
+        List<TaskExecution> filtered = runPromise(() -> taskService.getTaskHistory(tenantAFilter)); 
 
-        assertThat(filtered).isNotEmpty(); // GH-90000
+        assertThat(filtered).isNotEmpty(); 
         assertThat(filtered).allMatch(execution -> "tenant-a".equals(execution.metadata().get("tenantId")));
         assertThat(filtered).noneMatch(execution -> "tenant-b".equals(execution.metadata().get("tenantId")));
         }
@@ -160,12 +160,12 @@ class TaskServiceImplTest extends EventloopTestBase {
     private static final class EchoAgent implements AIAgent<Object, Object> {
         private final AgentMetadata metadata;
 
-        private EchoAgent(@NotNull String capability) { // GH-90000
-            this.metadata = new AgentMetadata( // GH-90000
+        private EchoAgent(@NotNull String capability) { 
+            this.metadata = new AgentMetadata( 
                     AgentName.COPILOT_AGENT,
                     "test",
                     "Echo agent for tests",
-                    List.of(capability), // GH-90000
+                    List.of(capability), 
                     List.of("test"),
                     10L,
                     null
@@ -174,38 +174,38 @@ class TaskServiceImplTest extends EventloopTestBase {
 
         @Override
         @NotNull
-        public String getId() { // GH-90000
-            return metadata.name().name(); // GH-90000
+        public String getId() { 
+            return metadata.name().name(); 
         }
 
         @Override
         @NotNull
-        public Promise<AgentResult<Object>> execute(@NotNull Object input, @NotNull AIAgentContext context) { // GH-90000
+        public Promise<AgentResult<Object>> execute(@NotNull Object input, @NotNull AIAgentContext context) { 
             // Echo agent: return input wrapped in AgentResult
-            AgentResult.AgentMetrics metrics = new AgentResult.AgentMetrics(10L, 0, "test", 1.0, 0.0); // GH-90000
-            AgentResult.AgentTrace trace = AgentResult.AgentTrace.of("echo", "test"); // GH-90000
+            AgentResult.AgentMetrics metrics = new AgentResult.AgentMetrics(10L, 0, "test", 1.0, 0.0); 
+            AgentResult.AgentTrace trace = AgentResult.AgentTrace.of("echo", "test"); 
             return Promise.of(AgentResult.success(Map.of("input", input, "taskId", context.metadata().get("taskId")), metrics, trace));
         }
 
         @Override
-        public long getLatencySLA() { // GH-90000
-            return metadata.latencySLA(); // GH-90000
+        public long getLatencySLA() { 
+            return metadata.latencySLA(); 
         }
 
         @Override
         @NotNull
-        public Promise<AgentHealth> healthCheck() { // GH-90000
-            return Promise.of(AgentHealth.healthy(1)); // GH-90000
+        public Promise<AgentHealth> healthCheck() { 
+            return Promise.of(AgentHealth.healthy(1)); 
         }
 
         @Override
         @NotNull
-        public AgentMetadata getMetadata() { // GH-90000
+        public AgentMetadata getMetadata() { 
             return metadata;
         }
 
         @Override
-        public void validateInput(@NotNull Object input) { // GH-90000
+        public void validateInput(@NotNull Object input) { 
             // no-op for test
         }
     }

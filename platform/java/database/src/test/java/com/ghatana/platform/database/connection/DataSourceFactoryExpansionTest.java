@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.database.connection;
@@ -29,12 +29,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DataSourceFactoryExpansionTest {
 
     @AfterEach
-    void tearDown() { // GH-90000
-        DataSourceFactory.closeAll(); // GH-90000
+    void tearDown() { 
+        DataSourceFactory.closeAll(); 
     }
 
     // ============================================
-    // CONCURRENT POOL CREATION (3 tests) // GH-90000
+    // CONCURRENT POOL CREATION (3 tests) 
     // ============================================
 
     @Nested
@@ -43,76 +43,76 @@ class DataSourceFactoryExpansionTest {
 
         @Test
         @DisplayName("Creates multiple pools concurrently without conflicts")
-        void multipleConcurrentPools() { // GH-90000
-            List<DataSource> dataSources = new ArrayList<>(); // GH-90000
+        void multipleConcurrentPools() { 
+            List<DataSource> dataSources = new ArrayList<>(); 
 
-            for (int i = 0; i < 10; i++) { // GH-90000
-                DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-                        .jdbcUrl("jdbc:h2:mem:concurrent-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
+            for (int i = 0; i < 10; i++) { 
+                DataSourceConfig config = DataSourceConfig.builder() 
+                        .jdbcUrl("jdbc:h2:mem:concurrent-" + i + ";DB_CLOSE_DELAY=-1") 
                         .username("sa")
                         .password("")
                         .driverClassName("org.h2.Driver")
-                        .poolName("concurrent-pool-" + i) // GH-90000
-                        .build(); // GH-90000
+                        .poolName("concurrent-pool-" + i) 
+                        .build(); 
 
-                DataSource ds = DataSourceFactory.create(config); // GH-90000
-                dataSources.add(ds); // GH-90000
+                DataSource ds = DataSourceFactory.create(config); 
+                dataSources.add(ds); 
             }
 
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(10); // GH-90000
-            assertThat(dataSources).hasSize(10); // GH-90000
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(10); 
+            assertThat(dataSources).hasSize(10); 
         }
 
         @Test
         @DisplayName("Handles rapid sequential pool creation")
-        void rapidSequentialCreation() { // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
-                DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-                        .jdbcUrl("jdbc:h2:mem:rapid-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
+        void rapidSequentialCreation() { 
+            for (int i = 0; i < 5; i++) { 
+                DataSourceConfig config = DataSourceConfig.builder() 
+                        .jdbcUrl("jdbc:h2:mem:rapid-" + i + ";DB_CLOSE_DELAY=-1") 
                         .username("sa")
                         .password("")
                         .driverClassName("org.h2.Driver")
-                        .poolName("rapid-" + i) // GH-90000
-                        .build(); // GH-90000
+                        .poolName("rapid-" + i) 
+                        .build(); 
 
-                DataSourceFactory.create(config); // GH-90000
+                DataSourceFactory.create(config); 
             }
 
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(5); // GH-90000
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(5); 
         }
 
         @Test
         @DisplayName("Maintains separate pools with unique configurations")
-        void separatePoolConfigurations() { // GH-90000
-            DataSourceConfig config1 = DataSourceConfig.builder() // GH-90000
+        void separatePoolConfigurations() { 
+            DataSourceConfig config1 = DataSourceConfig.builder() 
                     .jdbcUrl("jdbc:h2:mem:separate1;DB_CLOSE_DELAY=-1")
                     .username("sa")
                     .password("")
                     .driverClassName("org.h2.Driver")
                     .poolName("separate-1")
-                    .minimumIdle(2) // GH-90000
-                    .maximumPoolSize(5) // GH-90000
-                    .build(); // GH-90000
+                    .minimumIdle(2) 
+                    .maximumPoolSize(5) 
+                    .build(); 
 
-            DataSourceConfig config2 = DataSourceConfig.builder() // GH-90000
+            DataSourceConfig config2 = DataSourceConfig.builder() 
                     .jdbcUrl("jdbc:h2:mem:separate2;DB_CLOSE_DELAY=-1")
                     .username("sa")
                     .password("")
                     .driverClassName("org.h2.Driver")
                     .poolName("separate-2")
-                    .minimumIdle(4) // GH-90000
-                    .maximumPoolSize(20) // GH-90000
-                    .build(); // GH-90000
+                    .minimumIdle(4) 
+                    .maximumPoolSize(20) 
+                    .build(); 
 
-            DataSourceFactory.create(config1); // GH-90000
-            DataSourceFactory.create(config2); // GH-90000
+            DataSourceFactory.create(config1); 
+            DataSourceFactory.create(config2); 
 
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(2); // GH-90000
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(2); 
         }
     }
 
     // ============================================
-    // POOL LIFECYCLE MANAGEMENT (2 tests) // GH-90000
+    // POOL LIFECYCLE MANAGEMENT (2 tests) 
     // ============================================
 
     @Nested
@@ -121,51 +121,51 @@ class DataSourceFactoryExpansionTest {
 
         @Test
         @DisplayName("Resets pool count after closeAll invocation")
-        void poolCountResetAfterClose() { // GH-90000
-            for (int i = 0; i < 3; i++) { // GH-90000
-                DataSourceConfig config = DataSourceConfig.builder() // GH-90000
-                        .jdbcUrl("jdbc:h2:mem:reset-" + i + ";DB_CLOSE_DELAY=-1") // GH-90000
+        void poolCountResetAfterClose() { 
+            for (int i = 0; i < 3; i++) { 
+                DataSourceConfig config = DataSourceConfig.builder() 
+                        .jdbcUrl("jdbc:h2:mem:reset-" + i + ";DB_CLOSE_DELAY=-1") 
                         .username("sa")
                         .password("")
                         .driverClassName("org.h2.Driver")
-                        .poolName("reset-" + i) // GH-90000
-                        .build(); // GH-90000
+                        .poolName("reset-" + i) 
+                        .build(); 
 
-                DataSourceFactory.create(config); // GH-90000
+                DataSourceFactory.create(config); 
             }
 
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(3); // GH-90000
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(3); 
 
-            DataSourceFactory.closeAll(); // GH-90000
+            DataSourceFactory.closeAll(); 
 
-            assertThat(DataSourceFactory.poolCount()).isZero(); // GH-90000
+            assertThat(DataSourceFactory.poolCount()).isZero(); 
         }
 
         @Test
         @DisplayName("Allows pool recreation after full closure")
-        void recreateAfterClosure() { // GH-90000
-            DataSourceConfig config = DataSourceConfig.builder() // GH-90000
+        void recreateAfterClosure() { 
+            DataSourceConfig config = DataSourceConfig.builder() 
                     .jdbcUrl("jdbc:h2:mem:recreate;DB_CLOSE_DELAY=-1")
                     .username("sa")
                     .password("")
                     .driverClassName("org.h2.Driver")
                     .poolName("recreate-pool")
-                    .build(); // GH-90000
+                    .build(); 
 
-            DataSourceFactory.create(config); // GH-90000
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(1); // GH-90000
+            DataSourceFactory.create(config); 
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(1); 
 
-            DataSourceFactory.closeAll(); // GH-90000
-            assertThat(DataSourceFactory.poolCount()).isZero(); // GH-90000
+            DataSourceFactory.closeAll(); 
+            assertThat(DataSourceFactory.poolCount()).isZero(); 
 
             // Recreate same configuration
-            DataSourceFactory.create(config); // GH-90000
-            assertThat(DataSourceFactory.poolCount()).isEqualTo(1); // GH-90000
+            DataSourceFactory.create(config); 
+            assertThat(DataSourceFactory.poolCount()).isEqualTo(1); 
         }
     }
 
     // ============================================
-    // ERROR HANDLING (2 tests) // GH-90000
+    // ERROR HANDLING (2 tests) 
     // ============================================
 
     @Nested
@@ -174,23 +174,23 @@ class DataSourceFactoryExpansionTest {
 
         @Test
         @DisplayName("Rejects null configuration")
-        void rejectNullConfig() { // GH-90000
-            assertThatThrownBy(() -> DataSourceFactory.create(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectNullConfig() { 
+            assertThatThrownBy(() -> DataSourceFactory.create(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("Handles invalid JDBC URL configuration")
-        void rejectInvalidJdbcUrl() { // GH-90000
-            assertThatThrownBy(() -> { // GH-90000
-                DataSourceConfig.builder() // GH-90000
-                        .jdbcUrl(null) // GH-90000
+        void rejectInvalidJdbcUrl() { 
+            assertThatThrownBy(() -> { 
+                DataSourceConfig.builder() 
+                        .jdbcUrl(null) 
                         .username("sa")
                         .password("")
                         .driverClassName("org.h2.Driver")
                         .poolName("bad-url")
-                        .build(); // GH-90000
-            }).isInstanceOf(Exception.class); // GH-90000
+                        .build(); 
+            }).isInstanceOf(Exception.class); 
         }
     }
 }

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * update, and deletion of memory items across tiers.
  *
  * @doc.type class
- * @doc.purpose Tests for memory item lifecycle operations (CRUD and expiration) // GH-90000
+ * @doc.purpose Tests for memory item lifecycle operations (CRUD and expiration) 
  * @doc.layer platform
  * @doc.pattern Test
  */
@@ -37,29 +37,29 @@ class MemoryLifecycleTest extends EventloopTestBase {
     // ── In-memory store simulation ────────────────────────────────────────────
 
     static class InMemoryMemoryStore {
-        private final Map<String, MemoryItem> store = new ConcurrentHashMap<>(); // GH-90000
-        private long nowMs = System.currentTimeMillis(); // GH-90000
+        private final Map<String, MemoryItem> store = new ConcurrentHashMap<>(); 
+        private long nowMs = System.currentTimeMillis(); 
 
-        void store(MemoryItem item) { // GH-90000
-            store.put(item.getId(), item); // GH-90000
+        void store(MemoryItem item) { 
+            store.put(item.getId(), item); 
         }
 
-        Optional<MemoryItem> retrieve(String id) { // GH-90000
-            MemoryItem item = store.get(id); // GH-90000
-            if (item == null) return Optional.empty(); // GH-90000
-            if (item.getExpiresAt() != null && nowMs >= item.getExpiresAt().toEpochMilli()) { // GH-90000
-                store.remove(id); // GH-90000
-                return Optional.empty(); // GH-90000
+        Optional<MemoryItem> retrieve(String id) { 
+            MemoryItem item = store.get(id); 
+            if (item == null) return Optional.empty(); 
+            if (item.getExpiresAt() != null && nowMs >= item.getExpiresAt().toEpochMilli()) { 
+                store.remove(id); 
+                return Optional.empty(); 
             }
-            return Optional.of(item); // GH-90000
+            return Optional.of(item); 
         }
 
-        void delete(String id) { // GH-90000
-            store.remove(id); // GH-90000
+        void delete(String id) { 
+            store.remove(id); 
         }
 
-        int count() { return store.size(); } // GH-90000
-        void advanceTimeMs(long ms) { nowMs += ms; } // GH-90000
+        int count() { return store.size(); } 
+        void advanceTimeMs(long ms) { nowMs += ms; } 
     }
 
     // ── Creation ──────────────────────────────────────────────────────────────
@@ -70,19 +70,19 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("procedure item is created with all required fields")
-        void procedureItem_createdWithAllRequiredFields() { // GH-90000
-            String id = UUID.randomUUID().toString(); // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
-                    .id(id) // GH-90000
+        void procedureItem_createdWithAllRequiredFields() { 
+            String id = UUID.randomUUID().toString(); 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
+                    .id(id) 
                     .tenantId("tenant-a")
                     .situation("when user asks for help with code")
                     .action("suggest syntax fix")
                     .provenance(Provenance.builder().source("agent:code-helper").build())
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(procedure.getId()).isEqualTo(id); // GH-90000
+            assertThat(procedure.getId()).isEqualTo(id); 
             assertThat(procedure.getTenantId()).isEqualTo("tenant-a");
-            assertThat(procedure.getType()).isEqualTo(MemoryItemType.PROCEDURE); // GH-90000
+            assertThat(procedure.getType()).isEqualTo(MemoryItemType.PROCEDURE); 
             assertThat(procedure.getSituation()).isEqualTo("when user asks for help with code");
             assertThat(procedure.getAction()).isEqualTo("suggest syntax fix");
             assertThat(procedure.getProvenance().getSource()).isEqualTo("agent:code-helper");
@@ -90,18 +90,18 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("memory item defaults are applied when fields are omitted")
-        void memoryItemDefaults_areAppliedWhenFieldsAreOmitted() { // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
-                    .id(UUID.randomUUID().toString()) // GH-90000
+        void memoryItemDefaults_areAppliedWhenFieldsAreOmitted() { 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
+                    .id(UUID.randomUUID().toString()) 
                     .situation("test situation")
                     .action("test action")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(procedure.getTenantId()).isEqualTo("default");
-            assertThat(procedure.getVersion()).isEqualTo(1); // GH-90000
-            assertThat(procedure.getSuccessRate()).isEqualTo(0.0); // GH-90000
-            assertThat(procedure.getSteps()).isEmpty(); // GH-90000
-            assertThat(procedure.getLinks()).isEmpty(); // GH-90000
+            assertThat(procedure.getVersion()).isEqualTo(1); 
+            assertThat(procedure.getSuccessRate()).isEqualTo(0.0); 
+            assertThat(procedure.getSteps()).isEmpty(); 
+            assertThat(procedure.getLinks()).isEmpty(); 
         }
     }
 
@@ -113,29 +113,29 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("stored item is retrievable by ID")
-        void storedItem_isRetrievableById() { // GH-90000
-            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
+        void storedItem_isRetrievableById() { 
+            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
                     .id("proc-001")
                     .situation("S1")
                     .action("A1")
-                    .build(); // GH-90000
+                    .build(); 
 
-            memStore.store(procedure); // GH-90000
+            memStore.store(procedure); 
             Optional<MemoryItem> retrieved = memStore.retrieve("proc-001");
 
-            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved).isPresent(); 
             assertThat(retrieved.get().getId()).isEqualTo("proc-001");
         }
 
         @Test
         @DisplayName("retrieving non-existent ID returns empty optional")
-        void retrievingNonExistentId_returnsEmptyOptional() { // GH-90000
-            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); // GH-90000
+        void retrievingNonExistentId_returnsEmptyOptional() { 
+            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); 
 
             Optional<MemoryItem> result = memStore.retrieve("does-not-exist");
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -147,38 +147,38 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("item with future expiry is accessible before expiry")
-        void itemWithFutureExpiry_isAccessibleBeforeExpiry() { // GH-90000
-            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
+        void itemWithFutureExpiry_isAccessibleBeforeExpiry() { 
+            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
                     .id("expiring-item")
                     .situation("temp")
                     .action("temp action")
-                    .expiresAt(Instant.now().plusSeconds(3600)) // GH-90000
-                    .build(); // GH-90000
+                    .expiresAt(Instant.now().plusSeconds(3600)) 
+                    .build(); 
 
-            memStore.store(procedure); // GH-90000
+            memStore.store(procedure); 
             Optional<MemoryItem> result = memStore.retrieve("expiring-item");
 
-            assertThat(result).isPresent(); // GH-90000
+            assertThat(result).isPresent(); 
         }
 
         @Test
         @DisplayName("item is evicted when expiry time has passed")
-        void item_isEvicted_whenExpiryTimePassed() { // GH-90000
-            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
+        void item_isEvicted_whenExpiryTimePassed() { 
+            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
                     .id("expired-item")
                     .situation("temp")
                     .action("temp action")
-                    .expiresAt(Instant.ofEpochMilli(memStore.nowMs + 500)) // GH-90000
-                    .build(); // GH-90000
+                    .expiresAt(Instant.ofEpochMilli(memStore.nowMs + 500)) 
+                    .build(); 
 
-            memStore.store(procedure); // GH-90000
-            memStore.advanceTimeMs(1000); // GH-90000
+            memStore.store(procedure); 
+            memStore.advanceTimeMs(1000); 
 
             Optional<MemoryItem> result = memStore.retrieve("expired-item");
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -190,19 +190,19 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deleted item is no longer retrievable")
-        void deletedItem_isNoLongerRetrievable() { // GH-90000
-            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); // GH-90000
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
+        void deletedItem_isNoLongerRetrievable() { 
+            InMemoryMemoryStore memStore = new InMemoryMemoryStore(); 
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
                     .id("to-delete")
                     .situation("irrelevant")
                     .action("irrelevant action")
-                    .build(); // GH-90000
+                    .build(); 
 
-            memStore.store(procedure); // GH-90000
+            memStore.store(procedure); 
             memStore.delete("to-delete");
 
             assertThat(memStore.retrieve("to-delete")).isEmpty();
-            assertThat(memStore.count()).isEqualTo(0); // GH-90000
+            assertThat(memStore.count()).isEqualTo(0); 
         }
     }
 
@@ -214,22 +214,22 @@ class MemoryLifecycleTest extends EventloopTestBase {
 
         @Test
         @DisplayName("procedure item can have typed links to other items")
-        void procedureItem_canHaveTypedLinksToOtherItems() { // GH-90000
-            MemoryLink link = MemoryLink.builder() // GH-90000
+        void procedureItem_canHaveTypedLinksToOtherItems() { 
+            MemoryLink link = MemoryLink.builder() 
                     .targetItemId("episode-001")
-                    .linkType(LinkType.DERIVED_FROM) // GH-90000
-                    .build(); // GH-90000
+                    .linkType(LinkType.DERIVED_FROM) 
+                    .build(); 
 
-            EnhancedProcedure procedure = EnhancedProcedure.builder() // GH-90000
+            EnhancedProcedure procedure = EnhancedProcedure.builder() 
                     .id("proc-with-link")
                     .situation("S")
                     .action("A")
-                    .links(List.of(link)) // GH-90000
-                    .build(); // GH-90000
+                    .links(List.of(link)) 
+                    .build(); 
 
-            assertThat(procedure.getLinks()).hasSize(1); // GH-90000
+            assertThat(procedure.getLinks()).hasSize(1); 
             assertThat(procedure.getLinks().getFirst().getTargetItemId()).isEqualTo("episode-001");
-            assertThat(procedure.getLinks().getFirst().getLinkType()).isEqualTo(LinkType.DERIVED_FROM); // GH-90000
+            assertThat(procedure.getLinks().getFirst().getLinkType()).isEqualTo(LinkType.DERIVED_FROM); 
         }
     }
 }

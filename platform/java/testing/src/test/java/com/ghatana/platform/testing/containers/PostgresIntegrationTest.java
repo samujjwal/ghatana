@@ -21,86 +21,86 @@ import com.ghatana.platform.testing.IntegrationTest;
 @IntegrationTest
 class PostgresIntegrationTest {
 
-    private static final Logger log = LoggerFactory.getLogger(PostgresIntegrationTest.class); // GH-90000
+    private static final Logger log = LoggerFactory.getLogger(PostgresIntegrationTest.class); 
     private static boolean dockerAvailable;
 
     @BeforeAll
-    static void setup() { // GH-90000
+    static void setup() { 
         // Check Docker availability first
         boolean available;
         try {
-            available = DockerClientFactory.instance().isDockerAvailable(); // GH-90000
-        } catch (Throwable ex) { // GH-90000
-            log.warn("Docker availability check failed: {}", ex.getMessage()); // GH-90000
+            available = DockerClientFactory.instance().isDockerAvailable(); 
+        } catch (Throwable ex) { 
+            log.warn("Docker availability check failed: {}", ex.getMessage()); 
             available = false;
         }
         dockerAvailable = available;
 
         // Skip tests gracefully if Docker is not running
-        Assumptions.assumeTrue(dockerAvailable, // GH-90000
-                () -> "Skipping PostgresIntegrationTest because Docker is unavailable. Start Docker Desktop to run these tests."); // GH-90000
+        Assumptions.assumeTrue(dockerAvailable, 
+                () -> "Skipping PostgresIntegrationTest because Docker is unavailable. Start Docker Desktop to run these tests."); 
 
         try {
             log.info("Starting PostgreSQL container for testing...");
             // Start the container before all tests
-            PostgresTestContainer.start(); // GH-90000
-            log.info("PostgreSQL container started at: {}", PostgresTestContainer.getJdbcUrl()); // GH-90000
+            PostgresTestContainer.start(); 
+            log.info("PostgreSQL container started at: {}", PostgresTestContainer.getJdbcUrl()); 
 
             // Initialize test data
             log.info("Initializing test data...");
-            initializeTestData(); // GH-90000
+            initializeTestData(); 
             log.info("Test data initialization complete");
-        } catch (Exception e) { // GH-90000
-            log.error("Failed to initialize test environment", e); // GH-90000
-            Assumptions.assumeTrue(false, // GH-90000
-                    "Skipping PostgresIntegrationTest because PostgreSQL container setup failed: " + e.getMessage()); // GH-90000
+        } catch (Exception e) { 
+            log.error("Failed to initialize test environment", e); 
+            Assumptions.assumeTrue(false, 
+                    "Skipping PostgresIntegrationTest because PostgreSQL container setup failed: " + e.getMessage()); 
         }
     }
 
     @AfterAll
-    static void tearDown() { // GH-90000
+    static void tearDown() { 
         // Container will be stopped by the JVM shutdown hook
         log.info("PostgreSQL integration tests completed");
     }
 
     @Test
-    void shouldConnectToDatabase() throws SQLException { // GH-90000
+    void shouldConnectToDatabase() throws SQLException { 
         // Given
-        String url = PostgresTestContainer.getJdbcUrl(); // GH-90000
-        String username = PostgresTestContainer.getUsername(); // GH-90000
-        String password = PostgresTestContainer.getPassword(); // GH-90000
+        String url = PostgresTestContainer.getJdbcUrl(); 
+        String username = PostgresTestContainer.getUsername(); 
+        String password = PostgresTestContainer.getPassword(); 
 
         // When
-        try (Connection conn = DriverManager.getConnection(url, username, password)) { // GH-90000
+        try (Connection conn = DriverManager.getConnection(url, username, password)) { 
             // Then
-            assertThat(conn).isNotNull(); // GH-90000
-            assertThat(conn.isValid(5)).isTrue(); // GH-90000
-            log.info("Successfully connected to test database: {}", url); // GH-90000
+            assertThat(conn).isNotNull(); 
+            assertThat(conn.isValid(5)).isTrue(); 
+            log.info("Successfully connected to test database: {}", url); 
         }
     }
 
     @Test
-    void shouldExecuteQuery() throws SQLException { // GH-90000
+    void shouldExecuteQuery() throws SQLException { 
         // Given
-        String url = PostgresTestContainer.getJdbcUrl(); // GH-90000
-        String username = PostgresTestContainer.getUsername(); // GH-90000
-        String password = PostgresTestContainer.getPassword(); // GH-90000
+        String url = PostgresTestContainer.getJdbcUrl(); 
+        String username = PostgresTestContainer.getUsername(); 
+        String password = PostgresTestContainer.getPassword(); 
 
         // When
         try (Connection conn = DriverManager.getConnection(url, username, password); var stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT 1")) {
 
             // Then
-            assertThat(rs.next()).isTrue(); // GH-90000
-            assertThat(rs.getInt(1)).isEqualTo(1); // GH-90000
+            assertThat(rs.next()).isTrue(); 
+            assertThat(rs.getInt(1)).isEqualTo(1); 
         }
     }
 
-    private static void initializeTestData() { // GH-90000
+    private static void initializeTestData() { 
         // This would typically create test tables and insert test data
-        try (Connection conn = DriverManager.getConnection( // GH-90000
-                PostgresTestContainer.getJdbcUrl(), // GH-90000
-                PostgresTestContainer.getUsername(), // GH-90000
-                PostgresTestContainer.getPassword()); var stmt = conn.createStatement()) { // GH-90000
+        try (Connection conn = DriverManager.getConnection( 
+                PostgresTestContainer.getJdbcUrl(), 
+                PostgresTestContainer.getUsername(), 
+                PostgresTestContainer.getPassword()); var stmt = conn.createStatement()) { 
 
             // Create a test table if it doesn't exist
             stmt.execute("""
@@ -120,9 +120,9 @@ class PostgresIntegrationTest {
                 """);
 
             log.info("Test data initialized");
-        } catch (SQLException e) { // GH-90000
-            log.error("Failed to initialize test data", e); // GH-90000
-            throw new RuntimeException("Failed to initialize test data", e); // GH-90000
+        } catch (SQLException e) { 
+            log.error("Failed to initialize test data", e); 
+            throw new RuntimeException("Failed to initialize test data", e); 
         }
     }
 }

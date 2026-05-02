@@ -24,132 +24,132 @@ class HttpResponseAssertionsTest {
     private HttpHeaders jsonHeaders;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        request = HttpRequest.newBuilder() // GH-90000
-            .uri(URI.create(TEST_URL)) // GH-90000
-            .GET() // GH-90000
-            .build(); // GH-90000
+    void setUp() { 
+        request = HttpRequest.newBuilder() 
+            .uri(URI.create(TEST_URL)) 
+            .GET() 
+            .build(); 
 
-        successHeaders = HttpHeaders.of( // GH-90000
+        successHeaders = HttpHeaders.of( 
             Map.of("Content-Type", List.of("text/plain")),
-            (name, value) -> true // GH-90000
+            (name, value) -> true 
         );
 
-        jsonHeaders = HttpHeaders.of( // GH-90000
-            Map.of( // GH-90000
+        jsonHeaders = HttpHeaders.of( 
+            Map.of( 
                 "Content-Type", List.of("application/json"),
                 "X-Custom-Header", List.of("custom-value")
             ),
-            (name, value) -> true // GH-90000
+            (name, value) -> true 
         );
     }
 
     @Test
-    void testAssertStatusCode() { // GH-90000
-        HttpResponse<String> response = new TestResponse<>(200, successHeaders, "OK"); // GH-90000
-        HttpResponseAssertions.assertStatusCode(response, 200); // GH-90000
+    void testAssertStatusCode() { 
+        HttpResponse<String> response = new TestResponse<>(200, successHeaders, "OK"); 
+        HttpResponseAssertions.assertStatusCode(response, 200); 
 
         // Test failure case
-        HttpResponse<String> errorResponse = new TestResponse<>(404, successHeaders, "Not Found"); // GH-90000
-        AssertionError error = assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertStatusCode(errorResponse, 200)); // GH-90000
+        HttpResponse<String> errorResponse = new TestResponse<>(404, successHeaders, "Not Found"); 
+        AssertionError error = assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertStatusCode(errorResponse, 200)); 
         assertTrue(error.getMessage().contains("Expected status code 200 but was 404"));
     }
 
     @Test
-    void testAssertHeader() { // GH-90000
-        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); // GH-90000
-        HttpResponseAssertions.assertHeader(response, "Content-Type", "application/json"); // GH-90000
+    void testAssertHeader() { 
+        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); 
+        HttpResponseAssertions.assertHeader(response, "Content-Type", "application/json"); 
 
         // Test missing header
-        AssertionError error = assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertHeader(response, "Missing-Header", "value")); // GH-90000
+        AssertionError error = assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertHeader(response, "Missing-Header", "value")); 
         assertTrue(error.getMessage().contains("Header 'Missing-Header' not found"));
     }
 
     @Test
-    void testAssertBodyContains() { // GH-90000
-        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); // GH-90000
-        HttpResponseAssertions.assertBodyContains(response, "Test"); // GH-90000
+    void testAssertBodyContains() { 
+        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); 
+        HttpResponseAssertions.assertBodyContains(response, "Test"); 
 
         // Test missing text
-        AssertionError error = assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertBodyContains(response, "NotFound")); // GH-90000
+        AssertionError error = assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertBodyContains(response, "NotFound")); 
         assertTrue(error.getMessage().contains("Response body does not contain 'NotFound'"));
     }
 
     @Test
-    void testAssertBodyMatches() { // GH-90000
-        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); // GH-90000
+    void testAssertBodyMatches() { 
+        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); 
 
         // Test with lambda predicate - positive case
-        HttpResponseAssertions.assertBodyMatches(response, // GH-90000
+        HttpResponseAssertions.assertBodyMatches(response, 
             body -> body.contains("Test"),
             "Body should contain 'Test'");
 
         // Test with method reference - check that the body is not empty
-        HttpResponseAssertions.assertBodyMatches(response, // GH-90000
-            body -> !body.isEmpty(), // GH-90000
+        HttpResponseAssertions.assertBodyMatches(response, 
+            body -> !body.isEmpty(), 
             "Body should not be empty");
 
         // Test with a failing assertion
-        AssertionError error = assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertBodyMatches(response, // GH-90000
+        AssertionError error = assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertBodyMatches(response, 
                 body -> body.contains("NonExistent"),
                 "Body should contain 'NonExistent'"));
         assertTrue(error.getMessage().contains("Body should contain 'NonExistent'"));
     }
 
     @Test
-    void testAssertJsonContentType() { // GH-90000
-        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); // GH-90000
-        HttpResponseAssertions.assertJsonContentType(response); // GH-90000
+    void testAssertJsonContentType() { 
+        HttpResponse<String> response = new TestResponse<>(200, jsonHeaders, JSON_CONTENT); 
+        HttpResponseAssertions.assertJsonContentType(response); 
 
         // Test with wrong content type
-        HttpResponse<String> invalidResponse = new TestResponse<>(200, successHeaders, "Not JSON"); // GH-90000
-        AssertionError error = assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertJsonContentType(invalidResponse)); // GH-90000
+        HttpResponse<String> invalidResponse = new TestResponse<>(200, successHeaders, "Not JSON"); 
+        AssertionError error = assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertJsonContentType(invalidResponse)); 
         assertTrue(error.getMessage().contains("Unexpected value for header 'Content-Type'"));
     }
 
     @Test
-    void testAssertSuccess() { // GH-90000
+    void testAssertSuccess() { 
         // Test success cases
-        HttpResponseAssertions.assertSuccess(new TestResponse<>(200, successHeaders, "OK")); // GH-90000
-        HttpResponseAssertions.assertSuccess(new TestResponse<>(201, successHeaders, "Created")); // GH-90000
-        HttpResponseAssertions.assertSuccess(new TestResponse<>(204, successHeaders, "")); // GH-90000
+        HttpResponseAssertions.assertSuccess(new TestResponse<>(200, successHeaders, "OK")); 
+        HttpResponseAssertions.assertSuccess(new TestResponse<>(201, successHeaders, "Created")); 
+        HttpResponseAssertions.assertSuccess(new TestResponse<>(204, successHeaders, "")); 
 
         // Test error cases
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertSuccess(new TestResponse<>(400, successHeaders, "Bad Request"))); // GH-90000
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertSuccess(new TestResponse<>(500, successHeaders, "Server Error"))); // GH-90000
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertSuccess(new TestResponse<>(400, successHeaders, "Bad Request"))); 
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertSuccess(new TestResponse<>(500, successHeaders, "Server Error"))); 
     }
 
     @Test
-    void testAssertClientError() { // GH-90000
+    void testAssertClientError() { 
         // Test client error cases
-        HttpResponseAssertions.assertClientError(new TestResponse<>(400, successHeaders, "Bad Request")); // GH-90000
-        HttpResponseAssertions.assertClientError(new TestResponse<>(404, successHeaders, "Not Found")); // GH-90000
+        HttpResponseAssertions.assertClientError(new TestResponse<>(400, successHeaders, "Bad Request")); 
+        HttpResponseAssertions.assertClientError(new TestResponse<>(404, successHeaders, "Not Found")); 
 
         // Test non-client error cases
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertClientError(new TestResponse<>(200, successHeaders, "OK"))); // GH-90000
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertClientError(new TestResponse<>(500, successHeaders, "Server Error"))); // GH-90000
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertClientError(new TestResponse<>(200, successHeaders, "OK"))); 
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertClientError(new TestResponse<>(500, successHeaders, "Server Error"))); 
     }
 
     @Test
-    void testAssertServerError() { // GH-90000
+    void testAssertServerError() { 
         // Test server error cases
-        HttpResponseAssertions.assertServerError(new TestResponse<>(500, successHeaders, "Internal Server Error")); // GH-90000
-        HttpResponseAssertions.assertServerError(new TestResponse<>(503, successHeaders, "Service Unavailable")); // GH-90000
+        HttpResponseAssertions.assertServerError(new TestResponse<>(500, successHeaders, "Internal Server Error")); 
+        HttpResponseAssertions.assertServerError(new TestResponse<>(503, successHeaders, "Service Unavailable")); 
 
         // Test non-server error cases
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertServerError(new TestResponse<>(200, successHeaders, "OK"))); // GH-90000
-        assertThrows(AssertionError.class, // GH-90000
-            () -> HttpResponseAssertions.assertServerError(new TestResponse<>(404, successHeaders, "Not Found"))); // GH-90000
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertServerError(new TestResponse<>(200, successHeaders, "OK"))); 
+        assertThrows(AssertionError.class, 
+            () -> HttpResponseAssertions.assertServerError(new TestResponse<>(404, successHeaders, "Not Found"))); 
     }
 
     // Helper class for testing
@@ -158,21 +158,21 @@ class HttpResponseAssertionsTest {
         private final HttpHeaders headers;
         private final T body;
 
-        public TestResponse(int statusCode, HttpHeaders headers, T body) { // GH-90000
+        public TestResponse(int statusCode, HttpHeaders headers, T body) { 
             this.statusCode = statusCode;
             this.headers = headers;
             this.body = body;
         }
 
-        @Override public int statusCode() { return statusCode; } // GH-90000
-        @Override public HttpHeaders headers() { return headers; } // GH-90000
-        @Override public T body() { return body; } // GH-90000
+        @Override public int statusCode() { return statusCode; } 
+        @Override public HttpHeaders headers() { return headers; } 
+        @Override public T body() { return body; } 
 
         // Unimplemented methods
-        @Override public HttpRequest request() { return null; } // GH-90000
-        @Override public Optional<HttpResponse<T>> previousResponse() { return Optional.empty(); } // GH-90000
-        @Override public Optional<javax.net.ssl.SSLSession> sslSession() { return Optional.empty(); } // GH-90000
-        @Override public URI uri() { return null; } // GH-90000
-        @Override public java.net.http.HttpClient.Version version() { return null; } // GH-90000
+        @Override public HttpRequest request() { return null; } 
+        @Override public Optional<HttpResponse<T>> previousResponse() { return Optional.empty(); } 
+        @Override public Optional<javax.net.ssl.SSLSession> sslSession() { return Optional.empty(); } 
+        @Override public URI uri() { return null; } 
+        @Override public java.net.http.HttpClient.Version version() { return null; } 
     }
 }

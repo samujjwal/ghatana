@@ -15,7 +15,7 @@ dependencies {
     implementation(project(":platform-kernel:kernel-persistence"))
 
     // ── Platform plugins (canonical) ──
-    implementation(project(":platform-plugins:plugin-billing-ledger"))
+    implementation(project(":platform-plugins:plugin-ledger"))
     implementation(project(":platform-plugins:plugin-audit-trail"))
     implementation(project(":platform-plugins:plugin-consent"))
     implementation(project(":platform-plugins:plugin-compliance"))

@@ -16,344 +16,344 @@ import static org.junit.jupiter.api.Assertions.*;
 class DateTimeUtilsTest {
 
     @Test
-    void testToday() { // GH-90000
-        LocalDate today = DateTimeUtils.today(); // GH-90000
-        assertNotNull(today); // GH-90000
-        assertEquals(LocalDate.now(), today); // GH-90000
+    void testToday() { 
+        LocalDate today = DateTimeUtils.today(); 
+        assertNotNull(today); 
+        assertEquals(LocalDate.now(), today); 
     }
 
     @Test
-    void testNow() { // GH-90000
-        LocalDateTime now = DateTimeUtils.now(); // GH-90000
-        assertNotNull(now); // GH-90000
-        assertTrue(now.isBefore(LocalDateTime.now().plusSeconds(1))); // GH-90000
+    void testNow() { 
+        LocalDateTime now = DateTimeUtils.now(); 
+        assertNotNull(now); 
+        assertTrue(now.isBefore(LocalDateTime.now().plusSeconds(1))); 
     }
 
     @Test
-    void testNowUtc() { // GH-90000
-        OffsetDateTime nowUtc = DateTimeUtils.nowUtc(); // GH-90000
-        assertNotNull(nowUtc); // GH-90000
-        assertEquals(ZoneOffset.UTC, nowUtc.getOffset()); // GH-90000
+    void testNowUtc() { 
+        OffsetDateTime nowUtc = DateTimeUtils.nowUtc(); 
+        assertNotNull(nowUtc); 
+        assertEquals(ZoneOffset.UTC, nowUtc.getOffset()); 
     }
 
     @Test
-    void testToUtc() { // GH-90000
-        LocalDateTime local = LocalDateTime.of(2025, 1, 5, 14, 30, 0); // GH-90000
-        OffsetDateTime utc = DateTimeUtils.toUtc(local); // GH-90000
+    void testToUtc() { 
+        LocalDateTime local = LocalDateTime.of(2025, 1, 5, 14, 30, 0); 
+        OffsetDateTime utc = DateTimeUtils.toUtc(local); 
 
-        assertNotNull(utc); // GH-90000
-        assertEquals(ZoneOffset.UTC, utc.getOffset()); // GH-90000
+        assertNotNull(utc); 
+        assertEquals(ZoneOffset.UTC, utc.getOffset()); 
     }
 
     @Test
-    void testToUtcWithNull() { // GH-90000
-        assertNull(DateTimeUtils.toUtc(null)); // GH-90000
+    void testToUtcWithNull() { 
+        assertNull(DateTimeUtils.toUtc(null)); 
     }
 
     @Test
-    void testToStartOfDayUtc() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        OffsetDateTime startOfDay = DateTimeUtils.toStartOfDayUtc(date); // GH-90000
+    void testToStartOfDayUtc() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        OffsetDateTime startOfDay = DateTimeUtils.toStartOfDayUtc(date); 
 
-        assertNotNull(startOfDay); // GH-90000
-        assertEquals(0, startOfDay.getHour()); // GH-90000
-        assertEquals(0, startOfDay.getMinute()); // GH-90000
-        assertEquals(0, startOfDay.getSecond()); // GH-90000
-        assertEquals(0, startOfDay.getNano()); // GH-90000
-        assertEquals(ZoneOffset.UTC, startOfDay.getOffset()); // GH-90000
+        assertNotNull(startOfDay); 
+        assertEquals(0, startOfDay.getHour()); 
+        assertEquals(0, startOfDay.getMinute()); 
+        assertEquals(0, startOfDay.getSecond()); 
+        assertEquals(0, startOfDay.getNano()); 
+        assertEquals(ZoneOffset.UTC, startOfDay.getOffset()); 
     }
 
     @Test
-    void testToEndOfDayUtc() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        OffsetDateTime endOfDay = DateTimeUtils.toEndOfDayUtc(date); // GH-90000
+    void testToEndOfDayUtc() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        OffsetDateTime endOfDay = DateTimeUtils.toEndOfDayUtc(date); 
 
-        assertNotNull(endOfDay); // GH-90000
-        assertEquals(23, endOfDay.getHour()); // GH-90000
-        assertEquals(59, endOfDay.getMinute()); // GH-90000
-        assertEquals(59, endOfDay.getSecond()); // GH-90000
-        assertEquals(999999999, endOfDay.getNano()); // GH-90000
-        assertEquals(ZoneOffset.UTC, endOfDay.getOffset()); // GH-90000
+        assertNotNull(endOfDay); 
+        assertEquals(23, endOfDay.getHour()); 
+        assertEquals(59, endOfDay.getMinute()); 
+        assertEquals(59, endOfDay.getSecond()); 
+        assertEquals(999999999, endOfDay.getNano()); 
+        assertEquals(ZoneOffset.UTC, endOfDay.getOffset()); 
     }
 
     @Test
-    void testStartOfDay() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        LocalDateTime startOfDay = DateTimeUtils.startOfDay(date); // GH-90000
+    void testStartOfDay() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        LocalDateTime startOfDay = DateTimeUtils.startOfDay(date); 
 
-        assertNotNull(startOfDay); // GH-90000
-        assertEquals(0, startOfDay.getHour()); // GH-90000
-        assertEquals(0, startOfDay.getMinute()); // GH-90000
-        assertEquals(0, startOfDay.getSecond()); // GH-90000
+        assertNotNull(startOfDay); 
+        assertEquals(0, startOfDay.getHour()); 
+        assertEquals(0, startOfDay.getMinute()); 
+        assertEquals(0, startOfDay.getSecond()); 
     }
 
     @Test
-    void testEndOfDay() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        LocalDateTime endOfDay = DateTimeUtils.endOfDay(date); // GH-90000
+    void testEndOfDay() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        LocalDateTime endOfDay = DateTimeUtils.endOfDay(date); 
 
-        assertNotNull(endOfDay); // GH-90000
-        assertEquals(23, endOfDay.getHour()); // GH-90000
-        assertEquals(59, endOfDay.getMinute()); // GH-90000
-        assertEquals(59, endOfDay.getSecond()); // GH-90000
+        assertNotNull(endOfDay); 
+        assertEquals(23, endOfDay.getHour()); 
+        assertEquals(59, endOfDay.getMinute()); 
+        assertEquals(59, endOfDay.getSecond()); 
     }
 
     @Test
-    void testStartOfMonth() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 15); // GH-90000
-        LocalDate startOfMonth = DateTimeUtils.startOfMonth(date); // GH-90000
+    void testStartOfMonth() { 
+        LocalDate date = LocalDate.of(2025, 1, 15); 
+        LocalDate startOfMonth = DateTimeUtils.startOfMonth(date); 
 
-        assertNotNull(startOfMonth); // GH-90000
-        assertEquals(1, startOfMonth.getDayOfMonth()); // GH-90000
-        assertEquals(1, startOfMonth.getMonthValue()); // GH-90000
-        assertEquals(2025, startOfMonth.getYear()); // GH-90000
+        assertNotNull(startOfMonth); 
+        assertEquals(1, startOfMonth.getDayOfMonth()); 
+        assertEquals(1, startOfMonth.getMonthValue()); 
+        assertEquals(2025, startOfMonth.getYear()); 
     }
 
     @Test
-    void testEndOfMonth() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 15); // GH-90000
-        LocalDate endOfMonth = DateTimeUtils.endOfMonth(date); // GH-90000
+    void testEndOfMonth() { 
+        LocalDate date = LocalDate.of(2025, 1, 15); 
+        LocalDate endOfMonth = DateTimeUtils.endOfMonth(date); 
 
-        assertNotNull(endOfMonth); // GH-90000
-        assertEquals(31, endOfMonth.getDayOfMonth()); // GH-90000
-        assertEquals(1, endOfMonth.getMonthValue()); // GH-90000
-        assertEquals(2025, endOfMonth.getYear()); // GH-90000
+        assertNotNull(endOfMonth); 
+        assertEquals(31, endOfMonth.getDayOfMonth()); 
+        assertEquals(1, endOfMonth.getMonthValue()); 
+        assertEquals(2025, endOfMonth.getYear()); 
     }
 
     @Test
-    void testEndOfMonthFebruary() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 2, 15); // GH-90000
-        LocalDate endOfMonth = DateTimeUtils.endOfMonth(date); // GH-90000
+    void testEndOfMonthFebruary() { 
+        LocalDate date = LocalDate.of(2025, 2, 15); 
+        LocalDate endOfMonth = DateTimeUtils.endOfMonth(date); 
 
-        assertNotNull(endOfMonth); // GH-90000
-        assertEquals(28, endOfMonth.getDayOfMonth()); // 2025 is not a leap year // GH-90000
+        assertNotNull(endOfMonth); 
+        assertEquals(28, endOfMonth.getDayOfMonth()); // 2025 is not a leap year 
     }
 
     @Test
-    void testToDateAndBack() { // GH-90000
-        LocalDateTime original = LocalDateTime.of(2025, 1, 5, 14, 30, 0); // GH-90000
-        Date legacyDate = DateTimeUtils.toDate(original); // GH-90000
-        LocalDateTime converted = DateTimeUtils.toLocalDateTime(legacyDate); // GH-90000
+    void testToDateAndBack() { 
+        LocalDateTime original = LocalDateTime.of(2025, 1, 5, 14, 30, 0); 
+        Date legacyDate = DateTimeUtils.toDate(original); 
+        LocalDateTime converted = DateTimeUtils.toLocalDateTime(legacyDate); 
 
-        assertNotNull(legacyDate); // GH-90000
-        assertNotNull(converted); // GH-90000
-        assertEquals(original.withNano(0), converted.withNano(0)); // Date has millisecond precision // GH-90000
+        assertNotNull(legacyDate); 
+        assertNotNull(converted); 
+        assertEquals(original.withNano(0), converted.withNano(0)); // Date has millisecond precision 
     }
 
     @Test
-    void testToDateWithNull() { // GH-90000
-        assertNull(DateTimeUtils.toDate(null)); // GH-90000
+    void testToDateWithNull() { 
+        assertNull(DateTimeUtils.toDate(null)); 
     }
 
     @Test
-    void testToLocalDateTimeWithNull() { // GH-90000
-        assertNull(DateTimeUtils.toLocalDateTime(null)); // GH-90000
+    void testToLocalDateTimeWithNull() { 
+        assertNull(DateTimeUtils.toLocalDateTime(null)); 
     }
 
     @Test
-    void testParseDate() { // GH-90000
+    void testParseDate() { 
         String dateString = "2025-01-05";
-        LocalDate parsed = DateTimeUtils.parseDate(dateString, DateTimeUtils.DATE_PATTERN); // GH-90000
+        LocalDate parsed = DateTimeUtils.parseDate(dateString, DateTimeUtils.DATE_PATTERN); 
 
-        assertNotNull(parsed); // GH-90000
-        assertEquals(2025, parsed.getYear()); // GH-90000
-        assertEquals(1, parsed.getMonthValue()); // GH-90000
-        assertEquals(5, parsed.getDayOfMonth()); // GH-90000
+        assertNotNull(parsed); 
+        assertEquals(2025, parsed.getYear()); 
+        assertEquals(1, parsed.getMonthValue()); 
+        assertEquals(5, parsed.getDayOfMonth()); 
     }
 
     @Test
-    void testParseDateWithNull() { // GH-90000
-        assertNull(DateTimeUtils.parseDate(null, DateTimeUtils.DATE_PATTERN)); // GH-90000
+    void testParseDateWithNull() { 
+        assertNull(DateTimeUtils.parseDate(null, DateTimeUtils.DATE_PATTERN)); 
     }
 
     @Test
-    void testParseDateWithBlank() { // GH-90000
-        assertNull(DateTimeUtils.parseDate("", DateTimeUtils.DATE_PATTERN)); // GH-90000
-        assertNull(DateTimeUtils.parseDate("   ", DateTimeUtils.DATE_PATTERN)); // GH-90000
+    void testParseDateWithBlank() { 
+        assertNull(DateTimeUtils.parseDate("", DateTimeUtils.DATE_PATTERN)); 
+        assertNull(DateTimeUtils.parseDate("   ", DateTimeUtils.DATE_PATTERN)); 
     }
 
     @Test
-    void testParseDateTime() { // GH-90000
+    void testParseDateTime() { 
         String dateTimeString = "2025-01-05 14:30:00";
-        LocalDateTime parsed = DateTimeUtils.parseDateTime(dateTimeString, DateTimeUtils.DATETIME_PATTERN); // GH-90000
+        LocalDateTime parsed = DateTimeUtils.parseDateTime(dateTimeString, DateTimeUtils.DATETIME_PATTERN); 
 
-        assertNotNull(parsed); // GH-90000
-        assertEquals(2025, parsed.getYear()); // GH-90000
-        assertEquals(1, parsed.getMonthValue()); // GH-90000
-        assertEquals(5, parsed.getDayOfMonth()); // GH-90000
-        assertEquals(14, parsed.getHour()); // GH-90000
-        assertEquals(30, parsed.getMinute()); // GH-90000
-        assertEquals(0, parsed.getSecond()); // GH-90000
+        assertNotNull(parsed); 
+        assertEquals(2025, parsed.getYear()); 
+        assertEquals(1, parsed.getMonthValue()); 
+        assertEquals(5, parsed.getDayOfMonth()); 
+        assertEquals(14, parsed.getHour()); 
+        assertEquals(30, parsed.getMinute()); 
+        assertEquals(0, parsed.getSecond()); 
     }
 
     @Test
-    void testParseDateTimeWithNull() { // GH-90000
-        assertNull(DateTimeUtils.parseDateTime(null, DateTimeUtils.DATETIME_PATTERN)); // GH-90000
+    void testParseDateTimeWithNull() { 
+        assertNull(DateTimeUtils.parseDateTime(null, DateTimeUtils.DATETIME_PATTERN)); 
     }
 
     @Test
-    void testFormatWithFormatter() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        String formatted = DateTimeUtils.format(date, DateTimeUtils.ISO_DATE_FORMATTER); // GH-90000
+    void testFormatWithFormatter() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        String formatted = DateTimeUtils.format(date, DateTimeUtils.ISO_DATE_FORMATTER); 
 
-        assertEquals("2025-01-05", formatted); // GH-90000
+        assertEquals("2025-01-05", formatted); 
     }
 
     @Test
-    void testFormatWithPattern() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 5); // GH-90000
-        String formatted = DateTimeUtils.format(date, "MM/dd/yyyy"); // GH-90000
+    void testFormatWithPattern() { 
+        LocalDate date = LocalDate.of(2025, 1, 5); 
+        String formatted = DateTimeUtils.format(date, "MM/dd/yyyy"); 
 
-        assertEquals("01/05/2025", formatted); // GH-90000
+        assertEquals("01/05/2025", formatted); 
     }
 
     @Test
-    void testFormatWithNull() { // GH-90000
-        assertNull(DateTimeUtils.format(null, DateTimeUtils.ISO_DATE_FORMATTER)); // GH-90000
+    void testFormatWithNull() { 
+        assertNull(DateTimeUtils.format(null, DateTimeUtils.ISO_DATE_FORMATTER)); 
     }
 
     @Test
-    void testDaysBetween() { // GH-90000
-        LocalDate start = LocalDate.of(2025, 1, 1); // GH-90000
-        LocalDate end = LocalDate.of(2025, 1, 31); // GH-90000
+    void testDaysBetween() { 
+        LocalDate start = LocalDate.of(2025, 1, 1); 
+        LocalDate end = LocalDate.of(2025, 1, 31); 
 
-        long days = DateTimeUtils.daysBetween(start, end); // GH-90000
-        assertEquals(30, days); // GH-90000
+        long days = DateTimeUtils.daysBetween(start, end); 
+        assertEquals(30, days); 
     }
 
     @Test
-    void testDaysBetweenReversed() { // GH-90000
-        LocalDate start = LocalDate.of(2025, 1, 31); // GH-90000
-        LocalDate end = LocalDate.of(2025, 1, 1); // GH-90000
+    void testDaysBetweenReversed() { 
+        LocalDate start = LocalDate.of(2025, 1, 31); 
+        LocalDate end = LocalDate.of(2025, 1, 1); 
 
-        long days = DateTimeUtils.daysBetween(start, end); // GH-90000
-        assertEquals(30, days); // Absolute value // GH-90000
+        long days = DateTimeUtils.daysBetween(start, end); 
+        assertEquals(30, days); // Absolute value 
     }
 
     @Test
-    void testDaysBetweenWithNull() { // GH-90000
-        LocalDate date = LocalDate.of(2025, 1, 1); // GH-90000
+    void testDaysBetweenWithNull() { 
+        LocalDate date = LocalDate.of(2025, 1, 1); 
 
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            DateTimeUtils.daysBetween(null, date) // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> 
+            DateTimeUtils.daysBetween(null, date) 
         );
 
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            DateTimeUtils.daysBetween(date, null) // GH-90000
-        );
-    }
-
-    @Test
-    void testHoursBetween() { // GH-90000
-        OffsetDateTime start = OffsetDateTime.of(2025, 1, 5, 10, 0, 0, 0, ZoneOffset.UTC); // GH-90000
-        OffsetDateTime end = OffsetDateTime.of(2025, 1, 5, 14, 0, 0, 0, ZoneOffset.UTC); // GH-90000
-
-        long hours = DateTimeUtils.hoursBetween(start, end); // GH-90000
-        assertEquals(4, hours); // GH-90000
-    }
-
-    @Test
-    void testHoursBetweenWithNull() { // GH-90000
-        OffsetDateTime time = OffsetDateTime.now(); // GH-90000
-
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            DateTimeUtils.hoursBetween(null, time) // GH-90000
-        );
-
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-            DateTimeUtils.hoursBetween(time, null) // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> 
+            DateTimeUtils.daysBetween(date, null) 
         );
     }
 
     @Test
-    void testIsWithinRangeDate() { // GH-90000
-        LocalDate start = LocalDate.of(2025, 1, 1); // GH-90000
-        LocalDate end = LocalDate.of(2025, 1, 31); // GH-90000
-        LocalDate middle = LocalDate.of(2025, 1, 15); // GH-90000
-        LocalDate before = LocalDate.of(2024, 12, 31); // GH-90000
-        LocalDate after = LocalDate.of(2025, 2, 1); // GH-90000
+    void testHoursBetween() { 
+        OffsetDateTime start = OffsetDateTime.of(2025, 1, 5, 10, 0, 0, 0, ZoneOffset.UTC); 
+        OffsetDateTime end = OffsetDateTime.of(2025, 1, 5, 14, 0, 0, 0, ZoneOffset.UTC); 
 
-        assertTrue(DateTimeUtils.isWithinRange(middle, start, end)); // GH-90000
-        assertTrue(DateTimeUtils.isWithinRange(start, start, end)); // Inclusive // GH-90000
-        assertTrue(DateTimeUtils.isWithinRange(end, start, end)); // Inclusive // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(before, start, end)); // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(after, start, end)); // GH-90000
+        long hours = DateTimeUtils.hoursBetween(start, end); 
+        assertEquals(4, hours); 
     }
 
     @Test
-    void testIsWithinRangeDateWithNull() { // GH-90000
-        LocalDate start = LocalDate.of(2025, 1, 1); // GH-90000
-        LocalDate end = LocalDate.of(2025, 1, 31); // GH-90000
+    void testHoursBetweenWithNull() { 
+        OffsetDateTime time = OffsetDateTime.now(); 
 
-        assertFalse(DateTimeUtils.isWithinRange(null, start, end)); // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(start, null, end)); // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(start, start, null)); // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> 
+            DateTimeUtils.hoursBetween(null, time) 
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> 
+            DateTimeUtils.hoursBetween(time, null) 
+        );
     }
 
     @Test
-    void testIsWithinRangeDateTime() { // GH-90000
-        LocalDateTime start = LocalDateTime.of(2025, 1, 5, 10, 0); // GH-90000
-        LocalDateTime end = LocalDateTime.of(2025, 1, 5, 14, 0); // GH-90000
-        LocalDateTime middle = LocalDateTime.of(2025, 1, 5, 12, 0); // GH-90000
-        LocalDateTime before = LocalDateTime.of(2025, 1, 5, 9, 0); // GH-90000
-        LocalDateTime after = LocalDateTime.of(2025, 1, 5, 15, 0); // GH-90000
+    void testIsWithinRangeDate() { 
+        LocalDate start = LocalDate.of(2025, 1, 1); 
+        LocalDate end = LocalDate.of(2025, 1, 31); 
+        LocalDate middle = LocalDate.of(2025, 1, 15); 
+        LocalDate before = LocalDate.of(2024, 12, 31); 
+        LocalDate after = LocalDate.of(2025, 2, 1); 
 
-        assertTrue(DateTimeUtils.isWithinRange(middle, start, end)); // GH-90000
-        assertTrue(DateTimeUtils.isWithinRange(start, start, end)); // GH-90000
-        assertTrue(DateTimeUtils.isWithinRange(end, start, end)); // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(before, start, end)); // GH-90000
-        assertFalse(DateTimeUtils.isWithinRange(after, start, end)); // GH-90000
+        assertTrue(DateTimeUtils.isWithinRange(middle, start, end)); 
+        assertTrue(DateTimeUtils.isWithinRange(start, start, end)); // Inclusive 
+        assertTrue(DateTimeUtils.isWithinRange(end, start, end)); // Inclusive 
+        assertFalse(DateTimeUtils.isWithinRange(before, start, end)); 
+        assertFalse(DateTimeUtils.isWithinRange(after, start, end)); 
     }
 
     @Test
-    void testCurrentTimeMillis() { // GH-90000
-        long before = System.currentTimeMillis(); // GH-90000
-        long current = DateTimeUtils.currentTimeMillis(); // GH-90000
-        long after = System.currentTimeMillis(); // GH-90000
+    void testIsWithinRangeDateWithNull() { 
+        LocalDate start = LocalDate.of(2025, 1, 1); 
+        LocalDate end = LocalDate.of(2025, 1, 31); 
 
-        assertTrue(current >= before); // GH-90000
-        assertTrue(current <= after); // GH-90000
+        assertFalse(DateTimeUtils.isWithinRange(null, start, end)); 
+        assertFalse(DateTimeUtils.isWithinRange(start, null, end)); 
+        assertFalse(DateTimeUtils.isWithinRange(start, start, null)); 
     }
 
     @Test
-    void testCurrentTimeSeconds() { // GH-90000
-        long seconds = DateTimeUtils.currentTimeSeconds(); // GH-90000
-        assertTrue(seconds > 0); // GH-90000
-        assertTrue(seconds < System.currentTimeMillis()); // Seconds should be less than millis // GH-90000
+    void testIsWithinRangeDateTime() { 
+        LocalDateTime start = LocalDateTime.of(2025, 1, 5, 10, 0); 
+        LocalDateTime end = LocalDateTime.of(2025, 1, 5, 14, 0); 
+        LocalDateTime middle = LocalDateTime.of(2025, 1, 5, 12, 0); 
+        LocalDateTime before = LocalDateTime.of(2025, 1, 5, 9, 0); 
+        LocalDateTime after = LocalDateTime.of(2025, 1, 5, 15, 0); 
+
+        assertTrue(DateTimeUtils.isWithinRange(middle, start, end)); 
+        assertTrue(DateTimeUtils.isWithinRange(start, start, end)); 
+        assertTrue(DateTimeUtils.isWithinRange(end, start, end)); 
+        assertFalse(DateTimeUtils.isWithinRange(before, start, end)); 
+        assertFalse(DateTimeUtils.isWithinRange(after, start, end)); 
     }
 
     @Test
-    void testGetSystemTimezoneOffsetMinutes() { // GH-90000
-        int offset = DateTimeUtils.getSystemTimezoneOffsetMinutes(); // GH-90000
-        // Offset should be reasonable (-720 to +840 minutes, i.e., -12 to +14 hours) // GH-90000
-        assertTrue(offset >= -720 && offset <= 840); // GH-90000
+    void testCurrentTimeMillis() { 
+        long before = System.currentTimeMillis(); 
+        long current = DateTimeUtils.currentTimeMillis(); 
+        long after = System.currentTimeMillis(); 
+
+        assertTrue(current >= before); 
+        assertTrue(current <= after); 
     }
 
     @Test
-    void testFormatters() { // GH-90000
+    void testCurrentTimeSeconds() { 
+        long seconds = DateTimeUtils.currentTimeSeconds(); 
+        assertTrue(seconds > 0); 
+        assertTrue(seconds < System.currentTimeMillis()); // Seconds should be less than millis 
+    }
+
+    @Test
+    void testGetSystemTimezoneOffsetMinutes() { 
+        int offset = DateTimeUtils.getSystemTimezoneOffsetMinutes(); 
+        // Offset should be reasonable (-720 to +840 minutes, i.e., -12 to +14 hours) 
+        assertTrue(offset >= -720 && offset <= 840); 
+    }
+
+    @Test
+    void testFormatters() { 
         // Verify formatters are not null
-        assertNotNull(DateTimeUtils.ISO_DATE_FORMATTER); // GH-90000
-        assertNotNull(DateTimeUtils.ISO_TIME_FORMATTER); // GH-90000
-        assertNotNull(DateTimeUtils.ISO_DATETIME_FORMATTER); // GH-90000
-        assertNotNull(DateTimeUtils.ISO_OFFSET_DATETIME_FORMATTER); // GH-90000
-        assertNotNull(DateTimeUtils.ISO_ZONED_DATETIME_FORMATTER); // GH-90000
+        assertNotNull(DateTimeUtils.ISO_DATE_FORMATTER); 
+        assertNotNull(DateTimeUtils.ISO_TIME_FORMATTER); 
+        assertNotNull(DateTimeUtils.ISO_DATETIME_FORMATTER); 
+        assertNotNull(DateTimeUtils.ISO_OFFSET_DATETIME_FORMATTER); 
+        assertNotNull(DateTimeUtils.ISO_ZONED_DATETIME_FORMATTER); 
     }
 
     @Test
-    void testPatterns() { // GH-90000
+    void testPatterns() { 
         // Verify patterns are not null
-        assertNotNull(DateTimeUtils.DATE_PATTERN); // GH-90000
-        assertNotNull(DateTimeUtils.TIME_PATTERN); // GH-90000
-        assertNotNull(DateTimeUtils.DATETIME_PATTERN); // GH-90000
-        assertNotNull(DateTimeUtils.TIMESTAMP_PATTERN); // GH-90000
-        assertNotNull(DateTimeUtils.ISO_8601_PATTERN); // GH-90000
+        assertNotNull(DateTimeUtils.DATE_PATTERN); 
+        assertNotNull(DateTimeUtils.TIME_PATTERN); 
+        assertNotNull(DateTimeUtils.DATETIME_PATTERN); 
+        assertNotNull(DateTimeUtils.TIMESTAMP_PATTERN); 
+        assertNotNull(DateTimeUtils.ISO_8601_PATTERN); 
     }
 
     @Test
-    void testZones() { // GH-90000
+    void testZones() { 
         // Verify zones are not null
-        assertNotNull(DateTimeUtils.UTC); // GH-90000
-        assertNotNull(DateTimeUtils.SYSTEM_ZONE); // GH-90000
-        assertEquals("UTC", DateTimeUtils.UTC.getId()); // GH-90000
+        assertNotNull(DateTimeUtils.UTC); 
+        assertNotNull(DateTimeUtils.SYSTEM_ZONE); 
+        assertEquals("UTC", DateTimeUtils.UTC.getId()); 
     }
 }

@@ -37,11 +37,11 @@ class AgentControllerTest extends EventloopTestBase {
     private AgentController controller;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MetricsCollector metricsCollector = mock(MetricsCollector.class); // GH-90000
-        registry = mock(AgentRegistry.class); // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        controller = new AgentController(registry, objectMapper); // GH-90000
+    void setUp() { 
+        MetricsCollector metricsCollector = mock(MetricsCollector.class); 
+        registry = mock(AgentRegistry.class); 
+        objectMapper = new ObjectMapper(); 
+        controller = new AgentController(registry, objectMapper); 
     }
 
     @Nested
@@ -50,87 +50,87 @@ class AgentControllerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should list all registered agents")
-        void shouldListAllAgents() { // GH-90000
+        void shouldListAllAgents() { 
             // GIVEN
-            List<AgentMetadata> metadata = List.of( // GH-90000
-                    AgentMetadata.builder() // GH-90000
-                            .name(AgentName.COPILOT_AGENT) // GH-90000
+            List<AgentMetadata> metadata = List.of( 
+                    AgentMetadata.builder() 
+                            .name(AgentName.COPILOT_AGENT) 
                             .version("1.0.0")
                             .description("AI Copilot")
-                            .capabilities(List.of("chat", "assistance")) // GH-90000
+                            .capabilities(List.of("chat", "assistance")) 
                             .supportedModels(List.of("gpt-4"))
-                            .latencySLA(1000) // GH-90000
-                            .build(), // GH-90000
-                    AgentMetadata.builder() // GH-90000
-                            .name(AgentName.SEARCH_AGENT) // GH-90000
+                            .latencySLA(1000) 
+                            .build(), 
+                    AgentMetadata.builder() 
+                            .name(AgentName.SEARCH_AGENT) 
                             .version("1.0.0")
                             .description("Semantic Search")
-                            .capabilities(List.of("search", "vector-search")) // GH-90000
+                            .capabilities(List.of("search", "vector-search")) 
                             .supportedModels(List.of("text-embedding-3-small"))
-                            .latencySLA(200) // GH-90000
-                            .build() // GH-90000
+                            .latencySLA(200) 
+                            .build() 
             );
-            when(registry.getAllMetadata()).thenReturn(metadata); // GH-90000
+            when(registry.getAllMetadata()).thenReturn(metadata); 
 
-            HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/agents") // GH-90000
-                    .build(); // GH-90000
+            HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/agents") 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.listAgents(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listAgents(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
-            verify(registry).getAllMetadata(); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
+            verify(registry).getAllMetadata(); 
         }
 
         @Test
         @DisplayName("should get specific agent by name")
-        void shouldGetAgentByName() { // GH-90000
+        void shouldGetAgentByName() { 
             // GIVEN
             @SuppressWarnings("unchecked")
-            AIAgent<Object, Object> mockAgent = mock(AIAgent.class); // GH-90000
-            AgentMetadata metadata = AgentMetadata.builder() // GH-90000
-                    .name(AgentName.COPILOT_AGENT) // GH-90000
+            AIAgent<Object, Object> mockAgent = mock(AIAgent.class); 
+            AgentMetadata metadata = AgentMetadata.builder() 
+                    .name(AgentName.COPILOT_AGENT) 
                     .version("1.0.0")
                     .description("AI Copilot")
                     .capabilities(List.of("chat"))
                     .supportedModels(List.of("gpt-4"))
-                    .latencySLA(1000) // GH-90000
-                    .build(); // GH-90000
-            when(mockAgent.getMetadata()).thenReturn(metadata); // GH-90000
-            when(registry.get(AgentName.COPILOT_AGENT)).thenReturn(mockAgent); // GH-90000
+                    .latencySLA(1000) 
+                    .build(); 
+            when(mockAgent.getMetadata()).thenReturn(metadata); 
+            when(registry.get(AgentName.COPILOT_AGENT)).thenReturn(mockAgent); 
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/COPILOT_AGENT"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.getAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getAgent(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
-            verify(registry).get(AgentName.COPILOT_AGENT); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
+            verify(registry).get(AgentName.COPILOT_AGENT); 
         }
 
         @Test
         @DisplayName("should return 404 for unknown agent")
-        void shouldReturn404ForUnknownAgent() { // GH-90000
+        void shouldReturn404ForUnknownAgent() { 
             // GIVEN - no agent registered for this name
-            when(registry.get(any(AgentName.class))).thenReturn(null); // GH-90000
+            when(registry.get(any(AgentName.class))).thenReturn(null); 
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/COPILOT_AGENT"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.getAgent(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getAgent(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getCode()).isEqualTo(404); 
         }
     }
 
@@ -140,49 +140,49 @@ class AgentControllerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should get health for all agents")
-        void shouldGetAllAgentsHealth() { // GH-90000
+        void shouldGetAllAgentsHealth() { 
             // GIVEN
-            Map<AgentName, AgentHealth> healthMap = Map.of( // GH-90000
-                    AgentName.COPILOT_AGENT, AgentHealth.healthy(50), // GH-90000
-                    AgentName.SEARCH_AGENT, AgentHealth.healthy(30) // GH-90000
+            Map<AgentName, AgentHealth> healthMap = Map.of( 
+                    AgentName.COPILOT_AGENT, AgentHealth.healthy(50), 
+                    AgentName.SEARCH_AGENT, AgentHealth.healthy(30) 
             );
-            when(registry.healthCheckAll()).thenReturn(Promise.of(healthMap)); // GH-90000
+            when(registry.healthCheckAll()).thenReturn(Promise.of(healthMap)); 
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/health"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.getAllAgentsHealth(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getAllAgentsHealth(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
-            verify(registry).healthCheckAll(); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
+            verify(registry).healthCheckAll(); 
         }
 
         @Test
         @DisplayName("should get health for specific agent")
-        void shouldGetAgentHealth() { // GH-90000
+        void shouldGetAgentHealth() { 
             // GIVEN
             @SuppressWarnings("unchecked")
-            AIAgent<Object, Object> mockAgent = mock(AIAgent.class); // GH-90000
-            when(registry.get(AgentName.COPILOT_AGENT)).thenReturn(mockAgent); // GH-90000
-            when(mockAgent.healthCheck()) // GH-90000
-                    .thenReturn(Promise.of(AgentHealth.healthy(50))); // GH-90000
+            AIAgent<Object, Object> mockAgent = mock(AIAgent.class); 
+            when(registry.get(AgentName.COPILOT_AGENT)).thenReturn(mockAgent); 
+            when(mockAgent.healthCheck()) 
+                    .thenReturn(Promise.of(AgentHealth.healthy(50))); 
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/COPILOT_AGENT/health"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.getAgentHealth(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getAgentHealth(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
         }
     }
 
@@ -192,78 +192,78 @@ class AgentControllerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should list all capabilities")
-        void shouldListAllCapabilities() { // GH-90000
+        void shouldListAllCapabilities() { 
             // GIVEN
-            List<AgentMetadata> metadata = List.of( // GH-90000
-                    AgentMetadata.builder() // GH-90000
-                            .name(AgentName.COPILOT_AGENT) // GH-90000
+            List<AgentMetadata> metadata = List.of( 
+                    AgentMetadata.builder() 
+                            .name(AgentName.COPILOT_AGENT) 
                             .version("1.0.0")
                             .description("AI Copilot")
-                            .capabilities(List.of("chat", "code-generation")) // GH-90000
+                            .capabilities(List.of("chat", "code-generation")) 
                             .supportedModels(List.of("gpt-4"))
-                            .latencySLA(1000) // GH-90000
-                            .build(), // GH-90000
-                    AgentMetadata.builder() // GH-90000
-                            .name(AgentName.CODE_GENERATOR_AGENT) // GH-90000
+                            .latencySLA(1000) 
+                            .build(), 
+                    AgentMetadata.builder() 
+                            .name(AgentName.CODE_GENERATOR_AGENT) 
                             .version("1.0.0")
                             .description("Code Generator")
-                            .capabilities(List.of("code-generation", "scaffolding")) // GH-90000
+                            .capabilities(List.of("code-generation", "scaffolding")) 
                             .supportedModels(List.of("gpt-4"))
-                            .latencySLA(5000) // GH-90000
-                            .build() // GH-90000
+                            .latencySLA(5000) 
+                            .build() 
             );
-            when(registry.getAllMetadata()).thenReturn(metadata); // GH-90000
+            when(registry.getAllMetadata()).thenReturn(metadata); 
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/capabilities"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.listCapabilities(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listCapabilities(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("should find agents by capability")
-        void shouldFindAgentsByCapability() { // GH-90000
+        void shouldFindAgentsByCapability() { 
             // GIVEN
-            AgentRegistry.AgentInfo agentInfo = new AgentRegistry.AgentInfo( // GH-90000
+            AgentRegistry.AgentInfo agentInfo = new AgentRegistry.AgentInfo( 
                     AgentName.SEARCH_AGENT,
                     "1.0.0",
                     "Search",
                     AgentRegistry.AgentState.READY,
-                    Instant.now(), // GH-90000
+                    Instant.now(), 
                     List.of("semantic-search")
             );
             when(registry.findByCapability("semantic-search"))
-                    .thenReturn(List.of(agentInfo)); // GH-90000
-            when(registry.getMetadata(AgentName.SEARCH_AGENT)) // GH-90000
-                    .thenReturn(java.util.Optional.of( // GH-90000
-                            AgentMetadata.builder() // GH-90000
-                                    .name(AgentName.SEARCH_AGENT) // GH-90000
+                    .thenReturn(List.of(agentInfo)); 
+            when(registry.getMetadata(AgentName.SEARCH_AGENT)) 
+                    .thenReturn(java.util.Optional.of( 
+                            AgentMetadata.builder() 
+                                    .name(AgentName.SEARCH_AGENT) 
                                     .version("1.0.0")
                                     .description("Search")
                                     .capabilities(List.of("semantic-search"))
                                     .supportedModels(List.of("text-embedding-3-small"))
-                                    .latencySLA(200) // GH-90000
-                                    .build() // GH-90000
+                                    .latencySLA(200) 
+                                    .build() 
                     ));
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.GET,
                             "http://localhost/api/v1/agents/by-capability/semantic-search"
                     )
-                    .build(); // GH-90000
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.findByCapability(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.findByCapability(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
             verify(registry).findByCapability("semantic-search");
         }
     }
@@ -275,32 +275,32 @@ class AgentControllerTest extends EventloopTestBase {
         @Test
         @DisplayName("should execute copilot chat")
         @SuppressWarnings("unchecked")
-        void shouldExecuteCopilotChat() { // GH-90000
+        void shouldExecuteCopilotChat() { 
             // GIVEN
-            AIAgent<CopilotInput, Object> mockAgent = mock(AIAgent.class); // GH-90000
-            AgentMetadata metadata = AgentMetadata.builder() // GH-90000
-                    .name(AgentName.COPILOT_AGENT) // GH-90000
+            AIAgent<CopilotInput, Object> mockAgent = mock(AIAgent.class); 
+            AgentMetadata metadata = AgentMetadata.builder() 
+                    .name(AgentName.COPILOT_AGENT) 
                     .version("1.0.0")
                     .description("AI Copilot")
                     .capabilities(List.of("chat"))
                     .supportedModels(List.of("gpt-4"))
-                    .latencySLA(1000) // GH-90000
-                    .build(); // GH-90000
-            when(mockAgent.getMetadata()).thenReturn(metadata); // GH-90000
+                    .latencySLA(1000) 
+                    .build(); 
+            when(mockAgent.getMetadata()).thenReturn(metadata); 
 
-            AgentResult<Object> result = AgentResult.success( // GH-90000
-                    Map.of("response", "Hello! How can I help?"), // GH-90000
-                    AgentResult.AgentMetrics.builder() // GH-90000
-                            .latencyMs(50) // GH-90000
-                            .tokensUsed(100) // GH-90000
+            AgentResult<Object> result = AgentResult.success( 
+                    Map.of("response", "Hello! How can I help?"), 
+                    AgentResult.AgentMetrics.builder() 
+                            .latencyMs(50) 
+                            .tokensUsed(100) 
                             .modelVersion("gpt-4")
-                            .confidence(0.95) // GH-90000
-                            .build(), // GH-90000
-                    AgentResult.AgentTrace.of("CopilotAgent", "req-123") // GH-90000
+                            .confidence(0.95) 
+                            .build(), 
+                    AgentResult.AgentTrace.of("CopilotAgent", "req-123") 
             );
 
-            doReturn(mockAgent).when(registry).get(AgentName.COPILOT_AGENT); // GH-90000
-            when(mockAgent.execute(any(), any())).thenReturn(Promise.of(result)); // GH-90000
+            doReturn(mockAgent).when(registry).get(AgentName.COPILOT_AGENT); 
+            when(mockAgent.execute(any(), any())).thenReturn(Promise.of(result)); 
 
             String requestBody = """
                     {
@@ -310,28 +310,28 @@ class AgentControllerTest extends EventloopTestBase {
                     }
                     """;
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.POST,
                             "http://localhost/api/v1/agents/copilot/chat"
                     )
                     .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "tenant-1")
                     .withHeader(io.activej.http.HttpHeaders.of("X-Organization-ID"), "org-1")
                     .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "ws-1")
-                    .withBody(requestBody.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(requestBody.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.copilotChat(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.copilotChat(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(200); // GH-90000
+            assertThat(response.getCode()).isEqualTo(200); 
         }
 
         @Test
         @DisplayName("should return 404 when agent not registered")
-        void shouldReturn404WhenAgentNotRegistered() { // GH-90000
+        void shouldReturn404WhenAgentNotRegistered() { 
             // GIVEN
-            when(registry.get(any(AgentName.class))).thenReturn(null); // GH-90000
+            when(registry.get(any(AgentName.class))).thenReturn(null); 
 
             String requestBody = """
                     {
@@ -339,21 +339,21 @@ class AgentControllerTest extends EventloopTestBase {
                     }
                     """;
 
-            HttpRequest request = HttpRequest.builder( // GH-90000
+            HttpRequest request = HttpRequest.builder( 
                             HttpMethod.POST,
                             "http://localhost/api/v1/agents/search"
                     )
                     .withHeader(io.activej.http.HttpHeaders.of("X-Tenant-ID"), "tenant-1")
                     .withHeader(io.activej.http.HttpHeaders.of("X-Organization-ID"), "org-1")
                     .withHeader(io.activej.http.HttpHeaders.of("X-Workspace-ID"), "ws-1")
-                    .withBody(requestBody.getBytes()) // GH-90000
-                    .build(); // GH-90000
+                    .withBody(requestBody.getBytes()) 
+                    .build(); 
 
             // WHEN
-            HttpResponse response = runPromise(() -> controller.search(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.search(request)); 
 
             // THEN
-            assertThat(response.getCode()).isEqualTo(404); // GH-90000
+            assertThat(response.getCode()).isEqualTo(404); 
         }
     }
 }

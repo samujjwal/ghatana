@@ -23,14 +23,14 @@ class JdbcTemplateTest {
     private JdbcTemplate jdbc;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        JdbcDataSource ds = new JdbcDataSource(); // GH-90000
+    void setUp() throws Exception { 
+        JdbcDataSource ds = new JdbcDataSource(); 
         ds.setURL("jdbc:h2:mem:jdbc-template-test;DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
         ds.setPassword("");
         DataSource dataSource = ds;
 
-        jdbc = new JdbcTemplate(dataSource); // GH-90000
+        jdbc = new JdbcTemplate(dataSource); 
 
         // Create a simple test table
         jdbc.update("DROP TABLE IF EXISTS test_users");
@@ -44,17 +44,17 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("constructor throws NullPointerException for null DataSource")
-    void constructorThrowsForNullDataSource() { // GH-90000
-        assertThatThrownBy(() -> new JdbcTemplate(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void constructorThrowsForNullDataSource() { 
+        assertThatThrownBy(() -> new JdbcTemplate(null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ── queryForObject ────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("queryForObject returns populated Optional when row exists")
-    void queryForObjectReturnsPresentOptional() { // GH-90000
-        Optional<String> name = jdbc.queryForObject( // GH-90000
+    void queryForObjectReturnsPresentOptional() { 
+        Optional<String> name = jdbc.queryForObject( 
                 "SELECT name FROM test_users WHERE id = ?",
                 rs -> rs.getString("name"),
                 1);
@@ -64,102 +64,102 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("queryForObject returns empty Optional when no row matches")
-    void queryForObjectReturnsEmptyWhenNotFound() { // GH-90000
-        Optional<String> name = jdbc.queryForObject( // GH-90000
+    void queryForObjectReturnsEmptyWhenNotFound() { 
+        Optional<String> name = jdbc.queryForObject( 
                 "SELECT name FROM test_users WHERE id = ?",
                 rs -> rs.getString("name"),
                 999);
 
-        assertThat(name).isEmpty(); // GH-90000
+        assertThat(name).isEmpty(); 
     }
 
     @Test
     @DisplayName("queryForObject throws JdbcException for blank SQL")
-    void queryForObjectThrowsForBlankSql() { // GH-90000
-        assertThatThrownBy(() -> jdbc.queryForObject( // GH-90000
+    void queryForObjectThrowsForBlankSql() { 
+        assertThatThrownBy(() -> jdbc.queryForObject( 
                 "   ",
                 rs -> rs.getString("name")))
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("queryForObject throws NullPointerException for null rowMapper")
-    void queryForObjectThrowsForNullRowMapper() { // GH-90000
-        assertThatThrownBy(() -> jdbc.queryForObject( // GH-90000
+    void queryForObjectThrowsForNullRowMapper() { 
+        assertThatThrownBy(() -> jdbc.queryForObject( 
                 "SELECT name FROM test_users WHERE id = ?",
                 null,
                 1))
-                .isInstanceOf(NullPointerException.class); // GH-90000
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ── queryForList ──────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("queryForList returns all matching rows")
-    void queryForListReturnsAllMatchingRows() { // GH-90000
-        List<String> names = jdbc.queryForList( // GH-90000
+    void queryForListReturnsAllMatchingRows() { 
+        List<String> names = jdbc.queryForList( 
                 "SELECT name FROM test_users WHERE active = ?",
                 rs -> rs.getString("name"),
                 true);
 
-        assertThat(names).containsExactlyInAnyOrder("Alice", "Charlie"); // GH-90000
+        assertThat(names).containsExactlyInAnyOrder("Alice", "Charlie"); 
     }
 
     @Test
     @DisplayName("queryForList returns empty list when no rows match")
-    void queryForListReturnsEmptyListWhenNoMatch() { // GH-90000
-        List<String> names = jdbc.queryForList( // GH-90000
+    void queryForListReturnsEmptyListWhenNoMatch() { 
+        List<String> names = jdbc.queryForList( 
                 "SELECT name FROM test_users WHERE id = ?",
                 rs -> rs.getString("name"),
                 999);
 
-        assertThat(names).isEmpty(); // GH-90000
+        assertThat(names).isEmpty(); 
     }
 
     @Test
     @DisplayName("queryForList returns all rows without parameters")
-    void queryForListReturnsAllRowsNoParams() { // GH-90000
-        List<Integer> ids = jdbc.queryForList( // GH-90000
+    void queryForListReturnsAllRowsNoParams() { 
+        List<Integer> ids = jdbc.queryForList( 
                 "SELECT id FROM test_users ORDER BY id",
                 rs -> rs.getInt("id"));
 
-        assertThat(ids).containsExactly(1, 2, 3); // GH-90000
+        assertThat(ids).containsExactly(1, 2, 3); 
     }
 
     // ── update ────────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("update returns number of affected rows")
-    void updateReturnsAffectedRowCount() { // GH-90000
-        int affected = jdbc.update( // GH-90000
+    void updateReturnsAffectedRowCount() { 
+        int affected = jdbc.update( 
                 "UPDATE test_users SET active = ? WHERE id = ?",
                 false,
                 1);
 
-        assertThat(affected).isEqualTo(1); // GH-90000
+        assertThat(affected).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("update returns 0 when no rows match")
-    void updateReturnsZeroWhenNoMatch() { // GH-90000
-        int affected = jdbc.update( // GH-90000
+    void updateReturnsZeroWhenNoMatch() { 
+        int affected = jdbc.update( 
                 "UPDATE test_users SET active = ? WHERE id = ?",
                 false,
                 999);
 
-        assertThat(affected).isEqualTo(0); // GH-90000
+        assertThat(affected).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("update inserts a new row and returns 1")
-    void updateInsertsNewRow() { // GH-90000
-        int affected = jdbc.update( // GH-90000
-                "INSERT INTO test_users VALUES (?, ?, ?)", // GH-90000
+    void updateInsertsNewRow() { 
+        int affected = jdbc.update( 
+                "INSERT INTO test_users VALUES (?, ?, ?)", 
                 10, "Dave", true);
 
-        assertThat(affected).isEqualTo(1); // GH-90000
+        assertThat(affected).isEqualTo(1); 
 
-        Optional<String> name = jdbc.queryForObject( // GH-90000
+        Optional<String> name = jdbc.queryForObject( 
                 "SELECT name FROM test_users WHERE id = ?",
                 rs -> rs.getString("name"),
                 10);
@@ -168,34 +168,34 @@ class JdbcTemplateTest {
 
     @Test
     @DisplayName("update deletes a row and returns 1")
-    void updateDeletesRow() { // GH-90000
-        int affected = jdbc.update("DELETE FROM test_users WHERE id = ?", 2); // GH-90000
+    void updateDeletesRow() { 
+        int affected = jdbc.update("DELETE FROM test_users WHERE id = ?", 2); 
 
-        assertThat(affected).isEqualTo(1); // GH-90000
+        assertThat(affected).isEqualTo(1); 
 
-        Optional<String> found = jdbc.queryForObject( // GH-90000
+        Optional<String> found = jdbc.queryForObject( 
                 "SELECT name FROM test_users WHERE id = ?",
                 rs -> rs.getString("name"),
                 2);
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(found).isEmpty(); 
     }
 
     // ── JdbcException propagation ─────────────────────────────────────────────
 
     @Test
     @DisplayName("queryForObject wraps SQL error in JdbcException")
-    void queryForObjectWrapsErrorInJdbcException() { // GH-90000
-        assertThatThrownBy(() -> jdbc.queryForObject( // GH-90000
+    void queryForObjectWrapsErrorInJdbcException() { 
+        assertThatThrownBy(() -> jdbc.queryForObject( 
                 "SELECT this_column_does_not_exist FROM test_users",
-                rs -> rs.getString(1))) // GH-90000
-                .isInstanceOf(JdbcException.class); // GH-90000
+                rs -> rs.getString(1))) 
+                .isInstanceOf(JdbcException.class); 
     }
 
     @Test
     @DisplayName("update wraps SQL error in JdbcException")
-    void updateWrapsErrorInJdbcException() { // GH-90000
-        assertThatThrownBy(() -> jdbc.update( // GH-90000
-                "INSERT INTO nonexistent_table VALUES (1)")) // GH-90000
-                .isInstanceOf(JdbcException.class); // GH-90000
+    void updateWrapsErrorInJdbcException() { 
+        assertThatThrownBy(() -> jdbc.update( 
+                "INSERT INTO nonexistent_table VALUES (1)")) 
+                .isInstanceOf(JdbcException.class); 
     }
 }

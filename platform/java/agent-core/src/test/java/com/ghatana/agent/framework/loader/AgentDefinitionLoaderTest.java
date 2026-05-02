@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.*;
 class AgentDefinitionLoaderTest {
 
     // =========================================================================
-    //  loadFromString() // GH-90000
+    //  loadFromString() 
     // =========================================================================
 
     @Nested
@@ -38,24 +38,24 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("parses a minimal valid agent YAML string")
-        void minimalValidYaml() throws IOException { // GH-90000
+        void minimalValidYaml() throws IOException { 
             String yaml = """
                     id: agent-001
                     name: My Agent
                     type: DETERMINISTIC
                     """;
-            AgentDefinitionLoader loader = new AgentDefinitionLoader(); // GH-90000
+            AgentDefinitionLoader loader = new AgentDefinitionLoader(); 
 
-            AgentDefinition def = loader.loadFromString(yaml); // GH-90000
+            AgentDefinition def = loader.loadFromString(yaml); 
 
             assertThat(def.getId()).isEqualTo("agent-001");
             assertThat(def.getName()).isEqualTo("My Agent");
-            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); 
         }
 
         @Test
         @DisplayName("parses all optional fields when present")
-        void allOptionalFieldsParsed() throws IOException { // GH-90000
+        void allOptionalFieldsParsed() throws IOException { 
             String yaml = """
                     id: agent-full
                     name: Full Agent
@@ -64,7 +64,7 @@ class AgentDefinitionLoaderTest {
                     description: A fully specified agent
                     subtype: CLASSIFIER
                     """;
-            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); // GH-90000
+            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); 
 
             assertThat(def.getVersion()).isEqualTo("2.1.0");
             assertThat(def.getDescription()).isEqualTo("A fully specified agent");
@@ -73,17 +73,17 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("substitutes {{ varName }} placeholders from context")
-        void placeholdersAreSubstituted() throws IOException { // GH-90000
+        void placeholdersAreSubstituted() throws IOException { 
             String yaml = """
                     id: {{ agentId }}
                     name: {{ agentName }}
                     type: DETERMINISTIC
                     """;
-            TemplateContext ctx = TemplateContext.builder() // GH-90000
-                    .put("agentId", "injected-001") // GH-90000
-                    .put("agentName", "Injected Agent") // GH-90000
-                    .build(); // GH-90000
-            AgentDefinition def = new AgentDefinitionLoader(ctx).loadFromString(yaml); // GH-90000
+            TemplateContext ctx = TemplateContext.builder() 
+                    .put("agentId", "injected-001") 
+                    .put("agentName", "Injected Agent") 
+                    .build(); 
+            AgentDefinition def = new AgentDefinitionLoader(ctx).loadFromString(yaml); 
 
             assertThat(def.getId()).isEqualTo("injected-001");
             assertThat(def.getName()).isEqualTo("Injected Agent");
@@ -91,81 +91,81 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("throws ISE when 'id' field is missing")
-        void missingIdThrowsIse() { // GH-90000
+        void missingIdThrowsIse() { 
             String yaml = """
                     name: My Agent
                     type: DETERMINISTIC
                     """;
-            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("id");
         }
 
         @Test
         @DisplayName("throws ISE when 'name' field is missing")
-        void missingNameThrowsIse() { // GH-90000
+        void missingNameThrowsIse() { 
             String yaml = """
                     id: agent-001
                     type: DETERMINISTIC
                     """;
-            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("name");
         }
 
         @Test
         @DisplayName("throws ISE when 'type' field is missing")
-        void missingTypeThrowsIse() { // GH-90000
+        void missingTypeThrowsIse() { 
             String yaml = """
                     id: agent-001
                     name: My Agent
                     """;
-            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("type");
         }
 
         @Test
         @DisplayName("throws ISE for unrecognised agent type value")
-        void unknownTypeThrowsIse() { // GH-90000
+        void unknownTypeThrowsIse() { 
             String yaml = """
                     id: agent-001
                     name: My Agent
                     type: UNKNOWN_TYPE_XYZ
                     """;
-            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("UNKNOWN_TYPE_XYZ");
         }
 
         @Test
         @DisplayName("type is case-insensitive ('deterministic' → DETERMINISTIC)")
-        void typeIsCaseInsensitive() throws IOException { // GH-90000
+        void typeIsCaseInsensitive() throws IOException { 
             String yaml = """
                     id: agent-001
                     name: My Agent
                     type: deterministic
                     """;
-            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); // GH-90000
-            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
+            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); 
+            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); 
         }
 
         @Test
         @DisplayName("throws ISE when template variable is undefined")
-        void undefinedTemplateVariableThrowsIse() { // GH-90000
+        void undefinedTemplateVariableThrowsIse() { 
             String yaml = """
                     id: {{ undefinedVar }}
                     name: My Agent
                     type: DETERMINISTIC
                     """;
-            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) // GH-90000
-                    .isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)) 
+                    .isInstanceOf(IllegalStateException.class) 
                     .hasMessageContaining("undefinedVar");
         }
     }
 
     // =========================================================================
-    //  load(Path) // GH-90000
+    //  load(Path) 
     // =========================================================================
 
     @Nested
@@ -177,21 +177,21 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("loads a valid YAML file from the filesystem")
-        void loadsYamlFile() throws IOException { // GH-90000
+        void loadsYamlFile() throws IOException { 
             Path file = writeYaml(dir, "agent.yaml", """
                     id: file-agent
                     name: File Agent
                     type: HYBRID
                     """);
-            AgentDefinition def = new AgentDefinitionLoader().load(file); // GH-90000
+            AgentDefinition def = new AgentDefinitionLoader().load(file); 
 
             assertThat(def.getId()).isEqualTo("file-agent");
-            assertThat(def.getType()).isEqualTo(AgentType.HYBRID); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.HYBRID); 
         }
 
         @Test
         @DisplayName("resolves extends chain during load")
-        void loadsFileWithInheritance() throws IOException { // GH-90000
+        void loadsFileWithInheritance() throws IOException { 
             writeYaml(dir, "base.yaml", """
                     id: base-agent
                     name: BaseName
@@ -203,16 +203,16 @@ class AgentDefinitionLoaderTest {
                     id: child-agent
                     name: ChildName
                     """);
-            AgentDefinition def = new AgentDefinitionLoader().load(child); // GH-90000
+            AgentDefinition def = new AgentDefinitionLoader().load(child); 
 
             assertThat(def.getId()).isEqualTo("child-agent");
             assertThat(def.getName()).isEqualTo("ChildName");
-            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // inherited // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // inherited 
         }
     }
 
     // =========================================================================
-    //  loadFromDirectory() // GH-90000
+    //  loadFromDirectory() 
     // =========================================================================
 
     @Nested
@@ -224,52 +224,52 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("loads all valid *.yaml files in a directory")
-        void loadsAllYamlFiles() throws IOException { // GH-90000
-            writeYaml(dir, "agent1.yaml", "id: a1\nname: A1\ntype: DETERMINISTIC\n"); // GH-90000
-            writeYaml(dir, "agent2.yaml", "id: a2\nname: A2\ntype: ADAPTIVE\n"); // GH-90000
-            writeYaml(dir, "agent3.yaml", "id: a3\nname: A3\ntype: COMPOSITE\n"); // GH-90000
+        void loadsAllYamlFiles() throws IOException { 
+            writeYaml(dir, "agent1.yaml", "id: a1\nname: A1\ntype: DETERMINISTIC\n"); 
+            writeYaml(dir, "agent2.yaml", "id: a2\nname: A2\ntype: ADAPTIVE\n"); 
+            writeYaml(dir, "agent3.yaml", "id: a3\nname: A3\ntype: COMPOSITE\n"); 
 
-            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); // GH-90000
+            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); 
 
-            assertThat(defs).hasSize(3) // GH-90000
-                    .extracting(AgentDefinition::getId) // GH-90000
-                    .containsExactlyInAnyOrder("a1", "a2", "a3"); // GH-90000
+            assertThat(defs).hasSize(3) 
+                    .extracting(AgentDefinition::getId) 
+                    .containsExactlyInAnyOrder("a1", "a2", "a3"); 
         }
 
         @Test
         @DisplayName("skips non-YAML files")
-        void skipsNonYamlFiles() throws IOException { // GH-90000
-            writeYaml(dir, "agent.yaml", "id: a1\nname: A1\ntype: DETERMINISTIC\n"); // GH-90000
+        void skipsNonYamlFiles() throws IOException { 
+            writeYaml(dir, "agent.yaml", "id: a1\nname: A1\ntype: DETERMINISTIC\n"); 
             Files.writeString(dir.resolve("README.md"), "# readme");
             Files.writeString(dir.resolve("data.json"), "{}");
 
-            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); // GH-90000
-            assertThat(defs).hasSize(1); // GH-90000
+            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); 
+            assertThat(defs).hasSize(1); 
         }
 
         @Test
         @DisplayName("returns empty list for empty directory")
-        void emptyDirectoryReturnsEmptyList() throws IOException { // GH-90000
-            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); // GH-90000
-            assertThat(defs).isEmpty(); // GH-90000
+        void emptyDirectoryReturnsEmptyList() throws IOException { 
+            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); 
+            assertThat(defs).isEmpty(); 
         }
 
         @Test
         @DisplayName("skips invalid YAML files and returns rest")
-        void invalidFilesSkippedOthersLoaded() throws IOException { // GH-90000
-            writeYaml(dir, "valid.yaml", "id: v1\nname: Valid\ntype: DETERMINISTIC\n"); // GH-90000
-            writeYaml(dir, "invalid.yaml", "id: \nname: \ntype: \n"); // missing required // GH-90000
+        void invalidFilesSkippedOthersLoaded() throws IOException { 
+            writeYaml(dir, "valid.yaml", "id: v1\nname: Valid\ntype: DETERMINISTIC\n"); 
+            writeYaml(dir, "invalid.yaml", "id: \nname: \ntype: \n"); // missing required 
 
-            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); // GH-90000
-            assertThat(defs).hasSize(1); // GH-90000
+            List<AgentDefinition> defs = new AgentDefinitionLoader().loadFromDirectory(dir); 
+            assertThat(defs).hasSize(1); 
             assertThat(defs.get(0).getId()).isEqualTo("v1");
         }
 
         @Test
         @DisplayName("throws IOException when path is not a directory")
-        void throwsWhenNotDirectory() throws IOException { // GH-90000
-            Path file = writeYaml(dir, "file.yaml", "id: x\nname: X\ntype: DETERMINISTIC\n"); // GH-90000
-            assertThatIOException().isThrownBy(() -> new AgentDefinitionLoader().loadFromDirectory(file)); // GH-90000
+        void throwsWhenNotDirectory() throws IOException { 
+            Path file = writeYaml(dir, "file.yaml", "id: x\nname: X\ntype: DETERMINISTIC\n"); 
+            assertThatIOException().isThrownBy(() -> new AgentDefinitionLoader().loadFromDirectory(file)); 
         }
     }
 
@@ -283,20 +283,20 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("all declared AgentType enum values are loadable")
-        void allAgentTypesAreLoadable() { // GH-90000
-            for (AgentType type : AgentType.values()) { // GH-90000
-                String yaml = String.format( // GH-90000
+        void allAgentTypesAreLoadable() { 
+            for (AgentType type : AgentType.values()) { 
+                String yaml = String.format( 
                         "id: agent-%s\nname: Agent %s\ntype: %s\n",
-                        type.name().toLowerCase(), type.name(), type.name()); // GH-90000
-                assertThatNoException() // GH-90000
-                        .as("AgentType." + type) // GH-90000
-                        .isThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)); // GH-90000
+                        type.name().toLowerCase(), type.name(), type.name()); 
+                assertThatNoException() 
+                        .as("AgentType." + type) 
+                        .isThrownBy(() -> new AgentDefinitionLoader().loadFromString(yaml)); 
             }
         }
     }
 
     // =========================================================================
-    //  New-format spec bridge (agentSpecVersion detection) // GH-90000
+    //  New-format spec bridge (agentSpecVersion detection) 
     // =========================================================================
 
     @Nested
@@ -305,7 +305,7 @@ class AgentDefinitionLoaderTest {
 
         @Test
         @DisplayName("auto-detects agentSpecVersion YAML and delegates to AgentSpecLoader")
-        void delegatesToAgentSpecLoaderForNewFormat() throws IOException { // GH-90000
+        void delegatesToAgentSpecLoaderForNewFormat() throws IOException { 
             String newFormatYaml = """
                     agentSpecVersion: "2.0.0"
                     metadata:
@@ -315,27 +315,27 @@ class AgentDefinitionLoaderTest {
                     identity:
                       agentType: deterministic
                     """;
-            AgentDefinitionLoader loader = new AgentDefinitionLoader(); // GH-90000
-            AgentDefinition def = loader.loadFromString(newFormatYaml); // GH-90000
+            AgentDefinitionLoader loader = new AgentDefinitionLoader(); 
+            AgentDefinition def = loader.loadFromString(newFormatYaml); 
 
             assertThat(def.getId()).isEqualTo("agent.bridge.test");
             assertThat(def.getName()).isEqualTo("Bridge Test Agent");
-            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.DETERMINISTIC); 
         }
 
         @Test
         @DisplayName("still loads old flat-format YAML without agentSpecVersion")
-        void loadsOldFlatFormatNormally() throws IOException { // GH-90000
+        void loadsOldFlatFormatNormally() throws IOException { 
             String oldFormatYaml = """
                     id: agent.old.format
                     name: Old Format Agent
                     type: PROBABILISTIC
                     """;
-            AgentDefinitionLoader loader = new AgentDefinitionLoader(); // GH-90000
-            AgentDefinition def = loader.loadFromString(oldFormatYaml); // GH-90000
+            AgentDefinitionLoader loader = new AgentDefinitionLoader(); 
+            AgentDefinition def = loader.loadFromString(oldFormatYaml); 
 
             assertThat(def.getId()).isEqualTo("agent.old.format");
-            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC); // GH-90000
+            assertThat(def.getType()).isEqualTo(AgentType.PROBABILISTIC); 
         }
     }
 
@@ -343,15 +343,15 @@ class AgentDefinitionLoaderTest {
     //  Helpers
     // =========================================================================
 
-    private static Path writeYaml(Path dir, String name, String content) throws IOException { // GH-90000
-        Path file = dir.resolve(name); // GH-90000
-        Files.writeString(file, content); // GH-90000
+    private static Path writeYaml(Path dir, String name, String content) throws IOException { 
+        Path file = dir.resolve(name); 
+        Files.writeString(file, content); 
         return file;
     }
 
     @Test
     @DisplayName("properly deserializes input and output contracts with AST definitions")
-    void deserializesIoContracts() throws IOException { // GH-90000
+    void deserializesIoContracts() throws IOException { 
             String yaml = """
                     id: ast-agent
                     name: AST Agent
@@ -366,13 +366,13 @@ class AgentDefinitionLoaderTest {
                         component: Markdown
                         style: prose
                     """;
-            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); // GH-90000
+            AgentDefinition def = new AgentDefinitionLoader().loadFromString(yaml); 
 
-            assertThat(def.getInputContract()).isNotNull(); // GH-90000
+            assertThat(def.getInputContract()).isNotNull(); 
             assertThat(def.getInputContract().typeName()).isEqualTo("RequestEvent");
 
-            assertThat(def.getOutputContract()).isNotNull(); // GH-90000
-            assertThat(def.getOutputContract().uiAst()).isNotNull(); // GH-90000
-            assertThat(def.getOutputContract().uiAst()).containsEntry("component", "Markdown"); // GH-90000
+            assertThat(def.getOutputContract()).isNotNull(); 
+            assertThat(def.getOutputContract().uiAst()).isNotNull(); 
+            assertThat(def.getOutputContract().uiAst()).containsEntry("component", "Markdown"); 
         }
     }

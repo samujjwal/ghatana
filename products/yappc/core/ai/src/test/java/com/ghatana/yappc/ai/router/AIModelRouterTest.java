@@ -70,121 +70,121 @@ class AIModelRouterTest extends EventloopTestBase {
     }
 
     @Test
-    void testRouterInitialization() throws Exception { // GH-90000
-        AIRouterConfig config = AIRouterConfig.defaults(); // GH-90000
-        AIModelRouter router = new AIModelRouter(config); // GH-90000
+    void testRouterInitialization() throws Exception { 
+        AIRouterConfig config = AIRouterConfig.defaults(); 
+        AIModelRouter router = new AIModelRouter(config); 
 
-        Promise<Void> init = router.initialize(); // GH-90000
-        init.whenComplete((v, error) -> { // GH-90000
-            assertNull(error, "Initialization should succeed"); // GH-90000
+        Promise<Void> init = router.initialize(); 
+        init.whenComplete((v, error) -> { 
+            assertNull(error, "Initialization should succeed"); 
         });
 
         // Wait for completion
-        Thread.sleep(2000); // GH-90000
+        Thread.sleep(2000); 
 
         // Check available models
-        assertEquals(4, router.getAvailableModels().size(), "Should have 4 models"); // GH-90000
+        assertEquals(4, router.getAvailableModels().size(), "Should have 4 models"); 
         assertTrue(router.getAvailableModels().containsKey("llama3.2"), "Should have llama3.2");
         assertTrue(router.getAvailableModels().containsKey("codellama"), "Should have codellama");
         assertTrue(router.getAvailableModels().containsKey("mistral"), "Should have mistral");
         assertTrue(router.getAvailableModels().containsKey("phi-3"), "Should have phi-3");
 
-        router.shutdown(); // GH-90000
+        router.shutdown(); 
     }
 
     @Test
-    void testModelSelection() { // GH-90000
-        AIRouterConfig config = AIRouterConfig.defaults(); // GH-90000
-        AIModelRouter router = new AIModelRouter(config); // GH-90000
+    void testModelSelection() { 
+        AIRouterConfig config = AIRouterConfig.defaults(); 
+        AIModelRouter router = new AIModelRouter(config); 
 
         // Should select codellama for code tasks
-        // (This test assumes models are registered but not necessarily available) // GH-90000
+        // (This test assumes models are registered but not necessarily available) 
 
-        router.shutdown(); // GH-90000
+        router.shutdown(); 
     }
 
     @Test
-    void testSemanticCache() throws Exception { // GH-90000
-        SemanticCache.CacheConfig cacheConfig = SemanticCache.CacheConfig.builder() // GH-90000
-                .enabled(true) // GH-90000
-                .maxSize(100) // GH-90000
-                .ttlSeconds(60) // GH-90000
-                .build(); // GH-90000
+    void testSemanticCache() throws Exception { 
+        SemanticCache.CacheConfig cacheConfig = SemanticCache.CacheConfig.builder() 
+                .enabled(true) 
+                .maxSize(100) 
+                .ttlSeconds(60) 
+                .build(); 
 
-        SemanticCache cache = new SemanticCache(cacheConfig); // GH-90000
+        SemanticCache cache = new SemanticCache(cacheConfig); 
 
         // Create request and response
-        AIRequest request = AIRequest.builder() // GH-90000
-                .taskType(CHAT) // GH-90000
+        AIRequest request = AIRequest.builder() 
+                .taskType(CHAT) 
                 .prompt("Hello, how are you?")
-                .build(); // GH-90000
+                .build(); 
 
-        AIResponse response = AIResponse.builder() // GH-90000
-                .requestId(request.getRequestId()) // GH-90000
+        AIResponse response = AIResponse.builder() 
+                .requestId(request.getRequestId()) 
                 .modelId("llama3.2")
                 .content("I'm doing well, thank you!")
-                .metrics(AIResponse.ResponseMetrics.builder() // GH-90000
-                        .latencyMs(100) // GH-90000
-                        .tokenCount(10) // GH-90000
-                        .build()) // GH-90000
-                .build(); // GH-90000
+                .metrics(AIResponse.ResponseMetrics.builder() 
+                        .latencyMs(100) 
+                        .tokenCount(10) 
+                        .build()) 
+                .build(); 
 
         // Put in cache
-        cache.put(request, response); // GH-90000
+        cache.put(request, response); 
 
         // Get from cache
-        Promise<AIResponse> cached = cache.get(request); // GH-90000
-        cached.whenComplete((resp, error) -> { // GH-90000
-            assertNull(error, "Cache get should succeed"); // GH-90000
-            assertNotNull(resp, "Should find cached response"); // GH-90000
-            assertEquals(response.getContent(), resp.getContent(), "Content should match"); // GH-90000
+        Promise<AIResponse> cached = cache.get(request); 
+        cached.whenComplete((resp, error) -> { 
+            assertNull(error, "Cache get should succeed"); 
+            assertNotNull(resp, "Should find cached response"); 
+            assertEquals(response.getContent(), resp.getContent(), "Content should match"); 
         });
 
-        Thread.sleep(100); // GH-90000
+        Thread.sleep(100); 
 
         // Check statistics
-        CacheStatistics stats = cache.getStatistics(); // GH-90000
-        assertEquals(1, stats.hits(), "Should have 1 hit"); // GH-90000
-        assertEquals(1, stats.size(), "Cache size should be 1"); // GH-90000
-        assertTrue(stats.hitRate() > 0, "Hit rate should be > 0"); // GH-90000
+        CacheStatistics stats = cache.getStatistics(); 
+        assertEquals(1, stats.hits(), "Should have 1 hit"); 
+        assertEquals(1, stats.size(), "Cache size should be 1"); 
+        assertTrue(stats.hitRate() > 0, "Hit rate should be > 0"); 
 
-        cache.clear(); // GH-90000
+        cache.clear(); 
     }
 
     @Test
-    void testCacheExpiration() throws Exception { // GH-90000
-        SemanticCache.CacheConfig cacheConfig = SemanticCache.CacheConfig.builder() // GH-90000
-                .enabled(true) // GH-90000
-                .ttlSeconds(1) // 1 second TTL // GH-90000
-                .build(); // GH-90000
+    void testCacheExpiration() throws Exception { 
+        SemanticCache.CacheConfig cacheConfig = SemanticCache.CacheConfig.builder() 
+                .enabled(true) 
+                .ttlSeconds(1) // 1 second TTL 
+                .build(); 
 
-        SemanticCache cache = new SemanticCache(cacheConfig); // GH-90000
+        SemanticCache cache = new SemanticCache(cacheConfig); 
 
-        AIRequest request = AIRequest.builder() // GH-90000
-                .taskType(CHAT) // GH-90000
+        AIRequest request = AIRequest.builder() 
+                .taskType(CHAT) 
                 .prompt("Test expiration")
-                .build(); // GH-90000
+                .build(); 
 
-        AIResponse response = AIResponse.builder() // GH-90000
-                .requestId(request.getRequestId()) // GH-90000
+        AIResponse response = AIResponse.builder() 
+                .requestId(request.getRequestId()) 
                 .modelId("llama3.2")
                 .content("Test response")
-                .metrics(AIResponse.ResponseMetrics.builder().latencyMs(100).build()) // GH-90000
-                .build(); // GH-90000
+                .metrics(AIResponse.ResponseMetrics.builder().latencyMs(100).build()) 
+                .build(); 
 
-        cache.put(request, response); // GH-90000
+        cache.put(request, response); 
 
         // Wait for expiration
-        Thread.sleep(1500); // GH-90000
+        Thread.sleep(1500); 
 
         // Should not find expired entry
-        Promise<AIResponse> cached = cache.get(request); // GH-90000
-        cached.whenComplete((resp, error) -> { // GH-90000
-            assertNull(resp, "Should not find expired entry"); // GH-90000
+        Promise<AIResponse> cached = cache.get(request); 
+        cached.whenComplete((resp, error) -> { 
+            assertNull(resp, "Should not find expired entry"); 
         });
 
-        Thread.sleep(100); // GH-90000
-        cache.clear(); // GH-90000
+        Thread.sleep(100); 
+        cache.clear(); 
     }
 
     private static final class TestModelAdapterFactory implements AIModelRouter.ModelAdapterFactory {

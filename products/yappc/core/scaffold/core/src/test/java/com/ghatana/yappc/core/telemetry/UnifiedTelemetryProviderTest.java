@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -50,211 +50,211 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
     private TelemetryProvider telemetryProvider;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Reset any global state
-        TelemetryManager.shutdown(); // GH-90000
+        TelemetryManager.shutdown(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (telemetryProvider != null) { // GH-90000
-            telemetryProvider.shutdown(); // GH-90000
+    void tearDown() { 
+        if (telemetryProvider != null) { 
+            telemetryProvider.shutdown(); 
         }
-        TelemetryManager.shutdown(); // GH-90000
+        TelemetryManager.shutdown(); 
     }
 
     @Test
-    void testSimpleTelemetryProvider() { // GH-90000
+    void testSimpleTelemetryProvider() { 
         telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service");
 
-        assertNotNull(telemetryProvider); // GH-90000
-        assertEquals("test-service", telemetryProvider.getServiceName()); // GH-90000
-        assertFalse(telemetryProvider.isObservabilityEnabled()); // GH-90000
-        assertTrue(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        assertNotNull(telemetryProvider); 
+        assertEquals("test-service", telemetryProvider.getServiceName()); 
+        assertFalse(telemetryProvider.isObservabilityEnabled()); 
+        assertTrue(telemetryProvider.isUsageCollectionEnabled()); 
 
-        // Test OpenTelemetry components (should be no-op) // GH-90000
-        OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); // GH-90000
-        assertNotNull(otel); // GH-90000
+        // Test OpenTelemetry components (should be no-op) 
+        OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); 
+        assertNotNull(otel); 
 
         Tracer tracer = telemetryProvider.getTracer("test");
-        assertNotNull(tracer); // GH-90000
+        assertNotNull(tracer); 
 
         Meter meter = telemetryProvider.getMeter("test");
-        assertNotNull(meter); // GH-90000
+        assertNotNull(meter); 
     }
 
     @Test
-    void testDefaultTelemetryProvider() { // GH-90000
+    void testDefaultTelemetryProvider() { 
         telemetryProvider =
-                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); // GH-90000
+                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); 
 
-        assertNotNull(telemetryProvider); // GH-90000
-        assertEquals("test-service", telemetryProvider.getServiceName()); // GH-90000
-        assertTrue(telemetryProvider.isObservabilityEnabled()); // GH-90000
-        assertTrue(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        assertNotNull(telemetryProvider); 
+        assertEquals("test-service", telemetryProvider.getServiceName()); 
+        assertTrue(telemetryProvider.isObservabilityEnabled()); 
+        assertTrue(telemetryProvider.isUsageCollectionEnabled()); 
 
         // Test OpenTelemetry components
-        OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); // GH-90000
-        assertNotNull(otel); // GH-90000
+        OpenTelemetry otel = telemetryProvider.getOpenTelemetry(); 
+        assertNotNull(otel); 
 
         Tracer tracer = telemetryProvider.getTracer("test-instrumentation");
-        assertNotNull(tracer); // GH-90000
+        assertNotNull(tracer); 
 
         Meter meter = telemetryProvider.getMeter("test-instrumentation");
-        assertNotNull(meter); // GH-90000
+        assertNotNull(meter); 
     }
 
     @Test
-    void testNoOpTelemetryProvider() { // GH-90000
+    void testNoOpTelemetryProvider() { 
         telemetryProvider = UnifiedTelemetryProvider.createNoop("test-service");
 
-        assertNotNull(telemetryProvider); // GH-90000
-        assertEquals("test-service", telemetryProvider.getServiceName()); // GH-90000
-        assertFalse(telemetryProvider.isObservabilityEnabled()); // GH-90000
-        assertFalse(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        assertNotNull(telemetryProvider); 
+        assertEquals("test-service", telemetryProvider.getServiceName()); 
+        assertFalse(telemetryProvider.isObservabilityEnabled()); 
+        assertFalse(telemetryProvider.isUsageCollectionEnabled()); 
     }
 
     @Test
-    void testBuilderConfiguration() { // GH-90000
+    void testBuilderConfiguration() { 
         telemetryProvider =
-                UnifiedTelemetryProvider.builder() // GH-90000
+                UnifiedTelemetryProvider.builder() 
                         .serviceName("custom-service")
                         .otlpEndpoint("http://custom:4317")
-                        .tracingEnabled(true) // GH-90000
-                        .metricsEnabled(false) // GH-90000
-                        .usageCollectionEnabled(true) // GH-90000
-                        .samplingProbability(0.5) // GH-90000
-                        .build(); // GH-90000
+                        .tracingEnabled(true) 
+                        .metricsEnabled(false) 
+                        .usageCollectionEnabled(true) 
+                        .samplingProbability(0.5) 
+                        .build(); 
 
-        assertNotNull(telemetryProvider); // GH-90000
-        assertEquals("custom-service", telemetryProvider.getServiceName()); // GH-90000
-        assertTrue(telemetryProvider.isObservabilityEnabled()); // GH-90000
-        assertTrue(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        assertNotNull(telemetryProvider); 
+        assertEquals("custom-service", telemetryProvider.getServiceName()); 
+        assertTrue(telemetryProvider.isObservabilityEnabled()); 
+        assertTrue(telemetryProvider.isUsageCollectionEnabled()); 
     }
 
     @Test
-    void testUsageEventRecording() { // GH-90000
+    void testUsageEventRecording() { 
         telemetryProvider = UnifiedTelemetryProvider.createSimple("test-service");
 
         // Enable usage collection
-        telemetryProvider.setUsageCollectionEnabled(true); // GH-90000
-        assertTrue(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        telemetryProvider.setUsageCollectionEnabled(true); 
+        assertTrue(telemetryProvider.isUsageCollectionEnabled()); 
 
         // Record a test event
         TelemetryEvent event =
-                TelemetryEvent.builder() // GH-90000
+                TelemetryEvent.builder() 
                         .eventType("test.event")
                         .command("test-command")
-                        .success(true) // GH-90000
-                        .durationMs(123L) // GH-90000
-                        .build(); // GH-90000
+                        .success(true) 
+                        .durationMs(123L) 
+                        .build(); 
 
-        runPromise(() -> telemetryProvider.recordUsageEvent(event)); // GH-90000
+        runPromise(() -> telemetryProvider.recordUsageEvent(event)); 
 
-        // Wait for completion (runPromise already waited) // GH-90000
+        // Wait for completion (runPromise already waited) 
 
         // Disable usage collection
-        telemetryProvider.setUsageCollectionEnabled(false); // GH-90000
-        assertFalse(telemetryProvider.isUsageCollectionEnabled()); // GH-90000
+        telemetryProvider.setUsageCollectionEnabled(false); 
+        assertFalse(telemetryProvider.isUsageCollectionEnabled()); 
     }
 
     @Test
-    void testTelemetryManager() { // GH-90000
+    void testTelemetryManager() { 
         // Test CLI initialization
-        TelemetryManager.initializeForCli(); // GH-90000
-        TelemetryProvider provider = TelemetryManager.getInstance(); // GH-90000
+        TelemetryManager.initializeForCli(); 
+        TelemetryProvider provider = TelemetryManager.getInstance(); 
 
-        assertNotNull(provider); // GH-90000
-        assertEquals("yappc-cli", provider.getServiceName()); // GH-90000
-        assertFalse(provider.isObservabilityEnabled()); // GH-90000
-        assertTrue(provider.isUsageCollectionEnabled()); // GH-90000
+        assertNotNull(provider); 
+        assertEquals("yappc-cli", provider.getServiceName()); 
+        assertFalse(provider.isObservabilityEnabled()); 
+        assertTrue(provider.isUsageCollectionEnabled()); 
 
         // Test instrumentation
         TelemetryInstrumentation instrumentation =
                 TelemetryManager.getInstrumentation("test-component");
-        assertNotNull(instrumentation); // GH-90000
+        assertNotNull(instrumentation); 
 
         // Test service initialization
         TelemetryManager.initializeForService("test-service");
-        provider = TelemetryManager.getInstance(); // GH-90000
-        assertEquals("test-service", provider.getServiceName()); // GH-90000
+        provider = TelemetryManager.getInstance(); 
+        assertEquals("test-service", provider.getServiceName()); 
 
         // Test shutdown
-        TelemetryManager.shutdown(); // GH-90000
-        assertFalse(TelemetryManager.isInitialized()); // GH-90000
+        TelemetryManager.shutdown(); 
+        assertFalse(TelemetryManager.isInitialized()); 
     }
 
     @Test
-    void testTelemetryConfig() { // GH-90000
+    void testTelemetryConfig() { 
         // Test CLI config
-        TelemetryConfig cliConfig = TelemetryConfig.forCli(); // GH-90000
-        assertEquals("yappc-cli", cliConfig.getServiceName()); // GH-90000
-        assertFalse(cliConfig.isTracingEnabled()); // GH-90000
-        assertFalse(cliConfig.isMetricsEnabled()); // GH-90000
-        assertTrue(cliConfig.isUsageCollectionEnabled()); // GH-90000
+        TelemetryConfig cliConfig = TelemetryConfig.forCli(); 
+        assertEquals("yappc-cli", cliConfig.getServiceName()); 
+        assertFalse(cliConfig.isTracingEnabled()); 
+        assertFalse(cliConfig.isMetricsEnabled()); 
+        assertTrue(cliConfig.isUsageCollectionEnabled()); 
 
         // Test service config
         TelemetryConfig serviceConfig = TelemetryConfig.forService("test-service");
-        assertEquals("test-service", serviceConfig.getServiceName()); // GH-90000
+        assertEquals("test-service", serviceConfig.getServiceName()); 
 
         // Test build tool config
         TelemetryConfig buildConfig = TelemetryConfig.forBuildTool("maven");
-        assertEquals("yappc-maven", buildConfig.getServiceName()); // GH-90000
-        assertTrue(buildConfig.isTracingEnabled()); // GH-90000
-        assertTrue(buildConfig.isMetricsEnabled()); // GH-90000
-        assertEquals(0.1, buildConfig.getSamplingProbability(), 0.001); // GH-90000
+        assertEquals("yappc-maven", buildConfig.getServiceName()); 
+        assertTrue(buildConfig.isTracingEnabled()); 
+        assertTrue(buildConfig.isMetricsEnabled()); 
+        assertEquals(0.1, buildConfig.getSamplingProbability(), 0.001); 
 
         // Test disabled config
-        TelemetryConfig disabledConfig = TelemetryConfig.disabled(); // GH-90000
-        assertFalse(disabledConfig.isTracingEnabled()); // GH-90000
-        assertFalse(disabledConfig.isMetricsEnabled()); // GH-90000
-        assertFalse(disabledConfig.isUsageCollectionEnabled()); // GH-90000
+        TelemetryConfig disabledConfig = TelemetryConfig.disabled(); 
+        assertFalse(disabledConfig.isTracingEnabled()); 
+        assertFalse(disabledConfig.isMetricsEnabled()); 
+        assertFalse(disabledConfig.isUsageCollectionEnabled()); 
     }
 
     @Test
-    void testTelemetryInstrumentation() { // GH-90000
+    void testTelemetryInstrumentation() { 
         telemetryProvider =
-                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); // GH-90000
+                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); 
         TelemetryInstrumentation instrumentation =
-                new TelemetryInstrumentation(telemetryProvider, "test"); // GH-90000
+                new TelemetryInstrumentation(telemetryProvider, "test"); 
 
         // Test command instrumentation
-        assertDoesNotThrow( // GH-90000
-                () -> { // GH-90000
-                    Integer result = instrumentation.instrumentCommand("test-command", () -> 42); // GH-90000
-                    assertEquals(42, result); // GH-90000
+        assertDoesNotThrow( 
+                () -> { 
+                    Integer result = instrumentation.instrumentCommand("test-command", () -> 42); 
+                    assertEquals(42, result); 
                 });
 
         // Test build operation instrumentation
-        assertDoesNotThrow( // GH-90000
-                () -> { // GH-90000
+        assertDoesNotThrow( 
+                () -> { 
                     String result =
-                            instrumentation.instrumentBuildOperation( // GH-90000
-                                    "compile", "java", "spring", () -> "success"); // GH-90000
-                    assertEquals("success", result); // GH-90000
+                            instrumentation.instrumentBuildOperation( 
+                                    "compile", "java", "spring", () -> "success"); 
+                    assertEquals("success", result); 
                 });
 
         // Test simple operation instrumentation
-        assertDoesNotThrow( // GH-90000
-                () -> { // GH-90000
+        assertDoesNotThrow( 
+                () -> { 
                     String result =
-                            instrumentation.instrumentOperation( // GH-90000
+                            instrumentation.instrumentOperation( 
                                     "test-op",
                                     span -> {
-                                        span.setAttribute("test.attribute", "value"); // GH-90000
+                                        span.setAttribute("test.attribute", "value"); 
                                         return "completed";
                                     });
-                    assertEquals("completed", result); // GH-90000
+                    assertEquals("completed", result); 
                 });
 
         // Test metrics recording
-        assertDoesNotThrow( // GH-90000
-                () -> { // GH-90000
-                    instrumentation.recordMetric( // GH-90000
+        assertDoesNotThrow( 
+                () -> { 
+                    instrumentation.recordMetric( 
                             "test.metric",
                             123L,
                             Attributes.of(AttributeKey.stringKey("test"), "value"));
-                    instrumentation.recordDuration( // GH-90000
+                    instrumentation.recordDuration( 
                             "test.duration",
                             456L,
                             Attributes.of(AttributeKey.stringKey("operation"), "test"));
@@ -262,26 +262,26 @@ class UnifiedTelemetryProviderTest extends EventloopTestBase {
     }
 
     @Test
-    void testErrorHandling() { // GH-90000
+    void testErrorHandling() { 
         telemetryProvider =
-                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); // GH-90000
+                UnifiedTelemetryProvider.createDefault("test-service", "http://localhost:4317"); 
         TelemetryInstrumentation instrumentation =
-                new TelemetryInstrumentation(telemetryProvider, "test"); // GH-90000
+                new TelemetryInstrumentation(telemetryProvider, "test"); 
 
         // Test command instrumentation with exception
         RuntimeException testException = new RuntimeException("Test error");
 
         RuntimeException thrown =
-                assertThrows( // GH-90000
+                assertThrows( 
                         RuntimeException.class,
-                        () -> { // GH-90000
-                            instrumentation.instrumentCommand( // GH-90000
+                        () -> { 
+                            instrumentation.instrumentCommand( 
                                     "failing-command",
-                                    () -> { // GH-90000
+                                    () -> { 
                                         throw testException;
                                     });
                         });
 
-        assertEquals("Test error", thrown.getMessage()); // GH-90000
+        assertEquals("Test error", thrown.getMessage()); 
     }
 }

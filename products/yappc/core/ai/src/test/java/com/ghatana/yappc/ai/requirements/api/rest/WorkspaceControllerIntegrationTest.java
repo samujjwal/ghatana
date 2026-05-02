@@ -47,29 +47,29 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
     private User adminUser;
     private static final String BASE_URL = "http://localhost:8082";
 
-    private static String url(String path) { // GH-90000
+    private static String url(String path) { 
         return BASE_URL + path;
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
+    void setUp() { 
+        objectMapper = new ObjectMapper(); 
 
-        testUser = User.builder() // GH-90000
+        testUser = User.builder() 
             .userId("user-123")
             .email("test@example.com")
             .username("Test User")
             .roles(Set.of("USER"))
-            .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ")) // GH-90000
-            .build(); // GH-90000
+            .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ")) 
+            .build(); 
 
-        adminUser = User.builder() // GH-90000
+        adminUser = User.builder() 
             .userId("admin-456")
             .email("admin@example.com")
             .username("Admin User")
             .roles(Set.of("ADMIN"))
-            .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ", "WORKSPACE_DELETE")) // GH-90000
-            .build(); // GH-90000
+            .permissions(Set.of("WORKSPACE_CREATE", "WORKSPACE_READ", "WORKSPACE_DELETE")) 
+            .build(); 
     }
 
     @Nested
@@ -78,64 +78,64 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should create workspace with valid data")
-        void shouldCreateWorkspaceWithValidData() throws Exception { // GH-90000
+        void shouldCreateWorkspaceWithValidData() throws Exception { 
             // Given
-            CreateWorkspaceRequest request = new CreateWorkspaceRequest( // GH-90000
+            CreateWorkspaceRequest request = new CreateWorkspaceRequest( 
                 "Engineering Team",
                 "Main engineering workspace"
             );
 
             HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response.getCode()).isEqualTo(201); // GH-90000
+            assertThat(response.getCode()).isEqualTo(201); 
 
-            String body = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
+            String body = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); 
             assertThat(body).contains("Engineering Team");
             assertThat(body).contains("workspaceId");
         }
 
         @Test
         @DisplayName("Should reject creation with empty name")
-        void shouldRejectCreationWithEmptyName() throws Exception { // GH-90000
+        void shouldRejectCreationWithEmptyName() throws Exception { 
             // Given
-            CreateWorkspaceRequest request = new CreateWorkspaceRequest("", "Description"); // GH-90000
+            CreateWorkspaceRequest request = new CreateWorkspaceRequest("", "Description"); 
 
             HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
             assertThat(response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)).contains("error");
         }
 
         @Test
         @DisplayName("Should reject creation without authentication")
-        void shouldRejectCreationWithoutAuth() throws Exception { // GH-90000
+        void shouldRejectCreationWithoutAuth() throws Exception { 
             // Given
-            CreateWorkspaceRequest request = new CreateWorkspaceRequest("Test", "Desc"); // GH-90000
+            CreateWorkspaceRequest request = new CreateWorkspaceRequest("Test", "Desc"); 
 
             HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces"))
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
             // No userPrincipal attached
 
             // When
-            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.createWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response.getCode()).isEqualTo(500); // Internal error due to missing principal // GH-90000
+            assertThat(response.getCode()).isEqualTo(500); // Internal error due to missing principal 
         }
     }
 
@@ -145,32 +145,32 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should get workspace by ID when authorized")
-        void shouldGetWorkspaceWhenAuthorized() { // GH-90000
+        void shouldGetWorkspaceWhenAuthorized() { 
             // Given
             String workspaceId = "ws-123";
-            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId)).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId)).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.getWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getWorkspace(httpRequest)); 
 
             // Then - Will fail without actual service, but tests the flow
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
 
         @Test
         @DisplayName("Should return 400 when workspace not found")
-        void shouldReturn400WhenNotFound() { // GH-90000
+        void shouldReturn400WhenNotFound() { 
             // Given
             String workspaceId = "invalid-id";
-            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId)).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId)).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.getWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.getWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response.getCode()).isIn(400, 404, 500); // GH-90000
+            assertThat(response.getCode()).isIn(400, 404, 500); 
         }
     }
 
@@ -180,24 +180,24 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should update workspace name")
-        void shouldUpdateWorkspaceName() throws Exception { // GH-90000
+        void shouldUpdateWorkspaceName() throws Exception { 
             // Given
             String workspaceId = "ws-123";
-            UpdateWorkspaceRequest request = new UpdateWorkspaceRequest( // GH-90000
+            UpdateWorkspaceRequest request = new UpdateWorkspaceRequest( 
                 "Updated Name",
                 "Updated Description"
             );
 
-            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/workspaces/" + workspaceId)) // GH-90000
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.put(url("/api/v1/workspaces/" + workspaceId)) 
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.updateWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.updateWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
     }
 
@@ -207,55 +207,55 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should list workspace members")
-        void shouldListMembers() { // GH-90000
+        void shouldListMembers() { 
             // Given
             String workspaceId = "ws-123";
-            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId + "/members")).build(); // GH-90000
-            httpRequest.attach("userPrincipal", testUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.get(url("/api/v1/workspaces/" + workspaceId + "/members")).build(); 
+            httpRequest.attach("userPrincipal", testUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.listMembers(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.listMembers(httpRequest)); 
 
             // Then
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
 
         @Test
         @DisplayName("Should add member to workspace")
-        void shouldAddMember() throws Exception { // GH-90000
+        void shouldAddMember() throws Exception { 
             // Given
             String workspaceId = "ws-123";
-            AddMemberRequest request = new AddMemberRequest("user-789", WorkspaceRole.MEMBER); // GH-90000
+            AddMemberRequest request = new AddMemberRequest("user-789", WorkspaceRole.MEMBER); 
 
-            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces/" + workspaceId + "/members")) // GH-90000
-                .withBody(objectMapper.writeValueAsBytes(request)) // GH-90000
-                .build(); // GH-90000
-            httpRequest.attach("userPrincipal", adminUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.post(url("/api/v1/workspaces/" + workspaceId + "/members")) 
+                .withBody(objectMapper.writeValueAsBytes(request)) 
+                .build(); 
+            httpRequest.attach("userPrincipal", adminUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.addMember(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.addMember(httpRequest)); 
 
             // Then
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
 
         @Test
         @DisplayName("Should remove member from workspace")
-        void shouldRemoveMember() { // GH-90000
+        void shouldRemoveMember() { 
             // Given
             String workspaceId = "ws-123";
             String memberId = "user-789";
 
-            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, // GH-90000
-                url("/api/v1/workspaces/" + workspaceId + "/members/" + memberId) // GH-90000
-            ).build(); // GH-90000
-            httpRequest.attach("userPrincipal", adminUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, 
+                url("/api/v1/workspaces/" + workspaceId + "/members/" + memberId) 
+            ).build(); 
+            httpRequest.attach("userPrincipal", adminUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.removeMember(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.removeMember(httpRequest)); 
 
             // Then
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
     }
 
@@ -265,22 +265,22 @@ class WorkspaceControllerIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Should delete workspace when authorized")
-        void shouldDeleteWhenAuthorized() { // GH-90000
+        void shouldDeleteWhenAuthorized() { 
             // Given
             String workspaceId = "ws-123";
-            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, url("/api/v1/workspaces/" + workspaceId)).build(); // GH-90000
-            httpRequest.attach("userPrincipal", adminUser); // GH-90000
+            HttpRequest httpRequest = HttpRequest.builder(io.activej.http.HttpMethod.DELETE, url("/api/v1/workspaces/" + workspaceId)).build(); 
+            httpRequest.attach("userPrincipal", adminUser); 
 
             // When
-            HttpResponse response = runPromise(() -> controller.deleteWorkspace(httpRequest)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.deleteWorkspace(httpRequest)); 
 
             // Then
-            assertThat(response).isNotNull(); // GH-90000
+            assertThat(response).isNotNull(); 
         }
     }
 
     @BeforeAll
-    static void skipUntilControllerWired() { // GH-90000
-        Assumptions.assumeTrue(false, "Workspace controller integration is not yet wired to real services"); // GH-90000
+    static void skipUntilControllerWired() { 
+        Assumptions.assumeTrue(false, "Workspace controller integration is not yet wired to real services"); 
     }
 }

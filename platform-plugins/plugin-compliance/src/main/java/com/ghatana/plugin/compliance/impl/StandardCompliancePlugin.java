@@ -15,23 +15,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * Standard implementation of CompliancePlugin.
+ * Standard implementation of {@link CompliancePlugin}.
  *
- * <p>This implementation provides:</p>
+ * <p>Provides a rule-based compliance engine with the following capabilities:</p>
  * <ul>
- *   <li>Rule-based compliance checking</li>
- *   <li>SOX, PCI-DSS, HIPAA, GDPR support</li>
- *   <li>Audit trail generation</li>
+ *   <li>Dynamic rule pack registration — products supply their own rule sets</li>
+ *   <li>Audit trail generation for every evaluation</li>
  *   <li>Violation tracking and reporting</li>
  * </ul>
  *
- * <p>Products can register custom rule sets and extend with product-specific logic.</p>
+ * <p>The plugin starts with an <em>empty</em> rule registry. Products register
+ * their own rule packs via {@link #registerRuleSet(String, List)} before or
+ * after startup. This enforces the platform-product boundary: the kernel plugin
+ * defines the evaluation contract; domain rule logic belongs in the consuming
+ * product.</p>
  *
  * @doc.type class
- * @doc.purpose Standard compliance rule engine implementation
+ * @doc.purpose Standard compliance rule engine implementation — starts empty, products register rule packs
  * @doc.layer platform
  * @doc.pattern Plugin Implementation
- * @since 1.0.0
+ * @since 1.2.0
  */
 public class StandardCompliancePlugin implements CompliancePlugin {
 
@@ -43,8 +46,8 @@ public class StandardCompliancePlugin implements CompliancePlugin {
     private static final PluginMetadata METADATA = PluginMetadata.builder()
         .id("com.ghatana.plugin.compliance")
         .name("Compliance Plugin")
-        .version("1.0.0")
-        .description("Generic regulatory compliance rule engine")
+        .version("1.2.0")
+        .description("Domain-agnostic compliance rule engine — products register their own rule packs")
         .type(PluginType.GOVERNANCE)
         .author("Ghatana")
         .license("Proprietary")
@@ -53,47 +56,6 @@ public class StandardCompliancePlugin implements CompliancePlugin {
 
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
-
-    // Pre-defined rule sets for common regulations
-    private static final Map<String, List<ComplianceRule>> STANDARD_RULE_SETS;
-
-    static {
-        Map<String, List<ComplianceRule>> standards = new HashMap<>();
-
-        // SOX rules
-        standards.put("SOX", Arrays.asList(
-            new ComplianceRule("SOX-001", "SEPARATION_OF_DUTIES",
-                "Financial operations require approval from separate user", ComplianceRule.Severity.HIGH, "approval_required"),
-            new ComplianceRule("SOX-002", "AUDIT_TRAIL",
-                "All financial changes must be logged", ComplianceRule.Severity.CRITICAL, "audit_required")
-        ));
-
-        // HIPAA rules
-        standards.put("HIPAA", Arrays.asList(
-            new ComplianceRule("HIPAA-001", "PHI_ACCESS_CONTROL",
-                "PHI access requires authentication", ComplianceRule.Severity.CRITICAL, "authentication_required"),
-            new ComplianceRule("HIPAA-002", "MINIMUM_NECESSARY",
-                "Access limited to minimum necessary", ComplianceRule.Severity.HIGH, "need_to_know")
-        ));
-
-        // GDPR rules
-        standards.put("GDPR", Arrays.asList(
-            new ComplianceRule("GDPR-001", "CONSENT_REQUIRED",
-                "Data processing requires consent", ComplianceRule.Severity.CRITICAL, "consent_check"),
-            new ComplianceRule("GDPR-002", "RIGHT_TO_ERASURE",
-                "Users can request data deletion", ComplianceRule.Severity.HIGH, "deletion_request")
-        ));
-
-        // PCI-DSS rules
-        standards.put("PCI-DSS", Arrays.asList(
-            new ComplianceRule("PCI-001", "ENCRYPTION",
-                "Cardholder data must be encrypted", ComplianceRule.Severity.CRITICAL, "encryption_required"),
-            new ComplianceRule("PCI-002", "ACCESS_CONTROL",
-                "Restrict access to cardholder data", ComplianceRule.Severity.CRITICAL, "access_restriction")
-        ));
-
-        STANDARD_RULE_SETS = Collections.unmodifiableMap(standards);
-    }
 
     public String getId() {
         return "compliance-plugin";
@@ -104,7 +66,7 @@ public class StandardCompliancePlugin implements CompliancePlugin {
     }
 
     public String getVersion() {
-        return "1.0.0";
+        return "1.2.0";
     }
 
     @Override
@@ -121,11 +83,7 @@ public class StandardCompliancePlugin implements CompliancePlugin {
     public Promise<Void> initialize(PluginContext context) {
         this.context = context;
         this.state = PluginState.INITIALIZED;
-
-        // Load standard rule sets
-        STANDARD_RULE_SETS.forEach(ruleSets::putIfAbsent);
-
-        LOG.info("CompliancePlugin initialized with {} standard rule sets", STANDARD_RULE_SETS.size());
+        LOG.info("CompliancePlugin initialized — awaiting rule pack registration from products");
         return Promise.complete();
     }
 

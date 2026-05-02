@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.security;
@@ -49,144 +49,144 @@ class AepAuthFilterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("public endpoint preserves provided correlation ID and clears MDC after request")
-    void publicEndpointPreservesCorrelationId() throws Exception { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AtomicReference<String> observedCorrelationId = new AtomicReference<>(); // GH-90000
-        when(nextServlet.serve(any())).thenAnswer(invocation -> { // GH-90000
+    void publicEndpointPreservesCorrelationId() throws Exception { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AtomicReference<String> observedCorrelationId = new AtomicReference<>(); 
+        when(nextServlet.serve(any())).thenAnswer(invocation -> { 
             observedCorrelationId.set(MDC.get("correlationId"));
-            return Promise.of(HttpResponse.ofCode(200).build()); // GH-90000
+            return Promise.of(HttpResponse.ofCode(200).build()); 
         });
 
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, "secret", true); // GH-90000
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "secret", true); 
 
-        HttpRequest request = HttpRequest.get(PUBLIC_URL) // GH-90000
+        HttpRequest request = HttpRequest.get(PUBLIC_URL) 
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-public-123")
-            .build(); // GH-90000
-        HttpResponse response = serve(filter, request); // GH-90000
+            .build(); 
+        HttpResponse response = serve(filter, request); 
 
-        assertEquals(200, response.getCode()); // GH-90000
-        assertEquals("corr-public-123", observedCorrelationId.get()); // GH-90000
+        assertEquals(200, response.getCode()); 
+        assertEquals("corr-public-123", observedCorrelationId.get()); 
         assertEquals("corr-public-123", response.getHeader(HttpHeaders.of("X-Correlation-ID")));
         assertNull(MDC.get("correlationId"));
     }
 
     @Test
     @DisplayName("valid JWT request generates correlation ID when header is absent")
-    void validJwtRequestGeneratesCorrelationId() throws Exception { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AtomicReference<String> observedCorrelationId = new AtomicReference<>(); // GH-90000
-        when(nextServlet.serve(any())).thenAnswer(invocation -> { // GH-90000
+    void validJwtRequestGeneratesCorrelationId() throws Exception { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AtomicReference<String> observedCorrelationId = new AtomicReference<>(); 
+        when(nextServlet.serve(any())).thenAnswer(invocation -> { 
             observedCorrelationId.set(MDC.get("correlationId"));
-            return Promise.of(HttpResponse.ofCode(200).build()); // GH-90000
+            return Promise.of(HttpResponse.ofCode(200).build()); 
         });
 
         String jwtSecret = "unit-test-secret";
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true); // GH-90000
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true); 
 
-        HttpRequest request = HttpRequest.get(PRIVATE_URL) // GH-90000
+        HttpRequest request = HttpRequest.get(PRIVATE_URL) 
             .withHeader(HttpHeaders.of("Authorization"), "Bearer " + createJwt(jwtSecret))
-            .build(); // GH-90000
-        HttpResponse response = serve(filter, request); // GH-90000
+            .build(); 
+        HttpResponse response = serve(filter, request); 
         String correlationId = response.getHeader(HttpHeaders.of("X-Correlation-ID"));
 
-        assertEquals(200, response.getCode()); // GH-90000
-        assertNotNull(correlationId); // GH-90000
-        assertFalse(correlationId.isBlank()); // GH-90000
-        assertEquals(correlationId, observedCorrelationId.get()); // GH-90000
+        assertEquals(200, response.getCode()); 
+        assertNotNull(correlationId); 
+        assertFalse(correlationId.isBlank()); 
+        assertEquals(correlationId, observedCorrelationId.get()); 
         assertNull(MDC.get("correlationId"));
     }
 
     @Test
     @DisplayName("valid JWT attaches parsed role and permission claims for downstream authorization")
-    void validJwtAttachesAuthorizationClaims() throws Exception { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AtomicReference<AepAuthFilter.JwtPayload> observedPayload = new AtomicReference<>(); // GH-90000
-        when(nextServlet.serve(any())).thenAnswer(invocation -> { // GH-90000
-            HttpRequest request = invocation.getArgument(0); // GH-90000
-            observedPayload.set(request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT)); // GH-90000
-            return Promise.of(HttpResponse.ofCode(200).build()); // GH-90000
+    void validJwtAttachesAuthorizationClaims() throws Exception { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AtomicReference<AepAuthFilter.JwtPayload> observedPayload = new AtomicReference<>(); 
+        when(nextServlet.serve(any())).thenAnswer(invocation -> { 
+            HttpRequest request = invocation.getArgument(0); 
+            observedPayload.set(request.getAttachment(AepAuthFilter.JWT_PAYLOAD_ATTACHMENT)); 
+            return Promise.of(HttpResponse.ofCode(200).build()); 
         });
 
         String jwtSecret = "unit-test-secret";
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true); // GH-90000
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, jwtSecret, true); 
 
-        HttpRequest request = HttpRequest.get(PRIVATE_URL) // GH-90000
+        HttpRequest request = HttpRequest.get(PRIVATE_URL) 
             .withHeader(HttpHeaders.of("Authorization"), "Bearer " + createJwt(
                 jwtSecret,
                 "\"roles\":[\"admin\",\"operator\"],\"permissions\":[\"deployment:create\"]"
             ))
-            .build(); // GH-90000
-        HttpResponse response = serve(filter, request); // GH-90000
+            .build(); 
+        HttpResponse response = serve(filter, request); 
 
-        assertEquals(200, response.getCode()); // GH-90000
-        assertNotNull(observedPayload.get()); // GH-90000
-        assertThat(observedPayload.get().roles()).contains("admin", "operator"); // GH-90000
+        assertEquals(200, response.getCode()); 
+        assertNotNull(observedPayload.get()); 
+        assertThat(observedPayload.get().roles()).contains("admin", "operator"); 
         assertThat(observedPayload.get().permissions()).contains("deployment:create");
-        assertThat(observedPayload.get().canManageDeployments()).isTrue(); // GH-90000
+        assertThat(observedPayload.get().canManageDeployments()).isTrue(); 
     }
 
     @Test
     @DisplayName("unauthorized response includes correlation ID and does not call downstream")
-    void unauthorizedResponseIncludesCorrelationId() throws Exception { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true); // GH-90000
+    void unauthorizedResponseIncludesCorrelationId() throws Exception { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true); 
 
-        HttpRequest request = HttpRequest.get(PRIVATE_URL) // GH-90000
+        HttpRequest request = HttpRequest.get(PRIVATE_URL) 
             .withHeader(HttpHeaders.of("X-Correlation-ID"), "corr-failure-456")
-            .build(); // GH-90000
-        HttpResponse response = serve(filter, request); // GH-90000
+            .build(); 
+        HttpResponse response = serve(filter, request); 
 
-        assertEquals(401, response.getCode()); // GH-90000
+        assertEquals(401, response.getCode()); 
         assertEquals("corr-failure-456", response.getHeader(HttpHeaders.of("X-Correlation-ID")));
-        verify(nextServlet, never()).serve(any()); // GH-90000
+        verify(nextServlet, never()).serve(any()); 
         assertNull(MDC.get("correlationId"));
     }
 
     @Test
     @DisplayName("ai suggestions endpoint requires authentication when auth is enabled")
-    void aiSuggestionsEndpointRequiresAuthentication() { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true); // GH-90000
+    void aiSuggestionsEndpointRequiresAuthentication() { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "unit-test-secret", true); 
 
-        HttpRequest request = HttpRequest.get(AI_SUGGESTIONS_URL).build(); // GH-90000
-        HttpResponse response = serve(filter, request); // GH-90000
+        HttpRequest request = HttpRequest.get(AI_SUGGESTIONS_URL).build(); 
+        HttpResponse response = serve(filter, request); 
 
-        assertEquals(401, response.getCode()); // GH-90000
+        assertEquals(401, response.getCode()); 
     }
 
     @Test
     @DisplayName("production env + auth disabled throws IllegalStateException at construction")
-    void productionWithAuthDisabledThrows() { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        assertThrows(IllegalStateException.class, // GH-90000
-            () -> new AepAuthFilter(nextServlet, "some-secret", false, "production"), // GH-90000
+    void productionWithAuthDisabledThrows() { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        assertThrows(IllegalStateException.class, 
+            () -> new AepAuthFilter(nextServlet, "some-secret", false, "production"), 
             "Should refuse to start in production with auth disabled");
     }
 
     @Test
     @DisplayName("production env + blank JWT secret throws IllegalStateException at construction")
-    void productionWithBlankSecretThrows() { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        assertThrows(IllegalStateException.class, // GH-90000
-            () -> new AepAuthFilter(nextServlet, "", true, "production"), // GH-90000
+    void productionWithBlankSecretThrows() { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        assertThrows(IllegalStateException.class, 
+            () -> new AepAuthFilter(nextServlet, "", true, "production"), 
             "Should refuse to start in production with blank JWT secret");
     }
 
     @Test
     @DisplayName("development env + auth disabled is allowed (no exception)")
-    void developmentWithAuthDisabledIsAllowed() { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
+    void developmentWithAuthDisabledIsAllowed() { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
         // Must not throw
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "development"); // GH-90000
-        assertNotNull(filter); // GH-90000
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "development"); 
+        assertNotNull(filter); 
     }
 
     @Test
     @DisplayName("test env + auth disabled is allowed (no exception)")
-    void testEnvWithAuthDisabledIsAllowed() { // GH-90000
-        AsyncServlet nextServlet = mock(AsyncServlet.class); // GH-90000
-        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "test"); // GH-90000
-        assertNotNull(filter); // GH-90000
+    void testEnvWithAuthDisabledIsAllowed() { 
+        AsyncServlet nextServlet = mock(AsyncServlet.class); 
+        AepAuthFilter filter = new AepAuthFilter(nextServlet, "", true, "test"); 
+        assertNotNull(filter); 
     }
 
     // ─── Additional coverage: auth bypass, token validity, tenant, payload unit tests ───
@@ -402,38 +402,38 @@ class AepAuthFilterTest extends EventloopTestBase {
         verify(nextServlet, never()).serve(any());
     }
 
-    private HttpResponse serve(AsyncServlet filter, HttpRequest request) { // GH-90000
-        return runPromise(() -> filter.serve(request)); // GH-90000
+    private HttpResponse serve(AsyncServlet filter, HttpRequest request) { 
+        return runPromise(() -> filter.serve(request)); 
     }
 
-    private String createJwt(String secret) throws Exception { // GH-90000
-        return createJwt(secret, null); // GH-90000
+    private String createJwt(String secret) throws Exception { 
+        return createJwt(secret, null); 
     }
 
-    private String createJwt(String secret, String additionalClaims) throws Exception { // GH-90000
-        long issuedAt = Instant.now().getEpochSecond(); // GH-90000
+    private String createJwt(String secret, String additionalClaims) throws Exception { 
+        long issuedAt = Instant.now().getEpochSecond(); 
         long expiresAt = issuedAt + 300;
-        String header = encodeBase64Url("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"); // GH-90000
-        String extraClaims = (additionalClaims == null || additionalClaims.isBlank()) ? "" : "," + additionalClaims; // GH-90000
-        String payload = encodeBase64Url(String.format( // GH-90000
+        String header = encodeBase64Url("{\"alg\":\"HS256\",\"typ\":\"JWT\"}"); 
+        String extraClaims = (additionalClaims == null || additionalClaims.isBlank()) ? "" : "," + additionalClaims; 
+        String payload = encodeBase64Url(String.format( 
             "{\"sub\":\"test-user\",\"iss\":\"unit-test\",\"iat\":%d,\"exp\":%d%s}",
             issuedAt,
             expiresAt,
             extraClaims
         ));
-        String signature = sign(header + "." + payload, secret); // GH-90000
+        String signature = sign(header + "." + payload, secret); 
         return header + "." + payload + "." + signature;
     }
 
-    private String encodeBase64Url(String value) { // GH-90000
-        return Base64.getUrlEncoder().withoutPadding() // GH-90000
-            .encodeToString(value.getBytes(StandardCharsets.UTF_8)); // GH-90000
+    private String encodeBase64Url(String value) { 
+        return Base64.getUrlEncoder().withoutPadding() 
+            .encodeToString(value.getBytes(StandardCharsets.UTF_8)); 
     }
 
-    private String sign(String data, String secret) throws Exception { // GH-90000
+    private String sign(String data, String secret) throws Exception { 
         Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256")); // GH-90000
-        return Base64.getUrlEncoder().withoutPadding() // GH-90000
-            .encodeToString(mac.doFinal(data.getBytes(StandardCharsets.UTF_8))); // GH-90000
+        mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256")); 
+        return Base64.getUrlEncoder().withoutPadding() 
+            .encodeToString(mac.doFinal(data.getBytes(StandardCharsets.UTF_8))); 
     }
 }

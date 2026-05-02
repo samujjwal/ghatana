@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("VoiceGatewayHandler Execution")
 class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
 
@@ -32,25 +32,25 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
     @Test
     @DisplayName("query_entities executes against data cloud and includes TTS audio for the voice response")
     @SuppressWarnings("unchecked")
-    void queryEntitiesExecutesAgainstDataCloudAndIncludesTtsAudio() { // GH-90000
-        VoiceTtsPort ttsPort = new VoiceTtsPort() { // GH-90000
+    void queryEntitiesExecutesAgainstDataCloudAndIncludesTtsAudio() { 
+        VoiceTtsPort ttsPort = new VoiceTtsPort() { 
             @Override
-            public boolean isAvailable() { // GH-90000
+            public boolean isAvailable() { 
                 return true;
             }
 
             @Override
-            public Promise<byte[]> synthesize(String text, String languageHint) { // GH-90000
-                return Promise.of("demo-audio".getBytes(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+            public Promise<byte[]> synthesize(String text, String languageHint) { 
+                return Promise.of("demo-audio".getBytes(java.nio.charset.StandardCharsets.UTF_8)); 
             }
         };
 
-        VoiceGatewayHandler handler = new VoiceGatewayHandler( // GH-90000
+        VoiceGatewayHandler handler = new VoiceGatewayHandler( 
             client,
             null,
             null,
-            new ObjectMapper(), // GH-90000
-            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"), // GH-90000
+            new ObjectMapper(), 
+            new HttpHandlerSupport(new ObjectMapper(), "*", "GET,POST", "Content-Type,X-Tenant-Id"), 
             Runnable::run,
             null,
             ttsPort,
@@ -58,26 +58,26 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
         );
 
         when(client.query(eq("tenant-a"), eq("orders"), any()))
-            .thenReturn(Promise.of(List.of( // GH-90000
-                new DataCloudClient.Entity( // GH-90000
+            .thenReturn(Promise.of(List.of( 
+                new DataCloudClient.Entity( 
                     "order-1",
                     "orders",
-                    Map.of("status", "open", "amount", 10), // GH-90000
+                    Map.of("status", "open", "amount", 10), 
                     Instant.parse("2026-04-17T00:00:00Z"),
                     Instant.parse("2026-04-17T00:00:00Z"),
                     1L
                 ),
-                new DataCloudClient.Entity( // GH-90000
+                new DataCloudClient.Entity( 
                     "order-2",
                     "orders",
-                    Map.of("status", "closed", "amount", 20), // GH-90000
+                    Map.of("status", "closed", "amount", 20), 
                     Instant.parse("2026-04-17T00:00:00Z"),
                     Instant.parse("2026-04-17T00:00:00Z"),
                     1L
                 )
             )));
 
-        VoiceIntent intent = new VoiceIntent( // GH-90000
+        VoiceIntent intent = new VoiceIntent( 
             "query_entities",
             "GET",
             "/api/v1/entities/:collection",
@@ -87,9 +87,9 @@ class VoiceGatewayHandlerExecutionTest extends EventloopTestBase {
             EndpointSensitivity.INTERNAL
         );
 
-        Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( // GH-90000
+        Map<String, Object> payload = runPromise(() -> handler.executeIntentPayload( 
             intent,
-            Map.of("collection", "orders", "limit", "10"), // GH-90000
+            Map.of("collection", "orders", "limit", "10"), 
             "tenant-a",
             "en-US"));
 

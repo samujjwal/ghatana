@@ -29,35 +29,35 @@ public abstract class AbstractDatabaseTest {
     protected EntityManagerFactory entityManagerFactory;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Initialize JpaConfig with test database settings
-        this.jpaConfig = JpaConfig.builder() // GH-90000
-            .jdbcUrl(postgres.getJdbcUrl()) // GH-90000
-            .username(postgres.getUsername()) // GH-90000
-            .password(postgres.getPassword()) // GH-90000
+        this.jpaConfig = JpaConfig.builder() 
+            .jdbcUrl(postgres.getJdbcUrl()) 
+            .username(postgres.getUsername()) 
+            .password(postgres.getPassword()) 
             .entityPackages("com.ghatana")
             .ddlAuto("create-drop")  // Create and drop schema for tests
-            .showSql(true)           // Show SQL for debugging // GH-90000
-            .formatSql(true)         // Format SQL for better readability // GH-90000
-            .build(); // GH-90000
+            .showSql(true)           // Show SQL for debugging 
+            .formatSql(true)         // Format SQL for better readability 
+            .build(); 
 
         // Create and initialize the data source
-        this.dataSource = jpaConfig.createDataSource(); // GH-90000
+        this.dataSource = jpaConfig.createDataSource(); 
 
         // Create the EntityManagerFactory
-        this.entityManagerFactory = jpaConfig.createEntityManagerFactory(dataSource); // GH-90000
+        this.entityManagerFactory = jpaConfig.createEntityManagerFactory(dataSource); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (entityManagerFactory != null && entityManagerFactory.isOpen()) { // GH-90000
-            entityManagerFactory.close(); // GH-90000
+    void tearDown() { 
+        if (entityManagerFactory != null && entityManagerFactory.isOpen()) { 
+            entityManagerFactory.close(); 
         }
 
-        if (dataSource instanceof AutoCloseable) { // GH-90000
+        if (dataSource instanceof AutoCloseable) { 
             try {
-                ((AutoCloseable) dataSource).close(); // GH-90000
-            } catch (Exception e) { // GH-90000
+                ((AutoCloseable) dataSource).close(); 
+            } catch (Exception e) { 
                 // Ignore
             }
         }
@@ -70,21 +70,21 @@ public abstract class AbstractDatabaseTest {
      * @param <T> The return type of the callback
      * @return The result of the callback
      */
-    protected <T> T doInTransaction(TransactionCallback<EntityManager, T> callback) { // GH-90000
-        EntityManager em = entityManagerFactory.createEntityManager(); // GH-90000
+    protected <T> T doInTransaction(TransactionCallback<EntityManager, T> callback) { 
+        EntityManager em = entityManagerFactory.createEntityManager(); 
         try {
-            em.getTransaction().begin(); // GH-90000
-            T result = callback.execute(em); // GH-90000
-            em.getTransaction().commit(); // GH-90000
+            em.getTransaction().begin(); 
+            T result = callback.execute(em); 
+            em.getTransaction().commit(); 
             return result;
-        } catch (Exception e) { // GH-90000
-            if (em.getTransaction().isActive()) { // GH-90000
-                em.getTransaction().rollback(); // GH-90000
+        } catch (Exception e) { 
+            if (em.getTransaction().isActive()) { 
+                em.getTransaction().rollback(); 
             }
-            throw new RuntimeException("Transaction failed", e); // GH-90000
+            throw new RuntimeException("Transaction failed", e); 
         } finally {
-            if (em.isOpen()) { // GH-90000
-                em.close(); // GH-90000
+            if (em.isOpen()) { 
+                em.close(); 
             }
         }
     }

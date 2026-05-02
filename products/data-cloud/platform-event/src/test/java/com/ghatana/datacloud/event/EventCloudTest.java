@@ -23,59 +23,59 @@ class EventCloudTest {
 
     @Test
     @DisplayName("Should manage event cloud")
-    void shouldManageEventCloud() { // GH-90000
+    void shouldManageEventCloud() { 
         String cloudId = "cloud-123";
         String tenantId = "tenant-123";
 
-        assertThat(cloudId).isNotNull(); // GH-90000
-        assertThat(tenantId).isNotNull(); // GH-90000
+        assertThat(cloudId).isNotNull(); 
+        assertThat(tenantId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle event persistence")
-    void shouldHandleEventPersistence() { // GH-90000
+    void shouldHandleEventPersistence() { 
         boolean persisted = true;
         String storageType = "PostgreSQL";
 
-        assertThat(persisted).isTrue(); // GH-90000
-        assertThat(storageType).isNotNull(); // GH-90000
+        assertThat(persisted).isTrue(); 
+        assertThat(storageType).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle event TTL")
-    void shouldHandleEventTtl() { // GH-90000
-        Duration ttl = Duration.ofDays(7); // GH-90000
-        Duration maxTtl = Duration.ofDays(30); // GH-90000
+    void shouldHandleEventTtl() { 
+        Duration ttl = Duration.ofDays(7); 
+        Duration maxTtl = Duration.ofDays(30); 
 
-        assertThat(ttl).isLessThan(maxTtl); // GH-90000
+        assertThat(ttl).isLessThan(maxTtl); 
     }
 
     @Test
     @DisplayName("Should handle event partitioning")
-    void shouldHandleEventPartitioning() { // GH-90000
+    void shouldHandleEventPartitioning() { 
         int partitionCount = 10;
         int minPartitions = 1;
 
-        assertThat(partitionCount).isGreaterThanOrEqualTo(minPartitions); // GH-90000
+        assertThat(partitionCount).isGreaterThanOrEqualTo(minPartitions); 
     }
 
     @Test
     @DisplayName("Should handle cloud failures")
-    void shouldHandleCloudFailures() { // GH-90000
+    void shouldHandleCloudFailures() { 
         boolean failed = false;
         String error = null;
 
-        assertThat(failed).isFalse(); // GH-90000
-        assertThat(error).isNull(); // GH-90000
+        assertThat(failed).isFalse(); 
+        assertThat(error).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle cloud recovery")
-    void shouldHandleCloudRecovery() { // GH-90000
+    void shouldHandleCloudRecovery() { 
         boolean recovered = true;
         long recoveryTimeMs = 5000L;
 
-        assertThat(recovered).isTrue(); // GH-90000
-        assertThat(recoveryTimeMs).isPositive(); // GH-90000
+        assertThat(recovered).isTrue(); 
+        assertThat(recoveryTimeMs).isPositive(); 
     }
 }

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @doc.type class
- * @doc.purpose Unit tests for JpaTranscriptionRepository (synchronous per AEP pattern) // GH-90000
+ * @doc.purpose Unit tests for JpaTranscriptionRepository (synchronous per AEP pattern) 
  * @doc.layer test
  * @doc.pattern Test
  */
@@ -27,263 +27,263 @@ class JpaTranscriptionRepositoryTest {
     private JpaTranscriptionRepository repository;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         emf = Persistence.createEntityManagerFactory("audio-video-test");
-        entityManager = emf.createEntityManager(); // GH-90000
-        repository = new JpaTranscriptionRepository(entityManager); // GH-90000
+        entityManager = emf.createEntityManager(); 
+        repository = new JpaTranscriptionRepository(entityManager); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (entityManager != null && entityManager.isOpen()) { // GH-90000
-            entityManager.close(); // GH-90000
+    void tearDown() { 
+        if (entityManager != null && entityManager.isOpen()) { 
+            entityManager.close(); 
         }
-        if (emf != null && emf.isOpen()) { // GH-90000
-            emf.close(); // GH-90000
+        if (emf != null && emf.isOpen()) { 
+            emf.close(); 
         }
     }
 
     @Test
     @DisplayName("GIVEN valid entity WHEN save THEN entity is persisted")
-    void testSaveTranscription() { // GH-90000
+    void testSaveTranscription() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID audioFileId = UUID.randomUUID(); // GH-90000
-        TranscriptionEntity entity = new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        UUID audioFileId = UUID.randomUUID(); 
+        TranscriptionEntity entity = new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
             audioFileId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             "Hello world, this is a test transcription.",
             "en"
         );
-        entity.setConfidence(0.95f); // GH-90000
+        entity.setConfidence(0.95f); 
 
         // WHEN
-        TranscriptionEntity saved = repository.save(tenantId, entity); // GH-90000
+        TranscriptionEntity saved = repository.save(tenantId, entity); 
 
         // THEN
-        assertThat(saved).isNotNull(); // GH-90000
-        assertThat(saved.getId()).isEqualTo(entity.getId()); // GH-90000
-        assertThat(saved.getTenantId()).isEqualTo(tenantId); // GH-90000
-        assertThat(saved.getStatus()).isEqualTo(TranscriptionEntity.TranscriptionStatus.PENDING); // GH-90000
+        assertThat(saved).isNotNull(); 
+        assertThat(saved.getId()).isEqualTo(entity.getId()); 
+        assertThat(saved.getTenantId()).isEqualTo(tenantId); 
+        assertThat(saved.getStatus()).isEqualTo(TranscriptionEntity.TranscriptionStatus.PENDING); 
     }
 
     @Test
     @DisplayName("GIVEN saved entity WHEN findById THEN returns entity")
-    void testFindById() { // GH-90000
+    void testFindById() { 
         // GIVEN
         String tenantId = "tenant-123";
-        TranscriptionEntity entity = createTestTranscription(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        TranscriptionEntity entity = createTestTranscription(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
+        var found = repository.findById(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().getId()).isEqualTo(entity.getId()); // GH-90000
+        assertThat(found).isPresent(); 
+        assertThat(found.get().getId()).isEqualTo(entity.getId()); 
     }
 
     @Test
     @DisplayName("GIVEN saved transcription WHEN findByAudioFileId THEN returns transcription")
-    void testFindByAudioFileId() { // GH-90000
+    void testFindByAudioFileId() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID audioFileId = UUID.randomUUID(); // GH-90000
-        TranscriptionEntity entity = new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        UUID audioFileId = UUID.randomUUID(); 
+        TranscriptionEntity entity = new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
             audioFileId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             "Test transcription text",
             "en"
         );
-        repository.save(tenantId, entity); // GH-90000
+        repository.save(tenantId, entity); 
 
         // WHEN
-        var found = repository.findByAudioFileId(tenantId, audioFileId); // GH-90000
+        var found = repository.findByAudioFileId(tenantId, audioFileId); 
 
         // THEN
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().getAudioFileId()).isEqualTo(audioFileId); // GH-90000
+        assertThat(found).isPresent(); 
+        assertThat(found.get().getAudioFileId()).isEqualTo(audioFileId); 
     }
 
     @Test
     @DisplayName("GIVEN wrong tenant WHEN findById THEN returns empty")
-    void testFindByIdWrongTenant() { // GH-90000
+    void testFindByIdWrongTenant() { 
         // GIVEN
         String tenantId = "tenant-123";
         String wrongTenant = "tenant-999";
-        TranscriptionEntity entity = createTestTranscription(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        TranscriptionEntity entity = createTestTranscription(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        var found = repository.findById(wrongTenant, entity.getId()); // GH-90000
+        var found = repository.findById(wrongTenant, entity.getId()); 
 
         // THEN
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(found).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN multiple entities WHEN findByTenantId THEN returns all for tenant")
-    void testFindByTenantId() { // GH-90000
+    void testFindByTenantId() { 
         // GIVEN
         String tenantId = "tenant-123";
 
-        TranscriptionEntity entity1 = createTestTranscription(tenantId); // GH-90000
-        TranscriptionEntity entity2 = createTestTranscription(tenantId); // GH-90000
+        TranscriptionEntity entity1 = createTestTranscription(tenantId); 
+        TranscriptionEntity entity2 = createTestTranscription(tenantId); 
 
-        repository.save(tenantId, entity1); // GH-90000
-        repository.save(tenantId, entity2); // GH-90000
+        repository.save(tenantId, entity1); 
+        repository.save(tenantId, entity2); 
 
         // WHEN
-        var found = repository.findByTenantId(tenantId); // GH-90000
+        var found = repository.findByTenantId(tenantId); 
 
         // THEN
-        assertThat(found).hasSize(2); // GH-90000
+        assertThat(found).hasSize(2); 
     }
 
     @Test
     @DisplayName("GIVEN entities with different statuses WHEN findByStatus THEN returns matching")
-    void testFindByStatus() { // GH-90000
+    void testFindByStatus() { 
         // GIVEN
         String tenantId = "tenant-123";
 
-        TranscriptionEntity completed = createTestTranscription(tenantId); // GH-90000
-        completed.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); // GH-90000
+        TranscriptionEntity completed = createTestTranscription(tenantId); 
+        completed.setStatus(TranscriptionEntity.TranscriptionStatus.COMPLETED); 
 
-        TranscriptionEntity pending = createTestTranscription(tenantId); // GH-90000
-        pending.setStatus(TranscriptionEntity.TranscriptionStatus.PENDING); // GH-90000
+        TranscriptionEntity pending = createTestTranscription(tenantId); 
+        pending.setStatus(TranscriptionEntity.TranscriptionStatus.PENDING); 
 
-        repository.save(tenantId, completed); // GH-90000
-        repository.save(tenantId, pending); // GH-90000
+        repository.save(tenantId, completed); 
+        repository.save(tenantId, pending); 
 
         // WHEN
-        var completedTranscriptions = repository.findByStatus( // GH-90000
+        var completedTranscriptions = repository.findByStatus( 
             tenantId,
             TranscriptionEntity.TranscriptionStatus.COMPLETED
         );
 
         // THEN
-        assertThat(completedTranscriptions).hasSize(1); // GH-90000
-        assertThat(completedTranscriptions.get(0).getStatus()).isEqualTo( // GH-90000
+        assertThat(completedTranscriptions).hasSize(1); 
+        assertThat(completedTranscriptions.get(0).getStatus()).isEqualTo( 
             TranscriptionEntity.TranscriptionStatus.COMPLETED
         );
     }
 
     @Test
     @DisplayName("GIVEN saved entity WHEN softDelete THEN entity is marked deleted")
-    void testSoftDelete() { // GH-90000
+    void testSoftDelete() { 
         // GIVEN
         String tenantId = "tenant-123";
-        TranscriptionEntity entity = createTestTranscription(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
+        TranscriptionEntity entity = createTestTranscription(tenantId); 
+        repository.save(tenantId, entity); 
 
         // WHEN
-        boolean deleted = repository.softDelete(tenantId, entity.getId()); // GH-90000
+        boolean deleted = repository.softDelete(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(deleted).isTrue(); // GH-90000
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
-        assertThat(found).isPresent(); // GH-90000
-        assertThat(found.get().isDeleted()).isTrue(); // GH-90000
-        assertThat(found.get().getDeletedAt()).isNotNull(); // GH-90000
+        assertThat(deleted).isTrue(); 
+        var found = repository.findById(tenantId, entity.getId()); 
+        assertThat(found).isPresent(); 
+        assertThat(found.get().isDeleted()).isTrue(); 
+        assertThat(found.get().getDeletedAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("GIVEN no entity WHEN softDelete THEN returns false")
-    void testSoftDeleteNotFound() { // GH-90000
+    void testSoftDeleteNotFound() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID nonExistentId = UUID.randomUUID(); // GH-90000
+        UUID nonExistentId = UUID.randomUUID(); 
 
         // WHEN
-        boolean deleted = repository.softDelete(tenantId, nonExistentId); // GH-90000
+        boolean deleted = repository.softDelete(tenantId, nonExistentId); 
 
         // THEN
-        assertThat(deleted).isFalse(); // GH-90000
+        assertThat(deleted).isFalse(); 
     }
 
     @Test
     @DisplayName("GIVEN soft deleted entity WHEN hardDelete THEN entity is removed")
-    void testHardDelete() { // GH-90000
+    void testHardDelete() { 
         // GIVEN
         String tenantId = "tenant-123";
-        TranscriptionEntity entity = createTestTranscription(tenantId); // GH-90000
-        repository.save(tenantId, entity); // GH-90000
-        repository.softDelete(tenantId, entity.getId()); // GH-90000
+        TranscriptionEntity entity = createTestTranscription(tenantId); 
+        repository.save(tenantId, entity); 
+        repository.softDelete(tenantId, entity.getId()); 
 
         // WHEN
-        boolean deleted = repository.hardDelete(tenantId, entity.getId()); // GH-90000
+        boolean deleted = repository.hardDelete(tenantId, entity.getId()); 
 
         // THEN
-        assertThat(deleted).isTrue(); // GH-90000
-        var found = repository.findById(tenantId, entity.getId()); // GH-90000
-        assertThat(found).isEmpty(); // GH-90000
+        assertThat(deleted).isTrue(); 
+        var found = repository.findById(tenantId, entity.getId()); 
+        assertThat(found).isEmpty(); 
     }
 
     @Test
     @DisplayName("GIVEN transcription exists WHEN existsByAudioFileId THEN returns true")
-    void testExistsByAudioFileId() { // GH-90000
+    void testExistsByAudioFileId() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID audioFileId = UUID.randomUUID(); // GH-90000
-        TranscriptionEntity entity = new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+        UUID audioFileId = UUID.randomUUID(); 
+        TranscriptionEntity entity = new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
             audioFileId,
-            UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
             "Test text",
             "en"
         );
-        repository.save(tenantId, entity); // GH-90000
+        repository.save(tenantId, entity); 
 
         // WHEN
-        boolean exists = repository.existsByAudioFileId(tenantId, audioFileId); // GH-90000
+        boolean exists = repository.existsByAudioFileId(tenantId, audioFileId); 
 
         // THEN
-        assertThat(exists).isTrue(); // GH-90000
+        assertThat(exists).isTrue(); 
     }
 
     @Test
     @DisplayName("GIVEN no transcription WHEN existsByAudioFileId THEN returns false")
-    void testExistsByAudioFileIdNotFound() { // GH-90000
+    void testExistsByAudioFileIdNotFound() { 
         // GIVEN
         String tenantId = "tenant-123";
-        UUID audioFileId = UUID.randomUUID(); // GH-90000
+        UUID audioFileId = UUID.randomUUID(); 
 
         // WHEN
-        boolean exists = repository.existsByAudioFileId(tenantId, audioFileId); // GH-90000
+        boolean exists = repository.existsByAudioFileId(tenantId, audioFileId); 
 
         // THEN
-        assertThat(exists).isFalse(); // GH-90000
+        assertThat(exists).isFalse(); 
     }
 
     @Test
     @DisplayName("GIVEN saved entities WHEN countByTenantId THEN returns correct count")
-    void testCountByTenantId() { // GH-90000
+    void testCountByTenantId() { 
         // GIVEN
         String tenantId = "tenant-123";
-        repository.save(tenantId, createTestTranscription(tenantId)); // GH-90000
-        repository.save(tenantId, createTestTranscription(tenantId)); // GH-90000
+        repository.save(tenantId, createTestTranscription(tenantId)); 
+        repository.save(tenantId, createTestTranscription(tenantId)); 
 
         // WHEN
-        long count = repository.countByTenantId(tenantId); // GH-90000
+        long count = repository.countByTenantId(tenantId); 
 
         // THEN
-        assertThat(count).isEqualTo(2L); // GH-90000
+        assertThat(count).isEqualTo(2L); 
     }
 
     // Helper methods
 
-    private TranscriptionEntity createTestTranscription(String tenantId) { // GH-90000
-        return new TranscriptionEntity( // GH-90000
-            UUID.randomUUID(), // GH-90000
+    private TranscriptionEntity createTestTranscription(String tenantId) { 
+        return new TranscriptionEntity( 
+            UUID.randomUUID(), 
             tenantId,
-            UUID.randomUUID(), // GH-90000
-            UUID.randomUUID(), // GH-90000
-            "Test transcription " + UUID.randomUUID(), // GH-90000
+            UUID.randomUUID(), 
+            UUID.randomUUID(), 
+            "Test transcription " + UUID.randomUUID(), 
             "en"
         );
     }

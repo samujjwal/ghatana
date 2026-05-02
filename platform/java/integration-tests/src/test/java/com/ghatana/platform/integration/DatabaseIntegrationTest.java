@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.integration;
@@ -31,187 +31,187 @@ class DatabaseIntegrationTest extends EventloopTestBase {
     private InMemoryDatabase db;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        db = new InMemoryDatabase(5); // GH-90000
+    void setUp() { 
+        db = new InMemoryDatabase(5); 
     }
 
     // ── Connection management ─────────────────────────────────────────────────
 
     @Test
     @DisplayName("acquire returns a valid connection when pool has idle connections")
-    void acquireReturnsValidConnectionWhenPoolHasIdleConnections() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        assertThat(conn).isNotNull(); // GH-90000
-        assertThat(conn.isOpen()).isTrue(); // GH-90000
-        conn.release(); // GH-90000
+    void acquireReturnsValidConnectionWhenPoolHasIdleConnections() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        assertThat(conn).isNotNull(); 
+        assertThat(conn.isOpen()).isTrue(); 
+        conn.release(); 
     }
 
     @Test
     @DisplayName("released connections are returned to the pool for reuse")
-    void releasedConnectionsReturnedToPool() { // GH-90000
-        InMemoryDatabase.Connection c1 = db.acquire(); // GH-90000
-        c1.release(); // GH-90000
-        InMemoryDatabase.Connection c2 = db.acquire(); // GH-90000
-        assertThat(c2.isOpen()).isTrue(); // GH-90000
-        c2.release(); // GH-90000
+    void releasedConnectionsReturnedToPool() { 
+        InMemoryDatabase.Connection c1 = db.acquire(); 
+        c1.release(); 
+        InMemoryDatabase.Connection c2 = db.acquire(); 
+        assertThat(c2.isOpen()).isTrue(); 
+        c2.release(); 
     }
 
     @Test
     @DisplayName("pool enforces max connections — extra acquires block until a slot is freed")
-    void poolEnforcesMaxConnections() throws Exception { // GH-90000
-        List<InMemoryDatabase.Connection> held = new ArrayList<>(); // GH-90000
-        for (int i = 0; i < 5; i++) held.add(db.acquire()); // GH-90000
+    void poolEnforcesMaxConnections() throws Exception { 
+        List<InMemoryDatabase.Connection> held = new ArrayList<>(); 
+        for (int i = 0; i < 5; i++) held.add(db.acquire()); 
 
-        AtomicInteger acquired = new AtomicInteger(0); // GH-90000
-        Thread waiter = Thread.ofVirtual().start(() -> { // GH-90000
-            InMemoryDatabase.Connection c = db.acquire(); // GH-90000
-            acquired.incrementAndGet(); // GH-90000
-            c.release(); // GH-90000
+        AtomicInteger acquired = new AtomicInteger(0); 
+        Thread waiter = Thread.ofVirtual().start(() -> { 
+            InMemoryDatabase.Connection c = db.acquire(); 
+            acquired.incrementAndGet(); 
+            c.release(); 
         });
 
-        Thread.sleep(50); // GH-90000
-        assertThat(acquired.get()).isZero(); // still waiting // GH-90000
+        Thread.sleep(50); 
+        assertThat(acquired.get()).isZero(); // still waiting 
 
-        held.get(0).release(); // GH-90000
-        waiter.join(1000); // GH-90000
-        assertThat(acquired.get()).isEqualTo(1); // GH-90000
+        held.get(0).release(); 
+        waiter.join(1000); 
+        assertThat(acquired.get()).isEqualTo(1); 
 
-        held.subList(1, 5).forEach(InMemoryDatabase.Connection::release); // GH-90000
+        held.subList(1, 5).forEach(InMemoryDatabase.Connection::release); 
     }
 
     // ── CRUD correctness ──────────────────────────────────────────────────────
 
     @Test
     @DisplayName("insert and select round-trip returns the stored row")
-    void insertAndSelectRoundTrip() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        conn.insert("users", Map.of("id", "u1", "name", "Alice")); // GH-90000
+    void insertAndSelectRoundTrip() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        conn.insert("users", Map.of("id", "u1", "name", "Alice")); 
         List<Map<String, Object>> rows = conn.selectAll("users");
 
-        assertThat(rows).hasSize(1); // GH-90000
+        assertThat(rows).hasSize(1); 
         assertThat(rows.get(0).get("name")).isEqualTo("Alice");
-        conn.release(); // GH-90000
+        conn.release(); 
     }
 
     @Test
     @DisplayName("update modifies only the targeted row identified by id")
-    void updateModifiesOnlyTargetedRow() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        conn.insert("users", Map.of("id", "u-upd", "name", "Bob")); // GH-90000
-        conn.update("users", "u-upd", Map.of("name", "Robert")); // GH-90000
+    void updateModifiesOnlyTargetedRow() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        conn.insert("users", Map.of("id", "u-upd", "name", "Bob")); 
+        conn.update("users", "u-upd", Map.of("name", "Robert")); 
 
         List<Map<String, Object>> rows = conn.selectAll("users");
-        assertThat(rows).hasSize(1); // GH-90000
+        assertThat(rows).hasSize(1); 
         assertThat(rows.get(0).get("name")).isEqualTo("Robert");
-        conn.release(); // GH-90000
+        conn.release(); 
     }
 
     @Test
     @DisplayName("delete removes the targeted row so the table becomes empty")
-    void deleteRemovesTargetedRow() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        conn.insert("items", Map.of("id", "item-1", "value", "x")); // GH-90000
-        conn.delete("items", "item-1"); // GH-90000
+    void deleteRemovesTargetedRow() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        conn.insert("items", Map.of("id", "item-1", "value", "x")); 
+        conn.delete("items", "item-1"); 
 
         assertThat(conn.selectAll("items")).isEmpty();
-        conn.release(); // GH-90000
+        conn.release(); 
     }
 
     // ── Transaction isolation ─────────────────────────────────────────────────
 
     @Test
     @DisplayName("uncommitted transaction changes are not visible to other connections")
-    void uncommittedChangesAreNotVisibleToOthers() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
-        tx.insert("accounts", Map.of("id", "acc-u", "balance", 100)); // GH-90000
+    void uncommittedChangesAreNotVisibleToOthers() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); 
+        tx.insert("accounts", Map.of("id", "acc-u", "balance", 100)); 
 
-        InMemoryDatabase.Connection conn2 = db.acquire(); // GH-90000
+        InMemoryDatabase.Connection conn2 = db.acquire(); 
         List<Map<String, Object>> rows = conn2.selectAll("accounts");
-        assertThat(rows).isEmpty(); // GH-90000
+        assertThat(rows).isEmpty(); 
 
-        tx.rollback(); // GH-90000
-        conn.release(); // GH-90000
-        conn2.release(); // GH-90000
+        tx.rollback(); 
+        conn.release(); 
+        conn2.release(); 
     }
 
     @Test
     @DisplayName("committed changes are visible from other connections")
-    void committedChangesAreVisibleFromOtherConnections() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
-        tx.insert("accounts", Map.of("id", "acc-c", "balance", 200)); // GH-90000
-        tx.commit(); // GH-90000
-        conn.release(); // GH-90000
+    void committedChangesAreVisibleFromOtherConnections() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); 
+        tx.insert("accounts", Map.of("id", "acc-c", "balance", 200)); 
+        tx.commit(); 
+        conn.release(); 
 
-        InMemoryDatabase.Connection conn2 = db.acquire(); // GH-90000
+        InMemoryDatabase.Connection conn2 = db.acquire(); 
         List<Map<String, Object>> rows = conn2.selectAll("accounts");
         assertThat(rows).anyMatch(r -> "acc-c".equals(r.get("id")));
-        conn2.release(); // GH-90000
+        conn2.release(); 
     }
 
     @Test
     @DisplayName("rolled-back transaction leaves the table unchanged")
-    void rolledBackTransactionLeavesTableUnchanged() { // GH-90000
-        InMemoryDatabase.Connection conn = db.acquire(); // GH-90000
-        InMemoryDatabase.Transaction tx = conn.beginTransaction(); // GH-90000
-        tx.insert("rollback_test", Map.of("id", "rb-1")); // GH-90000
-        tx.rollback(); // GH-90000
+    void rolledBackTransactionLeavesTableUnchanged() { 
+        InMemoryDatabase.Connection conn = db.acquire(); 
+        InMemoryDatabase.Transaction tx = conn.beginTransaction(); 
+        tx.insert("rollback_test", Map.of("id", "rb-1")); 
+        tx.rollback(); 
 
         assertThat(conn.selectAll("rollback_test")).isEmpty();
-        conn.release(); // GH-90000
+        conn.release(); 
     }
 
     // ── Concurrent writes ─────────────────────────────────────────────────────
 
     @Test
     @DisplayName("concurrent inserts from multiple connections are all durably persisted")
-    void concurrentInsertsAreAllPersisted() throws Exception { // GH-90000
+    void concurrentInsertsAreAllPersisted() throws Exception { 
         int writers = 20;
-        CyclicBarrier barrier = new CyclicBarrier(writers); // GH-90000
+        CyclicBarrier barrier = new CyclicBarrier(writers); 
         Thread[] threads = new Thread[writers];
 
-        for (int i = 0; i < writers; i++) { // GH-90000
+        for (int i = 0; i < writers; i++) { 
             final int idx = i;
-            threads[i] = Thread.ofVirtual().start(() -> { // GH-90000
+            threads[i] = Thread.ofVirtual().start(() -> { 
                 try {
-                    barrier.await(); // GH-90000
-                    InMemoryDatabase.Connection c = db.acquire(); // GH-90000
-                    c.insert("concurrent_table", Map.of("id", "row-" + idx, "value", idx)); // GH-90000
-                    c.release(); // GH-90000
-                } catch (Exception ignored) {} // GH-90000
+                    barrier.await(); 
+                    InMemoryDatabase.Connection c = db.acquire(); 
+                    c.insert("concurrent_table", Map.of("id", "row-" + idx, "value", idx)); 
+                    c.release(); 
+                } catch (Exception ignored) {} 
             });
         }
-        for (Thread t : threads) t.join(); // GH-90000
+        for (Thread t : threads) t.join(); 
 
-        InMemoryDatabase.Connection readConn = db.acquire(); // GH-90000
+        InMemoryDatabase.Connection readConn = db.acquire(); 
         assertThat(readConn.selectAll("concurrent_table")).hasSize(writers);
-        readConn.release(); // GH-90000
+        readConn.release(); 
     }
 
-    // ── In-memory database simulation (for tests) ───────────────────────────── // GH-90000
+    // ── In-memory database simulation (for tests) ───────────────────────────── 
 
     static class InMemoryDatabase {
         private final Semaphore semaphore;
-        private final AtomicInteger idCounter = new AtomicInteger(0); // GH-90000
+        private final AtomicInteger idCounter = new AtomicInteger(0); 
         private final ConcurrentHashMap<String, CopyOnWriteArrayList<Map<String, Object>>> tables
-                = new ConcurrentHashMap<>(); // GH-90000
+                = new ConcurrentHashMap<>(); 
 
-        InMemoryDatabase(int maxConnections) { // GH-90000
-            this.semaphore = new Semaphore(maxConnections); // GH-90000
+        InMemoryDatabase(int maxConnections) { 
+            this.semaphore = new Semaphore(maxConnections); 
         }
 
-        Connection acquire() { // GH-90000
-            try { semaphore.acquire(); } catch (InterruptedException e) { // GH-90000
-                Thread.currentThread().interrupt(); throw new RuntimeException(e); // GH-90000
+        Connection acquire() { 
+            try { semaphore.acquire(); } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); throw new RuntimeException(e); 
             }
-            return new Connection(idCounter.incrementAndGet(), this); // GH-90000
+            return new Connection(idCounter.incrementAndGet(), this); 
         }
 
-        void doRelease() { semaphore.release(); } // GH-90000
+        void doRelease() { semaphore.release(); } 
 
-        CopyOnWriteArrayList<Map<String, Object>> table(String name) { // GH-90000
-            return tables.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>()); // GH-90000
+        CopyOnWriteArrayList<Map<String, Object>> table(String name) { 
+            return tables.computeIfAbsent(name, k -> new CopyOnWriteArrayList<>()); 
         }
 
         static class Connection {
@@ -219,49 +219,49 @@ class DatabaseIntegrationTest extends EventloopTestBase {
             private final InMemoryDatabase db;
             private boolean open = true;
 
-            Connection(int id, InMemoryDatabase db) { this.connId = id; this.db = db; } // GH-90000
-            int connectionId() { return connId; } // GH-90000
-            boolean isOpen() { return open; } // GH-90000
+            Connection(int id, InMemoryDatabase db) { this.connId = id; this.db = db; } 
+            int connectionId() { return connId; } 
+            boolean isOpen() { return open; } 
 
-            void insert(String table, Map<String, Object> row) { // GH-90000
-                db.table(table).add(new HashMap<>(row)); // GH-90000
+            void insert(String table, Map<String, Object> row) { 
+                db.table(table).add(new HashMap<>(row)); 
             }
 
-            void update(String table, String id, Map<String, Object> patch) { // GH-90000
+            void update(String table, String id, Map<String, Object> patch) { 
                 db.table(table).replaceAll(r -> id.equals(r.get("id")) ? mergedWith(r, patch) : r);
             }
 
-            void delete(String table, String id) { // GH-90000
+            void delete(String table, String id) { 
                 db.table(table).removeIf(r -> id.equals(r.get("id")));
             }
 
-            List<Map<String, Object>> selectAll(String table) { // GH-90000
-                return List.copyOf(db.table(table)); // GH-90000
+            List<Map<String, Object>> selectAll(String table) { 
+                return List.copyOf(db.table(table)); 
             }
 
-            Transaction beginTransaction() { return new Transaction(db); } // GH-90000
+            Transaction beginTransaction() { return new Transaction(db); } 
 
-            void release() { open = false; db.doRelease(); } // GH-90000
+            void release() { open = false; db.doRelease(); } 
 
-            private Map<String, Object> mergedWith(Map<String, Object> row, Map<String, Object> patch) { // GH-90000
-                Map<String, Object> merged = new HashMap<>(row); // GH-90000
-                merged.putAll(patch); // GH-90000
+            private Map<String, Object> mergedWith(Map<String, Object> row, Map<String, Object> patch) { 
+                Map<String, Object> merged = new HashMap<>(row); 
+                merged.putAll(patch); 
                 return merged;
             }
         }
 
         static class Transaction {
             private final InMemoryDatabase db;
-            private final List<Runnable> ops = new ArrayList<>(); // GH-90000
+            private final List<Runnable> ops = new ArrayList<>(); 
 
-            Transaction(InMemoryDatabase db) { this.db = db; } // GH-90000
+            Transaction(InMemoryDatabase db) { this.db = db; } 
 
-            void insert(String table, Map<String, Object> row) { // GH-90000
-                ops.add(() -> db.table(table).add(new HashMap<>(row))); // GH-90000
+            void insert(String table, Map<String, Object> row) { 
+                ops.add(() -> db.table(table).add(new HashMap<>(row))); 
             }
 
-            void commit() { ops.forEach(Runnable::run); ops.clear(); } // GH-90000
-            void rollback() { ops.clear(); } // GH-90000
+            void commit() { ops.forEach(Runnable::run); ops.clear(); } 
+            void rollback() { ops.clear(); } 
         }
     }
 }

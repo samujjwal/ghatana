@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.ai;
@@ -41,35 +41,35 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("SQL generation should produce accurate queries")
-    void shouldGenerateAccurateSQL() { // GH-90000
-        AIAssistService.DatabaseSchema schema = new AIAssistService.DatabaseSchema( // GH-90000
+    void shouldGenerateAccurateSQL() { 
+        AIAssistService.DatabaseSchema schema = new AIAssistService.DatabaseSchema( 
             "test_db",
-            List.of( // GH-90000
-                new AIAssistService.TableInfo( // GH-90000
+            List.of( 
+                new AIAssistService.TableInfo( 
                     "users",
-                    List.of( // GH-90000
-                        new AIAssistService.ColumnInfo("id", "INTEGER", false, "Primary key"), // GH-90000
-                        new AIAssistService.ColumnInfo("name", "VARCHAR", false, "User name"), // GH-90000
-                        new AIAssistService.ColumnInfo("email", "VARCHAR", true, "User email") // GH-90000
+                    List.of( 
+                        new AIAssistService.ColumnInfo("id", "INTEGER", false, "Primary key"), 
+                        new AIAssistService.ColumnInfo("name", "VARCHAR", false, "User name"), 
+                        new AIAssistService.ColumnInfo("email", "VARCHAR", true, "User email") 
                     ),
-                    List.of() // GH-90000
+                    List.of() 
                 )
             )
         );
 
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
-        Promise<AIAssistService.GeneratedSQL> result = service.generateSQL( // GH-90000
+        MockAIAssistService service = new MockAIAssistService(); 
+        Promise<AIAssistService.GeneratedSQL> result = service.generateSQL( 
             "Get all users with name starting with 'A'",
             schema
         );
 
-        AIAssistService.GeneratedSQL sql = runPromise(() -> result); // GH-90000
+        AIAssistService.GeneratedSQL sql = runPromise(() -> result); 
         
-        assertThat(sql).isNotNull(); // GH-90000
-        assertThat(sql.sql()).isNotEmpty(); // GH-90000
+        assertThat(sql).isNotNull(); 
+        assertThat(sql.sql()).isNotEmpty(); 
         assertThat(sql.tablesUsed()).contains("users");
-        assertThat(sql.isReadOnly()).isTrue(); // GH-90000
-        assertThat(sql.isSafe()).isTrue(); // GH-90000
+        assertThat(sql.isReadOnly()).isTrue(); 
+        assertThat(sql.isSafe()).isTrue(); 
     }
 
     /**
@@ -78,30 +78,30 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("Query processing should correctly interpret intent")
-    void shouldProcessQueryAccurately() { // GH-90000
-        AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+    void shouldProcessQueryAccurately() { 
+        AIAssistService.QueryContext context = new AIAssistService.QueryContext( 
             "tenant-1",
             "user-1",
             "conv-1",
             "test_db",
-            List.of("users", "orders"), // GH-90000
-            Map.of("language", "en"), // GH-90000
+            List.of("users", "orders"), 
+            Map.of("language", "en"), 
             null
         );
 
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
-        Promise<AIAssistService.QueryResult> result = service.processQuery( // GH-90000
+        MockAIAssistService service = new MockAIAssistService(); 
+        Promise<AIAssistService.QueryResult> result = service.processQuery( 
             "Show me users who ordered in the last 7 days",
             context
         );
 
-        AIAssistService.QueryResult queryResult = runPromise(() -> result); // GH-90000
+        AIAssistService.QueryResult queryResult = runPromise(() -> result); 
         
-        assertThat(queryResult).isNotNull(); // GH-90000
-        assertThat(queryResult.interpretedIntent()).isNotEmpty(); // GH-90000
-        assertThat(queryResult.generatedSQL()).isNotNull(); // GH-90000
-        assertThat(queryResult.processingTimeMs()).isGreaterThan(0); // GH-90000
-        assertThat(queryResult.confidenceScore()).isGreaterThan(0.5); // GH-90000
+        assertThat(queryResult).isNotNull(); 
+        assertThat(queryResult.interpretedIntent()).isNotEmpty(); 
+        assertThat(queryResult.generatedSQL()).isNotNull(); 
+        assertThat(queryResult.processingTimeMs()).isGreaterThan(0); 
+        assertThat(queryResult.confidenceScore()).isGreaterThan(0.5); 
     }
 
     /**
@@ -110,35 +110,35 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("Explanation should provide clear insights")
-    void shouldProvideQualityExplanations() { // GH-90000
-        List<Map<String, Object>> results = List.of( // GH-90000
-            Map.of("id", 1, "name", "Alice", "total", 1000), // GH-90000
-            Map.of("id", 2, "name", "Bob", "total", 500) // GH-90000
+    void shouldProvideQualityExplanations() { 
+        List<Map<String, Object>> results = List.of( 
+            Map.of("id", 1, "name", "Alice", "total", 1000), 
+            Map.of("id", 2, "name", "Bob", "total", 500) 
         );
 
-        AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+        AIAssistService.QueryContext context = new AIAssistService.QueryContext( 
             "tenant-1",
             "user-1",
             "conv-1",
             "test_db",
-            List.of("users", "orders"), // GH-90000
-            Map.of(), // GH-90000
+            List.of("users", "orders"), 
+            Map.of(), 
             null
         );
 
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
-        Promise<AIAssistService.Explanation> result = service.explainResults( // GH-90000
+        MockAIAssistService service = new MockAIAssistService(); 
+        Promise<AIAssistService.Explanation> result = service.explainResults( 
             "SELECT * FROM users",
             results,
             context
         );
 
-        AIAssistService.Explanation explanation = runPromise(() -> result); // GH-90000
+        AIAssistService.Explanation explanation = runPromise(() -> result); 
         
-        assertThat(explanation).isNotNull(); // GH-90000
-        assertThat(explanation.summary()).isNotEmpty(); // GH-90000
-        assertThat(explanation.keyPoints()).isNotEmpty(); // GH-90000
-        assertThat(explanation.keyPoints()).hasSizeGreaterThan(0); // GH-90000
+        assertThat(explanation).isNotNull(); 
+        assertThat(explanation.summary()).isNotEmpty(); 
+        assertThat(explanation.keyPoints()).isNotEmpty(); 
+        assertThat(explanation.keyPoints()).hasSizeGreaterThan(0); 
     }
 
     /**
@@ -147,30 +147,30 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("Suggestions should be contextually relevant")
-    void shouldProvideRelevantSuggestions() { // GH-90000
-        AIAssistService.QueryContext context = new AIAssistService.QueryContext( // GH-90000
+    void shouldProvideRelevantSuggestions() { 
+        AIAssistService.QueryContext context = new AIAssistService.QueryContext( 
             "tenant-1",
             "user-1",
             "conv-1",
             "test_db",
-            List.of("users", "orders", "products"), // GH-90000
-            Map.of("domain", "ecommerce"), // GH-90000
+            List.of("users", "orders", "products"), 
+            Map.of("domain", "ecommerce"), 
             "SELECT * FROM users"
         );
 
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
-        Promise<List<AIAssistService.QuerySuggestion>> result = service.suggestQueries(context, 5); // GH-90000
+        MockAIAssistService service = new MockAIAssistService(); 
+        Promise<List<AIAssistService.QuerySuggestion>> result = service.suggestQueries(context, 5); 
 
-        List<AIAssistService.QuerySuggestion> suggestions = runPromise(() -> result); // GH-90000
+        List<AIAssistService.QuerySuggestion> suggestions = runPromise(() -> result); 
         
-        assertThat(suggestions).isNotNull(); // GH-90000
-        assertThat(suggestions).hasSizeLessThanOrEqualTo(5); // GH-90000
+        assertThat(suggestions).isNotNull(); 
+        assertThat(suggestions).hasSizeLessThanOrEqualTo(5); 
         
-        for (AIAssistService.QuerySuggestion suggestion : suggestions) { // GH-90000
-            assertThat(suggestion.query()).isNotEmpty(); // GH-90000
-            assertThat(suggestion.description()).isNotEmpty(); // GH-90000
-            assertThat(suggestion.relevanceScore()).isGreaterThan(0); // GH-90000
-            assertThat(suggestion.relevanceScore()).isLessThanOrEqualTo(1.0); // GH-90000
+        for (AIAssistService.QuerySuggestion suggestion : suggestions) { 
+            assertThat(suggestion.query()).isNotEmpty(); 
+            assertThat(suggestion.description()).isNotEmpty(); 
+            assertThat(suggestion.relevanceScore()).isGreaterThan(0); 
+            assertThat(suggestion.relevanceScore()).isLessThanOrEqualTo(1.0); 
         }
     }
 
@@ -180,33 +180,33 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("Conversation management should be accurate")
-    void shouldManageConversationsAccurately() { // GH-90000
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
+    void shouldManageConversationsAccurately() { 
+        MockAIAssistService service = new MockAIAssistService(); 
         
         // Create conversation
-        Promise<AIAssistService.Conversation> createPromise = service.createConversation("tenant-1", "user-1"); // GH-90000
-        AIAssistService.Conversation conversation = runPromise(() -> createPromise); // GH-90000
+        Promise<AIAssistService.Conversation> createPromise = service.createConversation("tenant-1", "user-1"); 
+        AIAssistService.Conversation conversation = runPromise(() -> createPromise); 
         
-        assertThat(conversation).isNotNull(); // GH-90000
-        assertThat(conversation.id()).isNotEmpty(); // GH-90000
+        assertThat(conversation).isNotNull(); 
+        assertThat(conversation.id()).isNotEmpty(); 
         assertThat(conversation.tenantId()).isEqualTo("tenant-1");
         assertThat(conversation.userId()).isEqualTo("user-1");
-        assertThat(conversation.messageCount()).isEqualTo(0); // GH-90000
+        assertThat(conversation.messageCount()).isEqualTo(0); 
 
         // Add message
-        AIAssistService.Message message = new AIAssistService.Message( // GH-90000
+        AIAssistService.Message message = new AIAssistService.Message( 
             "msg-1",
             AIAssistService.MessageRole.USER,
             "Hello",
-            Instant.now(), // GH-90000
-            Map.of() // GH-90000
+            Instant.now(), 
+            Map.of() 
         );
         
-        Promise<AIAssistService.Conversation> addPromise = service.addMessage(conversation.id(), message); // GH-90000
-        AIAssistService.Conversation updated = runPromise(() -> addPromise); // GH-90000
+        Promise<AIAssistService.Conversation> addPromise = service.addMessage(conversation.id(), message); 
+        AIAssistService.Conversation updated = runPromise(() -> addPromise); 
         
-        assertThat(updated.messageCount()).isEqualTo(1); // GH-90000
-        assertThat(updated.messages()).hasSize(1); // GH-90000
+        assertThat(updated.messageCount()).isEqualTo(1); 
+        assertThat(updated.messages()).hasSize(1); 
     }
 
     /**
@@ -215,17 +215,17 @@ class AIAssistAccuracyTest extends EventloopTestBase {
      */
     @Test
     @DisplayName("Service status should be accurately reported")
-    void shouldReportAccurateStatus() { // GH-90000
-        MockAIAssistService service = new MockAIAssistService(); // GH-90000
+    void shouldReportAccurateStatus() { 
+        MockAIAssistService service = new MockAIAssistService(); 
         
-        Promise<AIAssistService.ServiceStatus> statusPromise = service.getStatus(); // GH-90000
-        AIAssistService.ServiceStatus status = runPromise(() -> statusPromise); // GH-90000
+        Promise<AIAssistService.ServiceStatus> statusPromise = service.getStatus(); 
+        AIAssistService.ServiceStatus status = runPromise(() -> statusPromise); 
         
-        assertThat(status).isNotNull(); // GH-90000
-        assertThat(status.available()).isTrue(); // GH-90000
-        assertThat(status.provider()).isNotEmpty(); // GH-90000
-        assertThat(status.model()).isNotEmpty(); // GH-90000
-        assertThat(status.lastHealthCheck()).isNotNull(); // GH-90000
+        assertThat(status).isNotNull(); 
+        assertThat(status.available()).isTrue(); 
+        assertThat(status.provider()).isNotEmpty(); 
+        assertThat(status.model()).isNotEmpty(); 
+        assertThat(status.lastHealthCheck()).isNotNull(); 
     }
 
     /**
@@ -234,22 +234,22 @@ class AIAssistAccuracyTest extends EventloopTestBase {
     private static class MockAIAssistService implements AIAssistService {
 
         @Override
-        public Promise<QueryResult> processQuery(String query, QueryContext context) { // GH-90000
-            return Promise.of(new QueryResult( // GH-90000
+        public Promise<QueryResult> processQuery(String query, QueryContext context) { 
+            return Promise.of(new QueryResult( 
                 "query-1",
                 query,
                 "SELECT_DATA",
-                new GeneratedSQL( // GH-90000
+                new GeneratedSQL( 
                     "SELECT * FROM users",
                     "Selects all users",
                     List.of("users"),
-                    List.of(), // GH-90000
+                    List.of(), 
                     true
                 ),
-                List.of(Map.of("id", 1, "name", "Alice")), // GH-90000
-                new Explanation( // GH-90000
+                List.of(Map.of("id", 1, "name", "Alice")), 
+                new Explanation( 
                     "Summary of results",
-                    List.of("Key point 1", "Key point 2"), // GH-90000
+                    List.of("Key point 1", "Key point 2"), 
                     List.of("Recommendation 1"),
                     "bar-chart"
                 ),
@@ -260,99 +260,99 @@ class AIAssistAccuracyTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<GeneratedSQL> generateSQL(String description, DatabaseSchema schema) { // GH-90000
-            return Promise.of(new GeneratedSQL( // GH-90000
-                "SELECT * FROM " + schema.tables().get(0).name(), // GH-90000
+        public Promise<GeneratedSQL> generateSQL(String description, DatabaseSchema schema) { 
+            return Promise.of(new GeneratedSQL( 
+                "SELECT * FROM " + schema.tables().get(0).name(), 
                 "Generated SQL from description",
-                schema.tables().stream().map(AIAssistService.TableInfo::name).toList(), // GH-90000
-                List.of(), // GH-90000
+                schema.tables().stream().map(AIAssistService.TableInfo::name).toList(), 
+                List.of(), 
                 true
             ));
         }
 
         @Override
-        public Promise<Explanation> explainResults(String query, List<Map<String, Object>> results, QueryContext context) { // GH-90000
-            return Promise.of(new Explanation( // GH-90000
-                "Query returned " + results.size() + " results", // GH-90000
-                List.of("Found data for multiple users", "Total aggregation shows variance"), // GH-90000
+        public Promise<Explanation> explainResults(String query, List<Map<String, Object>> results, QueryContext context) { 
+            return Promise.of(new Explanation( 
+                "Query returned " + results.size() + " results", 
+                List.of("Found data for multiple users", "Total aggregation shows variance"), 
                 List.of("Consider filtering by date"),
                 "table-view"
             ));
         }
 
         @Override
-        public Promise<List<QuerySuggestion>> suggestQueries(QueryContext context, int limit) { // GH-90000
-            return Promise.of(List.of( // GH-90000
-                new QuerySuggestion("SELECT * FROM users", "Get all users", 0.9, "data-retrieval"), // GH-90000
-                new QuerySuggestion("SELECT COUNT(*) FROM orders", "Count orders", 0.8, "aggregation"), // GH-90000
-                new QuerySuggestion("SELECT * FROM products LIMIT 10", "Sample products", 0.7, "sampling") // GH-90000
+        public Promise<List<QuerySuggestion>> suggestQueries(QueryContext context, int limit) { 
+            return Promise.of(List.of( 
+                new QuerySuggestion("SELECT * FROM users", "Get all users", 0.9, "data-retrieval"), 
+                new QuerySuggestion("SELECT COUNT(*) FROM orders", "Count orders", 0.8, "aggregation"), 
+                new QuerySuggestion("SELECT * FROM products LIMIT 10", "Sample products", 0.7, "sampling") 
             ));
         }
 
         @Override
-        public Promise<Conversation> getConversation(String conversationId) { // GH-90000
-            return Promise.of(new Conversation( // GH-90000
+        public Promise<Conversation> getConversation(String conversationId) { 
+            return Promise.of(new Conversation( 
                 conversationId,
                 "tenant-1",
                 "user-1",
-                List.of(), // GH-90000
-                Instant.now(), // GH-90000
-                Instant.now(), // GH-90000
+                List.of(), 
+                Instant.now(), 
+                Instant.now(), 
                 0
             ));
         }
 
         @Override
-        public Promise<Conversation> createConversation(String tenantId, String userId) { // GH-90000
-            return Promise.of(new Conversation( // GH-90000
-                "conv-" + System.currentTimeMillis(), // GH-90000
+        public Promise<Conversation> createConversation(String tenantId, String userId) { 
+            return Promise.of(new Conversation( 
+                "conv-" + System.currentTimeMillis(), 
                 tenantId,
                 userId,
-                List.of(), // GH-90000
-                Instant.now(), // GH-90000
-                Instant.now(), // GH-90000
+                List.of(), 
+                Instant.now(), 
+                Instant.now(), 
                 0
             ));
         }
 
         @Override
-        public Promise<Conversation> addMessage(String conversationId, Message message) { // GH-90000
-            return Promise.of(new Conversation( // GH-90000
+        public Promise<Conversation> addMessage(String conversationId, Message message) { 
+            return Promise.of(new Conversation( 
                 conversationId,
                 "tenant-1",
                 "user-1",
-                List.of(message), // GH-90000
-                Instant.now(), // GH-90000
-                Instant.now(), // GH-90000
+                List.of(message), 
+                Instant.now(), 
+                Instant.now(), 
                 1
             ));
         }
 
         @Override
-        public Promise<Void> clearConversation(String conversationId) { // GH-90000
-            return Promise.of((Void) null); // GH-90000
+        public Promise<Void> clearConversation(String conversationId) { 
+            return Promise.of((Void) null); 
         }
 
         @Override
-        public Promise<ServiceStatus> getStatus() { // GH-90000
-            return Promise.of(new ServiceStatus( // GH-90000
+        public Promise<ServiceStatus> getStatus() { 
+            return Promise.of(new ServiceStatus( 
                 true,
                 "mock-provider",
                 "mock-model-v1",
                 1000,
                 150.0,
-                Instant.now() // GH-90000
+                Instant.now() 
             ));
         }
 
         @Override
-        public Promise<AIEvaluationMetrics> getEvaluationMetrics(TimeRange timeRange) { // GH-90000
+        public Promise<AIEvaluationMetrics> getEvaluationMetrics(TimeRange timeRange) { 
             throw new UnsupportedOperationException("Evaluation metrics not implemented in mock");
         }
 
         @Override
-        public Promise<Void> recordEvaluationResult(AIEvaluationResult result) { // GH-90000
-            return Promise.of((Void) null); // GH-90000
+        public Promise<Void> recordEvaluationResult(AIEvaluationResult result) { 
+            return Promise.of((Void) null); 
         }
     }
 }

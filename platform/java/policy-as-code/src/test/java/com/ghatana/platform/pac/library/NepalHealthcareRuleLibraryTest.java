@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.pac.library;
@@ -26,12 +26,12 @@ import static org.assertj.core.api.Assertions.*;
 class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
     private InMemoryPolicyEngine engine;
-    private final NepalHealthcareRuleLibrary library = new NepalHealthcareRuleLibrary(); // GH-90000
+    private final NepalHealthcareRuleLibrary library = new NepalHealthcareRuleLibrary(); 
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = new InMemoryPolicyEngine(); // GH-90000
-        library.registerInto(engine); // GH-90000
+    void setUp() { 
+        engine = new InMemoryPolicyEngine(); 
+        library.registerInto(engine); 
     }
 
     // -------------------------------------------------------------------------
@@ -40,10 +40,10 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("id and version are populated")
-    void metadata() { // GH-90000
+    void metadata() { 
         assertThat(library.id()).isEqualTo("nepal-healthcare-directive-2081");
         assertThat(library.version()).isEqualTo("1.0.0");
-        assertThat(library.description()).isNotBlank(); // GH-90000
+        assertThat(library.description()).isNotBlank(); 
     }
 
     // -------------------------------------------------------------------------
@@ -56,36 +56,36 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DOCTOR with consent allowed on HIGH sensitivity data")
-        void doctor_with_consent_allowed() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", // GH-90000
-                    Map.of("role", "DOCTOR", "consent_on_file", true, "data_sensitivity", "HIGH")); // GH-90000
-            assertThat(result.allowed()).isTrue(); // GH-90000
+        void doctor_with_consent_allowed() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", 
+                    Map.of("role", "DOCTOR", "consent_on_file", true, "data_sensitivity", "HIGH")); 
+            assertThat(result.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("NURSE without consent denied on HIGH sensitivity data")
-        void nurse_without_consent_denied_high() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", // GH-90000
-                    Map.of("role", "NURSE", "consent_on_file", false, "data_sensitivity", "HIGH")); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void nurse_without_consent_denied_high() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", 
+                    Map.of("role", "NURSE", "consent_on_file", false, "data_sensitivity", "HIGH")); 
+            assertThat(result.allowed()).isFalse(); 
             assertThat(result.reasons()).anyMatch(r -> r.contains("consent"));
         }
 
         @Test
         @DisplayName("ADMIN role (not care role) is denied")
-        void non_care_role_denied() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", // GH-90000
-                    Map.of("role", "ADMIN", "consent_on_file", true, "data_sensitivity", "NORMAL")); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void non_care_role_denied() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", 
+                    Map.of("role", "ADMIN", "consent_on_file", true, "data_sensitivity", "NORMAL")); 
+            assertThat(result.allowed()).isFalse(); 
             assertThat(result.reasons()).anyMatch(r -> r.contains("ADMIN"));
         }
 
         @Test
         @DisplayName("NURSE with consent on NORMAL sensitivity is allowed")
-        void nurse_with_consent_normal_allowed() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", // GH-90000
-                    Map.of("role", "NURSE", "consent_on_file", true, "data_sensitivity", "NORMAL")); // GH-90000
-            assertThat(result.allowed()).isTrue(); // GH-90000
+        void nurse_with_consent_normal_allowed() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_access", 
+                    Map.of("role", "NURSE", "consent_on_file", true, "data_sensitivity", "NORMAL")); 
+            assertThat(result.allowed()).isTrue(); 
         }
     }
 
@@ -99,35 +99,35 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("DOCTOR with consent and purpose is allowed to export")
-        void doctor_with_consent_and_purpose_allowed() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", // GH-90000
-                    Map.of("role", "DOCTOR", "consent_on_file", true, "purpose", "referral")); // GH-90000
-            assertThat(result.allowed()).isTrue(); // GH-90000
+        void doctor_with_consent_and_purpose_allowed() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", 
+                    Map.of("role", "DOCTOR", "consent_on_file", true, "purpose", "referral")); 
+            assertThat(result.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("NURSE (not in export list) is denied")
-        void nurse_denied_export() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", // GH-90000
-                    Map.of("role", "NURSE", "consent_on_file", true, "purpose", "referral")); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void nurse_denied_export() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", 
+                    Map.of("role", "NURSE", "consent_on_file", true, "purpose", "referral")); 
+            assertThat(result.allowed()).isFalse(); 
         }
 
         @Test
         @DisplayName("PHR_ADMIN without consent is denied")
-        void admin_without_consent_denied() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", // GH-90000
-                    Map.of("role", "PHR_ADMIN", "consent_on_file", false, "purpose", "audit")); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void admin_without_consent_denied() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", 
+                    Map.of("role", "PHR_ADMIN", "consent_on_file", false, "purpose", "audit")); 
+            assertThat(result.allowed()).isFalse(); 
             assertThat(result.reasons()).anyMatch(r -> r.contains("consent"));
         }
 
         @Test
         @DisplayName("DOCTOR with consent but blank purpose is denied")
-        void doctor_blank_purpose_denied() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", // GH-90000
-                    Map.of("role", "DOCTOR", "consent_on_file", true, "purpose", "  ")); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void doctor_blank_purpose_denied() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.patient_data_export", 
+                    Map.of("role", "DOCTOR", "consent_on_file", true, "purpose", "  ")); 
+            assertThat(result.allowed()).isFalse(); 
             assertThat(result.reasons()).anyMatch(r -> r.contains("purpose"));
         }
     }
@@ -142,18 +142,18 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Record older than 7 years passes retention check")
-        void old_record_passes() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.retention_check", // GH-90000
-                    Map.of("record_age_days", 7 * 365 + 1)); // GH-90000
-            assertThat(result.allowed()).isTrue(); // GH-90000
+        void old_record_passes() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.retention_check", 
+                    Map.of("record_age_days", 7 * 365 + 1)); 
+            assertThat(result.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("Record younger than 7 years fails retention check")
-        void young_record_fails() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.retention_check", // GH-90000
-                    Map.of("record_age_days", 365)); // GH-90000
-            assertThat(result.allowed()).isFalse(); // GH-90000
+        void young_record_fails() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.retention_check", 
+                    Map.of("record_age_days", 365)); 
+            assertThat(result.allowed()).isFalse(); 
             assertThat(result.reasons()).anyMatch(r -> r.contains("2555"));
         }
     }
@@ -164,18 +164,18 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Operation with consent on file is allowed")
-    void consent_present_allowed() { // GH-90000
-        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", // GH-90000
-                Map.of("operation", "blood_test", "consent_on_file", true)); // GH-90000
-        assertThat(result.allowed()).isTrue(); // GH-90000
+    void consent_present_allowed() { 
+        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", 
+                Map.of("operation", "blood_test", "consent_on_file", true)); 
+        assertThat(result.allowed()).isTrue(); 
     }
 
     @Test
     @DisplayName("Operation without consent is denied")
-    void consent_absent_denied() { // GH-90000
-        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", // GH-90000
-                Map.of("operation", "blood_test", "consent_on_file", false)); // GH-90000
-        assertThat(result.allowed()).isFalse(); // GH-90000
+    void consent_absent_denied() { 
+        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", 
+                Map.of("operation", "blood_test", "consent_on_file", false)); 
+        assertThat(result.allowed()).isFalse(); 
         assertThat(result.reasons()).anyMatch(r -> r.contains("blood_test"));
     }
 
@@ -189,29 +189,29 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Valid emergency code + physician is allowed")
-        void valid_emergency_allowed() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", // GH-90000
-                    Map.of("emergency_code", "EMERGENCY-2081", // GH-90000
+        void valid_emergency_allowed() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", 
+                    Map.of("emergency_code", "EMERGENCY-2081", 
                            "authorizing_physician", "dr-sharma"));
-            assertThat(result.allowed()).isTrue(); // GH-90000
+            assertThat(result.allowed()).isTrue(); 
         }
 
         @Test
         @DisplayName("Wrong emergency code is denied")
-        void wrong_code_denied() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", // GH-90000
-                    Map.of("emergency_code", "WRONG-CODE", // GH-90000
+        void wrong_code_denied() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", 
+                    Map.of("emergency_code", "WRONG-CODE", 
                            "authorizing_physician", "dr-sharma"));
-            assertThat(result.allowed()).isFalse(); // GH-90000
+            assertThat(result.allowed()).isFalse(); 
         }
 
         @Test
         @DisplayName("Missing physician ID is denied even with correct code")
-        void missing_physician_denied() { // GH-90000
-            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", // GH-90000
-                    Map.of("emergency_code", "EMERGENCY-2081", // GH-90000
+        void missing_physician_denied() { 
+            PolicyEvalResult result = evaluate("nepal_healthcare.emergency_override", 
+                    Map.of("emergency_code", "EMERGENCY-2081", 
                            "authorizing_physician", ""));
-            assertThat(result.allowed()).isFalse(); // GH-90000
+            assertThat(result.allowed()).isFalse(); 
         }
     }
 
@@ -221,23 +221,23 @@ class NepalHealthcareRuleLibraryTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Later registerInto() call overrides earlier one for same policy name")
-    void registerInto_overrides_earlier_registration() { // GH-90000
+    void registerInto_overrides_earlier_registration() { 
         // Register a permissive override for consent_required
-        engine.register("nepal_healthcare.consent_required", // GH-90000
+        engine.register("nepal_healthcare.consent_required", 
                 input -> PolicyEvalResult.allow("nepal_healthcare.consent_required"));
 
-        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", // GH-90000
-                Map.of("operation", "risky_op", "consent_on_file", false)); // GH-90000
+        PolicyEvalResult result = evaluate("nepal_healthcare.consent_required", 
+                Map.of("operation", "risky_op", "consent_on_file", false)); 
 
         // Override wins — allowed even without consent
-        assertThat(result.allowed()).isTrue(); // GH-90000
+        assertThat(result.allowed()).isTrue(); 
     }
 
     // -------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------
 
-    private PolicyEvalResult evaluate(String policy, Map<String, Object> input) { // GH-90000
-        return runPromise(() -> engine.evaluate("tenant-nep", policy, input)); // GH-90000
+    private PolicyEvalResult evaluate(String policy, Map<String, Object> input) { 
+        return runPromise(() -> engine.evaluate("tenant-nep", policy, input)); 
     }
 }

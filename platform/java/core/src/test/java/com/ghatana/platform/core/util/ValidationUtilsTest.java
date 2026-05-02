@@ -24,25 +24,25 @@ class ValidationUtilsTest {
 
     @Test
     @DisplayName("validateNotBlank accepts non-blank string")
-    void validateNotBlankAcceptsNonBlank() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateNotBlank("hello", "name")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateNotBlankAcceptsNonBlank() { 
+        assertThatCode(() -> ValidationUtils.validateNotBlank("hello", "name")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateNotBlank throws for null")
-    void validateNotBlankThrowsForNull() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateNotBlank(null, "name")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateNotBlankThrowsForNull() { 
+        assertThatThrownBy(() -> ValidationUtils.validateNotBlank(null, "name")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("name");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "   ", "\t", "\n"}) // GH-90000
+    @ValueSource(strings = {"", "   ", "\t", "\n"}) 
     @DisplayName("validateNotBlank throws for blank strings")
-    void validateNotBlankThrowsForBlank(String blank) { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateNotBlank(blank, "field")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateNotBlankThrowsForBlank(String blank) { 
+        assertThatThrownBy(() -> ValidationUtils.validateNotBlank(blank, "field")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("field");
     }
 
@@ -50,16 +50,16 @@ class ValidationUtilsTest {
 
     @Test
     @DisplayName("validateNotNull accepts non-null object")
-    void validateNotNullAcceptsNonNull() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateNotNull(new Object(), "obj")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateNotNullAcceptsNonNull() { 
+        assertThatCode(() -> ValidationUtils.validateNotNull(new Object(), "obj")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateNotNull throws for null")
-    void validateNotNullThrowsForNull() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateNotNull(null, "myField")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateNotNullThrowsForNull() { 
+        assertThatThrownBy(() -> ValidationUtils.validateNotNull(null, "myField")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("myField");
     }
 
@@ -67,81 +67,81 @@ class ValidationUtilsTest {
 
     @Test
     @DisplayName("validateMaxLength accepts string at max boundary")
-    void validateMaxLengthAcceptsAtBoundary() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateMaxLength("abcde", 5, "name")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateMaxLengthAcceptsAtBoundary() { 
+        assertThatCode(() -> ValidationUtils.validateMaxLength("abcde", 5, "name")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateMaxLength throws when string exceeds max")
-    void validateMaxLengthThrowsWhenExceeded() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateMaxLength("toolong", 3, "field")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateMaxLengthThrowsWhenExceeded() { 
+        assertThatThrownBy(() -> ValidationUtils.validateMaxLength("toolong", 3, "field")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("field");
     }
 
     @Test
     @DisplayName("validateMaxLength accepts null (null is skipped)")
-    void validateMaxLengthAcceptsNull() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateMaxLength(null, 10, "field")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateMaxLengthAcceptsNull() { 
+        assertThatCode(() -> ValidationUtils.validateMaxLength(null, 10, "field")) 
+                .doesNotThrowAnyException(); 
     }
 
     // ── validateMinLength ────────────────────────────────────────────────────
 
     @Test
     @DisplayName("validateMinLength accepts string at min boundary")
-    void validateMinLengthAcceptsAtBoundary() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateMinLength("abc", 3, "code")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateMinLengthAcceptsAtBoundary() { 
+        assertThatCode(() -> ValidationUtils.validateMinLength("abc", 3, "code")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateMinLength throws when string is shorter than min")
-    void validateMinLengthThrowsWhenTooShort() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateMinLength("ab", 5, "code")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateMinLengthThrowsWhenTooShort() { 
+        assertThatThrownBy(() -> ValidationUtils.validateMinLength("ab", 5, "code")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("code");
     }
 
     @Test
     @DisplayName("validateMinLength accepts null (null is skipped)")
-    void validateMinLengthAcceptsNull() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateMinLength(null, 5, "code")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateMinLengthAcceptsNull() { 
+        assertThatCode(() -> ValidationUtils.validateMinLength(null, 5, "code")) 
+                .doesNotThrowAnyException(); 
     }
 
-    // ── validateRange (int) ────────────────────────────────────────────────── // GH-90000
+    // ── validateRange (int) ────────────────────────────────────────────────── 
 
     @Test
     @DisplayName("validateRange accepts value within range")
-    void validateRangeIntAcceptsWithin() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateRange(5, 1, 10, "count")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateRangeIntAcceptsWithin() { 
+        assertThatCode(() -> ValidationUtils.validateRange(5, 1, 10, "count")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateRange accepts value at inclusive bounds")
-    void validateRangeIntAcceptsAtBounds() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validateRange(1, 1, 10, "count")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
-        assertThatCode(() -> ValidationUtils.validateRange(10, 1, 10, "count")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validateRangeIntAcceptsAtBounds() { 
+        assertThatCode(() -> ValidationUtils.validateRange(1, 1, 10, "count")) 
+                .doesNotThrowAnyException(); 
+        assertThatCode(() -> ValidationUtils.validateRange(10, 1, 10, "count")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateRange throws for value below min")
-    void validateRangeIntThrowsBelowMin() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateRange(0, 1, 10, "count")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateRangeIntThrowsBelowMin() { 
+        assertThatThrownBy(() -> ValidationUtils.validateRange(0, 1, 10, "count")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("count");
     }
 
     @Test
     @DisplayName("validateRange throws for value above max")
-    void validateRangeIntThrowsAboveMax() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateRange(11, 1, 10, "count")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateRangeIntThrowsAboveMax() { 
+        assertThatThrownBy(() -> ValidationUtils.validateRange(11, 1, 10, "count")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("count");
     }
 
@@ -149,51 +149,51 @@ class ValidationUtilsTest {
 
     @Test
     @DisplayName("validatePattern accepts value matching pattern")
-    void validatePatternAcceptsMatch() { // GH-90000
+    void validatePatternAcceptsMatch() { 
         Pattern emailPattern = Pattern.compile("[a-z]+@[a-z]+\\.com");
-        assertThatCode(() -> ValidationUtils.validatePattern("user@domain.com", emailPattern, "email")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> ValidationUtils.validatePattern("user@domain.com", emailPattern, "email")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validatePattern throws for value not matching pattern")
-    void validatePatternThrowsForNonMatch() { // GH-90000
+    void validatePatternThrowsForNonMatch() { 
         Pattern alphanumeric = Pattern.compile("[a-zA-Z0-9]+");
-        assertThatThrownBy(() -> ValidationUtils.validatePattern("invalid-value!", alphanumeric, "code")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> ValidationUtils.validatePattern("invalid-value!", alphanumeric, "code")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("code");
     }
 
     @Test
     @DisplayName("validatePattern accepts null (null is skipped)")
-    void validatePatternAcceptsNull() { // GH-90000
+    void validatePatternAcceptsNull() { 
         Pattern alphanumeric = Pattern.compile("[a-zA-Z0-9]+");
-        assertThatCode(() -> ValidationUtils.validatePattern(null, alphanumeric, "code")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> ValidationUtils.validatePattern(null, alphanumeric, "code")) 
+                .doesNotThrowAnyException(); 
     }
 
-    // ── validateNotEmpty (Collection) ──────────────────────────────────────── // GH-90000
+    // ── validateNotEmpty (Collection) ──────────────────────────────────────── 
 
     @Test
     @DisplayName("validateNotEmpty accepts non-empty collection")
-    void validateNotEmptyAcceptsNonEmpty() { // GH-90000
+    void validateNotEmptyAcceptsNonEmpty() { 
         assertThatCode(() -> ValidationUtils.validateNotEmpty(List.of("item"), "items"))
-                .doesNotThrowAnyException(); // GH-90000
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validateNotEmpty throws for null collection")
-    void validateNotEmptyThrowsForNull() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateNotEmpty(null, "items")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateNotEmptyThrowsForNull() { 
+        assertThatThrownBy(() -> ValidationUtils.validateNotEmpty(null, "items")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("items");
     }
 
     @Test
     @DisplayName("validateNotEmpty throws for empty collection")
-    void validateNotEmptyThrowsForEmpty() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validateNotEmpty(Collections.emptyList(), "items")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validateNotEmptyThrowsForEmpty() { 
+        assertThatThrownBy(() -> ValidationUtils.validateNotEmpty(Collections.emptyList(), "items")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("items");
     }
 
@@ -201,39 +201,39 @@ class ValidationUtilsTest {
 
     @Test
     @DisplayName("validatePositive(int) accepts positive value")
-    void validatePositiveIntAccepts() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validatePositive(1, "count")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validatePositiveIntAccepts() { 
+        assertThatCode(() -> ValidationUtils.validatePositive(1, "count")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validatePositive(int) throws for zero")
-    void validatePositiveIntThrowsForZero() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validatePositive(0, "count")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validatePositiveIntThrowsForZero() { 
+        assertThatThrownBy(() -> ValidationUtils.validatePositive(0, "count")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("count");
     }
 
     @Test
     @DisplayName("validatePositive(int) throws for negative")
-    void validatePositiveIntThrowsForNegative() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validatePositive(-5, "count")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validatePositiveIntThrowsForNegative() { 
+        assertThatThrownBy(() -> ValidationUtils.validatePositive(-5, "count")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("count");
     }
 
     @Test
     @DisplayName("validatePositive(long) accepts positive value")
-    void validatePositiveLongAccepts() { // GH-90000
-        assertThatCode(() -> ValidationUtils.validatePositive(100L, "size")) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+    void validatePositiveLongAccepts() { 
+        assertThatCode(() -> ValidationUtils.validatePositive(100L, "size")) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("validatePositive(long) throws for zero")
-    void validatePositiveLongThrowsForZero() { // GH-90000
-        assertThatThrownBy(() -> ValidationUtils.validatePositive(0L, "size")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void validatePositiveLongThrowsForZero() { 
+        assertThatThrownBy(() -> ValidationUtils.validatePositive(0L, "size")) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("size");
     }
 }

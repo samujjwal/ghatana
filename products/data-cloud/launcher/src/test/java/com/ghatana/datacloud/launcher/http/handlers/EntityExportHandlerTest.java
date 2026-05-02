@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("EntityExportHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EntityExportHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -50,21 +50,21 @@ class EntityExportHandlerTest extends EventloopTestBase {
     private EntityExportHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new EntityExportHandler(exportService, http); // GH-90000
-        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new EntityExportHandler(exportService, http); 
+        lenient().when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("export rejects missing tenant before export service access")
-    void exportRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void exportRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleExportEntities(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleExportEntities(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(exportService, never()).exportCsv("default", "default", java.util.Map.of(), 0); // GH-90000
-        verify(exportService, never()).exportNdjson("default", "default", java.util.Map.of(), 0); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(exportService, never()).exportCsv("default", "default", java.util.Map.of(), 0); 
+        verify(exportService, never()).exportNdjson("default", "default", java.util.Map.of(), 0); 
     }
 
         @Test

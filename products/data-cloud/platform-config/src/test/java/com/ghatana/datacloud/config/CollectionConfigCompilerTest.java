@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.config;
@@ -33,8 +33,8 @@ class CollectionConfigCompilerTest {
     private CollectionConfigCompiler compiler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        compiler = new CollectionConfigCompiler(); // GH-90000
+    void setUp() { 
+        compiler = new CollectionConfigCompiler(); 
     }
 
     @Nested
@@ -43,104 +43,104 @@ class CollectionConfigCompilerTest {
 
         @Test
         @DisplayName("compiles a minimal entity collection")
-        void compilesMinimalEntityCollection() { // GH-90000
-            RawCollectionConfig raw = buildRaw("users", "ENTITY"); // GH-90000
+        void compilesMinimalEntityCollection() { 
+            RawCollectionConfig raw = buildRaw("users", "ENTITY"); 
 
-            CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
+            CompiledCollectionConfig compiled = compiler.compile(raw); 
 
-            assertThat(compiled).isNotNull(); // GH-90000
+            assertThat(compiled).isNotNull(); 
             assertThat(compiled.name()).isEqualTo("users");
         }
 
         @Test
         @DisplayName("compiles document collection type")
-        void compilesDocumentCollection() { // GH-90000
-            RawCollectionConfig raw = buildRaw("docs", "DOCUMENT"); // GH-90000
+        void compilesDocumentCollection() { 
+            RawCollectionConfig raw = buildRaw("docs", "DOCUMENT"); 
 
-            CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
+            CompiledCollectionConfig compiled = compiler.compile(raw); 
 
             assertThat(compiled.name()).isEqualTo("docs");
         }
 
         @Test
         @DisplayName("throws ConfigurationException for event record type")
-        void throwsForEventRecordType() { // GH-90000
-            RawCollectionConfig raw = buildRaw("events", "EVENT"); // GH-90000
+        void throwsForEventRecordType() { 
+            RawCollectionConfig raw = buildRaw("events", "EVENT"); 
 
-            assertThatThrownBy(() -> compiler.compile(raw)) // GH-90000
-                    .isInstanceOf(ConfigurationException.class) // GH-90000
+            assertThatThrownBy(() -> compiler.compile(raw)) 
+                    .isInstanceOf(ConfigurationException.class) 
                     .hasMessageContaining("compileEventCollection");
         }
 
         @Test
         @DisplayName("throws NullPointerException when null is passed")
-        void throwsForNullInput() { // GH-90000
-            assertThatThrownBy(() -> compiler.compile(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void throwsForNullInput() { 
+            assertThatThrownBy(() -> compiler.compile(null)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("compiled result has fields from schema")
-        void compiledResultHasFields() { // GH-90000
-            RawSchema schema = new RawSchema("1.0", null, List.of( // GH-90000
-                    new RawField("id", "string", null, true, true, true, // GH-90000
+        void compiledResultHasFields() { 
+            RawSchema schema = new RawSchema("1.0", null, List.of( 
+                    new RawField("id", "string", null, true, true, true, 
                             false, true, true, null, null, null, null,
-                            List.of(), null, null, "Primary ID", null, null), // GH-90000
-                    new RawField("name", "string", null, false, false, false, // GH-90000
+                            List.of(), null, null, "Primary ID", null, null), 
+                    new RawField("name", "string", null, false, false, false, 
                             false, false, false, null, 1, 255, null,
-                            List.of(), null, null, "Display name", null, null) // GH-90000
+                            List.of(), null, null, "Display name", null, null) 
             ));
-            RawCollectionConfig raw = buildRawWithSchema("customers", "ENTITY", schema); // GH-90000
+            RawCollectionConfig raw = buildRawWithSchema("customers", "ENTITY", schema); 
 
-            CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
+            CompiledCollectionConfig compiled = compiler.compile(raw); 
 
-            assertThat(compiled.fields()).isNotNull(); // GH-90000
-            assertThat(compiled.fields()).hasSize(2); // GH-90000
+            assertThat(compiled.fields()).isNotNull(); 
+            assertThat(compiled.fields()).hasSize(2); 
             assertThat(compiled.fieldsByName()).containsKey("id");
             assertThat(compiled.fieldsByName()).containsKey("name");
         }
 
         @Test
         @DisplayName("compiled config has version number")
-        void compiledConfigHasVersion() { // GH-90000
-            RawCollectionConfig raw = buildRaw("versioned", "ENTITY"); // GH-90000
-            CompiledCollectionConfig compiled = compiler.compile(raw); // GH-90000
-            assertThat(compiled.configVersion()).isGreaterThanOrEqualTo(0); // GH-90000
+        void compiledConfigHasVersion() { 
+            RawCollectionConfig raw = buildRaw("versioned", "ENTITY"); 
+            CompiledCollectionConfig compiled = compiler.compile(raw); 
+            assertThat(compiled.configVersion()).isGreaterThanOrEqualTo(0); 
         }
 
         @Test
         @DisplayName("version increments across compilations")
-        void versionIncrementsAcrossCompilations() { // GH-90000
-            CompiledCollectionConfig first = compiler.compile(buildRaw("col1", "ENTITY")); // GH-90000
-            CompiledCollectionConfig second = compiler.compile(buildRaw("col2", "ENTITY")); // GH-90000
-            assertThat(second.configVersion()).isGreaterThan(first.configVersion()); // GH-90000
+        void versionIncrementsAcrossCompilations() { 
+            CompiledCollectionConfig first = compiler.compile(buildRaw("col1", "ENTITY")); 
+            CompiledCollectionConfig second = compiler.compile(buildRaw("col2", "ENTITY")); 
+            assertThat(second.configVersion()).isGreaterThan(first.configVersion()); 
         }
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RawCollectionConfig buildRaw(String name, String recordType) { // GH-90000
-        return buildRawWithSchema(name, recordType, // GH-90000
-                new RawSchema("1.0", null, List.of())); // GH-90000
+    private static RawCollectionConfig buildRaw(String name, String recordType) { 
+        return buildRawWithSchema(name, recordType, 
+                new RawSchema("1.0", null, List.of())); 
     }
 
-    private static RawCollectionConfig buildRawWithSchema(String name, String recordType, RawSchema schema) { // GH-90000
-        RawMetadata metadata = new RawMetadata(name, "default", Map.of(), Map.of()); // GH-90000
-        RawSpec spec = new RawSpec( // GH-90000
+    private static RawCollectionConfig buildRawWithSchema(String name, String recordType, RawSchema schema) { 
+        RawMetadata metadata = new RawMetadata(name, "default", Map.of(), Map.of()); 
+        RawSpec spec = new RawSpec( 
                 recordType,     // recordType
                 name,           // displayName
                 null,           // description
                 null,           // icon
                 schema,         // schema
-                new RawStorage("default", "id", null, List.of(), false), // storage // GH-90000
-                List.of(),      // indexes // GH-90000
+                new RawStorage("default", "id", null, List.of(), false), // storage 
+                List.of(),      // indexes 
                 null,           // lifecycle
                 null,           // permissions
-                List.of(),      // policies // GH-90000
+                List.of(),      // policies 
                 null,           // eventSourcing
                 null,           // streaming
                 null            // replay
         );
-        return new RawCollectionConfig("v1", "Collection", metadata, spec); // GH-90000
+        return new RawCollectionConfig("v1", "Collection", metadata, spec); 
     }
 }

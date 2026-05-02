@@ -26,95 +26,95 @@ class JsonUtilsTest {
         private int value;
 
         // Default constructor for Jackson
-        public JsonTestData() {} // GH-90000
+        public JsonTestData() {} 
 
-        public JsonTestData(String name, int value) { // GH-90000
+        public JsonTestData(String name, int value) { 
             this.name = name;
             this.value = value;
         }
 
         // Getters and setters for Jackson
-        public String getName() { // GH-90000
+        public String getName() { 
             return name;
         }
 
-        public void setName(String name) { // GH-90000
+        public void setName(String name) { 
             this.name = name;
         }
 
-        public int getValue() { // GH-90000
+        public int getValue() { 
             return value;
         }
 
-        public void setValue(int value) { // GH-90000
+        public void setValue(int value) { 
             this.value = value;
         }
 
         @Override
-        public boolean equals(Object obj) { // GH-90000
-            if (this == obj) return true; // GH-90000
-            if (obj == null || getClass() != obj.getClass()) return false; // GH-90000
-            JsonTestData testData = (JsonTestData) obj; // GH-90000
+        public boolean equals(Object obj) { 
+            if (this == obj) return true; 
+            if (obj == null || getClass() != obj.getClass()) return false; 
+            JsonTestData testData = (JsonTestData) obj; 
             return value == testData.value
-                    && (name == null ? testData.name == null : name.equals(testData.name)); // GH-90000
+                    && (name == null ? testData.name == null : name.equals(testData.name)); 
         }
 
         @Override
-        public int hashCode() { // GH-90000
-            int result = name != null ? name.hashCode() : 0; // GH-90000
+        public int hashCode() { 
+            int result = name != null ? name.hashCode() : 0; 
             result = 31 * result + value;
             return result;
         }
     }
 
     @Test
-    void testFromJson() throws JsonProcessingException { // GH-90000
+    void testFromJson() throws JsonProcessingException { 
         // Arrange
         String json = "{\"name\":\"test\",\"value\":42}";
 
         // Act
-        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class); // GH-90000
+        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class); 
 
         // Assert
-        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
         assertThat(result.getName()).isEqualTo("test");
-        assertThat(result.getValue()).isEqualTo(42); // GH-90000
+        assertThat(result.getValue()).isEqualTo(42); 
     }
 
     @Test
-    void testToJson() throws JsonProcessingException { // GH-90000
+    void testToJson() throws JsonProcessingException { 
         // Arrange
-        JsonTestData testData = new JsonTestData("test", 42); // GH-90000
+        JsonTestData testData = new JsonTestData("test", 42); 
         String expectedJson = "{\"name\":\"test\",\"value\":42}";
 
         // Act
-        String json = JsonUtils.toJson(testData); // GH-90000
+        String json = JsonUtils.toJson(testData); 
 
         // Assert
-        assertThat(json).isEqualTo(expectedJson); // GH-90000
+        assertThat(json).isEqualTo(expectedJson); 
     }
 
     @Test
-    void testFromJsonWithUnknownProperties() throws JsonProcessingException { // GH-90000
+    void testFromJsonWithUnknownProperties() throws JsonProcessingException { 
         // Arrange - JSON with extra properties that aren't in the target class
         String json = "{\"name\":\"test\",\"value\":42,\"extra\":\"should be ignored\"}";
 
         // Act - Should not throw because FAIL_ON_UNKNOWN_PROPERTIES is false
-        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class); // GH-90000
+        JsonTestData result = JsonUtils.fromJson(json, JsonTestData.class); 
 
         // Assert
-        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
         assertThat(result.getName()).isEqualTo("test");
-        assertThat(result.getValue()).isEqualTo(42); // GH-90000
+        assertThat(result.getValue()).isEqualTo(42); 
     }
 
     @Test
-    void testFromJsonWithInvalidJson() { // GH-90000
+    void testFromJsonWithInvalidJson() { 
         // Arrange - Invalid JSON
         String invalidJson = "{invalid-json}";
 
         // Act & Assert
-        assertThatThrownBy(() -> JsonUtils.fromJson(invalidJson, JsonTestData.class)) // GH-90000
-                .isInstanceOf(JsonProcessingException.class); // GH-90000
+        assertThatThrownBy(() -> JsonUtils.fromJson(invalidJson, JsonTestData.class)) 
+                .isInstanceOf(JsonProcessingException.class); 
     }
 }

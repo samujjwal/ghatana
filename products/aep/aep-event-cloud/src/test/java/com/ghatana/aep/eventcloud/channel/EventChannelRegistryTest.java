@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud.channel;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link EventChannelRegistry}.
  */
 @DisplayName("EventChannelRegistry")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EventChannelRegistryTest extends EventloopTestBase {
 
     @Mock
@@ -42,130 +42,130 @@ class EventChannelRegistryTest extends EventloopTestBase {
     private EventChannelRegistry registry;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new EventChannelRegistry(eventLogStore); // GH-90000
+    void setUp() { 
+        registry = new EventChannelRegistry(eventLogStore); 
     }
 
     @Test
-    void shouldRegisterChannel() { // GH-90000
+    void shouldRegisterChannel() { 
         // WHEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
 
         // THEN
-        assertThat(registry.channelCount()).isEqualTo(1); // GH-90000
-        assertThat(registry.getChannel(EventChannel.EVENTS_INTAKE.name())).isPresent(); // GH-90000
+        assertThat(registry.channelCount()).isEqualTo(1); 
+        assertThat(registry.getChannel(EventChannel.EVENTS_INTAKE.name())).isPresent(); 
     }
 
     @Test
-    void shouldRegisterMultipleChannels() { // GH-90000
+    void shouldRegisterMultipleChannels() { 
         // WHEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        registry.registerChannel(EventChannel.PIPELINE_RUNS); // GH-90000
-        registry.registerChannel(EventChannel.AGENT_DECISIONS); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        registry.registerChannel(EventChannel.PIPELINE_RUNS); 
+        registry.registerChannel(EventChannel.AGENT_DECISIONS); 
 
         // THEN
-        assertThat(registry.channelCount()).isEqualTo(3); // GH-90000
+        assertThat(registry.channelCount()).isEqualTo(3); 
     }
 
     @Test
-    void shouldBeIdempotentOnDuplicateRegistration() { // GH-90000
+    void shouldBeIdempotentOnDuplicateRegistration() { 
         // WHEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
 
         // THEN
-        assertThat(registry.channelCount()).isEqualTo(1); // GH-90000
+        assertThat(registry.channelCount()).isEqualTo(1); 
     }
 
     @Test
-    void shouldListAllChannels() { // GH-90000
+    void shouldListAllChannels() { 
         // GIVEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        registry.registerChannel(EventChannel.PIPELINE_RUNS); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        registry.registerChannel(EventChannel.PIPELINE_RUNS); 
 
         // WHEN
-        var channels = registry.listChannels(); // GH-90000
+        var channels = registry.listChannels(); 
 
         // THEN
-        assertThat(channels).hasSize(2); // GH-90000
+        assertThat(channels).hasSize(2); 
     }
 
     @Test
-    void shouldPublishToRegisteredChannel() { // GH-90000
+    void shouldPublishToRegisteredChannel() { 
         // GIVEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        when(eventLogStore.append(any(TenantContext.class), any(EventEntry.class))) 
             .thenReturn(Promise.of(Offset.of("1")));
 
-        byte[] payload = "{\"data\":\"test\"}".getBytes(StandardCharsets.UTF_8); // GH-90000
+        byte[] payload = "{\"data\":\"test\"}".getBytes(StandardCharsets.UTF_8); 
 
         // WHEN
-        String eventId = runPromise(() -> // GH-90000
-            registry.publish(EventChannel.EVENTS_INTAKE.name(), // GH-90000
+        String eventId = runPromise(() -> 
+            registry.publish(EventChannel.EVENTS_INTAKE.name(), 
                 "tenant-1", "order.created", payload));
 
         // THEN
-        assertThat(eventId).isNotBlank(); // GH-90000
-        verify(eventLogStore).append(any(), entryCaptor.capture()); // GH-90000
+        assertThat(eventId).isNotBlank(); 
+        verify(eventLogStore).append(any(), entryCaptor.capture()); 
 
-        EventEntry entry = entryCaptor.getValue(); // GH-90000
-        assertThat(entry.eventType()) // GH-90000
+        EventEntry entry = entryCaptor.getValue(); 
+        assertThat(entry.eventType()) 
             .isEqualTo("aep.events.intake.order.created");
         assertThat(entry.headers().get("channel"))
-            .isEqualTo(EventChannel.EVENTS_INTAKE.name()); // GH-90000
+            .isEqualTo(EventChannel.EVENTS_INTAKE.name()); 
     }
 
     @Test
-    void shouldRejectPublishToUnregisteredChannel() { // GH-90000
+    void shouldRejectPublishToUnregisteredChannel() { 
         // WHEN/THEN
         try {
-            runPromise(() -> // GH-90000
-                registry.publish("nonexistent", "t1", "event", new byte[0])); // GH-90000
-        } catch (Exception e) { // GH-90000
+            runPromise(() -> 
+                registry.publish("nonexistent", "t1", "event", new byte[0])); 
+        } catch (Exception e) { 
             assertThat(e).hasMessageContaining("Channel not registered: nonexistent");
         }
-        clearFatalError(); // GH-90000
+        clearFatalError(); 
     }
 
     @Test
-    void shouldRemoveChannel() { // GH-90000
+    void shouldRemoveChannel() { 
         // GIVEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        assertThat(registry.channelCount()).isEqualTo(1); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        assertThat(registry.channelCount()).isEqualTo(1); 
 
         // WHEN
-        boolean removed = registry.removeChannel(EventChannel.EVENTS_INTAKE.name()); // GH-90000
+        boolean removed = registry.removeChannel(EventChannel.EVENTS_INTAKE.name()); 
 
         // THEN
-        assertThat(removed).isTrue(); // GH-90000
-        assertThat(registry.channelCount()).isZero(); // GH-90000
+        assertThat(removed).isTrue(); 
+        assertThat(registry.channelCount()).isZero(); 
     }
 
     @Test
-    void shouldReturnFalseWhenRemovingNonexistentChannel() { // GH-90000
+    void shouldReturnFalseWhenRemovingNonexistentChannel() { 
         assertThat(registry.removeChannel("nonexistent")).isFalse();
     }
 
     @Test
-    void shouldClearAllChannelsOnClose() { // GH-90000
+    void shouldClearAllChannelsOnClose() { 
         // GIVEN
-        registry.registerChannel(EventChannel.EVENTS_INTAKE); // GH-90000
-        registry.registerChannel(EventChannel.PIPELINE_RUNS); // GH-90000
+        registry.registerChannel(EventChannel.EVENTS_INTAKE); 
+        registry.registerChannel(EventChannel.PIPELINE_RUNS); 
 
         // WHEN
-        registry.close(); // GH-90000
+        registry.close(); 
 
         // THEN
-        assertThat(registry.channelCount()).isZero(); // GH-90000
+        assertThat(registry.channelCount()).isZero(); 
     }
 
     @Test
-    void shouldCreateCustomChannel() { // GH-90000
+    void shouldCreateCustomChannel() { 
         // GIVEN
-        EventChannel custom = EventChannel.of("custom.channel", "Custom events"); // GH-90000
+        EventChannel custom = EventChannel.of("custom.channel", "Custom events"); 
 
         // WHEN
-        registry.registerChannel(custom); // GH-90000
+        registry.registerChannel(custom); 
 
         // THEN
         assertThat(registry.getChannel("custom.channel")).isPresent();

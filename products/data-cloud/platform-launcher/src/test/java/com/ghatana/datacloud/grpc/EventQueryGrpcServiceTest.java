@@ -36,9 +36,9 @@ class EventQueryGrpcServiceTest {
     private EventQueryGrpcService service;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventLogStore = mock(EventLogStore.class); // GH-90000
-        service = new EventQueryGrpcService(eventLogStore); // GH-90000
+    void setUp() { 
+        eventLogStore = mock(EventLogStore.class); 
+        service = new EventQueryGrpcService(eventLogStore); 
     }
 
     @Nested
@@ -47,82 +47,82 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should execute query with type filter")
-        void shouldExecuteTypeFilterQuery() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldExecuteTypeFilterQuery() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:user.created")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "user.created", "1"), // GH-90000
-                    createEventEntry("event-2", "user.created", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "user.created", "1"), 
+                    createEventEntry("event-2", "user.created", "1") 
             );
 
-            when(eventLogStore.readByType( // GH-90000
+            when(eventLogStore.readByType( 
                     argThat(ctx -> ctx.tenantId().equals("default-tenant")),
                     eq("user.created"),
-                    any(), // GH-90000
-                    eq(100))) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    eq(100))) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
             // Allow async processing
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
+            assertTrue(observer.isCompleted()); 
         }
 
         @Test
         @DisplayName("should handle empty type filter results")
-        void shouldHandleEmptyTypeFilterResults() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldHandleEmptyTypeFilterResults() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:nonexistent.event")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            when(eventLogStore.readByType( // GH-90000
-                    any(TenantContext.class), // GH-90000
+            when(eventLogStore.readByType( 
+                    any(TenantContext.class), 
                     eq("nonexistent.event"),
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(List.of())); // GH-90000
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(List.of())); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertTrue(observer.isCompleted()); 
         }
 
         @Test
         @DisplayName("should trim whitespace from type filter")
-        void shouldTrimWhitespaceFromType() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldTrimWhitespaceFromType() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:  user.created  ")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "user.created", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "user.created", "1") 
             );
 
-            when(eventLogStore.readByType( // GH-90000
-                    any(TenantContext.class), // GH-90000
+            when(eventLogStore.readByType( 
+                    any(TenantContext.class), 
                     eq("user.created"),
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
     }
 
@@ -132,56 +132,56 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should execute scan query without type filter")
-        void shouldExecuteScanQuery() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldExecuteScanQuery() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("SELECT * FROM events LIMIT 50")
-                    .setLimit(50) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(50) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "user.created", "1"), // GH-90000
-                    createEventEntry("event-2", "order.placed", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "user.created", "1"), 
+                    createEventEntry("event-2", "order.placed", "1") 
             );
 
-            when(eventLogStore.read( // GH-90000
-                    any(TenantContext.class), // GH-90000
-                    any(), // GH-90000
-                    eq(50))) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+            when(eventLogStore.read( 
+                    any(TenantContext.class), 
+                    any(), 
+                    eq(50))) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
 
         @Test
         @DisplayName("should respect default limit")
-        void shouldRespectDefaultLimit() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldRespectDefaultLimit() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("SELECT * FROM events")
                     // No limit specified = should use default 100
-                    .build(); // GH-90000
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
-                entries.add(createEventEntry("event-" + i, "type-" + (i % 5), "1")); // GH-90000
+            List<EventLogStore.EventEntry> entries = new ArrayList<>(); 
+            for (int i = 0; i < 100; i++) { 
+                entries.add(createEventEntry("event-" + i, "type-" + (i % 5), "1")); 
             }
 
-            when(eventLogStore.read( // GH-90000
-                    any(TenantContext.class), // GH-90000
-                    any(), // GH-90000
-                    eq(100))) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+            when(eventLogStore.read( 
+                    any(TenantContext.class), 
+                    any(), 
+                    eq(100))) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertTrue(observer.isCompleted()); 
         }
     }
 
@@ -191,51 +191,51 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should enforce maximum query limit")
-        void shouldEnforceMaxLimit() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldEnforceMaxLimit() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("SELECT * FROM events")
-                    .setLimit(20000) // Exceeds max of 10,000 // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(20000) // Exceeds max of 10,000 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 10000; i++) { // GH-90000
-                entries.add(createEventEntry("event-" + i, "type", "1")); // GH-90000
+            List<EventLogStore.EventEntry> entries = new ArrayList<>(); 
+            for (int i = 0; i < 10000; i++) { 
+                entries.add(createEventEntry("event-" + i, "type", "1")); 
             }
 
-            when(eventLogStore.read( // GH-90000
-                    any(TenantContext.class), // GH-90000
-                    any(), // GH-90000
-                    eq(10000))) // Should be capped at 10,000 // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+            when(eventLogStore.read( 
+                    any(TenantContext.class), 
+                    any(), 
+                    eq(10000))) // Should be capped at 10,000 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertTrue(observer.isCompleted()); 
         }
 
         @Test
         @DisplayName("should handle zero limit")
-        void shouldHandleZeroLimit() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldHandleZeroLimit() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("SELECT * FROM events")
-                    .setLimit(0) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(0) 
+                    .build(); 
 
-            when(eventLogStore.read( // GH-90000
-                    any(TenantContext.class), // GH-90000
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(List.of())); // GH-90000
+            when(eventLogStore.read( 
+                    any(TenantContext.class), 
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(List.of())); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertTrue(observer.isCompleted()); 
         }
     }
 
@@ -245,62 +245,62 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should use tenant from envelope")
-        void shouldUseTenantFromEnvelope() { // GH-90000
+        void shouldUseTenantFromEnvelope() { 
             // Create envelope with tenant ID
-            Envelope envelope = Envelope.newBuilder() // GH-90000
+            Envelope envelope = Envelope.newBuilder() 
                     .setTenantId("tenant-specific-123")
-                    .build(); // GH-90000
+                    .build(); 
 
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
-                    .setEnvelope(envelope) // GH-90000
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
+                    .setEnvelope(envelope) 
                     .setQuery("type:user.created")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "user.created", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "user.created", "1") 
             );
 
-            when(eventLogStore.readByType( // GH-90000
+            when(eventLogStore.readByType( 
                     argThat(ctx -> ctx.tenantId().equals("tenant-specific-123")),
                     eq("user.created"),
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
 
         @Test
         @DisplayName("should use default tenant when envelope missing")
-        void shouldUseDefaultTenant() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldUseDefaultTenant() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:user.created")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "user.created", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "user.created", "1") 
             );
 
-            when(eventLogStore.readByType( // GH-90000
+            when(eventLogStore.readByType( 
                     argThat(ctx -> ctx.tenantId().equals("default-tenant")),
                     eq("user.created"),
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
     }
 
@@ -310,36 +310,36 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should handle event log store errors")
-        void shouldHandleEventStoreError() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldHandleEventStoreError() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:user.created")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            when(eventLogStore.readByType( // GH-90000
-                    any(TenantContext.class), // GH-90000
-                    anyString(), // GH-90000
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.ofException( // GH-90000
+            when(eventLogStore.readByType( 
+                    any(TenantContext.class), 
+                    anyString(), 
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.ofException( 
                             new RuntimeException("Event store failed")));
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertNotNull(observer.getError()); // GH-90000
-            assertTrue(observer.isCancelled()); // GH-90000
+            assertNotNull(observer.getError()); 
+            assertTrue(observer.isCancelled()); 
         }
 
         @Test
         @DisplayName("should handle null request gracefully")
-        void shouldHandleNullRequest() { // GH-90000
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
+        void shouldHandleNullRequest() { 
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
 
-            assertThrows(NullPointerException.class, () -> // GH-90000
-                service.executeQuery(null, observer)); // GH-90000
+            assertThrows(NullPointerException.class, () -> 
+                service.executeQuery(null, observer)); 
         }
     }
 
@@ -349,48 +349,48 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should return query explanation")
-        void shouldExplainQuery() { // GH-90000
-            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
+        void shouldExplainQuery() { 
+            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() 
                     .setQuery("type:user.created")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.explainQuery(request, observer); // GH-90000
+            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.explainQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
 
         @Test
         @DisplayName("should include query plan in explanation")
-        void shouldIncludeQueryPlan() { // GH-90000
-            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
+        void shouldIncludeQueryPlan() { 
+            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() 
                     .setQuery("SELECT * FROM events WHERE type='user.created'")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.explainQuery(request, observer); // GH-90000
+            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.explainQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
+            assertTrue(observer.isCompleted()); 
         }
 
         @Test
         @DisplayName("should honor tenant context in explain")
-        void shouldHonorTenantInExplain() { // GH-90000
-            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() // GH-90000
+        void shouldHonorTenantInExplain() { 
+            ExplainQueryRequestProto request = ExplainQueryRequestProto.newBuilder() 
                     .setQuery("type:user.created")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.explainQuery(request, observer); // GH-90000
+            CapturingObserver<ExplainQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.explainQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
     }
 
@@ -400,109 +400,109 @@ class EventQueryGrpcServiceTest {
 
         @Test
         @DisplayName("should handle large result streams")
-        void shouldHandleLargeResultStreams() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldHandleLargeResultStreams() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:event.stream")
-                    .setLimit(1000) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(1000) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < 1000; i++) { // GH-90000
-                entries.add(createEventEntry("event-" + i, "event.stream", "1")); // GH-90000
+            List<EventLogStore.EventEntry> entries = new ArrayList<>(); 
+            for (int i = 0; i < 1000; i++) { 
+                entries.add(createEventEntry("event-" + i, "event.stream", "1")); 
             }
 
-            when(eventLogStore.readByType( // GH-90000
-                    any(TenantContext.class), // GH-90000
+            when(eventLogStore.readByType( 
+                    any(TenantContext.class), 
                     eq("event.stream"),
-                    any(), // GH-90000
-                    eq(1000))) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    eq(1000))) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(200); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertEquals(1000, observer.getResults().size()); // GH-90000
-            assertTrue(observer.isCompleted()); // GH-90000
+            assertEquals(1000, observer.getResults().size()); 
+            assertTrue(observer.isCompleted()); 
         }
 
         @Test
         @DisplayName("should handle special characters in query")
-        void shouldHandleSpecialCharsInQuery() { // GH-90000
-            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() // GH-90000
+        void shouldHandleSpecialCharsInQuery() { 
+            ExecuteQueryRequestProto request = ExecuteQueryRequestProto.newBuilder() 
                     .setQuery("type:event.with_special-chars.v2")
-                    .setLimit(100) // GH-90000
-                    .build(); // GH-90000
+                    .setLimit(100) 
+                    .build(); 
 
-            List<EventLogStore.EventEntry> entries = List.of( // GH-90000
-                    createEventEntry("event-1", "event.with_special-chars.v2", "1") // GH-90000
+            List<EventLogStore.EventEntry> entries = List.of( 
+                    createEventEntry("event-1", "event.with_special-chars.v2", "1") 
             );
 
-            when(eventLogStore.readByType( // GH-90000
-                    any(TenantContext.class), // GH-90000
+            when(eventLogStore.readByType( 
+                    any(TenantContext.class), 
                     eq("event.with_special-chars.v2"),
-                    any(), // GH-90000
-                    anyInt())) // GH-90000
-                    .thenReturn(io.activej.promise.Promise.of(entries)); // GH-90000
+                    any(), 
+                    anyInt())) 
+                    .thenReturn(io.activej.promise.Promise.of(entries)); 
 
-            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); // GH-90000
-            service.executeQuery(request, observer); // GH-90000
+            CapturingObserver<ExecuteQueryResponseProto> observer = new CapturingObserver<>(); 
+            service.executeQuery(request, observer); 
 
-            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } // GH-90000
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); } 
 
-            assertFalse(observer.getResults().isEmpty()); // GH-90000
+            assertFalse(observer.getResults().isEmpty()); 
         }
     }
 
     // ─── Helper Methods ───────────────────────────────────────────────────
 
-    private EventLogStore.EventEntry createEventEntry(String eventId, String eventType, String version) { // GH-90000
-        return EventLogStore.EventEntry.builder() // GH-90000
-                .eventId(UUID.randomUUID()) // GH-90000
-                .eventType(eventType) // GH-90000
-                .eventVersion(version) // GH-90000
-                .timestamp(Instant.now()) // GH-90000
+    private EventLogStore.EventEntry createEventEntry(String eventId, String eventType, String version) { 
+        return EventLogStore.EventEntry.builder() 
+                .eventId(UUID.randomUUID()) 
+                .eventType(eventType) 
+                .eventVersion(version) 
+                .timestamp(Instant.now()) 
                 .contentType("application/json")
-                .payload("{\"test\": \"data\"}".getBytes(StandardCharsets.UTF_8)) // GH-90000
-                .build(); // GH-90000
+                .payload("{\"test\": \"data\"}".getBytes(StandardCharsets.UTF_8)) 
+                .build(); 
     }
 
     private static class CapturingObserver<T> implements StreamObserver<T> {
-        private final List<T> results = new ArrayList<>(); // GH-90000
+        private final List<T> results = new ArrayList<>(); 
         private Throwable error;
         private boolean completed;
         private boolean cancelled;
 
         @Override
-        public void onNext(T value) { // GH-90000
-            results.add(value); // GH-90000
+        public void onNext(T value) { 
+            results.add(value); 
         }
 
         @Override
-        public void onError(Throwable t) { // GH-90000
+        public void onError(Throwable t) { 
             this.error = t;
             this.cancelled = true;
         }
 
         @Override
-        public void onCompleted() { // GH-90000
+        public void onCompleted() { 
             this.completed = true;
         }
 
-        public List<T> getResults() { // GH-90000
+        public List<T> getResults() { 
             return results;
         }
 
-        public Throwable getError() { // GH-90000
+        public Throwable getError() { 
             return error;
         }
 
-        public boolean isCompleted() { // GH-90000
+        public boolean isCompleted() { 
             return completed;
         }
 
-        public boolean isCancelled() { // GH-90000
+        public boolean isCancelled() { 
             return cancelled;
         }
     }

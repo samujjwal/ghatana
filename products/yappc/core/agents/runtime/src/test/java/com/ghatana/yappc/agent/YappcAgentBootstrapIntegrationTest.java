@@ -32,84 +32,84 @@ class YappcAgentBootstrapIntegrationTest extends EventloopTestBase {
     private Eventloop eventloop;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        eventloop = eventloop(); // GH-90000
+    void setUp() { 
+        eventloop = eventloop(); 
     }
 
     @Test
     @DisplayName("Should create bootstrap instance with default config path")
-    void shouldCreateBootstrapWithDefaultPath() { // GH-90000
+    void shouldCreateBootstrapWithDefaultPath() { 
         // WHEN
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create(eventloop); // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create(eventloop); 
 
         // THEN
-        assertThat(bootstrap).isNotNull(); // GH-90000
-        assertThat(bootstrap.getFactory()).isNotNull(); // GH-90000
-        assertThat(bootstrap.getRegistry()).isNotNull(); // GH-90000
+        assertThat(bootstrap).isNotNull(); 
+        assertThat(bootstrap.getFactory()).isNotNull(); 
+        assertThat(bootstrap.getRegistry()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should create bootstrap instance with custom config path")
-    void shouldCreateBootstrapWithCustomPath() { // GH-90000
+    void shouldCreateBootstrapWithCustomPath() { 
         // WHEN
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( 
             eventloop,
-            tempConfigDir.toString() // GH-90000
+            tempConfigDir.toString() 
         );
 
         // THEN
-        assertThat(bootstrap).isNotNull(); // GH-90000
+        assertThat(bootstrap).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should throw exception when eventloop is null")
-    void shouldThrowExceptionWhenEventloopIsNull() { // GH-90000
+    void shouldThrowExceptionWhenEventloopIsNull() { 
         // WHEN/THEN
-        assertThatThrownBy(() -> YappcAgentBootstrap.create(null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> YappcAgentBootstrap.create(null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Eventloop cannot be null");
     }
 
     @Test
     @DisplayName("Should throw exception when config path is null or empty")
-    void shouldThrowExceptionWhenConfigPathIsInvalid() { // GH-90000
+    void shouldThrowExceptionWhenConfigPathIsInvalid() { 
         // WHEN/THEN
-        assertThatThrownBy(() -> YappcAgentBootstrap.create(eventloop, null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> YappcAgentBootstrap.create(eventloop, null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Config base path cannot be null or empty");
 
-        assertThatThrownBy(() -> YappcAgentBootstrap.create(eventloop, "")) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> YappcAgentBootstrap.create(eventloop, "")) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Config base path cannot be null or empty");
     }
 
     @Test
     @DisplayName("Should register all YAPPC tools successfully")
-    void shouldRegisterAllTools() { // GH-90000
+    void shouldRegisterAllTools() { 
         // GIVEN
-        PlannerAgentFactory factory = new PlannerAgentFactory(); // GH-90000
+        PlannerAgentFactory factory = new PlannerAgentFactory(); 
 
         // WHEN
-        YappcToolRegistry.registerAll(factory); // GH-90000
+        YappcToolRegistry.registerAll(factory); 
 
         // THEN
         // No exception thrown means success
-        assertThat(factory).isNotNull(); // GH-90000
+        assertThat(factory).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should succeed initialization when valid agent YAML definitions exist")
-    void shouldFailInitializationWhenAgentCreationNotImplemented() throws IOException { // GH-90000
+    void shouldFailInitializationWhenAgentCreationNotImplemented() throws IOException { 
         // GIVEN - valid agent YAML exists; bootstrap now parses YAML into raw maps
-        createMockAgentDefinitions(); // GH-90000
+        createMockAgentDefinitions(); 
 
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( 
             eventloop,
-            tempConfigDir.toString() // GH-90000
+            tempConfigDir.toString() 
         );
 
-        // WHEN - initialization should succeed (agents loaded as raw YAML maps) // GH-90000
-        runPromise(() -> bootstrap.initialize()); // GH-90000
+        // WHEN - initialization should succeed (agents loaded as raw YAML maps) 
+        runPromise(() -> bootstrap.initialize()); 
 
         // THEN - agent is accessible from registry
         assertThat(bootstrap.getAgent("test-agent")).isNotNull();
@@ -117,67 +117,67 @@ class YappcAgentBootstrapIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should succeed agent lookup after initialization with valid YAML")
-    void shouldFailAgentLookupWhenCreationNotImplemented() throws IOException { // GH-90000
+    void shouldFailAgentLookupWhenCreationNotImplemented() throws IOException { 
         // GIVEN - valid agent YAML exists; bootstrap loads it as a raw map
-        createMockAgentDefinitions(); // GH-90000
+        createMockAgentDefinitions(); 
 
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( 
             eventloop,
-            tempConfigDir.toString() // GH-90000
+            tempConfigDir.toString() 
         );
 
         // WHEN
-        runPromise(() -> bootstrap.initialize()); // GH-90000
+        runPromise(() -> bootstrap.initialize()); 
 
         // THEN - loaded definition is accessible
         Object agentDef = bootstrap.getAgent("test-agent");
-        assertThat(agentDef).isNotNull(); // GH-90000
-        assertThat(agentDef).isInstanceOf(java.util.Map.class); // GH-90000
+        assertThat(agentDef).isNotNull(); 
+        assertThat(agentDef).isInstanceOf(java.util.Map.class); 
         @SuppressWarnings("unchecked")
-        java.util.Map<String, Object> defMap = (java.util.Map<String, Object>) agentDef; // GH-90000
+        java.util.Map<String, Object> defMap = (java.util.Map<String, Object>) agentDef; 
         assertThat(defMap.get("id")).isEqualTo("test-agent");
     }
 
     @Test
     @DisplayName("Should throw exception when accessing agents before initialization")
-    void shouldThrowExceptionWhenNotInitialized() { // GH-90000
+    void shouldThrowExceptionWhenNotInitialized() { 
         // GIVEN
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( 
             eventloop,
-            tempConfigDir.toString() // GH-90000
+            tempConfigDir.toString() 
         );
 
         // WHEN/THEN
         assertThatThrownBy(() -> bootstrap.getAgent("any-agent"))
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("Bootstrap not initialized");
     }
 
     @Test
     @DisplayName("Should handle repeated initialization attempts gracefully (idempotent)")
-    void shouldHandleMultipleInitializations() throws IOException { // GH-90000
+    void shouldHandleMultipleInitializations() throws IOException { 
         // GIVEN - valid agent YAML exists
-        createMockAgentDefinitions(); // GH-90000
+        createMockAgentDefinitions(); 
 
-        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( // GH-90000
+        YappcAgentBootstrap bootstrap = YappcAgentBootstrap.create( 
             eventloop,
-            tempConfigDir.toString() // GH-90000
+            tempConfigDir.toString() 
         );
 
         // WHEN - first initialization succeeds
-        runPromise(() -> bootstrap.initialize()); // GH-90000
+        runPromise(() -> bootstrap.initialize()); 
         assertThat(bootstrap.getAgent("test-agent")).isNotNull();
 
-        // THEN - second initialization also succeeds (idempotent — already initialized) // GH-90000
-        runPromise(() -> bootstrap.initialize()); // GH-90000
+        // THEN - second initialization also succeeds (idempotent — already initialized) 
+        runPromise(() -> bootstrap.initialize()); 
         assertThat(bootstrap.getAgent("test-agent")).isNotNull();
     }
 
     // ==================== HELPER METHODS ====================
 
-    private void createMockAgentDefinitions() throws IOException { // GH-90000
+    private void createMockAgentDefinitions() throws IOException { 
         Path definitionsDir = tempConfigDir.resolve("definitions");
-        Files.createDirectories(definitionsDir); // GH-90000
+        Files.createDirectories(definitionsDir); 
 
         // Create a simple mock agent definition
         String mockAgentYaml = """
@@ -223,7 +223,7 @@ class YappcAgentBootstrapIntegrationTest extends EventloopTestBase {
               timeout_ms: 1000
             """;
 
-        Files.writeString( // GH-90000
+        Files.writeString( 
             definitionsDir.resolve("test-agent.yaml"),
             mockAgentYaml
         );

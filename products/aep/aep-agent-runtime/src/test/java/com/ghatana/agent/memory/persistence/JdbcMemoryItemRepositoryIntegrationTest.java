@@ -31,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Tag("integration") // GH-90000
-@Testcontainers(disabledWithoutDocker = true) // GH-90000
+@Tag("integration") 
+@Testcontainers(disabledWithoutDocker = true) 
 @DisplayName("JdbcMemoryItemRepositoryIntegrationTest")
 class JdbcMemoryItemRepositoryIntegrationTest extends EventloopTestBase {
 
@@ -45,15 +45,15 @@ class JdbcMemoryItemRepositoryIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("save persists an episode that can be queried by tenant")
-    void savePersistsEpisode() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
+    void savePersistsEpisode() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
 
-        try (HikariDataSource dataSource = new HikariDataSource(config); // GH-90000
-             Connection connection = dataSource.getConnection(); // GH-90000
-             Statement statement = connection.createStatement()) { // GH-90000
+        try (HikariDataSource dataSource = new HikariDataSource(config); 
+             Connection connection = dataSource.getConnection(); 
+             Statement statement = connection.createStatement()) { 
             statement.execute("""
                 CREATE TABLE IF NOT EXISTS memory_items (
                     id TEXT PRIMARY KEY,
@@ -69,26 +69,26 @@ class JdbcMemoryItemRepositoryIntegrationTest extends EventloopTestBase {
                 )
                 """);
 
-            JdbcMemoryItemRepository repository = new JdbcMemoryItemRepository(dataSource); // GH-90000
-            EnhancedEpisode episode = EnhancedEpisode.builder() // GH-90000
+            JdbcMemoryItemRepository repository = new JdbcMemoryItemRepository(dataSource); 
+            EnhancedEpisode episode = EnhancedEpisode.builder() 
                 .id("episode-1")
                 .tenantId("tenant-a")
                 .agentId("agent-1")
                 .turnId("turn-1")
                 .input("hello")
                 .output("world")
-                .context(Map.of("channel", "test")) // GH-90000
+                .context(Map.of("channel", "test")) 
                 .provenance(Provenance.builder().source("integration-test").build())
-                .validity(Validity.builder().confidence(1.0).status(ValidityStatus.ACTIVE).build()) // GH-90000
+                .validity(Validity.builder().confidence(1.0).status(ValidityStatus.ACTIVE).build()) 
                 .createdAt(Instant.parse("2026-04-15T12:00:00Z"))
                 .updatedAt(Instant.parse("2026-04-15T12:00:00Z"))
-                .build(); // GH-90000
+                .build(); 
 
-            runPromise(() -> repository.save(episode)); // GH-90000
-            List<com.ghatana.agent.memory.model.MemoryItem> results = runPromise(() -> repository.findByQuery( // GH-90000
+            runPromise(() -> repository.save(episode)); 
+            List<com.ghatana.agent.memory.model.MemoryItem> results = runPromise(() -> repository.findByQuery( 
                 MemoryQuery.builder().tenantId("tenant-a").limit(10).offset(0).build()));
 
-            assertThat(results).hasSize(1); // GH-90000
+            assertThat(results).hasSize(1); 
             assertThat(results.get(0).getId()).isEqualTo("episode-1");
             assertThat(results.get(0).getTenantId()).isEqualTo("tenant-a");
         }

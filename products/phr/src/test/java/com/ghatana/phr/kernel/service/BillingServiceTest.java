@@ -1,8 +1,13 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.phr.kernel.service.BillingService.*;
-import com.ghatana.plugin.billing.BillingTransaction;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerPlugin.AccountType;
+import com.ghatana.plugin.ledger.LedgerPlugin.LedgerAccount;
+import com.ghatana.plugin.ledger.LedgerPlugin.LedgerEntry;
+import com.ghatana.plugin.ledger.LedgerPlugin.PostingStatus;
+import com.ghatana.plugin.ledger.LedgerPlugin.TimeRange;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -217,14 +222,14 @@ class BillingServiceTest extends EventloopTestBase {
             runPromise(() -> serviceWithLedger.closeEncounter(enc.id()));
 
             assertEquals(1, capturingLedger.posted.size());
-            BillingTransaction tx = capturingLedger.posted.get(0);
+            LedgerTransaction tx = capturingLedger.posted.get(0);
             assertEquals("enc:" + enc.id(), tx.getTransactionId());
-            assertEquals("phr", tx.getSourceProductId());
+            assertEquals("phr", tx.getSourceId());
             assertEquals("PHR:AR:p-L1", tx.getDebitAccount());
             assertEquals("PHR:REVENUE:dr-L1", tx.getCreditAccount());
             assertEquals(0, new BigDecimal("1200.00").compareTo(tx.getAmount()));
             assertEquals("NPR", tx.getCurrency());
-            assertEquals(BillingTransaction.TransactionType.CHARGE, tx.getType());
+            assertEquals(LedgerTransaction.TransactionType.CHARGE, tx.getType());
         }
 
         @Test
@@ -279,13 +284,13 @@ class BillingServiceTest extends EventloopTestBase {
      * @doc.layer product
      * @doc.pattern TestDouble
      */
-    static final class CapturingLedger implements BillingLedgerPlugin {
+    static final class CapturingLedger implements LedgerPlugin {
 
-        final List<BillingTransaction> posted = new ArrayList<>();
+        final List<LedgerTransaction> posted = new ArrayList<>();
         private int counter = 0;
 
         @Override
-        public Promise<String> postTransaction(BillingTransaction transaction) {
+        public Promise<String> postTransaction(LedgerTransaction transaction) {
             posted.add(transaction);
             return Promise.of("entry-" + (++counter));
         }

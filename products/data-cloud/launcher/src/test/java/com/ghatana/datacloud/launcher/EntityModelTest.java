@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -31,51 +31,51 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("create entity with valid data: succeeds")
-        void shouldCreateValidEntity() { // GH-90000
-            String id = UUID.randomUUID().toString(); // GH-90000
+        void shouldCreateValidEntity() { 
+            String id = UUID.randomUUID().toString(); 
             String tenantId = "tenant-123";
             String type = "COLLECTION";
             String name = "Test Collection";
 
-            Map<String, Object> entity = createEntity(id, tenantId, type, name); // GH-90000
+            Map<String, Object> entity = createEntity(id, tenantId, type, name); 
 
-            assertThat(entity) // GH-90000
-                    .containsEntry("id", id) // GH-90000
-                    .containsEntry("tenantId", tenantId) // GH-90000
-                    .containsEntry("type", type) // GH-90000
-                    .containsEntry("name", name) // GH-90000
+            assertThat(entity) 
+                    .containsEntry("id", id) 
+                    .containsEntry("tenantId", tenantId) 
+                    .containsEntry("type", type) 
+                    .containsEntry("name", name) 
                     .containsKey("createdAt");
         }
 
         @Test
         @DisplayName("entity missing required field: fails")
-        void shouldRejectMissingRequiredField() { // GH-90000
-            Map<String, Object> entity = new HashMap<>(); // GH-90000
-            entity.put("id", UUID.randomUUID().toString()); // GH-90000
+        void shouldRejectMissingRequiredField() { 
+            Map<String, Object> entity = new HashMap<>(); 
+            entity.put("id", UUID.randomUUID().toString()); 
             // Missing: tenantId
 
-            assertThatThrownBy(() -> validateEntity(entity)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> validateEntity(entity)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("tenantId");
         }
 
         @Test
         @DisplayName("entity with duplicate ID: detectable")
-        void shouldHandleDuplicateId() { // GH-90000
+        void shouldHandleDuplicateId() { 
             String id = "entity-123";
             String tenantId = "tenant-1";
 
-            Map<String, Object> entity1 = createEntity(id, tenantId, "COLLECTION", "Coll1"); // GH-90000
-            Map<String, Object> entity2 = createEntity(id, tenantId, "COLLECTION", "Coll2"); // GH-90000
+            Map<String, Object> entity1 = createEntity(id, tenantId, "COLLECTION", "Coll1"); 
+            Map<String, Object> entity2 = createEntity(id, tenantId, "COLLECTION", "Coll2"); 
 
-            // IDs are the same but created separately (duplicate scenario) // GH-90000
+            // IDs are the same but created separately (duplicate scenario) 
             assertThat(entity1.get("id"))
                     .isEqualTo(entity2.get("id"));
         }
 
         @Test
         @DisplayName("entity type validation: enforced")
-        void shouldValidateEntityType() { // GH-90000
+        void shouldValidateEntityType() { 
             // Valid types
             assertThat(isValidEntityType("COLLECTION")).isTrue();
             assertThat(isValidEntityType("DATASET")).isTrue();
@@ -87,16 +87,16 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("entity with metadata: preserved")
-        void shouldPreserveMetadata() { // GH-90000
-            String id = UUID.randomUUID().toString(); // GH-90000
+        void shouldPreserveMetadata() { 
+            String id = UUID.randomUUID().toString(); 
             String tenantId = "tenant-1";
 
-            Map<String, Object> metadata = new HashMap<>(); // GH-90000
-            metadata.put("owner", "user-123"); // GH-90000
-            metadata.put("tags", new String[]{"important", "production"}); // GH-90000
+            Map<String, Object> metadata = new HashMap<>(); 
+            metadata.put("owner", "user-123"); 
+            metadata.put("tags", new String[]{"important", "production"}); 
 
-            Map<String, Object> entity = createEntity(id, tenantId, "COLLECTION", "MyCollection"); // GH-90000
-            entity.put("metadata", metadata); // GH-90000
+            Map<String, Object> entity = createEntity(id, tenantId, "COLLECTION", "MyCollection"); 
+            entity.put("metadata", metadata); 
 
             assertThat(entity.get("metadata")).isEqualTo(metadata);
         }
@@ -108,36 +108,36 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("same ID in different tenants: isolated")
-        void shouldIslateTenants() { // GH-90000
+        void shouldIslateTenants() { 
             String id = "entity-123";
 
-            Map<String, Object> entity1 = createEntity(id, "tenant-1", "COLLECTION", "Coll1"); // GH-90000
-            Map<String, Object> entity2 = createEntity(id, "tenant-2", "COLLECTION", "Coll2"); // GH-90000
+            Map<String, Object> entity1 = createEntity(id, "tenant-1", "COLLECTION", "Coll1"); 
+            Map<String, Object> entity2 = createEntity(id, "tenant-2", "COLLECTION", "Coll2"); 
 
             assertThat(entity1.get("tenantId")).isNotEqualTo(entity2.get("tenantId"));
         }
 
         @Test
         @DisplayName("cross-tenant access: must be prevented")
-        void shouldPreventCrossTenantAccess() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Private"); // GH-90000
+        void shouldPreventCrossTenantAccess() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Private"); 
 
             // Simulate cross-tenant access attempt
             String otherTenant = "tenant-2";
-            boolean canAccess = checkAccess(entity, otherTenant); // GH-90000
+            boolean canAccess = checkAccess(entity, otherTenant); 
 
-            assertThat(canAccess).isFalse(); // GH-90000
+            assertThat(canAccess).isFalse(); 
         }
 
         @Test
         @DisplayName("same-tenant access: allowed")
-        void shouldAllowSameTenantAccess() { // GH-90000
+        void shouldAllowSameTenantAccess() { 
             String tenantId = "tenant-1";
-            Map<String, Object> entity = createEntity("id-1", tenantId, "COLLECTION", "Shared"); // GH-90000
+            Map<String, Object> entity = createEntity("id-1", tenantId, "COLLECTION", "Shared"); 
 
-            boolean canAccess = checkAccess(entity, tenantId); // GH-90000
+            boolean canAccess = checkAccess(entity, tenantId); 
 
-            assertThat(canAccess).isTrue(); // GH-90000
+            assertThat(canAccess).isTrue(); 
         }
     }
 
@@ -147,36 +147,36 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("update entity field: succeeds")
-        void shouldUpdateField() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Original"); // GH-90000
+        void shouldUpdateField() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Original"); 
 
-            entity.put("name", "Updated Name"); // GH-90000
+            entity.put("name", "Updated Name"); 
 
             assertThat(entity.get("name")).isEqualTo("Updated Name");
         }
 
         @Test
         @DisplayName("update with schema mismatch: detected")
-        void shouldDetectSchemaMismatch() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Test"); // GH-90000
+        void shouldDetectSchemaMismatch() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "Test"); 
 
             // Invalid type value
-            entity.put("type", "INVALID"); // GH-90000
+            entity.put("type", "INVALID"); 
 
-            assertThatThrownBy(() -> validateEntity(entity)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+            assertThatThrownBy(() -> validateEntity(entity)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("tenant ID immutable: cannot change")
-        void shouldNotAllowTenantChange() { // GH-90000
+        void shouldNotAllowTenantChange() { 
             String originalTenant = "tenant-1";
-            Map<String, Object> entity = createEntity("id-1", originalTenant, "COLLECTION", "Test"); // GH-90000
+            Map<String, Object> entity = createEntity("id-1", originalTenant, "COLLECTION", "Test"); 
 
-            // Attempt to change tenant (should be prevented or tracked) // GH-90000
+            // Attempt to change tenant (should be prevented or tracked) 
             String changedTenant = entity.get("tenantId").toString();
 
-            assertThat(changedTenant).isEqualTo(originalTenant); // GH-90000
+            assertThat(changedTenant).isEqualTo(originalTenant); 
         }
     }
 
@@ -186,10 +186,10 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("soft delete: marks entity as deleted")
-        void shouldSoftDelete() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); // GH-90000
+        void shouldSoftDelete() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); 
 
-            softDelete(entity); // GH-90000
+            softDelete(entity); 
 
             assertThat(entity.get("deletedAt")).isNotNull();
             assertThat(entity.get("isDeleted")).isEqualTo(true);
@@ -197,21 +197,21 @@ public class EntityModelTest {
 
         @Test
         @DisplayName("hard delete: removes entity")
-        void shouldHardDelete() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); // GH-90000
+        void shouldHardDelete() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); 
 
-            hardDelete(entity); // GH-90000
+            hardDelete(entity); 
 
-            assertThat(entity).isEmpty(); // GH-90000
+            assertThat(entity).isEmpty(); 
         }
 
         @Test
         @DisplayName("double delete: idempotent")
-        void shouldHandleDoubleDelete() { // GH-90000
-            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); // GH-90000
+        void shouldHandleDoubleDelete() { 
+            Map<String, Object> entity = createEntity("id-1", "tenant-1", "COLLECTION", "ToDelete"); 
 
-            softDelete(entity); // GH-90000
-            softDelete(entity); // Second delete // GH-90000
+            softDelete(entity); 
+            softDelete(entity); // Second delete 
 
             // Should still be marked deleted, no error
             assertThat(entity.get("isDeleted")).isEqualTo(true);
@@ -222,18 +222,18 @@ public class EntityModelTest {
     // Helper Methods
     // ─────────────────────────────────────────────────────────────────────
 
-    private Map<String, Object> createEntity(String id, String tenantId, String type, String name) { // GH-90000
-        Map<String, Object> entity = new HashMap<>(); // GH-90000
-        entity.put("id", id); // GH-90000
-        entity.put("tenantId", tenantId); // GH-90000
-        entity.put("type", type); // GH-90000
-        entity.put("name", name); // GH-90000
-        entity.put("createdAt", Instant.now()); // GH-90000
-        entity.put("isDeleted", false); // GH-90000
+    private Map<String, Object> createEntity(String id, String tenantId, String type, String name) { 
+        Map<String, Object> entity = new HashMap<>(); 
+        entity.put("id", id); 
+        entity.put("tenantId", tenantId); 
+        entity.put("type", type); 
+        entity.put("name", name); 
+        entity.put("createdAt", Instant.now()); 
+        entity.put("isDeleted", false); 
         return entity;
     }
 
-    private void validateEntity(Map<String, Object> entity) { // GH-90000
+    private void validateEntity(Map<String, Object> entity) { 
         if (!entity.containsKey("id")) {
             throw new IllegalArgumentException("Missing required field: id");
         }
@@ -248,26 +248,26 @@ public class EntityModelTest {
         }
 
         String type = entity.get("type").toString();
-        if (!isValidEntityType(type)) { // GH-90000
-            throw new IllegalArgumentException("Invalid entity type: " + type); // GH-90000
+        if (!isValidEntityType(type)) { 
+            throw new IllegalArgumentException("Invalid entity type: " + type); 
         }
     }
 
-    private boolean isValidEntityType(String type) { // GH-90000
+    private boolean isValidEntityType(String type) { 
         return type.matches("^(COLLECTION|DATASET|TABLE|VIEW|SCHEMA)$");
     }
 
-    private boolean checkAccess(Map<String, Object> entity, String requestTenantId) { // GH-90000
+    private boolean checkAccess(Map<String, Object> entity, String requestTenantId) { 
         String entityTenantId = entity.get("tenantId").toString();
-        return entityTenantId.equals(requestTenantId); // GH-90000
+        return entityTenantId.equals(requestTenantId); 
     }
 
-    private void softDelete(Map<String, Object> entity) { // GH-90000
-        entity.put("deletedAt", Instant.now()); // GH-90000
-        entity.put("isDeleted", true); // GH-90000
+    private void softDelete(Map<String, Object> entity) { 
+        entity.put("deletedAt", Instant.now()); 
+        entity.put("isDeleted", true); 
     }
 
-    private void hardDelete(Map<String, Object> entity) { // GH-90000
-        entity.clear(); // GH-90000
+    private void hardDelete(Map<String, Object> entity) { 
+        entity.clear(); 
     }
 }

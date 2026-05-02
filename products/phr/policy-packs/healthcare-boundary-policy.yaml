@@ -1,0 +1,137 @@
+# PHR Healthcare Boundary Policy Pack
+# Declares PHR-specific boundary rules that load into the generic platform BoundaryPolicyResolver.
+# No platform kernel changes are required to activate these rules.
+#
+# Rule schema: BoundaryPolicyRule { ruleId, scope, action, condition, outcome }
+# Outcomes: ALLOW | DENY | REQUIRE_CONSENT | REQUIRE_APPROVAL | AUDIT
+
+pack:
+  id: phr-healthcare-boundary-policy
+  name: "PHR Healthcare Boundary Policy Pack"
+  version: "1.0.0"
+  product: phr
+  description: "Healthcare-domain boundary access rules for patient records, consent, and clinical workflows"
+  schema-version: "1"
+
+rules:
+
+  # ── Patient record access ────────────────────────────────────────────────────
+
+  - ruleId: PHR-BR-001
+    description: "Patient record read requires consent or emergency override"
+    scope: phr.patient-records
+    action: READ
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [patient, treating-clinician, emergency-clinician, admin]
+    outcome: DENY
+
+  - ruleId: PHR-BR-002
+    description: "Patient record read by treating clinician requires active consent on record"
+    scope: phr.patient-records
+    action: READ
+    conditions:
+      - field: actor.role
+        operator: EQ
+        value: treating-clinician
+      - field: consent.status
+        operator: NOT_EQ
+        value: ACTIVE
+    outcome: REQUIRE_CONSENT
+
+  - ruleId: PHR-BR-003
+    description: "Emergency clinician access allowed without consent; emits AUDIT"
+    scope: phr.patient-records
+    action: READ
+    conditions:
+      - field: actor.role
+        operator: EQ
+        value: emergency-clinician
+      - field: context.emergency
+        operator: EQ
+        value: "true"
+    outcome: ALLOW
+    audit: true
+
+  # ── Clinical data write restrictions ────────────────────────────────────────
+
+  - ruleId: PHR-BR-010
+    description: "Clinical data write restricted to licensed clinicians"
+    scope: phr.patient-records
+    action: WRITE
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [treating-clinician, authorized-clinician, admin]
+    outcome: DENY
+
+  - ruleId: PHR-BR-011
+    description: "Write to a patient's own record requires identity verification"
+    scope: phr.patient-records
+    action: WRITE
+    conditions:
+      - field: actor.role
+        operator: EQ
+        value: patient
+      - field: identity.verified
+        operator: NOT_EQ
+        value: "true"
+    outcome: DENY
+
+  # ── Consent management ───────────────────────────────────────────────────────
+
+  - ruleId: PHR-BR-020
+    description: "Consent grant must be made by the patient or a legally authorized representative"
+    scope: phr.consent-management
+    action: GRANT
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [patient, authorized-representative]
+    outcome: DENY
+
+  - ruleId: PHR-BR-021
+    description: "Consent revocation requires patient or authorized representative; audit trail mandatory"
+    scope: phr.consent-management
+    action: REVOKE
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [patient, authorized-representative, admin]
+    outcome: DENY
+
+  - ruleId: PHR-BR-022
+    description: "Third-party data sharing consent requires explicit grant scope"
+    scope: phr.consent-management
+    action: SHARE
+    conditions:
+      - field: consent.scope
+        operator: NOT_CONTAINS
+        value: third-party-share
+    outcome: DENY
+
+  # ── Cross-scope isolation ────────────────────────────────────────────────────
+
+  - ruleId: PHR-BR-030
+    description: "PHR clinical data must not flow to non-healthcare scopes without explicit consent"
+    scope: phr.patient-records
+    action: EXPORT
+    conditions:
+      - field: target.scope
+        operator: NOT_IN
+        values: [phr.clinical-documents, phr.fhir-interop, phr.referral]
+      - field: consent.cross-domain
+        operator: NOT_EQ
+        value: "true"
+    outcome: DENY
+
+  - ruleId: PHR-BR-031
+    description: "FHIR export requires patient consent and data classification"
+    scope: phr.fhir-interop
+    action: EXPORT
+    conditions:
+      - field: consent.status
+        operator: NOT_EQ
+        value: ACTIVE
+    outcome: REQUIRE_CONSENT

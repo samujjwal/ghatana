@@ -35,84 +35,84 @@ class ErrorProneRunnerTest {
     private static final String BRACE_CLOSE = "    } \n";
     private static final String TEST_JAVA = "Test.java";
     private static final String CLASS_DECLARATION = "public class Test { \n";
-    private static final String MAIN_METHOD = "    public static void main(String[] args) { \n"; // GH-90000
+    private static final String MAIN_METHOD = "    public static void main(String[] args) { \n"; 
 
     @BeforeEach
-    void setUp() { // GH-90000
-        runner = new ErrorProneRunner(); // GH-90000
+    void setUp() { 
+        runner = new ErrorProneRunner(); 
         javacPath = Path.of(System.getProperty("java.home"), "bin", "javac").toString();
     }
 
     @Test
-    void testRunWithNoSources() { // GH-90000
+    void testRunWithNoSources() { 
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); // GH-90000
+                ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); 
         List<UnifiedDiagnostic> diagnostics = runner.run(Path.of("."), opts, List.of(), 5000);
-        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for empty sources"); // GH-90000
+        assertTrue(diagnostics.isEmpty(), "Expected no diagnostics for empty sources"); 
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRunWithDefaultOptions() throws IOException { // GH-90000
+    void testRunWithDefaultOptions() throws IOException { 
         // Create a simple Java file
         Path tempDir = Files.createTempDirectory("errorprone-test");
-        Path srcFile = tempDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString( // GH-90000
+        Path srcFile = tempDir.resolve(TEST_JAVA); 
+        Files.writeString( 
                 srcFile,
                 CLASS_DECLARATION
                         + MAIN_METHOD
-                        + "        System.out.println(\"Hello\"); \n" // GH-90000
+                        + "        System.out.println(\"Hello\"); \n" 
                         + BRACE_CLOSE
                         + "}");
 
-        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, List.of(srcFile)); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, List.of(srcFile)); 
 
         // Should compile without errors
-        assertTrue(diagnostics.isEmpty(), "Expected no compilation errors: " + diagnostics); // GH-90000
+        assertTrue(diagnostics.isEmpty(), "Expected no compilation errors: " + diagnostics); 
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRunWithValidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testRunWithValidJavaFile(@TempDir Path tempDir) throws Exception { 
         // Create a simple Java file
         Path srcDir = tempDir.resolve("src/main/java");
-        Files.createDirectories(srcDir); // GH-90000
-        Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
+        Files.createDirectories(srcDir); 
+        Path javaFile = srcDir.resolve(TEST_JAVA); 
 
         // Create a very simple Java file that's unlikely to trigger any warnings
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 javaFile,
                 "// Simple test file with no warnings\n"
                         + CLASS_DECLARATION
-                        + "    @SuppressWarnings(\"all\") // Suppress all warnings\n" // GH-90000
+                        + "    @SuppressWarnings(\"all\") // Suppress all warnings\n" 
                         + MAIN_METHOD
-                        + "        System.out.println(\"Hello\"); \n" // GH-90000
+                        + "        System.out.println(\"Hello\"); \n" 
                         + BRACE_CLOSE
                         + "}");
 
         // Use minimal arguments to avoid unnecessary warnings
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder() // GH-90000
-                        .javacCmd(javacPath) // GH-90000
+                ErrorProneRunner.Options.builder() 
+                        .javacCmd(javacPath) 
                         .extraArgs(List.of("-Xlint:none")) // Disable all warnings
-                        .build(); // GH-90000
+                        .build(); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); 
 
         // For a valid Java file with warnings disabled, we should get no diagnostics at all
-        assertTrue( // GH-90000
-                diagnostics.isEmpty(), // GH-90000
+        assertTrue( 
+                diagnostics.isEmpty(), 
                 "Expected no diagnostics for valid Java file, but got: " + diagnostics);
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRunWithInvalidJavaFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testRunWithInvalidJavaFile(@TempDir Path tempDir) throws Exception { 
         // Create a Java file with an error
         Path srcDir = tempDir.resolve("src/main/java");
-        Files.createDirectories(srcDir); // GH-90000
-        Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString( // GH-90000
+        Files.createDirectories(srcDir); 
+        Path javaFile = srcDir.resolve(TEST_JAVA); 
+        Files.writeString( 
                 javaFile,
                 CLASS_DECLARATION
                         + MAIN_METHOD
@@ -121,19 +121,19 @@ class ErrorProneRunnerTest {
                         + "}");
 
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder() // GH-90000
-                        .javacCmd(javacPath) // GH-90000
+                ErrorProneRunner.Options.builder() 
+                        .javacCmd(javacPath) 
                         .extraArgs(List.of("-Xlint:all"))
-                        .build(); // GH-90000
+                        .build(); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); 
 
         // Should have at least one error
-        assertFalse(diagnostics.isEmpty(), "Expected compilation errors but found none"); // GH-90000
+        assertFalse(diagnostics.isEmpty(), "Expected compilation errors but found none"); 
 
         // Check that the error message contains relevant information
-        String errorMessage = diagnostics.get(0).message(); // GH-90000
-        assertTrue( // GH-90000
+        String errorMessage = diagnostics.get(0).message(); 
+        assertTrue( 
                 errorMessage.contains("cannot find symbol")
                         || errorMessage.contains("UndefinedType"),
                 "Unexpected error message: " + errorMessage);
@@ -141,58 +141,58 @@ class ErrorProneRunnerTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRunWithWarning(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testRunWithWarning(@TempDir Path tempDir) throws Exception { 
         // Create a Java file with a warning
         Path srcDir = tempDir.resolve("src/main/java");
-        Files.createDirectories(srcDir); // GH-90000
-        Path javaFile = srcDir.resolve(TEST_JAVA); // GH-90000
-        Files.writeString( // GH-90000
+        Files.createDirectories(srcDir); 
+        Path javaFile = srcDir.resolve(TEST_JAVA); 
+        Files.writeString( 
                 javaFile,
                 "import java.util.*;\n"
                         + CLASS_DECLARATION
                         + MAIN_METHOD
-                        + "        List<String> list = new ArrayList(); // Raw type warning\n" // GH-90000
-                        + "        System.out.println(list); \n" // GH-90000
+                        + "        List<String> list = new ArrayList(); // Raw type warning\n" 
+                        + "        System.out.println(list); \n" 
                         + BRACE_CLOSE
                         + "}");
 
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder() // GH-90000
-                        .javacCmd(javacPath) // GH-90000
+                ErrorProneRunner.Options.builder() 
+                        .javacCmd(javacPath) 
                         .extraArgs(List.of("-Xlint:all"))
-                        .build(); // GH-90000
+                        .build(); 
 
-        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runner.run(tempDir, opts, List.of(javaFile), 10000); 
 
         // Should have at least one warning
-        assertFalse(diagnostics.isEmpty(), "Expected warnings but found none"); // GH-90000
+        assertFalse(diagnostics.isEmpty(), "Expected warnings but found none"); 
 
         // Check that the warning message contains relevant information
-        String warningMessage = diagnostics.get(0).message(); // GH-90000
-        assertTrue( // GH-90000
+        String warningMessage = diagnostics.get(0).message(); 
+        assertTrue( 
                 warningMessage.toLowerCase(Locale.ROOT).contains("raw type")
                         || warningMessage.toLowerCase(Locale.ROOT).contains("arraylist"),
                 "Unexpected warning message: " + warningMessage);
     }
 
     @Test
-    void testRunWithInvalidJavacCommand() { // GH-90000
+    void testRunWithInvalidJavacCommand() { 
         ErrorProneRunner.Options opts =
                 ErrorProneRunner.Options.builder().javacCmd("nonexistent-javac").build();
 
         List<UnifiedDiagnostic> diagnostics =
-                runner.run( // GH-90000
+                runner.run( 
                         Path.of("."),
                         opts,
                         List.of(Path.of("Test.java").toAbsolutePath()), // Use absolute path
                         5000);
 
         // Should have at least one error
-        assertFalse(diagnostics.isEmpty(), "Expected error for invalid javac command"); // GH-90000
+        assertFalse(diagnostics.isEmpty(), "Expected error for invalid javac command"); 
 
         // Check that the error message indicates the command wasn't found
-        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); // GH-90000
-        assertTrue( // GH-90000
+        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); 
+        assertTrue( 
                 errorMessage.contains("cannot run program")
                         || errorMessage.contains("not found")
                         || errorMessage.contains("no such file")
@@ -202,22 +202,22 @@ class ErrorProneRunnerTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRunWithNonexistentSourceFile() { // GH-90000
+    void testRunWithNonexistentSourceFile() { 
         ErrorProneRunner.Options opts =
-                ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); // GH-90000
+                ErrorProneRunner.Options.builder().javacCmd(javacPath).build(); 
 
-        Path nonExistentFile = Path.of("nonexistent/" + TEST_JAVA).toAbsolutePath(); // GH-90000
+        Path nonExistentFile = Path.of("nonexistent/" + TEST_JAVA).toAbsolutePath(); 
 
         // Now we expect a diagnostic instead of an exception
         List<UnifiedDiagnostic> diagnostics =
                 runner.run(Path.of("."), opts, List.of(nonExistentFile), 5000);
 
         // Should have at least one error
-        assertFalse(diagnostics.isEmpty(), "Expected error for non-existent source file"); // GH-90000
+        assertFalse(diagnostics.isEmpty(), "Expected error for non-existent source file"); 
 
         // Check that the error message indicates the file wasn't found
-        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); // GH-90000
-        assertTrue( // GH-90000
+        String errorMessage = diagnostics.get(0).message().toLowerCase(Locale.ROOT); 
+        assertTrue( 
                 errorMessage.contains("source file not readable")
                         || errorMessage.contains("file not found"),
                 "Unexpected error message: " + errorMessage);

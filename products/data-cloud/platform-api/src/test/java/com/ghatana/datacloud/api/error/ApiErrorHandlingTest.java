@@ -49,87 +49,87 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns 400 when tenant ID header is missing")
-        void returns400WhenTenantIdMissing() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void returns400WhenTenantIdMissing() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections").build();
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("X-Tenant-Id header is required");
         }
 
         @Test
         @DisplayName("returns 400 when tenant ID header is blank")
-        void returns400WhenTenantIdBlank() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void returns400WhenTenantIdBlank() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "  ")
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("X-Tenant-Id header is required");
         }
 
         @Test
         @DisplayName("returns 404 for unknown endpoint")
-        void returns404ForUnknownEndpoint() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void returns404ForUnknownEndpoint() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.get("http://localhost/api/v1/unknown")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(404); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(404); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("Endpoint not found");
         }
 
         @Test
         @DisplayName("returns 500 on internal service exception")
-        void returns500OnInternalServiceException() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void returns500OnInternalServiceException() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .withBody("{\"invalid\": \"json\"}".getBytes(StandardCharsets.UTF_8)) // GH-90000
-                .build(); // GH-90000
+                .withBody("{\"invalid\": \"json\"}".getBytes(StandardCharsets.UTF_8)) 
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("Invalid request format");
         }
     }
@@ -140,84 +140,84 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("returns 400 when tenant ID header is missing")
-        void returns400WhenTenantIdMissing() { // GH-90000
-            WebhookService mockService = mock(WebhookService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
+        void returns400WhenTenantIdMissing() { 
+            WebhookService mockService = mock(WebhookService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
 
-            WebhookController controller = new WebhookController( // GH-90000
+            WebhookController controller = new WebhookController( 
                 mockService, mockMetrics, mockMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/webhooks").build();
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("X-Tenant-Id header is required");
         }
 
         @Test
         @DisplayName("returns 400 for invalid webhook ID")
-        void returns400ForInvalidWebhookId() { // GH-90000
-            WebhookService mockService = mock(WebhookService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
+        void returns400ForInvalidWebhookId() { 
+            WebhookService mockService = mock(WebhookService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
 
-            WebhookController controller = new WebhookController( // GH-90000
+            WebhookController controller = new WebhookController( 
                 mockService, mockMetrics, mockMapper);
 
             HttpRequest request = HttpRequest.get("http://localhost/api/webhooks/invalid-id")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("Invalid webhook ID");
         }
 
         @Test
         @DisplayName("returns 404 for unknown endpoint")
-        void returns404ForUnknownEndpoint() { // GH-90000
-            WebhookService mockService = mock(WebhookService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
+        void returns404ForUnknownEndpoint() { 
+            WebhookService mockService = mock(WebhookService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
 
-            WebhookController controller = new WebhookController( // GH-90000
+            WebhookController controller = new WebhookController( 
                 mockService, mockMetrics, mockMapper);
 
             HttpRequest request = HttpRequest.get("http://localhost/api/v1/unknown")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(404); // GH-90000
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(404); 
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(body).contains("Endpoint not found");
         }
 
         @Test
         @DisplayName("returns 400 for missing required webhook fields")
-        void returns400ForMissingRequiredWebhookFields() { // GH-90000
-            WebhookService mockService = mock(WebhookService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = new ObjectMapper(); // GH-90000
+        void returns400ForMissingRequiredWebhookFields() { 
+            WebhookService mockService = mock(WebhookService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = new ObjectMapper(); 
 
-            WebhookController controller = new WebhookController( // GH-90000
+            WebhookController controller = new WebhookController( 
                 mockService, mockMetrics, mockMapper);
 
             String body = "{\"url\": \"https://example.com/webhook\"}"; // Missing eventType
             HttpRequest request = HttpRequest.post("http://localhost/api/webhooks")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .withBody(body.getBytes(StandardCharsets.UTF_8)) // GH-90000
-                .build(); // GH-90000
+                .withBody(body.getBytes(StandardCharsets.UTF_8)) 
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
-            String responseBody = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
+            String responseBody = new String(response.getBody().array(), StandardCharsets.UTF_8); 
             assertThat(responseBody).contains("Missing required fields");
         }
     }
@@ -228,39 +228,39 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("error responses include JSON error field")
-        void errorResponsesIncludeJsonErrorField() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void errorResponsesIncludeJsonErrorField() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections").build();
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
-            assertThat(body).contains("\"error\""); // GH-90000
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
+            assertThat(body).contains("\"error\""); 
         }
 
         @Test
         @DisplayName("error responses include descriptive message")
-        void errorResponsesIncludeDescriptiveMessage() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void errorResponsesIncludeDescriptiveMessage() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections").build();
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); // GH-90000
-            assertThat(body).isNotEmpty(); // GH-90000
-            assertThat(body.length()).isGreaterThan(10); // GH-90000
+            String body = new String(response.getBody().array(), StandardCharsets.UTF_8); 
+            assertThat(body).isNotEmpty(); 
+            assertThat(body.length()).isGreaterThan(10); 
         }
     }
 
@@ -270,40 +270,40 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("records error metrics for missing tenant")
-        void recordsErrorMetricsForMissingTenant() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void recordsErrorMetricsForMissingTenant() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections").build();
-            runPromise(() -> controller.handle(request)); // GH-90000
+            runPromise(() -> controller.handle(request)); 
 
             // Verify metrics were recorded
-            // (In real test, would verify mockMetrics.incrementCounter was called) // GH-90000
+            // (In real test, would verify mockMetrics.incrementCounter was called) 
         }
 
         @Test
         @DisplayName("records error metrics for not found")
-        void recordsErrorMetricsForNotFound() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void recordsErrorMetricsForNotFound() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.get("http://localhost/api/v1/unknown")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .build(); // GH-90000
-            runPromise(() -> controller.handle(request)); // GH-90000
+                .build(); 
+            runPromise(() -> controller.handle(request)); 
 
             // Verify metrics were recorded
-            // (In real test, would verify mockMetrics.incrementCounter was called) // GH-90000
+            // (In real test, would verify mockMetrics.incrementCounter was called) 
         }
     }
 
@@ -313,88 +313,88 @@ class ApiErrorHandlingTest extends EventloopTestBase {
 
         @Test
         @DisplayName("handles null request body gracefully")
-        void handlesNullRequestBodyGracefully() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void handlesNullRequestBodyGracefully() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
             // Should handle gracefully with appropriate error
-            assertThat(response.getCode()).isBetween(400, 500); // GH-90000
+            assertThat(response.getCode()).isBetween(400, 500); 
         }
 
         @Test
         @DisplayName("handles malformed JSON gracefully")
-        void handlesMalformedJsonGracefully() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void handlesMalformedJsonGracefully() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             String malformedJson = "{\"name\": \"test\", invalid}";
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .withBody(malformedJson.getBytes(StandardCharsets.UTF_8)) // GH-90000
-                .build(); // GH-90000
+                .withBody(malformedJson.getBytes(StandardCharsets.UTF_8)) 
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("handles empty request body gracefully")
-        void handlesEmptyRequestBodyGracefully() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = new ObjectMapper(); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void handlesEmptyRequestBodyGracefully() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = new ObjectMapper(); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
-                .withBody(" ".getBytes(StandardCharsets.UTF_8)) // GH-90000
-                .build(); // GH-90000
+                .withBody(" ".getBytes(StandardCharsets.UTF_8)) 
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
-            assertThat(response.getCode()).isEqualTo(400); // GH-90000
+            assertThat(response.getCode()).isEqualTo(400); 
         }
 
         @Test
         @DisplayName("handles very long tenant ID gracefully")
-        void handlesVeryLongTenantIdGracefully() { // GH-90000
-            CollectionService mockService = mock(CollectionService.class); // GH-90000
-            MetricsCollector mockMetrics = mock(MetricsCollector.class); // GH-90000
-            ObjectMapper mockMapper = mock(ObjectMapper.class); // GH-90000
-            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); // GH-90000
+        void handlesVeryLongTenantIdGracefully() { 
+            CollectionService mockService = mock(CollectionService.class); 
+            MetricsCollector mockMetrics = mock(MetricsCollector.class); 
+            ObjectMapper mockMapper = mock(ObjectMapper.class); 
+            com.ghatana.datacloud.api.dto.DtoMapper mockDtoMapper = mock(com.ghatana.datacloud.api.dto.DtoMapper.class); 
 
-            CollectionController controller = new CollectionController( // GH-90000
+            CollectionController controller = new CollectionController( 
                 mockService, mockMetrics, mockMapper, mockDtoMapper);
 
-            String longTenantId = "a".repeat(10000); // GH-90000
+            String longTenantId = "a".repeat(10000); 
             HttpRequest request = HttpRequest.post("http://localhost/api/v1/collections")
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), longTenantId)
-                .build(); // GH-90000
+                .build(); 
 
-            HttpResponse response = runPromise(() -> controller.handle(request)); // GH-90000
+            HttpResponse response = runPromise(() -> controller.handle(request)); 
 
             // Should handle gracefully
-            assertThat(response.getCode()).isBetween(400, 500); // GH-90000
+            assertThat(response.getCode()).isBetween(400, 500); 
         }
     }
 }

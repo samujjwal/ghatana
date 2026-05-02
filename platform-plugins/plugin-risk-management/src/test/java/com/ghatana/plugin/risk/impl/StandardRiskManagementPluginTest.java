@@ -62,7 +62,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     void testMetadata() { 
         var metadata = riskPlugin.metadata(); 
         assertThat(metadata.name()).isEqualTo("Risk Management Plugin");
-        assertThat(metadata.version()).isEqualTo("1.0.0");
+        assertThat(metadata.version()).isEqualTo("1.2.0");
     }
 
     @Test
@@ -79,11 +79,11 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
         );
 
         Promise<RiskManagementPlugin.RiskScore> result =
-                riskPlugin.calculateRisk("portfolio1", RiskManagementPlugin.RiskType.MARKET, factors); 
+                riskPlugin.calculateRisk("portfolio1", RiskManagementPlugin.RiskModelId.MARKET, factors); 
         RiskManagementPlugin.RiskScore score = runPromise(() -> result); 
 
         assertThat(score.entityId()).isEqualTo("portfolio1");
-        assertThat(score.type()).isEqualTo(RiskManagementPlugin.RiskType.MARKET); 
+        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.MARKET); 
         assertThat(score.score()).isBetween(0.0, 1.0); 
         assertThat(score.componentScores()).isNotEmpty(); 
     }
@@ -101,10 +101,10 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
         );
 
         Promise<RiskManagementPlugin.RiskScore> result =
-                riskPlugin.calculateRisk("borrower1", RiskManagementPlugin.RiskType.CREDIT, factors); 
+                riskPlugin.calculateRisk("borrower1", RiskManagementPlugin.RiskModelId.CREDIT, factors); 
         RiskManagementPlugin.RiskScore score = runPromise(() -> result); 
 
-        assertThat(score.type()).isEqualTo(RiskManagementPlugin.RiskType.CREDIT); 
+        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.CREDIT); 
         assertThat(score.calculatedAt()).isNotNull(); 
     }
 
@@ -114,12 +114,12 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
         runPromise(() -> riskPlugin.initialize(mockContext) 
                 .then(v -> riskPlugin.start())); 
 
-        RiskManagementPlugin.RiskLimits limits = new RiskManagementPlugin.RiskLimits( 
-            new BigDecimal("10000000.00"),
-            new BigDecimal("50000000.00"),
-            new BigDecimal("1000000.00"),
-            new BigDecimal("1000000.00"),
-            new BigDecimal("500000.00")
+        Map<String, BigDecimal> limits = Map.of(
+            "position_size",     new BigDecimal("10000000.00"),
+            "max_exposure",      new BigDecimal("50000000.00"),
+            "max_var",           new BigDecimal("1000000.00"),
+            "max_concentration", new BigDecimal("1000000.00"),
+            "max_loss",          new BigDecimal("500000.00")
         );
 
         Promise<Void> result = riskPlugin.setRiskLimits("trader123", limits); 
@@ -150,7 +150,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
                 .then(v -> { 
                     Map<String, Object> factors = Map.of("volatility", 0.2); 
                     return riskPlugin.calculateRisk("entity456", 
-                        RiskManagementPlugin.RiskType.OPERATIONAL, factors);
+                        RiskManagementPlugin.RiskModelId.OPERATIONAL, factors);
                 }));
 
         Instant now = Instant.now(); 

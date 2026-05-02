@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,65 +42,65 @@ class YappcServerConfigTest {
 
         @Test
         @DisplayName("should have default port of 8080")
-        void shouldHaveDefaultPortOf8080() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.getPort()).isEqualTo(8080); // GH-90000
+        void shouldHaveDefaultPortOf8080() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.getPort()).isEqualTo(8080); 
         }
 
         @Test
         @DisplayName("should have default host of 0.0.0.0")
-        void shouldHaveDefaultHostOfAllInterfaces() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
+        void shouldHaveDefaultHostOfAllInterfaces() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
             assertThat(config.getHost()).isEqualTo("0.0.0.0");
         }
 
         @Test
         @DisplayName("should enable Swagger by default")
-        void shouldEnableSwaggerByDefault() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.isEnableSwagger()).isTrue(); // GH-90000
+        void shouldEnableSwaggerByDefault() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.isEnableSwagger()).isTrue(); 
         }
 
         @Test
         @DisplayName("should enable WebSocket by default")
-        void shouldEnableWebSocketByDefault() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.isEnableWebSocket()).isTrue(); // GH-90000
+        void shouldEnableWebSocketByDefault() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.isEnableWebSocket()).isTrue(); 
         }
 
         @Test
         @DisplayName("should enable CORS by default")
-        void shouldEnableCORSByDefault() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.isEnableCors()).isTrue(); // GH-90000
+        void shouldEnableCORSByDefault() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.isEnableCors()).isTrue(); 
         }
 
         @Test
         @DisplayName("should have default max request size of 10MB")
-        void shouldHaveDefaultMaxRequestSize() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.getMaxRequestSize()).isEqualTo(10 * 1024 * 1024); // GH-90000
+        void shouldHaveDefaultMaxRequestSize() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.getMaxRequestSize()).isEqualTo(10 * 1024 * 1024); 
         }
 
         @Test
         @DisplayName("should have default request timeout of 30s")
-        void shouldHaveDefaultRequestTimeout() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.getRequestTimeoutMs()).isEqualTo(30000); // GH-90000
+        void shouldHaveDefaultRequestTimeout() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.getRequestTimeoutMs()).isEqualTo(30000); 
         }
 
         @Test
         @DisplayName("should have workspace path set to current directory")
-        void shouldHaveWorkspacePathSetToCurrentDirectory() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.getWorkspacePath()).isNotNull(); // GH-90000
+        void shouldHaveWorkspacePathSetToCurrentDirectory() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.getWorkspacePath()).isNotNull(); 
         }
 
         @Test
         @DisplayName("should have packs path set")
-        void shouldHavePacksPathSet() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.defaults(); // GH-90000
-            assertThat(config.getPacksPath()).isNotNull(); // GH-90000
+        void shouldHavePacksPathSet() { 
+            YappcServerConfig config = YappcServerConfig.defaults(); 
+            assertThat(config.getPacksPath()).isNotNull(); 
         }
     }
 
@@ -110,128 +110,128 @@ class YappcServerConfigTest {
 
         @Test
         @DisplayName("should set custom port")
-        void shouldSetCustomPort() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .port(9090) // GH-90000
-                    .build(); // GH-90000
+        void shouldSetCustomPort() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .port(9090) 
+                    .build(); 
 
-            assertThat(config.getPort()).isEqualTo(9090); // GH-90000
+            assertThat(config.getPort()).isEqualTo(9090); 
         }
 
         @Test
         @DisplayName("should set custom host")
-        void shouldSetCustomHost() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
+        void shouldSetCustomHost() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
                     .host("127.0.0.1")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(config.getHost()).isEqualTo("127.0.0.1");
         }
 
         @Test
         @DisplayName("should set custom packs path")
-        void shouldSetCustomPacksPath() { // GH-90000
+        void shouldSetCustomPacksPath() { 
             Path customPath = Paths.get("/custom/packs");
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .packsPath(customPath) // GH-90000
-                    .build(); // GH-90000
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .packsPath(customPath) 
+                    .build(); 
 
-            assertThat(config.getPacksPath()).isEqualTo(customPath); // GH-90000
+            assertThat(config.getPacksPath()).isEqualTo(customPath); 
         }
 
         @Test
         @DisplayName("should set custom workspace path")
-        void shouldSetCustomWorkspacePath() { // GH-90000
+        void shouldSetCustomWorkspacePath() { 
             Path customPath = Paths.get("/custom/workspace");
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .workspacePath(customPath) // GH-90000
-                    .build(); // GH-90000
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .workspacePath(customPath) 
+                    .build(); 
 
-            assertThat(config.getWorkspacePath()).isEqualTo(customPath); // GH-90000
+            assertThat(config.getWorkspacePath()).isEqualTo(customPath); 
         }
 
         @Test
         @DisplayName("should disable Swagger")
-        void shouldDisableSwagger() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .enableSwagger(false) // GH-90000
-                    .build(); // GH-90000
+        void shouldDisableSwagger() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .enableSwagger(false) 
+                    .build(); 
 
-            assertThat(config.isEnableSwagger()).isFalse(); // GH-90000
+            assertThat(config.isEnableSwagger()).isFalse(); 
         }
 
         @Test
         @DisplayName("should disable WebSocket")
-        void shouldDisableWebSocket() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .enableWebSocket(false) // GH-90000
-                    .build(); // GH-90000
+        void shouldDisableWebSocket() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .enableWebSocket(false) 
+                    .build(); 
 
-            assertThat(config.isEnableWebSocket()).isFalse(); // GH-90000
+            assertThat(config.isEnableWebSocket()).isFalse(); 
         }
 
         @Test
         @DisplayName("should disable CORS")
-        void shouldDisableCORS() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .enableCors(false) // GH-90000
-                    .build(); // GH-90000
+        void shouldDisableCORS() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .enableCors(false) 
+                    .build(); 
 
-            assertThat(config.isEnableCors()).isFalse(); // GH-90000
+            assertThat(config.isEnableCors()).isFalse(); 
         }
 
         @Test
         @DisplayName("should set custom CORS origin")
-        void shouldSetCustomCORSOrigin() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
+        void shouldSetCustomCORSOrigin() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
                     .corsOrigin("https://example.com")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(config.getCorsOrigin()).isEqualTo("https://example.com");
         }
 
         @Test
         @DisplayName("should set custom max request size")
-        void shouldSetCustomMaxRequestSize() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .maxRequestSize(5 * 1024 * 1024) // GH-90000
-                    .build(); // GH-90000
+        void shouldSetCustomMaxRequestSize() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .maxRequestSize(5 * 1024 * 1024) 
+                    .build(); 
 
-            assertThat(config.getMaxRequestSize()).isEqualTo(5 * 1024 * 1024); // GH-90000
+            assertThat(config.getMaxRequestSize()).isEqualTo(5 * 1024 * 1024); 
         }
 
         @Test
         @DisplayName("should set custom request timeout")
-        void shouldSetCustomRequestTimeout() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .requestTimeoutMs(60000) // GH-90000
-                    .build(); // GH-90000
+        void shouldSetCustomRequestTimeout() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .requestTimeoutMs(60000) 
+                    .build(); 
 
-            assertThat(config.getRequestTimeoutMs()).isEqualTo(60000); // GH-90000
+            assertThat(config.getRequestTimeoutMs()).isEqualTo(60000); 
         }
 
         @Test
         @DisplayName("should chain builder methods")
-        void shouldChainBuilderMethods() { // GH-90000
-            YappcServerConfig config = YappcServerConfig.builder() // GH-90000
-                    .port(9090) // GH-90000
+        void shouldChainBuilderMethods() { 
+            YappcServerConfig config = YappcServerConfig.builder() 
+                    .port(9090) 
                     .host("localhost")
-                    .enableSwagger(true) // GH-90000
-                    .enableWebSocket(true) // GH-90000
-                    .enableCors(true) // GH-90000
+                    .enableSwagger(true) 
+                    .enableWebSocket(true) 
+                    .enableCors(true) 
                     .corsOrigin("https://app.example.com")
-                    .maxRequestSize(20 * 1024 * 1024) // GH-90000
-                    .requestTimeoutMs(45000) // GH-90000
-                    .build(); // GH-90000
+                    .maxRequestSize(20 * 1024 * 1024) 
+                    .requestTimeoutMs(45000) 
+                    .build(); 
 
-            assertThat(config.getPort()).isEqualTo(9090); // GH-90000
+            assertThat(config.getPort()).isEqualTo(9090); 
             assertThat(config.getHost()).isEqualTo("localhost");
-            assertThat(config.isEnableSwagger()).isTrue(); // GH-90000
-            assertThat(config.isEnableWebSocket()).isTrue(); // GH-90000
-            assertThat(config.isEnableCors()).isTrue(); // GH-90000
+            assertThat(config.isEnableSwagger()).isTrue(); 
+            assertThat(config.isEnableWebSocket()).isTrue(); 
+            assertThat(config.isEnableCors()).isTrue(); 
             assertThat(config.getCorsOrigin()).isEqualTo("https://app.example.com");
-            assertThat(config.getMaxRequestSize()).isEqualTo(20 * 1024 * 1024); // GH-90000
-            assertThat(config.getRequestTimeoutMs()).isEqualTo(45000); // GH-90000
+            assertThat(config.getMaxRequestSize()).isEqualTo(20 * 1024 * 1024); 
+            assertThat(config.getRequestTimeoutMs()).isEqualTo(45000); 
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.observability;
@@ -28,143 +28,143 @@ class ObservabilityLauncherTest {
     private ObservabilityLauncher launcher;
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (launcher != null) { // GH-90000
-            launcher.shutdown(); // GH-90000
+    void tearDown() { 
+        if (launcher != null) { 
+            launcher.shutdown(); 
         }
     }
 
     @Test
     @DisplayName("Should create launcher with minimal configuration")
-    void shouldCreateLauncherWithMinimalConfiguration() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldCreateLauncherWithMinimalConfiguration() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(launcher).isNotNull(); // GH-90000
+        assertThat(launcher).isNotNull(); 
         assertThat(launcher.getServiceName()).isEqualTo("test-service");
         assertThat(launcher.getServiceVersion()).isEqualTo("1.0.0");
-        assertThat(launcher.getMetricsCollector()).isNotNull(); // GH-90000
-        assertThat(launcher.getTracingManager()).isNotNull(); // GH-90000
-        assertThat(launcher.getMeterRegistry()).isNotNull(); // GH-90000
-        assertThat(launcher.getMetricsRegistry()).isNotNull(); // GH-90000
-        assertThat(launcher.getOpenTelemetry()).isNotNull(); // GH-90000
+        assertThat(launcher.getMetricsCollector()).isNotNull(); 
+        assertThat(launcher.getTracingManager()).isNotNull(); 
+        assertThat(launcher.getMeterRegistry()).isNotNull(); 
+        assertThat(launcher.getMetricsRegistry()).isNotNull(); 
+        assertThat(launcher.getOpenTelemetry()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should create launcher with custom configuration")
-    void shouldCreateLauncherWithCustomConfiguration() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldCreateLauncherWithCustomConfiguration() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
             .serviceVersion("2.0.0")
             .environment("production")
-            .enableTracing(true) // GH-90000
-            .build(); // GH-90000
+            .enableTracing(true) 
+            .build(); 
 
-        assertThat(launcher).isNotNull(); // GH-90000
+        assertThat(launcher).isNotNull(); 
         assertThat(launcher.getServiceName()).isEqualTo("test-service");
         assertThat(launcher.getServiceVersion()).isEqualTo("2.0.0");
-        assertThat(launcher.getMeterRegistry()).isInstanceOf(SimpleMeterRegistry.class); // GH-90000
+        assertThat(launcher.getMeterRegistry()).isInstanceOf(SimpleMeterRegistry.class); 
     }
 
     @Test
     @DisplayName("Should fail when service name is null")
-    void shouldFailWhenServiceNameIsNull() { // GH-90000
-        assertThatThrownBy(() ->  // GH-90000
-            ObservabilityLauncher.builder().build() // GH-90000
-        ).isInstanceOf(IllegalStateException.class) // GH-90000
+    void shouldFailWhenServiceNameIsNull() { 
+        assertThatThrownBy(() ->  
+            ObservabilityLauncher.builder().build() 
+        ).isInstanceOf(IllegalStateException.class) 
          .hasMessageContaining("serviceName is required");
     }
 
     @Test
     @DisplayName("Should fail when service name is blank")
-    void shouldFailWhenServiceNameIsBlank() { // GH-90000
-        assertThatThrownBy(() ->  // GH-90000
-            ObservabilityLauncher.builder() // GH-90000
+    void shouldFailWhenServiceNameIsBlank() { 
+        assertThatThrownBy(() ->  
+            ObservabilityLauncher.builder() 
                 .serviceName("  ")
-                .build() // GH-90000
-        ).isInstanceOf(IllegalStateException.class) // GH-90000
+                .build() 
+        ).isInstanceOf(IllegalStateException.class) 
          .hasMessageContaining("serviceName is required");
     }
 
     @Test
     @DisplayName("Should use SimpleMeterRegistry by default")
-    void shouldUseSimpleMeterRegistryByDefault() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldUseSimpleMeterRegistryByDefault() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(launcher.getMeterRegistry()).isInstanceOf(SimpleMeterRegistry.class); // GH-90000
+        assertThat(launcher.getMeterRegistry()).isInstanceOf(SimpleMeterRegistry.class); 
     }
 
     @Test
     @DisplayName("Should disable tracing when configured")
-    void shouldDisableTracingWhenConfigured() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldDisableTracingWhenConfigured() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .enableTracing(false) // GH-90000
-            .build(); // GH-90000
+            .enableTracing(false) 
+            .build(); 
 
-        assertThat(launcher.getOpenTelemetry()).isNotNull(); // GH-90000
-        assertThat(launcher.getTracingManager()).isNotNull(); // GH-90000
+        assertThat(launcher.getOpenTelemetry()).isNotNull(); 
+        assertThat(launcher.getTracingManager()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should record metrics through MetricsCollector")
-    void shouldRecordMetricsThroughMetricsCollector() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldRecordMetricsThroughMetricsCollector() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
-        MetricsCollector collector = launcher.getMetricsCollector(); // GH-90000
-        collector.incrementCounter("test.metric", "tag", "value"); // GH-90000
+        MetricsCollector collector = launcher.getMetricsCollector(); 
+        collector.incrementCounter("test.metric", "tag", "value"); 
 
-        MeterRegistry registry = launcher.getMeterRegistry(); // GH-90000
+        MeterRegistry registry = launcher.getMeterRegistry(); 
         assertThat(registry.get("test.metric").counters().size()).isGreaterThan(0);
     }
 
     @Test
     @DisplayName("Should shutdown gracefully")
-    void shouldShutdownGracefully() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldShutdownGracefully() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
-        launcher.shutdown(); // GH-90000
+        launcher.shutdown(); 
         // No exception should be thrown
     }
 
     @Test
     @DisplayName("Should handle multiple shutdowns gracefully")
-    void shouldHandleMultipleShutdownsGracefully() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldHandleMultipleShutdownsGracefully() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
-        launcher.shutdown(); // GH-90000
-        launcher.shutdown(); // Should not throw exception // GH-90000
+        launcher.shutdown(); 
+        launcher.shutdown(); // Should not throw exception 
     }
 
     @Test
     @DisplayName("Should create launcher with custom SpanExporter")
-    void shouldCreateLauncherWithCustomSpanExporter() { // GH-90000
-        SpanExporter customExporter = new InMemorySpanExporter(); // GH-90000
+    void shouldCreateLauncherWithCustomSpanExporter() { 
+        SpanExporter customExporter = new InMemorySpanExporter(); 
         
-        launcher = ObservabilityLauncher.builder() // GH-90000
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .spanExporter(customExporter) // GH-90000
-            .build(); // GH-90000
+            .spanExporter(customExporter) 
+            .build(); 
 
-        assertThat(launcher).isNotNull(); // GH-90000
-        assertThat(launcher.getOpenTelemetry()).isNotNull(); // GH-90000
+        assertThat(launcher).isNotNull(); 
+        assertThat(launcher.getOpenTelemetry()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should use default environment when not specified")
-    void shouldUseDefaultEnvironmentWhenNotSpecified() { // GH-90000
-        launcher = ObservabilityLauncher.builder() // GH-90000
+    void shouldUseDefaultEnvironmentWhenNotSpecified() { 
+        launcher = ObservabilityLauncher.builder() 
             .serviceName("test-service")
-            .build(); // GH-90000
+            .build(); 
 
         assertThat(launcher.getServiceName()).isEqualTo("test-service");
         // Environment defaults to "default" in MetricsRegistry.initialize

@@ -27,65 +27,65 @@ class AgentDiscoveryTest {
 
     @Test
     @DisplayName("Should discover agents")
-    void shouldDiscoverAgents() { // GH-90000
-        TypedAgent<?, ?> agent = mock(TypedAgent.class); // GH-90000
-        AgentDescriptor descriptor = mock(AgentDescriptor.class); // GH-90000
+    void shouldDiscoverAgents() { 
+        TypedAgent<?, ?> agent = mock(TypedAgent.class); 
+        AgentDescriptor descriptor = mock(AgentDescriptor.class); 
 
-        when(agent.descriptor()).thenReturn(descriptor); // GH-90000
+        when(agent.descriptor()).thenReturn(descriptor); 
 
-        assertThat(agent).isNotNull(); // GH-90000
-        assertThat(descriptor).isNotNull(); // GH-90000
+        assertThat(agent).isNotNull(); 
+        assertThat(descriptor).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should lookup agents by ID")
-    void shouldLookupAgentsById() { // GH-90000
+    void shouldLookupAgentsById() { 
         String agentId = "data-cloud:agent.data-cloud.anomaly-detector";
 
-        assertThat(agentId).isNotNull(); // GH-90000
+        assertThat(agentId).isNotNull(); 
         assertThat(agentId).contains(":");
     }
 
     @Test
     @DisplayName("Should search agents by capability")
-    void shouldSearchAgentsByCapability() { // GH-90000
+    void shouldSearchAgentsByCapability() { 
         String capability = "anomaly-detection";
-        Set<String> capabilities = Set.of("anomaly-detection", "statistical-analysis", "outlier-identification"); // GH-90000
+        Set<String> capabilities = Set.of("anomaly-detection", "statistical-analysis", "outlier-identification"); 
 
-        assertThat(capability).isIn(capabilities); // GH-90000
+        assertThat(capability).isIn(capabilities); 
     }
 
     @Test
     @DisplayName("Should handle agent metadata")
-    void shouldHandleAgentMetadata() { // GH-90000
-        AgentDescriptor descriptor = AgentDescriptor.builder() // GH-90000
+    void shouldHandleAgentMetadata() { 
+        AgentDescriptor descriptor = AgentDescriptor.builder() 
             .agentId("test-agent")
             .name("Test Agent")
             .version("1.0.0")
             .namespace("test")
             .capabilities(Set.of("test-capability"))
-            .build(); // GH-90000
+            .build(); 
 
-        assertThat(descriptor).isNotNull(); // GH-90000
+        assertThat(descriptor).isNotNull(); 
         assertThat(descriptor.getAgentId()).isEqualTo("test-agent");
         assertThat(descriptor.getVersion()).isEqualTo("1.0.0");
     }
 
     @Test
     @DisplayName("Should handle discovery failures")
-    void shouldHandleDiscoveryFailures() { // GH-90000
+    void shouldHandleDiscoveryFailures() { 
         String agentId = "non-existent-agent";
 
-        assertThat(agentId).isNotNull(); // GH-90000
+        assertThat(agentId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle agent availability")
-    void shouldHandleAgentAvailability() { // GH-90000
+    void shouldHandleAgentAvailability() { 
         boolean available = true;
         boolean registered = true;
 
-        assertThat(available).isTrue(); // GH-90000
-        assertThat(registered).isTrue(); // GH-90000
+        assertThat(available).isTrue(); 
+        assertThat(registered).isTrue(); 
     }
 }

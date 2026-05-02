@@ -21,7 +21,7 @@ class MediaPipelineIntegrationTest {
 
     @Test
     @DisplayName("detectAudioFormat identifies WAV by header")
-    void shouldDetectWavHeader() { // GH-90000
+    void shouldDetectWavHeader() { 
         byte[] wavHeader = new byte[] {
             'R', 'I', 'F', 'F', 0, 0, 0, 0,
             'W', 'A', 'V', 'E', 'f', 'm', 't', ' '
@@ -32,15 +32,15 @@ class MediaPipelineIntegrationTest {
 
     @Test
     @DisplayName("STT engine factory returns an engine instance")
-    void shouldCreateSttEngine() { // GH-90000
+    void shouldCreateSttEngine() { 
         SttConfig config = SttConfig.builder().modelId("whisper-tiny").build();
-        assertThat(SttEngineFactory.create(config, null)).isNotNull(); // GH-90000
+        assertThat(SttEngineFactory.create(config, null)).isNotNull(); 
     }
 
     @Test
     @DisplayName("TTS engine factory returns an engine instance")
-    void shouldCreateTtsEngine() { // GH-90000
+    void shouldCreateTtsEngine() { 
         TtsConfig config = TtsConfig.builder().defaultVoiceId("en-us").build();
-        assertThat(TtsEngineFactory.create(config, null)).isNotNull(); // GH-90000
+        assertThat(TtsEngineFactory.create(config, null)).isNotNull(); 
     }
 }

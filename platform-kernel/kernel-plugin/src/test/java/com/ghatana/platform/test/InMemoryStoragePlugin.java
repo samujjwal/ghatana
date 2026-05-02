@@ -33,7 +33,7 @@ public class InMemoryStoragePlugin implements StoragePlugin<String> {
             Set.of(), 
             Map.of(), 
             Set.of(), 
-            PluginCompatibility.dataCloudVersion("1.0.0")
+            PluginCompatibility.atLeast("1.0.0")
         );
     }
 

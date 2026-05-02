@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.integration;
@@ -44,11 +44,11 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should redact PII from log messages")
-    void shouldRedactPIIFromLogMessages() { // GH-90000
-        PIIRedactor redactor = new PIIRedactor(); // GH-90000
+    void shouldRedactPIIFromLogMessages() { 
+        PIIRedactor redactor = new PIIRedactor(); 
         
         String logMessage = "User john.doe@example.com with phone 555-123-4567 and SSN 123-45-6789 logged in from IP 192.168.1.100";
-        String redacted = redactor.redact(logMessage); // GH-90000
+        String redacted = redactor.redact(logMessage); 
         
         assertThat(redacted).doesNotContain("john.doe@example.com");
         assertThat(redacted).doesNotContain("555-123-4567");
@@ -60,16 +60,16 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should redact PII from API responses")
-    void shouldRedactPIIFromAPIResponses() { // GH-90000
-        PIIRedactor redactor = new PIIRedactor(); // GH-90000
+    void shouldRedactPIIFromAPIResponses() { 
+        PIIRedactor redactor = new PIIRedactor(); 
         
-        Map<String, Object> userResponse = new HashMap<>(); // GH-90000
-        userResponse.put("id", "user-123"); // GH-90000
-        userResponse.put("email", "user@example.com"); // GH-90000
-        userResponse.put("phone", "555-987-6543"); // GH-90000
-        userResponse.put("address", "123 Main St, Anytown, CA 12345"); // GH-90000
+        Map<String, Object> userResponse = new HashMap<>(); 
+        userResponse.put("id", "user-123"); 
+        userResponse.put("email", "user@example.com"); 
+        userResponse.put("phone", "555-987-6543"); 
+        userResponse.put("address", "123 Main St, Anytown, CA 12345"); 
         
-        Map<String, Object> redactedResponse = redactor.redactMap(userResponse); // GH-90000
+        Map<String, Object> redactedResponse = redactor.redactMap(userResponse); 
         
         assertThat(redactedResponse.get("email")).isNotEqualTo("user@example.com");
         assertThat(redactedResponse.get("phone")).isNotEqualTo("555-987-6543");
@@ -78,11 +78,11 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should detect and redact credit card numbers")
-    void shouldDetectAndRedactCreditCardNumbers() { // GH-90000
-        PIIRedactor redactor = new PIIRedactor(); // GH-90000
+    void shouldDetectAndRedactCreditCardNumbers() { 
+        PIIRedactor redactor = new PIIRedactor(); 
         
         String paymentData = "Payment with card 4111-1111-1111-1111 succeeded";
-        String redacted = redactor.redact(paymentData); // GH-90000
+        String redacted = redactor.redact(paymentData); 
         
         assertThat(redacted).doesNotContain("4111-1111-1111-1111");
         assertThat(redacted).contains("****-1111");
@@ -90,11 +90,11 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should detect and redact API keys and tokens")
-    void shouldDetectAndRedactApiKeysAndTokens() { // GH-90000
-        PIIRedactor redactor = new PIIRedactor(); // GH-90000
+    void shouldDetectAndRedactApiKeysAndTokens() { 
+        PIIRedactor redactor = new PIIRedactor(); 
         
         String configData = "api_key=sk_live_1234567890abcdef&token=xyza987654321";
-        String redacted = redactor.redact(configData); // GH-90000
+        String redacted = redactor.redact(configData); 
         
         assertThat(redacted).doesNotContain("sk_live_1234567890abcdef");
         assertThat(redacted).doesNotContain("xyza987654321");
@@ -103,10 +103,10 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should log audit events for sensitive operations")
-    void shouldLogAuditEventsForSensitiveOperations() { // GH-90000
-        AuditLogger auditLogger = new AuditLogger(); // GH-90000
+    void shouldLogAuditEventsForSensitiveOperations() { 
+        AuditLogger auditLogger = new AuditLogger(); 
         
-        AuditEvent loginEvent = new AuditEvent.Builder() // GH-90000
+        AuditEvent loginEvent = new AuditEvent.Builder() 
             .eventType("USER_LOGIN")
             .userId("user-123")
             .tenantId("tenant-456")
@@ -114,26 +114,26 @@ class SecurityPrivacyTest {
             .resourceId("user-123")
             .action("LOGIN")
             .outcome("SUCCESS")
-            .timestamp(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .timestamp(Instant.now()) 
+            .build(); 
         
-        auditLogger.log(loginEvent); // GH-90000
+        auditLogger.log(loginEvent); 
         
-        assertThat(auditLogger.getEventCount()).isEqualTo(1); // GH-90000
+        assertThat(auditLogger.getEventCount()).isEqualTo(1); 
         assertThat(auditLogger.getLastEvent().getEventType()).isEqualTo("USER_LOGIN");
     }
 
     @Test
     @DisplayName("Should log audit events with proper metadata")
-    void shouldLogAuditEventsWithProperMetadata() { // GH-90000
-        AuditLogger auditLogger = new AuditLogger(); // GH-90000
+    void shouldLogAuditEventsWithProperMetadata() { 
+        AuditLogger auditLogger = new AuditLogger(); 
         
-        Map<String, String> metadata = new HashMap<>(); // GH-90000
-        metadata.put("ip_address", "192.168.1.100"); // GH-90000
-        metadata.put("user_agent", "Mozilla/5.0"); // GH-90000
-        metadata.put("session_id", UUID.randomUUID().toString()); // GH-90000
+        Map<String, String> metadata = new HashMap<>(); 
+        metadata.put("ip_address", "192.168.1.100"); 
+        metadata.put("user_agent", "Mozilla/5.0"); 
+        metadata.put("session_id", UUID.randomUUID().toString()); 
         
-        AuditEvent event = new AuditEvent.Builder() // GH-90000
+        AuditEvent event = new AuditEvent.Builder() 
             .eventType("DATA_ACCESS")
             .userId("user-123")
             .tenantId("tenant-456")
@@ -141,13 +141,13 @@ class SecurityPrivacyTest {
             .resourceId("collection-789")
             .action("READ")
             .outcome("SUCCESS")
-            .metadata(metadata) // GH-90000
-            .timestamp(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .metadata(metadata) 
+            .timestamp(Instant.now()) 
+            .build(); 
         
-        auditLogger.log(event); // GH-90000
+        auditLogger.log(event); 
         
-        AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
+        AuditEvent loggedEvent = auditLogger.getLastEvent(); 
         assertThat(loggedEvent.getMetadata()).containsKey("ip_address");
         assertThat(loggedEvent.getMetadata()).containsKey("user_agent");
         assertThat(loggedEvent.getMetadata()).containsKey("session_id");
@@ -155,10 +155,10 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should log failed authorization attempts")
-    void shouldLogFailedAuthorizationAttempts() { // GH-90000
-        AuditLogger auditLogger = new AuditLogger(); // GH-90000
+    void shouldLogFailedAuthorizationAttempts() { 
+        AuditLogger auditLogger = new AuditLogger(); 
         
-        AuditEvent authFailureEvent = new AuditEvent.Builder() // GH-90000
+        AuditEvent authFailureEvent = new AuditEvent.Builder() 
             .eventType("AUTHORIZATION_FAILED")
             .userId("user-123")
             .tenantId("tenant-456")
@@ -167,188 +167,188 @@ class SecurityPrivacyTest {
             .action("DELETE")
             .outcome("FAILURE")
             .failureReason("INSUFFICIENT_PERMISSIONS")
-            .timestamp(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .timestamp(Instant.now()) 
+            .build(); 
         
-        auditLogger.log(authFailureEvent); // GH-90000
+        auditLogger.log(authFailureEvent); 
         
-        AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
+        AuditEvent loggedEvent = auditLogger.getLastEvent(); 
         assertThat(loggedEvent.getOutcome()).isEqualTo("FAILURE");
         assertThat(loggedEvent.getFailureReason()).isEqualTo("INSUFFICIENT_PERMISSIONS");
     }
 
     @Test
     @DisplayName("Should enforce RBAC permissions correctly")
-    void shouldEnforceRBACPermissionsCorrectly() { // GH-90000
-        RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
+    void shouldEnforceRBACPermissionsCorrectly() { 
+        RBACEnforcer rbac = new RBACEnforcer(); 
         
         // Define roles and permissions
-        rbac.addRole("admin", List.of("READ", "WRITE", "DELETE", "ADMIN")); // GH-90000
-        rbac.addRole("editor", List.of("READ", "WRITE")); // GH-90000
+        rbac.addRole("admin", List.of("READ", "WRITE", "DELETE", "ADMIN")); 
+        rbac.addRole("editor", List.of("READ", "WRITE")); 
         rbac.addRole("viewer", List.of("READ"));
         
         // Assign user to role
-        rbac.assignRole("user-123", "editor"); // GH-90000
+        rbac.assignRole("user-123", "editor"); 
         
         // Check permissions
-        assertThat(rbac.hasPermission("user-123", "READ")).isTrue(); // GH-90000
-        assertThat(rbac.hasPermission("user-123", "WRITE")).isTrue(); // GH-90000
-        assertThat(rbac.hasPermission("user-123", "DELETE")).isFalse(); // GH-90000
-        assertThat(rbac.hasPermission("user-123", "ADMIN")).isFalse(); // GH-90000
+        assertThat(rbac.hasPermission("user-123", "READ")).isTrue(); 
+        assertThat(rbac.hasPermission("user-123", "WRITE")).isTrue(); 
+        assertThat(rbac.hasPermission("user-123", "DELETE")).isFalse(); 
+        assertThat(rbac.hasPermission("user-123", "ADMIN")).isFalse(); 
     }
 
     @Test
     @DisplayName("Should enforce resource-level RBAC permissions")
-    void shouldEnforceResourceLevelRBACPermissions() { // GH-90000
-        RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
+    void shouldEnforceResourceLevelRBACPermissions() { 
+        RBACEnforcer rbac = new RBACEnforcer(); 
         
         // Define resource-specific permissions
-        rbac.addResourcePermission("user-123", "collection-abc", "READ"); // GH-90000
-        rbac.addResourcePermission("user-123", "collection-def", "WRITE"); // GH-90000
+        rbac.addResourcePermission("user-123", "collection-abc", "READ"); 
+        rbac.addResourcePermission("user-123", "collection-def", "WRITE"); 
         
         // Check resource permissions
-        assertThat(rbac.hasResourcePermission("user-123", "collection-abc", "READ")).isTrue(); // GH-90000
-        assertThat(rbac.hasResourcePermission("user-123", "collection-abc", "WRITE")).isFalse(); // GH-90000
-        assertThat(rbac.hasResourcePermission("user-123", "collection-def", "WRITE")).isTrue(); // GH-90000
+        assertThat(rbac.hasResourcePermission("user-123", "collection-abc", "READ")).isTrue(); 
+        assertThat(rbac.hasResourcePermission("user-123", "collection-abc", "WRITE")).isFalse(); 
+        assertThat(rbac.hasResourcePermission("user-123", "collection-def", "WRITE")).isTrue(); 
     }
 
     @Test
     @DisplayName("Should deny access when role is not assigned")
-    void shouldDenyAccessWhenRoleIsNotAssigned() { // GH-90000
-        RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
+    void shouldDenyAccessWhenRoleIsNotAssigned() { 
+        RBACEnforcer rbac = new RBACEnforcer(); 
         
-        rbac.addRole("admin", List.of("READ", "WRITE", "DELETE")); // GH-90000
+        rbac.addRole("admin", List.of("READ", "WRITE", "DELETE")); 
         
         // User has no role assigned
-        assertThat(rbac.hasPermission("user-999", "READ")).isFalse(); // GH-90000
-        assertThat(rbac.hasPermission("user-999", "WRITE")).isFalse(); // GH-90000
+        assertThat(rbac.hasPermission("user-999", "READ")).isFalse(); 
+        assertThat(rbac.hasPermission("user-999", "WRITE")).isFalse(); 
     }
 
     @Test
     @DisplayName("Should support role hierarchy")
-    void shouldSupportRoleHierarchy() { // GH-90000
-        RBACEnforcer rbac = new RBACEnforcer(); // GH-90000
+    void shouldSupportRoleHierarchy() { 
+        RBACEnforcer rbac = new RBACEnforcer(); 
         
         // Define role hierarchy
-        rbac.addRoleHierarchy("admin", List.of("editor", "viewer")); // GH-90000
+        rbac.addRoleHierarchy("admin", List.of("editor", "viewer")); 
         rbac.addRoleHierarchy("editor", List.of("viewer"));
         
         rbac.addRole("viewer", List.of("READ"));
-        rbac.addRole("editor", List.of("READ", "WRITE")); // GH-90000
+        rbac.addRole("editor", List.of("READ", "WRITE")); 
         rbac.addRole("admin", List.of("DELETE"));
         
         // Assign user to admin role
-        rbac.assignRole("user-123", "admin"); // GH-90000
+        rbac.assignRole("user-123", "admin"); 
         
         // Admin should have all permissions including inherited
-        assertThat(rbac.hasPermission("user-123", "READ")).isTrue(); // GH-90000
-        assertThat(rbac.hasPermission("user-123", "WRITE")).isTrue(); // GH-90000
-        assertThat(rbac.hasPermission("user-123", "DELETE")).isTrue(); // GH-90000
+        assertThat(rbac.hasPermission("user-123", "READ")).isTrue(); 
+        assertThat(rbac.hasPermission("user-123", "WRITE")).isTrue(); 
+        assertThat(rbac.hasPermission("user-123", "DELETE")).isTrue(); 
     }
 
     @Test
     @DisplayName("Should encrypt sensitive data at rest")
-    void shouldEncryptSensitiveDataAtRest() { // GH-90000
-        EncryptionService encryption = new EncryptionService(); // GH-90000
+    void shouldEncryptSensitiveDataAtRest() { 
+        EncryptionService encryption = new EncryptionService(); 
         
         String sensitiveData = "This is sensitive information";
-        String encrypted = encryption.encrypt(sensitiveData); // GH-90000
+        String encrypted = encryption.encrypt(sensitiveData); 
         
-        assertThat(encrypted).isNotEqualTo(sensitiveData); // GH-90000
+        assertThat(encrypted).isNotEqualTo(sensitiveData); 
         assertThat(encrypted).doesNotContain("sensitive");
     }
 
     @Test
     @DisplayName("Should decrypt encrypted data correctly")
-    void shouldDecryptEncryptedDataCorrectly() { // GH-90000
-        EncryptionService encryption = new EncryptionService(); // GH-90000
+    void shouldDecryptEncryptedDataCorrectly() { 
+        EncryptionService encryption = new EncryptionService(); 
         
         String originalData = "This is sensitive information";
-        String encrypted = encryption.encrypt(originalData); // GH-90000
-        String decrypted = encryption.decrypt(encrypted); // GH-90000
+        String encrypted = encryption.encrypt(originalData); 
+        String decrypted = encryption.decrypt(encrypted); 
         
-        assertThat(decrypted).isEqualTo(originalData); // GH-90000
+        assertThat(decrypted).isEqualTo(originalData); 
     }
 
     @Test
     @DisplayName("Should generate secure random tokens")
-    void shouldGenerateSecureRandomTokens() { // GH-90000
-        TokenGenerator tokenGenerator = new TokenGenerator(); // GH-90000
+    void shouldGenerateSecureRandomTokens() { 
+        TokenGenerator tokenGenerator = new TokenGenerator(); 
         
-        String token1 = tokenGenerator.generateSecureToken(32); // GH-90000
-        String token2 = tokenGenerator.generateSecureToken(32); // GH-90000
+        String token1 = tokenGenerator.generateSecureToken(32); 
+        String token2 = tokenGenerator.generateSecureToken(32); 
         
-        assertThat(token1).hasSize(64); // Hex encoded 32 bytes = 64 chars // GH-90000
-        assertThat(token2).hasSize(64); // GH-90000
-        assertThat(token1).isNotEqualTo(token2); // GH-90000
+        assertThat(token1).hasSize(64); // Hex encoded 32 bytes = 64 chars 
+        assertThat(token2).hasSize(64); 
+        assertThat(token1).isNotEqualTo(token2); 
     }
 
     @Test
     @DisplayName("Should validate token format and strength")
-    void shouldValidateTokenFormatAndStrength() { // GH-90000
-        TokenGenerator tokenGenerator = new TokenGenerator(); // GH-90000
+    void shouldValidateTokenFormatAndStrength() { 
+        TokenGenerator tokenGenerator = new TokenGenerator(); 
         
-        String token = tokenGenerator.generateSecureToken(32); // GH-90000
+        String token = tokenGenerator.generateSecureToken(32); 
         
         // Should be valid hex
         assertThat(token).matches("^[a-f0-9]{64}$");
         
-        // Should have sufficient entropy (not all same characters) // GH-90000
+        // Should have sufficient entropy (not all same characters) 
         boolean hasVariation = false;
-        for (int i = 1; i < token.length(); i++) { // GH-90000
-            if (token.charAt(i) != token.charAt(0)) { // GH-90000
+        for (int i = 1; i < token.length(); i++) { 
+            if (token.charAt(i) != token.charAt(0)) { 
                 hasVariation = true;
                 break;
             }
         }
-        assertThat(hasVariation).isTrue(); // GH-90000
+        assertThat(hasVariation).isTrue(); 
     }
 
     @Test
     @DisplayName("Should enforce rate limits per user")
-    void shouldEnforceRateLimitsPerUser() { // GH-90000
-        RateLimiter rateLimiter = new RateLimiter(10, Duration.ofSeconds(1)); // 10 requests per second // GH-90000
+    void shouldEnforceRateLimitsPerUser() { 
+        RateLimiter rateLimiter = new RateLimiter(10, Duration.ofSeconds(1)); // 10 requests per second 
         
         String userId = "user-123";
         
         // First 10 requests should succeed
-        for (int i = 0; i < 10; i++) { // GH-90000
-            assertThat(rateLimiter.tryAcquire(userId)).isTrue(); // GH-90000
+        for (int i = 0; i < 10; i++) { 
+            assertThat(rateLimiter.tryAcquire(userId)).isTrue(); 
         }
         
         // 11th request should be rate limited
-        assertThat(rateLimiter.tryAcquire(userId)).isFalse(); // GH-90000
+        assertThat(rateLimiter.tryAcquire(userId)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should reset rate limits after time window expires")
-    void shouldResetRateLimitsAfterTimeWindowExpires() throws Exception { // GH-90000
-        RateLimiter rateLimiter = new RateLimiter(5, Duration.ofMillis(500)); // 5 requests per 500ms // GH-90000
+    void shouldResetRateLimitsAfterTimeWindowExpires() throws Exception { 
+        RateLimiter rateLimiter = new RateLimiter(5, Duration.ofMillis(500)); // 5 requests per 500ms 
         
         String userId = "user-123";
         
         // Use up all permits
-        for (int i = 0; i < 5; i++) { // GH-90000
-            rateLimiter.tryAcquire(userId); // GH-90000
+        for (int i = 0; i < 5; i++) { 
+            rateLimiter.tryAcquire(userId); 
         }
         
-        assertThat(rateLimiter.tryAcquire(userId)).isFalse(); // GH-90000
+        assertThat(rateLimiter.tryAcquire(userId)).isFalse(); 
         
         // Wait for window to expire
-        Thread.sleep(600); // GH-90000
+        Thread.sleep(600); 
         
         // Should allow new requests
-        assertThat(rateLimiter.tryAcquire(userId)).isTrue(); // GH-90000
+        assertThat(rateLimiter.tryAcquire(userId)).isTrue(); 
     }
 
     @Test
     @DisplayName("Should validate and sanitize user input")
-    void shouldValidateAndSanitizeUserInput() { // GH-90000
-        InputValidator validator = new InputValidator(); // GH-90000
+    void shouldValidateAndSanitizeUserInput() { 
+        InputValidator validator = new InputValidator(); 
         
         // Test XSS prevention
-        String maliciousInput = "<script>alert('xss')</script>"; // GH-90000
-        String sanitized = validator.sanitize(maliciousInput); // GH-90000
+        String maliciousInput = "<script>alert('xss')</script>"; 
+        String sanitized = validator.sanitize(maliciousInput); 
         
         assertThat(sanitized).doesNotContain("<script>");
         assertThat(sanitized).doesNotContain("alert");
@@ -356,50 +356,50 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should detect SQL injection attempts")
-    void shouldDetectSQLInjectionAttempts() { // GH-90000
-        InputValidator validator = new InputValidator(); // GH-90000
+    void shouldDetectSQLInjectionAttempts() { 
+        InputValidator validator = new InputValidator(); 
         
         String sqlInjection = "1' OR '1'='1";
         
-        assertThat(validator.isSQLInjection(sqlInjection)).isTrue(); // GH-90000
+        assertThat(validator.isSQLInjection(sqlInjection)).isTrue(); 
         assertThat(validator.isSQLInjection("normal input")).isFalse();
     }
 
     @Test
     @DisplayName("Should enforce session timeout")
-    void shouldEnforceSessionTimeout() throws Exception { // GH-90000
-        SessionManager sessionManager = new SessionManager(Duration.ofMillis(100)); // 100ms timeout // GH-90000
+    void shouldEnforceSessionTimeout() throws Exception { 
+        SessionManager sessionManager = new SessionManager(Duration.ofMillis(100)); // 100ms timeout 
         
         String sessionId = sessionManager.createSession("user-123");
         
         // Session should be valid immediately
-        assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); // GH-90000
+        assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); 
         
         // Wait for timeout
-        Thread.sleep(150); // GH-90000
+        Thread.sleep(150); 
         
         // Session should be invalid after timeout
-        assertThat(sessionManager.isSessionValid(sessionId)).isFalse(); // GH-90000
+        assertThat(sessionManager.isSessionValid(sessionId)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should invalidate session on logout")
-    void shouldInvalidateSessionOnLogout() { // GH-90000
-        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); // GH-90000
+    void shouldInvalidateSessionOnLogout() { 
+        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); 
         
         String sessionId = sessionManager.createSession("user-123");
         
-        assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); // GH-90000
+        assertThat(sessionManager.isSessionValid(sessionId)).isTrue(); 
         
-        sessionManager.invalidateSession(sessionId); // GH-90000
+        sessionManager.invalidateSession(sessionId); 
         
-        assertThat(sessionManager.isSessionValid(sessionId)).isFalse(); // GH-90000
+        assertThat(sessionManager.isSessionValid(sessionId)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should track concurrent sessions per user")
-    void shouldTrackConcurrentSessionsPerUser() { // GH-90000
-        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); // GH-90000
+    void shouldTrackConcurrentSessionsPerUser() { 
+        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30)); 
         
         String sessionId1 = sessionManager.createSession("user-123");
         String sessionId2 = sessionManager.createSession("user-123");
@@ -411,8 +411,8 @@ class SecurityPrivacyTest {
 
     @Test
     @DisplayName("Should enforce maximum concurrent sessions")
-    void shouldEnforceMaximumConcurrentSessions() { // GH-90000
-        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30), 2); // Max 2 sessions per user // GH-90000
+    void shouldEnforceMaximumConcurrentSessions() { 
+        SessionManager sessionManager = new SessionManager(Duration.ofMinutes(30), 2); // Max 2 sessions per user 
         
         String sessionId1 = sessionManager.createSession("user-123");
         String sessionId2 = sessionManager.createSession("user-123");
@@ -420,34 +420,34 @@ class SecurityPrivacyTest {
         // Third session should be rejected
         String sessionId3 = sessionManager.createSession("user-123");
         
-        assertThat(sessionId3).isNull(); // GH-90000
+        assertThat(sessionId3).isNull(); 
         assertThat(sessionManager.getActiveSessionCount("user-123")).isEqualTo(2);
     }
 
     @Test
     @DisplayName("Should validate data retention policies")
-    void shouldValidateDataRetentionPolicies() { // GH-90000
-        RetentionPolicy policy = new RetentionPolicy.Builder() // GH-90000
+    void shouldValidateDataRetentionPolicies() { 
+        RetentionPolicy policy = new RetentionPolicy.Builder() 
             .dataCategory("USER_DATA")
-            .retentionPeriod(Duration.ofDays(365)) // GH-90000
+            .retentionPeriod(Duration.ofDays(365)) 
             .deletionMethod("SECURE_DELETE")
-            .build(); // GH-90000
+            .build(); 
         
-        Instant now = Instant.now(); // GH-90000
-        Instant dataTimestamp = now.minus(Duration.ofDays(400)); // GH-90000
+        Instant now = Instant.now(); 
+        Instant dataTimestamp = now.minus(Duration.ofDays(400)); 
         
-        assertThat(policy.shouldDelete(dataTimestamp)).isTrue(); // GH-90000
+        assertThat(policy.shouldDelete(dataTimestamp)).isTrue(); 
         
-        Instant recentData = now.minus(Duration.ofDays(100)); // GH-90000
-        assertThat(policy.shouldDelete(recentData)).isFalse(); // GH-90000
+        Instant recentData = now.minus(Duration.ofDays(100)); 
+        assertThat(policy.shouldDelete(recentData)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should log data access for compliance")
-    void shouldLogDataAccessForCompliance() { // GH-90000
-        AuditLogger auditLogger = new AuditLogger(); // GH-90000
+    void shouldLogDataAccessForCompliance() { 
+        AuditLogger auditLogger = new AuditLogger(); 
         
-        AuditEvent dataAccessEvent = new AuditEvent.Builder() // GH-90000
+        AuditEvent dataAccessEvent = new AuditEvent.Builder() 
             .eventType("DATA_ACCESS")
             .userId("user-123")
             .tenantId("tenant-456")
@@ -456,33 +456,33 @@ class SecurityPrivacyTest {
             .action("READ")
             .outcome("SUCCESS")
             .complianceCategory("GDPR")
-            .dataCategories(List.of("PERSONAL_DATA", "CONTACT_INFO")) // GH-90000
-            .timestamp(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .dataCategories(List.of("PERSONAL_DATA", "CONTACT_INFO")) 
+            .timestamp(Instant.now()) 
+            .build(); 
         
-        auditLogger.log(dataAccessEvent); // GH-90000
+        auditLogger.log(dataAccessEvent); 
         
-        AuditEvent loggedEvent = auditLogger.getLastEvent(); // GH-90000
+        AuditEvent loggedEvent = auditLogger.getLastEvent(); 
         assertThat(loggedEvent.getComplianceCategory()).isEqualTo("GDPR");
         assertThat(loggedEvent.getDataCategories()).contains("PERSONAL_DATA");
     }
 
     @Test
     @DisplayName("Should enforce data minimization principles")
-    void shouldEnforceDataMinimizationPrinciples() { // GH-90000
-        DataMinimizer minimizer = new DataMinimizer(); // GH-90000
+    void shouldEnforceDataMinimizationPrinciples() { 
+        DataMinimizer minimizer = new DataMinimizer(); 
         
-        Map<String, Object> fullUserData = new HashMap<>(); // GH-90000
-        fullUserData.put("id", "user-123"); // GH-90000
-        fullUserData.put("name", "John Doe"); // GH-90000
-        fullUserData.put("email", "john@example.com"); // GH-90000
-        fullUserData.put("phone", "555-123-4567"); // GH-90000
-        fullUserData.put("ssn", "123-45-6789"); // GH-90000
-        fullUserData.put("address", "123 Main St"); // GH-90000
-        fullUserData.put("internal_notes", "VIP customer"); // GH-90000
+        Map<String, Object> fullUserData = new HashMap<>(); 
+        fullUserData.put("id", "user-123"); 
+        fullUserData.put("name", "John Doe"); 
+        fullUserData.put("email", "john@example.com"); 
+        fullUserData.put("phone", "555-123-4567"); 
+        fullUserData.put("ssn", "123-45-6789"); 
+        fullUserData.put("address", "123 Main St"); 
+        fullUserData.put("internal_notes", "VIP customer"); 
         
         // Minimize for public API response
-        Map<String, Object> minimized = minimizer.minimizeForPublicAPI(fullUserData); // GH-90000
+        Map<String, Object> minimized = minimizer.minimizeForPublicAPI(fullUserData); 
         
         assertThat(minimized).containsKey("id");
         assertThat(minimized).containsKey("name");
@@ -504,8 +504,8 @@ class SecurityPrivacyTest {
         private static final Pattern API_KEY_PATTERN = Pattern.compile("(api[_-]?key|password|token)\\s*=\\s*[\\w-]+");
         private static final Pattern UUID_PATTERN = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
 
-        String redact(String input) { // GH-90000
-            if (input == null) return null; // GH-90000
+        String redact(String input) { 
+            if (input == null) return null; 
             
             String result = input;
             result = EMAIL_PATTERN.matcher(result).replaceAll("***@***.***");
@@ -519,17 +519,17 @@ class SecurityPrivacyTest {
             return result;
         }
 
-        Map<String, Object> redactMap(Map<String, Object> input) { // GH-90000
-            Map<String, Object> redacted = new HashMap<>(); // GH-90000
-            for (Map.Entry<String, Object> entry : input.entrySet()) { // GH-90000
-                String value = entry.getValue() != null ? entry.getValue().toString() : null; // GH-90000
+        Map<String, Object> redactMap(Map<String, Object> input) { 
+            Map<String, Object> redacted = new HashMap<>(); 
+            for (Map.Entry<String, Object> entry : input.entrySet()) { 
+                String value = entry.getValue() != null ? entry.getValue().toString() : null; 
                 if (value != null && (entry.getKey().toLowerCase().contains("email") ||
                     entry.getKey().toLowerCase().contains("phone") ||
                     entry.getKey().toLowerCase().contains("ssn") ||
                     entry.getKey().toLowerCase().contains("address"))) {
-                    redacted.put(entry.getKey(), "****"); // GH-90000
+                    redacted.put(entry.getKey(), "****"); 
                 } else {
-                    redacted.put(entry.getKey(), entry.getValue()); // GH-90000
+                    redacted.put(entry.getKey(), entry.getValue()); 
                 }
             }
             return redacted;
@@ -537,18 +537,18 @@ class SecurityPrivacyTest {
     }
 
     static class AuditLogger {
-        private final List<AuditEvent> events = new ArrayList<>(); // GH-90000
+        private final List<AuditEvent> events = new ArrayList<>(); 
 
-        void log(AuditEvent event) { // GH-90000
-            events.add(event); // GH-90000
+        void log(AuditEvent event) { 
+            events.add(event); 
         }
 
-        int getEventCount() { // GH-90000
-            return events.size(); // GH-90000
+        int getEventCount() { 
+            return events.size(); 
         }
 
-        AuditEvent getLastEvent() { // GH-90000
-            return events.isEmpty() ? null : events.get(events.size() - 1); // GH-90000
+        AuditEvent getLastEvent() { 
+            return events.isEmpty() ? null : events.get(events.size() - 1); 
         }
     }
 
@@ -566,7 +566,7 @@ class SecurityPrivacyTest {
         private final String complianceCategory;
         private final List<String> dataCategories;
 
-        private AuditEvent(Builder builder) { // GH-90000
+        private AuditEvent(Builder builder) { 
             this.eventType = builder.eventType;
             this.userId = builder.userId;
             this.tenantId = builder.tenantId;
@@ -581,27 +581,27 @@ class SecurityPrivacyTest {
             this.dataCategories = builder.dataCategories;
         }
 
-        String getEventType() { // GH-90000
+        String getEventType() { 
             return eventType;
         }
 
-        String getOutcome() { // GH-90000
+        String getOutcome() { 
             return outcome;
         }
 
-        String getFailureReason() { // GH-90000
+        String getFailureReason() { 
             return failureReason;
         }
 
-        Map<String, String> getMetadata() { // GH-90000
+        Map<String, String> getMetadata() { 
             return metadata;
         }
 
-        String getComplianceCategory() { // GH-90000
+        String getComplianceCategory() { 
             return complianceCategory;
         }
 
-        List<String> getDataCategories() { // GH-90000
+        List<String> getDataCategories() { 
             return dataCategories;
         }
 
@@ -614,265 +614,265 @@ class SecurityPrivacyTest {
             private String action;
             private String outcome;
             private String failureReason;
-            private Map<String, String> metadata = new HashMap<>(); // GH-90000
+            private Map<String, String> metadata = new HashMap<>(); 
             private Instant timestamp;
             private String complianceCategory;
-            private List<String> dataCategories = new ArrayList<>(); // GH-90000
+            private List<String> dataCategories = new ArrayList<>(); 
 
-            Builder eventType(String eventType) { // GH-90000
+            Builder eventType(String eventType) { 
                 this.eventType = eventType;
                 return this;
             }
 
-            Builder userId(String userId) { // GH-90000
+            Builder userId(String userId) { 
                 this.userId = userId;
                 return this;
             }
 
-            Builder tenantId(String tenantId) { // GH-90000
+            Builder tenantId(String tenantId) { 
                 this.tenantId = tenantId;
                 return this;
             }
 
-            Builder resourceType(String resourceType) { // GH-90000
+            Builder resourceType(String resourceType) { 
                 this.resourceType = resourceType;
                 return this;
             }
 
-            Builder resourceId(String resourceId) { // GH-90000
+            Builder resourceId(String resourceId) { 
                 this.resourceId = resourceId;
                 return this;
             }
 
-            Builder action(String action) { // GH-90000
+            Builder action(String action) { 
                 this.action = action;
                 return this;
             }
 
-            Builder outcome(String outcome) { // GH-90000
+            Builder outcome(String outcome) { 
                 this.outcome = outcome;
                 return this;
             }
 
-            Builder failureReason(String failureReason) { // GH-90000
+            Builder failureReason(String failureReason) { 
                 this.failureReason = failureReason;
                 return this;
             }
 
-            Builder metadata(Map<String, String> metadata) { // GH-90000
+            Builder metadata(Map<String, String> metadata) { 
                 this.metadata = metadata;
                 return this;
             }
 
-            Builder timestamp(Instant timestamp) { // GH-90000
+            Builder timestamp(Instant timestamp) { 
                 this.timestamp = timestamp;
                 return this;
             }
 
-            Builder complianceCategory(String complianceCategory) { // GH-90000
+            Builder complianceCategory(String complianceCategory) { 
                 this.complianceCategory = complianceCategory;
                 return this;
             }
 
-            Builder dataCategories(List<String> dataCategories) { // GH-90000
+            Builder dataCategories(List<String> dataCategories) { 
                 this.dataCategories = dataCategories;
                 return this;
             }
 
-            AuditEvent build() { // GH-90000
-                return new AuditEvent(this); // GH-90000
+            AuditEvent build() { 
+                return new AuditEvent(this); 
             }
         }
     }
 
     static class RBACEnforcer {
-        private final Map<String, List<String>> rolePermissions = new HashMap<>(); // GH-90000
-        private final Map<String, String> userRoles = new HashMap<>(); // GH-90000
-        private final Map<String, List<String>> roleHierarchy = new HashMap<>(); // GH-90000
-        private final Map<String, Map<String, List<String>>> resourcePermissions = new ConcurrentHashMap<>(); // GH-90000
+        private final Map<String, List<String>> rolePermissions = new HashMap<>(); 
+        private final Map<String, String> userRoles = new HashMap<>(); 
+        private final Map<String, List<String>> roleHierarchy = new HashMap<>(); 
+        private final Map<String, Map<String, List<String>>> resourcePermissions = new ConcurrentHashMap<>(); 
 
-        void addRole(String role, List<String> permissions) { // GH-90000
-            rolePermissions.put(role, permissions); // GH-90000
+        void addRole(String role, List<String> permissions) { 
+            rolePermissions.put(role, permissions); 
         }
 
-        void assignRole(String userId, String role) { // GH-90000
-            userRoles.put(userId, role); // GH-90000
+        void assignRole(String userId, String role) { 
+            userRoles.put(userId, role); 
         }
 
-        void addResourcePermission(String userId, String resourceId, String permission) { // GH-90000
-            resourcePermissions.computeIfAbsent(userId, k -> new HashMap<>()) // GH-90000
-                .computeIfAbsent(resourceId, k -> new ArrayList<>()) // GH-90000
-                .add(permission); // GH-90000
+        void addResourcePermission(String userId, String resourceId, String permission) { 
+            resourcePermissions.computeIfAbsent(userId, k -> new HashMap<>()) 
+                .computeIfAbsent(resourceId, k -> new ArrayList<>()) 
+                .add(permission); 
         }
 
-        void addRoleHierarchy(String parentRole, List<String> childRoles) { // GH-90000
-            roleHierarchy.put(parentRole, childRoles); // GH-90000
+        void addRoleHierarchy(String parentRole, List<String> childRoles) { 
+            roleHierarchy.put(parentRole, childRoles); 
         }
 
-        boolean hasPermission(String userId, String permission) { // GH-90000
-            String role = userRoles.get(userId); // GH-90000
-            if (role == null) return false; // GH-90000
+        boolean hasPermission(String userId, String permission) { 
+            String role = userRoles.get(userId); 
+            if (role == null) return false; 
 
             // Check direct role permissions
-            if (rolePermissions.getOrDefault(role, List.of()).contains(permission)) { // GH-90000
+            if (rolePermissions.getOrDefault(role, List.of()).contains(permission)) { 
                 return true;
             }
 
             // Check inherited permissions through hierarchy
-            return hasInheritedPermission(role, permission); // GH-90000
+            return hasInheritedPermission(role, permission); 
         }
 
-        private boolean hasInheritedPermission(String role, String permission) { // GH-90000
-            List<String> childRoles = roleHierarchy.get(role); // GH-90000
-            if (childRoles == null) return false; // GH-90000
+        private boolean hasInheritedPermission(String role, String permission) { 
+            List<String> childRoles = roleHierarchy.get(role); 
+            if (childRoles == null) return false; 
 
-            for (String childRole : childRoles) { // GH-90000
-                if (rolePermissions.getOrDefault(childRole, List.of()).contains(permission)) { // GH-90000
+            for (String childRole : childRoles) { 
+                if (rolePermissions.getOrDefault(childRole, List.of()).contains(permission)) { 
                     return true;
                 }
-                if (hasInheritedPermission(childRole, permission)) { // GH-90000
+                if (hasInheritedPermission(childRole, permission)) { 
                     return true;
                 }
             }
             return false;
         }
 
-        boolean hasResourcePermission(String userId, String resourceId, String permission) { // GH-90000
-            Map<String, List<String>> userResourcePerms = resourcePermissions.get(userId); // GH-90000
-            if (userResourcePerms == null) return false; // GH-90000
+        boolean hasResourcePermission(String userId, String resourceId, String permission) { 
+            Map<String, List<String>> userResourcePerms = resourcePermissions.get(userId); 
+            if (userResourcePerms == null) return false; 
 
-            List<String> resourcePerms = userResourcePerms.get(resourceId); // GH-90000
-            return resourcePerms != null && resourcePerms.contains(permission); // GH-90000
+            List<String> resourcePerms = userResourcePerms.get(resourceId); 
+            return resourcePerms != null && resourcePerms.contains(permission); 
         }
     }
 
     static class EncryptionService {
         private static final String ENCRYPTION_KEY = "test-key-for-encryption-purposes-only";
 
-        String encrypt(String plaintext) { // GH-90000
-            // Simple XOR for testing (not production-grade) // GH-90000
-            StringBuilder encrypted = new StringBuilder(); // GH-90000
-            for (int i = 0; i < plaintext.length(); i++) { // GH-90000
-                encrypted.append((char) (plaintext.charAt(i) ^ ENCRYPTION_KEY.charAt(i % ENCRYPTION_KEY.length()))); // GH-90000
+        String encrypt(String plaintext) { 
+            // Simple XOR for testing (not production-grade) 
+            StringBuilder encrypted = new StringBuilder(); 
+            for (int i = 0; i < plaintext.length(); i++) { 
+                encrypted.append((char) (plaintext.charAt(i) ^ ENCRYPTION_KEY.charAt(i % ENCRYPTION_KEY.length()))); 
             }
-            return encrypted.toString(); // GH-90000
+            return encrypted.toString(); 
         }
 
-        String decrypt(String ciphertext) { // GH-90000
+        String decrypt(String ciphertext) { 
             // XOR is symmetric, so decryption is same as encryption
-            return encrypt(ciphertext); // GH-90000
+            return encrypt(ciphertext); 
         }
     }
 
     static class TokenGenerator {
         private static final String HEX_CHARS = "0123456789abcdef";
 
-        String generateSecureToken(int bytes) { // GH-90000
-            StringBuilder token = new StringBuilder(); // GH-90000
-            for (int i = 0; i < bytes * 2; i++) { // GH-90000
-                token.append(HEX_CHARS.charAt((int) (Math.random() * HEX_CHARS.length()))); // GH-90000
+        String generateSecureToken(int bytes) { 
+            StringBuilder token = new StringBuilder(); 
+            for (int i = 0; i < bytes * 2; i++) { 
+                token.append(HEX_CHARS.charAt((int) (Math.random() * HEX_CHARS.length()))); 
             }
-            return token.toString(); // GH-90000
+            return token.toString(); 
         }
     }
 
     static class RateLimiter {
         private final int permitsPerWindow;
         private final Duration windowDuration;
-        private final ConcurrentHashMap<String, AtomicInteger> counters = new ConcurrentHashMap<>(); // GH-90000
-        private final ConcurrentHashMap<String, Long> windowStarts = new ConcurrentHashMap<>(); // GH-90000
+        private final ConcurrentHashMap<String, AtomicInteger> counters = new ConcurrentHashMap<>(); 
+        private final ConcurrentHashMap<String, Long> windowStarts = new ConcurrentHashMap<>(); 
 
-        RateLimiter(int permitsPerWindow, Duration windowDuration) { // GH-90000
+        RateLimiter(int permitsPerWindow, Duration windowDuration) { 
             this.permitsPerWindow = permitsPerWindow;
             this.windowDuration = windowDuration;
         }
 
-        boolean tryAcquire(String userId) { // GH-90000
-            long now = System.currentTimeMillis(); // GH-90000
-            long windowStart = (now / windowDuration.toMillis()) * windowDuration.toMillis(); // GH-90000
+        boolean tryAcquire(String userId) { 
+            long now = System.currentTimeMillis(); 
+            long windowStart = (now / windowDuration.toMillis()) * windowDuration.toMillis(); 
 
-            Long existingWindowStart = windowStarts.get(userId); // GH-90000
-            if (existingWindowStart == null || existingWindowStart != windowStart) { // GH-90000
-                counters.put(userId, new AtomicInteger(0)); // GH-90000
-                windowStarts.put(userId, windowStart); // GH-90000
+            Long existingWindowStart = windowStarts.get(userId); 
+            if (existingWindowStart == null || existingWindowStart != windowStart) { 
+                counters.put(userId, new AtomicInteger(0)); 
+                windowStarts.put(userId, windowStart); 
             }
 
-            AtomicInteger counter = counters.get(userId); // GH-90000
-            int currentCount = counter.incrementAndGet(); // GH-90000
+            AtomicInteger counter = counters.get(userId); 
+            int currentCount = counter.incrementAndGet(); 
 
             return currentCount <= permitsPerWindow;
         }
     }
 
     static class InputValidator {
-        private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile( // GH-90000
-            "(?i)(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\\b.*?(\\bWHERE\\b|'\\s*=\\s*'|--|;))|('[^']*'\\s*=\\s*'[^']*')|(\\bor\\b\\s+\\d+\\s*=\\s*\\d+)" // GH-90000
+        private static final Pattern SQL_INJECTION_PATTERN = Pattern.compile( 
+            "(?i)(\\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\\b.*?(\\bWHERE\\b|'\\s*=\\s*'|--|;))|('[^']*'\\s*=\\s*'[^']*')|(\\bor\\b\\s+\\d+\\s*=\\s*\\d+)" 
         );
 
-        String sanitize(String input) { // GH-90000
+        String sanitize(String input) { 
             // Basic XSS sanitization
-            return input.replaceAll("<script[^>]*>.*?</script>", "") // GH-90000
-                .replaceAll("on\\w+\\s*=\\s*\"[^\"]*\"", "") // GH-90000
-                .replaceAll("on\\w+\\s*=\\s*'[^']*'", ""); // GH-90000
+            return input.replaceAll("<script[^>]*>.*?</script>", "") 
+                .replaceAll("on\\w+\\s*=\\s*\"[^\"]*\"", "") 
+                .replaceAll("on\\w+\\s*=\\s*'[^']*'", ""); 
         }
 
-        boolean isSQLInjection(String input) { // GH-90000
-            return SQL_INJECTION_PATTERN.matcher(input).find(); // GH-90000
+        boolean isSQLInjection(String input) { 
+            return SQL_INJECTION_PATTERN.matcher(input).find(); 
         }
     }
 
     static class SessionManager {
         private final Duration sessionTimeout;
         private final int maxConcurrentSessions;
-        private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>(); // GH-90000
-        private final ConcurrentHashMap<String, AtomicInteger> userSessionCounts = new ConcurrentHashMap<>(); // GH-90000
+        private final ConcurrentHashMap<String, Session> sessions = new ConcurrentHashMap<>(); 
+        private final ConcurrentHashMap<String, AtomicInteger> userSessionCounts = new ConcurrentHashMap<>(); 
 
-        SessionManager(Duration sessionTimeout) { // GH-90000
-            this(sessionTimeout, Integer.MAX_VALUE); // GH-90000
+        SessionManager(Duration sessionTimeout) { 
+            this(sessionTimeout, Integer.MAX_VALUE); 
         }
 
-        SessionManager(Duration sessionTimeout, int maxConcurrentSessions) { // GH-90000
+        SessionManager(Duration sessionTimeout, int maxConcurrentSessions) { 
             this.sessionTimeout = sessionTimeout;
             this.maxConcurrentSessions = maxConcurrentSessions;
         }
 
-        String createSession(String userId) { // GH-90000
+        String createSession(String userId) { 
             // Check concurrent session limit
-            AtomicInteger count = userSessionCounts.computeIfAbsent(userId, k -> new AtomicInteger(0)); // GH-90000
-            if (count.incrementAndGet() > maxConcurrentSessions) { // GH-90000
-                count.decrementAndGet(); // GH-90000
+            AtomicInteger count = userSessionCounts.computeIfAbsent(userId, k -> new AtomicInteger(0)); 
+            if (count.incrementAndGet() > maxConcurrentSessions) { 
+                count.decrementAndGet(); 
                 return null;
             }
 
-            String sessionId = UUID.randomUUID().toString(); // GH-90000
-            sessions.put(sessionId, new Session(sessionId, userId, Instant.now())); // GH-90000
+            String sessionId = UUID.randomUUID().toString(); 
+            sessions.put(sessionId, new Session(sessionId, userId, Instant.now())); 
             return sessionId;
         }
 
-        boolean isSessionValid(String sessionId) { // GH-90000
-            Session session = sessions.get(sessionId); // GH-90000
-            if (session == null) return false; // GH-90000
+        boolean isSessionValid(String sessionId) { 
+            Session session = sessions.get(sessionId); 
+            if (session == null) return false; 
 
-            boolean isValid = session.createdAt.plus(sessionTimeout).isAfter(Instant.now()); // GH-90000
-            if (!isValid) { // GH-90000
-                invalidateSession(sessionId); // GH-90000
+            boolean isValid = session.createdAt.plus(sessionTimeout).isAfter(Instant.now()); 
+            if (!isValid) { 
+                invalidateSession(sessionId); 
             }
             return isValid;
         }
 
-        void invalidateSession(String sessionId) { // GH-90000
-            Session session = sessions.remove(sessionId); // GH-90000
-            if (session != null) { // GH-90000
-                userSessionCounts.computeIfPresent(session.userId, (k, v) -> { // GH-90000
-                    int newCount = v.decrementAndGet(); // GH-90000
+        void invalidateSession(String sessionId) { 
+            Session session = sessions.remove(sessionId); 
+            if (session != null) { 
+                userSessionCounts.computeIfPresent(session.userId, (k, v) -> { 
+                    int newCount = v.decrementAndGet(); 
                     return newCount <= 0 ? null : v;
                 });
             }
         }
 
-        int getActiveSessionCount(String userId) { // GH-90000
-            AtomicInteger count = userSessionCounts.get(userId); // GH-90000
-            return count != null ? count.get() : 0; // GH-90000
+        int getActiveSessionCount(String userId) { 
+            AtomicInteger count = userSessionCounts.get(userId); 
+            return count != null ? count.get() : 0; 
         }
 
         static class Session {
@@ -880,7 +880,7 @@ class SecurityPrivacyTest {
             final String userId;
             final Instant createdAt;
 
-            Session(String sessionId, String userId, Instant createdAt) { // GH-90000
+            Session(String sessionId, String userId, Instant createdAt) { 
                 this.sessionId = sessionId;
                 this.userId = userId;
                 this.createdAt = createdAt;
@@ -893,14 +893,14 @@ class SecurityPrivacyTest {
         private final Duration retentionPeriod;
         private final String deletionMethod;
 
-        RetentionPolicy(Builder builder) { // GH-90000
+        RetentionPolicy(Builder builder) { 
             this.dataCategory = builder.dataCategory;
             this.retentionPeriod = builder.retentionPeriod;
             this.deletionMethod = builder.deletionMethod;
         }
 
-        boolean shouldDelete(Instant dataTimestamp) { // GH-90000
-            return dataTimestamp.plus(retentionPeriod).isBefore(Instant.now()); // GH-90000
+        boolean shouldDelete(Instant dataTimestamp) { 
+            return dataTimestamp.plus(retentionPeriod).isBefore(Instant.now()); 
         }
 
         static class Builder {
@@ -908,35 +908,35 @@ class SecurityPrivacyTest {
             private Duration retentionPeriod;
             private String deletionMethod;
 
-            Builder dataCategory(String dataCategory) { // GH-90000
+            Builder dataCategory(String dataCategory) { 
                 this.dataCategory = dataCategory;
                 return this;
             }
 
-            Builder retentionPeriod(Duration retentionPeriod) { // GH-90000
+            Builder retentionPeriod(Duration retentionPeriod) { 
                 this.retentionPeriod = retentionPeriod;
                 return this;
             }
 
-            Builder deletionMethod(String deletionMethod) { // GH-90000
+            Builder deletionMethod(String deletionMethod) { 
                 this.deletionMethod = deletionMethod;
                 return this;
             }
 
-            RetentionPolicy build() { // GH-90000
-                return new RetentionPolicy(this); // GH-90000
+            RetentionPolicy build() { 
+                return new RetentionPolicy(this); 
             }
         }
     }
 
     static class DataMinimizer {
-        private static final List<String> PUBLIC_API_ALLOWED_FIELDS = List.of("id", "name", "created_at"); // GH-90000
+        private static final List<String> PUBLIC_API_ALLOWED_FIELDS = List.of("id", "name", "created_at"); 
 
-        Map<String, Object> minimizeForPublicAPI(Map<String, Object> fullData) { // GH-90000
-            Map<String, Object> minimized = new HashMap<>(); // GH-90000
-            for (String field : PUBLIC_API_ALLOWED_FIELDS) { // GH-90000
-                if (fullData.containsKey(field)) { // GH-90000
-                    minimized.put(field, fullData.get(field)); // GH-90000
+        Map<String, Object> minimizeForPublicAPI(Map<String, Object> fullData) { 
+            Map<String, Object> minimized = new HashMap<>(); 
+            for (String field : PUBLIC_API_ALLOWED_FIELDS) { 
+                if (fullData.containsKey(field)) { 
+                    minimized.put(field, fullData.get(field)); 
                 }
             }
             return minimized;

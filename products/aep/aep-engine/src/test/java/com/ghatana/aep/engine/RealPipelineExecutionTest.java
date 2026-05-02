@@ -26,50 +26,50 @@ class RealPipelineExecutionTest {
 
     @Test
     @DisplayName("Should execute pipeline with operators")
-    void shouldExecutePipelineWithOperators() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldExecutePipelineWithOperators() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle data flow through pipeline")
-    void shouldHandleDataFlowThroughPipeline() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
-        AepEngine.Event event = new AepEngine.Event("test-type", Map.of("data", "value"), Map.of(), Instant.now()); // GH-90000
+    void shouldHandleDataFlowThroughPipeline() { 
+        AepEngine engine = Aep.forTesting(); 
+        AepEngine.Event event = new AepEngine.Event("test-type", Map.of("data", "value"), Map.of(), Instant.now()); 
 
-        assertThat(event).isNotNull(); // GH-90000
+        assertThat(event).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle operator chaining")
-    void shouldHandleOperatorChaining() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleOperatorChaining() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle parallel execution")
-    void shouldHandleParallelExecution() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleParallelExecution() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle pipeline state management")
-    void shouldHandlePipelineStateManagement() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandlePipelineStateManagement() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle pipeline termination")
-    void shouldHandlePipelineTermination() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandlePipelineTermination() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 }

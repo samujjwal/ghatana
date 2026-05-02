@@ -26,68 +26,68 @@ class MultiModuleConsistencyTest {
 
     @Test
     @DisplayName("Should maintain data consistency")
-    void shouldMaintainDataConsistency() { // GH-90000
-        Entity entity = Entity.builder() // GH-90000
+    void shouldMaintainDataConsistency() { 
+        Entity entity = Entity.builder() 
             .tenantId("tenant-123")
             .collectionName("products")
-            .data(Map.of("id", "prod-123", "name", "Product A")) // GH-90000
-            .build(); // GH-90000
+            .data(Map.of("id", "prod-123", "name", "Product A")) 
+            .build(); 
         
-        MetaCollection collection = MetaCollection.builder() // GH-90000
+        MetaCollection collection = MetaCollection.builder() 
             .tenantId("tenant-123")
             .name("products")
-            .build(); // GH-90000
+            .build(); 
         
-        assertThat(entity.getTenantId()).isEqualTo(collection.getTenantId()); // GH-90000
-        assertThat(entity.getCollectionName()).isEqualTo(collection.getName()); // GH-90000
+        assertThat(entity.getTenantId()).isEqualTo(collection.getTenantId()); 
+        assertThat(entity.getCollectionName()).isEqualTo(collection.getName()); 
     }
 
     @Test
     @DisplayName("Should handle cross-module transactions")
-    void shouldHandleCrossModuleTransactions() { // GH-90000
-        String transactionId = UUID.randomUUID().toString(); // GH-90000
+    void shouldHandleCrossModuleTransactions() { 
+        String transactionId = UUID.randomUUID().toString(); 
         boolean committed = true;
         
-        assertThat(transactionId).isNotNull(); // GH-90000
-        assertThat(committed).isTrue(); // GH-90000
+        assertThat(transactionId).isNotNull(); 
+        assertThat(committed).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle consistency checks")
-    void shouldHandleConsistencyChecks() { // GH-90000
+    void shouldHandleConsistencyChecks() { 
         boolean consistent = true;
         int inconsistencies = 0;
         
-        assertThat(consistent).isTrue(); // GH-90000
-        assertThat(inconsistencies).isEqualTo(0); // GH-90000
+        assertThat(consistent).isTrue(); 
+        assertThat(inconsistencies).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Should handle concurrent modifications")
-    void shouldHandleConcurrentModifications() { // GH-90000
+    void shouldHandleConcurrentModifications() { 
         int version1 = 1;
         int version2 = 2;
         
-        assertThat(version2).isGreaterThan(version1); // GH-90000
+        assertThat(version2).isGreaterThan(version1); 
     }
 
     @Test
     @DisplayName("Should handle consistency failures")
-    void shouldHandleConsistencyFailures() { // GH-90000
+    void shouldHandleConsistencyFailures() { 
         boolean consistent = false;
         String error = "Constraint violation";
         
-        assertThat(consistent).isFalse(); // GH-90000
-        assertThat(error).isNotNull(); // GH-90000
+        assertThat(consistent).isFalse(); 
+        assertThat(error).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle consistency recovery")
-    void shouldHandleConsistencyRecovery() { // GH-90000
+    void shouldHandleConsistencyRecovery() { 
         boolean recovered = true;
         String recoveryMode = "rollback";
         
-        assertThat(recovered).isTrue(); // GH-90000
+        assertThat(recovered).isTrue(); 
         assertThat(recoveryMode).isEqualTo("rollback");
     }
 }

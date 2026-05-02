@@ -32,11 +32,11 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
     // ── Simulated LLM response model ──────────────────────────────────────────
 
-    record ModelResponse(String content, int inputTokens, int outputTokens, String finishReason) {} // GH-90000
+    record ModelResponse(String content, int inputTokens, int outputTokens, String finishReason) {} 
 
-    record ModelRequest(String model, List<Map<String, String>> messages, double temperature, int maxTokens) {} // GH-90000
+    record ModelRequest(String model, List<Map<String, String>> messages, double temperature, int maxTokens) {} 
 
-    // ── Simulated adapter (stands in until real HTTP client is wired) ───────── // GH-90000
+    // ── Simulated adapter (stands in until real HTTP client is wired) ───────── 
 
     static class SimulatedModelAdapter {
         private final boolean simulateFailure;
@@ -44,27 +44,27 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
         private final boolean simulateRateLimit;
         private int callCount = 0;
 
-        SimulatedModelAdapter(boolean simulateFailure, boolean simulateTimeout, boolean simulateRateLimit) { // GH-90000
+        SimulatedModelAdapter(boolean simulateFailure, boolean simulateTimeout, boolean simulateRateLimit) { 
             this.simulateFailure   = simulateFailure;
             this.simulateTimeout   = simulateTimeout;
             this.simulateRateLimit = simulateRateLimit;
         }
 
-        ModelResponse call(ModelRequest request) { // GH-90000
+        ModelResponse call(ModelRequest request) { 
             callCount++;
-            if (simulateRateLimit && callCount == 1) { // GH-90000
+            if (simulateRateLimit && callCount == 1) { 
                 throw new RuntimeException("rate_limit_exceeded: Too many requests");
             }
-            if (simulateTimeout) { // GH-90000
+            if (simulateTimeout) { 
                 throw new RuntimeException("timeout: Request timed out after 30s");
             }
-            if (simulateFailure) { // GH-90000
+            if (simulateFailure) { 
                 throw new RuntimeException("api_error: Internal server error");
             }
-            return new ModelResponse("This is a simulated AI response.", 10, 8, "stop"); // GH-90000
+            return new ModelResponse("This is a simulated AI response.", 10, 8, "stop"); 
         }
 
-        int getCallCount() { return callCount; } // GH-90000
+        int getCallCount() { return callCount; } 
     }
 
     // ── Model response parsing ─────────────────────────────────────────────────
@@ -75,29 +75,29 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("valid response includes non-empty content and token counts")
-        void validResponse_includesNonEmptyContentAndTokenCounts() { // GH-90000
-            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, false, false); // GH-90000
-            ModelRequest request = new ModelRequest("gpt-4", List.of(Map.of("role", "user", "content", "Hello")), 0.7, 100); // GH-90000
+        void validResponse_includesNonEmptyContentAndTokenCounts() { 
+            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, false, false); 
+            ModelRequest request = new ModelRequest("gpt-4", List.of(Map.of("role", "user", "content", "Hello")), 0.7, 100); 
 
-            ModelResponse response = adapter.call(request); // GH-90000
+            ModelResponse response = adapter.call(request); 
 
-            assertThat(response.content()).isNotBlank(); // GH-90000
-            assertThat(response.inputTokens()).isPositive(); // GH-90000
-            assertThat(response.outputTokens()).isPositive(); // GH-90000
+            assertThat(response.content()).isNotBlank(); 
+            assertThat(response.inputTokens()).isPositive(); 
+            assertThat(response.outputTokens()).isPositive(); 
             assertThat(response.finishReason()).isEqualTo("stop");
         }
 
         @Test
         @DisplayName("response finish_reason=stop indicates normal completion")
-        void response_finishReasonStop_indicatesNormalCompletion() { // GH-90000
-            ModelResponse response = new ModelResponse("Hello!", 5, 1, "stop"); // GH-90000
+        void response_finishReasonStop_indicatesNormalCompletion() { 
+            ModelResponse response = new ModelResponse("Hello!", 5, 1, "stop"); 
             assertThat(response.finishReason()).isEqualTo("stop");
         }
 
         @Test
         @DisplayName("response finish_reason=length indicates truncation")
-        void response_finishReasonLength_indicatesTruncation() { // GH-90000
-            ModelResponse response = new ModelResponse("Truncated...", 5, 100, "length"); // GH-90000
+        void response_finishReasonLength_indicatesTruncation() { 
+            ModelResponse response = new ModelResponse("Truncated...", 5, 100, "length"); 
             assertThat(response.finishReason()).isEqualTo("length");
             // Caller should retry or increase max_tokens
         }
@@ -111,35 +111,35 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("API error surfaces as categorized exception")
-        void apiError_surfacesAsCategorizedExceptionWithMessage() { // GH-90000
-            SimulatedModelAdapter adapter = new SimulatedModelAdapter(true, false, false); // GH-90000
-            ModelRequest request = new ModelRequest("gpt-4", List.of(), 0.7, 100); // GH-90000
+        void apiError_surfacesAsCategorizedExceptionWithMessage() { 
+            SimulatedModelAdapter adapter = new SimulatedModelAdapter(true, false, false); 
+            ModelRequest request = new ModelRequest("gpt-4", List.of(), 0.7, 100); 
 
             RuntimeException thrown = null;
             try {
-                adapter.call(request); // GH-90000
-            } catch (RuntimeException e) { // GH-90000
+                adapter.call(request); 
+            } catch (RuntimeException e) { 
                 thrown = e;
             }
 
-            assertThat(thrown).isNotNull(); // GH-90000
+            assertThat(thrown).isNotNull(); 
             assertThat(thrown.getMessage()).contains("api_error");
         }
 
         @Test
         @DisplayName("timeout error surfaces with descriptive message")
-        void timeoutError_surfacesWithDescriptiveMessage() { // GH-90000
-            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, true, false); // GH-90000
-            ModelRequest request = new ModelRequest("gpt-4", List.of(), 0.7, 100); // GH-90000
+        void timeoutError_surfacesWithDescriptiveMessage() { 
+            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, true, false); 
+            ModelRequest request = new ModelRequest("gpt-4", List.of(), 0.7, 100); 
 
             RuntimeException thrown = null;
             try {
-                adapter.call(request); // GH-90000
-            } catch (RuntimeException e) { // GH-90000
+                adapter.call(request); 
+            } catch (RuntimeException e) { 
                 thrown = e;
             }
 
-            assertThat(thrown).isNotNull(); // GH-90000
+            assertThat(thrown).isNotNull(); 
             assertThat(thrown.getMessage()).contains("timeout");
         }
     }
@@ -152,54 +152,54 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rate limit triggers retry and succeeds on second attempt")
-        void rateLimit_triggersRetry_succeedsOnSecondAttempt() { // GH-90000
+        void rateLimit_triggersRetry_succeedsOnSecondAttempt() { 
             // First call rate-limited, second call succeeds
-            AtomicInteger attempt = new AtomicInteger(0); // GH-90000
-            AtomicBoolean succeeded = new AtomicBoolean(false); // GH-90000
+            AtomicInteger attempt = new AtomicInteger(0); 
+            AtomicBoolean succeeded = new AtomicBoolean(false); 
 
             int maxRetries = 3;
-            while (attempt.get() < maxRetries && !succeeded.get()) { // GH-90000
-                attempt.incrementAndGet(); // GH-90000
-                if (attempt.get() == 1) { // GH-90000
+            while (attempt.get() < maxRetries && !succeeded.get()) { 
+                attempt.incrementAndGet(); 
+                if (attempt.get() == 1) { 
                     // Simulate rate limit on first attempt
                     continue;
                 }
-                succeeded.set(true); // GH-90000
+                succeeded.set(true); 
             }
 
-            assertThat(succeeded.get()).isTrue(); // GH-90000
-            assertThat(attempt.get()).isEqualTo(2); // GH-90000
+            assertThat(succeeded.get()).isTrue(); 
+            assertThat(attempt.get()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("non-retryable error does not retry")
-        void nonRetryableError_doesNotRetry() { // GH-90000
-            AtomicInteger callCount = new AtomicInteger(0); // GH-90000
+        void nonRetryableError_doesNotRetry() { 
+            AtomicInteger callCount = new AtomicInteger(0); 
 
             try {
-                callCount.incrementAndGet(); // GH-90000
+                callCount.incrementAndGet(); 
                 throw new RuntimeException("invalid_request: Malformed input"); // non-retryable
-            } catch (RuntimeException e) { // GH-90000
+            } catch (RuntimeException e) { 
                 // Non-retryable: do not retry
             }
 
-            assertThat(callCount.get()).isEqualTo(1); // GH-90000
+            assertThat(callCount.get()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("max retries exhausted surfaces final error to caller")
-        void maxRetriesExhausted_surfacesFinalErrorToCaller() { // GH-90000
+        void maxRetriesExhausted_surfacesFinalErrorToCaller() { 
             int maxRetries = 3;
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
+            AtomicInteger attempts = new AtomicInteger(0); 
             RuntimeException finalError = null;
 
-            while (attempts.get() < maxRetries) { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
-                finalError = new RuntimeException("rate_limit_exceeded attempt " + attempts.get()); // GH-90000
+            while (attempts.get() < maxRetries) { 
+                attempts.incrementAndGet(); 
+                finalError = new RuntimeException("rate_limit_exceeded attempt " + attempts.get()); 
             }
 
-            assertThat(attempts.get()).isEqualTo(maxRetries); // GH-90000
-            assertThat(finalError).isNotNull(); // GH-90000
+            assertThat(attempts.get()).isEqualTo(maxRetries); 
+            assertThat(finalError).isNotNull(); 
             assertThat(finalError.getMessage()).contains("rate_limit_exceeded");
         }
     }
@@ -212,7 +212,7 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rate limit error contains retry-after information")
-        void rateLimitError_containsRetryAfterInformation() { // GH-90000
+        void rateLimitError_containsRetryAfterInformation() { 
             String rateLimitMessage = "rate_limit_exceeded: retry after 60 seconds";
 
             assertThat(rateLimitMessage).contains("rate_limit_exceeded");
@@ -221,14 +221,14 @@ class RealModelCallIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("request within rate limit succeeds without error")
-        void requestWithinRateLimit_succeedsWithoutError() { // GH-90000
-            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, false, false); // GH-90000
-            ModelRequest request = new ModelRequest("claude-3", List.of(Map.of("role", "user", "content", "Test")), 0.5, 50); // GH-90000
+        void requestWithinRateLimit_succeedsWithoutError() { 
+            SimulatedModelAdapter adapter = new SimulatedModelAdapter(false, false, false); 
+            ModelRequest request = new ModelRequest("claude-3", List.of(Map.of("role", "user", "content", "Test")), 0.5, 50); 
 
-            ModelResponse response = adapter.call(request); // GH-90000
+            ModelResponse response = adapter.call(request); 
 
-            assertThat(response).isNotNull(); // GH-90000
-            assertThat(response.content()).isNotBlank(); // GH-90000
+            assertThat(response).isNotNull(); 
+            assertThat(response.content()).isNotBlank(); 
         }
     }
 }

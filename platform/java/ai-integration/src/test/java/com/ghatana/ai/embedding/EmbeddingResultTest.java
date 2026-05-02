@@ -24,11 +24,11 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("creates with text, vector, and model")
-        void createsWithAllFields() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("hello world", SAMPLE_VECTOR, "text-embedding-ada-002"); // GH-90000
+        void createsWithAllFields() { 
+            EmbeddingResult r = new EmbeddingResult("hello world", SAMPLE_VECTOR, "text-embedding-ada-002"); 
             assertThat(r.getText()).isEqualTo("hello world");
             assertThat(r.getModel()).isEqualTo("text-embedding-ada-002");
-            assertThat(r.getVector()).isEqualTo(SAMPLE_VECTOR); // GH-90000
+            assertThat(r.getVector()).isEqualTo(SAMPLE_VECTOR); 
         }
     }
 
@@ -38,25 +38,25 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("null text throws NullPointerException")
-        void nullText() { // GH-90000
-            assertThatThrownBy(() -> new EmbeddingResult(null, SAMPLE_VECTOR, "model")) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullText() { 
+            assertThatThrownBy(() -> new EmbeddingResult(null, SAMPLE_VECTOR, "model")) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("text");
         }
 
         @Test
         @DisplayName("null vector throws NullPointerException")
-        void nullVector() { // GH-90000
-            assertThatThrownBy(() -> new EmbeddingResult("text", null, "model")) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullVector() { 
+            assertThatThrownBy(() -> new EmbeddingResult("text", null, "model")) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("vector");
         }
 
         @Test
         @DisplayName("null model throws NullPointerException")
-        void nullModel() { // GH-90000
-            assertThatThrownBy(() -> new EmbeddingResult("text", SAMPLE_VECTOR, null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void nullModel() { 
+            assertThatThrownBy(() -> new EmbeddingResult("text", SAMPLE_VECTOR, null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("model");
         }
     }
@@ -67,31 +67,31 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("constructor clones input vector")
-        void constructorClones() { // GH-90000
+        void constructorClones() { 
             float[] original = {1.0f, 2.0f};
-            EmbeddingResult r = new EmbeddingResult("text", original, "model"); // GH-90000
+            EmbeddingResult r = new EmbeddingResult("text", original, "model"); 
             original[0] = 99.0f;
-            assertThat(r.getVector()[0]).isEqualTo(1.0f); // GH-90000
+            assertThat(r.getVector()[0]).isEqualTo(1.0f); 
         }
 
         @Test
         @DisplayName("getVector returns a clone")
-        void getVectorClones() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); // GH-90000
-            float[] v1 = r.getVector(); // GH-90000
-            float[] v2 = r.getVector(); // GH-90000
-            assertThat(v1).isNotSameAs(v2); // GH-90000
-            assertThat(v1).isEqualTo(v2); // GH-90000
+        void getVectorClones() { 
+            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); 
+            float[] v1 = r.getVector(); 
+            float[] v2 = r.getVector(); 
+            assertThat(v1).isNotSameAs(v2); 
+            assertThat(v1).isEqualTo(v2); 
         }
 
         @Test
         @DisplayName("embedding() returns a clone (alias for getVector)")
-        void embeddingClones() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); // GH-90000
-            float[] e1 = r.embedding(); // GH-90000
-            float[] e2 = r.embedding(); // GH-90000
-            assertThat(e1).isNotSameAs(e2); // GH-90000
-            assertThat(e1).isEqualTo(SAMPLE_VECTOR); // GH-90000
+        void embeddingClones() { 
+            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); 
+            float[] e1 = r.embedding(); 
+            float[] e2 = r.embedding(); 
+            assertThat(e1).isNotSameAs(e2); 
+            assertThat(e1).isEqualTo(SAMPLE_VECTOR); 
         }
     }
 
@@ -101,19 +101,19 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("of(vector) creates result with empty text and 'unknown' model")
-        void ofFactory() { // GH-90000
+        void ofFactory() { 
             float[] vec = {0.5f, 0.6f};
-            EmbeddingResult r = EmbeddingResult.of(vec); // GH-90000
-            assertThat(r.getText()).isEmpty(); // GH-90000
+            EmbeddingResult r = EmbeddingResult.of(vec); 
+            assertThat(r.getText()).isEmpty(); 
             assertThat(r.getModel()).isEqualTo("unknown");
-            assertThat(r.getVector()).isEqualTo(vec); // GH-90000
+            assertThat(r.getVector()).isEqualTo(vec); 
         }
 
         @Test
         @DisplayName("fromOpenAI throws IllegalArgumentException for unsupported embedding type")
-        void fromOpenAIThrows() { // GH-90000
-            assertThatThrownBy(() -> EmbeddingResult.fromOpenAI(new Object(), "text", "model")) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void fromOpenAIThrows() { 
+            assertThatThrownBy(() -> EmbeddingResult.fromOpenAI(new Object(), "text", "model")) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("embedding");
         }
     }
@@ -124,9 +124,9 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("getModelName is alias for getModel")
-        void getModelNameAlias() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "ada-002"); // GH-90000
-            assertThat(r.getModelName()).isEqualTo(r.getModel()); // GH-90000
+        void getModelNameAlias() { 
+            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "ada-002"); 
+            assertThat(r.getModelName()).isEqualTo(r.getModel()); 
         }
     }
 
@@ -136,50 +136,50 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("equal results are equal")
-        void equalResults() { // GH-90000
+        void equalResults() { 
             float[] v = {1.0f, 2.0f};
-            EmbeddingResult r1 = new EmbeddingResult("hello", v, "model-a"); // GH-90000
-            EmbeddingResult r2 = new EmbeddingResult("hello", v, "model-a"); // GH-90000
-            assertThat(r1).isEqualTo(r2); // GH-90000
-            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); // GH-90000
+            EmbeddingResult r1 = new EmbeddingResult("hello", v, "model-a"); 
+            EmbeddingResult r2 = new EmbeddingResult("hello", v, "model-a"); 
+            assertThat(r1).isEqualTo(r2); 
+            assertThat(r1.hashCode()).isEqualTo(r2.hashCode()); 
         }
 
         @Test
         @DisplayName("different text not equal")
-        void differentText() { // GH-90000
-            EmbeddingResult r1 = new EmbeddingResult("hello", SAMPLE_VECTOR, "model"); // GH-90000
-            EmbeddingResult r2 = new EmbeddingResult("world", SAMPLE_VECTOR, "model"); // GH-90000
-            assertThat(r1).isNotEqualTo(r2); // GH-90000
+        void differentText() { 
+            EmbeddingResult r1 = new EmbeddingResult("hello", SAMPLE_VECTOR, "model"); 
+            EmbeddingResult r2 = new EmbeddingResult("world", SAMPLE_VECTOR, "model"); 
+            assertThat(r1).isNotEqualTo(r2); 
         }
 
         @Test
         @DisplayName("different model not equal")
-        void differentModel() { // GH-90000
-            EmbeddingResult r1 = new EmbeddingResult("text", SAMPLE_VECTOR, "model-a"); // GH-90000
-            EmbeddingResult r2 = new EmbeddingResult("text", SAMPLE_VECTOR, "model-b"); // GH-90000
-            assertThat(r1).isNotEqualTo(r2); // GH-90000
+        void differentModel() { 
+            EmbeddingResult r1 = new EmbeddingResult("text", SAMPLE_VECTOR, "model-a"); 
+            EmbeddingResult r2 = new EmbeddingResult("text", SAMPLE_VECTOR, "model-b"); 
+            assertThat(r1).isNotEqualTo(r2); 
         }
 
         @Test
         @DisplayName("different vector not equal")
-        void differentVector() { // GH-90000
-            EmbeddingResult r1 = new EmbeddingResult("text", new float[]{1.0f}, "model"); // GH-90000
-            EmbeddingResult r2 = new EmbeddingResult("text", new float[]{2.0f}, "model"); // GH-90000
-            assertThat(r1).isNotEqualTo(r2); // GH-90000
+        void differentVector() { 
+            EmbeddingResult r1 = new EmbeddingResult("text", new float[]{1.0f}, "model"); 
+            EmbeddingResult r2 = new EmbeddingResult("text", new float[]{2.0f}, "model"); 
+            assertThat(r1).isNotEqualTo(r2); 
         }
 
         @Test
         @DisplayName("equal to itself")
-        void equalToItself() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); // GH-90000
-            assertThat(r).isEqualTo(r); // GH-90000
+        void equalToItself() { 
+            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); 
+            assertThat(r).isEqualTo(r); 
         }
 
         @Test
         @DisplayName("not equal to null")
-        void notEqualToNull() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); // GH-90000
-            assertThat(r).isNotEqualTo(null); // GH-90000
+        void notEqualToNull() { 
+            EmbeddingResult r = new EmbeddingResult("text", SAMPLE_VECTOR, "model"); 
+            assertThat(r).isNotEqualTo(null); 
         }
     }
 
@@ -189,9 +189,9 @@ class EmbeddingResultTest {
 
         @Test
         @DisplayName("toString contains text and model, hides vector")
-        void toStringContent() { // GH-90000
-            EmbeddingResult r = new EmbeddingResult("hello", SAMPLE_VECTOR, "ada-002"); // GH-90000
-            String str = r.toString(); // GH-90000
+        void toStringContent() { 
+            EmbeddingResult r = new EmbeddingResult("hello", SAMPLE_VECTOR, "ada-002"); 
+            String str = r.toString(); 
             assertThat(str).contains("hello").contains("ada-002").contains("[...]");
         }
     }

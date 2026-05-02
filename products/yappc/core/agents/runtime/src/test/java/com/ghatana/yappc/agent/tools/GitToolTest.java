@@ -30,31 +30,31 @@ class GitToolTest {
     private String repo;
 
     @BeforeEach
-    void initGitRepo() throws IOException, InterruptedException { // GH-90000
-        repo = repoDir.toString(); // GH-90000
+    void initGitRepo() throws IOException, InterruptedException { 
+        repo = repoDir.toString(); 
 
         // Initialise a bare-minimum git repo so every test starts clean
-        runGit(repo, "git", "init", "-b", "main"); // GH-90000
-        runGit(repo, "git", "config", "user.email", "test@ghatana.ai"); // GH-90000
-        runGit(repo, "git", "config", "user.name", "Test User"); // GH-90000
+        runGit(repo, "git", "init", "-b", "main"); 
+        runGit(repo, "git", "config", "user.email", "test@ghatana.ai"); 
+        runGit(repo, "git", "config", "user.name", "Test User"); 
     }
 
     // ──────────────────────────── status ────────────────────────────
 
     @Test
     @DisplayName("status returns SUCCESS on a clean repo with no staged changes")
-    void statusSucceedsOnCleanRepo() { // GH-90000
-        String result = GitTool.status(repo); // GH-90000
+    void statusSucceedsOnCleanRepo() { 
+        String result = GitTool.status(repo); 
 
         assertThat(result).startsWith("SUCCESS:");
     }
 
     @Test
     @DisplayName("status shows untracked file after creating one")
-    void statusShowsUntrackedFile() throws IOException { // GH-90000
+    void statusShowsUntrackedFile() throws IOException { 
         Files.writeString(repoDir.resolve("new.txt"), "new");
 
-        String result = GitTool.status(repo); // GH-90000
+        String result = GitTool.status(repo); 
 
         assertThat(result).startsWith("SUCCESS:");
         assertThat(result).contains("new.txt");
@@ -64,25 +64,25 @@ class GitToolTest {
 
     @Test
     @DisplayName("diff returns SUCCESS with empty diff on a clean repo")
-    void diffSucceedsOnCleanRepo() { // GH-90000
-        String result = GitTool.diff(repo); // GH-90000
+    void diffSucceedsOnCleanRepo() { 
+        String result = GitTool.diff(repo); 
 
         assertThat(result).startsWith("SUCCESS:");
     }
 
     @Test
     @DisplayName("diff shows modified content after changing a tracked file")
-    void diffShowsModifiedContent() throws IOException, InterruptedException { // GH-90000
+    void diffShowsModifiedContent() throws IOException, InterruptedException { 
         // Stage and commit a file first
         Path file = repoDir.resolve("tracked.txt");
-        Files.writeString(file, "original"); // GH-90000
-        runGit(repo, "git", "add", "tracked.txt"); // GH-90000
-        runGit(repo, "git", "commit", "-m", "init"); // GH-90000
+        Files.writeString(file, "original"); 
+        runGit(repo, "git", "add", "tracked.txt"); 
+        runGit(repo, "git", "commit", "-m", "init"); 
 
-        // Modify the tracked file (not staged) // GH-90000
-        Files.writeString(file, "modified"); // GH-90000
+        // Modify the tracked file (not staged) 
+        Files.writeString(file, "modified"); 
 
-        String result = GitTool.diff(repo); // GH-90000
+        String result = GitTool.diff(repo); 
 
         assertThat(result).startsWith("SUCCESS:");
         assertThat(result).contains("tracked.txt");
@@ -92,8 +92,8 @@ class GitToolTest {
 
     @Test
     @DisplayName("log FAILS on a repo with no commits yet")
-    void logFailsWithNoCommits() { // GH-90000
-        String result = GitTool.log(repo, "5"); // GH-90000
+    void logFailsWithNoCommits() { 
+        String result = GitTool.log(repo, "5"); 
 
         // git log returns exit code 128 when there are no commits
         assertThat(result).startsWith("FAILED");
@@ -101,12 +101,12 @@ class GitToolTest {
 
     @Test
     @DisplayName("log returns commit message after first commit")
-    void logReturnsCommitAfterFirstCommit() throws IOException, InterruptedException { // GH-90000
+    void logReturnsCommitAfterFirstCommit() throws IOException, InterruptedException { 
         Files.writeString(repoDir.resolve("a.txt"), "a");
-        runGit(repo, "git", "add", "."); // GH-90000
-        runGit(repo, "git", "commit", "-m", "first commit"); // GH-90000
+        runGit(repo, "git", "add", "."); 
+        runGit(repo, "git", "commit", "-m", "first commit"); 
 
-        String result = GitTool.log(repo, "1"); // GH-90000
+        String result = GitTool.log(repo, "1"); 
 
         assertThat(result).startsWith("SUCCESS:");
         assertThat(result).contains("first commit");
@@ -116,19 +116,19 @@ class GitToolTest {
 
     @Test
     @DisplayName("commit FAILS when there is nothing to commit")
-    void commitFailsWithNothingStaged() { // GH-90000
-        String result = GitTool.commit(repo, "empty commit"); // GH-90000
+    void commitFailsWithNothingStaged() { 
+        String result = GitTool.commit(repo, "empty commit"); 
 
         assertThat(result).startsWith("FAILED");
     }
 
     @Test
     @DisplayName("commit succeeds when a file is staged")
-    void commitSucceedsWithStagedFile() throws IOException, InterruptedException { // GH-90000
+    void commitSucceedsWithStagedFile() throws IOException, InterruptedException { 
         Files.writeString(repoDir.resolve("staged.txt"), "content");
-        runGit(repo, "git", "add", "staged.txt"); // GH-90000
+        runGit(repo, "git", "add", "staged.txt"); 
 
-        String result = GitTool.commit(repo, "add staged file"); // GH-90000
+        String result = GitTool.commit(repo, "add staged file"); 
 
         assertThat(result).startsWith("SUCCESS:");
     }
@@ -137,12 +137,12 @@ class GitToolTest {
 
     @Test
     @DisplayName("branch returns SUCCESS and lists branches after initial commit")
-    void branchListsAfterInitialCommit() throws IOException, InterruptedException { // GH-90000
+    void branchListsAfterInitialCommit() throws IOException, InterruptedException { 
         Files.writeString(repoDir.resolve("init.txt"), "init");
-        runGit(repo, "git", "add", "."); // GH-90000
-        runGit(repo, "git", "commit", "-m", "init"); // GH-90000
+        runGit(repo, "git", "add", "."); 
+        runGit(repo, "git", "commit", "-m", "init"); 
 
-        String result = GitTool.branch(repo); // GH-90000
+        String result = GitTool.branch(repo); 
 
         assertThat(result).startsWith("SUCCESS:");
         assertThat(result).contains("main");
@@ -152,22 +152,22 @@ class GitToolTest {
 
     @Test
     @DisplayName("checkout FAILS for a branch that does not exist")
-    void checkoutFailsForNonExistentBranch() { // GH-90000
-        String result = GitTool.checkout(repo, "no-such-branch"); // GH-90000
+    void checkoutFailsForNonExistentBranch() { 
+        String result = GitTool.checkout(repo, "no-such-branch"); 
 
         assertThat(result).startsWith("FAILED");
     }
 
     @Test
     @DisplayName("checkout succeeds when switching to an existing branch")
-    void checkoutSucceedsForExistingBranch() throws IOException, InterruptedException { // GH-90000
+    void checkoutSucceedsForExistingBranch() throws IOException, InterruptedException { 
         // Create an initial commit so branches can be created
         Files.writeString(repoDir.resolve("base.txt"), "base");
-        runGit(repo, "git", "add", "."); // GH-90000
-        runGit(repo, "git", "commit", "-m", "base"); // GH-90000
-        runGit(repo, "git", "checkout", "-b", "feature-x"); // GH-90000
+        runGit(repo, "git", "add", "."); 
+        runGit(repo, "git", "commit", "-m", "base"); 
+        runGit(repo, "git", "checkout", "-b", "feature-x"); 
 
-        String result = GitTool.checkout(repo, "main"); // GH-90000
+        String result = GitTool.checkout(repo, "main"); 
 
         assertThat(result).startsWith("SUCCESS:");
     }
@@ -176,14 +176,14 @@ class GitToolTest {
 
     @Test
     @DisplayName("clone FAILS for an invalid/unreachable URL")
-    void cloneFailsForInvalidUrl() { // GH-90000
+    void cloneFailsForInvalidUrl() { 
         String invalidUrl = "https://invalid.ghatana.local/nonexistent/repo.git";
         String target = repoDir.resolve("cloned").toString();
 
-        String result = GitTool.clone(invalidUrl, target); // GH-90000
+        String result = GitTool.clone(invalidUrl, target); 
 
         // git clone returns non-zero exit code for unreachable URLs
-        assertThat(result).satisfiesAnyOf( // GH-90000
+        assertThat(result).satisfiesAnyOf( 
             r -> assertThat(r).startsWith("FAILED"),
             r -> assertThat(r).startsWith("ERROR")
         );
@@ -191,11 +191,11 @@ class GitToolTest {
 
     // ──────────────────────────── helpers ────────────────────────────
 
-    private static void runGit(String workDir, String... cmd) throws IOException, InterruptedException { // GH-90000
-        new ProcessBuilder(cmd) // GH-90000
-            .directory(Path.of(workDir).toFile()) // GH-90000
-            .redirectErrorStream(true) // GH-90000
-            .start() // GH-90000
-            .waitFor(); // GH-90000
+    private static void runGit(String workDir, String... cmd) throws IOException, InterruptedException { 
+        new ProcessBuilder(cmd) 
+            .directory(Path.of(workDir).toFile()) 
+            .redirectErrorStream(true) 
+            .start() 
+            .waitFor(); 
     }
 }

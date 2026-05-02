@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.api.graphql;
@@ -29,8 +29,8 @@ import static org.mockito.Mockito.*;
  *
  * <p>Tests mutation operations for entities and collections:
  * <ul>
- *   <li>Entity CRUD operations (create, update, delete)</li> // GH-90000
- *   <li>Collection CRUD operations (create, update, delete)</li> // GH-90000
+ *   <li>Entity CRUD operations (create, update, delete)</li> 
+ *   <li>Collection CRUD operations (create, update, delete)</li> 
  *   <li>Input validation</li>
  *   <li>UUID parsing and error handling</li>
  *   <li>Response mapping</li>
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer api
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("GraphQL Mutations Tests")
 class GraphQLMutationsTest extends EventloopTestBase {
 
@@ -64,69 +64,69 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create entity successfully")
-        void shouldCreateEntitySuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldCreateEntitySuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            Entity entity = Entity.builder() // GH-90000
-                .id(UUID.randomUUID()) // GH-90000
+            Entity entity = Entity.builder() 
+                .id(UUID.randomUUID()) 
                 .tenantId("tenant-1")
                 .collectionName("products")
-                .data(Map.of("name", "Product 1", "price", 100)) // GH-90000
-                .version(1) // GH-90000
-                .build(); // GH-90000
+                .data(Map.of("name", "Product 1", "price", 100)) 
+                .version(1) 
+                .build(); 
             
-            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) // GH-90000
-                .thenReturn(Promise.of(entity)); // GH-90000
+            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) 
+                .thenReturn(Promise.of(entity)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") 
             );
             
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.get("tenantId")).isEqualTo("tenant-1");
             assertThat(result.get("collectionName")).isEqualTo("products");
         }
 
         @Test
         @DisplayName("should update entity successfully")
-        void shouldUpdateEntitySuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldUpdateEntitySuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            Entity entity = Entity.builder() // GH-90000
-                .id(entityId) // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            Entity entity = Entity.builder() 
+                .id(entityId) 
                 .tenantId("tenant-1")
                 .collectionName("products")
-                .data(Map.of("name", "Updated Product", "price", 150)) // GH-90000
-                .version(2) // GH-90000
-                .build(); // GH-90000
+                .data(Map.of("name", "Updated Product", "price", 150)) 
+                .version(2) 
+                .build(); 
             
-            when(entityService.updateEntity("tenant-1", "products", entityId, Map.of("price", 150), "user-1")) // GH-90000
-                .thenReturn(Promise.of(entity)); // GH-90000
+            when(entityService.updateEntity("tenant-1", "products", entityId, Map.of("price", 150), "user-1")) 
+                .thenReturn(Promise.of(entity)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.updateEntity("tenant-1", "products", entityId.toString(), Map.of("price", 150), "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.updateEntity("tenant-1", "products", entityId.toString(), Map.of("price", 150), "user-1") 
             );
             
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.get("id")).isEqualTo(entityId.toString());
             assertThat(result.get("version")).isEqualTo(2);
         }
 
         @Test
         @DisplayName("should delete entity successfully")
-        void shouldDeleteEntitySuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldDeleteEntitySuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            when(entityService.deleteEntity("tenant-1", "products", entityId, "user-1")) // GH-90000
-                .thenReturn(Promise.complete()); // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            when(entityService.deleteEntity("tenant-1", "products", entityId, "user-1")) 
+                .thenReturn(Promise.complete()); 
             
-            Boolean result = runPromise(() ->  // GH-90000
-                mutations.deleteEntity("tenant-1", "products", entityId.toString(), "user-1") // GH-90000
+            Boolean result = runPromise(() ->  
+                mutations.deleteEntity("tenant-1", "products", entityId.toString(), "user-1") 
             );
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
     }
 
@@ -140,86 +140,86 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should create collection successfully")
-        void shouldCreateCollectionSuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldCreateCollectionSuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            MetaCollection collection = MetaCollection.builder() // GH-90000
-                .id(UUID.randomUUID()) // GH-90000
+            MetaCollection collection = MetaCollection.builder() 
+                .id(UUID.randomUUID()) 
                 .tenantId("tenant-1")
                 .name("products")
                 .label("products")
                 .description("Product collection")
-                .fields(java.util.Collections.emptyList()) // GH-90000
-                .permission(java.util.Collections.emptyMap()) // GH-90000
-                .build(); // GH-90000
+                .fields(java.util.Collections.emptyList()) 
+                .permission(java.util.Collections.emptyMap()) 
+                .build(); 
             
             when(collectionService.createCollection(eq("tenant-1"), any(MetaCollection.class), eq("user-1")))
-                .thenReturn(Promise.of(collection)); // GH-90000
+                .thenReturn(Promise.of(collection)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.createCollection("tenant-1", "products", "Product collection", "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.createCollection("tenant-1", "products", "Product collection", "user-1") 
             );
             
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.get("tenantId")).isEqualTo("tenant-1");
             assertThat(result.get("name")).isEqualTo("products");
         }
 
         @Test
         @DisplayName("should update collection successfully")
-        void shouldUpdateCollectionSuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldUpdateCollectionSuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            MetaCollection existing = MetaCollection.builder() // GH-90000
-                .id(UUID.randomUUID()) // GH-90000
+            MetaCollection existing = MetaCollection.builder() 
+                .id(UUID.randomUUID()) 
                 .tenantId("tenant-1")
                 .name("products")
                 .label("products")
                 .description("Old description")
-                .fields(java.util.Collections.emptyList()) // GH-90000
-                .permission(java.util.Collections.emptyMap()) // GH-90000
-                .build(); // GH-90000
+                .fields(java.util.Collections.emptyList()) 
+                .permission(java.util.Collections.emptyMap()) 
+                .build(); 
             
-            when(collectionRepository.findByName("tenant-1", "products")) // GH-90000
-                .thenReturn(Promise.of(java.util.Optional.of(existing))); // GH-90000
+            when(collectionRepository.findByName("tenant-1", "products")) 
+                .thenReturn(Promise.of(java.util.Optional.of(existing))); 
             
             when(collectionService.updateCollection(eq("tenant-1"), any(MetaCollection.class), eq("user-1")))
-                .thenReturn(Promise.of(existing)); // GH-90000
+                .thenReturn(Promise.of(existing)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.updateCollection("tenant-1", "products", "New description", "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.updateCollection("tenant-1", "products", "New description", "user-1") 
             );
             
-            assertThat(result).isNotNull(); // GH-90000
+            assertThat(result).isNotNull(); 
             assertThat(result.get("name")).isEqualTo("products");
         }
 
         @Test
         @DisplayName("should delete collection successfully")
-        void shouldDeleteCollectionSuccessfully() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldDeleteCollectionSuccessfully() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            MetaCollection existing = MetaCollection.builder() // GH-90000
-                .id(UUID.randomUUID()) // GH-90000
+            MetaCollection existing = MetaCollection.builder() 
+                .id(UUID.randomUUID()) 
                 .tenantId("tenant-1")
                 .name("products")
                 .label("products")
                 .description("Product collection")
-                .fields(java.util.Collections.emptyList()) // GH-90000
-                .permission(java.util.Collections.emptyMap()) // GH-90000
-                .build(); // GH-90000
+                .fields(java.util.Collections.emptyList()) 
+                .permission(java.util.Collections.emptyMap()) 
+                .build(); 
             
-            when(collectionRepository.findByName("tenant-1", "products")) // GH-90000
-                .thenReturn(Promise.of(java.util.Optional.of(existing))); // GH-90000
+            when(collectionRepository.findByName("tenant-1", "products")) 
+                .thenReturn(Promise.of(java.util.Optional.of(existing))); 
             
-            when(collectionService.deleteCollection("tenant-1", existing.getId(), "user-1")) // GH-90000
-                .thenReturn(Promise.complete()); // GH-90000
+            when(collectionService.deleteCollection("tenant-1", existing.getId(), "user-1")) 
+                .thenReturn(Promise.complete()); 
             
-            Boolean result = runPromise(() ->  // GH-90000
-                mutations.deleteCollection("tenant-1", "products", "user-1") // GH-90000
+            Boolean result = runPromise(() ->  
+                mutations.deleteCollection("tenant-1", "products", "user-1") 
             );
             
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
     }
 
@@ -233,89 +233,89 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should reject null tenantId in createEntity")
-        void shouldRejectNullTenantIdInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectNullTenantIdInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity(null, "products", Map.of("name", "Product 1"), "user-1") // GH-90000
-            )).isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity(null, "products", Map.of("name", "Product 1"), "user-1") 
+            )).isInstanceOf(NullPointerException.class) 
               .hasMessageContaining("tenantId is required");
         }
 
         @Test
         @DisplayName("should reject blank tenantId in createEntity")
-        void shouldRejectBlankTenantIdInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectBlankTenantIdInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity("", "products", Map.of("name", "Product 1"), "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity("", "products", Map.of("name", "Product 1"), "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("tenantId cannot be empty");
         }
 
         @Test
         @DisplayName("should reject null collectionName in createEntity")
-        void shouldRejectNullCollectionNameInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectNullCollectionNameInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", null, Map.of("name", "Product 1"), "user-1") // GH-90000
-            )).isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity("tenant-1", null, Map.of("name", "Product 1"), "user-1") 
+            )).isInstanceOf(NullPointerException.class) 
               .hasMessageContaining("collectionName is required");
         }
 
         @Test
         @DisplayName("should reject empty data in createEntity")
-        void shouldRejectEmptyDataInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectEmptyDataInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", Map.of(), "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", Map.of(), "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("data cannot be empty");
         }
 
         @Test
         @DisplayName("should reject null data in createEntity")
-        void shouldRejectNullDataInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectNullDataInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", null, "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", null, "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("data cannot be empty");
         }
 
         @Test
         @DisplayName("should reject null userId in createEntity")
-        void shouldRejectNullUserIdInCreateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectNullUserIdInCreateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), null) // GH-90000
-            )).isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), null) 
+            )).isInstanceOf(NullPointerException.class) 
               .hasMessageContaining("userId is required");
         }
 
         @Test
         @DisplayName("should reject blank name in createCollection")
-        void shouldRejectBlankNameInCreateCollection() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectBlankNameInCreateCollection() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createCollection("tenant-1", "", "Description", "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createCollection("tenant-1", "", "Description", "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("name cannot be empty");
         }
 
         @Test
         @DisplayName("should reject null name in createCollection")
-        void shouldRejectNullNameInCreateCollection() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectNullNameInCreateCollection() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.createCollection("tenant-1", null, "Description", "user-1") // GH-90000
-            )).isInstanceOf(NullPointerException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.createCollection("tenant-1", null, "Description", "user-1") 
+            )).isInstanceOf(NullPointerException.class) 
               .hasMessageContaining("name is required");
         }
     }
@@ -330,51 +330,51 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should reject invalid UUID format in updateEntity")
-        void shouldRejectInvalidUuidFormatInUpdateEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectInvalidUuidFormatInUpdateEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.updateEntity("tenant-1", "products", "invalid-uuid", Map.of("price", 150), "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.updateEntity("tenant-1", "products", "invalid-uuid", Map.of("price", 150), "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("Invalid entity ID format");
         }
 
         @Test
         @DisplayName("should reject invalid UUID format in deleteEntity")
-        void shouldRejectInvalidUuidFormatInDeleteEntity() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldRejectInvalidUuidFormatInDeleteEntity() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.deleteEntity("tenant-1", "products", "invalid-uuid", "user-1") // GH-90000
-            )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.deleteEntity("tenant-1", "products", "invalid-uuid", "user-1") 
+            )).isInstanceOf(IllegalArgumentException.class) 
               .hasMessageContaining("Invalid entity ID format");
         }
 
         @Test
         @DisplayName("should handle collection not found in updateCollection")
-        void shouldHandleCollectionNotFoundInUpdateCollection() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldHandleCollectionNotFoundInUpdateCollection() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            when(collectionRepository.findByName("tenant-1", "products")) // GH-90000
-                .thenReturn(Promise.of(java.util.Optional.empty())); // GH-90000
+            when(collectionRepository.findByName("tenant-1", "products")) 
+                .thenReturn(Promise.of(java.util.Optional.empty())); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.updateCollection("tenant-1", "products", "New description", "user-1") // GH-90000
-            )).isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.updateCollection("tenant-1", "products", "New description", "user-1") 
+            )).isInstanceOf(IllegalStateException.class) 
               .hasMessageContaining("Collection not found");
         }
 
         @Test
         @DisplayName("should handle collection not found in deleteCollection")
-        void shouldHandleCollectionNotFoundInDeleteCollection() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldHandleCollectionNotFoundInDeleteCollection() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            when(collectionRepository.findByName("tenant-1", "products")) // GH-90000
-                .thenReturn(Promise.of(java.util.Optional.empty())); // GH-90000
+            when(collectionRepository.findByName("tenant-1", "products")) 
+                .thenReturn(Promise.of(java.util.Optional.empty())); 
             
-            assertThatThrownBy(() -> runPromise(() ->  // GH-90000
-                mutations.deleteCollection("tenant-1", "products", "user-1") // GH-90000
-            )).isInstanceOf(IllegalStateException.class) // GH-90000
+            assertThatThrownBy(() -> runPromise(() ->  
+                mutations.deleteCollection("tenant-1", "products", "user-1") 
+            )).isInstanceOf(IllegalStateException.class) 
               .hasMessageContaining("Collection not found");
         }
     }
@@ -389,24 +389,24 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should map entity to response map correctly")
-        void shouldMapEntityToResponseMapCorrectly() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldMapEntityToResponseMapCorrectly() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            UUID entityId = UUID.randomUUID(); // GH-90000
-            Entity entity = Entity.builder() // GH-90000
-                .id(entityId) // GH-90000
+            UUID entityId = UUID.randomUUID(); 
+            Entity entity = Entity.builder() 
+                .id(entityId) 
                 .tenantId("tenant-1")
                 .collectionName("products")
-                .data(Map.of("name", "Product 1", "price", 100)) // GH-90000
-                .metadata(Map.of("source", "api")) // GH-90000
-                .version(1) // GH-90000
-                .build(); // GH-90000
+                .data(Map.of("name", "Product 1", "price", 100)) 
+                .metadata(Map.of("source", "api")) 
+                .version(1) 
+                .build(); 
             
-            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) // GH-90000
-                .thenReturn(Promise.of(entity)); // GH-90000
+            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) 
+                .thenReturn(Promise.of(entity)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") 
             );
             
             assertThat(result.get("id")).isEqualTo(entityId.toString());
@@ -419,25 +419,25 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should map collection to response map correctly")
-        void shouldMapCollectionToResponseMapCorrectly() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldMapCollectionToResponseMapCorrectly() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            UUID collectionId = UUID.randomUUID(); // GH-90000
-            MetaCollection collection = MetaCollection.builder() // GH-90000
-                .id(collectionId) // GH-90000
+            UUID collectionId = UUID.randomUUID(); 
+            MetaCollection collection = MetaCollection.builder() 
+                .id(collectionId) 
                 .tenantId("tenant-1")
                 .name("products")
                 .label("products")
                 .description("Product collection")
-                .fields(java.util.Collections.emptyList()) // GH-90000
-                .permission(java.util.Collections.emptyMap()) // GH-90000
-                .build(); // GH-90000
+                .fields(java.util.Collections.emptyList()) 
+                .permission(java.util.Collections.emptyMap()) 
+                .build(); 
             
             when(collectionService.createCollection(eq("tenant-1"), any(MetaCollection.class), eq("user-1")))
-                .thenReturn(Promise.of(collection)); // GH-90000
+                .thenReturn(Promise.of(collection)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.createCollection("tenant-1", "products", "Product collection", "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.createCollection("tenant-1", "products", "Product collection", "user-1") 
             );
             
             assertThat(result.get("id")).isEqualTo(collectionId.toString());
@@ -448,18 +448,18 @@ class GraphQLMutationsTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should handle null entity in mapping")
-        void shouldHandleNullEntityInMapping() { // GH-90000
-            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); // GH-90000
+        void shouldHandleNullEntityInMapping() { 
+            GraphQLMutations mutations = new GraphQLMutations(entityService, collectionService, collectionRepository); 
             
-            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) // GH-90000
-                .thenReturn(Promise.of(null)); // GH-90000
+            when(entityService.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1")) 
+                .thenReturn(Promise.of(null)); 
             
-            Map<String, Object> result = runPromise(() ->  // GH-90000
-                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") // GH-90000
+            Map<String, Object> result = runPromise(() ->  
+                mutations.createEntity("tenant-1", "products", Map.of("name", "Product 1"), "user-1") 
             );
             
-            assertThat(result).isNotNull(); // GH-90000
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isNotNull(); 
+            assertThat(result).isEmpty(); 
         }
     }
 }

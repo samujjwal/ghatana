@@ -34,7 +34,7 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  */
 @DisplayName("CentralityAnalyticsEngine Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class CentralityAnalyticsEngineTest {
 
     @Mock
@@ -49,50 +49,50 @@ class CentralityAnalyticsEngineTest {
     private GraphEdge edgeBC;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = new CentralityAnalyticsEngine(storageAdapter); // GH-90000
-        engine.initialize(Map.of()); // GH-90000
-        engine.start(); // GH-90000
+    void setUp() { 
+        engine = new CentralityAnalyticsEngine(storageAdapter); 
+        engine.initialize(Map.of()); 
+        engine.start(); 
 
-        nodeA = GraphNode.builder() // GH-90000
+        nodeA = GraphNode.builder() 
                 .id("node-a")
                 .type("SERVICE")
                 .labels(Set.of("java"))
-                .properties(Map.of("name", "ServiceA")) // GH-90000
+                .properties(Map.of("name", "ServiceA")) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        nodeB = GraphNode.builder() // GH-90000
+        nodeB = GraphNode.builder() 
                 .id("node-b")
                 .type("SERVICE")
                 .labels(Set.of("java"))
-                .properties(Map.of("name", "ServiceB")) // GH-90000
+                .properties(Map.of("name", "ServiceB")) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        nodeC = GraphNode.builder() // GH-90000
+        nodeC = GraphNode.builder() 
                 .id("node-c")
                 .type("SERVICE")
                 .labels(Set.of("java"))
-                .properties(Map.of("name", "ServiceC")) // GH-90000
+                .properties(Map.of("name", "ServiceC")) 
                 .tenantId("tenant-1")
-                .build(); // GH-90000
+                .build(); 
 
-        edgeAB = GraphEdge.builder() // GH-90000
+        edgeAB = GraphEdge.builder() 
                 .id("edge-ab")
                 .sourceNodeId("node-a")
                 .targetNodeId("node-b")
                 .tenantId("tenant-1")
                 .relationshipType("CALLS")
-                .build(); // GH-90000
+                .build(); 
 
-        edgeBC = GraphEdge.builder() // GH-90000
+        edgeBC = GraphEdge.builder() 
                 .id("edge-bc")
                 .sourceNodeId("node-b")
                 .targetNodeId("node-c")
                 .tenantId("tenant-1")
                 .relationshipType("CALLS")
-                .build(); // GH-90000
+                .build(); 
     }
 
     // =========================================================================
@@ -105,22 +105,22 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should be healthy after start")
-        void shouldBeHealthyAfterStart() { // GH-90000
-            assertThat(engine.isHealthy()).isTrue(); // GH-90000
+        void shouldBeHealthyAfterStart() { 
+            assertThat(engine.isHealthy()).isTrue(); 
         }
 
         @Test
         @DisplayName("should not be healthy after stop")
-        void shouldNotBeHealthyAfterStop() { // GH-90000
-            engine.stop(); // GH-90000
-            assertThat(engine.isHealthy()).isFalse(); // GH-90000
+        void shouldNotBeHealthyAfterStop() { 
+            engine.stop(); 
+            assertThat(engine.isHealthy()).isFalse(); 
         }
 
         @Test
         @DisplayName("should not be healthy after shutdown")
-        void shouldNotBeHealthyAfterShutdown() { // GH-90000
-            engine.shutdown(); // GH-90000
-            assertThat(engine.isHealthy()).isFalse(); // GH-90000
+        void shouldNotBeHealthyAfterShutdown() { 
+            engine.shutdown(); 
+            assertThat(engine.isHealthy()).isFalse(); 
         }
     }
 
@@ -134,29 +134,29 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should return centrality map for all nodes")
-        void shouldReturnCentralityMap() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(List.of(nodeA, nodeB, nodeC)); // GH-90000
-            lenient().when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeAB)); // GH-90000
-            lenient().when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeBC)); // GH-90000
-            lenient().when(storageAdapter.getOutgoingEdges("node-c", "tenant-1")) // GH-90000
-                    .thenReturn(List.of()); // GH-90000
+        void shouldReturnCentralityMap() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))) 
+                    .thenReturn(List.of(nodeA, nodeB, nodeC)); 
+            lenient().when(storageAdapter.getOutgoingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeAB)); 
+            lenient().when(storageAdapter.getOutgoingEdges("node-b", "tenant-1")) 
+                    .thenReturn(List.of(edgeBC)); 
+            lenient().when(storageAdapter.getOutgoingEdges("node-c", "tenant-1")) 
+                    .thenReturn(List.of()); 
 
             Map<String, Double> centrality = engine.calculateBetweennessCentrality("tenant-1");
 
-            assertThat(centrality).containsKeys("node-a", "node-b", "node-c"); // GH-90000
+            assertThat(centrality).containsKeys("node-a", "node-b", "node-c"); 
             assertThat(centrality.get("node-b")).isGreaterThanOrEqualTo(0.0);
         }
 
         @Test
         @DisplayName("should return empty map when no nodes exist")
-        void shouldReturnEmptyMapWhenNoNodes() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyMapWhenNoNodes() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); 
 
             Map<String, Double> centrality = engine.calculateBetweennessCentrality("tenant-empty");
-            assertThat(centrality).isEmpty(); // GH-90000
+            assertThat(centrality).isEmpty(); 
         }
     }
 
@@ -170,24 +170,24 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should return closeness map for all nodes")
-        void shouldReturnClosenessMap() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(List.of(nodeA, nodeB, nodeC)); // GH-90000
+        void shouldReturnClosenessMap() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))) 
+                    .thenReturn(List.of(nodeA, nodeB, nodeC)); 
             lenient().when(storageAdapter.getOutgoingEdges(anyString(), eq("tenant-1")))
-                    .thenReturn(List.of()); // GH-90000
+                    .thenReturn(List.of()); 
 
             Map<String, Double> closeness = engine.calculateClosenessCentrality("tenant-1");
 
-            assertThat(closeness).containsKeys("node-a", "node-b", "node-c"); // GH-90000
+            assertThat(closeness).containsKeys("node-a", "node-b", "node-c"); 
         }
 
         @Test
         @DisplayName("should return empty map for tenant with no nodes")
-        void shouldReturnEmptyMapForEmptyTenant() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyMapForEmptyTenant() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); 
 
             Map<String, Double> closeness = engine.calculateClosenessCentrality("empty-tenant");
-            assertThat(closeness).isEmpty(); // GH-90000
+            assertThat(closeness).isEmpty(); 
         }
     }
 
@@ -201,24 +201,24 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should detect communities and return community assignments")
-        void shouldDetectCommunities() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(List.of(nodeA, nodeB, nodeC)); // GH-90000
+        void shouldDetectCommunities() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))) 
+                    .thenReturn(List.of(nodeA, nodeB, nodeC)); 
             lenient().when(storageAdapter.getNodeEdges(anyString(), eq("tenant-1")))
-                    .thenReturn(List.of()); // GH-90000
+                    .thenReturn(List.of()); 
 
             Map<String, Integer> communities = engine.detectCommunities("tenant-1");
 
-            assertThat(communities).containsKeys("node-a", "node-b", "node-c"); // GH-90000
+            assertThat(communities).containsKeys("node-a", "node-b", "node-c"); 
         }
 
         @Test
         @DisplayName("should return empty map when no nodes exist")
-        void shouldReturnEmptyWhenNoNodes() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyWhenNoNodes() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))).thenReturn(List.of()); 
 
             Map<String, Integer> communities = engine.detectCommunities("no-tenant");
-            assertThat(communities).isEmpty(); // GH-90000
+            assertThat(communities).isEmpty(); 
         }
     }
 
@@ -232,34 +232,34 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should analyze impact starting from a given node")
-        void shouldAnalyzeImpact() { // GH-90000
-            // analyzeImpact uses getIncomingEdges (nodes that depend on the source) // GH-90000
-            GraphEdge edgeBdependsOnA = GraphEdge.builder() // GH-90000
+        void shouldAnalyzeImpact() { 
+            // analyzeImpact uses getIncomingEdges (nodes that depend on the source) 
+            GraphEdge edgeBdependsOnA = GraphEdge.builder() 
                     .id("edge-ba")
                     .sourceNodeId("node-b")
                     .targetNodeId("node-a")
                     .tenantId("tenant-1")
                     .relationshipType("DEPENDS_ON")
-                    .build(); // GH-90000
-            when(storageAdapter.getIncomingEdges("node-a", "tenant-1")) // GH-90000
-                    .thenReturn(List.of(edgeBdependsOnA)); // GH-90000
-            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); // GH-90000
-            lenient().when(storageAdapter.getIncomingEdges("node-b", "tenant-1")) // GH-90000
-                    .thenReturn(List.of()); // GH-90000
+                    .build(); 
+            when(storageAdapter.getIncomingEdges("node-a", "tenant-1")) 
+                    .thenReturn(List.of(edgeBdependsOnA)); 
+            when(storageAdapter.getNode("node-b", "tenant-1")).thenReturn(nodeB); 
+            lenient().when(storageAdapter.getIncomingEdges("node-b", "tenant-1")) 
+                    .thenReturn(List.of()); 
 
-            List<GraphNode> impacted = engine.analyzeImpact("node-a", 1, "tenant-1"); // GH-90000
+            List<GraphNode> impacted = engine.analyzeImpact("node-a", 1, "tenant-1"); 
 
-            assertThat(impacted).isNotNull(); // GH-90000
+            assertThat(impacted).isNotNull(); 
         }
 
         @Test
         @DisplayName("should return empty list when node has no dependents")
-        void shouldReturnEmptyForNodeWithNoDependents() { // GH-90000
-            when(storageAdapter.getIncomingEdges("node-leaf", "tenant-1")) // GH-90000
-                    .thenReturn(List.of()); // GH-90000
+        void shouldReturnEmptyForNodeWithNoDependents() { 
+            when(storageAdapter.getIncomingEdges("node-leaf", "tenant-1")) 
+                    .thenReturn(List.of()); 
 
-            List<GraphNode> impacted = engine.analyzeImpact("node-leaf", 2, "tenant-1"); // GH-90000
-            assertThat(impacted).isEmpty(); // GH-90000
+            List<GraphNode> impacted = engine.analyzeImpact("node-leaf", 2, "tenant-1"); 
+            assertThat(impacted).isEmpty(); 
         }
     }
 
@@ -273,17 +273,17 @@ class CentralityAnalyticsEngineTest {
 
         @Test
         @DisplayName("should return statistics with node and edge counts")
-        void shouldReturnStatistics() { // GH-90000
-            when(storageAdapter.queryNodes(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(List.of(nodeA, nodeB, nodeC)); // GH-90000
-            lenient().when(storageAdapter.queryEdges(any(GraphQuery.class))) // GH-90000
-                    .thenReturn(List.of(edgeAB, edgeBC)); // GH-90000
+        void shouldReturnStatistics() { 
+            when(storageAdapter.queryNodes(any(GraphQuery.class))) 
+                    .thenReturn(List.of(nodeA, nodeB, nodeC)); 
+            lenient().when(storageAdapter.queryEdges(any(GraphQuery.class))) 
+                    .thenReturn(List.of(edgeAB, edgeBC)); 
 
             GraphAnalyticsEngine.GraphStatistics stats =
                     engine.calculateStatistics("tenant-1");
 
-            assertThat(stats).isNotNull(); // GH-90000
-            assertThat(stats.nodeCount()).isEqualTo(3); // GH-90000
+            assertThat(stats).isNotNull(); 
+            assertThat(stats.nodeCount()).isEqualTo(3); 
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher.http;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * Validates that all AI-assist endpoints exhibit <em>deterministic</em> fallback
  * behaviour when:
  * <ul>
- *   <li>No {@link CompletionService} is wired (offline/unconfigured mode).</li> // GH-90000
+ *   <li>No {@link CompletionService} is wired (offline/unconfigured mode).</li> 
  *   <li>The LLM returns an error or low-confidence result.</li>
  *   <li>The LLM fails consecutively, triggering the handler's circuit-breaker guard.</li>
  *   <li>The confidence threshold boundary is exactly at the fallback cutoff.</li>
@@ -53,12 +53,12 @@ import static org.mockito.Mockito.when;
  * within spec.
  *
  * @doc.type class
- * @doc.purpose AI fallback determinism tests for all AI assist endpoints (DC-E3) // GH-90000
+ * @doc.purpose AI fallback determinism tests for all AI assist endpoints (DC-E3) 
  * @doc.layer product
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
-@Timeout(value = 15, unit = TimeUnit.SECONDS) // GH-90000
+@ExtendWith(MockitoExtension.class) 
+@Timeout(value = 15, unit = TimeUnit.SECONDS) 
 @DisplayName("AI Assist – Fallback Determinism")
 class AiFallbackDeterminismTest {
 
@@ -66,19 +66,19 @@ class AiFallbackDeterminismTest {
     private CompletionService mockCompletion;
     private DataCloudHttpServer server;
     private int port;
-    private final HttpClient httpClient = HttpClient.newBuilder().build(); // GH-90000
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final HttpClient httpClient = HttpClient.newBuilder().build(); 
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        mockClient     = mock(DataCloudClient.class); // GH-90000
-        mockCompletion = mock(CompletionService.class); // GH-90000
-        port           = findFreePort(); // GH-90000
+    void setUp() throws Exception { 
+        mockClient     = mock(DataCloudClient.class); 
+        mockCompletion = mock(CompletionService.class); 
+        port           = findFreePort(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -91,81 +91,81 @@ class AiFallbackDeterminismTest {
 
         @Test
         @DisplayName("entity/suggest → fallback=true, confidence<0.5, data.suggestions present")
-        void entitySuggest_noLlm_returnsHeuristicFallback() throws Exception { // GH-90000
-            startServerWithoutLlm(); // GH-90000
+        void entitySuggest_noLlm_returnsHeuristicFallback() throws Exception { 
+            startServerWithoutLlm(); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/entities/orders/suggest",
                 "{\"collection\":\"orders\",\"fields\":[\"id\",\"amount\",\"status\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> ai = extractAiBlock(resp); // GH-90000
-            assertThat(ai).containsEntry("fallback", true); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> ai = extractAiBlock(resp); 
+            assertThat(ai).containsEntry("fallback", true); 
             assertThat((Double) ai.get("confidence")).isLessThan(0.5);
             assertThat(ai).containsKey("model");
 
-            Map<String, Object> body = parseBody(resp); // GH-90000
+            Map<String, Object> body = parseBody(resp); 
             assertThat(body).containsKey("data");
         }
 
         @Test
         @DisplayName("analytics/suggest → fallback=true, consistent response on repeated calls")
-        void analyticsSuggest_noLlm_isDeterministic() throws Exception { // GH-90000
-            startServerWithoutLlm(); // GH-90000
+        void analyticsSuggest_noLlm_isDeterministic() throws Exception { 
+            startServerWithoutLlm(); 
 
-            HttpResponse<String> resp1 = post( // GH-90000
+            HttpResponse<String> resp1 = post( 
                 "/api/v1/analytics/suggest",
                 "{\"collections\":[\"orders\"],\"goal\":\"revenue trend\"}");
-            HttpResponse<String> resp2 = post( // GH-90000
+            HttpResponse<String> resp2 = post( 
                 "/api/v1/analytics/suggest",
                 "{\"collections\":[\"orders\"],\"goal\":\"revenue trend\"}");
 
-            assertThat(resp1.statusCode()).isEqualTo(200); // GH-90000
-            assertThat(resp2.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp1.statusCode()).isEqualTo(200); 
+            assertThat(resp2.statusCode()).isEqualTo(200); 
 
-            Map<String, Object> ai1 = extractAiBlock(resp1); // GH-90000
-            Map<String, Object> ai2 = extractAiBlock(resp2); // GH-90000
+            Map<String, Object> ai1 = extractAiBlock(resp1); 
+            Map<String, Object> ai2 = extractAiBlock(resp2); 
 
             // Same fallback flag on repeated identical calls
             assertThat(ai1.get("fallback")).isEqualTo(ai2.get("fallback"));
-            assertThat(ai1).containsEntry("fallback", true); // GH-90000
+            assertThat(ai1).containsEntry("fallback", true); 
         }
 
         @Test
         @DisplayName("pipelines/optimise-hint → fallback=true, hint present in data")
-        void pipelineOptimiseHint_noLlm_returnsHeuristicHint() throws Exception { // GH-90000
-            startServerWithoutLlm(); // GH-90000
+        void pipelineOptimiseHint_noLlm_returnsHeuristicHint() throws Exception { 
+            startServerWithoutLlm(); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/pipelines/etl-pipeline-001/optimise-hint",
                 "{\"pipelineId\":\"etl-pipeline-001\",\"avgLatencyMs\":12000,\"stepCount\":20}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> body = parseBody(resp); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> body = parseBody(resp); 
             assertThat(body).containsKey("data");
-            Map<String, Object> ai = extractAiBlock(resp); // GH-90000
-            assertThat(ai).containsEntry("fallback", true); // GH-90000
+            Map<String, Object> ai = extractAiBlock(resp); 
+            assertThat(ai).containsEntry("fallback", true); 
         }
 
         @Test
         @DisplayName("brain/explain → fallback=true, explanation present in data")
-        void brainExplain_noLlm_returnsHeuristicExplanation() throws Exception { // GH-90000
-            startServerWithoutLlm(); // GH-90000
+        void brainExplain_noLlm_returnsHeuristicExplanation() throws Exception { 
+            startServerWithoutLlm(); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/brain/explain",
                 "{\"queryType\":\"SEARCH\",\"collection\":\"events\",\"resultCount\":42}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> body = parseBody(resp); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> body = parseBody(resp); 
             assertThat(body).containsKey("data");
             assertThat(body).containsKey("ai");
         }
 
-        private void startServerWithoutLlm() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        private void startServerWithoutLlm() throws Exception { 
+            server = new DataCloudHttpServer(mockClient, port); 
+            server.start(); 
+            waitForServerReady(port); 
         }
     }
 
@@ -179,62 +179,62 @@ class AiFallbackDeterminismTest {
 
         @Test
         @DisplayName("exception from completion → returns 200 with fallback, not 500")
-        void llmThrowsException_returns200WithFallback() throws Exception { // GH-90000
-            when(mockCompletion.complete(any())) // GH-90000
+        void llmThrowsException_returns200WithFallback() throws Exception { 
+            when(mockCompletion.complete(any())) 
                 .thenReturn(Promise.ofException(new RuntimeException("connection refused")));
 
-            startServerWithLlm(); // GH-90000
+            startServerWithLlm(); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/entities/products/suggest",
                 "{\"collection\":\"products\",\"fields\":[\"sku\",\"name\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> ai = extractAiBlock(resp); // GH-90000
-            assertThat(ai).containsEntry("fallback", true); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> ai = extractAiBlock(resp); 
+            assertThat(ai).containsEntry("fallback", true); 
         }
 
         @Test
         @DisplayName("null result from completion → returns 200 with fallback")
-        void llmReturnsNullResult_returns200WithFallback() throws Exception { // GH-90000
-            when(mockCompletion.complete(any())).thenReturn(Promise.of(null)); // GH-90000
+        void llmReturnsNullResult_returns200WithFallback() throws Exception { 
+            when(mockCompletion.complete(any())).thenReturn(Promise.of(null)); 
 
-            startServerWithLlm(); // GH-90000
+            startServerWithLlm(); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/entities/users/suggest",
                 "{\"collection\":\"users\",\"fields\":[\"email\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> ai = extractAiBlock(resp); // GH-90000
-            assertThat(ai).containsEntry("fallback", true); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> ai = extractAiBlock(resp); 
+            assertThat(ai).containsEntry("fallback", true); 
         }
 
         @Test
         @DisplayName("consecutive LLM failures → fallback applied on each call independently")
-        void consecutiveLlmFailures_eachCallFallsBack() throws Exception { // GH-90000
-            when(mockCompletion.complete(any())) // GH-90000
+        void consecutiveLlmFailures_eachCallFallsBack() throws Exception { 
+            when(mockCompletion.complete(any())) 
                 .thenReturn(Promise.ofException(new RuntimeException("timeout")));
 
-            startServerWithLlm(); // GH-90000
+            startServerWithLlm(); 
 
-            for (int i = 0; i < 3; i++) { // GH-90000
-                HttpResponse<String> resp = post( // GH-90000
+            for (int i = 0; i < 3; i++) { 
+                HttpResponse<String> resp = post( 
                     "/api/v1/entities/items/suggest",
                     "{\"collection\":\"items\",\"fields\":[\"id\"]}");
-                assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-                assertThat(extractAiBlock(resp)).containsEntry("fallback", true); // GH-90000
+                assertThat(resp.statusCode()).isEqualTo(200); 
+                assertThat(extractAiBlock(resp)).containsEntry("fallback", true); 
             }
 
             // Verify the completion service was called for each request
-            verify(mockCompletion, times(3)).complete(any()); // GH-90000
+            verify(mockCompletion, times(3)).complete(any()); 
         }
 
-        private void startServerWithLlm() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port) // GH-90000
-                .withCompletionService(mockCompletion); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        private void startServerWithLlm() throws Exception { 
+            server = new DataCloudHttpServer(mockClient, port) 
+                .withCompletionService(mockCompletion); 
+            server.start(); 
+            waitForServerReady(port); 
         }
     }
 
@@ -249,53 +249,53 @@ class AiFallbackDeterminismTest {
         @Test
         @DisplayName("LLM confidence=0.0 → treated as fallback (below threshold)")
         @SuppressWarnings("unchecked")
-        void zeroConfidence_treatedAsFallback() throws Exception { // GH-90000
-            CompletionResult lowResult = mock(CompletionResult.class); // GH-90000
+        void zeroConfidence_treatedAsFallback() throws Exception { 
+            CompletionResult lowResult = mock(CompletionResult.class); 
             when(lowResult.getFinishReason()).thenReturn("stop");
             when(lowResult.getModelUsed()).thenReturn("gpt-4o-mini");
-            when(mockCompletion.complete(any())).thenReturn(Promise.of(lowResult)); // GH-90000
+            when(mockCompletion.complete(any())).thenReturn(Promise.of(lowResult)); 
 
-            server = new DataCloudHttpServer(mockClient, port) // GH-90000
-                .withCompletionService(mockCompletion); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) 
+                .withCompletionService(mockCompletion); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/entities/test/suggest",
                 "{\"collection\":\"test\",\"fields\":[\"id\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             // Response must always contain the ai block regardless of confidence
             assertThat(parseBody(resp)).containsKey("ai");
         }
 
-        @ParameterizedTest(name = "empty text=''{0}''") // GH-90000
-        @ValueSource(strings = {"", "   "}) // GH-90000
+        @ParameterizedTest(name = "empty text=''{0}''") 
+        @ValueSource(strings = {"", "   "}) 
         @DisplayName("LLM returns blank text → treated as fallback")
         @SuppressWarnings("unchecked")
-        void blankLlmText_treatedAsFallback(String blankText) throws Exception { // GH-90000
-            CompletionResult blankResult = mock(CompletionResult.class); // GH-90000
-            when(blankResult.getText()).thenReturn(blankText); // GH-90000
+        void blankLlmText_treatedAsFallback(String blankText) throws Exception { 
+            CompletionResult blankResult = mock(CompletionResult.class); 
+            when(blankResult.getText()).thenReturn(blankText); 
             when(blankResult.getFinishReason()).thenReturn("length");
             when(blankResult.getModelUsed()).thenReturn("gpt-4o-mini");
-            when(mockCompletion.complete(any())).thenReturn(Promise.of(blankResult)); // GH-90000
+            when(mockCompletion.complete(any())).thenReturn(Promise.of(blankResult)); 
 
-            server = new DataCloudHttpServer(mockClient, port) // GH-90000
-                .withCompletionService(mockCompletion); // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+            server = new DataCloudHttpServer(mockClient, port) 
+                .withCompletionService(mockCompletion); 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/analytics/suggest",
                 "{\"collections\":[\"events\"],\"goal\":\"count per day\"}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
             assertThat(parseBody(resp)).containsKey("data");
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // All AI endpoints return valid ai-block structure (response contract) // GH-90000
+    // All AI endpoints return valid ai-block structure (response contract) 
     // ─────────────────────────────────────────────────────────────────────────
 
     @Nested
@@ -304,18 +304,18 @@ class AiFallbackDeterminismTest {
 
         @Test
         @DisplayName("all fallback responses include: fallback, confidence, model keys")
-        void fallbackResponse_containsAllRequiredAiKeys() throws Exception { // GH-90000
-            server = new DataCloudHttpServer(mockClient, port); // no LLM // GH-90000
-            server.start(); // GH-90000
-            waitForServerReady(port); // GH-90000
+        void fallbackResponse_containsAllRequiredAiKeys() throws Exception { 
+            server = new DataCloudHttpServer(mockClient, port); // no LLM 
+            server.start(); 
+            waitForServerReady(port); 
 
-            HttpResponse<String> resp = post( // GH-90000
+            HttpResponse<String> resp = post( 
                 "/api/v1/entities/catalog/suggest",
                 "{\"collection\":\"catalog\",\"fields\":[\"title\"]}");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<String, Object> ai = extractAiBlock(resp); // GH-90000
-            assertThat(ai).containsKeys("fallback", "confidence", "model"); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<String, Object> ai = extractAiBlock(resp); 
+            assertThat(ai).containsKeys("fallback", "confidence", "model"); 
             assertThat(ai.get("fallback")).isInstanceOf(Boolean.class);
             assertThat(ai.get("confidence")).isInstanceOf(Double.class);
             assertThat(ai.get("model")).isInstanceOf(String.class);
@@ -327,42 +327,42 @@ class AiFallbackDeterminismTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception { // GH-90000
-        return mapper.readValue(resp.body(), Map.class); // GH-90000
+    private Map<String, Object> parseBody(HttpResponse<String> resp) throws Exception { 
+        return mapper.readValue(resp.body(), Map.class); 
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> extractAiBlock(HttpResponse<String> resp) throws Exception { // GH-90000
-        Map<String, Object> body = parseBody(resp); // GH-90000
+    private Map<String, Object> extractAiBlock(HttpResponse<String> resp) throws Exception { 
+        Map<String, Object> body = parseBody(resp); 
         assertThat(body).containsKey("ai");
         return (Map<String, Object>) body.get("ai");
     }
 
-    private HttpResponse<String> post(String path, String jsonBody) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .POST(HttpRequest.BodyPublishers.ofString(jsonBody)) // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .header("Content-Type", "application/json") // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> post(String path, String jsonBody) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .POST(HttpRequest.BodyPublishers.ofString(jsonBody)) 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("Content-Type", "application/json") 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); 
     }
 }

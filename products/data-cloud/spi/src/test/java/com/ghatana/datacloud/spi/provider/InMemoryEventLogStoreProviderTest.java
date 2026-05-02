@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.spi.provider;
@@ -31,17 +31,17 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     private TenantContext tenant;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        store = new InMemoryEventLogStoreProvider(); // GH-90000
+    void setUp() { 
+        store = new InMemoryEventLogStoreProvider(); 
         tenant = TenantContext.of("tenant-1");
     }
 
-    private EventEntry entry(String type) { // GH-90000
-        return EventEntry.builder() // GH-90000
-                .eventType(type) // GH-90000
-                .payload("{}".getBytes()) // GH-90000
-                .timestamp(Instant.now()) // GH-90000
-                .build(); // GH-90000
+    private EventEntry entry(String type) { 
+        return EventEntry.builder() 
+                .eventType(type) 
+                .payload("{}".getBytes()) 
+                .timestamp(Instant.now()) 
+                .build(); 
     }
 
     // ─── Append ──────────────────────────────────────────────────────────────
@@ -51,20 +51,20 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class Append {
 
         @Test
-        void firstAppendReturnsOffset1() { // GH-90000
+        void firstAppendReturnsOffset1() { 
             Offset offset = runPromise(() -> store.append(tenant, entry("OrderCreated")));
             assertThat(offset.value()).isEqualTo("1");
         }
 
         @Test
-        void subsequentAppendsIncrementOffset() { // GH-90000
+        void subsequentAppendsIncrementOffset() { 
             runPromise(() -> store.append(tenant, entry("A")));
             Offset second = runPromise(() -> store.append(tenant, entry("B")));
             assertThat(second.value()).isEqualTo("2");
         }
 
         @Test
-        void differentTenantsHaveIndependentOffsets() { // GH-90000
+        void differentTenantsHaveIndependentOffsets() { 
             TenantContext other = TenantContext.of("tenant-2");
             Offset t1 = runPromise(() -> store.append(tenant, entry("X")));
             Offset t2 = runPromise(() -> store.append(other, entry("Y")));
@@ -80,10 +80,10 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class AppendBatch {
 
         @Test
-        void returnsOneOffsetPerEntry() { // GH-90000
+        void returnsOneOffsetPerEntry() { 
             List<EventEntry> entries = List.of(entry("A"), entry("B"), entry("C"));
-            List<Offset> offsets = runPromise(() -> store.appendBatch(tenant, entries)); // GH-90000
-            assertThat(offsets).hasSize(3); // GH-90000
+            List<Offset> offsets = runPromise(() -> store.appendBatch(tenant, entries)); 
+            assertThat(offsets).hasSize(3); 
             assertThat(offsets.get(0).value()).isEqualTo("1");
             assertThat(offsets.get(1).value()).isEqualTo("2");
             assertThat(offsets.get(2).value()).isEqualTo("3");
@@ -97,47 +97,47 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class Read {
 
         @Test
-        void readFromBeginning() { // GH-90000
+        void readFromBeginning() { 
             runPromise(() -> store.append(tenant, entry("A")));
             runPromise(() -> store.append(tenant, entry("B")));
 
-            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 10)); // GH-90000
-            assertThat(result).hasSize(2); // GH-90000
+            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 10)); 
+            assertThat(result).hasSize(2); 
         }
 
         @Test
-        void limitHonoured() { // GH-90000
-            for (int i = 0; i < 5; i++) { // GH-90000
+        void limitHonoured() { 
+            for (int i = 0; i < 5; i++) { 
                 runPromise(() -> store.append(tenant, entry("E")));
             }
-            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 2)); // GH-90000
-            assertThat(result).hasSize(2); // GH-90000
+            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(0L), 2)); 
+            assertThat(result).hasSize(2); 
         }
 
         @Test
-        void emptyForUnknownTenant() { // GH-90000
-            List<EventEntry> result = runPromise(() -> // GH-90000
+        void emptyForUnknownTenant() { 
+            List<EventEntry> result = runPromise(() -> 
                     store.read(TenantContext.of("unknown"), Offset.of(0L), 10));
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
 
         @Test
-        void readFromMidway() { // GH-90000
+        void readFromMidway() { 
             runPromise(() -> store.append(tenant, entry("A")));
             runPromise(() -> store.append(tenant, entry("B")));
             runPromise(() -> store.append(tenant, entry("C")));
 
             // Read starting from offset 2 — should return entries with offset >= 2
-            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(2L), 10)); // GH-90000
-            assertThat(result).hasSize(2); // offset 2 and 3 // GH-90000
+            List<EventEntry> result = runPromise(() -> store.read(tenant, Offset.of(2L), 10)); 
+            assertThat(result).hasSize(2); // offset 2 and 3 
         }
 
         @Test
-        void nonNumericOffsetThrows() { // GH-90000
+        void nonNumericOffsetThrows() { 
             runPromise(() -> store.append(tenant, entry("A")));
-            assertThatThrownBy(() -> // GH-90000
+            assertThatThrownBy(() -> 
                     runPromise(() -> store.read(tenant, Offset.of("bad"), 10)))
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("Offset must be numeric");
         }
     }
@@ -149,22 +149,22 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class ReadByTimeRange {
 
         @Test
-        void filtersToRange() { // GH-90000
+        void filtersToRange() { 
             Instant base = Instant.parse("2026-01-01T00:00:00Z");
             EventEntry before = EventEntry.builder().eventType("Before")
-                    .timestamp(base.minusSeconds(10)).payload("{}".getBytes()).build(); // GH-90000
+                    .timestamp(base.minusSeconds(10)).payload("{}".getBytes()).build(); 
             EventEntry inside = EventEntry.builder().eventType("Inside")
-                    .timestamp(base).payload("{}".getBytes()).build(); // GH-90000
+                    .timestamp(base).payload("{}".getBytes()).build(); 
             EventEntry after = EventEntry.builder().eventType("After")
-                    .timestamp(base.plusSeconds(100)).payload("{}".getBytes()).build(); // GH-90000
+                    .timestamp(base.plusSeconds(100)).payload("{}".getBytes()).build(); 
 
-            runPromise(() -> store.append(tenant, before)); // GH-90000
-            runPromise(() -> store.append(tenant, inside)); // GH-90000
-            runPromise(() -> store.append(tenant, after)); // GH-90000
+            runPromise(() -> store.append(tenant, before)); 
+            runPromise(() -> store.append(tenant, inside)); 
+            runPromise(() -> store.append(tenant, after)); 
 
-            List<EventEntry> result = runPromise(() -> // GH-90000
-                    store.readByTimeRange(tenant, base, base.plusSeconds(50), 10)); // GH-90000
-            assertThat(result).hasSize(1); // GH-90000
+            List<EventEntry> result = runPromise(() -> 
+                    store.readByTimeRange(tenant, base, base.plusSeconds(50), 10)); 
+            assertThat(result).hasSize(1); 
             assertThat(result.get(0).eventType()).isEqualTo("Inside");
         }
     }
@@ -176,15 +176,15 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class ReadByType {
 
         @Test
-        void returnsOnlyMatchingType() { // GH-90000
+        void returnsOnlyMatchingType() { 
             runPromise(() -> store.append(tenant, entry("TypeA")));
             runPromise(() -> store.append(tenant, entry("TypeB")));
             runPromise(() -> store.append(tenant, entry("TypeA")));
 
-            List<EventEntry> result = runPromise(() -> // GH-90000
-                    store.readByType(tenant, "TypeA", Offset.of(0L), 10)); // GH-90000
-            assertThat(result).hasSize(2) // GH-90000
-                    .allMatch(e -> "TypeA".equals(e.eventType())); // GH-90000
+            List<EventEntry> result = runPromise(() -> 
+                    store.readByType(tenant, "TypeA", Offset.of(0L), 10)); 
+            assertThat(result).hasSize(2) 
+                    .allMatch(e -> "TypeA".equals(e.eventType())); 
         }
     }
 
@@ -195,24 +195,24 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class OffsetQueries {
 
         @Test
-        void latestOffsetForEmptyTenantIsZero() { // GH-90000
-            Offset latest = runPromise(() -> // GH-90000
+        void latestOffsetForEmptyTenantIsZero() { 
+            Offset latest = runPromise(() -> 
                     store.getLatestOffset(TenantContext.of("new-tenant")));
             assertThat(latest.value()).isEqualTo("0");
         }
 
         @Test
-        void latestOffsetReflectsAppendsCount() { // GH-90000
+        void latestOffsetReflectsAppendsCount() { 
             runPromise(() -> store.append(tenant, entry("A")));
             runPromise(() -> store.append(tenant, entry("B")));
-            Offset latest = runPromise(() -> store.getLatestOffset(tenant)); // GH-90000
+            Offset latest = runPromise(() -> store.getLatestOffset(tenant)); 
             assertThat(latest.value()).isEqualTo("2");
         }
 
         @Test
-        void earliestOffsetIsAlwaysZero() { // GH-90000
+        void earliestOffsetIsAlwaysZero() { 
             runPromise(() -> store.append(tenant, entry("A")));
-            Offset earliest = runPromise(() -> store.getEarliestOffset(tenant)); // GH-90000
+            Offset earliest = runPromise(() -> store.getEarliestOffset(tenant)); 
             assertThat(earliest.value()).isEqualTo("0");
         }
     }
@@ -224,39 +224,39 @@ class InMemoryEventLogStoreProviderTest extends EventloopTestBase {
     class Tail {
 
         @Test
-        void deliversExistingEntries() { // GH-90000
+        void deliversExistingEntries() { 
             runPromise(() -> store.append(tenant, entry("E1")));
             runPromise(() -> store.append(tenant, entry("E2")));
 
-            List<EventEntry> received = new ArrayList<>(); // GH-90000
-            EventLogStore.Subscription sub = runPromise(() -> // GH-90000
-                    store.tail(tenant, Offset.of(0L), received::add)); // GH-90000
+            List<EventEntry> received = new ArrayList<>(); 
+            EventLogStore.Subscription sub = runPromise(() -> 
+                    store.tail(tenant, Offset.of(0L), received::add)); 
 
-            assertThat(received).hasSize(2); // GH-90000
-            assertThat(sub.isCancelled()).isFalse(); // GH-90000
+            assertThat(received).hasSize(2); 
+            assertThat(sub.isCancelled()).isFalse(); 
         }
 
         @Test
-        void cancellationStopsDelivery() { // GH-90000
+        void cancellationStopsDelivery() { 
             // Tail from offset -1 means "from latest", no existing entries will be delivered
-            List<EventEntry> received = new ArrayList<>(); // GH-90000
-            EventLogStore.Subscription sub = runPromise(() -> // GH-90000
-                    store.tail(tenant, Offset.of(-1L), received::add)); // GH-90000
+            List<EventEntry> received = new ArrayList<>(); 
+            EventLogStore.Subscription sub = runPromise(() -> 
+                    store.tail(tenant, Offset.of(-1L), received::add)); 
 
-            assertThat(received).isEmpty(); // GH-90000
-            sub.cancel(); // GH-90000
-            assertThat(sub.isCancelled()).isTrue(); // GH-90000
+            assertThat(received).isEmpty(); 
+            sub.cancel(); 
+            assertThat(sub.isCancelled()).isTrue(); 
         }
 
         @Test
-        void tailFromEndDeliversNothing() { // GH-90000
+        void tailFromEndDeliversNothing() { 
             runPromise(() -> store.append(tenant, entry("X")));
             runPromise(() -> store.append(tenant, entry("Y")));
 
-            List<EventEntry> received = new ArrayList<>(); // GH-90000
+            List<EventEntry> received = new ArrayList<>(); 
             // offset == size of list => no entries returned
-            runPromise(() -> store.tail(tenant, Offset.of(2L), received::add)); // GH-90000
-            assertThat(received).isEmpty(); // GH-90000
+            runPromise(() -> store.tail(tenant, Offset.of(2L), received::add)); 
+            assertThat(received).isEmpty(); 
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.integration;
@@ -34,265 +34,265 @@ class ContractTest {
 
     @Test
     @DisplayName("OpenAPI spec should match API endpoint paths")
-    void openAPISpecShouldMatchAPIEndpointPaths() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void openAPISpecShouldMatchAPIEndpointPaths() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateEndpointPaths(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateEndpointPaths(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("OpenAPI spec should match API HTTP methods")
-    void openAPISpecShouldMatchAPIHTTPMethods() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void openAPISpecShouldMatchAPIHTTPMethods() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateHTTPMethods(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateHTTPMethods(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("OpenAPI spec should match API request parameters")
-    void openAPISpecShouldMatchAPIRequestParameters() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void openAPISpecShouldMatchAPIRequestParameters() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateRequestParameters(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateRequestParameters(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("OpenAPI spec should match API response schemas")
-    void openAPISpecShouldMatchAPIResponseSchemas() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void openAPISpecShouldMatchAPIResponseSchemas() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateResponseSchemas(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateResponseSchemas(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("OpenAPI spec should match API status codes")
-    void openAPISpecShouldMatchAPIStatusCodes() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void openAPISpecShouldMatchAPIStatusCodes() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateStatusCodes(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateStatusCodes(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API response structure")
-    void sdkShouldMatchBackendAPIResponseStructure() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIResponseStructure() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKResponseStructure(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKResponseStructure(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API data types")
-    void sdkShouldMatchBackendAPIDataTypes() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIDataTypes() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKDataTypes(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKDataTypes(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API field names")
-    void sdkShouldMatchBackendAPIFieldNames() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIFieldNames() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKFieldNames(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKFieldNames(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API required fields")
-    void sdkShouldMatchBackendAPIRequiredFields() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIRequiredFields() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKRequiredFields(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKRequiredFields(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API error responses")
-    void sdkShouldMatchBackendAPIErrorResponses() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIErrorResponses() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKErrorResponses(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKErrorResponses(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should return documented response headers")
-    void apiShouldReturnDocumentedResponseHeaders() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldReturnDocumentedResponseHeaders() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateResponseHeaders(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateResponseHeaders(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should enforce documented authentication")
-    void apiShouldEnforceDocumentedAuthentication() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldEnforceDocumentedAuthentication() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateAuthentication(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateAuthentication(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should respect documented rate limits")
-    void apiShouldRespectDocumentedRateLimits() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldRespectDocumentedRateLimits() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateRateLimits(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateRateLimits(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should match documented pagination parameters")
-    void apiShouldMatchDocumentedPaginationParameters() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldMatchDocumentedPaginationParameters() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validatePaginationParameters(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validatePaginationParameters(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should match documented filtering parameters")
-    void apiShouldMatchDocumentedFilteringParameters() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldMatchDocumentedFilteringParameters() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateFilteringParameters(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateFilteringParameters(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should match documented sorting parameters")
-    void apiShouldMatchDocumentedSortingParameters() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldMatchDocumentedSortingParameters() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSortingParameters(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSortingParameters(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should handle all documented API error codes")
-    void sdkShouldHandleAllDocumentedAPIErrorCodes() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldHandleAllDocumentedAPIErrorCodes() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateSDKErrorHandling(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateSDKErrorHandling(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("SDK should match backend API version compatibility")
-    void sdkShouldMatchBackendAPIVersionCompatibility() { // GH-90000
-        SDKClient sdk = new SDKClient(); // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void sdkShouldMatchBackendAPIVersionCompatibility() { 
+        SDKClient sdk = new SDKClient(); 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateVersionCompatibility(sdk, backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateVersionCompatibility(sdk, backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should return consistent error response format")
-    void apiShouldReturnConsistentErrorResponseFormat() { // GH-90000
-        BackendAPI backend = new BackendAPI(); // GH-90000
+    void apiShouldReturnConsistentErrorResponseFormat() { 
+        BackendAPI backend = new BackendAPI(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateErrorResponseConsistency(backend); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateErrorResponseConsistency(backend); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     @Test
     @DisplayName("API should match documented content types")
-    void apiShouldMatchDocumentedContentTypes() { // GH-90000
-        OpenAPISpec spec = new OpenAPISpec(); // GH-90000
-        APIImplementation api = new APIImplementation(); // GH-90000
+    void apiShouldMatchDocumentedContentTypes() { 
+        OpenAPISpec spec = new OpenAPISpec(); 
+        APIImplementation api = new APIImplementation(); 
         
-        ContractValidator validator = new ContractValidator(); // GH-90000
-        List<ContractViolation> violations = validator.validateContentTypes(spec, api); // GH-90000
+        ContractValidator validator = new ContractValidator(); 
+        List<ContractViolation> violations = validator.validateContentTypes(spec, api); 
         
-        assertThat(violations).isEmpty(); // GH-90000
+        assertThat(violations).isEmpty(); 
     }
 
     // Helper classes for contract testing
 
     static class OpenAPISpec {
-        private final Map<String, EndpointSpec> endpoints = new HashMap<>(); // GH-90000
+        private final Map<String, EndpointSpec> endpoints = new HashMap<>(); 
         private final String version = "1.0.0";
 
-        OpenAPISpec() { // GH-90000
+        OpenAPISpec() { 
             // Initialize with sample endpoint specs
-            endpoints.put("/api/v1/collections", new EndpointSpec( // GH-90000
+            endpoints.put("/api/v1/collections", new EndpointSpec( 
                 "/api/v1/collections",
-                List.of("GET", "POST"), // GH-90000
-                Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), // GH-90000
-                Map.of("GET", "200", "POST", "201"), // GH-90000
+                List.of("GET", "POST"), 
+                Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), 
+                Map.of("GET", "200", "POST", "201"), 
                 Map.of("GET", List.of("application/json"), "POST", List.of("application/json"))
             ));
         }
 
-        Map<String, EndpointSpec> getEndpoints() { // GH-90000
+        Map<String, EndpointSpec> getEndpoints() { 
             return endpoints;
         }
 
-        String getVersion() { // GH-90000
+        String getVersion() { 
             return version;
         }
     }
@@ -304,7 +304,7 @@ class ContractTest {
         private final Map<String, String> statusCodes;
         private final Map<String, List<String>> contentTypes;
 
-        EndpointSpec(String path, List<String> methods, Map<String, List<String>> parameters, // GH-90000
+        EndpointSpec(String path, List<String> methods, Map<String, List<String>> parameters, 
                     Map<String, String> statusCodes, Map<String, List<String>> contentTypes) {
             this.path = path;
             this.methods = methods;
@@ -313,42 +313,42 @@ class ContractTest {
             this.contentTypes = contentTypes;
         }
 
-        String getPath() { // GH-90000
+        String getPath() { 
             return path;
         }
 
-        List<String> getMethods() { // GH-90000
+        List<String> getMethods() { 
             return methods;
         }
 
-        Map<String, List<String>> getParameters() { // GH-90000
+        Map<String, List<String>> getParameters() { 
             return parameters;
         }
 
-        Map<String, String> getStatusCodes() { // GH-90000
+        Map<String, String> getStatusCodes() { 
             return statusCodes;
         }
 
-        Map<String, List<String>> getContentTypes() { // GH-90000
+        Map<String, List<String>> getContentTypes() { 
             return contentTypes;
         }
     }
 
     static class APIImplementation {
-        private final Map<String, EndpointImplementation> endpoints = new HashMap<>(); // GH-90000
+        private final Map<String, EndpointImplementation> endpoints = new HashMap<>(); 
 
-        APIImplementation() { // GH-90000
+        APIImplementation() { 
             // Initialize with sample endpoint implementations
-            endpoints.put("/api/v1/collections", new EndpointImplementation( // GH-90000
+            endpoints.put("/api/v1/collections", new EndpointImplementation( 
                 "/api/v1/collections",
-                List.of("GET", "POST"), // GH-90000
-                Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), // GH-90000
+                List.of("GET", "POST"), 
+                Map.of("GET", List.of("page", "limit"), "POST", List.of("name", "description")), 
                 Map.of("GET", List.of("200"), "POST", List.of("201")),
                 Map.of("GET", List.of("application/json"), "POST", List.of("application/json"))
             ));
         }
 
-        Map<String, EndpointImplementation> getEndpoints() { // GH-90000
+        Map<String, EndpointImplementation> getEndpoints() { 
             return endpoints;
         }
     }
@@ -360,7 +360,7 @@ class ContractTest {
         private final Map<String, List<String>> statusCodes;
         private final Map<String, List<String>> contentTypes;
 
-        EndpointImplementation(String path, List<String> methods, Map<String, List<String>> parameters, // GH-90000
+        EndpointImplementation(String path, List<String> methods, Map<String, List<String>> parameters, 
                               Map<String, List<String>> statusCodes, Map<String, List<String>> contentTypes) {
             this.path = path;
             this.methods = methods;
@@ -369,52 +369,52 @@ class ContractTest {
             this.contentTypes = contentTypes;
         }
 
-        String getPath() { // GH-90000
+        String getPath() { 
             return path;
         }
 
-        List<String> getMethods() { // GH-90000
+        List<String> getMethods() { 
             return methods;
         }
 
-        Map<String, List<String>> getParameters() { // GH-90000
+        Map<String, List<String>> getParameters() { 
             return parameters;
         }
 
-        Map<String, List<String>> getStatusCodes() { // GH-90000
+        Map<String, List<String>> getStatusCodes() { 
             return statusCodes;
         }
 
-        Map<String, List<String>> getContentTypes() { // GH-90000
+        Map<String, List<String>> getContentTypes() { 
             return contentTypes;
         }
     }
 
     static class SDKClient {
         private final String version = "1.0.0";
-        private final Map<String, SDKMethod> methods = new HashMap<>(); // GH-90000
+        private final Map<String, SDKMethod> methods = new HashMap<>(); 
 
-        SDKClient() { // GH-90000
+        SDKClient() { 
             // Initialize with sample SDK methods
-            methods.put("listCollections", new SDKMethod( // GH-90000
+            methods.put("listCollections", new SDKMethod( 
                 "listCollections",
-                Map.of("page", "Integer", "limit", "Integer"), // GH-90000
+                Map.of("page", "Integer", "limit", "Integer"), 
                 "CollectionList",
                 List.of("Collection")
             ));
-            methods.put("createCollection", new SDKMethod( // GH-90000
+            methods.put("createCollection", new SDKMethod( 
                 "createCollection",
-                Map.of("name", "String", "description", "String"), // GH-90000
+                Map.of("name", "String", "description", "String"), 
                 "Collection",
-                List.of("id", "name", "description") // GH-90000
+                List.of("id", "name", "description") 
             ));
         }
 
-        String getVersion() { // GH-90000
+        String getVersion() { 
             return version;
         }
 
-        Map<String, SDKMethod> getMethods() { // GH-90000
+        Map<String, SDKMethod> getMethods() { 
             return methods;
         }
     }
@@ -425,57 +425,57 @@ class ContractTest {
         private final String returnType;
         private final List<String> returnFields;
 
-        SDKMethod(String name, Map<String, String> parameters, String returnType, List<String> returnFields) { // GH-90000
+        SDKMethod(String name, Map<String, String> parameters, String returnType, List<String> returnFields) { 
             this.name = name;
             this.parameters = parameters;
             this.returnType = returnType;
             this.returnFields = returnFields;
         }
 
-        String getName() { // GH-90000
+        String getName() { 
             return name;
         }
 
-        Map<String, String> getParameters() { // GH-90000
+        Map<String, String> getParameters() { 
             return parameters;
         }
 
-        String getReturnType() { // GH-90000
+        String getReturnType() { 
             return returnType;
         }
 
-        List<String> getReturnFields() { // GH-90000
+        List<String> getReturnFields() { 
             return returnFields;
         }
     }
 
     static class BackendAPI {
         private final String version = "1.0.0";
-        private final Map<String, APIEndpoint> endpoints = new HashMap<>(); // GH-90000
+        private final Map<String, APIEndpoint> endpoints = new HashMap<>(); 
 
-        BackendAPI() { // GH-90000
+        BackendAPI() { 
             // Initialize with sample backend endpoints
-            endpoints.put("GET /api/v1/collections", new APIEndpoint( // GH-90000
+            endpoints.put("GET /api/v1/collections", new APIEndpoint( 
                 "GET",
                 "/api/v1/collections",
-                Map.of("page", "Integer", "limit", "Integer"), // GH-90000
+                Map.of("page", "Integer", "limit", "Integer"), 
                 "CollectionList",
-                List.of("id", "name", "description") // GH-90000
+                List.of("id", "name", "description") 
             ));
-            endpoints.put("POST /api/v1/collections", new APIEndpoint( // GH-90000
+            endpoints.put("POST /api/v1/collections", new APIEndpoint( 
                 "POST",
                 "/api/v1/collections",
-                Map.of("name", "String", "description", "String"), // GH-90000
+                Map.of("name", "String", "description", "String"), 
                 "Collection",
-                List.of("id", "name", "description") // GH-90000
+                List.of("id", "name", "description") 
             ));
         }
 
-        String getVersion() { // GH-90000
+        String getVersion() { 
             return version;
         }
 
-        Map<String, APIEndpoint> getEndpoints() { // GH-90000
+        Map<String, APIEndpoint> getEndpoints() { 
             return endpoints;
         }
     }
@@ -487,7 +487,7 @@ class ContractTest {
         private final String responseType;
         private final List<String> responseFields;
 
-        APIEndpoint(String method, String path, Map<String, String> parameters, // GH-90000
+        APIEndpoint(String method, String path, Map<String, String> parameters, 
                   String responseType, List<String> responseFields) {
             this.method = method;
             this.path = path;
@@ -496,43 +496,43 @@ class ContractTest {
             this.responseFields = responseFields;
         }
 
-        String getMethod() { // GH-90000
+        String getMethod() { 
             return method;
         }
 
-        String getPath() { // GH-90000
+        String getPath() { 
             return path;
         }
 
-        Map<String, String> getParameters() { // GH-90000
+        Map<String, String> getParameters() { 
             return parameters;
         }
 
-        String getResponseType() { // GH-90000
+        String getResponseType() { 
             return responseType;
         }
 
-        List<String> getResponseFields() { // GH-90000
+        List<String> getResponseFields() { 
             return responseFields;
         }
     }
 
     static class ContractValidator {
-        List<ContractViolation> validateEndpointPaths(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateEndpointPaths(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (String path : spec.getEndpoints().keySet()) { // GH-90000
-                if (!api.getEndpoints().containsKey(path)) { // GH-90000
-                    violations.add(new ContractViolation( // GH-90000
+            for (String path : spec.getEndpoints().keySet()) { 
+                if (!api.getEndpoints().containsKey(path)) { 
+                    violations.add(new ContractViolation( 
                         "MISSING_ENDPOINT",
                         "Path " + path + " defined in OpenAPI spec but not implemented"
                     ));
                 }
             }
             
-            for (String path : api.getEndpoints().keySet()) { // GH-90000
-                if (!spec.getEndpoints().containsKey(path)) { // GH-90000
-                    violations.add(new ContractViolation( // GH-90000
+            for (String path : api.getEndpoints().keySet()) { 
+                if (!spec.getEndpoints().containsKey(path)) { 
+                    violations.add(new ContractViolation( 
                         "UNDOCUMENTED_ENDPOINT",
                         "Path " + path + " implemented but not documented in OpenAPI spec"
                     ));
@@ -542,27 +542,27 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateHTTPMethods(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateHTTPMethods(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                EndpointSpec specEndpoint = entry.getValue(); // GH-90000
-                EndpointImplementation implEndpoint = api.getEndpoints().get(path); // GH-90000
+            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { 
+                String path = entry.getKey(); 
+                EndpointSpec specEndpoint = entry.getValue(); 
+                EndpointImplementation implEndpoint = api.getEndpoints().get(path); 
                 
-                if (implEndpoint != null) { // GH-90000
-                    for (String method : specEndpoint.getMethods()) { // GH-90000
-                        if (!implEndpoint.getMethods().contains(method)) { // GH-90000
-                            violations.add(new ContractViolation( // GH-90000
+                if (implEndpoint != null) { 
+                    for (String method : specEndpoint.getMethods()) { 
+                        if (!implEndpoint.getMethods().contains(method)) { 
+                            violations.add(new ContractViolation( 
                                 "MISSING_METHOD",
                                 "Method " + method + " for path " + path + " defined in spec but not implemented"
                             ));
                         }
                     }
                     
-                    for (String method : implEndpoint.getMethods()) { // GH-90000
-                        if (!specEndpoint.getMethods().contains(method)) { // GH-90000
-                            violations.add(new ContractViolation( // GH-90000
+                    for (String method : implEndpoint.getMethods()) { 
+                        if (!specEndpoint.getMethods().contains(method)) { 
+                            violations.add(new ContractViolation( 
                                 "UNDOCUMENTED_METHOD",
                                 "Method " + method + " for path " + path + " implemented but not documented"
                             ));
@@ -574,23 +574,23 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateRequestParameters(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateRequestParameters(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                EndpointSpec specEndpoint = entry.getValue(); // GH-90000
-                EndpointImplementation implEndpoint = api.getEndpoints().get(path); // GH-90000
+            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { 
+                String path = entry.getKey(); 
+                EndpointSpec specEndpoint = entry.getValue(); 
+                EndpointImplementation implEndpoint = api.getEndpoints().get(path); 
                 
-                if (implEndpoint != null) { // GH-90000
-                    for (Map.Entry<String, List<String>> paramEntry : specEndpoint.getParameters().entrySet()) { // GH-90000
-                        String method = paramEntry.getKey(); // GH-90000
-                        List<String> specParams = paramEntry.getValue(); // GH-90000
-                        List<String> implParams = implEndpoint.getParameters().getOrDefault(method, List.of()); // GH-90000
+                if (implEndpoint != null) { 
+                    for (Map.Entry<String, List<String>> paramEntry : specEndpoint.getParameters().entrySet()) { 
+                        String method = paramEntry.getKey(); 
+                        List<String> specParams = paramEntry.getValue(); 
+                        List<String> implParams = implEndpoint.getParameters().getOrDefault(method, List.of()); 
                         
-                        for (String param : specParams) { // GH-90000
-                            if (!implParams.contains(param)) { // GH-90000
-                                violations.add(new ContractViolation( // GH-90000
+                        for (String param : specParams) { 
+                            if (!implParams.contains(param)) { 
+                                violations.add(new ContractViolation( 
                                     "MISSING_PARAMETER",
                                     "Parameter " + param + " for " + method + " " + path + " defined in spec but not implemented"
                                 ));
@@ -603,23 +603,23 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateResponseSchemas(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateResponseSchemas(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                EndpointSpec specEndpoint = entry.getValue(); // GH-90000
-                EndpointImplementation implEndpoint = api.getEndpoints().get(path); // GH-90000
+            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { 
+                String path = entry.getKey(); 
+                EndpointSpec specEndpoint = entry.getValue(); 
+                EndpointImplementation implEndpoint = api.getEndpoints().get(path); 
                 
-                if (implEndpoint != null) { // GH-90000
+                if (implEndpoint != null) { 
                     // Validate that status codes match
-                    for (Map.Entry<String, String> statusEntry : specEndpoint.getStatusCodes().entrySet()) { // GH-90000
-                        String method = statusEntry.getKey(); // GH-90000
-                        String specStatus = statusEntry.getValue(); // GH-90000
-                        List<String> implStatuses = implEndpoint.getStatusCodes().getOrDefault(method, List.of()); // GH-90000
+                    for (Map.Entry<String, String> statusEntry : specEndpoint.getStatusCodes().entrySet()) { 
+                        String method = statusEntry.getKey(); 
+                        String specStatus = statusEntry.getValue(); 
+                        List<String> implStatuses = implEndpoint.getStatusCodes().getOrDefault(method, List.of()); 
                         
-                        if (!implStatuses.contains(specStatus)) { // GH-90000
-                            violations.add(new ContractViolation( // GH-90000
+                        if (!implStatuses.contains(specStatus)) { 
+                            violations.add(new ContractViolation( 
                                 "MISSING_STATUS_CODE",
                                 "Status code " + specStatus + " for " + method + " " + path + " defined in spec but not implemented"
                             ));
@@ -631,35 +631,35 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateStatusCodes(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            return validateResponseSchemas(spec, api); // GH-90000
+        List<ContractViolation> validateStatusCodes(OpenAPISpec spec, APIImplementation api) { 
+            return validateResponseSchemas(spec, api); 
         }
 
-        List<ContractViolation> validateSDKResponseStructure(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKResponseStructure(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { // GH-90000
-                String methodName = entry.getKey(); // GH-90000
-                SDKMethod sdkMethod = entry.getValue(); // GH-90000
+            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { 
+                String methodName = entry.getKey(); 
+                SDKMethod sdkMethod = entry.getValue(); 
                 
                 // Find corresponding backend endpoint
-                String backendKey = findBackendEndpointKey(methodName, backend); // GH-90000
-                if (backendKey == null) { // GH-90000
-                    violations.add(new ContractViolation( // GH-90000
+                String backendKey = findBackendEndpointKey(methodName, backend); 
+                if (backendKey == null) { 
+                    violations.add(new ContractViolation( 
                         "MISSING_BACKEND_ENDPOINT",
                         "SDK method " + methodName + " has no corresponding backend endpoint"
                     ));
                     continue;
                 }
                 
-                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); // GH-90000
+                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); 
                 
                 // Validate response types match
-                if (!sdkMethod.getReturnType().equals(backendEndpoint.getResponseType())) { // GH-90000
-                    violations.add(new ContractViolation( // GH-90000
+                if (!sdkMethod.getReturnType().equals(backendEndpoint.getResponseType())) { 
+                    violations.add(new ContractViolation( 
                         "TYPE_MISMATCH",
-                        "SDK method " + methodName + " returns " + sdkMethod.getReturnType() + // GH-90000
-                        " but backend returns " + backendEndpoint.getResponseType() // GH-90000
+                        "SDK method " + methodName + " returns " + sdkMethod.getReturnType() + 
+                        " but backend returns " + backendEndpoint.getResponseType() 
                     ));
                 }
             }
@@ -667,7 +667,7 @@ class ContractTest {
             return violations;
         }
 
-        private String findBackendEndpointKey(String sdkMethodName, BackendAPI backend) { // GH-90000
+        private String findBackendEndpointKey(String sdkMethodName, BackendAPI backend) { 
             // Simple mapping: SDK method names to backend endpoints
             if (sdkMethodName.equals("listCollections")) {
                 return "GET /api/v1/collections";
@@ -677,26 +677,26 @@ class ContractTest {
             return null;
         }
 
-        List<ContractViolation> validateSDKDataTypes(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKDataTypes(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { // GH-90000
-                String methodName = entry.getKey(); // GH-90000
-                SDKMethod sdkMethod = entry.getValue(); // GH-90000
+            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { 
+                String methodName = entry.getKey(); 
+                SDKMethod sdkMethod = entry.getValue(); 
                 
-                String backendKey = findBackendEndpointKey(methodName, backend); // GH-90000
-                if (backendKey == null) continue; // GH-90000
+                String backendKey = findBackendEndpointKey(methodName, backend); 
+                if (backendKey == null) continue; 
                 
-                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); // GH-90000
+                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); 
                 
                 // Validate parameter types match
-                for (Map.Entry<String, String> paramEntry : sdkMethod.getParameters().entrySet()) { // GH-90000
-                    String paramName = paramEntry.getKey(); // GH-90000
-                    String sdkType = paramEntry.getValue(); // GH-90000
-                    String backendType = backendEndpoint.getParameters().get(paramName); // GH-90000
+                for (Map.Entry<String, String> paramEntry : sdkMethod.getParameters().entrySet()) { 
+                    String paramName = paramEntry.getKey(); 
+                    String sdkType = paramEntry.getValue(); 
+                    String backendType = backendEndpoint.getParameters().get(paramName); 
                     
-                    if (backendType != null && !sdkType.equals(backendType)) { // GH-90000
-                        violations.add(new ContractViolation( // GH-90000
+                    if (backendType != null && !sdkType.equals(backendType)) { 
+                        violations.add(new ContractViolation( 
                             "TYPE_MISMATCH",
                             "Parameter " + paramName + " in SDK method " + methodName +
                             " has type " + sdkType + " but backend expects " + backendType
@@ -708,22 +708,22 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateSDKFieldNames(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKFieldNames(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { // GH-90000
-                String methodName = entry.getKey(); // GH-90000
-                SDKMethod sdkMethod = entry.getValue(); // GH-90000
+            for (Map.Entry<String, SDKMethod> entry : sdk.getMethods().entrySet()) { 
+                String methodName = entry.getKey(); 
+                SDKMethod sdkMethod = entry.getValue(); 
                 
-                String backendKey = findBackendEndpointKey(methodName, backend); // GH-90000
-                if (backendKey == null) continue; // GH-90000
+                String backendKey = findBackendEndpointKey(methodName, backend); 
+                if (backendKey == null) continue; 
                 
-                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); // GH-90000
+                APIEndpoint backendEndpoint = backend.getEndpoints().get(backendKey); 
                 
                 // Validate field names match
-                for (String field : sdkMethod.getReturnFields()) { // GH-90000
-                    if (!backendEndpoint.getResponseFields().contains(field)) { // GH-90000
-                        violations.add(new ContractViolation( // GH-90000
+                for (String field : sdkMethod.getReturnFields()) { 
+                    if (!backendEndpoint.getResponseFields().contains(field)) { 
+                        violations.add(new ContractViolation( 
                             "MISSING_FIELD",
                             "Field " + field + " in SDK method " + methodName +
                             " not found in backend response"
@@ -731,9 +731,9 @@ class ContractTest {
                     }
                 }
                 
-                for (String field : backendEndpoint.getResponseFields()) { // GH-90000
-                    if (!sdkMethod.getReturnFields().contains(field)) { // GH-90000
-                        violations.add(new ContractViolation( // GH-90000
+                for (String field : backendEndpoint.getResponseFields()) { 
+                    if (!sdkMethod.getReturnFields().contains(field)) { 
+                        violations.add(new ContractViolation( 
                             "UNDOCUMENTED_FIELD",
                             "Field " + field + " in backend response for " + methodName +
                             " not documented in SDK"
@@ -745,8 +745,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateSDKRequiredFields(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKRequiredFields(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate required fields
             // For this test, we'll assume all fields are required
@@ -754,8 +754,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateSDKErrorResponses(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKErrorResponses(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate error response handling
             // For this test, we'll assume SDK handles all error codes correctly
@@ -763,8 +763,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateResponseHeaders(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateResponseHeaders(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate response headers
             // For this test, we'll assume headers are correct
@@ -772,8 +772,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateAuthentication(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateAuthentication(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate authentication requirements
             // For this test, we'll assume authentication is correctly enforced
@@ -781,8 +781,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateRateLimits(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateRateLimits(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate rate limit enforcement
             // For this test, we'll assume rate limits are correctly enforced
@@ -790,25 +790,25 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validatePaginationParameters(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validatePaginationParameters(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            // Validate standard pagination parameters (page, limit, offset) // GH-90000
-            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                EndpointSpec specEndpoint = entry.getValue(); // GH-90000
+            // Validate standard pagination parameters (page, limit, offset) 
+            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { 
+                String path = entry.getKey(); 
+                EndpointSpec specEndpoint = entry.getValue(); 
                 
                 if (path.contains("collections")) {
                     List<String> getParams = specEndpoint.getParameters().get("GET");
-                    if (getParams != null) { // GH-90000
+                    if (getParams != null) { 
                         if (!getParams.contains("page")) {
-                            violations.add(new ContractViolation( // GH-90000
+                            violations.add(new ContractViolation( 
                                 "MISSING_PAGINATION_PARAMETER",
                                 "GET endpoint " + path + " missing 'page' parameter for pagination"
                             ));
                         }
                         if (!getParams.contains("limit")) {
-                            violations.add(new ContractViolation( // GH-90000
+                            violations.add(new ContractViolation( 
                                 "MISSING_PAGINATION_PARAMETER",
                                 "GET endpoint " + path + " missing 'limit' parameter for pagination"
                             ));
@@ -820,8 +820,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateFilteringParameters(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateFilteringParameters(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate filtering parameters
             // For this test, we'll assume filtering is correctly documented
@@ -829,8 +829,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateSortingParameters(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSortingParameters(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate sorting parameters
             // For this test, we'll assume sorting is correctly documented
@@ -838,8 +838,8 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateSDKErrorHandling(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateSDKErrorHandling(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate SDK error handling
             // For this test, we'll assume SDK handles all error codes correctly
@@ -847,22 +847,22 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateVersionCompatibility(SDKClient sdk, BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateVersionCompatibility(SDKClient sdk, BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // Validate version compatibility
-            if (!sdk.getVersion().equals(backend.getVersion())) { // GH-90000
-                violations.add(new ContractViolation( // GH-90000
+            if (!sdk.getVersion().equals(backend.getVersion())) { 
+                violations.add(new ContractViolation( 
                     "VERSION_MISMATCH",
-                    "SDK version " + sdk.getVersion() + " does not match backend version " + backend.getVersion() // GH-90000
+                    "SDK version " + sdk.getVersion() + " does not match backend version " + backend.getVersion() 
                 ));
             }
             
             return violations;
         }
 
-        List<ContractViolation> validateErrorResponseConsistency(BackendAPI backend) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateErrorResponseConsistency(BackendAPI backend) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
             // In a real implementation, this would validate error response format consistency
             // For this test, we'll assume error responses are consistent
@@ -870,23 +870,23 @@ class ContractTest {
             return violations;
         }
 
-        List<ContractViolation> validateContentTypes(OpenAPISpec spec, APIImplementation api) { // GH-90000
-            List<ContractViolation> violations = new ArrayList<>(); // GH-90000
+        List<ContractViolation> validateContentTypes(OpenAPISpec spec, APIImplementation api) { 
+            List<ContractViolation> violations = new ArrayList<>(); 
             
-            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { // GH-90000
-                String path = entry.getKey(); // GH-90000
-                EndpointSpec specEndpoint = entry.getValue(); // GH-90000
-                EndpointImplementation implEndpoint = api.getEndpoints().get(path); // GH-90000
+            for (Map.Entry<String, EndpointSpec> entry : spec.getEndpoints().entrySet()) { 
+                String path = entry.getKey(); 
+                EndpointSpec specEndpoint = entry.getValue(); 
+                EndpointImplementation implEndpoint = api.getEndpoints().get(path); 
                 
-                if (implEndpoint != null) { // GH-90000
-                    for (Map.Entry<String, List<String>> contentTypeEntry : specEndpoint.getContentTypes().entrySet()) { // GH-90000
-                        String method = contentTypeEntry.getKey(); // GH-90000
-                        List<String> specContentTypes = contentTypeEntry.getValue(); // GH-90000
-                        List<String> implContentTypes = implEndpoint.getContentTypes().getOrDefault(method, List.of()); // GH-90000
+                if (implEndpoint != null) { 
+                    for (Map.Entry<String, List<String>> contentTypeEntry : specEndpoint.getContentTypes().entrySet()) { 
+                        String method = contentTypeEntry.getKey(); 
+                        List<String> specContentTypes = contentTypeEntry.getValue(); 
+                        List<String> implContentTypes = implEndpoint.getContentTypes().getOrDefault(method, List.of()); 
                         
-                        for (String contentType : specContentTypes) { // GH-90000
-                            if (!implContentTypes.contains(contentType)) { // GH-90000
-                                violations.add(new ContractViolation( // GH-90000
+                        for (String contentType : specContentTypes) { 
+                            if (!implContentTypes.contains(contentType)) { 
+                                violations.add(new ContractViolation( 
                                     "MISSING_CONTENT_TYPE",
                                     "Content type " + contentType + " for " + method + " " + path +
                                     " defined in spec but not implemented"
@@ -905,16 +905,16 @@ class ContractTest {
         private final String type;
         private final String message;
 
-        ContractViolation(String type, String message) { // GH-90000
+        ContractViolation(String type, String message) { 
             this.type = type;
             this.message = message;
         }
 
-        String getType() { // GH-90000
+        String getType() { 
             return type;
         }
 
-        String getMessage() { // GH-90000
+        String getMessage() { 
             return message;
         }
     }

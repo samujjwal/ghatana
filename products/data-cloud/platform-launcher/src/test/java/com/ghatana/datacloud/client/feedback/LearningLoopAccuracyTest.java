@@ -38,73 +38,73 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("accurately maps feedback type to signal type")
-        void accuratelyMapsFeedbackTypeToSignalType() { // GH-90000
+        void accuratelyMapsFeedbackTypeToSignalType() { 
             // Test OPERATIONAL feedback maps to OPERATIONAL signal
-            FeedbackEvent operationalEvent = FeedbackEvent.builder() // GH-90000
-                .feedbackType(FeedbackEvent.FeedbackType.OPERATIONAL) // GH-90000
-                .build(); // GH-90000
+            FeedbackEvent operationalEvent = FeedbackEvent.builder() 
+                .feedbackType(FeedbackEvent.FeedbackType.OPERATIONAL) 
+                .build(); 
 
             // Test OUTCOME feedback maps to PREDICTION_OUTCOME signal
-            FeedbackEvent outcomeEvent = FeedbackEvent.builder() // GH-90000
-                .feedbackType(FeedbackEvent.FeedbackType.OUTCOME) // GH-90000
-                .build(); // GH-90000
+            FeedbackEvent outcomeEvent = FeedbackEvent.builder() 
+                .feedbackType(FeedbackEvent.FeedbackType.OUTCOME) 
+                .build(); 
 
             // Test EXPLICIT feedback maps to FEEDBACK signal
-            FeedbackEvent explicitEvent = FeedbackEvent.builder() // GH-90000
-                .feedbackType(FeedbackEvent.FeedbackType.EXPLICIT) // GH-90000
-                .build(); // GH-90000
+            FeedbackEvent explicitEvent = FeedbackEvent.builder() 
+                .feedbackType(FeedbackEvent.FeedbackType.EXPLICIT) 
+                .build(); 
 
             // The transformation happens internally, we verify the mapping is correct
-            assertThat(operationalEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.OPERATIONAL); // GH-90000
-            assertThat(outcomeEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.OUTCOME); // GH-90000
-            assertThat(explicitEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.EXPLICIT); // GH-90000
+            assertThat(operationalEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.OPERATIONAL); 
+            assertThat(outcomeEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.OUTCOME); 
+            assertThat(explicitEvent.getFeedbackType()).isEqualTo(FeedbackEvent.FeedbackType.EXPLICIT); 
         }
 
         @Test
         @DisplayName("accurately calculates signal strength")
-        void accuratelyCalculatesSignalStrength() { // GH-90000
-            FeedbackEvent event = FeedbackEvent.builder() // GH-90000
-                .score(0.8) // GH-90000
-                .feedbackType(FeedbackEvent.FeedbackType.EXPLICIT) // GH-90000
-                .source(FeedbackEvent.FeedbackSource.EXPERT) // GH-90000
-                .confidence(0.9) // GH-90000
-                .build(); // GH-90000
+        void accuratelyCalculatesSignalStrength() { 
+            FeedbackEvent event = FeedbackEvent.builder() 
+                .score(0.8) 
+                .feedbackType(FeedbackEvent.FeedbackType.EXPLICIT) 
+                .source(FeedbackEvent.FeedbackSource.EXPERT) 
+                .confidence(0.9) 
+                .build(); 
 
             // Expected strength calculation:
             // baseStrength = |0.8| = 0.8
             // EXPLICIT boost: 0.8 * 1.5 = 1.2
             // EXPERT boost: 1.2 * 2.0 = 2.4
             // Confidence weighting: 2.4 * 0.9 = 2.16
-            // Capped at 1.0: min(1.0, 2.16) = 1.0 // GH-90000
+            // Capped at 1.0: min(1.0, 2.16) = 1.0 
 
             double expectedStrength = 1.0; // Capped
-            double calculatedStrength = Math.min(1.0,  // GH-90000
-                Math.abs(event.getScore()) * 1.5 * 2.0 * event.getConfidence()); // GH-90000
+            double calculatedStrength = Math.min(1.0,  
+                Math.abs(event.getScore()) * 1.5 * 2.0 * event.getConfidence()); 
 
-            assertThat(calculatedStrength).isEqualTo(expectedStrength); // GH-90000
+            assertThat(calculatedStrength).isEqualTo(expectedStrength); 
         }
 
         @Test
         @DisplayName("accurately calculates signal strength without boosts")
-        void accuratelyCalculatesSignalStrengthWithoutBoosts() { // GH-90000
-            FeedbackEvent event = FeedbackEvent.builder() // GH-90000
-                .score(0.5) // GH-90000
-                .feedbackType(FeedbackEvent.FeedbackType.IMPLICIT) // GH-90000
-                .source(FeedbackEvent.FeedbackSource.USER) // GH-90000
-                .confidence(0.8) // GH-90000
-                .build(); // GH-90000
+        void accuratelyCalculatesSignalStrengthWithoutBoosts() { 
+            FeedbackEvent event = FeedbackEvent.builder() 
+                .score(0.5) 
+                .feedbackType(FeedbackEvent.FeedbackType.IMPLICIT) 
+                .source(FeedbackEvent.FeedbackSource.USER) 
+                .confidence(0.8) 
+                .build(); 
 
             // Expected strength calculation:
             // baseStrength = |0.5| = 0.5
-            // No boosts (not EXPLICIT, not EXPERT/GROUND_TRUTH) // GH-90000
+            // No boosts (not EXPLICIT, not EXPERT/GROUND_TRUTH) 
             // Confidence weighting: 0.5 * 0.8 = 0.4
-            // Capped at 1.0: min(1.0, 0.4) = 0.4 // GH-90000
+            // Capped at 1.0: min(1.0, 0.4) = 0.4 
 
             double expectedStrength = 0.4;
-            double calculatedStrength = Math.min(1.0,  // GH-90000
-                Math.abs(event.getScore()) * event.getConfidence()); // GH-90000
+            double calculatedStrength = Math.min(1.0,  
+                Math.abs(event.getScore()) * event.getConfidence()); 
 
-            assertThat(calculatedStrength).isEqualTo(expectedStrength); // GH-90000
+            assertThat(calculatedStrength).isEqualTo(expectedStrength); 
         }
     }
 
@@ -114,115 +114,115 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("accurately aggregates signals by reference")
-        void accuratelyAggregatesSignalsByReference() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void accuratelyAggregatesSignalsByReference() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.8) // GH-90000
-                    .confidence(0.9) // GH-90000
-                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .score(0.8) 
+                    .confidence(0.9) 
+                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .id("evt-2")
                     .referenceId("ref-1")
-                    .score(0.6) // GH-90000
-                    .confidence(0.7) // GH-90000
-                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .score(0.6) 
+                    .confidence(0.7) 
+                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .id("evt-3")
                     .referenceId("ref-2")
-                    .score(-0.5) // GH-90000
-                    .confidence(0.8) // GH-90000
-                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
-                    .build() // GH-90000
+                    .score(-0.5) 
+                    .confidence(0.8) 
+                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(3)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(3)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
             // Should have 2 references affected
-            assertThat(report.getReferencesAffected()).isEqualTo(2); // GH-90000
+            assertThat(report.getReferencesAffected()).isEqualTo(2); 
             // Should have 3 signals generated
-            assertThat(report.getSignalsGenerated()).isEqualTo(3); // GH-90000
+            assertThat(report.getSignalsGenerated()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("accurately calculates average strength")
-        void accuratelyCalculatesAverageStrength() { // GH-90000
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+        void accuratelyCalculatesAverageStrength() { 
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .score(0.8) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .score(0.8) 
+                    .confidence(1.0) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .score(0.6) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .score(0.6) 
+                    .confidence(1.0) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .score(0.4) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build() // GH-90000
+                    .score(0.4) 
+                    .confidence(1.0) 
+                    .build() 
             );
 
-            // Average strength = (0.8 + 0.6 + 0.4) / 3 = 0.6 // GH-90000
-            double averageStrength = events.stream() // GH-90000
-                .mapToDouble(e -> Math.abs(e.getScore())) // GH-90000
-                .average() // GH-90000
-                .orElse(0.0); // GH-90000
+            // Average strength = (0.8 + 0.6 + 0.4) / 3 = 0.6 
+            double averageStrength = events.stream() 
+                .mapToDouble(e -> Math.abs(e.getScore())) 
+                .average() 
+                .orElse(0.0); 
 
-            assertThat(averageStrength).isEqualTo(0.6, within(0.001)); // GH-90000
+            assertThat(averageStrength).isEqualTo(0.6, within(0.001)); 
         }
 
         @Test
         @DisplayName("accurately counts reinforcements and corrections")
-        void accuratelyCountsReinforcementsAndCorrections() { // GH-90000
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+        void accuratelyCountsReinforcementsAndCorrections() { 
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .sentiment(FeedbackEvent.Sentiment.POSITIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .sentiment(FeedbackEvent.Sentiment.NEGATIVE) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .referenceId("ref-1")
-                    .sentiment(FeedbackEvent.Sentiment.NEUTRAL) // GH-90000
-                    .build() // GH-90000
+                    .sentiment(FeedbackEvent.Sentiment.NEUTRAL) 
+                    .build() 
             );
 
-            long reinforcements = events.stream() // GH-90000
-                .filter(e -> e.getSentiment() != null && e.getSentiment().getNumericValue() >= 0) // GH-90000
-                .count(); // GH-90000
+            long reinforcements = events.stream() 
+                .filter(e -> e.getSentiment() != null && e.getSentiment().getNumericValue() >= 0) 
+                .count(); 
 
-            long corrections = events.stream() // GH-90000
-                .filter(e -> e.getSentiment() != null && e.getSentiment().getNumericValue() < 0) // GH-90000
-                .count(); // GH-90000
+            long corrections = events.stream() 
+                .filter(e -> e.getSentiment() != null && e.getSentiment().getNumericValue() < 0) 
+                .count(); 
 
-            assertThat(reinforcements).isEqualTo(3); // POSITIVE, POSITIVE, NEUTRAL // GH-90000
-            assertThat(corrections).isEqualTo(2); // NEGATIVE, NEGATIVE // GH-90000
+            assertThat(reinforcements).isEqualTo(3); // POSITIVE, POSITIVE, NEUTRAL 
+            assertThat(corrections).isEqualTo(2); // NEGATIVE, NEGATIVE 
         }
     }
 
@@ -232,129 +232,129 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("IMMEDIATE strategy applies when strength threshold met")
-        void immediateStrategyAppliesWhenStrengthThresholdMet() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void immediateStrategyAppliesWhenStrengthThresholdMet() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
             // Events with average strength >= 0.3 should trigger IMMEDIATE learning
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.5) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build() // GH-90000
+                    .score(0.5) 
+                    .confidence(1.0) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .strategy(LearningLoop.LearningStrategy.IMMEDIATE) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .strategy(LearningLoop.LearningStrategy.IMMEDIATE) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
-            assertThat(report.getEventsCollected()).isEqualTo(1); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
+            assertThat(report.getEventsCollected()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("BATCHED strategy requires minimum signal count")
-        void batchedStrategyRequiresMinimumSignalCount() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void batchedStrategyRequiresMinimumSignalCount() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
             // BATCHED requires at least 3 signals
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.9) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build(), // GH-90000
-                FeedbackEvent.builder() // GH-90000
+                    .score(0.9) 
+                    .confidence(1.0) 
+                    .build(), 
+                FeedbackEvent.builder() 
                     .id("evt-2")
                     .referenceId("ref-1")
-                    .score(0.9) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build() // GH-90000
+                    .score(0.9) 
+                    .confidence(1.0) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(2)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(2)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .strategy(LearningLoop.LearningStrategy.BATCHED) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .strategy(LearningLoop.LearningStrategy.BATCHED) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
             // Should still process events, but may not apply learning due to batch threshold
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
-            assertThat(report.getEventsCollected()).isEqualTo(2); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
+            assertThat(report.getEventsCollected()).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("GRADUAL strategy respects confidence threshold")
-        void gradualStrategyRespectsConfidenceThreshold() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void gradualStrategyRespectsConfidenceThreshold() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
             // Events with confidence < 0.7 should not trigger GRADUAL learning
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.9) // GH-90000
-                    .confidence(0.5) // Below threshold // GH-90000
-                    .build() // GH-90000
+                    .score(0.9) 
+                    .confidence(0.5) // Below threshold 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .strategy(LearningLoop.LearningStrategy.GRADUAL) // GH-90000
-                .confidenceThreshold(0.7) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .strategy(LearningLoop.LearningStrategy.GRADUAL) 
+                .confidenceThreshold(0.7) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
         }
 
         @Test
         @DisplayName("SUPERVISED strategy defers application")
-        void supervisedStrategyDefersApplication() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void supervisedStrategyDefersApplication() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.9) // GH-90000
-                    .confidence(1.0) // GH-90000
-                    .build() // GH-90000
+                    .score(0.9) 
+                    .confidence(1.0) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .strategy(LearningLoop.LearningStrategy.SUPERVISED) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .strategy(LearningLoop.LearningStrategy.SUPERVISED) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
             // SUPERVISED should not auto-apply
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
-            assertThat(report.getUpdatesApplied()).isEqualTo(0); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
+            assertThat(report.getUpdatesApplied()).isEqualTo(0); 
         }
     }
 
@@ -364,82 +364,83 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("accurately reports cycle duration")
-        void accuratelyReportsCycleDuration() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void accuratelyReportsCycleDuration() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
 
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .score(0.5) // GH-90000
-                    .build() // GH-90000
+                    .score(0.5) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
             // Fast local execution may complete within the same clock tick and report 0ms.
-            assertThat(report.getDuration().toMillis()).isGreaterThanOrEqualTo(0L); // GH-90000
-            assertThat(report.getDuration().toMillis()).isLessThan(Duration.ofSeconds(30).toMillis()); // GH-90000 - relaxed timeout
+            assertThat(report.getDuration().toMillis()).isGreaterThanOrEqualTo(0L);
+            // relaxed timeout
+            assertThat(report.getDuration().toMillis()).isLessThan(Duration.ofSeconds(30).toMillis());
         }
 
         @Test
         @DisplayName("accurately counts events processed")
-        void accuratelyCountsEventsProcessed() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void accuratelyCountsEventsProcessed() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
+            List<FeedbackEvent> events = List.of( 
                 FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build(),
                 FeedbackEvent.builder().id("evt-2").referenceId("ref-1").build(),
                 FeedbackEvent.builder().id("evt-3").referenceId("ref-1").build()
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(3)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(3)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.getEventsCollected()).isEqualTo(3); // GH-90000
-            assertThat(report.getEventsProcessed()).isEqualTo(3); // GH-90000
+            assertThat(report.getEventsCollected()).isEqualTo(3); 
+            assertThat(report.getEventsProcessed()).isEqualTo(3); 
         }
 
         @Test
         @DisplayName("accurately reports cycle number")
-        void accuratelyReportsCycleNumber() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void accuratelyReportsCycleNumber() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
+            List<FeedbackEvent> events = List.of( 
                 FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build()
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report1 = runPromise(() -> loop.learnNow()); // GH-90000
-            LearningLoop.CycleReport report2 = runPromise(() -> loop.learnNow()); // GH-90000
-            LearningLoop.CycleReport report3 = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report1 = runPromise(() -> loop.learnNow()); 
+            LearningLoop.CycleReport report2 = runPromise(() -> loop.learnNow()); 
+            LearningLoop.CycleReport report3 = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report1.getCycleNumber()).isEqualTo(1); // GH-90000
-            assertThat(report2.getCycleNumber()).isEqualTo(2); // GH-90000
-            assertThat(report3.getCycleNumber()).isEqualTo(3); // GH-90000
-            assertThat(loop.getCycleCount()).isEqualTo(3); // GH-90000
+            assertThat(report1.getCycleNumber()).isEqualTo(1); 
+            assertThat(report2.getCycleNumber()).isEqualTo(2); 
+            assertThat(report3.getCycleNumber()).isEqualTo(3); 
+            assertThat(loop.getCycleCount()).isEqualTo(3); 
         }
     }
 
@@ -449,109 +450,109 @@ class LearningLoopAccuracyTest extends EventloopTestBase {
 
         @Test
         @DisplayName("handles empty feedback gracefully")
-        void handlesEmptyFeedbackGracefully() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void handlesEmptyFeedbackGracefully() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(List.of())); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(List.of())); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSkipped()).isTrue(); // GH-90000
+            assertThat(report.isSkipped()).isTrue(); 
             assertThat(report.getSkipReason()).contains("Insufficient events");
         }
 
         @Test
         @DisplayName("handles insufficient events gracefully")
-        void handlesInsufficientEventsGracefully() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void handlesInsufficientEventsGracefully() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
+            List<FeedbackEvent> events = List.of( 
                 FeedbackEvent.builder().id("evt-1").referenceId("ref-1").build()
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(5) // Requires 5, only have 1 // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(5) // Requires 5, only have 1 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSkipped()).isTrue(); // GH-90000
+            assertThat(report.isSkipped()).isTrue(); 
             assertThat(report.getSkipReason()).contains("Insufficient events");
         }
 
         @Test
         @DisplayName("handles null fields in feedback events")
-        void handlesNullFieldsInFeedbackEvents() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void handlesNullFieldsInFeedbackEvents() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
-                FeedbackEvent.builder() // GH-90000
+            List<FeedbackEvent> events = List.of( 
+                FeedbackEvent.builder() 
                     .id("evt-1")
                     .referenceId("ref-1")
-                    .feedbackType(null) // GH-90000
-                    .sentiment(null) // GH-90000
-                    .source(null) // GH-90000
-                    .score(0.5) // GH-90000
-                    .confidence(0.5) // GH-90000
-                    .build() // GH-90000
+                    .feedbackType(null) 
+                    .sentiment(null) 
+                    .source(null) 
+                    .score(0.5) 
+                    .confidence(0.5) 
+                    .build() 
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
-            assertThat(report.getSignalsGenerated()).isEqualTo(1); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
+            assertThat(report.getSignalsGenerated()).isEqualTo(1); 
         }
 
         @Test
         @DisplayName("handles learner failures with rollback")
-        void handlesLearnerFailuresWithRollback() { // GH-90000
-            FeedbackCollector mockCollector = mock(FeedbackCollector.class); // GH-90000
+        void handlesLearnerFailuresWithRollback() { 
+            FeedbackCollector mockCollector = mock(FeedbackCollector.class); 
             
-            List<FeedbackEvent> events = List.of( // GH-90000
+            List<FeedbackEvent> events = List.of( 
                 FeedbackEvent.builder().id("evt-1").referenceId("ref-1").score(0.5).build()
             );
 
-            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); // GH-90000
-            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); // GH-90000
+            when(mockCollector.getPending(anyInt())).thenReturn(Promise.of(events)); 
+            when(mockCollector.markProcessed(any())).thenReturn(Promise.of(1)); 
 
-            LearningLoop.Learner mockLearner = mock(LearningLoop.Learner.class); // GH-90000
+            LearningLoop.Learner mockLearner = mock(LearningLoop.Learner.class); 
             when(mockLearner.getName()).thenReturn("test-learner");
-            when(mockLearner.learn(any())).thenReturn(Promise.of(false)); // Learning fails // GH-90000
-            when(mockLearner.rollback(any())).thenReturn(Promise.of(true)); // Rollback succeeds // GH-90000
+            when(mockLearner.learn(any())).thenReturn(Promise.of(false)); // Learning fails 
+            when(mockLearner.rollback(any())).thenReturn(Promise.of(true)); // Rollback succeeds 
 
-            LearningLoop loop = LearningLoop.builder() // GH-90000
-                .feedbackCollector(mockCollector) // GH-90000
-                .autoRollback(true) // GH-90000
-                .minEventsToLearn(1) // GH-90000
-                .build(); // GH-90000
+            LearningLoop loop = LearningLoop.builder() 
+                .feedbackCollector(mockCollector) 
+                .autoRollback(true) 
+                .minEventsToLearn(1) 
+                .build(); 
 
-            loop.addLearner(mockLearner); // GH-90000
+            loop.addLearner(mockLearner); 
 
-            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); // GH-90000
+            LearningLoop.CycleReport report = runPromise(() -> loop.learnNow()); 
 
-            assertThat(report.isSuccess()).isTrue(); // GH-90000
-            assertThat(report.getUpdatesFailed()).isGreaterThan(0); // GH-90000
-            assertThat(report.getRollbacks()).isGreaterThan(0); // GH-90000
+            assertThat(report.isSuccess()).isTrue(); 
+            assertThat(report.getUpdatesFailed()).isGreaterThan(0); 
+            assertThat(report.getRollbacks()).isGreaterThan(0); 
         }
     }
 
-    private static org.assertj.core.data.Offset<Double> within(double delta) { // GH-90000
-        return org.assertj.core.data.Offset.offset(delta); // GH-90000
+    private static org.assertj.core.data.Offset<Double> within(double delta) { 
+        return org.assertj.core.data.Offset.offset(delta); 
     }
 }

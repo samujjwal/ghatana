@@ -14,7 +14,7 @@ import java.util.Map;
  * <ul>
  *   <li>Hash chain verification</li>
  *   <li>Cryptographic signing</li>
- *   <li>Regulatory compliance (SOX, HIPAA, PCI-DSS)</li>
+ *   <li>Configurable retention and regulatory compliance support via product-supplied rule packs</li>
  *   <li>Cross-product audit trails</li>
  * </ul>
  *

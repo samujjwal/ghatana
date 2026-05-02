@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.planning;
@@ -28,61 +28,61 @@ class PlanGraphTest {
 
         @Test
         @DisplayName("constructs successfully with all fields")
-        void constructsWithAllFields() { // GH-90000
-            PlannedAction action = new PlannedAction( // GH-90000
+        void constructsWithAllFields() { 
+            PlannedAction action = new PlannedAction( 
                     "a1", "Retrieve context", "context-tool",
-                    Set.of(), ActionClass.READ, false); // GH-90000
+                    Set.of(), ActionClass.READ, false); 
             assertThat(action.actionId()).isEqualTo("a1");
             assertThat(action.specification()).isEqualTo("Retrieve context");
             assertThat(action.toolId()).isEqualTo("context-tool");
-            assertThat(action.dependencies()).isEmpty(); // GH-90000
-            assertThat(action.actionClass()).isEqualTo(ActionClass.READ); // GH-90000
-            assertThat(action.requiresApproval()).isFalse(); // GH-90000
+            assertThat(action.dependencies()).isEmpty(); 
+            assertThat(action.actionClass()).isEqualTo(ActionClass.READ); 
+            assertThat(action.requiresApproval()).isFalse(); 
         }
 
         @Test
         @DisplayName("simple factory produces no-tool, no-dependency action")
-        void simpleFactory() { // GH-90000
-            PlannedAction action = PlannedAction.simple("a1", "Spec", ActionClass.DRAFT); // GH-90000
-            assertThat(action.toolId()).isNull(); // GH-90000
-            assertThat(action.dependencies()).isEmpty(); // GH-90000
-            assertThat(action.requiresApproval()).isFalse(); // GH-90000
+        void simpleFactory() { 
+            PlannedAction action = PlannedAction.simple("a1", "Spec", ActionClass.DRAFT); 
+            assertThat(action.toolId()).isNull(); 
+            assertThat(action.dependencies()).isEmpty(); 
+            assertThat(action.requiresApproval()).isFalse(); 
         }
 
         @Test
         @DisplayName("dependencies are immutable copy")
-        void dependenciesAreImmutable() { // GH-90000
-            PlannedAction action = new PlannedAction( // GH-90000
+        void dependenciesAreImmutable() { 
+            PlannedAction action = new PlannedAction( 
                     "a2", "Write result", null, Set.of("a1"), ActionClass.WRITE_REVERSIBLE, false);
             assertThat(action.dependencies()).containsExactly("a1");
             assertThatThrownBy(() -> action.dependencies().add("a3"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("rejects blank actionId")
-        void rejectsBlankActionId() { // GH-90000
-            assertThatThrownBy(() -> new PlannedAction( // GH-90000
-                    "  ", "Spec", null, Set.of(), ActionClass.READ, false)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsBlankActionId() { 
+            assertThatThrownBy(() -> new PlannedAction( 
+                    "  ", "Spec", null, Set.of(), ActionClass.READ, false)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("actionId");
         }
 
         @Test
         @DisplayName("rejects blank specification")
-        void rejectsBlankSpecification() { // GH-90000
-            assertThatThrownBy(() -> new PlannedAction( // GH-90000
-                    "a1", "  ", null, Set.of(), ActionClass.READ, false)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsBlankSpecification() { 
+            assertThatThrownBy(() -> new PlannedAction( 
+                    "a1", "  ", null, Set.of(), ActionClass.READ, false)) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("specification");
         }
 
         @Test
         @DisplayName("rejects null actionClass")
-        void rejectsNullActionClass() { // GH-90000
-            assertThatThrownBy(() -> new PlannedAction( // GH-90000
-                    "a1", "Spec", null, Set.of(), null, false)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void rejectsNullActionClass() { 
+            assertThatThrownBy(() -> new PlannedAction( 
+                    "a1", "Spec", null, Set.of(), null, false)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
     }
 
@@ -94,62 +94,62 @@ class PlanGraphTest {
 
         @Test
         @DisplayName("builds empty plan")
-        void buildsEmptyPlan() { // GH-90000
-            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Do nothing", List.of()); // GH-90000
+        void buildsEmptyPlan() { 
+            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Do nothing", List.of()); 
             assertThat(plan.planId()).isEqualTo("p1");
             assertThat(plan.agentId()).isEqualTo("agent-1");
-            assertThat(plan.actions()).isEmpty(); // GH-90000
-            assertThat(plan.createdAt()).isNotNull(); // GH-90000
+            assertThat(plan.actions()).isEmpty(); 
+            assertThat(plan.createdAt()).isNotNull(); 
         }
 
         @Test
         @DisplayName("builds single-action plan")
-        void buildsSingleAction() { // GH-90000
-            PlannedAction action = PlannedAction.simple("a1", "Read data", ActionClass.READ); // GH-90000
-            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Objective", List.of(action)); // GH-90000
-            assertThat(plan.actions()).hasSize(1); // GH-90000
+        void buildsSingleAction() { 
+            PlannedAction action = PlannedAction.simple("a1", "Read data", ActionClass.READ); 
+            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Objective", List.of(action)); 
+            assertThat(plan.actions()).hasSize(1); 
         }
 
         @Test
         @DisplayName("builds linear chain of actions")
-        void buildsLinearChain() { // GH-90000
-            PlannedAction a1 = PlannedAction.simple("a1", "Step 1", ActionClass.READ); // GH-90000
+        void buildsLinearChain() { 
+            PlannedAction a1 = PlannedAction.simple("a1", "Step 1", ActionClass.READ); 
             PlannedAction a2 = new PlannedAction("a2", "Step 2", null, Set.of("a1"), ActionClass.DRAFT, false);
             PlannedAction a3 = new PlannedAction("a3", "Step 3", null, Set.of("a2"), ActionClass.WRITE_REVERSIBLE, false);
-            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Multi-step", List.of(a1, a2, a3)); // GH-90000
-            assertThat(plan.actions()).hasSize(3); // GH-90000
+            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Multi-step", List.of(a1, a2, a3)); 
+            assertThat(plan.actions()).hasSize(3); 
         }
 
         @Test
         @DisplayName("actions list is immutable")
-        void actionsAreImmutable() { // GH-90000
-            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Obj", List.of()); // GH-90000
-            assertThatThrownBy(() -> plan.actions().add( // GH-90000
-                    PlannedAction.simple("a1", "Spec", ActionClass.READ))) // GH-90000
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+        void actionsAreImmutable() { 
+            PlanGraph plan = PlanGraph.of("p1", "agent-1", "Obj", List.of()); 
+            assertThatThrownBy(() -> plan.actions().add( 
+                    PlannedAction.simple("a1", "Spec", ActionClass.READ))) 
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
 
         @Test
         @DisplayName("rejects blank planId")
-        void rejectsBlankPlanId() { // GH-90000
-            assertThatThrownBy(() -> PlanGraph.of("", "agent-1", "Obj", List.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsBlankPlanId() { 
+            assertThatThrownBy(() -> PlanGraph.of("", "agent-1", "Obj", List.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("planId");
         }
 
         @Test
         @DisplayName("rejects blank agentId")
-        void rejectsBlankAgentId() { // GH-90000
-            assertThatThrownBy(() -> PlanGraph.of("p1", "  ", "Obj", List.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsBlankAgentId() { 
+            assertThatThrownBy(() -> PlanGraph.of("p1", "  ", "Obj", List.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("agentId");
         }
 
         @Test
         @DisplayName("rejects blank objective")
-        void rejectsBlankObjective() { // GH-90000
-            assertThatThrownBy(() -> PlanGraph.of("p1", "agent-1", "", List.of())) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        void rejectsBlankObjective() { 
+            assertThatThrownBy(() -> PlanGraph.of("p1", "agent-1", "", List.of())) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("objective");
         }
     }
@@ -162,41 +162,41 @@ class PlanGraphTest {
 
         @Test
         @DisplayName("detects simple 2-node cycle (a1 → a2 → a1)")
-        void detectsTwoNodeCycle() { // GH-90000
+        void detectsTwoNodeCycle() { 
             PlannedAction a1 = new PlannedAction("a1", "S1", null, Set.of("a2"), ActionClass.READ, false);
             PlannedAction a2 = new PlannedAction("a2", "S2", null, Set.of("a1"), ActionClass.READ, false);
-            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2))) // GH-90000
-                    .isInstanceOf(PlanCycleException.class) // GH-90000
+            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2))) 
+                    .isInstanceOf(PlanCycleException.class) 
                     .hasMessageContaining("cycle");
         }
 
         @Test
         @DisplayName("detects three-node cycle")
-        void detectsThreeNodeCycle() { // GH-90000
+        void detectsThreeNodeCycle() { 
             PlannedAction a1 = new PlannedAction("a1", "S1", null, Set.of("a3"), ActionClass.READ, false);
             PlannedAction a2 = new PlannedAction("a2", "S2", null, Set.of("a1"), ActionClass.READ, false);
             PlannedAction a3 = new PlannedAction("a3", "S3", null, Set.of("a2"), ActionClass.READ, false);
-            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2, a3))) // GH-90000
-                    .isInstanceOf(PlanCycleException.class); // GH-90000
+            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2, a3))) 
+                    .isInstanceOf(PlanCycleException.class); 
         }
 
         @Test
         @DisplayName("allows diamond DAG (no cycle)")
-        void allowsDiamondDag() { // GH-90000
-            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); // GH-90000
+        void allowsDiamondDag() { 
+            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); 
             PlannedAction a2 = new PlannedAction("a2", "Left", null, Set.of("a1"), ActionClass.READ, false);
             PlannedAction a3 = new PlannedAction("a3", "Right", null, Set.of("a1"), ActionClass.READ, false);
-            PlannedAction a4 = new PlannedAction("a4", "Join", null, Set.of("a2", "a3"), ActionClass.DRAFT, false); // GH-90000
-            PlanGraph plan = PlanGraph.of("p1", "ag", "Diamond", List.of(a1, a2, a3, a4)); // GH-90000
-            assertThat(plan.actions()).hasSize(4); // GH-90000
+            PlannedAction a4 = new PlannedAction("a4", "Join", null, Set.of("a2", "a3"), ActionClass.DRAFT, false); 
+            PlanGraph plan = PlanGraph.of("p1", "ag", "Diamond", List.of(a1, a2, a3, a4)); 
+            assertThat(plan.actions()).hasSize(4); 
         }
 
         @Test
         @DisplayName("throws on unknown dependency reference")
-        void throwsOnUnknownDependency() { // GH-90000
+        void throwsOnUnknownDependency() { 
             PlannedAction a1 = new PlannedAction("a1", "S1", null, Set.of("nonexistent"), ActionClass.READ, false);
-            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1))) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> PlanGraph.of("p1", "ag", "Obj", List.of(a1))) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("nonexistent");
         }
     }
@@ -209,29 +209,29 @@ class PlanGraphTest {
 
         @Test
         @DisplayName("roots() returns actions with no dependencies")
-        void rootsReturnsNoDependencyActions() { // GH-90000
-            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); // GH-90000
+        void rootsReturnsNoDependencyActions() { 
+            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); 
             PlannedAction a2 = new PlannedAction("a2", "Child", null, Set.of("a1"), ActionClass.DRAFT, false);
-            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2)); // GH-90000
-            assertThat(plan.roots()).containsExactly(a1); // GH-90000
+            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2)); 
+            assertThat(plan.roots()).containsExactly(a1); 
         }
 
         @Test
         @DisplayName("dependents() returns actions that depend on the given ID")
-        void dependentsReturnsChildren() { // GH-90000
-            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); // GH-90000
+        void dependentsReturnsChildren() { 
+            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); 
             PlannedAction a2 = new PlannedAction("a2", "Child1", null, Set.of("a1"), ActionClass.DRAFT, false);
             PlannedAction a3 = new PlannedAction("a3", "Child2", null, Set.of("a1"), ActionClass.DRAFT, false);
-            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2, a3)); // GH-90000
+            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2, a3)); 
             assertThat(plan.dependents("a1")).containsExactlyInAnyOrder(a2, a3);
         }
 
         @Test
         @DisplayName("dependents() returns empty list for leaf nodes")
-        void dependentsEmptyForLeaf() { // GH-90000
-            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); // GH-90000
+        void dependentsEmptyForLeaf() { 
+            PlannedAction a1 = PlannedAction.simple("a1", "Root", ActionClass.READ); 
             PlannedAction a2 = new PlannedAction("a2", "Leaf", null, Set.of("a1"), ActionClass.DRAFT, false);
-            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2)); // GH-90000
+            PlanGraph plan = PlanGraph.of("p1", "ag", "Obj", List.of(a1, a2)); 
             assertThat(plan.dependents("a2")).isEmpty();
         }
     }

@@ -19,18 +19,18 @@ class AiQualityTelemetryTest {
 
     @Test
     @DisplayName("recordCompletion records token, request, and estimated cost metrics")
-    void shouldRecordCompletionTelemetry() { // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
-        CompletionResult result = CompletionResult.builder() // GH-90000
+    void shouldRecordCompletionTelemetry() { 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
+        CompletionResult result = CompletionResult.builder() 
                 .text("Generated response with enough detail for confidence scoring.")
-                .promptTokens(300) // GH-90000
-                .completionTokens(120) // GH-90000
-                .tokensUsed(420) // GH-90000
+                .promptTokens(300) 
+                .completionTokens(120) 
+                .tokensUsed(420) 
                 .finishReason("stop")
                 .modelUsed("gpt-4o")
-                .build(); // GH-90000
+                .build(); 
 
-        AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.test", result, Map.of("tenant", "t-1")); // GH-90000
+        AiQualityTelemetry.recordCompletion(metrics, "yappc.ai.test", result, Map.of("tenant", "t-1")); 
 
         verify(metrics).incrementCounter(eq("yappc.ai.test.request"), anyMap());
         verify(metrics).increment(eq("yappc.ai.test.tokens.total"), eq(420.0), anyMap());
@@ -41,42 +41,42 @@ class AiQualityTelemetryTest {
 
     @Test
     @DisplayName("recordFallback tags error type and fallback flag")
-    void shouldRecordFallbackTelemetry() { // GH-90000
-        MetricsCollector metrics = mock(MetricsCollector.class); // GH-90000
+    void shouldRecordFallbackTelemetry() { 
+        MetricsCollector metrics = mock(MetricsCollector.class); 
 
-        AiQualityTelemetry.recordFallback( // GH-90000
+        AiQualityTelemetry.recordFallback( 
                 metrics,
                 "yappc.ai.intent.capture",
                 new IllegalStateException("failed"),
-                Map.of("tenant", "t-1")); // GH-90000
+                Map.of("tenant", "t-1")); 
 
         verify(metrics).incrementCounter(eq("yappc.ai.intent.capture.fallback"), anyMap());
     }
 
     @Test
     @DisplayName("estimateConfidence returns bounded score")
-    void shouldEstimateBoundedConfidence() { // GH-90000
-        CompletionResult result = CompletionResult.builder() // GH-90000
+    void shouldEstimateBoundedConfidence() { 
+        CompletionResult result = CompletionResult.builder() 
                 .text("This is a sufficiently detailed response to produce non-trivial confidence score.")
-                .tokensUsed(100) // GH-90000
+                .tokensUsed(100) 
                 .finishReason("stop")
-                .build(); // GH-90000
+                .build(); 
 
-        double score = AiQualityTelemetry.estimateConfidence(result); // GH-90000
-        assertThat(score).isGreaterThanOrEqualTo(0.0); // GH-90000
-        assertThat(score).isLessThanOrEqualTo(1.0); // GH-90000
+        double score = AiQualityTelemetry.estimateConfidence(result); 
+        assertThat(score).isGreaterThanOrEqualTo(0.0); 
+        assertThat(score).isLessThanOrEqualTo(1.0); 
     }
 
     @Test
     @DisplayName("estimateCostUsd returns zero for local/unknown models")
-    void shouldEstimateZeroCostForLocalModel() { // GH-90000
-        CompletionResult result = CompletionResult.builder() // GH-90000
+    void shouldEstimateZeroCostForLocalModel() { 
+        CompletionResult result = CompletionResult.builder() 
                 .modelUsed("llama3.2")
-                .promptTokens(1000) // GH-90000
-                .completionTokens(1000) // GH-90000
-                .build(); // GH-90000
+                .promptTokens(1000) 
+                .completionTokens(1000) 
+                .build(); 
 
-        double cost = AiQualityTelemetry.estimateCostUsd(result); // GH-90000
-        assertThat(cost).isEqualTo(0.0); // GH-90000
+        double cost = AiQualityTelemetry.estimateCostUsd(result); 
+        assertThat(cost).isEqualTo(0.0); 
     }
 }

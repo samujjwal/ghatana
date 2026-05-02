@@ -32,51 +32,51 @@ class DeriveDataModelsStepTest extends EventloopTestBase {
   private DeriveDataModelsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new DeriveDataModelsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new DeriveDataModelsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("architecture.derivedatamodels");
   }
 
   @Test
   @DisplayName("Should derive data models from architecture")
-  void shouldDeriveDataModels() { // GH-90000
+  void shouldDeriveDataModels() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("architectureId", "arch-001"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("architectureId", "arch-001"); 
+    context.put( 
         "functionalRequirements",
-        List.of("User management", "Product catalog", "Order processing")); // GH-90000
-    context.put("entities", List.of(Map.of("name", "User"), Map.of("name", "Product"))); // GH-90000
+        List.of("User management", "Product catalog", "Order processing")); 
+    context.put("entities", List.of(Map.of("name", "User"), Map.of("name", "Product"))); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
   }
 
   @Test
   @DisplayName("Should fail when architectureId is missing")
-  void shouldFailWhenArchitectureIdMissing() { // GH-90000
+  void shouldFailWhenArchitectureIdMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
     context.put("functionalRequirements", List.of("Some requirement"));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("architectureId");
   }
 }

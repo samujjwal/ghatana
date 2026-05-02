@@ -32,16 +32,16 @@ class TestSpecificationGeneratorTest extends EventloopTestBase {
   private TestSpecificationGenerator generator;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    MockitoAnnotations.openMocks(this); // GH-90000
-    generator = new TestSpecificationGenerator(aiService); // GH-90000
+  void setUp() { 
+    MockitoAnnotations.openMocks(this); 
+    generator = new TestSpecificationGenerator(aiService); 
   }
 
   @Test
   @DisplayName("generateSpecifications parses structured AI scenarios and passes source context")
   @SuppressWarnings("unchecked")
-  void generateSpecificationsParsesStructuredResponse() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( // GH-90000
+  void generateSpecificationsParsesStructuredResponse() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( 
         "SCENARIO: returns result for valid request\n"
             + "CATEGORY: HAPPY_PATH\n"
             + "GIVEN: a valid request\n"
@@ -63,23 +63,23 @@ class TestSpecificationGeneratorTest extends EventloopTestBase {
             + "THEN: the value is handled correctly\n"
             + "COVERAGE: boundary,numeric"));
 
-    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( // GH-90000
-        new TestSpecificationRequest( // GH-90000
+    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( 
+        new TestSpecificationRequest( 
             "CalculatorService",
-            "class CalculatorService { int add(int left, int right) { return left + right; } }", // GH-90000
+            "class CalculatorService { int add(int left, int right) { return left + right; } }", 
             List.of("The calculator must add two numbers correctly"))));
 
-    assertThat(scenarios).hasSize(3); // GH-90000
-    assertThat(scenarios).extracting(TestScenario::category) // GH-90000
-        .containsExactly( // GH-90000
+    assertThat(scenarios).hasSize(3); 
+    assertThat(scenarios).extracting(TestScenario::category) 
+        .containsExactly( 
             TestScenario.ScenarioCategory.HAPPY_PATH,
             TestScenario.ScenarioCategory.EDGE_CASE,
             TestScenario.ScenarioCategory.BOUNDARY_VALUE);
 
-    ArgumentCaptor<Map<String, Object>> contextCaptor = (ArgumentCaptor<Map<String, Object>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class); // GH-90000
-    verify(aiService).reason(anyString(), contextCaptor.capture()); // GH-90000
-    assertThat(contextCaptor.getValue()) // GH-90000
-        .containsEntry("className", "CalculatorService") // GH-90000
+    ArgumentCaptor<Map<String, Object>> contextCaptor = (ArgumentCaptor<Map<String, Object>>) (ArgumentCaptor<?>) ArgumentCaptor.forClass(Map.class); 
+    verify(aiService).reason(anyString(), contextCaptor.capture()); 
+    assertThat(contextCaptor.getValue()) 
+        .containsEntry("className", "CalculatorService") 
         .containsKey("requirements")
         .containsKey("classSource")
         .containsKey("expectedCategories");
@@ -87,8 +87,8 @@ class TestSpecificationGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateSpecifications backfills missing edge and boundary scenarios for simple classes")
-  void generateSpecificationsBackfillsMissingCoverageCategories() { // GH-90000
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( // GH-90000
+  void generateSpecificationsBackfillsMissingCoverageCategories() { 
+    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( 
         "SCENARIO: creates a customer for valid input\n"
             + "CATEGORY: HAPPY_PATH\n"
             + "GIVEN: a valid customer payload\n"
@@ -96,15 +96,15 @@ class TestSpecificationGeneratorTest extends EventloopTestBase {
             + "THEN: the new customer id is returned\n"
             + "COVERAGE: create-flow"));
 
-    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( // GH-90000
-        new TestSpecificationRequest( // GH-90000
+    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( 
+        new TestSpecificationRequest( 
             "CustomerHandler",
-            "class CustomerHandler { String create(String name) { return name.trim(); } }", // GH-90000
+            "class CustomerHandler { String create(String name) { return name.trim(); } }", 
             List.of("The handler must create a customer record"))));
 
-    assertThat(scenarios).hasSize(3); // GH-90000
-    assertThat(scenarios).extracting(TestScenario::category) // GH-90000
-        .containsExactly( // GH-90000
+    assertThat(scenarios).hasSize(3); 
+    assertThat(scenarios).extracting(TestScenario::category) 
+        .containsExactly( 
             TestScenario.ScenarioCategory.HAPPY_PATH,
             TestScenario.ScenarioCategory.EDGE_CASE,
             TestScenario.ScenarioCategory.BOUNDARY_VALUE);
@@ -113,18 +113,18 @@ class TestSpecificationGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateSpecifications chooses collection-oriented boundary scenarios for collection-heavy classes")
-  void generateSpecificationsChoosesCollectionBoundariesForComplexClasses() { // GH-90000
+  void generateSpecificationsChoosesCollectionBoundariesForComplexClasses() { 
     when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of(""));
 
-    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( // GH-90000
-        new TestSpecificationRequest( // GH-90000
+    List<TestScenario> scenarios = runPromise(() -> generator.generateSpecifications( 
+        new TestSpecificationRequest( 
             "BatchProcessor",
-            "class BatchProcessor { void run(List<String> items) { for (String item : items) {} } }", // GH-90000
+            "class BatchProcessor { void run(List<String> items) { for (String item : items) {} } }", 
             List.of("The processor must support large batches"))));
 
-    assertThat(scenarios).hasSize(3); // GH-90000
-    assertThat(scenarios.get(2).category()).isEqualTo(TestScenario.ScenarioCategory.BOUNDARY_VALUE); // GH-90000
+    assertThat(scenarios).hasSize(3); 
+    assertThat(scenarios.get(2).category()).isEqualTo(TestScenario.ScenarioCategory.BOUNDARY_VALUE); 
     assertThat(scenarios.get(2).givenClause()).contains("collection size");
-    assertThat(scenarios.get(0).coverageTargets()).contains("main-flow", "requirement"); // GH-90000
+    assertThat(scenarios.get(0).coverageTargets()).contains("main-flow", "requirement"); 
   }
 }

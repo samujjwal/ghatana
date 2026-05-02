@@ -15,44 +15,44 @@ class ExampleUnitTest {
 
     @Test
     @DisplayName("should demonstrate basic assertions")
-    void basicAssertions() { // GH-90000
+    void basicAssertions() { 
         // Given
         String actual = "test";
 
         // When & Then
-        assertThat(actual) // GH-90000
-            .isNotBlank() // GH-90000
-            .hasSize(4) // GH-90000
+        assertThat(actual) 
+            .isNotBlank() 
+            .hasSize(4) 
             .isEqualToIgnoringCase("TEST");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"test1", "test2", "test3"}) // GH-90000
+    @ValueSource(strings = {"test1", "test2", "test3"}) 
     @DisplayName("should pass with different test data")
-    void parameterizedTest(String input) { // GH-90000
+    void parameterizedTest(String input) { 
         assertThat(input).startsWith("test");
     }
 
     @Test
     @DisplayName("should demonstrate mocking")
-    void mockExample() { // GH-90000
+    void mockExample() { 
         // Given
-        var mockService = mock(Runnable.class); // GH-90000
+        var mockService = mock(Runnable.class); 
 
         // When
-        mockService.run(); // GH-90000
+        mockService.run(); 
 
         // Then
-        verify(mockService, times(1)).run(); // GH-90000
+        verify(mockService, times(1)).run(); 
     }
 
     @Test
     @DisplayName("should demonstrate exception handling")
-    void exceptionHandling() { // GH-90000
-        assertThatThrownBy(() -> { // GH-90000
+    void exceptionHandling() { 
+        assertThatThrownBy(() -> { 
             throw new IllegalArgumentException("Test exception");
         })
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessage("Test exception");
     }
 }

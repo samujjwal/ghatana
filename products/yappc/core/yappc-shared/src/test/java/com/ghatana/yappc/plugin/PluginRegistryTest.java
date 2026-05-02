@@ -25,118 +25,118 @@ class PluginRegistryTest extends EventloopTestBase {
     private PluginContext context;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        context = DefaultPluginContext.builder() // GH-90000
+    void setUp() { 
+        context = DefaultPluginContext.builder() 
             .yappcVersion("1.0.0")
             .pluginDirectory("./test-plugins")
-            .build(); // GH-90000
+            .build(); 
 
-        registry = PluginRegistry.create(context); // GH-90000
+        registry = PluginRegistry.create(context); 
     }
 
     @Test
-    void testInitializeAndShutdown() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
-        assertTrue(registry.getPluginCount() >= 0); // GH-90000
+    void testInitializeAndShutdown() throws Exception { 
+        runPromise(() -> registry.initialize()); 
+        assertTrue(registry.getPluginCount() >= 0); 
 
-        runPromise(() -> registry.shutdown()); // GH-90000
-        assertEquals(0, registry.getPluginCount()); // GH-90000
+        runPromise(() -> registry.shutdown()); 
+        assertEquals(0, registry.getPluginCount()); 
     }
 
     @Test
-    void testRegisterPlugin() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testRegisterPlugin() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestValidatorPlugin plugin = new TestValidatorPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
         assertTrue(registry.isRegistered("test-validator"));
-        assertEquals(1, registry.getPluginCount()); // GH-90000
+        assertEquals(1, registry.getPluginCount()); 
     }
 
     @Test
-    void testGetPlugin() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetPlugin() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestValidatorPlugin plugin = new TestValidatorPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
         var retrieved = registry.getPlugin("test-validator");
-        assertTrue(retrieved.isPresent()); // GH-90000
-        assertEquals("test-validator", retrieved.get().getMetadata().getId()); // GH-90000
+        assertTrue(retrieved.isPresent()); 
+        assertEquals("test-validator", retrieved.get().getMetadata().getId()); 
     }
 
     @Test
-    void testGetPluginsByType() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetPluginsByType() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestValidatorPlugin validator = new TestValidatorPlugin(); // GH-90000
-        TestGeneratorPlugin generator = new TestGeneratorPlugin(); // GH-90000
+        TestValidatorPlugin validator = new TestValidatorPlugin(); 
+        TestGeneratorPlugin generator = new TestGeneratorPlugin(); 
 
-        runPromise(() -> registry.registerPlugin(validator)); // GH-90000
-        runPromise(() -> registry.registerPlugin(generator)); // GH-90000
+        runPromise(() -> registry.registerPlugin(validator)); 
+        runPromise(() -> registry.registerPlugin(generator)); 
 
-        List<ValidatorPlugin> validators = registry.getValidators(); // GH-90000
-        assertEquals(1, validators.size()); // GH-90000
+        List<ValidatorPlugin> validators = registry.getValidators(); 
+        assertEquals(1, validators.size()); 
 
-        List<GeneratorPlugin> generators = registry.getGenerators(); // GH-90000
-        assertEquals(1, generators.size()); // GH-90000
+        List<GeneratorPlugin> generators = registry.getGenerators(); 
+        assertEquals(1, generators.size()); 
     }
 
     @Test
-    void testGetValidatorsByCategory() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetValidatorsByCategory() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestValidatorPlugin plugin = new TestValidatorPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
         List<ValidatorPlugin> validators = registry.getValidatorsByCategory("test");
-        assertEquals(1, validators.size()); // GH-90000
+        assertEquals(1, validators.size()); 
     }
 
     @Test
-    void testGetGeneratorsByLanguage() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetGeneratorsByLanguage() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestGeneratorPlugin plugin = new TestGeneratorPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestGeneratorPlugin plugin = new TestGeneratorPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
         List<GeneratorPlugin> generators = registry.getGeneratorsByLanguage("java");
-        assertEquals(1, generators.size()); // GH-90000
+        assertEquals(1, generators.size()); 
     }
 
     @Test
-    void testGetAgentsByPhase() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetAgentsByPhase() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestAgentPlugin plugin = new TestAgentPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestAgentPlugin plugin = new TestAgentPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
         List<AgentPlugin> agents = registry.getAgentsByPhase("planning");
-        assertEquals(1, agents.size()); // GH-90000
+        assertEquals(1, agents.size()); 
     }
 
     @Test
-    void testGetAgent() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testGetAgent() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestAgentPlugin plugin = new TestAgentPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestAgentPlugin plugin = new TestAgentPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
-        var agent = registry.getAgent("planning", "create-architecture"); // GH-90000
-        assertTrue(agent.isPresent()); // GH-90000
+        var agent = registry.getAgent("planning", "create-architecture"); 
+        assertTrue(agent.isPresent()); 
     }
 
     @Test
-    void testCheckHealth() throws Exception { // GH-90000
-        runPromise(() -> registry.initialize()); // GH-90000
+    void testCheckHealth() throws Exception { 
+        runPromise(() -> registry.initialize()); 
 
-        TestValidatorPlugin plugin = new TestValidatorPlugin(); // GH-90000
-        runPromise(() -> registry.registerPlugin(plugin)); // GH-90000
+        TestValidatorPlugin plugin = new TestValidatorPlugin(); 
+        runPromise(() -> registry.registerPlugin(plugin)); 
 
-        Map<String, HealthStatus> healthMap = runPromise(() -> registry.checkHealth()); // GH-90000
+        Map<String, HealthStatus> healthMap = runPromise(() -> registry.checkHealth()); 
 
-        assertNotNull(healthMap); // GH-90000
+        assertNotNull(healthMap); 
         assertTrue(healthMap.containsKey("test-validator"));
         assertTrue(healthMap.get("test-validator").isHealthy());
     }
@@ -146,54 +146,54 @@ class PluginRegistryTest extends EventloopTestBase {
     static class TestValidatorPlugin implements ValidatorPlugin {
 
         @Override
-        public Promise<Void> initialize(PluginContext context) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> initialize(PluginContext context) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> start() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> start() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> stop() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> stop() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> shutdown() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> shutdown() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public PluginMetadata getMetadata() { // GH-90000
-            return PluginMetadata.builder() // GH-90000
+        public PluginMetadata getMetadata() { 
+            return PluginMetadata.builder() 
                 .id("test-validator")
                 .name("Test Validator")
                 .version("1.0.0")
-                .build(); // GH-90000
+                .build(); 
         }
 
         @Override
-        public PluginCapabilities getCapabilities() { // GH-90000
-            return PluginCapabilities.builder().build(); // GH-90000
+        public PluginCapabilities getCapabilities() { 
+            return PluginCapabilities.builder().build(); 
         }
 
         @Override
-        public Promise<HealthStatus> checkHealth() { // GH-90000
-            return Promise.of(HealthStatus.healthy()); // GH-90000
+        public Promise<HealthStatus> checkHealth() { 
+            return Promise.of(HealthStatus.healthy()); 
         }
 
         @Override
-        public Promise<ValidationResult> validate(ValidationContext context) { // GH-90000
-            return Promise.of(ValidationResult.builder() // GH-90000
+        public Promise<ValidationResult> validate(ValidationContext context) { 
+            return Promise.of(ValidationResult.builder() 
                 .validatorId("test-validator")
-                .valid(true) // GH-90000
-                .build()); // GH-90000
+                .valid(true) 
+                .build()); 
         }
 
         @Override
-        public String getValidatorCategory() { // GH-90000
+        public String getValidatorCategory() { 
             return "test";
         }
     }
@@ -201,114 +201,114 @@ class PluginRegistryTest extends EventloopTestBase {
     static class TestGeneratorPlugin implements GeneratorPlugin {
 
         @Override
-        public Promise<Void> initialize(PluginContext context) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> initialize(PluginContext context) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> start() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> start() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> stop() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> stop() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> shutdown() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> shutdown() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public PluginMetadata getMetadata() { // GH-90000
-            return PluginMetadata.builder() // GH-90000
+        public PluginMetadata getMetadata() { 
+            return PluginMetadata.builder() 
                 .id("test-generator")
                 .name("Test Generator")
                 .version("1.0.0")
-                .build(); // GH-90000
+                .build(); 
         }
 
         @Override
-        public PluginCapabilities getCapabilities() { // GH-90000
-            return PluginCapabilities.builder().build(); // GH-90000
+        public PluginCapabilities getCapabilities() { 
+            return PluginCapabilities.builder().build(); 
         }
 
         @Override
-        public Promise<HealthStatus> checkHealth() { // GH-90000
-            return Promise.of(HealthStatus.healthy()); // GH-90000
+        public Promise<HealthStatus> checkHealth() { 
+            return Promise.of(HealthStatus.healthy()); 
         }
 
         @Override
-        public Promise<GenerationResult> generate(GenerationContext context) { // GH-90000
-            return Promise.of(GenerationResult.builder() // GH-90000
+        public Promise<GenerationResult> generate(GenerationContext context) { 
+            return Promise.of(GenerationResult.builder() 
                 .generatorId("test-generator")
-                .success(true) // GH-90000
-                .build()); // GH-90000
+                .success(true) 
+                .build()); 
         }
 
         @Override
-        public Set<String> getSupportedLanguages() { // GH-90000
-            return Set.of("java", "typescript"); // GH-90000
+        public Set<String> getSupportedLanguages() { 
+            return Set.of("java", "typescript"); 
         }
     }
 
     static class TestAgentPlugin implements AgentPlugin {
 
         @Override
-        public Promise<Void> initialize(PluginContext context) { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> initialize(PluginContext context) { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> start() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> start() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> stop() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> stop() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public Promise<Void> shutdown() { // GH-90000
-            return Promise.complete(); // GH-90000
+        public Promise<Void> shutdown() { 
+            return Promise.complete(); 
         }
 
         @Override
-        public PluginMetadata getMetadata() { // GH-90000
-            return PluginMetadata.builder() // GH-90000
+        public PluginMetadata getMetadata() { 
+            return PluginMetadata.builder() 
                 .id("test-agent")
                 .name("Test Agent")
                 .version("1.0.0")
-                .build(); // GH-90000
+                .build(); 
         }
 
         @Override
-        public PluginCapabilities getCapabilities() { // GH-90000
-            return PluginCapabilities.builder().build(); // GH-90000
+        public PluginCapabilities getCapabilities() { 
+            return PluginCapabilities.builder().build(); 
         }
 
         @Override
-        public Promise<HealthStatus> checkHealth() { // GH-90000
-            return Promise.of(HealthStatus.healthy()); // GH-90000
+        public Promise<HealthStatus> checkHealth() { 
+            return Promise.of(HealthStatus.healthy()); 
         }
 
         @Override
-        public <I, O> Promise<StepResult<O>> execute(I input, StepContext context) { // GH-90000
-            return Promise.of(StepResult.<O>builder() // GH-90000
+        public <I, O> Promise<StepResult<O>> execute(I input, StepContext context) { 
+            return Promise.of(StepResult.<O>builder() 
                 .stepName("create-architecture")
-                .success(true) // GH-90000
-                .build()); // GH-90000
+                .success(true) 
+                .build()); 
         }
 
         @Override
-        public String getSdlcPhase() { // GH-90000
+        public String getSdlcPhase() { 
             return "planning";
         }
 
         @Override
-        public String getStepName() { // GH-90000
+        public String getStepName() { 
             return "create-architecture";
         }
     }

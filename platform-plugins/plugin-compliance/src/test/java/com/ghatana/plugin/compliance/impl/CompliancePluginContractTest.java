@@ -33,7 +33,7 @@ class CompliancePluginContractTest extends EventloopTestBase {
 
         assertThat(metadata.id()).isEqualTo("com.ghatana.plugin.compliance");
         assertThat(metadata.name()).isEqualTo("Compliance Plugin");
-        assertThat(metadata.version()).isEqualTo("1.0.0");
+        assertThat(metadata.version()).isEqualTo("1.2.0");
         assertThat(metadata.type()).isEqualTo(PluginType.GOVERNANCE);
     }
 

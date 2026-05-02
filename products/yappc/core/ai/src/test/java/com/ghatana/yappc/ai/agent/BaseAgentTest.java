@@ -30,33 +30,33 @@ class BaseAgentTest extends EventloopTestBase {
     private TestAgent testAgent;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        testAgent = new TestAgent(llmService); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        testAgent = new TestAgent(llmService); 
     }
 
     @Test
     @DisplayName("Should execute agent with input")
-    void shouldExecuteAgent() { // GH-90000
+    void shouldExecuteAgent() { 
         // Given
         String input = "Analyze this code";
         String response = "Analysis result";
 
-        when(llmService.chat(anyString(), anyString())) // GH-90000
-            .thenReturn(Promise.of(response)); // GH-90000
+        when(llmService.chat(anyString(), anyString())) 
+            .thenReturn(Promise.of(response)); 
 
         // When
-        Promise<String> result = testAgent.execute(input); // GH-90000
+        Promise<String> result = testAgent.execute(input); 
 
         // Then
-        verify(llmService).chat(anyString(), anyString()); // GH-90000
+        verify(llmService).chat(anyString(), anyString()); 
     }
 
     @Test
     @DisplayName("Should return agent name")
-    void shouldReturnAgentName() { // GH-90000
+    void shouldReturnAgentName() { 
         // Given/When
-        String name = testAgent.getName(); // GH-90000
+        String name = testAgent.getName(); 
 
         // Then
         assert name.equals("TestAgent");
@@ -66,12 +66,12 @@ class BaseAgentTest extends EventloopTestBase {
      * Test implementation of BaseAgent.
      */
     private static class TestAgent extends BaseAgent {
-        public TestAgent(LLMService llmService) { // GH-90000
-            super(llmService, "TestAgent", "You are a test agent"); // GH-90000
+        public TestAgent(LLMService llmService) { 
+            super(llmService, "TestAgent", "You are a test agent"); 
         }
 
         @org.jetbrains.annotations.NotNull
-        public String getCapabilities() { // GH-90000
+        public String getCapabilities() { 
             return "Test agent capabilities";
         }
     }

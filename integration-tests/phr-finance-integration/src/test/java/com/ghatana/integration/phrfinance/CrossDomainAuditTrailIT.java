@@ -1,7 +1,7 @@
 package com.ghatana.integration.phrfinance;
 
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import com.ghatana.finance.kernel.service.BillingLedgerAdapter;
 import com.ghatana.finance.kernel.service.LedgerManagementService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -30,14 +30,14 @@ class CrossDomainAuditTrailIT extends EventloopTestBase {
         StubLedgerManagementService ledgerService = new StubLedgerManagementService();
         BillingLedgerAdapter adapter = new BillingLedgerAdapter(ledgerService);
 
-        BillingTransaction tx = BillingTransaction.builder()
+        LedgerTransaction tx = LedgerTransaction.builder()
             .transactionId("tx-audit-1")
-            .sourceProductId("phr")
+            .sourceId("phr")
             .debitAccount("PHR:AR:patient-audit-1")
             .creditAccount("PHR:REVENUE:provider-audit-2")
             .amount(new BigDecimal("450.00"))
             .currency("NPR")
-            .type(BillingTransaction.TransactionType.CHARGE)
+            .type(LedgerTransaction.TransactionType.CHARGE)
             .description("Encounter closure")
             .externalReferenceId("enc-audit-9")
             .tenantId("tenant-audit")
@@ -52,8 +52,8 @@ class CrossDomainAuditTrailIT extends EventloopTestBase {
             .contains("src=phr")
             .contains("ref=enc-audit-9");
 
-        BillingLedgerPlugin.PostingStatus status = runPromise(() -> adapter.getPostingStatus("tx-audit-1"));
-        assertThat(status).isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+        LedgerPlugin.PostingStatus status = runPromise(() -> adapter.getPostingStatus("tx-audit-1"));
+        assertThat(status).isEqualTo(LedgerPlugin.PostingStatus.POSTED);
     }
 
     private static final class StubLedgerManagementService extends LedgerManagementService {

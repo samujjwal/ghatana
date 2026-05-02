@@ -22,7 +22,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles python language service test operations
@@ -37,33 +37,33 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
     private UnifiedDiagnostic mockDiagnostic;
 
     @BeforeEach
-    void setUpPythonConfig() { // GH-90000
+    void setUpPythonConfig() { 
         // Initialize service with Reactor from EventloopTestBase
-        pythonService = new PythonLanguageService(eventloop()); // GH-90000
+        pythonService = new PythonLanguageService(eventloop()); 
 
         // Update config to include Python
         projectContext
-                = new PolyfixProjectContext( // GH-90000
+                = new PolyfixProjectContext( 
                         tempDir, // root
-                        new PolyfixConfig( // GH-90000
+                        new PolyfixConfig( 
                                 List.of("python"),
-                                projectContext.config().schemaPaths(), // GH-90000
-                                projectContext.config().budgets(), // GH-90000
-                                projectContext.config().policies(), // GH-90000
-                                projectContext.config().tools()), // GH-90000
-                        projectContext.languages(), // languages // GH-90000
-                        projectContext.exec(), // exec // GH-90000
-                        projectContext.log() // log // GH-90000
+                                projectContext.config().schemaPaths(), 
+                                projectContext.config().budgets(), 
+                                projectContext.config().policies(), 
+                                projectContext.config().tools()), 
+                        projectContext.languages(), // languages 
+                        projectContext.exec(), // exec 
+                        projectContext.log() // log 
                 );
     }
 
     @Test
-    void testId() { // GH-90000
-        assertEquals("python", pythonService.id()); // GH-90000
+    void testId() { 
+        assertEquals("python", pythonService.id()); 
     }
 
     @Test
-    void testSupportsPythonFile() { // GH-90000
+    void testSupportsPythonFile() { 
         assertTrue(pythonService.supports(Path.of("test.py")));
         assertTrue(pythonService.supports(Path.of("src/main/python/module.py")));
         assertTrue(pythonService.supports(Path.of("script.pyi")));
@@ -71,50 +71,50 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
     }
 
     @Test
-    void testDoesNotSupportNonPythonFiles() { // GH-90000
+    void testDoesNotSupportNonPythonFiles() { 
         assertFalse(pythonService.supports(Path.of("test.java")), "Should not support Java files");
-        assertFalse( // GH-90000
+        assertFalse( 
                 pythonService.supports(Path.of("requirements.txt")),
                 "Should not support requirements.txt");
-        assertTrue( // GH-90000
+        assertTrue( 
                 pythonService.supports(Path.of("setup.py")),
                 "Should support setup.py as it's a Python file");
     }
 
     @Test
-    void testDiagnoseEmptyProject() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> pythonService.diagnose(projectContext, List.of())); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+    void testDiagnoseEmptyProject() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> pythonService.diagnose(projectContext, List.of())); 
+        assertNotNull(diagnostics); 
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testDiagnoseValidPythonFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testDiagnoseValidPythonFile(@TempDir Path tempDir) throws Exception { 
         // Create a simple valid Python file
         Path pythonFile = tempDir.resolve("test.py");
-        Files.writeString( // GH-90000
+        Files.writeString( 
                 pythonFile,
                 """
-            def hello(): // GH-90000
-                print(\"Hello, World!\") // GH-90000
+            def hello(): 
+                print(\"Hello, World!\") 
 
             if __name__ == \"__main__\":
-                hello() // GH-90000
+                hello() 
             """);
 
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> pythonService.diagnose(projectContext, List.of(pythonFile))); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> pythonService.diagnose(projectContext, List.of(pythonFile))); 
+        assertNotNull(diagnostics); 
         // No errors expected in valid Python code
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testPlanFixes() { // GH-90000
+    void testPlanFixes() { 
         // Create a test diagnostic with required fields
         UnifiedDiagnostic diagnostic
-                = new UnifiedDiagnostic( // GH-90000
+                = new UnifiedDiagnostic( 
                         "test-tool", // tool
                         "test-rule", // rule
                         "Test message", // message
@@ -122,14 +122,14 @@ class PythonLanguageServiceTest extends AbstractLanguageTest {
                         1, // startLine
                         1, // startColumn
                         Severity.ERROR, // severity
-                        Map.of() // meta // GH-90000
+                        Map.of() // meta 
                 );
 
-        List<FixAction> fixes = runPromise( // GH-90000
-                () -> pythonService.planFixes(diagnostic, projectContext)); // GH-90000
-        assertNotNull(fixes); // GH-90000
+        List<FixAction> fixes = runPromise( 
+                () -> pythonService.planFixes(diagnostic, projectContext)); 
+        assertNotNull(fixes); 
         // Fix planning may return empty list if no fixes are available
         // This test verifies the method completes successfully
-        assertTrue(fixes != null); // GH-90000
+        assertTrue(fixes != null); 
     }
 }

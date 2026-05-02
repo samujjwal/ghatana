@@ -1,0 +1,46 @@
+{
+  "pluginId": "com.ghatana.plugin.human-approval",
+  "version": "1.0.0",
+  "description": "Human-in-the-loop approval plugin for regulated operations. Provides four-eyes, exception review, and policy waiver workflows. Idempotent by requestId.",
+  "tier": "T2",
+  "capabilities": [
+    "approval:request",
+    "approval:query",
+    "approval:complete",
+    "approval:escalate",
+    "approval:list-pending"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 128,
+    "maxCpuPercent": 5,
+    "maxThreads": 4
+  },
+  "configSchema": {
+    "defaultTimeoutHours": {
+      "type": "number",
+      "required": false,
+      "description": "Default number of hours before an un-actioned approval request is escalated or expired. Defaults to 24."
+    },
+    "escalationEnabled": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether timed-out requests are automatically escalated to a secondary approver. Defaults to false."
+    },
+    "notificationWebhookUrl": {
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "description": "Webhook URL for approval request notifications. Must be an env reference in production: env:APPROVAL_WEBHOOK_URL."
+    },
+    "notificationWebhookSecret": {
+      "type": "string",
+      "required": false,
+      "secret": true,
+      "description": "HMAC secret for signing webhook payloads. Must be an env reference: env:APPROVAL_WEBHOOK_SECRET."
+    }
+  }
+}

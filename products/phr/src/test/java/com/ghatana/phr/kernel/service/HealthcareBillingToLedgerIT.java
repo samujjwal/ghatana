@@ -1,7 +1,12 @@
 package com.ghatana.phr.kernel.service;
 
-import com.ghatana.plugin.billing.BillingTransaction;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerPlugin.AccountType;
+import com.ghatana.plugin.ledger.LedgerPlugin.LedgerAccount;
+import com.ghatana.plugin.ledger.LedgerPlugin.LedgerEntry;
+import com.ghatana.plugin.ledger.LedgerPlugin.PostingStatus;
+import com.ghatana.plugin.ledger.LedgerPlugin.TimeRange;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -62,9 +67,9 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         assertNotNull(closed.closedAt());
 
         assertEquals(1, ledger.posted.size());
-        BillingTransaction posted = ledger.posted.getFirst();
+        LedgerTransaction posted = ledger.posted.getFirst();
         assertEquals("enc:" + created.id(), posted.getTransactionId());
-        assertEquals(BillingTransaction.TransactionType.CHARGE, posted.getType());
+        assertEquals(LedgerTransaction.TransactionType.CHARGE, posted.getType());
         assertEquals("PHR:AR:patient-int-1", posted.getDebitAccount());
         assertEquals("PHR:REVENUE:provider-int-1", posted.getCreditAccount());
         assertEquals("NPR", posted.getCurrency());
@@ -78,13 +83,13 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
      * @doc.layer product
      * @doc.pattern TestDouble
      */
-    static final class CapturingLedger implements BillingLedgerPlugin {
+    static final class CapturingLedger implements LedgerPlugin {
 
-        final List<BillingTransaction> posted = new ArrayList<>();
+        final List<LedgerTransaction> posted = new ArrayList<>();
         private int counter = 0;
 
         @Override
-        public Promise<String> postTransaction(BillingTransaction transaction) {
+        public Promise<String> postTransaction(LedgerTransaction transaction) {
             posted.add(transaction);
             return Promise.of("entry-" + (++counter));
         }

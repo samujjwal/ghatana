@@ -19,7 +19,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles safe exec test operations
@@ -37,207 +37,207 @@ class SafeExecTest {
     private SafeExec safeExec;
 
     @BeforeEach
-    void setUp() { // GH-90000
+    void setUp() { 
         // Create a real SafeExec instance
-        safeExec = new SafeExec(); // GH-90000
-        safeExec.setPolicy(mockPolicy); // GH-90000
+        safeExec = new SafeExec(); 
+        safeExec.setPolicy(mockPolicy); 
     }
 
     @Test
-    void run_disallowedCommand_throwsSecurityException() { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_disallowedCommand_throwsSecurityException() { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
-            var command = List.of("echo", "hello"); // GH-90000
-            when(mockPolicy.commands()).thenReturn(List.of()); // GH-90000
+            var command = List.of("echo", "hello"); 
+            when(mockPolicy.commands()).thenReturn(List.of()); 
 
             // Act & Assert
-            assertThrows( // GH-90000
+            assertThrows( 
                     SecurityException.class,
-                    () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                    () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); 
 
             // Verify ProcessExec was never called
-            mocked.verifyNoInteractions(); // GH-90000
+            mocked.verifyNoInteractions(); 
         }
     }
 
     @Test
-    void run_allowedCommand_returnsResult() throws Exception { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_allowedCommand_returnsResult() throws Exception { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
-            var command = List.of("echo", "hello"); // GH-90000
-            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); // GH-90000
-            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
+            var command = List.of("echo", "hello"); 
+            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); 
+            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); 
 
             // Set up the mock to return a successful result
-            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) // GH-90000
-                    .thenReturn(new ProcessExec.Result(0, "output", "")); // GH-90000
+            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) 
+                    .thenReturn(new ProcessExec.Result(0, "output", "")); 
 
             // Act
-            var result = safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis()); // GH-90000
+            var result = safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis()); 
 
             // Assert
-            verify(mockPolicy).commands(); // GH-90000
-            assertEquals(0, result.exitCode()); // GH-90000
-            assertEquals("output", result.out()); // GH-90000
+            verify(mockPolicy).commands(); 
+            assertEquals(0, result.exitCode()); 
+            assertEquals("output", result.out()); 
 
             // Verify ProcessExec.run was called with the expected parameters
-            mocked.verify( // GH-90000
-                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); // GH-90000
+            mocked.verify( 
+                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); 
         }
     }
 
     @Test
-    void run_commandWithArguments_allowsWithPrefixMatch() throws Exception { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_commandWithArguments_allowsWithPrefixMatch() throws Exception { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
-            var baseCommand = List.of("git", "commit"); // GH-90000
-            var fullCommand = List.of("git", "commit", "-m", "Initial commit"); // GH-90000
+            var baseCommand = List.of("git", "commit"); 
+            var fullCommand = List.of("git", "commit", "-m", "Initial commit"); 
             var allowedCommand =
-                    new AllowlistPolicy.AllowedCommand("git-commit", baseCommand, List.of()); // GH-90000
-            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
+                    new AllowlistPolicy.AllowedCommand("git-commit", baseCommand, List.of()); 
+            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); 
 
             // Set up the mock to return a successful result
-            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) // GH-90000
-                    .thenReturn(new ProcessExec.Result(0, "commit output", "")); // GH-90000
+            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) 
+                    .thenReturn(new ProcessExec.Result(0, "commit output", "")); 
 
             // Act
-            var result = safeExec.run(tempDir, fullCommand, Duration.ofSeconds(1).toMillis()); // GH-90000
+            var result = safeExec.run(tempDir, fullCommand, Duration.ofSeconds(1).toMillis()); 
 
             // Assert
-            assertEquals(0, result.exitCode()); // GH-90000
-            assertEquals("commit output", result.out()); // GH-90000
+            assertEquals(0, result.exitCode()); 
+            assertEquals("commit output", result.out()); 
 
             // Verify ProcessExec.run was called with the expected parameters
-            mocked.verify( // GH-90000
-                    () -> // GH-90000
-                            ProcessExec.run( // GH-90000
-                                    eq(tempDir), any(Duration.class), eq(fullCommand), anyMap())); // GH-90000
+            mocked.verify( 
+                    () -> 
+                            ProcessExec.run( 
+                                    eq(tempDir), any(Duration.class), eq(fullCommand), anyMap())); 
         }
     }
 
     @Test
-    void run_commandWithDifferentCasing_allowsCaseInsensitiveMatch() throws Exception { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_commandWithDifferentCasing_allowsCaseInsensitiveMatch() throws Exception { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
-            var command = List.of("ECHO", "hello"); // GH-90000
+            var command = List.of("ECHO", "hello"); 
             var allowedCommand =
                     new AllowlistPolicy.AllowedCommand("echo-cmd", List.of("echo"), List.of());
-            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
+            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); 
 
             // Set up the mock to return a successful result
-            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) // GH-90000
-                    .thenReturn(new ProcessExec.Result(0, "HELLO", "")); // GH-90000
+            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) 
+                    .thenReturn(new ProcessExec.Result(0, "HELLO", "")); 
 
             // Act & Assert - Should not throw SecurityException
             var result =
-                    assertDoesNotThrow( // GH-90000
-                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                    assertDoesNotThrow( 
+                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); 
 
             // Assert
-            assertEquals(0, result.exitCode()); // GH-90000
-            assertEquals("HELLO", result.out()); // GH-90000
+            assertEquals(0, result.exitCode()); 
+            assertEquals("HELLO", result.out()); 
 
             // Verify ProcessExec.run was called with the expected parameters
-            mocked.verify( // GH-90000
-                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); // GH-90000
+            mocked.verify( 
+                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); 
         }
     }
 
     @Test
-    void run_commandFails_throwsIOException() { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_commandFails_throwsIOException() { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
             var command = List.of("failing-command");
-            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); // GH-90000
-            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
+            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); 
+            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); 
 
             // Set up the mock to simulate a failing command
-            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) // GH-90000
-                    .thenReturn(new ProcessExec.Result(1, "", "Command failed")); // GH-90000
+            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) 
+                    .thenReturn(new ProcessExec.Result(1, "", "Command failed")); 
 
             // Act & Assert
             var exception =
-                    assertThrows( // GH-90000
+                    assertThrows( 
                             IOException.class,
-                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); 
 
             // Verify the exception message
             assertTrue(exception.getMessage().contains("Command failed"));
 
             // Verify ProcessExec.run was called with the expected parameters
-            mocked.verify( // GH-90000
-                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); // GH-90000
+            mocked.verify( 
+                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); 
         }
     }
 
     @Test
-    void run_withoutSettingPolicy_throwsIllegalStateException() { // GH-90000
+    void run_withoutSettingPolicy_throwsIllegalStateException() { 
         // Arrange
-        var safeExec = new SafeExec(); // No policy set // GH-90000
-        var command = List.of("echo", "test"); // GH-90000
+        var safeExec = new SafeExec(); // No policy set 
+        var command = List.of("echo", "test"); 
 
         // Act & Assert
-        assertThrows( // GH-90000
+        assertThrows( 
                 IllegalStateException.class,
-                () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); 
     }
 
     @Test
-    void run_withNullCommand_throwsNullPointerException() { // GH-90000
+    void run_withNullCommand_throwsNullPointerException() { 
         // Act & Assert
-        assertThrows( // GH-90000
+        assertThrows( 
                 NullPointerException.class,
-                () -> safeExec.run(tempDir, null, Duration.ofSeconds(1).toMillis())); // GH-90000
+                () -> safeExec.run(tempDir, null, Duration.ofSeconds(1).toMillis())); 
     }
 
     @Test
-    void run_withNullCwd_throwsNullPointerException() { // GH-90000
+    void run_withNullCwd_throwsNullPointerException() { 
         // Arrange
-        var command = List.of("echo", "test"); // GH-90000
+        var command = List.of("echo", "test"); 
 
         // Act & Assert
-        assertThrows( // GH-90000
+        assertThrows( 
                 NullPointerException.class,
-                () -> safeExec.run(null, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                () -> safeExec.run(null, command, Duration.ofSeconds(1).toMillis())); 
     }
 
     @Test
-    void run_withEmptyCommand_throwsSecurityException() { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_withEmptyCommand_throwsSecurityException() { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Act & Assert
-            assertThrows( // GH-90000
+            assertThrows( 
                     SecurityException.class,
-                    () -> safeExec.run(tempDir, List.of(), Duration.ofSeconds(1).toMillis())); // GH-90000
+                    () -> safeExec.run(tempDir, List.of(), Duration.ofSeconds(1).toMillis())); 
 
             // Verify ProcessExec was never called
-            mocked.verifyNoInteractions(); // GH-90000
+            mocked.verifyNoInteractions(); 
         }
     }
 
     @Test
-    void run_failingCommand_throwsIOException() { // GH-90000
-        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { // GH-90000
+    void run_failingCommand_throwsIOException() { 
+        try (MockedStatic<ProcessExec> mocked = Mockito.mockStatic(ProcessExec.class)) { 
             // Arrange
             var command = List.of("failing-command");
-            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); // GH-90000
-            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); // GH-90000
+            var allowedCommand = new AllowlistPolicy.AllowedCommand("test", command, List.of()); 
+            when(mockPolicy.commands()).thenReturn(List.of(allowedCommand)); 
 
             // Set up the mock to simulate a failing command
-            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) // GH-90000
-                    .thenReturn(new ProcessExec.Result(1, "", "Command failed")); // GH-90000
+            when(ProcessExec.run(any(Path.class), any(Duration.class), anyList(), anyMap())) 
+                    .thenReturn(new ProcessExec.Result(1, "", "Command failed")); 
 
             // Act & Assert
             var exception =
-                    assertThrows( // GH-90000
+                    assertThrows( 
                             IOException.class,
-                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); // GH-90000
+                            () -> safeExec.run(tempDir, command, Duration.ofSeconds(1).toMillis())); 
 
             // Verify the exception message
             assertTrue(exception.getMessage().contains("Command failed"));
 
             // Verify ProcessExec.run was called with the expected parameters
-            mocked.verify( // GH-90000
-                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); // GH-90000
+            mocked.verify( 
+                    () -> ProcessExec.run(eq(tempDir), any(Duration.class), eq(command), anyMap())); 
         }
     }
 }

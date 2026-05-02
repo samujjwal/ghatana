@@ -30,13 +30,13 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
     private AesGcmEncryptionProvider provider;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        provider = AesGcmEncryptionProvider.withNewKey(256, "svc-test-key"); // GH-90000
-        encryptionService = new EncryptionService(provider, eventloop()); // GH-90000
+    void setUp() { 
+        provider = AesGcmEncryptionProvider.withNewKey(256, "svc-test-key"); 
+        encryptionService = new EncryptionService(provider, eventloop()); 
     }
 
     // ============================================
-    // LARGE DATA ENCRYPTION (2 tests) // GH-90000
+    // LARGE DATA ENCRYPTION (2 tests) 
     // ============================================
 
     @Nested
@@ -45,34 +45,34 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Encrypt and decrypt large data (1MB)")
-        void largeMegabyteData() { // GH-90000
+        void largeMegabyteData() { 
             byte[] plaintext = new byte[1024 * 1024]; // 1 MB
-            for (int i = 0; i < plaintext.length; i++) { // GH-90000
-                plaintext[i] = (byte) (i % 256); // GH-90000
+            for (int i = 0; i < plaintext.length; i++) { 
+                plaintext[i] = (byte) (i % 256); 
             }
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            assertThat(decrypted).isEqualTo(plaintext); // GH-90000
-            assertThat(encrypted.length).isGreaterThan(plaintext.length); // GH-90000
+            assertThat(decrypted).isEqualTo(plaintext); 
+            assertThat(encrypted.length).isGreaterThan(plaintext.length); 
         }
 
         @Test
         @DisplayName("Encrypt very small data (single byte)")
-        void singleByteData() { // GH-90000
+        void singleByteData() { 
             byte[] plaintext = new byte[] { 42 };
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            assertThat(decrypted).isEqualTo(plaintext); // GH-90000
-            assertThat(encrypted[0]).isNotEqualTo(42); // GH-90000
+            assertThat(decrypted).isEqualTo(plaintext); 
+            assertThat(encrypted[0]).isNotEqualTo(42); 
         }
     }
 
     // ============================================
-    // STRUCTURED DATA SUPPORT (1 test) // GH-90000
+    // STRUCTURED DATA SUPPORT (1 test) 
     // ============================================
 
     @Nested
@@ -81,20 +81,20 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Encrypt and decrypt JSON data")
-        void jsonDataEncryption() { // GH-90000
+        void jsonDataEncryption() { 
             String jsonData = "{\"userId\":\"user-123\",\"email\":\"user@example.com\",\"nested\":{\"field\":\"value\"}}";
-            byte[] plaintext = jsonData.getBytes(StandardCharsets.UTF_8); // GH-90000
+            byte[] plaintext = jsonData.getBytes(StandardCharsets.UTF_8); 
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            String decryptedJson = new String(decrypted, StandardCharsets.UTF_8); // GH-90000
-            assertThat(decryptedJson).isEqualTo(jsonData); // GH-90000
+            String decryptedJson = new String(decrypted, StandardCharsets.UTF_8); 
+            assertThat(decryptedJson).isEqualTo(jsonData); 
         }
     }
 
     // ============================================
-    // CONCURRENT ENCRYPTION (1 test) // GH-90000
+    // CONCURRENT ENCRYPTION (1 test) 
     // ============================================
 
     @Nested
@@ -103,7 +103,7 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Concurrent encryption/decryption operations don't corrupt data")
-        void concurrentEncryptionIntegrity() throws InterruptedException { // GH-90000
+        void concurrentEncryptionIntegrity() throws InterruptedException { 
             int threadCount = 5;
             String[] testData = new String[] {
                 "Data thread 0",
@@ -113,39 +113,39 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
                 "Data thread 4"
             };
 
-            CountDownLatch latch = new CountDownLatch(threadCount); // GH-90000
-            ConcurrentHashMap<Integer, String> results = new ConcurrentHashMap<>(); // GH-90000
-            AtomicInteger successCount = new AtomicInteger(0); // GH-90000
+            CountDownLatch latch = new CountDownLatch(threadCount); 
+            ConcurrentHashMap<Integer, String> results = new ConcurrentHashMap<>(); 
+            AtomicInteger successCount = new AtomicInteger(0); 
 
-            for (int i = 0; i < threadCount; i++) { // GH-90000
+            for (int i = 0; i < threadCount; i++) { 
                 int index = i;
-                new Thread(() -> { // GH-90000
+                new Thread(() -> { 
                     try {
-                        byte[] plaintext = testData[index].getBytes(StandardCharsets.UTF_8); // GH-90000
-                        byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-                        byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
-                        String result = new String(decrypted, StandardCharsets.UTF_8); // GH-90000
+                        byte[] plaintext = testData[index].getBytes(StandardCharsets.UTF_8); 
+                        byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+                        byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
+                        String result = new String(decrypted, StandardCharsets.UTF_8); 
 
-                        if (result.equals(testData[index])) { // GH-90000
-                            results.put(index, result); // GH-90000
-                            successCount.incrementAndGet(); // GH-90000
+                        if (result.equals(testData[index])) { 
+                            results.put(index, result); 
+                            successCount.incrementAndGet(); 
                         }
                     } finally {
-                        latch.countDown(); // GH-90000
+                        latch.countDown(); 
                     }
-                }).start(); // GH-90000
+                }).start(); 
             }
 
-            latch.await(); // GH-90000
+            latch.await(); 
 
             // All threads should have successfully encrypted and decrypted
-            assertThat(successCount.get()).isEqualTo(threadCount); // GH-90000
-            assertThat(results).hasSize(threadCount); // GH-90000
+            assertThat(successCount.get()).isEqualTo(threadCount); 
+            assertThat(results).hasSize(threadCount); 
         }
     }
 
     // ============================================
-    // BINARY DATA HANDLING (1 test) // GH-90000
+    // BINARY DATA HANDLING (1 test) 
     // ============================================
 
     @Nested
@@ -154,26 +154,26 @@ class EncryptionServiceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Encrypt and decrypt arbitrary binary data")
-        void binaryDataRoundTrip() { // GH-90000
-            // Test data with all byte values (0-255) // GH-90000
+        void binaryDataRoundTrip() { 
+            // Test data with all byte values (0-255) 
             byte[] plaintext = new byte[256];
-            for (int i = 0; i < 256; i++) { // GH-90000
-                plaintext[i] = (byte) i; // GH-90000
+            for (int i = 0; i < 256; i++) { 
+                plaintext[i] = (byte) i; 
             }
 
-            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); // GH-90000
-            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); // GH-90000
+            byte[] encrypted = runPromise(() -> encryptionService.encryptAsync(plaintext)); 
+            byte[] decrypted = runPromise(() -> encryptionService.decryptAsync(encrypted)); 
 
-            assertThat(decrypted).isEqualTo(plaintext); // GH-90000
+            assertThat(decrypted).isEqualTo(plaintext); 
 
-            // All encrypted bytes should be different from original (statistical property) // GH-90000
+            // All encrypted bytes should be different from original (statistical property) 
             int differentCount = 0;
-            for (int i = 0; i < Math.min(plaintext.length, encrypted.length); i++) { // GH-90000
-                if (plaintext[i] != encrypted[i]) { // GH-90000
+            for (int i = 0; i < Math.min(plaintext.length, encrypted.length); i++) { 
+                if (plaintext[i] != encrypted[i]) { 
                     differentCount++;
                 }
             }
-            assertThat(differentCount).isGreaterThan(plaintext.length / 2); // GH-90000
+            assertThat(differentCount).isGreaterThan(plaintext.length / 2); 
         }
     }
 }

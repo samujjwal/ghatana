@@ -21,19 +21,19 @@ class EventConfigTest {
     class HashPartitioned {
 
         @Test
-        void setsStrategyAndPartitionCount() { // GH-90000
-            EventConfig cfg = EventConfig.hashPartitioned("orderId", 16); // GH-90000
+        void setsStrategyAndPartitionCount() { 
+            EventConfig cfg = EventConfig.hashPartitioned("orderId", 16); 
 
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.HASH); // GH-90000
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.HASH); 
             assertThat(cfg.getPartitionKeyField()).isEqualTo("orderId");
-            assertThat(cfg.getPartitionCount()).isEqualTo(16); // GH-90000
+            assertThat(cfg.getPartitionCount()).isEqualTo(16); 
         }
 
         @Test
-        void defaultsToPerPartitionOrdering() { // GH-90000
-            EventConfig cfg = EventConfig.hashPartitioned("id", 4); // GH-90000
+        void defaultsToPerPartitionOrdering() { 
+            EventConfig cfg = EventConfig.hashPartitioned("id", 4); 
 
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); // GH-90000
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); 
         }
     }
 
@@ -42,19 +42,19 @@ class EventConfigTest {
     class TimePartitioned {
 
         @Test
-        void setsStrategyAndTimeBucket() { // GH-90000
-            Duration bucket = Duration.ofDays(1); // GH-90000
-            EventConfig cfg = EventConfig.timePartitioned(bucket); // GH-90000
+        void setsStrategyAndTimeBucket() { 
+            Duration bucket = Duration.ofDays(1); 
+            EventConfig cfg = EventConfig.timePartitioned(bucket); 
 
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.TIME_BASED); // GH-90000
-            assertThat(cfg.getPartitionTimeBucket()).isEqualTo(bucket); // GH-90000
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.TIME_BASED); 
+            assertThat(cfg.getPartitionTimeBucket()).isEqualTo(bucket); 
         }
 
         @Test
-        void defaultsToPerPartitionOrdering() { // GH-90000
-            EventConfig cfg = EventConfig.timePartitioned(Duration.ofHours(6)); // GH-90000
+        void defaultsToPerPartitionOrdering() { 
+            EventConfig cfg = EventConfig.timePartitioned(Duration.ofHours(6)); 
 
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); // GH-90000
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); 
         }
     }
 
@@ -63,12 +63,12 @@ class EventConfigTest {
     class SinglePartition {
 
         @Test
-        void setsNoneStrategyAndGlobalOrdering() { // GH-90000
-            EventConfig cfg = EventConfig.singlePartition(); // GH-90000
+        void setsNoneStrategyAndGlobalOrdering() { 
+            EventConfig cfg = EventConfig.singlePartition(); 
 
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.NONE); // GH-90000
-            assertThat(cfg.getPartitionCount()).isEqualTo(1); // GH-90000
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.GLOBAL); // GH-90000
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.NONE); 
+            assertThat(cfg.getPartitionCount()).isEqualTo(1); 
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.GLOBAL); 
         }
     }
 
@@ -77,21 +77,21 @@ class EventConfigTest {
     class HighThroughput {
 
         @Test
-        void setsRoundRobinAndCompression() { // GH-90000
-            EventConfig cfg = EventConfig.highThroughput(32); // GH-90000
+        void setsRoundRobinAndCompression() { 
+            EventConfig cfg = EventConfig.highThroughput(32); 
 
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.ROUND_ROBIN); // GH-90000
-            assertThat(cfg.getPartitionCount()).isEqualTo(32); // GH-90000
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.NONE); // GH-90000
-            assertThat(cfg.getCompressPayload()).isTrue(); // GH-90000
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.ROUND_ROBIN); 
+            assertThat(cfg.getPartitionCount()).isEqualTo(32); 
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.NONE); 
+            assertThat(cfg.getCompressPayload()).isTrue(); 
         }
 
         @Test
-        void setsBatchConfig() { // GH-90000
-            EventConfig cfg = EventConfig.highThroughput(8); // GH-90000
+        void setsBatchConfig() { 
+            EventConfig cfg = EventConfig.highThroughput(8); 
 
-            assertThat(cfg.getBatchSize()).isEqualTo(1000); // GH-90000
-            assertThat(cfg.getBatchLingerTime()).isEqualTo(Duration.ofMillis(50)); // GH-90000
+            assertThat(cfg.getBatchSize()).isEqualTo(1000); 
+            assertThat(cfg.getBatchLingerTime()).isEqualTo(Duration.ofMillis(50)); 
         }
     }
 
@@ -102,13 +102,13 @@ class EventConfigTest {
     class WithDeduplication {
 
         @Test
-        void enablesDeduplicationWithDefaultKeyField() { // GH-90000
-            Duration window = Duration.ofMinutes(5); // GH-90000
-            EventConfig cfg = EventConfig.singlePartition().withDeduplication(window); // GH-90000
+        void enablesDeduplicationWithDefaultKeyField() { 
+            Duration window = Duration.ofMinutes(5); 
+            EventConfig cfg = EventConfig.singlePartition().withDeduplication(window); 
 
-            assertThat(cfg.getDeduplicationEnabled()).isTrue(); // GH-90000
+            assertThat(cfg.getDeduplicationEnabled()).isTrue(); 
             assertThat(cfg.getDeduplicationKeyField()).isEqualTo("idempotencyKey");
-            assertThat(cfg.getDeduplicationWindow()).isEqualTo(window); // GH-90000
+            assertThat(cfg.getDeduplicationWindow()).isEqualTo(window); 
         }
     }
 
@@ -117,21 +117,21 @@ class EventConfigTest {
     class WithIdempotency {
 
         @Test
-        void enablesDeduplicationWithCustomKeyField() { // GH-90000
-            EventConfig cfg = EventConfig.hashPartitioned("userId", 8) // GH-90000
-                    .withIdempotency("eventId", Duration.ofHours(1)); // GH-90000
+        void enablesDeduplicationWithCustomKeyField() { 
+            EventConfig cfg = EventConfig.hashPartitioned("userId", 8) 
+                    .withIdempotency("eventId", Duration.ofHours(1)); 
 
-            assertThat(cfg.getDeduplicationEnabled()).isTrue(); // GH-90000
+            assertThat(cfg.getDeduplicationEnabled()).isTrue(); 
             assertThat(cfg.getDeduplicationKeyField()).isEqualTo("eventId");
-            assertThat(cfg.getDeduplicationWindow()).isEqualTo(Duration.ofHours(1)); // GH-90000
+            assertThat(cfg.getDeduplicationWindow()).isEqualTo(Duration.ofHours(1)); 
         }
 
         @Test
-        void returnsThisForChaining() { // GH-90000
-            EventConfig original = EventConfig.singlePartition(); // GH-90000
-            EventConfig chained = original.withIdempotency("key", Duration.ofMinutes(30)); // GH-90000
+        void returnsThisForChaining() { 
+            EventConfig original = EventConfig.singlePartition(); 
+            EventConfig chained = original.withIdempotency("key", Duration.ofMinutes(30)); 
 
-            assertThat(chained).isSameAs(original); // GH-90000
+            assertThat(chained).isSameAs(original); 
         }
     }
 
@@ -140,11 +140,11 @@ class EventConfigTest {
     class WithStrictOrdering {
 
         @Test
-        void setsOrderingToPerPartition() { // GH-90000
-            EventConfig cfg = EventConfig.highThroughput(4) // starts with NONE ordering // GH-90000
-                    .withStrictOrdering(); // GH-90000
+        void setsOrderingToPerPartition() { 
+            EventConfig cfg = EventConfig.highThroughput(4) // starts with NONE ordering 
+                    .withStrictOrdering(); 
 
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); // GH-90000
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); 
         }
     }
 
@@ -153,12 +153,12 @@ class EventConfigTest {
     class WithGlobalOrdering {
 
         @Test
-        void collapsesToSinglePartitionWithGlobalGuarantee() { // GH-90000
-            EventConfig cfg = EventConfig.hashPartitioned("id", 16).withGlobalOrdering(); // GH-90000
+        void collapsesToSinglePartitionWithGlobalGuarantee() { 
+            EventConfig cfg = EventConfig.hashPartitioned("id", 16).withGlobalOrdering(); 
 
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.GLOBAL); // GH-90000
-            assertThat(cfg.getPartitionCount()).isEqualTo(1); // GH-90000
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.NONE); // GH-90000
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.GLOBAL); 
+            assertThat(cfg.getPartitionCount()).isEqualTo(1); 
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.NONE); 
         }
     }
 
@@ -167,18 +167,18 @@ class EventConfigTest {
     class WithCompression {
 
         @Test
-        void enablesCompressionWithDefaultLz4Codec() { // GH-90000
-            EventConfig cfg = EventConfig.singlePartition().withCompression(); // GH-90000
+        void enablesCompressionWithDefaultLz4Codec() { 
+            EventConfig cfg = EventConfig.singlePartition().withCompression(); 
 
-            assertThat(cfg.getCompressPayload()).isTrue(); // GH-90000
+            assertThat(cfg.getCompressPayload()).isTrue(); 
             assertThat(cfg.getCompressionCodec()).isEqualTo("lz4");
         }
 
         @Test
-        void enablesCompressionWithCustomCodec() { // GH-90000
+        void enablesCompressionWithCustomCodec() { 
             EventConfig cfg = EventConfig.singlePartition().withCompression("snappy");
 
-            assertThat(cfg.getCompressPayload()).isTrue(); // GH-90000
+            assertThat(cfg.getCompressPayload()).isTrue(); 
             assertThat(cfg.getCompressionCodec()).isEqualTo("snappy");
         }
     }
@@ -190,20 +190,20 @@ class EventConfigTest {
     class BuilderDefaults {
 
         @Test
-        void defaultBuilderProducesValidConfig() { // GH-90000
-            EventConfig cfg = EventConfig.builder().build(); // GH-90000
+        void defaultBuilderProducesValidConfig() { 
+            EventConfig cfg = EventConfig.builder().build(); 
 
-            assertThat(cfg.getPartitionCount()).isEqualTo(1); // GH-90000
-            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.HASH); // GH-90000
-            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); // GH-90000
-            assertThat(cfg.getDeduplicationEnabled()).isFalse(); // GH-90000
-            assertThat(cfg.getCompressPayload()).isFalse(); // GH-90000
+            assertThat(cfg.getPartitionCount()).isEqualTo(1); 
+            assertThat(cfg.getPartitionStrategy()).isEqualTo(EventConfig.PartitionStrategy.HASH); 
+            assertThat(cfg.getOrdering()).isEqualTo(EventConfig.OrderingGuarantee.PER_PARTITION); 
+            assertThat(cfg.getDeduplicationEnabled()).isFalse(); 
+            assertThat(cfg.getCompressPayload()).isFalse(); 
             assertThat(cfg.getCompressionCodec()).isEqualTo("lz4");
-            assertThat(cfg.getBatchSize()).isEqualTo(100); // GH-90000
-            assertThat(cfg.getBatchLingerTime()).isEqualTo(Duration.ofMillis(10)); // GH-90000
-            assertThat(cfg.getTailingEnabled()).isTrue(); // GH-90000
-            assertThat(cfg.getReplayEnabled()).isTrue(); // GH-90000
-            assertThat(cfg.getProperties()).isEmpty(); // GH-90000
+            assertThat(cfg.getBatchSize()).isEqualTo(100); 
+            assertThat(cfg.getBatchLingerTime()).isEqualTo(Duration.ofMillis(10)); 
+            assertThat(cfg.getTailingEnabled()).isTrue(); 
+            assertThat(cfg.getReplayEnabled()).isTrue(); 
+            assertThat(cfg.getProperties()).isEmpty(); 
         }
     }
 
@@ -214,9 +214,9 @@ class EventConfigTest {
     class PartitionStrategyEnum {
 
         @Test
-        void hasAllExpectedValues() { // GH-90000
-            assertThat(EventConfig.PartitionStrategy.values()) // GH-90000
-                    .containsExactlyInAnyOrder( // GH-90000
+        void hasAllExpectedValues() { 
+            assertThat(EventConfig.PartitionStrategy.values()) 
+                    .containsExactlyInAnyOrder( 
                             EventConfig.PartitionStrategy.HASH,
                             EventConfig.PartitionStrategy.ROUND_ROBIN,
                             EventConfig.PartitionStrategy.TIME_BASED,
@@ -230,9 +230,9 @@ class EventConfigTest {
     class OrderingGuaranteeEnum {
 
         @Test
-        void hasAllExpectedValues() { // GH-90000
-            assertThat(EventConfig.OrderingGuarantee.values()) // GH-90000
-                    .containsExactlyInAnyOrder( // GH-90000
+        void hasAllExpectedValues() { 
+            assertThat(EventConfig.OrderingGuarantee.values()) 
+                    .containsExactlyInAnyOrder( 
                             EventConfig.OrderingGuarantee.NONE,
                             EventConfig.OrderingGuarantee.PER_PARTITION,
                             EventConfig.OrderingGuarantee.GLOBAL);

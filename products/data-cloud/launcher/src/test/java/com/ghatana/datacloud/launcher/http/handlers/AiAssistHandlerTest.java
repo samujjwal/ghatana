@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AiAssistHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AiAssistHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -50,63 +50,63 @@ class AiAssistHandlerTest extends EventloopTestBase {
     private AiAssistHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new AiAssistHandler(completionService, objectMapper, http, blockingExecutor, AiRecommendationMetrics.NOOP); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new AiAssistHandler(completionService, objectMapper, http, blockingExecutor, AiRecommendationMetrics.NOOP); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("entity suggest rejects missing tenant before loading body")
-    void entitySuggestRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void entitySuggestRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleEntitySuggest(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleEntitySuggest(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(4096); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(4096); 
     }
 
     @Test
     @DisplayName("analytics suggest rejects missing tenant before loading body")
-    void analyticsSuggestRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void analyticsSuggestRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleAnalyticsSuggest(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleAnalyticsSuggest(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(4096); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(4096); 
     }
 
     @Test
     @DisplayName("pipeline hint rejects missing tenant before loading body")
-    void pipelineHintRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void pipelineHintRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handlePipelineOptimiseHint(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handlePipelineOptimiseHint(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(4096); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(4096); 
     }
 
     @Test
     @DisplayName("pipeline draft rejects missing tenant before loading body")
-    void pipelineDraftRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void pipelineDraftRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handlePipelineDraft(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handlePipelineDraft(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(4096); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(4096); 
     }
 
     @Test
     @DisplayName("brain explain rejects missing tenant before loading body")
-    void brainExplainRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void brainExplainRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleBrainExplain(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleBrainExplain(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(4096); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(4096); 
     }
 }

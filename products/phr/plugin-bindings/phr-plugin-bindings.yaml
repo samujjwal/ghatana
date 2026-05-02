@@ -1,0 +1,131 @@
+# PHR Product-to-Plugin Binding Manifest
+# Declares which platform plugins PHR binds to and the domain-specific configuration
+# provided for each. No platform kernel changes are needed to support these bindings.
+#
+# The platform plugin loader reads these manifests at startup and applies the
+# product-scoped configuration to each declared plugin.
+
+product: phr
+version: "1.0.0"
+description: "PHR plugin binding manifest — declares platform plugins used by PHR and their domain configuration"
+
+bindings:
+
+  - pluginId: consent-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Consent management for patient-owned health data"
+    config:
+      # PHR-specific purpose vocabulary; the plugin itself is purpose-agnostic
+      purposeVocabulary:
+        - id: phr.data-access
+          label: "Access to personal health data"
+          revocable: true
+          expiryDays: 365
+        - id: phr.data-share.third-party
+          label: "Share health data with authorized third parties"
+          revocable: true
+          expiryDays: 90
+          requiresExplicitGrant: true
+        - id: phr.emergency-access
+          label: "Emergency clinical access override"
+          revocable: false
+          requiresEmergencyContext: true
+        - id: phr.research
+          label: "Anonymized research use"
+          revocable: true
+          expiryDays: 730
+      # Consent audit level
+      auditLevel: FULL
+      # Consent revocation propagation window (seconds)
+      revocationPropagationSec: 60
+
+  - pluginId: audit-trail-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Immutable audit trail for all PHR access and consent events"
+    config:
+      retentionYears: 25
+      eventCategories:
+        - PATIENT_ACCESS
+        - CONSENT_GRANT
+        - CONSENT_REVOKE
+        - EMERGENCY_ACCESS
+        - DATA_EXPORT
+        - DOCUMENT_VIEW
+      sinkType: APPEND_ONLY_LOG
+      encryptAtRest: true
+
+  - pluginId: compliance-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Healthcare compliance rule evaluation (Nepal 2081, FHIR conformance)"
+    config:
+      rulePack: phr-compliance-rules-v1
+      evaluationMode: STRICT
+      reportingSchedule: MONTHLY
+      regulatoryFrameworks:
+        - nepal-2081
+        - nepal-privacy-act-2075
+
+  - pluginId: risk-management-plugin
+    version: ">=1.2.0"
+    enabled: true
+    description: "Healthcare operational and access risk management"
+    config:
+      # PHR registers a domain-specific evaluator for its risk model
+      evaluators:
+        - modelId: phr.clinical-access-risk
+          factorKeys:
+            - access.frequency.daily
+            - access.from.unusual-location
+            - actor.recent-failed-auth
+            - record.sensitivity-level
+          description: "Evaluates access risk for clinical records"
+      defaultLimits:
+        max.failed.auth.per.hour: 5
+        max.emergency.overrides.per.day: 10
+
+  - pluginId: fraud-detection-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Identity fraud and unauthorized access detection for PHR"
+    config:
+      # PHR-specific fraud signals
+      signals:
+        - id: phr.identity.mismatch
+          description: "Patient ID does not match session identity"
+          weight: 0.9
+        - id: phr.access.bulk-download
+          description: "Bulk record download by non-admin actor"
+          weight: 0.75
+        - id: phr.access.off-hours
+          description: "Clinical access outside business hours without emergency context"
+          weight: 0.4
+      thresholds:
+        flagScore: 0.5
+        blockScore: 0.8
+
+  - pluginId: human-approval-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "Human approval workflows for high-sensitivity PHR operations"
+    config:
+      workflows:
+        - id: phr.emergency-access-approval
+          description: "Approval for emergency clinical access override"
+          approvers: [clinical-lead, admin]
+          slaMinutes: 5
+        - id: phr.third-party-share-approval
+          description: "Approval for sharing with external third parties"
+          approvers: [data-protection-officer]
+          slaMinutes: 1440
+
+  - pluginId: ledger-plugin
+    version: ">=1.0.0"
+    enabled: true
+    description: "PHR platform billing and usage ledger"
+    config:
+      currency: NPR
+      billingModel: per-api-call
+      costCentre: phr-product

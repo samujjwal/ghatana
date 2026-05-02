@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.forecasting;
@@ -18,24 +18,24 @@ import java.lang.annotation.Annotation;
 class NaiveForecastingEngineAnnotationTest {
 
     @Test
-    void shouldHaveDevelopmentOnlyAnnotation() { // GH-90000
+    void shouldHaveDevelopmentOnlyAnnotation() { 
         DevelopmentOnly annotation = NaiveForecastingEngine.class
-            .getAnnotation(DevelopmentOnly.class); // GH-90000
+            .getAnnotation(DevelopmentOnly.class); 
         
-        assertNotNull(annotation, "NaiveForecastingEngine should be marked with @DevelopmentOnly"); // GH-90000
-        assertFalse(annotation.reason().isEmpty(),  // GH-90000
+        assertNotNull(annotation, "NaiveForecastingEngine should be marked with @DevelopmentOnly"); 
+        assertFalse(annotation.reason().isEmpty(),  
             "@DevelopmentOnly should have a reason specified");
         assertTrue(annotation.reason().contains("time-series ML"),
             "Reason should mention replacement with ML model");
     }
 
     @Test
-    void shouldIndicateProductionUnsuitability() { // GH-90000
+    void shouldIndicateProductionUnsuitability() { 
         DevelopmentOnly annotation = NaiveForecastingEngine.class
-            .getAnnotation(DevelopmentOnly.class); // GH-90000
+            .getAnnotation(DevelopmentOnly.class); 
         
-        assertNotNull(annotation); // GH-90000
-        String reason = annotation.reason().toLowerCase(); // GH-90000
+        assertNotNull(annotation); 
+        String reason = annotation.reason().toLowerCase(); 
         
         assertTrue(reason.contains("production") || reason.contains("baseline"),
             "Reason should indicate this is not for production use");

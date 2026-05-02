@@ -22,10 +22,10 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern ConcurrencyLimitTest
  *
- * Requirement: DC-F-026 (Concurrency Bounds) // GH-90000
+ * Requirement: DC-F-026 (Concurrency Bounds) 
  * Focus: Thread pool saturation, connection pool limits, ordering, fairness, deadlock detection
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("ConcurrencyLimitTest - DC-F-026")
 class ConcurrencyLimitTest {
 
@@ -36,8 +36,8 @@ class ConcurrencyLimitTest {
     private ConcurrencyTestingService concurrencyTestingService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        concurrencyTestingService = new ConcurrencyTestingService(threadPoolMonitor, connectionPoolMonitor, raceConditionDetector); // GH-90000
+    void setUp() { 
+        concurrencyTestingService = new ConcurrencyTestingService(threadPoolMonitor, connectionPoolMonitor, raceConditionDetector); 
     }
 
     @Nested
@@ -46,76 +46,76 @@ class ConcurrencyLimitTest {
 
         @Test
         @DisplayName("shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList")
-        void shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList() { // GH-90000
-            when(threadPoolMonitor.getQueuedTasks()).thenReturn(5000L); // GH-90000
+        void shouldQueueTasksWhenThreadsMaxed_whenThreadPoolFull_thenWaitList() { 
+            when(threadPoolMonitor.getQueuedTasks()).thenReturn(5000L); 
 
-            long queued = threadPoolMonitor.getQueuedTasks(); // GH-90000
+            long queued = threadPoolMonitor.getQueuedTasks(); 
 
-            assertTrue(queued > 0); // GH-90000
-            verify(threadPoolMonitor).getQueuedTasks(); // GH-90000
+            assertTrue(queued > 0); 
+            verify(threadPoolMonitor).getQueuedTasks(); 
         }
 
         @Test
         @DisplayName("shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent")
-        void shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { // GH-90000
-            when(threadPoolMonitor.getThreadPoolSize()).thenReturn(1024); // GH-90000
-            when(threadPoolMonitor.getActiveThreads()).thenReturn(1024); // GH-90000
+        void shouldMeasureThreadPoolUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { 
+            when(threadPoolMonitor.getThreadPoolSize()).thenReturn(1024); 
+            when(threadPoolMonitor.getActiveThreads()).thenReturn(1024); 
 
-            int poolSize = threadPoolMonitor.getThreadPoolSize(); // GH-90000
-            int active = threadPoolMonitor.getActiveThreads(); // GH-90000
+            int poolSize = threadPoolMonitor.getThreadPoolSize(); 
+            int active = threadPoolMonitor.getActiveThreads(); 
 
-            double utilization = (active * 100.0) / poolSize; // GH-90000
-            assertEquals(100.0, utilization); // GH-90000
+            double utilization = (active * 100.0) / poolSize; 
+            assertEquals(100.0, utilization); 
         }
 
         @Test
         @DisplayName("shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked")
-        void shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked() { // GH-90000
-            when(threadPoolMonitor.getHighPriorityWaitTime()).thenReturn(5000L); // GH-90000
+        void shouldDetectThreadStarvation_whenHighPriorityTasksWaiting_thenLowPriorityBlocked() { 
+            when(threadPoolMonitor.getHighPriorityWaitTime()).thenReturn(5000L); 
 
-            long waitTime = threadPoolMonitor.getHighPriorityWaitTime(); // GH-90000
+            long waitTime = threadPoolMonitor.getHighPriorityWaitTime(); 
 
-            assertTrue(waitTime > 1000); // GH-90000
+            assertTrue(waitTime > 1000); 
         }
 
         @Test
         @DisplayName("shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned")
-        void shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned() { // GH-90000
-            when(threadPoolMonitor.detectThreadLeaks()).thenReturn(false); // GH-90000
+        void shouldPreventThreadLeaks_whenTasksCancel_thenThreadsReturned() { 
+            when(threadPoolMonitor.detectThreadLeaks()).thenReturn(false); 
 
-            boolean hasLeaks = threadPoolMonitor.detectThreadLeaks(); // GH-90000
+            boolean hasLeaks = threadPoolMonitor.detectThreadLeaks(); 
 
-            assertFalse(hasLeaks); // GH-90000
+            assertFalse(hasLeaks); 
         }
 
         @Test
         @DisplayName("shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated")
-        void shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated() { // GH-90000
-            when(raceConditionDetector.detectDeadlock()).thenReturn(true); // GH-90000
+        void shouldHandleDeadlock_whenTasksDeadlock_thenDetectionActivated() { 
+            when(raceConditionDetector.detectDeadlock()).thenReturn(true); 
 
-            boolean deadlock = raceConditionDetector.detectDeadlock(); // GH-90000
+            boolean deadlock = raceConditionDetector.detectDeadlock(); 
 
-            assertTrue(deadlock); // GH-90000
+            assertTrue(deadlock); 
         }
 
         @Test
         @DisplayName("shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected")
-        void shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected() { // GH-90000
-            when(threadPoolMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
+        void shouldValidateFairnessInQueue_whenThreadPoolFull_thenQueueOrderRespected() { 
+            when(threadPoolMonitor.validateQueueFairness()).thenReturn(true); 
 
-            boolean fair = threadPoolMonitor.validateQueueFairness(); // GH-90000
+            boolean fair = threadPoolMonitor.validateQueueFairness(); 
 
-            assertTrue(fair); // GH-90000
+            assertTrue(fair); 
         }
 
         @Test
         @DisplayName("shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes")
-        void shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes() { // GH-90000
-            when(threadPoolMonitor.getRecoveryTimeMs()).thenReturn(3000L); // GH-90000
+        void shouldRecoverWhenThreadPoolRecovers_afterSpike_thenNormalProcessingResumes() { 
+            when(threadPoolMonitor.getRecoveryTimeMs()).thenReturn(3000L); 
 
-            long recovery = threadPoolMonitor.getRecoveryTimeMs(); // GH-90000
+            long recovery = threadPoolMonitor.getRecoveryTimeMs(); 
 
-            assertTrue(recovery < 5000); // GH-90000
+            assertTrue(recovery < 5000); 
         }
     }
 
@@ -125,74 +125,74 @@ class ConcurrencyLimitTest {
 
         @Test
         @DisplayName("shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue")
-        void shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue() { // GH-90000
-            when(connectionPoolMonitor.getWaitingRequestCount()).thenReturn(500L); // GH-90000
+        void shouldLimitConcurrentConnections_whenMaxConnectionsReached_thenWaitQueue() { 
+            when(connectionPoolMonitor.getWaitingRequestCount()).thenReturn(500L); 
 
-            long waiting = connectionPoolMonitor.getWaitingRequestCount(); // GH-90000
+            long waiting = connectionPoolMonitor.getWaitingRequestCount(); 
 
-            assertTrue(waiting > 0); // GH-90000
+            assertTrue(waiting > 0); 
         }
 
         @Test
         @DisplayName("shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent")
-        void shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { // GH-90000
-            when(connectionPoolMonitor.getPoolSize()).thenReturn(500); // GH-90000
-            when(connectionPoolMonitor.getActiveConnections()).thenReturn(475); // GH-90000
+        void shouldMeasureConnectionUtilization_whenConcurrencyIncreases_thenUtilizationPercent() { 
+            when(connectionPoolMonitor.getPoolSize()).thenReturn(500); 
+            when(connectionPoolMonitor.getActiveConnections()).thenReturn(475); 
 
-            int poolSize = connectionPoolMonitor.getPoolSize(); // GH-90000
-            int active = connectionPoolMonitor.getActiveConnections(); // GH-90000
+            int poolSize = connectionPoolMonitor.getPoolSize(); 
+            int active = connectionPoolMonitor.getActiveConnections(); 
 
-            double utilization = (active * 100.0) / poolSize; // GH-90000
-            assertTrue(utilization > 90); // GH-90000
+            double utilization = (active * 100.0) / poolSize; 
+            assertTrue(utilization > 90); 
         }
 
         @Test
         @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected")
-        void shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected() { // GH-90000
-            when(connectionPoolMonitor.detectConnectionLeaks()).thenReturn(true); // GH-90000
+        void shouldDetectConnectionLeaks_whenConnectionsNotReleased_thenLeakDetected() { 
+            when(connectionPoolMonitor.detectConnectionLeaks()).thenReturn(true); 
 
-            boolean hasLeaks = connectionPoolMonitor.detectConnectionLeaks(); // GH-90000
+            boolean hasLeaks = connectionPoolMonitor.detectConnectionLeaks(); 
 
-            assertTrue(hasLeaks); // GH-90000
+            assertTrue(hasLeaks); 
         }
 
         @Test
         @DisplayName("shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled")
-        void shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled() { // GH-90000
-            when(connectionPoolMonitor.getIdleConnectionCount()).thenReturn(50L); // GH-90000
+        void shouldEnforceConnectionIdleTimeout_whenConnectionUnused_thenClosedAndRecycled() { 
+            when(connectionPoolMonitor.getIdleConnectionCount()).thenReturn(50L); 
 
-            long idleCount = connectionPoolMonitor.getIdleConnectionCount(); // GH-90000
+            long idleCount = connectionPoolMonitor.getIdleConnectionCount(); 
 
-            assertTrue(idleCount >= 0); // GH-90000
+            assertTrue(idleCount >= 0); 
         }
 
         @Test
         @DisplayName("shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated")
-        void shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated() { // GH-90000
-            when(connectionPoolMonitor.isFailoverActive()).thenReturn(true); // GH-90000
+        void shouldHandleConnectionFailure_whenNetworkDown_thenFailoverActivated() { 
+            when(connectionPoolMonitor.isFailoverActive()).thenReturn(true); 
 
-            boolean failover = connectionPoolMonitor.isFailoverActive(); // GH-90000
+            boolean failover = connectionPoolMonitor.isFailoverActive(); 
 
-            assertTrue(failover); // GH-90000
+            assertTrue(failover); 
         }
 
         @Test
         @DisplayName("shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected")
-        void shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected() { // GH-90000
-            when(connectionPoolMonitor.validateQueueFairness()).thenReturn(true); // GH-90000
+        void shouldValidateFairnessInConnectionQueue_whenPoolFull_thenRequestOrderRespected() { 
+            when(connectionPoolMonitor.validateQueueFairness()).thenReturn(true); 
 
-            boolean fair = connectionPoolMonitor.validateQueueFairness(); // GH-90000
+            boolean fair = connectionPoolMonitor.validateQueueFairness(); 
 
-            assertTrue(fair); // GH-90000
+            assertTrue(fair); 
         }
 
         @Test
         @DisplayName("shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows")
-        void shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows() { // GH-90000
+        void shouldScaleConnectionPoolDynamically_whenDemandIncreases_thenPoolGrows() { 
             int sizeBefore = 100;
             int sizeAfter = 150;
 
-            assertTrue(sizeAfter > sizeBefore); // GH-90000
+            assertTrue(sizeAfter > sizeBefore); 
         }
     }
 
@@ -202,72 +202,72 @@ class ConcurrencyLimitTest {
 
         @Test
         @DisplayName("shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained")
-        void shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained() { // GH-90000
-            when(raceConditionDetector.detectOrderingViolations()).thenReturn(false); // GH-90000
+        void shouldPreserveRequestOrder_whenMultipleConcurrentRequests_thenSequencingMaintained() { 
+            when(raceConditionDetector.detectOrderingViolations()).thenReturn(false); 
 
-            boolean ordered = !raceConditionDetector.detectOrderingViolations(); // GH-90000
+            boolean ordered = !raceConditionDetector.detectOrderingViolations(); 
 
-            assertTrue(ordered); // GH-90000
+            assertTrue(ordered); 
         }
 
         @Test
         @DisplayName("shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference")
-        void shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference() { // GH-90000
-            when(raceConditionDetector.detectInterference()).thenReturn(false); // GH-90000
+        void shouldIsolateConcurrentRequests_whenProcessedInParallel_thenNoInterference() { 
+            when(raceConditionDetector.detectInterference()).thenReturn(false); 
 
-            boolean isolated = !raceConditionDetector.detectInterference(); // GH-90000
+            boolean isolated = !raceConditionDetector.detectInterference(); 
 
-            assertTrue(isolated); // GH-90000
+            assertTrue(isolated); 
         }
 
         @Test
         @DisplayName("shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked")
-        void shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked() { // GH-90000
-            when(raceConditionDetector.detectRaceConditions()).thenReturn(5L); // GH-90000
+        void shouldDetectRaceConditions_whenConcurrentAccessOccurs_thenAnomaliesMarked() { 
+            when(raceConditionDetector.detectRaceConditions()).thenReturn(5L); 
 
-            long raceCount = raceConditionDetector.detectRaceConditions(); // GH-90000
+            long raceCount = raceConditionDetector.detectRaceConditions(); 
 
-            assertTrue(raceCount >= 0); // GH-90000
+            assertTrue(raceCount >= 0); 
         }
 
         @Test
         @DisplayName("shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied")
-        void shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied() { // GH-90000
-            when(raceConditionDetector.validateMutualExclusion()).thenReturn(true); // GH-90000
+        void shouldEnforceExclusivityWhereRequired_whenCriticalSectionAccessed_thenSerializationApplied() { 
+            when(raceConditionDetector.validateMutualExclusion()).thenReturn(true); 
 
-            boolean exclusive = raceConditionDetector.validateMutualExclusion(); // GH-90000
+            boolean exclusive = raceConditionDetector.validateMutualExclusion(); 
 
-            assertTrue(exclusive); // GH-90000
+            assertTrue(exclusive); 
         }
 
         @Test
         @DisplayName("shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered")
-        void shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered() { // GH-90000
-            when(raceConditionDetector.detectDeadlock()).thenReturn(false); // GH-90000
+        void shouldDetectDeadlocks_whenCircularWaitsForm_thenDetectionTriggered() { 
+            when(raceConditionDetector.detectDeadlock()).thenReturn(false); 
 
-            boolean deadlock = raceConditionDetector.detectDeadlock(); // GH-90000
+            boolean deadlock = raceConditionDetector.detectDeadlock(); 
 
-            assertFalse(deadlock); // GH-90000
+            assertFalse(deadlock); 
         }
 
         @Test
         @DisplayName("shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected")
-        void shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected() { // GH-90000
-            when(raceConditionDetector.validateCausality()).thenReturn(true); // GH-90000
+        void shouldValidateCausalityPreservation_whenEventsOrdering_thenCausalityRespected() { 
+            when(raceConditionDetector.validateCausality()).thenReturn(true); 
 
-            boolean causal = raceConditionDetector.validateCausality(); // GH-90000
+            boolean causal = raceConditionDetector.validateCausality(); 
 
-            assertTrue(causal); // GH-90000
+            assertTrue(causal); 
         }
 
         @Test
         @DisplayName("shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount")
-        void shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount() { // GH-90000
-            when(threadPoolMonitor.getCurrentConcurrencyLevel()).thenReturn(512); // GH-90000
+        void shouldMeasureConcurrencyLevel_whenMultipleRequestsInFlight_thenConcurrencyCount() { 
+            when(threadPoolMonitor.getCurrentConcurrencyLevel()).thenReturn(512); 
 
-            int level = threadPoolMonitor.getCurrentConcurrencyLevel(); // GH-90000
+            int level = threadPoolMonitor.getCurrentConcurrencyLevel(); 
 
-            assertTrue(level > 0); // GH-90000
+            assertTrue(level > 0); 
         }
     }
 
@@ -277,76 +277,76 @@ class ConcurrencyLimitTest {
 
         @Test
         @DisplayName("shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency")
-        void shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency() { // GH-90000
-            when(threadPoolMonitor.getMaxConcurrency()).thenReturn(2048); // GH-90000
+        void shouldMeasureMaxConcurrentRequests_whenSystemAtCapacity_thenMaxConcurrency() { 
+            when(threadPoolMonitor.getMaxConcurrency()).thenReturn(2048); 
 
-            int maxConcurrency = threadPoolMonitor.getMaxConcurrency(); // GH-90000
+            int maxConcurrency = threadPoolMonitor.getMaxConcurrency(); 
 
-            assertTrue(maxConcurrency > 1000); // GH-90000
+            assertTrue(maxConcurrency > 1000); 
         }
 
         @Test
         @DisplayName("shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified")
-        void shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified() { // GH-90000
+        void shouldDetectConcurrencyBottleneck_whenLimitReached_thenIdentified() { 
             when(threadPoolMonitor.identifyBottleneck()).thenReturn("ThreadPool");
 
-            String bottleneck = threadPoolMonitor.identifyBottleneck(); // GH-90000
+            String bottleneck = threadPoolMonitor.identifyBottleneck(); 
 
-            assertNotNull(bottleneck); // GH-90000
+            assertNotNull(bottleneck); 
         }
 
         @Test
         @DisplayName("shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus")
-        void shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus() { // GH-90000
+        void shouldValidateLinearScalingWithConcurrency_untilBottleneckHit_thenPlateaus() { 
             long tps256 = 20_000L;
             long tps512 = 38_000L;
             long tps1024 = 39_500L;
 
-            double scale1 = (double) tps512 / tps256; // GH-90000
-            double scale2 = (double) tps1024 / tps512; // GH-90000
+            double scale1 = (double) tps512 / tps256; 
+            double scale2 = (double) tps1024 / tps512; 
 
-            assertTrue(scale1 > 1.5); // GH-90000
-            assertTrue(scale2 < 1.1); // GH-90000
+            assertTrue(scale1 > 1.5); 
+            assertTrue(scale2 < 1.1); 
         }
 
         @Test
         @DisplayName("shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone")
-        void shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone() { // GH-90000
-            when(raceConditionDetector.detectDataCorruption()).thenReturn(0L); // GH-90000
+        void shouldMaintainConsistency_underHighConcurrency_thenDataCorruptionNone() { 
+            when(raceConditionDetector.detectDataCorruption()).thenReturn(0L); 
 
-            long corruptions = raceConditionDetector.detectDataCorruption(); // GH-90000
+            long corruptions = raceConditionDetector.detectDataCorruption(); 
 
-            assertEquals(0, corruptions); // GH-90000
+            assertEquals(0, corruptions); 
         }
 
         @Test
         @DisplayName("shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified")
-        void shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified() { // GH-90000
-            when(raceConditionDetector.measureLockContention()).thenReturn(0.25); // GH-90000
+        void shouldDetectContentionLevels_whenResourceShared_thenContentionQuantified() { 
+            when(raceConditionDetector.measureLockContention()).thenReturn(0.25); 
 
-            double contention = raceConditionDetector.measureLockContention(); // GH-90000
+            double contention = raceConditionDetector.measureLockContention(); 
 
-            assertTrue(contention >= 0.0 && contention <= 1.0); // GH-90000
+            assertTrue(contention >= 0.0 && contention <= 1.0); 
         }
 
         @Test
         @DisplayName("shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified")
-        void shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified() { // GH-90000
-            when(threadPoolMonitor.computeContextSwitchOverhead()).thenReturn(0.15); // GH-90000
+        void shouldMeasureContextSwitchOverhead_whenConcurrencyHigh_thenOverheadQuantified() { 
+            when(threadPoolMonitor.computeContextSwitchOverhead()).thenReturn(0.15); 
 
-            double overhead = threadPoolMonitor.computeContextSwitchOverhead(); // GH-90000
+            double overhead = threadPoolMonitor.computeContextSwitchOverhead(); 
 
-            assertTrue(overhead >= 0); // GH-90000
+            assertTrue(overhead >= 0); 
         }
 
         @Test
         @DisplayName("shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation")
-        void shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation() { // GH-90000
-            when(threadPoolMonitor.validateNoStarvation()).thenReturn(true); // GH-90000
+        void shouldValidateFairnessMetrics_underHighConcurrency_thenNoThreadStarvation() { 
+            when(threadPoolMonitor.validateNoStarvation()).thenReturn(true); 
 
-            boolean fair = threadPoolMonitor.validateNoStarvation(); // GH-90000
+            boolean fair = threadPoolMonitor.validateNoStarvation(); 
 
-            assertTrue(fair); // GH-90000
+            assertTrue(fair); 
         }
     }
 
@@ -356,7 +356,7 @@ class ConcurrencyLimitTest {
         private final ConnectionPoolMonitorService connectionPoolMonitor;
         private final RaceConditionDetectorService raceConditionDetector;
 
-        ConcurrencyTestingService(ThreadPoolMonitorService tpe, ConnectionPoolMonitorService cpm, RaceConditionDetectorService rcd) { // GH-90000
+        ConcurrencyTestingService(ThreadPoolMonitorService tpe, ConnectionPoolMonitorService cpm, RaceConditionDetectorService rcd) { 
             this.threadPoolMonitor = tpe;
             this.connectionPoolMonitor = cpm;
             this.raceConditionDetector = rcd;
@@ -364,39 +364,39 @@ class ConcurrencyLimitTest {
     }
 
     static class ThreadPoolMonitorService {
-        long getQueuedTasks() { return 5000L; } // GH-90000
-        int getThreadPoolSize() { return 1024; } // GH-90000
-        int getActiveThreads() { return 1024; } // GH-90000
-        long getHighPriorityWaitTime() { return 5000L; } // GH-90000
-        boolean detectThreadLeaks() { return false; } // GH-90000
-        boolean validateQueueFairness() { return true; } // GH-90000
-        long getRecoveryTimeMs() { return 3000L; } // GH-90000
-        int getCurrentConcurrencyLevel() { return 512; } // GH-90000
-        int getMaxConcurrency() { return 2048; } // GH-90000
-        String identifyBottleneck() { return "ThreadPool"; } // GH-90000
-        double computeContextSwitchOverhead() { return 0.15; } // GH-90000
-        boolean validateNoStarvation() { return true; } // GH-90000
+        long getQueuedTasks() { return 5000L; } 
+        int getThreadPoolSize() { return 1024; } 
+        int getActiveThreads() { return 1024; } 
+        long getHighPriorityWaitTime() { return 5000L; } 
+        boolean detectThreadLeaks() { return false; } 
+        boolean validateQueueFairness() { return true; } 
+        long getRecoveryTimeMs() { return 3000L; } 
+        int getCurrentConcurrencyLevel() { return 512; } 
+        int getMaxConcurrency() { return 2048; } 
+        String identifyBottleneck() { return "ThreadPool"; } 
+        double computeContextSwitchOverhead() { return 0.15; } 
+        boolean validateNoStarvation() { return true; } 
     }
 
     static class ConnectionPoolMonitorService {
-        long getWaitingRequestCount() { return 500L; } // GH-90000
-        int getPoolSize() { return 500; } // GH-90000
-        int getActiveConnections() { return 475; } // GH-90000
-        boolean detectConnectionLeaks() { return true; } // GH-90000
-        long getIdleConnectionCount() { return 50L; } // GH-90000
-        boolean isFailoverActive() { return true; } // GH-90000
-        boolean validateQueueFairness() { return true; } // GH-90000
+        long getWaitingRequestCount() { return 500L; } 
+        int getPoolSize() { return 500; } 
+        int getActiveConnections() { return 475; } 
+        boolean detectConnectionLeaks() { return true; } 
+        long getIdleConnectionCount() { return 50L; } 
+        boolean isFailoverActive() { return true; } 
+        boolean validateQueueFairness() { return true; } 
     }
 
     static class RaceConditionDetectorService {
-        boolean detectDeadlock() { return true; } // GH-90000
-        boolean detectOrderingViolations() { return false; } // GH-90000
-        boolean detectInterference() { return false; } // GH-90000
-        long detectRaceConditions() { return 5L; } // GH-90000
-        boolean validateMutualExclusion() { return true; } // GH-90000
-        boolean validateCausality() { return true; } // GH-90000
-        long detectDataCorruption() { return 0L; } // GH-90000
-        double measureLockContention() { return 0.25; } // GH-90000
+        boolean detectDeadlock() { return true; } 
+        boolean detectOrderingViolations() { return false; } 
+        boolean detectInterference() { return false; } 
+        long detectRaceConditions() { return 5L; } 
+        boolean validateMutualExclusion() { return true; } 
+        boolean validateCausality() { return true; } 
+        long detectDataCorruption() { return 0L; } 
+        double measureLockContention() { return 0.25; } 
     }
 
     // Custom Exceptions

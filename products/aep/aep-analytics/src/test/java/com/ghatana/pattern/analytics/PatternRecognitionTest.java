@@ -23,49 +23,49 @@ class PatternRecognitionTest {
 
     @Test
     @DisplayName("Should recognize patterns")
-    void shouldRecognizePatterns() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldRecognizePatterns() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should detect anomalies")
-    void shouldDetectAnomalies() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldDetectAnomalies() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should classify patterns")
-    void shouldClassifyPatterns() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldClassifyPatterns() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle pattern updates")
-    void shouldHandlePatternUpdates() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandlePatternUpdates() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle pattern deletion")
-    void shouldHandlePatternDeletion() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandlePatternDeletion() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle pattern queries")
-    void shouldHandlePatternQueries() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandlePatternQueries() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 }

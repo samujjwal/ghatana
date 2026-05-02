@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.datagovernance;
@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class DataGovernanceExpansionTest extends EventloopTestBase {
 
     // ============================================
-    // CONSENT MANAGEMENT (4 tests) // GH-90000
+    // CONSENT MANAGEMENT (4 tests) 
     // ============================================
 
     @Nested
@@ -40,13 +40,13 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("User consent recording and verification")
-        void consentRecording() { // GH-90000
-            Map<String, Object> consent = new HashMap<>(); // GH-90000
-            consent.put("userId", "user-1"); // GH-90000
-            consent.put("dataCategory", "personal-data"); // GH-90000
-            consent.put("consentType", "explicit"); // GH-90000
-            consent.put("grantedAt", Instant.now()); // GH-90000
-            consent.put("isActive", true); // GH-90000
+        void consentRecording() { 
+            Map<String, Object> consent = new HashMap<>(); 
+            consent.put("userId", "user-1"); 
+            consent.put("dataCategory", "personal-data"); 
+            consent.put("consentType", "explicit"); 
+            consent.put("grantedAt", Instant.now()); 
+            consent.put("isActive", true); 
 
             assertThat(consent.get("isActive")).isEqualTo(true);
             assertThat(consent.get("consentType")).isEqualTo("explicit");
@@ -54,17 +54,17 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Consent withdrawal and expiration")
-        void consentWithdrawal() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+        void consentWithdrawal() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
                 // Simulate 40 consent withdrawals
-                for (int i = 0; i < 40; i++) { // GH-90000
+                for (int i = 0; i < 40; i++) { 
                     final int idx = i;
-                    Map<String, Object> withdrawal = new HashMap<>(); // GH-90000
-                    withdrawal.put("userId", "user-" + idx); // GH-90000
-                    withdrawal.put("withdrawnAt", Instant.now()); // GH-90000
-                    withdrawal.put("reason", idx % 2 == 0 ? "user-request" : "expired"); // GH-90000
+                    Map<String, Object> withdrawal = new HashMap<>(); 
+                    withdrawal.put("userId", "user-" + idx); 
+                    withdrawal.put("withdrawnAt", Instant.now()); 
+                    withdrawal.put("reason", idx % 2 == 0 ? "user-request" : "expired"); 
                 }
 
                 return result;
@@ -73,33 +73,33 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Multi-purpose consent aggregation")
-        void multiPurposeConsent() { // GH-90000
-            Map<String, Boolean> purposes = new HashMap<>(); // GH-90000
-            purposes.put("marketing", true); // GH-90000
-            purposes.put("analytics", false); // GH-90000
-            purposes.put("personalization", true); // GH-90000
-            purposes.put("data-sharing", false); // GH-90000
+        void multiPurposeConsent() { 
+            Map<String, Boolean> purposes = new HashMap<>(); 
+            purposes.put("marketing", true); 
+            purposes.put("analytics", false); 
+            purposes.put("personalization", true); 
+            purposes.put("data-sharing", false); 
 
-            long grantedCount = purposes.values().stream().filter(v -> v).count(); // GH-90000
-            assertThat(grantedCount).isEqualTo(2); // GH-90000
+            long grantedCount = purposes.values().stream().filter(v -> v).count(); 
+            assertThat(grantedCount).isEqualTo(2); 
         }
 
         @Test
         @DisplayName("Consent audit trail with integrity")
-        void consentAuditTrail() { // GH-90000
-            Map<String, Object> auditEntry = new HashMap<>(); // GH-90000
-            auditEntry.put("timestamp", Instant.now()); // GH-90000
-            auditEntry.put("action", "CONSENT_GRANTED"); // GH-90000
-            auditEntry.put("userId", "user-1"); // GH-90000
-            auditEntry.put("dataCategory", "health-data"); // GH-90000
-            auditEntry.put("signature", "hmac-sha256-value"); // GH-90000
+        void consentAuditTrail() { 
+            Map<String, Object> auditEntry = new HashMap<>(); 
+            auditEntry.put("timestamp", Instant.now()); 
+            auditEntry.put("action", "CONSENT_GRANTED"); 
+            auditEntry.put("userId", "user-1"); 
+            auditEntry.put("dataCategory", "health-data"); 
+            auditEntry.put("signature", "hmac-sha256-value"); 
 
             assertThat(auditEntry.get("signature")).isNotNull();
         }
     }
 
     // ============================================
-    // DATA RETENTION POLICIES (4 tests) // GH-90000
+    // DATA RETENTION POLICIES (4 tests) 
     // ============================================
 
     @Nested
@@ -108,43 +108,43 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Retention period enforcement")
-        void retentionPeriod() { // GH-90000
-            Instant createdAt = Instant.now(); // GH-90000
-            Instant retentionExpires = createdAt.plus(90, ChronoUnit.DAYS); // GH-90000
+        void retentionPeriod() { 
+            Instant createdAt = Instant.now(); 
+            Instant retentionExpires = createdAt.plus(90, ChronoUnit.DAYS); 
 
-            Map<String, Object> record = new HashMap<>(); // GH-90000
-            record.put("recordId", "rec-1"); // GH-90000
-            record.put("createdAt", createdAt); // GH-90000
-            record.put("retentionExpires", retentionExpires); // GH-90000
-            record.put("dataType", "transaction"); // GH-90000
+            Map<String, Object> record = new HashMap<>(); 
+            record.put("recordId", "rec-1"); 
+            record.put("createdAt", createdAt); 
+            record.put("retentionExpires", retentionExpires); 
+            record.put("dataType", "transaction"); 
 
-            assertThat(retentionExpires).isAfter(createdAt); // GH-90000
+            assertThat(retentionExpires).isAfter(createdAt); 
         }
 
         @Test
         @DisplayName("Tiered retention by data type")
-        void tieredRetention() { // GH-90000
-            Map<String, Integer> retentionRules = new HashMap<>(); // GH-90000
-            retentionRules.put("transactional", 90);  // 90 days // GH-90000
-            retentionRules.put("audit", 365);         // 1 year // GH-90000
-            retentionRules.put("analytics", 180);     // 180 days // GH-90000
-            retentionRules.put("backup", 730);        // 2 years // GH-90000
+        void tieredRetention() { 
+            Map<String, Integer> retentionRules = new HashMap<>(); 
+            retentionRules.put("transactional", 90);  // 90 days 
+            retentionRules.put("audit", 365);         // 1 year 
+            retentionRules.put("analytics", 180);     // 180 days 
+            retentionRules.put("backup", 730);        // 2 years 
 
             assertThat(retentionRules.get("audit")).isGreaterThan(retentionRules.get("transactional"));
         }
 
         @Test
         @DisplayName("Batch data deletion on expiration")
-        void batchDeletion() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+        void batchDeletion() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
                 // Simulate deletion of 100 expired records
-                for (int i = 0; i < 100; i++) { // GH-90000
+                for (int i = 0; i < 100; i++) { 
                     final int idx = i;
-                    Map<String, Object> record = new HashMap<>(); // GH-90000
-                    record.put("recordId", "rec-" + idx); // GH-90000
-                    record.put("deleteReason", "retention-expired"); // GH-90000
+                    Map<String, Object> record = new HashMap<>(); 
+                    record.put("recordId", "rec-" + idx); 
+                    record.put("deleteReason", "retention-expired"); 
                 }
 
                 return result;
@@ -153,25 +153,25 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Retention policy multi-tenant isolation")
-        void retentionIsolation() { // GH-90000
-            Map<String, Map<String, Integer>> tenantRetentionRules = new HashMap<>(); // GH-90000
+        void retentionIsolation() { 
+            Map<String, Map<String, Integer>> tenantRetentionRules = new HashMap<>(); 
 
-            for (int i = 0; i < 5; i++) { // GH-90000
+            for (int i = 0; i < 5; i++) { 
                 String tenantId = "t" + i;
-                Map<String, Integer> rules = new HashMap<>(); // GH-90000
-                rules.put("default", 90 + (i * 10)); // GH-90000
-                rules.put("sensitive", 365); // GH-90000
-                tenantRetentionRules.put(tenantId, rules); // GH-90000
+                Map<String, Integer> rules = new HashMap<>(); 
+                rules.put("default", 90 + (i * 10)); 
+                rules.put("sensitive", 365); 
+                tenantRetentionRules.put(tenantId, rules); 
             }
 
-            assertThat(tenantRetentionRules).hasSize(5); // GH-90000
+            assertThat(tenantRetentionRules).hasSize(5); 
             assertThat(tenantRetentionRules.get("t4").get("default"))
                 .isGreaterThan(tenantRetentionRules.get("t0").get("default"));
         }
     }
 
     // ============================================
-    // DATA CLASSIFICATION (3 tests) // GH-90000
+    // DATA CLASSIFICATION (3 tests) 
     // ============================================
 
     @Nested
@@ -180,30 +180,30 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Data classification levels")
-        void classificationLevels() { // GH-90000
-            Map<String, String> classifications = new HashMap<>(); // GH-90000
-            classifications.put("public", "LEVEL_1"); // GH-90000
-            classifications.put("internal", "LEVEL_2"); // GH-90000
-            classifications.put("confidential", "LEVEL_3"); // GH-90000
-            classifications.put("restricted", "LEVEL_4"); // GH-90000
+        void classificationLevels() { 
+            Map<String, String> classifications = new HashMap<>(); 
+            classifications.put("public", "LEVEL_1"); 
+            classifications.put("internal", "LEVEL_2"); 
+            classifications.put("confidential", "LEVEL_3"); 
+            classifications.put("restricted", "LEVEL_4"); 
 
-            assertThat(classifications).hasSize(4); // GH-90000
+            assertThat(classifications).hasSize(4); 
             assertThat(classifications.get("restricted")).isEqualTo("LEVEL_4");
         }
 
         @Test
         @DisplayName("Automatic classification at scale")
-        void automaticClassification() { // GH-90000
-            runPromise(() -> { // GH-90000
-                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); // GH-90000
+        void automaticClassification() { 
+            runPromise(() -> { 
+                io.activej.promise.Promise<Void> result = io.activej.promise.Promise.complete(); 
 
                 // Classify 200 data elements
-                for (int i = 0; i < 200; i++) { // GH-90000
+                for (int i = 0; i < 200; i++) { 
                     final int idx = i;
                     String classification;
-                    if (idx % 4 == 0) classification = "public"; // GH-90000
-                    else if (idx % 4 == 1) classification = "internal"; // GH-90000
-                    else if (idx % 4 == 2) classification = "confidential"; // GH-90000
+                    if (idx % 4 == 0) classification = "public"; 
+                    else if (idx % 4 == 1) classification = "internal"; 
+                    else if (idx % 4 == 2) classification = "confidential"; 
                     else classification = "restricted";
                 }
 
@@ -213,12 +213,12 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Classification hierarchy enforcement")
-        void classificationHierarchy() { // GH-90000
-            Map<String, Integer> hierarchy = new HashMap<>(); // GH-90000
-            hierarchy.put("public", 1); // GH-90000
-            hierarchy.put("internal", 2); // GH-90000
-            hierarchy.put("confidential", 3); // GH-90000
-            hierarchy.put("restricted", 4); // GH-90000
+        void classificationHierarchy() { 
+            Map<String, Integer> hierarchy = new HashMap<>(); 
+            hierarchy.put("public", 1); 
+            hierarchy.put("internal", 2); 
+            hierarchy.put("confidential", 3); 
+            hierarchy.put("restricted", 4); 
 
             // Restricted requires stricter access controls than public
             assertThat(hierarchy.get("restricted")).isGreaterThan(hierarchy.get("public"));
@@ -226,7 +226,7 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
     }
 
     // ============================================
-    // GOVERNANCE COMPLIANCE (2 tests) // GH-90000
+    // GOVERNANCE COMPLIANCE (2 tests) 
     // ============================================
 
     @Nested
@@ -235,31 +235,31 @@ class DataGovernanceExpansionTest extends EventloopTestBase {
 
         @Test
         @DisplayName("Data lineage and provenance tracking")
-        void lineageTracking() { // GH-90000
-            Map<String, Object> dataElement = new HashMap<>(); // GH-90000
-            dataElement.put("id", "data-1"); // GH-90000
-            dataElement.put("createdBy", "user-1"); // GH-90000
-            dataElement.put("createdAt", Instant.now()); // GH-90000
-            dataElement.put("lastModifiedBy", "user-2"); // GH-90000
-            dataElement.put("lastModifiedAt", Instant.now()); // GH-90000
-            dataElement.put("lineage", "source-system-A > transformation-B > warehouse"); // GH-90000
+        void lineageTracking() { 
+            Map<String, Object> dataElement = new HashMap<>(); 
+            dataElement.put("id", "data-1"); 
+            dataElement.put("createdBy", "user-1"); 
+            dataElement.put("createdAt", Instant.now()); 
+            dataElement.put("lastModifiedBy", "user-2"); 
+            dataElement.put("lastModifiedAt", Instant.now()); 
+            dataElement.put("lineage", "source-system-A > transformation-B > warehouse"); 
 
             assertThat(dataElement.get("lineage")).isNotNull();
         }
 
         @Test
         @DisplayName("Cross-system governance consistency")
-        void systemConsistency() { // GH-90000
-            Set<String> governedSystems = new HashSet<>(); // GH-90000
+        void systemConsistency() { 
+            Set<String> governedSystems = new HashSet<>(); 
             governedSystems.add("data-warehouse");
             governedSystems.add("analytics-platform");
             governedSystems.add("compliance-engine");
             governedSystems.add("audit-system");
 
-            assertThat(governedSystems).hasSize(4); // GH-90000
+            assertThat(governedSystems).hasSize(4); 
             // All systems enforce same governance rules
-            for (String system : governedSystems) { // GH-90000
-                assertThat(system).isNotBlank(); // GH-90000
+            for (String system : governedSystems) { 
+                assertThat(system).isNotBlank(); 
             }
         }
     }

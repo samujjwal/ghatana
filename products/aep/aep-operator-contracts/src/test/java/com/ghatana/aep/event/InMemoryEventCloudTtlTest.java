@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Tests for TTL-based eviction in {@link InMemoryEventCloud}.
  *
  * @doc.type class
- * @doc.purpose Verify automatic TTL enforcement (Risk ICR-003 remediation) // GH-90000
+ * @doc.purpose Verify automatic TTL enforcement (Risk ICR-003 remediation) 
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -22,82 +22,82 @@ class InMemoryEventCloudTtlTest {
 
     @Test
     @DisplayName("events survive when TTL has not elapsed")
-    void shouldRetainEventsWithinTtl() { // GH-90000
-        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofHours(1)); // GH-90000
+    void shouldRetainEventsWithinTtl() { 
+        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofHours(1)); 
 
-        cloud.append(TENANT, "user.click", "{}".getBytes()); // GH-90000
-        cloud.append(TENANT, "user.click", "{}".getBytes()); // GH-90000
+        cloud.append(TENANT, "user.click", "{}".getBytes()); 
+        cloud.append(TENANT, "user.click", "{}".getBytes()); 
 
-        assertThat(cloud.getEvents(TENANT)).hasSize(2); // GH-90000
+        assertThat(cloud.getEvents(TENANT)).hasSize(2); 
     }
 
     @Test
     @DisplayName("purgeExpired() with zero TTL removes nothing")
-    void zeroTtlShouldRemoveNothing() { // GH-90000
-        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ZERO); // GH-90000
+    void zeroTtlShouldRemoveNothing() { 
+        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ZERO); 
 
-        cloud.append(TENANT, "page.view", "{}".getBytes()); // GH-90000
-        int removed = cloud.purgeExpired(); // GH-90000
+        cloud.append(TENANT, "page.view", "{}".getBytes()); 
+        int removed = cloud.purgeExpired(); 
 
-        assertThat(removed).isZero(); // GH-90000
-        assertThat(cloud.getEvents(TENANT)).hasSize(1); // GH-90000
+        assertThat(removed).isZero(); 
+        assertThat(cloud.getEvents(TENANT)).hasSize(1); 
     }
 
     @Test
     @DisplayName("purgeExpired() removes events older than TTL")
-    void shouldEvictExpiredEvents() throws InterruptedException { // GH-90000
+    void shouldEvictExpiredEvents() throws InterruptedException { 
         // Use a very short TTL so we can test eviction without waiting long
-        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); // GH-90000
+        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); 
 
-        cloud.append(TENANT, "order.placed", "{}".getBytes()); // GH-90000
-        assertThat(cloud.getEvents(TENANT)).hasSize(1); // GH-90000
+        cloud.append(TENANT, "order.placed", "{}".getBytes()); 
+        assertThat(cloud.getEvents(TENANT)).hasSize(1); 
 
         // Wait for TTL to elapse
-        Thread.sleep(60); // GH-90000
+        Thread.sleep(60); 
 
-        int removed = cloud.purgeExpired(); // GH-90000
-        assertThat(removed).isEqualTo(1); // GH-90000
-        assertThat(cloud.getEvents(TENANT)).isEmpty(); // GH-90000
+        int removed = cloud.purgeExpired(); 
+        assertThat(removed).isEqualTo(1); 
+        assertThat(cloud.getEvents(TENANT)).isEmpty(); 
     }
 
     @Test
     @DisplayName("append() triggers automatic purge when TTL is configured")
-    void appendShouldAutoPurgeExpiredEvents() throws InterruptedException { // GH-90000
-        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); // GH-90000
+    void appendShouldAutoPurgeExpiredEvents() throws InterruptedException { 
+        InMemoryEventCloud cloud = new InMemoryEventCloud(Duration.ofMillis(50)); 
 
         // Append first event and let it expire
-        cloud.append(TENANT, "order.placed", "{}".getBytes()); // GH-90000
-        Thread.sleep(60); // GH-90000
+        cloud.append(TENANT, "order.placed", "{}".getBytes()); 
+        Thread.sleep(60); 
 
         // Second append triggers auto-purge of the first event
-        cloud.append(TENANT, "order.shipped", "{}".getBytes()); // GH-90000
+        cloud.append(TENANT, "order.shipped", "{}".getBytes()); 
 
-        assertThat(cloud.getEvents(TENANT)).hasSize(1); // GH-90000
+        assertThat(cloud.getEvents(TENANT)).hasSize(1); 
         assertThat(cloud.getEvents(TENANT).get(0).eventType()).isEqualTo("order.shipped");
     }
 
     @Test
     @DisplayName("no TTL instance never evicts events")
-    void noTtlShouldNeverEvict() { // GH-90000
-        InMemoryEventCloud cloud = new InMemoryEventCloud(); // GH-90000
+    void noTtlShouldNeverEvict() { 
+        InMemoryEventCloud cloud = new InMemoryEventCloud(); 
 
-        cloud.append(TENANT, "session.start", "{}".getBytes()); // GH-90000
-        cloud.append(TENANT, "session.end", "{}".getBytes()); // GH-90000
+        cloud.append(TENANT, "session.start", "{}".getBytes()); 
+        cloud.append(TENANT, "session.end", "{}".getBytes()); 
 
-        int removed = cloud.purgeExpired(); // GH-90000
-        assertThat(removed).isZero(); // GH-90000
-        assertThat(cloud.size()).isEqualTo(2); // GH-90000
+        int removed = cloud.purgeExpired(); 
+        assertThat(removed).isZero(); 
+        assertThat(cloud.size()).isEqualTo(2); 
     }
 
     @Test
     @DisplayName("size() returns total event count across all tenants")
-    void sizeShouldCountAllTenants() { // GH-90000
-        InMemoryEventCloud cloud = new InMemoryEventCloud(); // GH-90000
+    void sizeShouldCountAllTenants() { 
+        InMemoryEventCloud cloud = new InMemoryEventCloud(); 
 
-        cloud.append("tenant-a", "event.a", "{}".getBytes()); // GH-90000
-        cloud.append("tenant-b", "event.b", "{}".getBytes()); // GH-90000
-        cloud.append("tenant-b", "event.c", "{}".getBytes()); // GH-90000
+        cloud.append("tenant-a", "event.a", "{}".getBytes()); 
+        cloud.append("tenant-b", "event.b", "{}".getBytes()); 
+        cloud.append("tenant-b", "event.c", "{}".getBytes()); 
 
-        assertThat(cloud.size()).isEqualTo(3); // GH-90000
+        assertThat(cloud.size()).isEqualTo(3); 
     }
 }

@@ -18,80 +18,80 @@ class StepContextTest {
 
   @Test
   @DisplayName("should create StepContext with full constructor")
-  void shouldCreateWithFullConstructor() { // GH-90000
+  void shouldCreateWithFullConstructor() { 
     String tenantId = "tenant-1";
     String runId = "run-1";
     String phase = "test-phase";
     String configSnapshotId = "config-1";
-    Budget budget = new Budget(100L, 1.0, 60000L); // GH-90000
-    FeatureFlags flags = new FeatureFlags(java.util.Map.of("flag1", true)); // GH-90000
-    TraceContext trace = new TraceContext("trace-1", "span-1"); // GH-90000
+    Budget budget = new Budget(100L, 1.0, 60000L); 
+    FeatureFlags flags = new FeatureFlags(java.util.Map.of("flag1", true)); 
+    TraceContext trace = new TraceContext("trace-1", "span-1"); 
 
-    StepContext context = new StepContext(tenantId, runId, phase, configSnapshotId, budget, flags, trace); // GH-90000
+    StepContext context = new StepContext(tenantId, runId, phase, configSnapshotId, budget, flags, trace); 
 
-    assertThat(context.tenantId()).isEqualTo(tenantId); // GH-90000
-    assertThat(context.runId()).isEqualTo(runId); // GH-90000
-    assertThat(context.phase()).isEqualTo(phase); // GH-90000
-    assertThat(context.configSnapshotId()).isEqualTo(configSnapshotId); // GH-90000
-    assertThat(context.budget()).isEqualTo(budget); // GH-90000
-    assertThat(context.flags()).isEqualTo(flags); // GH-90000
-    assertThat(context.trace()).isEqualTo(trace); // GH-90000
+    assertThat(context.tenantId()).isEqualTo(tenantId); 
+    assertThat(context.runId()).isEqualTo(runId); 
+    assertThat(context.phase()).isEqualTo(phase); 
+    assertThat(context.configSnapshotId()).isEqualTo(configSnapshotId); 
+    assertThat(context.budget()).isEqualTo(budget); 
+    assertThat(context.flags()).isEqualTo(flags); 
+    assertThat(context.trace()).isEqualTo(trace); 
   }
 
   @Test
   @DisplayName("should create StepContext with convenience constructor (5 params)")
-  void shouldCreateWithConvenienceConstructor() { // GH-90000
+  void shouldCreateWithConvenienceConstructor() { 
     String runId = "run-1";
     String tenantId = "tenant-1";
     String phase = "test-phase";
     String configSnapshotId = "config-1";
-    Budget budget = new Budget(100L, 1.0, 60000L); // GH-90000
+    Budget budget = new Budget(100L, 1.0, 60000L); 
 
-    StepContext context = new StepContext(runId, tenantId, phase, configSnapshotId, budget); // GH-90000
+    StepContext context = new StepContext(runId, tenantId, phase, configSnapshotId, budget); 
 
-    assertThat(context.tenantId()).isEqualTo(tenantId); // GH-90000
-    assertThat(context.runId()).isEqualTo(runId); // GH-90000
-    assertThat(context.phase()).isEqualTo(phase); // GH-90000
-    assertThat(context.configSnapshotId()).isEqualTo(configSnapshotId); // GH-90000
-    assertThat(context.budget()).isEqualTo(budget); // GH-90000
-    assertThat(context.flags()).isNull(); // GH-90000
-    assertThat(context.trace()).isNull(); // GH-90000
+    assertThat(context.tenantId()).isEqualTo(tenantId); 
+    assertThat(context.runId()).isEqualTo(runId); 
+    assertThat(context.phase()).isEqualTo(phase); 
+    assertThat(context.configSnapshotId()).isEqualTo(configSnapshotId); 
+    assertThat(context.budget()).isEqualTo(budget); 
+    assertThat(context.flags()).isNull(); 
+    assertThat(context.trace()).isNull(); 
   }
 
   @Test
   @DisplayName("should create StepContext with StepBudget constructor")
-  void shouldCreateWithStepBudgetConstructor() { // GH-90000
+  void shouldCreateWithStepBudgetConstructor() { 
     String runId = "run-1";
     String tenantId = "tenant-1";
     String phase = "test-phase";
     String configSnapshotId = "config-1";
-    StepBudget stepBudget = new StepBudget(1.0, 1000L); // GH-90000
+    StepBudget stepBudget = new StepBudget(1.0, 1000L); 
 
-    StepContext context = new StepContext(runId, tenantId, phase, configSnapshotId, stepBudget); // GH-90000
+    StepContext context = new StepContext(runId, tenantId, phase, configSnapshotId, stepBudget); 
 
-    assertThat(context.tenantId()).isEqualTo(tenantId); // GH-90000
-    assertThat(context.runId()).isEqualTo(runId); // GH-90000
-    assertThat(context.budget()).isNotNull(); // GH-90000
-    assertThat(context.budget().maxWallTimeMs()).isEqualTo(1000L); // GH-90000
+    assertThat(context.tenantId()).isEqualTo(tenantId); 
+    assertThat(context.runId()).isEqualTo(runId); 
+    assertThat(context.budget()).isNotNull(); 
+    assertThat(context.budget().maxWallTimeMs()).isEqualTo(1000L); 
   }
 
   @Test
   @DisplayName("should handle null StepBudget")
-  void shouldHandleNullStepBudget() { // GH-90000
-    StepContext context = new StepContext("run-1", "tenant-1", "phase", "config", (StepBudget) null); // GH-90000
+  void shouldHandleNullStepBudget() { 
+    StepContext context = new StepContext("run-1", "tenant-1", "phase", "config", (StepBudget) null); 
 
-    assertThat(context.budget()).isNull(); // GH-90000
+    assertThat(context.budget()).isNull(); 
   }
 
-  private StepContext createTestContext() { // GH-90000
-    return new StepContext( // GH-90000
+  private StepContext createTestContext() { 
+    return new StepContext( 
         "tenant-1",
         "run-1",
         "phase-1",
         "config-1",
-        new Budget(100L, 1.0, 60000L), // GH-90000
-        new FeatureFlags(java.util.Map.of()), // GH-90000
-        new TraceContext("trace-1", "span-1") // GH-90000
+        new Budget(100L, 1.0, 60000L), 
+        new FeatureFlags(java.util.Map.of()), 
+        new TraceContext("trace-1", "span-1") 
     );
   }
 }

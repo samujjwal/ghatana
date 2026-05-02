@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("PlatformMultimodalAdapter")
 class PlatformMultimodalAdapterTest {
 
@@ -33,23 +33,23 @@ class PlatformMultimodalAdapterTest {
 
     @Test
     @DisplayName("transcribe delegates to STT adapter and returns adapter result")
-    void transcribeDelegatesToSttAdapter() { // GH-90000
-        AudioResult expected = AudioResult.builder() // GH-90000
+    void transcribeDelegatesToSttAdapter() { 
+        AudioResult expected = AudioResult.builder() 
             .transcription("hello via llm")
-            .confidence(0.93) // GH-90000
-            .build(); // GH-90000
-        when(sttClientAdapter.transcribe(any())).thenReturn(expected); // GH-90000
+            .confidence(0.93) 
+            .build(); 
+        when(sttClientAdapter.transcribe(any())).thenReturn(expected); 
 
-        PlatformMultimodalAdapter adapter = new PlatformMultimodalAdapter( // GH-90000
-            AudioVideoRuntimeSettings.defaults(), // GH-90000
+        PlatformMultimodalAdapter adapter = new PlatformMultimodalAdapter( 
+            AudioVideoRuntimeSettings.defaults(), 
             library,
             frameExtractor,
             sttClientAdapter
         );
 
-        AudioResult actual = adapter.transcribe(new byte[] {1, 2, 3}); // GH-90000
+        AudioResult actual = adapter.transcribe(new byte[] {1, 2, 3}); 
 
         assertThat(actual.getTranscription()).isEqualTo("hello via llm");
-        assertThat(actual.getConfidence()).isEqualTo(0.93); // GH-90000
+        assertThat(actual.getConfidence()).isEqualTo(0.93); 
     }
 }

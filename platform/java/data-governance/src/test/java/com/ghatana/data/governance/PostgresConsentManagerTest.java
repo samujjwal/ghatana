@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.data.governance;
@@ -49,89 +49,89 @@ class PostgresConsentManagerTest extends EventloopTestBase {
     private PostgresConsentManager manager;
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        HikariConfig config = new HikariConfig(); // GH-90000
-        config.setJdbcUrl(POSTGRES.getJdbcUrl()); // GH-90000
-        config.setUsername(POSTGRES.getUsername()); // GH-90000
-        config.setPassword(POSTGRES.getPassword()); // GH-90000
-        config.setMaximumPoolSize(5); // GH-90000
-        dataSource = new HikariDataSource(config); // GH-90000
+    void setUp() throws Exception { 
+        HikariConfig config = new HikariConfig(); 
+        config.setJdbcUrl(POSTGRES.getJdbcUrl()); 
+        config.setUsername(POSTGRES.getUsername()); 
+        config.setPassword(POSTGRES.getPassword()); 
+        config.setMaximumPoolSize(5); 
+        dataSource = new HikariDataSource(config); 
 
-        initSchema(); // GH-90000
-        manager = new PostgresConsentManager(dataSource); // GH-90000
+        initSchema(); 
+        manager = new PostgresConsentManager(dataSource); 
     }
 
     @AfterEach
-    void tearDown() throws Exception { // GH-90000
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+    void tearDown() throws Exception { 
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("DROP TABLE IF EXISTS consent_records");
         }
-        dataSource.close(); // GH-90000
+        dataSource.close(); 
     }
 
     @Test
     @DisplayName("recordConsent then hasConsent returns true")
-    void recordConsent_thenHasConsent_returnsTrue() { // GH-90000
-        runPromise(() -> manager.recordConsent("tenant-1", "subject-1", "analytics")); // GH-90000
+    void recordConsent_thenHasConsent_returnsTrue() { 
+        runPromise(() -> manager.recordConsent("tenant-1", "subject-1", "analytics")); 
 
-        boolean result = runPromise(() -> manager.hasConsent("tenant-1", "subject-1", "analytics")); // GH-90000
+        boolean result = runPromise(() -> manager.hasConsent("tenant-1", "subject-1", "analytics")); 
 
-        assertThat(result).isTrue(); // GH-90000
+        assertThat(result).isTrue(); 
     }
 
     @Test
     @DisplayName("hasConsent for absent record returns false")
-    void hasConsent_notRecorded_returnsFalse() { // GH-90000
-        boolean result = runPromise(() -> manager.hasConsent("tenant-x", "subject-x", "marketing")); // GH-90000
+    void hasConsent_notRecorded_returnsFalse() { 
+        boolean result = runPromise(() -> manager.hasConsent("tenant-x", "subject-x", "marketing")); 
 
-        assertThat(result).isFalse(); // GH-90000
+        assertThat(result).isFalse(); 
     }
 
     @Test
     @DisplayName("withdrawConsent after record makes hasConsent return false")
-    void withdrawConsent_afterRecord_returnsFalse() { // GH-90000
-        runPromise(() -> manager.recordConsent("tenant-2", "subject-2", "gdpr_data_processing")); // GH-90000
-        runPromise(() -> manager.withdrawConsent("tenant-2", "subject-2", "gdpr_data_processing")); // GH-90000
+    void withdrawConsent_afterRecord_returnsFalse() { 
+        runPromise(() -> manager.recordConsent("tenant-2", "subject-2", "gdpr_data_processing")); 
+        runPromise(() -> manager.withdrawConsent("tenant-2", "subject-2", "gdpr_data_processing")); 
 
-        boolean result = runPromise(() -> manager.hasConsent("tenant-2", "subject-2", "gdpr_data_processing")); // GH-90000
+        boolean result = runPromise(() -> manager.hasConsent("tenant-2", "subject-2", "gdpr_data_processing")); 
 
-        assertThat(result).isFalse(); // GH-90000
+        assertThat(result).isFalse(); 
     }
 
     @Test
     @DisplayName("enforceConsent passes when consent is present")
-    void enforceConsent_withConsent_passes() { // GH-90000
-        runPromise(() -> manager.recordConsent("tenant-3", "subject-3", "profiling")); // GH-90000
+    void enforceConsent_withConsent_passes() { 
+        runPromise(() -> manager.recordConsent("tenant-3", "subject-3", "profiling")); 
 
-        assertThatCode(() -> runPromise(() -> manager.enforceConsent("tenant-3", "subject-3", "profiling"))) // GH-90000
-                .doesNotThrowAnyException(); // GH-90000
+        assertThatCode(() -> runPromise(() -> manager.enforceConsent("tenant-3", "subject-3", "profiling"))) 
+                .doesNotThrowAnyException(); 
     }
 
     @Test
     @DisplayName("enforceConsent throws ConsentRequiredException when consent is absent")
-    void enforceConsent_withoutConsent_throws() { // GH-90000
-        assertThatThrownBy(() -> runPromise(() -> manager.enforceConsent("tenant-4", "subject-4", "email_marketing"))) // GH-90000
-                .isInstanceOf(ConsentRequiredException.class); // GH-90000
+    void enforceConsent_withoutConsent_throws() { 
+        assertThatThrownBy(() -> runPromise(() -> manager.enforceConsent("tenant-4", "subject-4", "email_marketing"))) 
+                .isInstanceOf(ConsentRequiredException.class); 
     }
 
     @Test
     @DisplayName("re-recording consent after withdrawal restores consent")
-    void reRecord_afterWithdrawal_restoresConsent() { // GH-90000
-        runPromise(() -> manager.recordConsent("tenant-5", "subject-5", "personalization")); // GH-90000
-        runPromise(() -> manager.withdrawConsent("tenant-5", "subject-5", "personalization")); // GH-90000
-        runPromise(() -> manager.recordConsent("tenant-5", "subject-5", "personalization")); // GH-90000
+    void reRecord_afterWithdrawal_restoresConsent() { 
+        runPromise(() -> manager.recordConsent("tenant-5", "subject-5", "personalization")); 
+        runPromise(() -> manager.withdrawConsent("tenant-5", "subject-5", "personalization")); 
+        runPromise(() -> manager.recordConsent("tenant-5", "subject-5", "personalization")); 
 
-        boolean result = runPromise(() -> manager.hasConsent("tenant-5", "subject-5", "personalization")); // GH-90000
+        boolean result = runPromise(() -> manager.hasConsent("tenant-5", "subject-5", "personalization")); 
 
-        assertThat(result).isTrue(); // GH-90000
+        assertThat(result).isTrue(); 
     }
 
     // ---- Schema helpers ----------------------------------------------------
 
-    private void initSchema() throws Exception { // GH-90000
-        try (Connection conn = dataSource.getConnection(); // GH-90000
-             Statement stmt = conn.createStatement()) { // GH-90000
+    private void initSchema() throws Exception { 
+        try (Connection conn = dataSource.getConnection(); 
+             Statement stmt = conn.createStatement()) { 
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS consent_records (
                     id          BIGSERIAL   PRIMARY KEY,

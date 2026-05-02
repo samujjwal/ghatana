@@ -18,57 +18,57 @@ import static org.assertj.core.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("WhisperTranscriptionEngineTest")
-@SuppressWarnings({"removal", "deprecation"}) // GH-90000
+@SuppressWarnings({"removal", "deprecation"}) 
 class WhisperTranscriptionEngineTest {
 
-    private static final byte[] SAMPLE_AUDIO = "SAMPLE_PCM_DATA_HELLO_WORLD".getBytes(StandardCharsets.UTF_8); // GH-90000
+    private static final byte[] SAMPLE_AUDIO = "SAMPLE_PCM_DATA_HELLO_WORLD".getBytes(StandardCharsets.UTF_8); 
     private WhisperTranscriptionEngine engine;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        engine = new WhisperTranscriptionEngine("whisper-base", false); // GH-90000
+    void setUp() { 
+        engine = new WhisperTranscriptionEngine("whisper-base", false); 
     }
 
     @Test
     @DisplayName("transcribe throws UnsupportedOperationException with LLM_FALLBACK guidance")
-    void transcribeThrowsWithFallbackGuidance() { // GH-90000
-        assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO, AudioFormat.PCM, "en")) // GH-90000
-            .isInstanceOf(UnsupportedOperationException.class) // GH-90000
+    void transcribeThrowsWithFallbackGuidance() { 
+        assertThatThrownBy(() -> engine.transcribe(SAMPLE_AUDIO, AudioFormat.PCM, "en")) 
+            .isInstanceOf(UnsupportedOperationException.class) 
             .hasMessageContaining("LLM_FALLBACK")
             .hasMessageContaining("GrpcSttClientAdapter");
     }
 
     @Test
     @DisplayName("detectLanguage(byte[], format) returns a non-blank language tag")
-    void detectLanguageMethod() { // GH-90000
-        String lang = engine.detectLanguage(SAMPLE_AUDIO, AudioFormat.PCM); // GH-90000
-        assertThat(lang).isNotBlank(); // GH-90000
+    void detectLanguageMethod() { 
+        String lang = engine.detectLanguage(SAMPLE_AUDIO, AudioFormat.PCM); 
+        assertThat(lang).isNotBlank(); 
     }
 
     @Test
     @DisplayName("detectLanguage rejects null audio")
-    void nullAudioDataThrows() { // GH-90000
-        assertThatThrownBy(() -> engine.detectLanguage(null, AudioFormat.WAV)) // GH-90000
-            .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); // GH-90000
+    void nullAudioDataThrows() { 
+        assertThatThrownBy(() -> engine.detectLanguage(null, AudioFormat.WAV)) 
+            .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); 
     }
 
     @Test
     @DisplayName("detectLanguage rejects empty audio")
-    void emptyAudioDataThrows() { // GH-90000
-        assertThatThrownBy(() -> engine.detectLanguage(new byte[0], AudioFormat.WAV)) // GH-90000
-            .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); // GH-90000
+    void emptyAudioDataThrows() { 
+        assertThatThrownBy(() -> engine.detectLanguage(new byte[0], AudioFormat.WAV)) 
+            .isInstanceOf(WhisperTranscriptionEngine.TranscriptionException.class); 
     }
 
 
     @Test
     @DisplayName("engine reports correct model ID")
-    void engineReportsModelId() { // GH-90000
+    void engineReportsModelId() { 
         assertThat(engine.getModelId()).isEqualTo("whisper-base");
     }
 
     @Test
     @DisplayName("engine reports diarization disabled")
-    void engineReportsDiarizationDisabled() { // GH-90000
-        assertThat(engine.isDiarizationEnabled()).isFalse(); // GH-90000
+    void engineReportsDiarizationDisabled() { 
+        assertThat(engine.isDiarizationEnabled()).isFalse(); 
     }
 }

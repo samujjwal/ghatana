@@ -27,27 +27,27 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("strict mode rejects missing tenant with 401 before delegate execution")
-    void strictModeRejectsMissingTenant() { // GH-90000
-        HttpHandlerSupport support = new HttpHandlerSupport( // GH-90000
-            new ObjectMapper(), // GH-90000
+    void strictModeRejectsMissingTenant() { 
+        HttpHandlerSupport support = new HttpHandlerSupport( 
+            new ObjectMapper(), 
             ORIGIN,
             "GET,POST,PUT,DELETE,OPTIONS",
             "Content-Type,X-Tenant-Id",
             true
         );
-        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); // GH-90000
-        AtomicBoolean delegateCalled = new AtomicBoolean(false); // GH-90000
+        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); 
+        AtomicBoolean delegateCalled = new AtomicBoolean(false); 
         AsyncServlet delegate = request -> {
-            delegateCalled.set(true); // GH-90000
-            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); // GH-90000
+            delegateCalled.set(true); 
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); 
         };
 
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders").build(); // GH-90000
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders").build(); 
 
-        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(401); // GH-90000
-        assertThat(delegateCalled.get()).isFalse(); // GH-90000
+        assertThat(response.getCode()).isEqualTo(401); 
+        assertThat(delegateCalled.get()).isFalse(); 
         assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isNotBlank();
         assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isNotBlank();
         assertThat(response.getHeader(HttpHeaders.of("traceparent"))).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
@@ -55,62 +55,62 @@ class RequestObservationFilterTenantValidationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("strict mode rejects malformed tenant with 400 before delegate execution")
-    void strictModeRejectsMalformedTenant() { // GH-90000
-        HttpHandlerSupport support = new HttpHandlerSupport( // GH-90000
-            new ObjectMapper(), // GH-90000
+    void strictModeRejectsMalformedTenant() { 
+        HttpHandlerSupport support = new HttpHandlerSupport( 
+            new ObjectMapper(), 
             ORIGIN,
             "GET,POST,PUT,DELETE,OPTIONS",
             "Content-Type,X-Tenant-Id",
             true
         );
-        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); // GH-90000
-        AtomicBoolean delegateCalled = new AtomicBoolean(false); // GH-90000
+        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); 
+        AtomicBoolean delegateCalled = new AtomicBoolean(false); 
         AsyncServlet delegate = request -> {
-            delegateCalled.set(true); // GH-90000
-            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); // GH-90000
+            delegateCalled.set(true); 
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); 
         };
 
-        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") // GH-90000
+        HttpRequest request = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") 
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant invalid")
-            .build(); // GH-90000
+            .build(); 
 
-        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(request)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(request)); 
 
-        assertThat(response.getCode()).isEqualTo(400); // GH-90000
-        assertThat(delegateCalled.get()).isFalse(); // GH-90000
+        assertThat(response.getCode()).isEqualTo(400); 
+        assertThat(delegateCalled.get()).isFalse(); 
         assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isNotBlank();
         assertThat(response.getHeader(HttpHeaders.of("traceparent"))).matches("00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]");
     }
 
     @Test
     @DisplayName("strict mode allows valid tenant for protected API routes")
-    void strictModeAllowsValidTenant() { // GH-90000
-        HttpHandlerSupport support = new HttpHandlerSupport( // GH-90000
-            new ObjectMapper(), // GH-90000
+    void strictModeAllowsValidTenant() { 
+        HttpHandlerSupport support = new HttpHandlerSupport( 
+            new ObjectMapper(), 
             ORIGIN,
             "GET,POST,PUT,DELETE,OPTIONS",
             "Content-Type,X-Tenant-Id",
             true
         );
-        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); // GH-90000
-        AtomicBoolean delegateCalled = new AtomicBoolean(false); // GH-90000
+        RequestObservationFilter filter = new RequestObservationFilter(support, DataCloudBusinessMetrics.noop(), null, 0.0); 
+        AtomicBoolean delegateCalled = new AtomicBoolean(false); 
         AsyncServlet delegate = request -> {
-            delegateCalled.set(true); // GH-90000
-            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); // GH-90000
+            delegateCalled.set(true); 
+            return io.activej.promise.Promise.of(support.jsonResponse(java.util.Map.of("status", "ok"))); 
         };
 
-        HttpRequest requestWithHeaders = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") // GH-90000
+        HttpRequest requestWithHeaders = HttpRequest.get(BASE_URL + "/api/v1/entities/orders") 
             .withHeader(HttpHeaders.of("X-Tenant-Id"), "tenant-001")
             .withHeader(HttpHeaders.of("X-Request-Id"), "req-dc-001")
             .withHeader(HttpHeaders.of("traceparent"), "00-0123456789abcdef0123456789abcdef-1111222233334444-01")
-            .build(); // GH-90000
+            .build(); 
 
-        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(requestWithHeaders)); // GH-90000
+        HttpResponse response = runPromise(() -> filter.apply(delegate).serve(requestWithHeaders)); 
 
-        assertThat(response.getCode()).isEqualTo(200); // GH-90000
+        assertThat(response.getCode()).isEqualTo(200); 
         assertThat(response.getHeader(HttpHeaders.of("X-Request-ID"))).isEqualTo("req-dc-001");
         assertThat(response.getHeader(HttpHeaders.of("X-Correlation-ID"))).isEqualTo("req-dc-001");
         assertThat(response.getHeader(HttpHeaders.of("traceparent"))).startsWith("00-0123456789abcdef0123456789abcdef-");
-        assertThat(delegateCalled.get()).isTrue(); // GH-90000
+        assertThat(delegateCalled.get()).isTrue(); 
     }
 }

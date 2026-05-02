@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.platform.security.fixtures;
@@ -21,14 +21,14 @@ import java.util.Set;
  * @doc.pattern Fixture
  */
 public final class SecurityTestFixture {
-    private SecurityTestFixture() {} // GH-90000
+    private SecurityTestFixture() {} 
 
     /**
      * Creates a SecurityContext with sensible defaults.
      * Default: user-123, tenant-456, roles [USER], permissions [read]
      */
-    public static SecurityContextBuilder securityContext() { // GH-90000
-        return new SecurityContextBuilder(); // GH-90000
+    public static SecurityContextBuilder securityContext() { 
+        return new SecurityContextBuilder(); 
     }
 
     /**
@@ -40,40 +40,40 @@ public final class SecurityTestFixture {
         private Set<String> roles = new HashSet<>(Set.of("USER"));
         private Set<String> permissions = new HashSet<>(Set.of("read"));
 
-        public SecurityContextBuilder userId(String userId) { // GH-90000
+        public SecurityContextBuilder userId(String userId) { 
             this.userId = userId;
             return this;
         }
 
-        public SecurityContextBuilder tenantId(String tenantId) { // GH-90000
+        public SecurityContextBuilder tenantId(String tenantId) { 
             this.tenantId = tenantId;
             return this;
         }
 
-        public SecurityContextBuilder roles(String... roles) { // GH-90000
-            this.roles = new HashSet<>(Set.of(roles)); // GH-90000
+        public SecurityContextBuilder roles(String... roles) { 
+            this.roles = new HashSet<>(Set.of(roles)); 
             return this;
         }
 
-        public SecurityContextBuilder permissions(String... permissions) { // GH-90000
-            this.permissions = new HashSet<>(Set.of(permissions)); // GH-90000
+        public SecurityContextBuilder permissions(String... permissions) { 
+            this.permissions = new HashSet<>(Set.of(permissions)); 
             return this;
         }
 
-        public SecurityContextBuilder admin() { // GH-90000
+        public SecurityContextBuilder admin() { 
             this.roles = new HashSet<>(Set.of("ADMIN"));
-            this.permissions = new HashSet<>(Set.of("read", "write", "delete", "admin")); // GH-90000
+            this.permissions = new HashSet<>(Set.of("read", "write", "delete", "admin")); 
             return this;
         }
 
-        public SecurityContextBuilder viewer() { // GH-90000
+        public SecurityContextBuilder viewer() { 
             this.roles = new HashSet<>(Set.of("VIEWER"));
             this.permissions = new HashSet<>(Set.of("read"));
             return this;
         }
 
-        public SecurityContext build() { // GH-90000
-            return new SecurityContext.Default(userId, tenantId, roles, permissions); // GH-90000
+        public SecurityContext build() { 
+            return new SecurityContext.Default(userId, tenantId, roles, permissions); 
         }
     }
 }

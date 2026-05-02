@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("LearningHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class LearningHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,19 +41,19 @@ class LearningHandlerTest extends EventloopTestBase {
     private LearningHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new LearningHandler(learningBridge, http); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new LearningHandler(learningBridge, http); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("learning trigger rejects missing tenant before bridge execution")
-    void learningTriggerRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void learningTriggerRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleLearningTrigger(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleLearningTrigger(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(learningBridge, never()).runLearning("default", true); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(learningBridge, never()).runLearning("default", true); 
     }
 }

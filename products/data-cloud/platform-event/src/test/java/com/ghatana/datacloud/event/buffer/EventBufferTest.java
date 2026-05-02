@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.buffer;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link EventBuffer}.
  */
 @DisplayName("EventBuffer")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EventBufferTest extends EventloopTestBase {
 
     @Mock
@@ -40,116 +40,116 @@ class EventBufferTest extends EventloopTestBase {
     private EventBuffer buffer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        buffer = new EventBuffer(spillStore, "test-buffer", 10, 8, 2); // GH-90000
+    void setUp() { 
+        buffer = new EventBuffer(spillStore, "test-buffer", 10, 8, 2); 
     }
 
-    private EventEntry testEntry(String eventType) { // GH-90000
-        return EventEntry.builder() // GH-90000
-            .eventId(UUID.randomUUID()) // GH-90000
-            .eventType(eventType) // GH-90000
-            .payload(ByteBuffer.wrap(("payload-" + eventType).getBytes())) // GH-90000
-            .headers(Map.of()) // GH-90000
-            .build(); // GH-90000
+    private EventEntry testEntry(String eventType) { 
+        return EventEntry.builder() 
+            .eventId(UUID.randomUUID()) 
+            .eventType(eventType) 
+            .payload(ByteBuffer.wrap(("payload-" + eventType).getBytes())) 
+            .headers(Map.of()) 
+            .build(); 
     }
 
     @Test
-    void shouldAcceptEventsWithinCapacity() { // GH-90000
-        for (int i = 0; i < 10; i++) { // GH-90000
-            assertThat(buffer.offer(testEntry("evt." + i))).isTrue(); // GH-90000
+    void shouldAcceptEventsWithinCapacity() { 
+        for (int i = 0; i < 10; i++) { 
+            assertThat(buffer.offer(testEntry("evt." + i))).isTrue(); 
         }
-        assertThat(buffer.size()).isEqualTo(10); // GH-90000
+        assertThat(buffer.size()).isEqualTo(10); 
     }
 
     @Test
-    void shouldRejectWhenFull() { // GH-90000
-        for (int i = 0; i < 10; i++) { // GH-90000
-            buffer.offer(testEntry("evt." + i)); // GH-90000
+    void shouldRejectWhenFull() { 
+        for (int i = 0; i < 10; i++) { 
+            buffer.offer(testEntry("evt." + i)); 
         }
         assertThat(buffer.offer(testEntry("evt.overflow"))).isFalse();
-        assertThat(buffer.size()).isEqualTo(10); // GH-90000
+        assertThat(buffer.size()).isEqualTo(10); 
     }
 
     @Test
-    void shouldDrainInOrder() { // GH-90000
+    void shouldDrainInOrder() { 
         buffer.offer(testEntry("first"));
         buffer.offer(testEntry("second"));
         buffer.offer(testEntry("third"));
 
-        List<EventEntry> drained = buffer.drain(2); // GH-90000
+        List<EventEntry> drained = buffer.drain(2); 
 
-        assertThat(drained).hasSize(2); // GH-90000
+        assertThat(drained).hasSize(2); 
         assertThat(drained.get(0).eventType()).isEqualTo("first");
         assertThat(drained.get(1).eventType()).isEqualTo("second");
-        assertThat(buffer.size()).isEqualTo(1); // GH-90000
+        assertThat(buffer.size()).isEqualTo(1); 
     }
 
     @Test
-    void shouldDrainLessThanRequested() { // GH-90000
+    void shouldDrainLessThanRequested() { 
         buffer.offer(testEntry("only-one"));
 
-        List<EventEntry> drained = buffer.drain(5); // GH-90000
+        List<EventEntry> drained = buffer.drain(5); 
 
-        assertThat(drained).hasSize(1); // GH-90000
-        assertThat(buffer.isEmpty()).isTrue(); // GH-90000
+        assertThat(drained).hasSize(1); 
+        assertThat(buffer.isEmpty()).isTrue(); 
     }
 
     @Test
-    void shouldReturnEmptyOnDrainWhenEmpty() { // GH-90000
-        List<EventEntry> drained = buffer.drain(10); // GH-90000
-        assertThat(drained).isEmpty(); // GH-90000
+    void shouldReturnEmptyOnDrainWhenEmpty() { 
+        List<EventEntry> drained = buffer.drain(10); 
+        assertThat(drained).isEmpty(); 
     }
 
     @Test
-    void shouldReportHighWaterMark() { // GH-90000
-        assertThat(buffer.isOverHighWaterMark()).isFalse(); // GH-90000
+    void shouldReportHighWaterMark() { 
+        assertThat(buffer.isOverHighWaterMark()).isFalse(); 
 
-        for (int i = 0; i < 9; i++) { // GH-90000
-            buffer.offer(testEntry("evt." + i)); // GH-90000
+        for (int i = 0; i < 9; i++) { 
+            buffer.offer(testEntry("evt." + i)); 
         }
-        assertThat(buffer.isOverHighWaterMark()).isTrue(); // GH-90000
+        assertThat(buffer.isOverHighWaterMark()).isTrue(); 
     }
 
     @Test
-    void shouldReportLowWaterMark() { // GH-90000
-        assertThat(buffer.isBelowLowWaterMark()).isTrue(); // GH-90000
+    void shouldReportLowWaterMark() { 
+        assertThat(buffer.isBelowLowWaterMark()).isTrue(); 
         buffer.offer(testEntry("one"));
-        assertThat(buffer.isBelowLowWaterMark()).isTrue(); // GH-90000
+        assertThat(buffer.isBelowLowWaterMark()).isTrue(); 
         buffer.offer(testEntry("two"));
-        assertThat(buffer.isBelowLowWaterMark()).isFalse(); // GH-90000
+        assertThat(buffer.isBelowLowWaterMark()).isFalse(); 
     }
 
     @Test
-    void shouldSpillExcessToStore() { // GH-90000
-        for (int i = 0; i < 10; i++) { // GH-90000
-            buffer.offer(testEntry("evt." + i)); // GH-90000
+    void shouldSpillExcessToStore() { 
+        for (int i = 0; i < 10; i++) { 
+            buffer.offer(testEntry("evt." + i)); 
         }
 
-        when(spillStore.appendBatch(any(TenantContext.class), any())) // GH-90000
-            .thenReturn(Promise.of(List.of(Offset.of(1L), Offset.of(2L)))); // GH-90000
+        when(spillStore.appendBatch(any(TenantContext.class), any())) 
+            .thenReturn(Promise.of(List.of(Offset.of(1L), Offset.of(2L)))); 
 
         Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1"));
 
-        assertThat(spilled).isEqualTo(2); // GH-90000
-        assertThat(buffer.size()).isEqualTo(8); // GH-90000
+        assertThat(spilled).isEqualTo(2); 
+        assertThat(buffer.size()).isEqualTo(8); 
     }
 
     @Test
-    void shouldNotSpillWhenBelowHighWaterMark() { // GH-90000
+    void shouldNotSpillWhenBelowHighWaterMark() { 
         buffer.offer(testEntry("evt.1"));
 
         Integer spilled = runPromise(() -> buffer.spillExcess("tenant-1"));
 
-        assertThat(spilled).isZero(); // GH-90000
+        assertThat(spilled).isZero(); 
     }
 
     @Test
-    void shouldTrackStats() { // GH-90000
+    void shouldTrackStats() { 
         buffer.offer(testEntry("evt.1"));
         buffer.offer(testEntry("evt.2"));
-        buffer.drain(1); // GH-90000
+        buffer.drain(1); 
 
-        Map<String, Object> stats = buffer.stats(); // GH-90000
+        Map<String, Object> stats = buffer.stats(); 
 
         assertThat(stats.get("bufferName")).isEqualTo("test-buffer");
         assertThat(stats.get("size")).isEqualTo(1);
@@ -159,23 +159,23 @@ class EventBufferTest extends EventloopTestBase {
     }
 
     @Test
-    void shouldRejectNullEntry() { // GH-90000
-        assertThatThrownBy(() -> buffer.offer(null)) // GH-90000
-            .isInstanceOf(NullPointerException.class); // GH-90000
+    void shouldRejectNullEntry() { 
+        assertThatThrownBy(() -> buffer.offer(null)) 
+            .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
-    void shouldRejectInvalidConstructorParams() { // GH-90000
-        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 0, 0, 0)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void shouldRejectInvalidConstructorParams() { 
+        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 0, 0, 0)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("capacity");
 
-        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 15, 2)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 15, 2)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("highWaterMark");
 
-        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 8, 9)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> new EventBuffer(spillStore, "bad", 10, 8, 9)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("lowWaterMark");
     }
 }

@@ -23,11 +23,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("integration")
 @Testcontainers
 @DisplayName("Audio-Video Integration Tests")
-class AudioVideoIntegrationTest extends AudioVideoContainerBase { // GH-90000: real images pending
+class AudioVideoIntegrationTest extends AudioVideoContainerBase { : real images pending
 
     @Test
     @DisplayName("STT service exposes reachable gRPC and HTTP ports after startup")
-    void sttService_exposesPortsAfterStartup() { // GH-90000
+    void sttService_exposesPortsAfterStartup() { 
         assertThat(sttGrpcPort()).isGreaterThan(0);
         assertThat(serviceHttpPort(STT_SERVICE)).isGreaterThan(0);
         assertThat(sttHost()).isNotBlank();
@@ -35,7 +35,7 @@ class AudioVideoIntegrationTest extends AudioVideoContainerBase { // GH-90000: r
 
     @Test
     @DisplayName("TTS service exposes reachable gRPC and HTTP ports after startup")
-    void ttsService_exposesPortsAfterStartup() { // GH-90000
+    void ttsService_exposesPortsAfterStartup() { 
         assertThat(ttsGrpcPort()).isGreaterThan(0);
         assertThat(serviceHttpPort(TTS_SERVICE)).isGreaterThan(0);
         assertThat(ttsHost()).isNotBlank();
@@ -43,14 +43,14 @@ class AudioVideoIntegrationTest extends AudioVideoContainerBase { // GH-90000: r
 
     @Test
     @DisplayName("Both services expose distinct gRPC ports (no collision)")
-    void bothServices_distinctGrpcPorts() { // GH-90000
+    void bothServices_distinctGrpcPorts() { 
         // Docker maps both to ephemeral host ports; assert they are distinct
         assertThat(sttGrpcPort()).isNotEqualTo(ttsGrpcPort());
     }
 
     @Test
     @DisplayName("STT and TTS services share the Docker Compose network")
-    void bothServices_shareNetwork() { // GH-90000
+    void bothServices_shareNetwork() { 
         // DockerComposeContainer wires all services to the same internal network;
         // cross-service calls are possible using service-name aliases
         assertThat(COMPOSE).isNotNull();

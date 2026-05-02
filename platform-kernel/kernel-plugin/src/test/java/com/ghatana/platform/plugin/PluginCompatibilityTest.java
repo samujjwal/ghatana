@@ -29,7 +29,7 @@ class PluginCompatibilityTest {
     @Test
     @DisplayName("treats non-numeric versions as incompatible instead of throwing")
     void shouldTreatNonNumericVersionsAsIncompatibleInsteadOfThrowing() {
-        PluginCompatibility compatibility = PluginCompatibility.dataCloudVersion("1.0.0");
+        PluginCompatibility compatibility = PluginCompatibility.atLeast("1.0.0");
 
         assertThat(compatibility.isCompatibleWith("unknown"))
             .isFalse();

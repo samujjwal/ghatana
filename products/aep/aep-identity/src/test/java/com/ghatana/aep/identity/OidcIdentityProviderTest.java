@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("OidcIdentityProvider")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class OidcIdentityProviderTest extends EventloopTestBase {
 
     @Mock
@@ -35,11 +35,11 @@ class OidcIdentityProviderTest extends EventloopTestBase {
 
     @Test
     @DisplayName("resolve returns federated agent identity when introspected subject matches registration")
-    void resolveReturnsFederatedAgentIdentity() { // GH-90000
-        OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
+    void resolveReturnsFederatedAgentIdentity() { 
+        OidcIdentityProvider provider = new OidcIdentityProvider( 
             tokenIntrospector,
             "https://issuer.example.com",
-            List.of(new OidcIdentityProvider.FederatedAgentRegistration( // GH-90000
+            List.of(new OidcIdentityProvider.FederatedAgentRegistration( 
                 "tenant-a",
                 "agent-1",
                 "oidc-subject-1",
@@ -50,52 +50,52 @@ class OidcIdentityProviderTest extends EventloopTestBase {
             .userId("oidc-subject-1")
             .username("agent-1")
             .email("agent-1@example.com")
-            .build())); // GH-90000
+            .build())); 
 
-        Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
+        Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); 
 
-        assertThat(identity).isPresent(); // GH-90000
+        assertThat(identity).isPresent(); 
         assertThat(identity.orElseThrow().tenantId()).isEqualTo("tenant-a");
         assertThat(identity.orElseThrow().agentId()).isEqualTo("agent-1");
-        assertThat(identity.orElseThrow().spiffeId()) // GH-90000
+        assertThat(identity.orElseThrow().spiffeId()) 
             .isEqualTo("https://issuer.example.com/subject/oidc-subject-1");
-        assertThat(identity.orElseThrow().scopes()) // GH-90000
-            .contains("aep:execute", "aep:capability:routing"); // GH-90000
+        assertThat(identity.orElseThrow().scopes()) 
+            .contains("aep:execute", "aep:capability:routing"); 
     }
 
     @Test
     @DisplayName("resolve returns empty when the OIDC subject does not match the registration")
-    void resolveReturnsEmptyWhenSubjectDoesNotMatch() { // GH-90000
-        OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
+    void resolveReturnsEmptyWhenSubjectDoesNotMatch() { 
+        OidcIdentityProvider provider = new OidcIdentityProvider( 
             tokenIntrospector,
             "https://issuer.example.com",
-            List.of(new OidcIdentityProvider.FederatedAgentRegistration( // GH-90000
+            List.of(new OidcIdentityProvider.FederatedAgentRegistration( 
                 "tenant-a",
                 "agent-1",
                 "oidc-subject-1",
                 "token-1",
-                Set.of()))); // GH-90000
+                Set.of()))); 
 
         when(tokenIntrospector.introspect("token-1")).thenReturn(Promise.of(User.builder()
             .userId("unexpected-subject")
             .username("agent-1")
             .email("agent-1@example.com")
-            .build())); // GH-90000
+            .build())); 
 
-        Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); // GH-90000
+        Optional<AgentIdentity> identity = runPromise(() -> provider.resolve("tenant-a", "agent-1")); 
 
-        assertThat(identity).isEmpty(); // GH-90000
+        assertThat(identity).isEmpty(); 
     }
 
     @Test
     @DisplayName("supports and resolve return negative results for unregistered agents")
-    void unregisteredAgentsAreNotSupported() { // GH-90000
-        OidcIdentityProvider provider = new OidcIdentityProvider( // GH-90000
+    void unregisteredAgentsAreNotSupported() { 
+        OidcIdentityProvider provider = new OidcIdentityProvider( 
             tokenIntrospector,
             "https://issuer.example.com",
-            List.of()); // GH-90000
+            List.of()); 
 
-        assertThat(provider.supports("tenant-a", "agent-1")).isFalse(); // GH-90000
-        assertThat(runPromise(() -> provider.resolve("tenant-a", "agent-1"))).isEmpty(); // GH-90000
+        assertThat(provider.supports("tenant-a", "agent-1")).isFalse(); 
+        assertThat(runPromise(() -> provider.resolve("tenant-a", "agent-1"))).isEmpty(); 
     }
 }

@@ -42,40 +42,40 @@ class DashboardDataCloudAdapterTest extends EventloopTestBase {
     private DashboardRepository dashboardRepository;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
 
-        ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
-        objectMapper.registerModule(new JavaTimeModule()); // GH-90000
-        mapper = new YappcEntityMapper(objectMapper); // GH-90000
+        ObjectMapper objectMapper = new ObjectMapper(); 
+        objectMapper.registerModule(new JavaTimeModule()); 
+        mapper = new YappcEntityMapper(objectMapper); 
 
-        dashboardRepository = new DashboardDataCloudAdapter(client, mapper); // GH-90000
+        dashboardRepository = new DashboardDataCloudAdapter(client, mapper); 
     }
 
     @Test
     @DisplayName("Should find dashboards by workspace ID")
-    void shouldFindByWorkspaceId() { // GH-90000
-        UUID workspaceId = UUID.randomUUID(); // GH-90000
+    void shouldFindByWorkspaceId() { 
+        UUID workspaceId = UUID.randomUUID(); 
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-            .thenReturn(Promise.of(List.of())); // GH-90000
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
+            .thenReturn(Promise.of(List.of())); 
 
-        List<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceId(workspaceId)); // GH-90000
+        List<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceId(workspaceId)); 
 
-        assertThat(result).isNotNull(); // GH-90000
-        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); // GH-90000
+        assertThat(result).isNotNull(); 
+        verify(client).query(anyString(), anyString(), any(DataCloudClient.Query.class)); 
     }
 
     @Test
     @DisplayName("Should find dashboard by workspace ID and name")
-    void shouldFindByWorkspaceIdAndName() { // GH-90000
-        UUID workspaceId = UUID.randomUUID(); // GH-90000
+    void shouldFindByWorkspaceIdAndName() { 
+        UUID workspaceId = UUID.randomUUID(); 
 
-        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) // GH-90000
-            .thenReturn(Promise.of(List.of())); // GH-90000
+        when(client.query(anyString(), anyString(), any(DataCloudClient.Query.class))) 
+            .thenReturn(Promise.of(List.of())); 
 
-        Optional<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test")); // GH-90000
+        Optional<Dashboard> result = runPromise(() -> dashboardRepository.findByWorkspaceIdAndName(workspaceId, "test")); 
 
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 }

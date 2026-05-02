@@ -23,10 +23,10 @@ import static org.mockito.Mockito.*;
  * @doc.layer product
  * @doc.pattern ResourceExhaustionTest
  *
- * Requirement: DC-F-023 (Resource Limits) // GH-90000
+ * Requirement: DC-F-023 (Resource Limits) 
  * Focus: CPU, memory, connections, disk IO boundaries, resource contention
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("ResourceExhaustionTest - DC-F-023")
 class ResourceExhaustionTest {
 
@@ -36,8 +36,8 @@ class ResourceExhaustionTest {
     private ResourceExhaustionTestService resourceExhaustionTestService;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        resourceExhaustionTestService = new ResourceExhaustionTestService(limitTester, boundaryDetector); // GH-90000
+    void setUp() { 
+        resourceExhaustionTestService = new ResourceExhaustionTestService(limitTester, boundaryDetector); 
     }
 
     @Nested
@@ -46,78 +46,78 @@ class ResourceExhaustionTest {
 
         @Test
         @DisplayName("shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases")
-        void shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases() { // GH-90000
-            when(limitTester.getCPUUtilization()).thenReturn(99.5); // GH-90000
-            when(limitTester.measureLatency()).thenReturn(2500L); // GH-90000
+        void shouldDetectCPUBoundWorkload_whenCPUMaxedOut_thenLatencyIncreases() { 
+            when(limitTester.getCPUUtilization()).thenReturn(99.5); 
+            when(limitTester.measureLatency()).thenReturn(2500L); 
 
-            double cpuUsage = limitTester.getCPUUtilization(); // GH-90000
-            long latency = limitTester.measureLatency(); // GH-90000
+            double cpuUsage = limitTester.getCPUUtilization(); 
+            long latency = limitTester.measureLatency(); 
 
-            assertTrue(cpuUsage > 95); // GH-90000
-            assertTrue(latency > 1000); // GH-90000
+            assertTrue(cpuUsage > 95); 
+            assertTrue(latency > 1000); 
         }
 
         @Test
         @DisplayName("shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported")
-        void shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported() { // GH-90000
-            when(limitTester.getCPUUtilization()).thenReturn(98.0); // GH-90000
+        void shouldMeasureCPUUtilizationAtCapacity_whenMaxThreadsRunning_thenUtilationReported() { 
+            when(limitTester.getCPUUtilization()).thenReturn(98.0); 
 
-            double usage = limitTester.getCPUUtilization(); // GH-90000
+            double usage = limitTester.getCPUUtilization(); 
 
-            assertTrue(usage > 90 && usage <= 100); // GH-90000
-            verify(limitTester).getCPUUtilization(); // GH-90000
+            assertTrue(usage > 90 && usage <= 100); 
+            verify(limitTester).getCPUUtilization(); 
         }
 
         @Test
         @DisplayName("shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases")
-        void shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases() { // GH-90000
+        void shouldHandleContextSwitchingOverhead_whenCPUOversubscribed_thenThroughputDecreases() { 
             long baselineTPS = 10_000L;
-            when(limitTester.measureThroughput()).thenReturn(7_000L); // GH-90000
+            when(limitTester.measureThroughput()).thenReturn(7_000L); 
 
-            long oversubscribedTPS = limitTester.measureThroughput(); // GH-90000
+            long oversubscribedTPS = limitTester.measureThroughput(); 
 
-            assertTrue(oversubscribedTPS < baselineTPS); // GH-90000
+            assertTrue(oversubscribedTPS < baselineTPS); 
         }
 
         @Test
         @DisplayName("shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress")
-        void shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress() { // GH-90000
-            when(limitTester.validateTaskFairness()).thenReturn(true); // GH-90000
+        void shouldPreserveFairnessUnderCPUPressure_whenCPUContended_thenAllTasksProgress() { 
+            when(limitTester.validateTaskFairness()).thenReturn(true); 
 
-            boolean fair = limitTester.validateTaskFairness(); // GH-90000
+            boolean fair = limitTester.validateTaskFairness(); 
 
-            assertTrue(fair); // GH-90000
+            assertTrue(fair); 
         }
 
         @Test
         @DisplayName("shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves")
-        void shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves() { // GH-90000
+        void shouldDetectCPUAffinityCostBenefit_whenPinningThreads_thenLatencyImproves() { 
             long withoutAffinity = 100L;
-            when(limitTester.measureLatencyWithAffinity()).thenReturn(85L); // GH-90000
+            when(limitTester.measureLatencyWithAffinity()).thenReturn(85L); 
 
-            long withAffinity = limitTester.measureLatencyWithAffinity(); // GH-90000
+            long withAffinity = limitTester.measureLatencyWithAffinity(); 
 
-            assertTrue(withAffinity < withoutAffinity); // GH-90000
+            assertTrue(withAffinity < withoutAffinity); 
         }
 
         @Test
         @DisplayName("shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked")
-        void shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked() { // GH-90000
-            when(limitTester.getQueueDepth()).thenReturn(5000L); // GH-90000
+        void shouldMeasureQueueDepthUnderCPUPressure_whenWorkQueueBuilds_thenDepthTracked() { 
+            when(limitTester.getQueueDepth()).thenReturn(5000L); 
 
-            long depth = limitTester.getQueueDepth(); // GH-90000
+            long depth = limitTester.getQueueDepth(); 
 
-            assertTrue(depth > 0); // GH-90000
+            assertTrue(depth > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified")
-        void shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified() { // GH-90000
+        void shouldDetectCPUBottleneck_whenOtherResourcesIdle_thenCPUIdentified() { 
             when(boundaryDetector.identifyBottleneck()).thenReturn("CPU");
 
-            String bottleneck = boundaryDetector.identifyBottleneck(); // GH-90000
+            String bottleneck = boundaryDetector.identifyBottleneck(); 
 
-            assertEquals("CPU", bottleneck); // GH-90000
+            assertEquals("CPU", bottleneck); 
         }
     }
 
@@ -127,75 +127,75 @@ class ResourceExhaustionTest {
 
         @Test
         @DisplayName("shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth")
-        void shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth() { // GH-90000
+        void shouldMeasureHeapUtilizationGrowth_whenLoadIncreases_thenLinearGrowth() { 
             long heap1 = 256_000_000L;
             long heap2 = 512_000_000L;
 
-            double growth = (heap2 - heap1) / (double) heap1; // GH-90000
-            assertTrue(growth > 0.5); // GH-90000
+            double growth = (heap2 - heap1) / (double) heap1; 
+            assertTrue(growth > 0.5); 
         }
 
         @Test
         @DisplayName("shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered")
-        void shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered() { // GH-90000
-            when(limitTester.getHeapUsagePercent()).thenReturn(90.5); // GH-90000
-            when(limitTester.wasGCTriggered()).thenReturn(true); // GH-90000
+        void shouldDetectMemoryThreshold_whenHeapNears90Percent_thenGCTriggered() { 
+            when(limitTester.getHeapUsagePercent()).thenReturn(90.5); 
+            when(limitTester.wasGCTriggered()).thenReturn(true); 
 
-            double usage = limitTester.getHeapUsagePercent(); // GH-90000
-            boolean gcTriggered = limitTester.wasGCTriggered(); // GH-90000
+            double usage = limitTester.getHeapUsagePercent(); 
+            boolean gcTriggered = limitTester.wasGCTriggered(); 
 
-            assertTrue(usage > 90); // GH-90000
-            assertTrue(gcTriggered); // GH-90000
+            assertTrue(usage > 90); 
+            assertTrue(gcTriggered); 
         }
 
         @Test
         @DisplayName("shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations")
-        void shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations() { // GH-90000
-            when(limitTester.getMaxGCPauseMs()).thenReturn(450L); // GH-90000
+        void shouldMeasureGCPauseDuration_whenHeapAlmostFull_thenPauseDurations() { 
+            when(limitTester.getMaxGCPauseMs()).thenReturn(450L); 
 
-            long pause = limitTester.getMaxGCPauseMs(); // GH-90000
+            long pause = limitTester.getMaxGCPauseMs(); 
 
-            assertTrue(pause > 0 && pause < 1000); // GH-90000
+            assertTrue(pause > 0 && pause < 1000); 
         }
 
         @Test
         @DisplayName("shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals")
-        void shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals() { // GH-90000
-            when(limitTester.getFullGCCount()).thenReturn(15L); // GH-90000
+        void shouldMeasureFullGCFrequency_whenHeapBecomesScarce_thenGCIntervals() { 
+            when(limitTester.getFullGCCount()).thenReturn(15L); 
 
-            long fullGCs = limitTester.getFullGCCount(); // GH-90000
+            long fullGCs = limitTester.getFullGCCount(); 
 
-            assertTrue(fullGCs > 0); // GH-90000
+            assertTrue(fullGCs > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectMemoryLeak_whenGarbage NotCollected_thenGrowthDetected")
-        void shouldDetectMemoryLeak_whenGarbageNotCollected_thenGrowthDetected() { // GH-90000
-            when(limitTester.detectMemoryLeak()).thenReturn(true); // GH-90000
+        void shouldDetectMemoryLeak_whenGarbageNotCollected_thenGrowthDetected() { 
+            when(limitTester.detectMemoryLeak()).thenReturn(true); 
 
-            boolean leak = limitTester.detectMemoryLeak(); // GH-90000
+            boolean leak = limitTester.detectMemoryLeak(); 
 
-            assertTrue(leak); // GH-90000
+            assertTrue(leak); 
         }
 
         @Test
         @DisplayName("shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps")
-        void shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps() { // GH-90000
-            when(limitTester.measureP99LatencyDuringGC()).thenReturn(5000L); // GH-90000
+        void shouldMaintainApplicationResponsiveness_duringGCPauses_thenLatencyBumps() { 
+            when(limitTester.measureP99LatencyDuringGC()).thenReturn(5000L); 
 
-            long p99 = limitTester.measureP99LatencyDuringGC(); // GH-90000
+            long p99 = limitTester.measureP99LatencyDuringGC(); 
 
-            assertTrue(p99 > 1000); // GH-90000
+            assertTrue(p99 > 1000); 
         }
 
         @Test
         @DisplayName("shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace")
-        void shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace() { // GH-90000
-            when(limitTester.getHeapAvailablePercent()).thenReturn(75.0); // GH-90000
+        void shouldValidateHeapRecovery_afterGC_thenHeapAvailableSpace() { 
+            when(limitTester.getHeapAvailablePercent()).thenReturn(75.0); 
 
-            double available = limitTester.getHeapAvailablePercent(); // GH-90000
+            double available = limitTester.getHeapAvailablePercent(); 
 
-            assertTrue(available > 50); // GH-90000
+            assertTrue(available > 50); 
         }
     }
 
@@ -205,75 +205,75 @@ class ResourceExhaustionTest {
 
         @Test
         @DisplayName("shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization")
-        void shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization() { // GH-90000
-            when(limitTester.getConnectionPoolSize()).thenReturn(500); // GH-90000
-            when(limitTester.getActiveConnections()).thenReturn(475); // GH-90000
+        void shouldMeasureConnectionPoolUtilization_whenConcurrentRequestsIncrease_thenUtilization() { 
+            when(limitTester.getConnectionPoolSize()).thenReturn(500); 
+            when(limitTester.getActiveConnections()).thenReturn(475); 
 
-            int poolSize = limitTester.getConnectionPoolSize(); // GH-90000
-            int active = limitTester.getActiveConnections(); // GH-90000
+            int poolSize = limitTester.getConnectionPoolSize(); 
+            int active = limitTester.getActiveConnections(); 
 
-            double utilization = (active * 100.0) / poolSize; // GH-90000
-            assertTrue(utilization > 90); // GH-90000
+            double utilization = (active * 100.0) / poolSize; 
+            assertTrue(utilization > 90); 
         }
 
         @Test
         @DisplayName("shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued")
-        void shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued() { // GH-90000
-            when(limitTester.getQueuedConnectionRequests()).thenReturn(1000L); // GH-90000
+        void shouldDetectConnectionPoolDepletion_whenAllConnectionsInUse_thenWaitingQueued() { 
+            when(limitTester.getQueuedConnectionRequests()).thenReturn(1000L); 
 
-            long queued = limitTester.getQueuedConnectionRequests(); // GH-90000
+            long queued = limitTester.getQueuedConnectionRequests(); 
 
-            assertTrue(queued > 0); // GH-90000
+            assertTrue(queued > 0); 
         }
 
         @Test
         @DisplayName("shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked")
-        void shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked() { // GH-90000
-            when(limitTester.getMedianConnectionWaitMs()).thenReturn(500L); // GH-90000
+        void shouldMeasureConnectionWaitTime_whenPoolDepleted_thenWaitTimeTracked() { 
+            when(limitTester.getMedianConnectionWaitMs()).thenReturn(500L); 
 
-            long waitTime = limitTester.getMedianConnectionWaitMs(); // GH-90000
+            long waitTime = limitTester.getMedianConnectionWaitMs(); 
 
-            assertTrue(waitTime > 0); // GH-90000
+            assertTrue(waitTime > 0); 
         }
 
         @Test
         @DisplayName("shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned")
-        void shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned() { // GH-90000
-            when(limitTester.getRecoveryTimeMs()).thenReturn(2000L); // GH-90000
+        void shouldRecoverConnectionPool_afterHighLoad_thenConnectionsReturned() { 
+            when(limitTester.getRecoveryTimeMs()).thenReturn(2000L); 
 
-            long recovery = limitTester.getRecoveryTimeMs(); // GH-90000
+            long recovery = limitTester.getRecoveryTimeMs(); 
 
-            assertTrue(recovery < 5000); // GH-90000
+            assertTrue(recovery < 5000); 
         }
 
         @Test
         @DisplayName("shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected")
-        void shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected() { // GH-90000
-            when(limitTester.detectConnectionLeaks()).thenReturn(true); // GH-90000
+        void shouldDetectConnectionLeaks_whenConnectionsNotReturned_thenLeakDetected() { 
+            when(limitTester.detectConnectionLeaks()).thenReturn(true); 
 
-            boolean hasLeaks = limitTester.detectConnectionLeaks(); // GH-90000
+            boolean hasLeaks = limitTester.detectConnectionLeaks(); 
 
-            assertTrue(hasLeaks); // GH-90000
+            assertTrue(hasLeaks); 
         }
 
         @Test
         @DisplayName("shouldValidateConnectionReusability_whenConnectionReused_thenStateClean")
-        void shouldValidateConnectionReusability_whenConnectionReused_thenStateClean() { // GH-90000
-            when(limitTester.validateConnectionStateReset()).thenReturn(true); // GH-90000
+        void shouldValidateConnectionReusability_whenConnectionReused_thenStateClean() { 
+            when(limitTester.validateConnectionStateReset()).thenReturn(true); 
 
-            boolean clean = limitTester.validateConnectionStateReset(); // GH-90000
+            boolean clean = limitTester.validateConnectionStateReset(); 
 
-            assertTrue(clean); // GH-90000
+            assertTrue(clean); 
         }
 
         @Test
         @DisplayName("shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs")
-        void shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs() { // GH-90000
-            when(limitTester.getConnectionTimeoutCount()).thenReturn(150L); // GH-90000
+        void shouldMeasureConnectionTimeouts_whenWaitingTooLong_thenTimeoutOccurs() { 
+            when(limitTester.getConnectionTimeoutCount()).thenReturn(150L); 
 
-            long timeouts = limitTester.getConnectionTimeoutCount(); // GH-90000
+            long timeouts = limitTester.getConnectionTimeoutCount(); 
 
-            assertTrue(timeouts > 0); // GH-90000
+            assertTrue(timeouts > 0); 
         }
     }
 
@@ -283,72 +283,72 @@ class ResourceExhaustionTest {
 
         @Test
         @DisplayName("shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped")
-        void shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped() { // GH-90000
-            when(limitTester.measureDiskReadBandwidth()).thenReturn(500_000_000L); // GH-90000
+        void shouldMeasureDiskReadBandwidth_whenMaxIOReached_thenBandwidthCapped() { 
+            when(limitTester.measureDiskReadBandwidth()).thenReturn(500_000_000L); 
 
-            long bandwidth = limitTester.measureDiskReadBandwidth(); // GH-90000
+            long bandwidth = limitTester.measureDiskReadBandwidth(); 
 
-            assertTrue(bandwidth > 0); // GH-90000
-            assertTrue(bandwidth < 1_000_000_000L); // GH-90000
+            assertTrue(bandwidth > 0); 
+            assertTrue(bandwidth < 1_000_000_000L); 
         }
 
         @Test
         @DisplayName("shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped")
-        void shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped() { // GH-90000
-            when(limitTester.measureDiskWriteBandwidth()).thenReturn(450_000_000L); // GH-90000
+        void shouldMeasureDiskWriteBandwidth_whenMaxIOReached_thenBandwidthCapped() { 
+            when(limitTester.measureDiskWriteBandwidth()).thenReturn(450_000_000L); 
 
-            long bandwidth = limitTester.measureDiskWriteBandwidth(); // GH-90000
+            long bandwidth = limitTester.measureDiskWriteBandwidth(); 
 
-            assertTrue(bandwidth > 0); // GH-90000
+            assertTrue(bandwidth > 0); 
         }
 
         @Test
         @DisplayName("shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases")
-        void shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases() { // GH-90000
-            when(limitTester.getIOWaitPercent()).thenReturn(35.0); // GH-90000
+        void shouldDetectIOWait_whenDiskBoundWorkload_thenIOWaitIncreases() { 
+            when(limitTester.getIOWaitPercent()).thenReturn(35.0); 
 
-            double ioWait = limitTester.getIOWaitPercent(); // GH-90000
+            double ioWait = limitTester.getIOWaitPercent(); 
 
-            assertTrue(ioWait > 30); // GH-90000
+            assertTrue(ioWait > 30); 
         }
 
         @Test
         @DisplayName("shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers")
-        void shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers() { // GH-90000
+        void shouldMeasureRandomVsSequentialIO_whenAccessPatternsVary_thenLatencyDiffers() { 
             long randomLatency = 5000L;
             long sequentialLatency = 1000L;
 
-            assertTrue(randomLatency > sequentialLatency); // GH-90000
+            assertTrue(randomLatency > sequentialLatency); 
         }
 
         @Test
         @DisplayName("shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail")
-        void shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail() { // GH-90000
-            when(limitTester.getDiskUsagePercent()).thenReturn(98.0); // GH-90000
+        void shouldDetectDiskSpaceExhaustion_whenDiskNearFull_thenWritesFail() { 
+            when(limitTester.getDiskUsagePercent()).thenReturn(98.0); 
 
-            double usage = limitTester.getDiskUsagePercent(); // GH-90000
+            double usage = limitTester.getDiskUsagePercent(); 
 
-            assertTrue(usage > 90); // GH-90000
+            assertTrue(usage > 90); 
         }
 
         @Test
         @DisplayName("shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth")
-        void shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth() { // GH-90000
-            when(limitTester.getIOQueueDepth()).thenReturn(256L); // GH-90000
+        void shouldMeasureIOQueueDepth_whenDiskSaturated_thenQueueDepth() { 
+            when(limitTester.getIOQueueDepth()).thenReturn(256L); 
 
-            long depth = limitTester.getIOQueueDepth(); // GH-90000
+            long depth = limitTester.getIOQueueDepth(); 
 
-            assertTrue(depth > 0); // GH-90000
+            assertTrue(depth > 0); 
         }
 
         @Test
         @DisplayName("shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded")
-        void shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded() { // GH-90000
-            when(limitTester.getIOErrorCount()).thenReturn(5L); // GH-90000
+        void shouldValidateIOErrorHandling_whenDiskFails_thenErrorsRecorded() { 
+            when(limitTester.getIOErrorCount()).thenReturn(5L); 
 
-            long errors = limitTester.getIOErrorCount(); // GH-90000
+            long errors = limitTester.getIOErrorCount(); 
 
-            assertTrue(errors >= 0); // GH-90000
+            assertTrue(errors >= 0); 
         }
     }
 
@@ -357,44 +357,44 @@ class ResourceExhaustionTest {
         private final ResourceLimitTester limitTester;
         private final ResourceBoundaryDetector boundaryDetector;
 
-        ResourceExhaustionTestService(ResourceLimitTester tester, ResourceBoundaryDetector detector) { // GH-90000
+        ResourceExhaustionTestService(ResourceLimitTester tester, ResourceBoundaryDetector detector) { 
             this.limitTester = tester;
             this.boundaryDetector = detector;
         }
     }
 
     static class ResourceLimitTester {
-        double getCPUUtilization() { return 99.5; } // GH-90000
-        long measureLatency() { return 2500L; } // GH-90000
-        long measureThroughput() { return 7000L; } // GH-90000
-        boolean validateTaskFairness() { return true; } // GH-90000
-        long measureLatencyWithAffinity() { return 85L; } // GH-90000
-        long getQueueDepth() { return 5000L; } // GH-90000
-        double getHeapUsagePercent() { return 90.5; } // GH-90000
-        boolean wasGCTriggered() { return true; } // GH-90000
-        long getMaxGCPauseMs() { return 450L; } // GH-90000
-        long getFullGCCount() { return 15L; } // GH-90000
-        boolean detectMemoryLeak() { return true; } // GH-90000
-        long measureP99LatencyDuringGC() { return 5000L; } // GH-90000
-        double getHeapAvailablePercent() { return 75.0; } // GH-90000
-        int getConnectionPoolSize() { return 500; } // GH-90000
-        int getActiveConnections() { return 475; } // GH-90000
-        long getQueuedConnectionRequests() { return 1000L; } // GH-90000
-        long getMedianConnectionWaitMs() { return 500L; } // GH-90000
-        long getRecoveryTimeMs() { return 2000L; } // GH-90000
-        boolean detectConnectionLeaks() { return true; } // GH-90000
-        boolean validateConnectionStateReset() { return true; } // GH-90000
-        long getConnectionTimeoutCount() { return 150L; } // GH-90000
-        long measureDiskReadBandwidth() { return 500_000_000L; } // GH-90000
-        long measureDiskWriteBandwidth() { return 450_000_000L; } // GH-90000
-        double getIOWaitPercent() { return 35.0; } // GH-90000
-        double getDiskUsagePercent() { return 98.0; } // GH-90000
-        long getIOQueueDepth() { return 256L; } // GH-90000
-        long getIOErrorCount() { return 5L; } // GH-90000
+        double getCPUUtilization() { return 99.5; } 
+        long measureLatency() { return 2500L; } 
+        long measureThroughput() { return 7000L; } 
+        boolean validateTaskFairness() { return true; } 
+        long measureLatencyWithAffinity() { return 85L; } 
+        long getQueueDepth() { return 5000L; } 
+        double getHeapUsagePercent() { return 90.5; } 
+        boolean wasGCTriggered() { return true; } 
+        long getMaxGCPauseMs() { return 450L; } 
+        long getFullGCCount() { return 15L; } 
+        boolean detectMemoryLeak() { return true; } 
+        long measureP99LatencyDuringGC() { return 5000L; } 
+        double getHeapAvailablePercent() { return 75.0; } 
+        int getConnectionPoolSize() { return 500; } 
+        int getActiveConnections() { return 475; } 
+        long getQueuedConnectionRequests() { return 1000L; } 
+        long getMedianConnectionWaitMs() { return 500L; } 
+        long getRecoveryTimeMs() { return 2000L; } 
+        boolean detectConnectionLeaks() { return true; } 
+        boolean validateConnectionStateReset() { return true; } 
+        long getConnectionTimeoutCount() { return 150L; } 
+        long measureDiskReadBandwidth() { return 500_000_000L; } 
+        long measureDiskWriteBandwidth() { return 450_000_000L; } 
+        double getIOWaitPercent() { return 35.0; } 
+        double getDiskUsagePercent() { return 98.0; } 
+        long getIOQueueDepth() { return 256L; } 
+        long getIOErrorCount() { return 5L; } 
     }
 
     static class ResourceBoundaryDetector {
-        String identifyBottleneck() { return "CPU"; } // GH-90000
+        String identifyBottleneck() { return "CPU"; } 
     }
 
     // Custom Exceptions

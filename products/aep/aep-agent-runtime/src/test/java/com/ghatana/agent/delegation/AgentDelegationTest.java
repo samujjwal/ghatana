@@ -22,40 +22,40 @@ class AgentDelegationTest {
 
     @Test
     @DisplayName("Should handle agent delegation")
-    void shouldHandleAgentDelegation() { // GH-90000
-        assertThat(ExecutionTier.JAVA_IMPLEMENTED).isNotNull(); // GH-90000
-        assertThat(ExecutionTier.SERVICE_ORCHESTRATED).isNotNull(); // GH-90000
-        assertThat(ExecutionTier.LLM_EXECUTED).isNotNull(); // GH-90000
+    void shouldHandleAgentDelegation() { 
+        assertThat(ExecutionTier.JAVA_IMPLEMENTED).isNotNull(); 
+        assertThat(ExecutionTier.SERVICE_ORCHESTRATED).isNotNull(); 
+        assertThat(ExecutionTier.LLM_EXECUTED).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle agent composition")
-    void shouldHandleAgentComposition() { // GH-90000
-        assertThat(ExecutionTier.values().length).isEqualTo(4); // GH-90000
+    void shouldHandleAgentComposition() { 
+        assertThat(ExecutionTier.values().length).isEqualTo(4); 
     }
 
     @Test
     @DisplayName("Should handle agent isolation")
-    void shouldHandleAgentIsolation() { // GH-90000
+    void shouldHandleAgentIsolation() { 
         assertThat(ExecutionTier.JAVA_IMPLEMENTED.name()).isEqualTo("JAVA_IMPLEMENTED");
     }
 
     @Test
     @DisplayName("Should handle delegation security")
-    void shouldHandleDelegationSecurity() { // GH-90000
+    void shouldHandleDelegationSecurity() { 
         assertThat(ExecutionTier.SERVICE_ORCHESTRATED.name()).isEqualTo("SERVICE_ORCHESTRATED");
     }
 
     @Test
     @DisplayName("Should handle delegation failure")
-    void shouldHandleDelegationFailure() { // GH-90000
+    void shouldHandleDelegationFailure() { 
         assertThat(ExecutionTier.LLM_EXECUTED.name()).isEqualTo("LLM_EXECUTED");
     }
 
     @Test
     @DisplayName("Should handle concurrent delegation")
-    void shouldHandleConcurrentDelegation() { // GH-90000
-        assertThat(ExecutionTier.values()).containsExactly( // GH-90000
+    void shouldHandleConcurrentDelegation() { 
+        assertThat(ExecutionTier.values()).containsExactly( 
             ExecutionTier.JAVA_IMPLEMENTED,
             ExecutionTier.SERVICE_ORCHESTRATED,
             ExecutionTier.LLM_EXECUTED,

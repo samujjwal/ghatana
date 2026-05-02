@@ -16,48 +16,48 @@ class MetricsTest {
     private Metrics metrics;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new SimpleMeterRegistry(); // GH-90000
-        metrics = new Metrics(registry); // GH-90000
+    void setUp() { 
+        registry = new SimpleMeterRegistry(); 
+        metrics = new Metrics(registry); 
     }
 
     @Test
-    void testTimer() { // GH-90000
+    void testTimer() { 
         var timer = metrics.timer("test.timer");
 
-        assertNotNull(timer); // GH-90000
-        assertEquals("test.timer", timer.getId().getName()); // GH-90000
+        assertNotNull(timer); 
+        assertEquals("test.timer", timer.getId().getName()); 
 
-        timer.record(() -> { // GH-90000
+        timer.record(() -> { 
             // Simulate work
             try {
-                Thread.sleep(1); // GH-90000
-            } catch (InterruptedException e) { // GH-90000
-                Thread.currentThread().interrupt(); // GH-90000
+                Thread.sleep(1); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
             }
         });
 
-        assertTrue(timer.count() > 0); // GH-90000
+        assertTrue(timer.count() > 0); 
     }
 
     @Test
-    void testCounter() { // GH-90000
+    void testCounter() { 
         var counter = metrics.counter("test.counter");
 
-        assertNotNull(counter); // GH-90000
-        assertEquals("test.counter", counter.getId().getName()); // GH-90000
+        assertNotNull(counter); 
+        assertEquals("test.counter", counter.getId().getName()); 
 
-        counter.increment(); // GH-90000
-        counter.increment(); // GH-90000
+        counter.increment(); 
+        counter.increment(); 
 
-        assertEquals(2, counter.count()); // GH-90000
+        assertEquals(2, counter.count()); 
     }
 
     @Test
-    void testGetRegistry() { // GH-90000
-        MeterRegistry returnedRegistry = metrics.getRegistry(); // GH-90000
+    void testGetRegistry() { 
+        MeterRegistry returnedRegistry = metrics.getRegistry(); 
 
-        assertNotNull(returnedRegistry); // GH-90000
-        assertSame(registry, returnedRegistry); // GH-90000
+        assertNotNull(returnedRegistry); 
+        assertSame(registry, returnedRegistry); 
     }
 }

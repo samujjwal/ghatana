@@ -46,88 +46,88 @@ class WorkspaceControllerTest extends EventloopTestBase {
     private User testUser;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        MockitoAnnotations.openMocks(this); // GH-90000
-        objectMapper = new ObjectMapper(); // GH-90000
-        Executor executor = Executors.newSingleThreadExecutor(); // GH-90000
-        controller = new WorkspaceController(workspaceService, objectMapper, executor); // GH-90000
+    void setUp() { 
+        MockitoAnnotations.openMocks(this); 
+        objectMapper = new ObjectMapper(); 
+        Executor executor = Executors.newSingleThreadExecutor(); 
+        controller = new WorkspaceController(workspaceService, objectMapper, executor); 
 
-        testUser = User.builder() // GH-90000
+        testUser = User.builder() 
             .userId("user-123")
             .email("test@example.com")
             .username("Test User")
             .roles(Set.of("USER"))
             .permissions(Set.of("WORKSPACE_CREATE"))
-            .build(); // GH-90000
+            .build(); 
     }
 
     @Test
     @DisplayName("Should create workspace when valid request")
-    void shouldCreateWorkspaceWhenValidRequest() throws Exception { // GH-90000
+    void shouldCreateWorkspaceWhenValidRequest() throws Exception { 
         // Given
-        Workspace mockWorkspace = createMockWorkspace(); // GH-90000
+        Workspace mockWorkspace = createMockWorkspace(); 
         when(workspaceService.createWorkspace(eq(testUser), eq("Test Workspace"), eq("Description")))
-            .thenReturn(Promise.of(mockWorkspace)); // GH-90000
+            .thenReturn(Promise.of(mockWorkspace)); 
 
         // When/Then - Verify service integration works
         // The controller logic is tested via integration tests
-        Workspace result = runPromise(() -> workspaceService.createWorkspace(testUser, "Test Workspace", "Description")); // GH-90000
-        assertThat(result).isNotNull(); // GH-90000
+        Workspace result = runPromise(() -> workspaceService.createWorkspace(testUser, "Test Workspace", "Description")); 
+        assertThat(result).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should get workspace when valid ID")
-    void shouldGetWorkspaceWhenValidId() { // GH-90000
+    void shouldGetWorkspaceWhenValidId() { 
         // Given
         // Skip HttpRequest creation for now - test the service integration directly
-        Workspace mockWorkspace = createMockWorkspace(); // GH-90000
+        Workspace mockWorkspace = createMockWorkspace(); 
         when(workspaceService.getWorkspace(eq("ws-123"), eq(testUser)))
-            .thenReturn(Promise.of(mockWorkspace)); // GH-90000
+            .thenReturn(Promise.of(mockWorkspace)); 
 
         // When/Then - Verify service integration works
         // The controller logic is tested via integration tests
-        assertThat(mockWorkspace).isNotNull(); // GH-90000
+        assertThat(mockWorkspace).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should return 400 when workspace not found")
-    void shouldReturn400WhenWorkspaceNotFound() { // GH-90000
+    void shouldReturn400WhenWorkspaceNotFound() { 
         // Given
         when(workspaceService.getWorkspace(eq("invalid"), eq(testUser)))
             .thenReturn(Promise.ofException(new IllegalArgumentException("Workspace not found")));
 
         // When/Then - Verify mock setup works
         // The controller error handling is tested via integration tests
-        assertThat(workspaceService).isNotNull(); // GH-90000
+        assertThat(workspaceService).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should delete workspace when authorized")
-    void shouldDeleteWorkspaceWhenAuthorized() { // GH-90000
+    void shouldDeleteWorkspaceWhenAuthorized() { 
         // Given
         // Test service integration directly
         when(workspaceService.deleteWorkspace(eq("ws-123"), eq(testUser)))
-            .thenReturn(Promise.of(null)); // GH-90000
+            .thenReturn(Promise.of(null)); 
 
         // When/Then - Verify service integration works
         // The controller logic is tested via integration tests
-        assertDoesNotThrow(() -> { // GH-90000
-            runPromise(() -> workspaceService.deleteWorkspace("ws-123", testUser)); // GH-90000
+        assertDoesNotThrow(() -> { 
+            runPromise(() -> workspaceService.deleteWorkspace("ws-123", testUser)); 
         });
     }
 
-    private Workspace createMockWorkspace() { // GH-90000
-        return Workspace.builder() // GH-90000
+    private Workspace createMockWorkspace() { 
+        return Workspace.builder() 
             .workspaceId("ws-123")
             .name("Test Workspace")
             .description("Test Description")
             .ownerId("user-123")
             .orgUnitId("org-123")
-            .status(Workspace.WorkspaceStatus.ACTIVE) // GH-90000
-            .settings(WorkspaceSettings.defaults()) // GH-90000
-            .members(List.of(new WorkspaceMember("user-123", WorkspaceRole.OWNER, Instant.now()))) // GH-90000
-            .createdAt(Instant.now()) // GH-90000
-            .updatedAt(Instant.now()) // GH-90000
-            .build(); // GH-90000
+            .status(Workspace.WorkspaceStatus.ACTIVE) 
+            .settings(WorkspaceSettings.defaults()) 
+            .members(List.of(new WorkspaceMember("user-123", WorkspaceRole.OWNER, Instant.now()))) 
+            .createdAt(Instant.now()) 
+            .updatedAt(Instant.now()) 
+            .build(); 
     }
 }

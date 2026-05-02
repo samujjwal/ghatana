@@ -37,7 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Redis integration tests for cache TTL, tenant isolation, and invalidation (AV-P1-02) // GH-90000
+ * @doc.purpose Redis integration tests for cache TTL, tenant isolation, and invalidation (AV-P1-02) 
  * @doc.layer test
  * @doc.pattern IntegrationTest
  */
@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TranscriptionCacheIT extends EventloopTestBase {
 
     @Container
-    static final RedisContainer REDIS = new RedisContainer( // GH-90000
+    static final RedisContainer REDIS = new RedisContainer( 
             DockerImageName.parse("redis:7.2-alpine"));
 
     private JedisPool jedisPool;
@@ -55,151 +55,151 @@ class TranscriptionCacheIT extends EventloopTestBase {
     private ObjectMapper objectMapper;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        String host = REDIS.getHost(); // GH-90000
-        int port = REDIS.getFirstMappedPort(); // GH-90000
+    void setUp() { 
+        String host = REDIS.getHost(); 
+        int port = REDIS.getFirstMappedPort(); 
 
-        jedisPool = new JedisPool(host, port); // GH-90000
-        ioExecutor = Executors.newVirtualThreadPerTaskExecutor(); // GH-90000
+        jedisPool = new JedisPool(host, port); 
+        ioExecutor = Executors.newVirtualThreadPerTaskExecutor(); 
 
-        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()); // GH-90000
+        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()); 
 
         RedisDistributedCacheAdapter<String, String> cachePort =
-                new RedisDistributedCacheAdapter<>( // GH-90000
+                new RedisDistributedCacheAdapter<>( 
                         jedisPool,
                         objectMapper,
                         String.class,
                         ioExecutor,
                         "transcription",
-                        Duration.ofMinutes(30)); // GH-90000
+                        Duration.ofMinutes(30)); 
 
-        cacheService = new TranscriptionCacheService(cachePort, objectMapper); // GH-90000
+        cacheService = new TranscriptionCacheService(cachePort, objectMapper); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (jedisPool != null) jedisPool.close(); // GH-90000
-        if (ioExecutor != null) ioExecutor.shutdown(); // GH-90000
+    void tearDown() { 
+        if (jedisPool != null) jedisPool.close(); 
+        if (ioExecutor != null) ioExecutor.shutdown(); 
     }
 
     @Test
     @DisplayName("Should store and retrieve transcription within TTL")
-    void shouldStoreAndRetrieveTranscription() { // GH-90000
+    void shouldStoreAndRetrieveTranscription() { 
         String tenantId = "tenant-cache-1";
-        TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
+        TranscriptionEntity entity = buildEntity(tenantId); 
 
-        runPromise(() -> cacheService.cacheTranscription(tenantId, entity)); // GH-90000
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity)); 
 
         Optional<TranscriptionEntity> retrieved =
-                runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); // GH-90000
+                runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); 
 
-        assertThat(retrieved).isPresent(); // GH-90000
-        assertThat(retrieved.get().getId()).isEqualTo(entity.getId()); // GH-90000
-        assertThat(retrieved.get().getText()).isEqualTo(entity.getText()); // GH-90000
+        assertThat(retrieved).isPresent(); 
+        assertThat(retrieved.get().getId()).isEqualTo(entity.getId()); 
+        assertThat(retrieved.get().getText()).isEqualTo(entity.getText()); 
     }
 
     @Test
     @DisplayName("Should return empty for cache miss")
-    void shouldReturnEmptyForCacheMiss() { // GH-90000
+    void shouldReturnEmptyForCacheMiss() { 
         Optional<TranscriptionEntity> result =
-                runPromise(() -> cacheService.getTranscription("tenant-miss", UUID.randomUUID())); // GH-90000
+                runPromise(() -> cacheService.getTranscription("tenant-miss", UUID.randomUUID())); 
 
-        assertThat(result).isEmpty(); // GH-90000
+        assertThat(result).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should isolate keys between tenants (tenant isolation)")
-    void shouldIsolateCacheKeysBetweenTenants() { // GH-90000
+    void shouldIsolateCacheKeysBetweenTenants() { 
         String tenant1 = "tenant-iso-1";
         String tenant2 = "tenant-iso-2";
-        UUID sharedId = UUID.randomUUID(); // GH-90000
+        UUID sharedId = UUID.randomUUID(); 
 
         // Store the same ID under two different tenants with different text
-        TranscriptionEntity entity1 = buildEntityWithIdAndText(tenant1, sharedId, "Transcript for tenant-1"); // GH-90000
-        TranscriptionEntity entity2 = buildEntityWithIdAndText(tenant2, sharedId, "Transcript for tenant-2"); // GH-90000
+        TranscriptionEntity entity1 = buildEntityWithIdAndText(tenant1, sharedId, "Transcript for tenant-1"); 
+        TranscriptionEntity entity2 = buildEntityWithIdAndText(tenant2, sharedId, "Transcript for tenant-2"); 
 
-        runPromise(() -> cacheService.cacheTranscription(tenant1, entity1)); // GH-90000
-        runPromise(() -> cacheService.cacheTranscription(tenant2, entity2)); // GH-90000
+        runPromise(() -> cacheService.cacheTranscription(tenant1, entity1)); 
+        runPromise(() -> cacheService.cacheTranscription(tenant2, entity2)); 
 
-        Optional<TranscriptionEntity> t1Result = runPromise(() -> cacheService.getTranscription(tenant1, sharedId)); // GH-90000
-        Optional<TranscriptionEntity> t2Result = runPromise(() -> cacheService.getTranscription(tenant2, sharedId)); // GH-90000
+        Optional<TranscriptionEntity> t1Result = runPromise(() -> cacheService.getTranscription(tenant1, sharedId)); 
+        Optional<TranscriptionEntity> t2Result = runPromise(() -> cacheService.getTranscription(tenant2, sharedId)); 
 
-        assertThat(t1Result).isPresent(); // GH-90000
-        assertThat(t2Result).isPresent(); // GH-90000
+        assertThat(t1Result).isPresent(); 
+        assertThat(t2Result).isPresent(); 
         assertThat(t1Result.get().getText()).isEqualTo("Transcript for tenant-1");
         assertThat(t2Result.get().getText()).isEqualTo("Transcript for tenant-2");
     }
 
     @Test
     @DisplayName("Should evict entry after short TTL")
-    void shouldEvictAfterTtl() throws InterruptedException { // GH-90000
+    void shouldEvictAfterTtl() throws InterruptedException { 
         String tenantId = "tenant-ttl";
-        TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
+        TranscriptionEntity entity = buildEntity(tenantId); 
 
         // Cache with a 1-second TTL
-        runPromise(() -> cacheService.cacheTranscription(tenantId, entity, Duration.ofSeconds(1))); // GH-90000
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity, Duration.ofSeconds(1))); 
 
         // Present before TTL
-        Optional<TranscriptionEntity> before = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); // GH-90000
-        assertThat(before).isPresent(); // GH-90000
+        Optional<TranscriptionEntity> before = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); 
+        assertThat(before).isPresent(); 
 
         // Wait for TTL to expire
-        Thread.sleep(1500); // GH-90000
+        Thread.sleep(1500); 
 
-        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); // GH-90000
-        assertThat(after).isEmpty(); // GH-90000
+        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); 
+        assertThat(after).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should remove entry on explicit invalidation")
-    void shouldRemoveEntryOnInvalidation() { // GH-90000
+    void shouldRemoveEntryOnInvalidation() { 
         String tenantId = "tenant-inval";
-        TranscriptionEntity entity = buildEntity(tenantId); // GH-90000
+        TranscriptionEntity entity = buildEntity(tenantId); 
 
-        runPromise(() -> cacheService.cacheTranscription(tenantId, entity)); // GH-90000
-        assertThat(runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()))).isPresent(); // GH-90000
+        runPromise(() -> cacheService.cacheTranscription(tenantId, entity)); 
+        assertThat(runPromise(() -> cacheService.getTranscription(tenantId, entity.getId()))).isPresent(); 
 
-        runPromise(() -> cacheService.invalidateTranscription(tenantId, entity.getId())); // GH-90000
+        runPromise(() -> cacheService.invalidateTranscription(tenantId, entity.getId())); 
 
-        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); // GH-90000
-        assertThat(after).isEmpty(); // GH-90000
+        Optional<TranscriptionEntity> after = runPromise(() -> cacheService.getTranscription(tenantId, entity.getId())); 
+        assertThat(after).isEmpty(); 
     }
 
     @Test
     @DisplayName("Should load and cache from loader on cache miss (getOrLoad)")
-    void shouldLoadAndCacheOnMiss() { // GH-90000
+    void shouldLoadAndCacheOnMiss() { 
         String tenantId = "tenant-load";
-        UUID transcriptionId = UUID.randomUUID(); // GH-90000
-        TranscriptionEntity expected = buildEntityWithIdAndText(tenantId, transcriptionId, "Loaded from source"); // GH-90000
+        UUID transcriptionId = UUID.randomUUID(); 
+        TranscriptionEntity expected = buildEntityWithIdAndText(tenantId, transcriptionId, "Loaded from source"); 
 
-        TranscriptionEntity result = runPromise(() -> cacheService.getOrLoadTranscription( // GH-90000
+        TranscriptionEntity result = runPromise(() -> cacheService.getOrLoadTranscription( 
                 tenantId, transcriptionId,
-                id -> Promise.of(Optional.of(expected)) // GH-90000
+                id -> Promise.of(Optional.of(expected)) 
         ));
 
-        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
         assertThat(result.getText()).isEqualTo("Loaded from source");
 
-        // Second call should hit cache (no loader call needed) // GH-90000
-        TranscriptionEntity cachedResult = runPromise(() -> cacheService.getOrLoadTranscription( // GH-90000
+        // Second call should hit cache (no loader call needed) 
+        TranscriptionEntity cachedResult = runPromise(() -> cacheService.getOrLoadTranscription( 
                 tenantId, transcriptionId,
                 id -> Promise.ofException(new RuntimeException("loader should not be called"))
         ));
 
-        assertThat(cachedResult).isNotNull(); // GH-90000
-        assertThat(cachedResult.getId()).isEqualTo(transcriptionId); // GH-90000
+        assertThat(cachedResult).isNotNull(); 
+        assertThat(cachedResult.getId()).isEqualTo(transcriptionId); 
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private TranscriptionEntity buildEntity(String tenantId) { // GH-90000
-        return buildEntityWithIdAndText(tenantId, UUID.randomUUID(), "Test transcription text"); // GH-90000
+    private TranscriptionEntity buildEntity(String tenantId) { 
+        return buildEntityWithIdAndText(tenantId, UUID.randomUUID(), "Test transcription text"); 
     }
 
-    private TranscriptionEntity buildEntityWithIdAndText(String tenantId, UUID id, String text) { // GH-90000
-        TranscriptionEntity entity = new TranscriptionEntity( // GH-90000
-                id, tenantId, UUID.randomUUID(), UUID.randomUUID(), text, "en"); // GH-90000
-        entity.setConfidence(0.95f); // GH-90000
+    private TranscriptionEntity buildEntityWithIdAndText(String tenantId, UUID id, String text) { 
+        TranscriptionEntity entity = new TranscriptionEntity( 
+                id, tenantId, UUID.randomUUID(), UUID.randomUUID(), text, "en"); 
+        entity.setConfidence(0.95f); 
         return entity;
     }
 }

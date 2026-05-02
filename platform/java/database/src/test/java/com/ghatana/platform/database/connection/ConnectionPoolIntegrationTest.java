@@ -26,321 +26,321 @@ class ConnectionPoolIntegrationTest extends EventloopTestBase {
 
     @Test
     @DisplayName("should create connection pool with configured size")
-    void shouldCreateConnectionPoolWithConfiguredSize() { // GH-90000
+    void shouldCreateConnectionPoolWithConfiguredSize() { 
         int poolSize = 10;
-        AtomicInteger activeConnections = new AtomicInteger(0); // GH-90000
+        AtomicInteger activeConnections = new AtomicInteger(0); 
 
         // Initialize pool
-        for (int i = 0; i < poolSize; i++) { // GH-90000
-            activeConnections.incrementAndGet(); // GH-90000
+        for (int i = 0; i < poolSize; i++) { 
+            activeConnections.incrementAndGet(); 
         }
 
-        assertThat(activeConnections.get()).isEqualTo(poolSize); // GH-90000
+        assertThat(activeConnections.get()).isEqualTo(poolSize); 
     }
 
     @Test
     @DisplayName("should acquire connection from pool")
-    void shouldAcquireConnectionFromPool() { // GH-90000
-        AtomicInteger availableConnections = new AtomicInteger(10); // GH-90000
+    void shouldAcquireConnectionFromPool() { 
+        AtomicInteger availableConnections = new AtomicInteger(10); 
 
         // Acquire connection
-        if (availableConnections.get() > 0) { // GH-90000
-            availableConnections.decrementAndGet(); // GH-90000
+        if (availableConnections.get() > 0) { 
+            availableConnections.decrementAndGet(); 
         }
 
-        assertThat(availableConnections.get()).isEqualTo(9); // GH-90000
+        assertThat(availableConnections.get()).isEqualTo(9); 
     }
 
     @Test
     @DisplayName("should release connection back to pool")
-    void shouldReleaseConnectionBackToPool() { // GH-90000
-        AtomicInteger availableConnections = new AtomicInteger(9); // GH-90000
+    void shouldReleaseConnectionBackToPool() { 
+        AtomicInteger availableConnections = new AtomicInteger(9); 
 
         // Release connection
-        availableConnections.incrementAndGet(); // GH-90000
+        availableConnections.incrementAndGet(); 
 
-        assertThat(availableConnections.get()).isEqualTo(10); // GH-90000
+        assertThat(availableConnections.get()).isEqualTo(10); 
     }
 
     @Test
     @DisplayName("should handle pool exhaustion gracefully")
-    void shouldHandlePoolExhaustionGracefully() { // GH-90000
+    void shouldHandlePoolExhaustionGracefully() { 
         int poolSize = 5;
-        AtomicInteger activeConnections = new AtomicInteger(poolSize); // GH-90000
+        AtomicInteger activeConnections = new AtomicInteger(poolSize); 
 
         // Try to acquire when pool is exhausted
         boolean acquired = false;
-        if (activeConnections.get() < poolSize) { // GH-90000
+        if (activeConnections.get() < poolSize) { 
             acquired = true;
         }
 
-        assertThat(acquired).isFalse(); // GH-90000
+        assertThat(acquired).isFalse(); 
     }
 
     @Test
     @DisplayName("should wait for available connection with timeout")
-    void shouldWaitForAvailableConnectionWithTimeout() { // GH-90000
-        AtomicBoolean timeoutOccurred = new AtomicBoolean(false); // GH-90000
+    void shouldWaitForAvailableConnectionWithTimeout() { 
+        AtomicBoolean timeoutOccurred = new AtomicBoolean(false); 
 
         try {
             // Simulate waiting for connection
-            Thread.sleep(100); // GH-90000
+            Thread.sleep(100); 
             // Timeout after 100ms
-            timeoutOccurred.set(true); // GH-90000
-        } catch (InterruptedException e) { // GH-90000
+            timeoutOccurred.set(true); 
+        } catch (InterruptedException e) { 
             fail("Should not be interrupted");
         }
 
-        assertThat(timeoutOccurred.get()).isTrue(); // GH-90000
+        assertThat(timeoutOccurred.get()).isTrue(); 
     }
 
     @Test
     @DisplayName("should validate connections before use")
-    void shouldValidateConnectionsBeforeUse() { // GH-90000
-        AtomicBoolean connectionValid = new AtomicBoolean(true); // GH-90000
+    void shouldValidateConnectionsBeforeUse() { 
+        AtomicBoolean connectionValid = new AtomicBoolean(true); 
 
         // Validate connection
         // Check if connection is alive
         // Execute test query
 
-        assertThat(connectionValid.get()).isTrue(); // GH-90000
+        assertThat(connectionValid.get()).isTrue(); 
     }
 
     @Test
     @DisplayName("should remove invalid connections from pool")
-    void shouldRemoveInvalidConnectionsFromPool() { // GH-90000
-        AtomicInteger poolSize = new AtomicInteger(10); // GH-90000
+    void shouldRemoveInvalidConnectionsFromPool() { 
+        AtomicInteger poolSize = new AtomicInteger(10); 
 
         // Detect invalid connection
         boolean isValid = false;
 
-        if (!isValid) { // GH-90000
+        if (!isValid) { 
             // Remove from pool
-            poolSize.decrementAndGet(); // GH-90000
+            poolSize.decrementAndGet(); 
             // Create new connection
-            poolSize.incrementAndGet(); // GH-90000
+            poolSize.incrementAndGet(); 
         }
 
-        assertThat(poolSize.get()).isEqualTo(10); // GH-90000
+        assertThat(poolSize.get()).isEqualTo(10); 
     }
 
     @Test
     @DisplayName("should handle connection leaks with timeout")
-    void shouldHandleConnectionLeaksWithTimeout() { // GH-90000
-        AtomicInteger leakedConnections = new AtomicInteger(0); // GH-90000
+    void shouldHandleConnectionLeaksWithTimeout() { 
+        AtomicInteger leakedConnections = new AtomicInteger(0); 
 
         // Acquire connection
-        // Don't release (simulate leak) // GH-90000
-        leakedConnections.incrementAndGet(); // GH-90000
+        // Don't release (simulate leak) 
+        leakedConnections.incrementAndGet(); 
 
         // After timeout, reclaim connection
-        leakedConnections.decrementAndGet(); // GH-90000
+        leakedConnections.decrementAndGet(); 
 
-        assertThat(leakedConnections.get()).isEqualTo(0); // GH-90000
+        assertThat(leakedConnections.get()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("should maintain minimum pool size")
-    void shouldMaintainMinimumPoolSize() { // GH-90000
+    void shouldMaintainMinimumPoolSize() { 
         int minPoolSize = 5;
-        AtomicInteger currentSize = new AtomicInteger(minPoolSize); // GH-90000
+        AtomicInteger currentSize = new AtomicInteger(minPoolSize); 
 
         // Release connections
-        currentSize.decrementAndGet(); // GH-90000
+        currentSize.decrementAndGet(); 
 
         // Pool should maintain minimum
-        if (currentSize.get() < minPoolSize) { // GH-90000
-            currentSize.incrementAndGet(); // GH-90000
+        if (currentSize.get() < minPoolSize) { 
+            currentSize.incrementAndGet(); 
         }
 
-        assertThat(currentSize.get()).isGreaterThanOrEqualTo(minPoolSize); // GH-90000
+        assertThat(currentSize.get()).isGreaterThanOrEqualTo(minPoolSize); 
     }
 
     @Test
     @DisplayName("should expand pool up to maximum size")
-    void shouldExpandPoolUpToMaximumSize() { // GH-90000
+    void shouldExpandPoolUpToMaximumSize() { 
         int maxPoolSize = 20;
-        AtomicInteger currentSize = new AtomicInteger(10); // GH-90000
+        AtomicInteger currentSize = new AtomicInteger(10); 
 
         // High demand - expand pool
-        if (currentSize.get() < maxPoolSize) { // GH-90000
-            currentSize.incrementAndGet(); // GH-90000
+        if (currentSize.get() < maxPoolSize) { 
+            currentSize.incrementAndGet(); 
         }
 
-        assertThat(currentSize.get()).isLessThanOrEqualTo(maxPoolSize); // GH-90000
+        assertThat(currentSize.get()).isLessThanOrEqualTo(maxPoolSize); 
     }
 
     @Test
     @DisplayName("should shrink pool during idle periods")
-    void shouldShrinkPoolDuringIdlePeriods() { // GH-90000
+    void shouldShrinkPoolDuringIdlePeriods() { 
         int minPoolSize = 5;
-        AtomicInteger currentSize = new AtomicInteger(15); // GH-90000
+        AtomicInteger currentSize = new AtomicInteger(15); 
 
         // Idle period - shrink to minimum
-        while (currentSize.get() > minPoolSize) { // GH-90000
-            currentSize.decrementAndGet(); // GH-90000
+        while (currentSize.get() > minPoolSize) { 
+            currentSize.decrementAndGet(); 
         }
 
-        assertThat(currentSize.get()).isEqualTo(minPoolSize); // GH-90000
+        assertThat(currentSize.get()).isEqualTo(minPoolSize); 
     }
 
     @Test
     @DisplayName("should track connection usage statistics")
-    void shouldTrackConnectionUsageStatistics() { // GH-90000
-        AtomicInteger totalAcquired = new AtomicInteger(0); // GH-90000
-        AtomicInteger totalReleased = new AtomicInteger(0); // GH-90000
+    void shouldTrackConnectionUsageStatistics() { 
+        AtomicInteger totalAcquired = new AtomicInteger(0); 
+        AtomicInteger totalReleased = new AtomicInteger(0); 
 
         // Acquire connections
-        for (int i = 0; i < 100; i++) { // GH-90000
-            totalAcquired.incrementAndGet(); // GH-90000
+        for (int i = 0; i < 100; i++) { 
+            totalAcquired.incrementAndGet(); 
         }
 
         // Release connections
-        for (int i = 0; i < 100; i++) { // GH-90000
-            totalReleased.incrementAndGet(); // GH-90000
+        for (int i = 0; i < 100; i++) { 
+            totalReleased.incrementAndGet(); 
         }
 
-        assertThat(totalAcquired.get()).isEqualTo(100); // GH-90000
-        assertThat(totalReleased.get()).isEqualTo(100); // GH-90000
+        assertThat(totalAcquired.get()).isEqualTo(100); 
+        assertThat(totalReleased.get()).isEqualTo(100); 
     }
 
     @Test
     @DisplayName("should handle concurrent connection requests")
-    void shouldHandleConcurrentConnectionRequests() { // GH-90000
-        AtomicInteger successfulAcquisitions = new AtomicInteger(0); // GH-90000
+    void shouldHandleConcurrentConnectionRequests() { 
+        AtomicInteger successfulAcquisitions = new AtomicInteger(0); 
         int poolSize = 10;
 
         // Simulate concurrent requests
-        for (int i = 0; i < poolSize; i++) { // GH-90000
-            successfulAcquisitions.incrementAndGet(); // GH-90000
+        for (int i = 0; i < poolSize; i++) { 
+            successfulAcquisitions.incrementAndGet(); 
         }
 
-        assertThat(successfulAcquisitions.get()).isEqualTo(poolSize); // GH-90000
+        assertThat(successfulAcquisitions.get()).isEqualTo(poolSize); 
     }
 
     @Test
     @DisplayName("should close all connections on pool shutdown")
-    void shouldCloseAllConnectionsOnPoolShutdown() { // GH-90000
-        AtomicInteger openConnections = new AtomicInteger(10); // GH-90000
+    void shouldCloseAllConnectionsOnPoolShutdown() { 
+        AtomicInteger openConnections = new AtomicInteger(10); 
 
         // Shutdown pool
-        while (openConnections.get() > 0) { // GH-90000
-            openConnections.decrementAndGet(); // GH-90000
+        while (openConnections.get() > 0) { 
+            openConnections.decrementAndGet(); 
         }
 
-        assertThat(openConnections.get()).isEqualTo(0); // GH-90000
+        assertThat(openConnections.get()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("should prevent connection use after pool shutdown")
-    void shouldPreventConnectionUseAfterPoolShutdown() { // GH-90000
-        AtomicBoolean poolShutdown = new AtomicBoolean(true); // GH-90000
+    void shouldPreventConnectionUseAfterPoolShutdown() { 
+        AtomicBoolean poolShutdown = new AtomicBoolean(true); 
 
-        assertThatThrownBy(() -> { // GH-90000
-            if (poolShutdown.get()) { // GH-90000
+        assertThatThrownBy(() -> { 
+            if (poolShutdown.get()) { 
                 throw new IllegalStateException("Pool is shutdown");
             }
-        }).isInstanceOf(IllegalStateException.class) // GH-90000
+        }).isInstanceOf(IllegalStateException.class) 
           .hasMessageContaining("shutdown");
     }
 
     @Test
     @DisplayName("should implement fair connection distribution")
-    void shouldImplementFairConnectionDistribution() { // GH-90000
-        List<Integer> acquisitionOrder = new ArrayList<>(); // GH-90000
+    void shouldImplementFairConnectionDistribution() { 
+        List<Integer> acquisitionOrder = new ArrayList<>(); 
 
         // Track acquisition order
-        for (int i = 0; i < 10; i++) { // GH-90000
-            acquisitionOrder.add(i); // GH-90000
+        for (int i = 0; i < 10; i++) { 
+            acquisitionOrder.add(i); 
         }
 
         // FIFO order should be maintained
-        assertThat(acquisitionOrder).containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9); // GH-90000
+        assertThat(acquisitionOrder).containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8, 9); 
     }
 
     @Test
     @DisplayName("should handle connection creation failures")
-    void shouldHandleConnectionCreationFailures() { // GH-90000
-        AtomicBoolean failureHandled = new AtomicBoolean(false); // GH-90000
+    void shouldHandleConnectionCreationFailures() { 
+        AtomicBoolean failureHandled = new AtomicBoolean(false); 
 
         try {
             // Simulate connection creation failure
             throw new RuntimeException("Connection failed");
-        } catch (Exception e) { // GH-90000
+        } catch (Exception e) { 
             // Retry or fallback
-            failureHandled.set(true); // GH-90000
+            failureHandled.set(true); 
         }
 
-        assertThat(failureHandled.get()).isTrue(); // GH-90000
+        assertThat(failureHandled.get()).isTrue(); 
     }
 
     @Test
     @DisplayName("should monitor connection health periodically")
-    void shouldMonitorConnectionHealthPeriodically() { // GH-90000
-        AtomicInteger healthyConnections = new AtomicInteger(10); // GH-90000
+    void shouldMonitorConnectionHealthPeriodically() { 
+        AtomicInteger healthyConnections = new AtomicInteger(10); 
 
         // Periodic health check
         // Remove unhealthy connections
         // Replace with new connections
 
-        assertThat(healthyConnections.get()).isEqualTo(10); // GH-90000
+        assertThat(healthyConnections.get()).isEqualTo(10); 
     }
 
     @Test
     @DisplayName("should support connection pool metrics")
-    void shouldSupportConnectionPoolMetrics() { // GH-90000
-        AtomicInteger activeCount = new AtomicInteger(5); // GH-90000
-        AtomicInteger idleCount = new AtomicInteger(5); // GH-90000
-        AtomicInteger waitingCount = new AtomicInteger(2); // GH-90000
+    void shouldSupportConnectionPoolMetrics() { 
+        AtomicInteger activeCount = new AtomicInteger(5); 
+        AtomicInteger idleCount = new AtomicInteger(5); 
+        AtomicInteger waitingCount = new AtomicInteger(2); 
 
-        int totalSize = activeCount.get() + idleCount.get(); // GH-90000
+        int totalSize = activeCount.get() + idleCount.get(); 
 
-        assertThat(totalSize).isEqualTo(10); // GH-90000
-        assertThat(activeCount.get()).isEqualTo(5); // GH-90000
-        assertThat(idleCount.get()).isEqualTo(5); // GH-90000
-        assertThat(waitingCount.get()).isEqualTo(2); // GH-90000
+        assertThat(totalSize).isEqualTo(10); 
+        assertThat(activeCount.get()).isEqualTo(5); 
+        assertThat(idleCount.get()).isEqualTo(5); 
+        assertThat(waitingCount.get()).isEqualTo(2); 
     }
 
     @Test
     @DisplayName("should handle database failover scenarios")
-    void shouldHandleDatabaseFailoverScenarios() { // GH-90000
-        AtomicBoolean failoverSuccessful = new AtomicBoolean(false); // GH-90000
+    void shouldHandleDatabaseFailoverScenarios() { 
+        AtomicBoolean failoverSuccessful = new AtomicBoolean(false); 
 
         try {
             // Primary database fails
             throw new RuntimeException("Primary database down");
-        } catch (Exception e) { // GH-90000
+        } catch (Exception e) { 
             // Failover to secondary
-            failoverSuccessful.set(true); // GH-90000
+            failoverSuccessful.set(true); 
         }
 
-        assertThat(failoverSuccessful.get()).isTrue(); // GH-90000
+        assertThat(failoverSuccessful.get()).isTrue(); 
     }
 
     @Test
     @DisplayName("should implement connection retry with backoff")
-    void shouldImplementConnectionRetryWithBackoff() { // GH-90000
-        AtomicInteger retryCount = new AtomicInteger(0); // GH-90000
+    void shouldImplementConnectionRetryWithBackoff() { 
+        AtomicInteger retryCount = new AtomicInteger(0); 
         int maxRetries = 3;
 
-        while (retryCount.get() < maxRetries) { // GH-90000
+        while (retryCount.get() < maxRetries) { 
             try {
                 // Attempt connection
-                if (retryCount.get() < 2) { // GH-90000
-                    retryCount.incrementAndGet(); // GH-90000
+                if (retryCount.get() < 2) { 
+                    retryCount.incrementAndGet(); 
                     throw new RuntimeException("Connection failed");
                 }
                 break;
-            } catch (Exception e) { // GH-90000
+            } catch (Exception e) { 
                 // Exponential backoff
                 try {
-                    Thread.sleep((long) Math.pow(2, retryCount.get()) * 100); // GH-90000
-                } catch (InterruptedException ie) { // GH-90000
-                    Thread.currentThread().interrupt(); // GH-90000
+                    Thread.sleep((long) Math.pow(2, retryCount.get()) * 100); 
+                } catch (InterruptedException ie) { 
+                    Thread.currentThread().interrupt(); 
                 }
             }
         }
 
-        assertThat(retryCount.get()).isEqualTo(2); // GH-90000
+        assertThat(retryCount.get()).isEqualTo(2); 
     }
 }

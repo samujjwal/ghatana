@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Ghatana.ai. All rights reserved. // GH-90000
+ * Copyright (c) 2025 Ghatana.ai. All rights reserved. 
  */
 
 package com.ghatana.agent.catalog;
@@ -30,11 +30,11 @@ class CatalogAgentEntryTest {
 
         @Test
         @DisplayName("should require at minimum an id and catalogId")
-        void shouldBuildWithMinimalFields() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldBuildWithMinimalFields() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("my-agent")
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getId()).isEqualTo("my-agent");
             assertThat(entry.getCatalogId()).isEqualTo("platform");
@@ -42,81 +42,81 @@ class CatalogAgentEntryTest {
 
         @Test
         @DisplayName("should default version to 1.0.0")
-        void shouldDefaultVersion() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultVersion() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getVersion()).isEqualTo("1.0.0");
         }
 
         @Test
         @DisplayName("should default metadata to empty map")
-        void shouldDefaultMetadataToEmptyMap() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultMetadataToEmptyMap() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(entry.getMetadata()).isEmpty(); // GH-90000
+            assertThat(entry.getMetadata()).isEmpty(); 
         }
 
         @Test
         @DisplayName("should default capabilities to empty set")
-        void shouldDefaultCapabilitiesToEmptySet() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultCapabilitiesToEmptySet() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(entry.getCapabilities()).isEmpty(); // GH-90000
+            assertThat(entry.getCapabilities()).isEmpty(); 
         }
 
         @Test
         @DisplayName("should default tools to empty list")
-        void shouldDefaultToolsToEmptyList() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultToolsToEmptyList() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(entry.getTools()).isEmpty(); // GH-90000
+            assertThat(entry.getTools()).isEmpty(); 
         }
 
         @Test
         @DisplayName("should accept all fields")
-        void shouldAcceptAllFields() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldAcceptAllFields() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("data-transformation-agent")
                     .name("Data Transformation Agent")
                     .version("2.0.0")
                     .description("Transforms structured data between formats.")
-                    .metadata(Map.of("level", "3", "domain", "data-processing")) // GH-90000
-                    .capabilities(Set.of("data-transformation", "json-schema-validation")) // GH-90000
-                    .tools(List.of("transformationEngine", "mappingResolver")) // GH-90000
+                    .metadata(Map.of("level", "3", "domain", "data-processing")) 
+                    .capabilities(Set.of("data-transformation", "json-schema-validation")) 
+                    .tools(List.of("transformationEngine", "mappingResolver")) 
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getId()).isEqualTo("data-transformation-agent");
             assertThat(entry.getName()).isEqualTo("Data Transformation Agent");
             assertThat(entry.getVersion()).isEqualTo("2.0.0");
             assertThat(entry.getDescription()).contains("Transforms structured data");
-            assertThat(entry.getCapabilities()).containsExactlyInAnyOrder( // GH-90000
+            assertThat(entry.getCapabilities()).containsExactlyInAnyOrder( 
                     "data-transformation", "json-schema-validation");
-            assertThat(entry.getTools()).containsExactly("transformationEngine", "mappingResolver"); // GH-90000
+            assertThat(entry.getTools()).containsExactly("transformationEngine", "mappingResolver"); 
             assertThat(entry.getCatalogId()).isEqualTo("platform");
         }
 
         @Test
         @DisplayName("toBuilder should produce equal copy")
-        void toBuilderShouldProduceCopy() { // GH-90000
-            CatalogAgentEntry original = CatalogAgentEntry.builder() // GH-90000
+        void toBuilderShouldProduceCopy() { 
+            CatalogAgentEntry original = CatalogAgentEntry.builder() 
                     .id("original")
                     .name("Original Agent")
                     .version("1.0.0")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
             CatalogAgentEntry copy = original.toBuilder().name("Updated Agent").build();
 
@@ -136,35 +136,35 @@ class CatalogAgentEntryTest {
 
         @Test
         @DisplayName("should return level from metadata as string")
-        void shouldReturnLevelFromMetadata() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldReturnLevelFromMetadata() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .metadata(Map.of("level", 3)) // GH-90000
-                    .build(); // GH-90000
+                    .metadata(Map.of("level", 3)) 
+                    .build(); 
 
             assertThat(entry.getLevel()).isEqualTo("3");
         }
 
         @Test
         @DisplayName("should return 'worker' when metadata has no level")
-        void shouldDefaultToWorker() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultToWorker() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getLevel()).isEqualTo("worker");
         }
 
         @Test
         @DisplayName("should handle string level in metadata")
-        void shouldHandleStringLevel() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldHandleStringLevel() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .metadata(Map.of("level", "strategic")) // GH-90000
-                    .build(); // GH-90000
+                    .metadata(Map.of("level", "strategic")) 
+                    .build(); 
 
             assertThat(entry.getLevel()).isEqualTo("strategic");
         }
@@ -176,35 +176,35 @@ class CatalogAgentEntryTest {
 
         @Test
         @DisplayName("should return domain from metadata")
-        void shouldReturnDomainFromMetadata() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldReturnDomainFromMetadata() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .metadata(Map.of("domain", "data-processing")) // GH-90000
-                    .build(); // GH-90000
+                    .metadata(Map.of("domain", "data-processing")) 
+                    .build(); 
 
             assertThat(entry.getDomain()).isEqualTo("data-processing");
         }
 
         @Test
         @DisplayName("should default to 'general' when no domain in metadata")
-        void shouldDefaultToGeneral() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldDefaultToGeneral() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getDomain()).isEqualTo("general");
         }
 
         @Test
         @DisplayName("should handle metadata with neither level nor domain")
-        void shouldHandleEmptyMetadata() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void shouldHandleEmptyMetadata() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("agent")
                     .catalogId("catalog")
                     .metadata(Map.of("tags", List.of("monitoring")))
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.getLevel()).isEqualTo("worker");
             assertThat(entry.getDomain()).isEqualTo("general");
@@ -221,39 +221,39 @@ class CatalogAgentEntryTest {
 
         @Test
         @DisplayName("equal entries with same fields should be equal")
-        void shouldBeEqual() { // GH-90000
-            CatalogAgentEntry a = CatalogAgentEntry.builder() // GH-90000
+        void shouldBeEqual() { 
+            CatalogAgentEntry a = CatalogAgentEntry.builder() 
                     .id("my-agent")
                     .name("My Agent")
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            CatalogAgentEntry b = CatalogAgentEntry.builder() // GH-90000
+            CatalogAgentEntry b = CatalogAgentEntry.builder() 
                     .id("my-agent")
                     .name("My Agent")
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
-            assertThat(a).isEqualTo(b); // GH-90000
-            assertThat(a.hashCode()).isEqualTo(b.hashCode()); // GH-90000
+            assertThat(a).isEqualTo(b); 
+            assertThat(a.hashCode()).isEqualTo(b.hashCode()); 
         }
 
         @Test
         @DisplayName("entries with different ids should not be equal")
-        void shouldNotBeEqualWithDifferentId() { // GH-90000
+        void shouldNotBeEqualWithDifferentId() { 
             CatalogAgentEntry a = CatalogAgentEntry.builder().id("agent-a").catalogId("c").build();
             CatalogAgentEntry b = CatalogAgentEntry.builder().id("agent-b").catalogId("c").build();
 
-            assertThat(a).isNotEqualTo(b); // GH-90000
+            assertThat(a).isNotEqualTo(b); 
         }
 
         @Test
         @DisplayName("toString should contain id and catalogId")
-        void toStringShouldContainKeyFields() { // GH-90000
-            CatalogAgentEntry entry = CatalogAgentEntry.builder() // GH-90000
+        void toStringShouldContainKeyFields() { 
+            CatalogAgentEntry entry = CatalogAgentEntry.builder() 
                     .id("event-transformer")
                     .catalogId("platform")
-                    .build(); // GH-90000
+                    .build(); 
 
             assertThat(entry.toString()).contains("event-transformer");
         }

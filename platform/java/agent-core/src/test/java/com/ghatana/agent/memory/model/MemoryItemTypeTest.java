@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.memory.model;
@@ -36,8 +36,8 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("All seven built-in types are present")
-        void allBuiltInTypes_present() { // GH-90000
-            assertThat(MemoryItemType.values()).containsExactlyInAnyOrder( // GH-90000
+        void allBuiltInTypes_present() { 
+            assertThat(MemoryItemType.values()).containsExactlyInAnyOrder( 
                     MemoryItemType.EPISODE,
                     MemoryItemType.FACT,
                     MemoryItemType.PROCEDURE,
@@ -50,7 +50,7 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("CUSTOM_TYPE_LABEL_KEY is the expected constant string")
-        void customTypeLabelKey_isExpected() { // GH-90000
+        void customTypeLabelKey_isExpected() { 
             assertThat(MemoryItemType.CUSTOM_TYPE_LABEL_KEY).isEqualTo("memory.custom.type");
         }
     }
@@ -61,22 +61,22 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("Registering a new custom type makes it discoverable")
-        void register_newType_isDiscoverable() { // GH-90000
+        void register_newType_isDiscoverable() { 
             MemoryItemType.registerCustomType("TEST_CONVERSATION_UNIQUE_A1");
             assertThat(MemoryItemType.isCustomTypeRegistered("TEST_CONVERSATION_UNIQUE_A1"))
-                    .isTrue(); // GH-90000
+                    .isTrue(); 
         }
 
         @Test
         @DisplayName("Registration is case-insensitive: lower-case lookup finds upper-cased entry")
-        void register_caseInsensitive_lookup() { // GH-90000
+        void register_caseInsensitive_lookup() { 
             MemoryItemType.registerCustomType("TEST_INSIGHT_UNIQUE_B2");
             assertThat(MemoryItemType.isCustomTypeRegistered("test_insight_unique_b2")).isTrue();
         }
 
         @Test
         @DisplayName("Registering an existing type is idempotent (no exception)")
-        void register_existingType_isIdempotent() { // GH-90000
+        void register_existingType_isIdempotent() { 
             MemoryItemType.registerCustomType("TEST_IDEMPOTENT_TYPE_C3");
             MemoryItemType.registerCustomType("TEST_IDEMPOTENT_TYPE_C3"); // second call
             assertThat(MemoryItemType.isCustomTypeRegistered("TEST_IDEMPOTENT_TYPE_C3")).isTrue();
@@ -84,18 +84,18 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("registeredCustomTypes() returns a copy containing the registered name")
-        void registeredCustomTypes_containsRegisteredName() { // GH-90000
+        void registeredCustomTypes_containsRegisteredName() { 
             MemoryItemType.registerCustomType("TEST_COPY_CONTAINS_D4");
-            Set<String> types = MemoryItemType.registeredCustomTypes(); // GH-90000
+            Set<String> types = MemoryItemType.registeredCustomTypes(); 
             assertThat(types).contains("TEST_COPY_CONTAINS_D4");
         }
 
         @Test
         @DisplayName("registeredCustomTypes() returns an unmodifiable set (add throws)")
-        void registeredCustomTypes_isUnmodifiable() { // GH-90000
-            Set<String> types = MemoryItemType.registeredCustomTypes(); // GH-90000
+        void registeredCustomTypes_isUnmodifiable() { 
+            Set<String> types = MemoryItemType.registeredCustomTypes(); 
             assertThatThrownBy(() -> types.add("SHOULD_FAIL"))
-                    .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                    .isInstanceOf(UnsupportedOperationException.class); 
         }
     }
 
@@ -105,25 +105,25 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("Null name throws NullPointerException")
-        void registerNull_throwsNPE() { // GH-90000
-            assertThatThrownBy(() -> MemoryItemType.registerCustomType(null)) // GH-90000
-                    .isInstanceOf(NullPointerException.class) // GH-90000
+        void registerNull_throwsNPE() { 
+            assertThatThrownBy(() -> MemoryItemType.registerCustomType(null)) 
+                    .isInstanceOf(NullPointerException.class) 
                     .hasMessageContaining("name");
         }
 
         @Test
         @DisplayName("Blank name throws IllegalArgumentException")
-        void registerBlank_throwsIllegalArgument() { // GH-90000
+        void registerBlank_throwsIllegalArgument() { 
             assertThatThrownBy(() -> MemoryItemType.registerCustomType("  "))
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("blank");
         }
 
         @Test
         @DisplayName("Empty string name throws IllegalArgumentException")
-        void registerEmpty_throwsIllegalArgument() { // GH-90000
+        void registerEmpty_throwsIllegalArgument() { 
             assertThatThrownBy(() -> MemoryItemType.registerCustomType(""))
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -133,9 +133,9 @@ class MemoryItemTypeTest {
 
         @Test
         @DisplayName("Unregistered type name returns false")
-        void unregisteredType_returnsFalse() { // GH-90000
+        void unregisteredType_returnsFalse() { 
             assertThat(MemoryItemType.isCustomTypeRegistered("DEFINITELY_NOT_REGISTERED_XYZ_999"))
-                    .isFalse(); // GH-90000
+                    .isFalse(); 
         }
     }
 }

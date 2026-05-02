@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.event.benchmark;
@@ -29,16 +29,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Benchmarks actual event append operations:
  * <ul>
- *   <li>Single event append through EventBuffer.offer()</li> // GH-90000
- *   <li>Batch event append through EventBuffer.drain()</li> // GH-90000
+ *   <li>Single event append through EventBuffer.offer()</li> 
+ *   <li>Batch event append through EventBuffer.drain()</li> 
  *   <li>EventBuffer spill operations</li>
  * </ul>
  *
  * <p>Performance targets:
  * <ul>
  *   <li>Single event offer: < 1ms p99</li>
- *   <li>Batch drain (100 events): < 10ms p99</li> // GH-90000
- *   <li>Buffer spill (1000 events): < 100ms p99</li> // GH-90000
+ *   <li>Batch drain (100 events): < 10ms p99</li> 
+ *   <li>Buffer spill (1000 events): < 100ms p99</li> 
  * </ul>
  *
  * @doc.type class
@@ -46,7 +46,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern Benchmark Test
  */
-@Timeout(value = 120, unit = TimeUnit.SECONDS) // GH-90000
+@Timeout(value = 120, unit = TimeUnit.SECONDS) 
 @DisplayName("EventAppendBenchmark – platform-event Performance")
 class EventAppendBenchmark extends EventloopTestBase {
 
@@ -58,80 +58,80 @@ class EventAppendBenchmark extends EventloopTestBase {
 
     @Test
     @DisplayName("single event offer p99 under 1ms")
-    void singleEventOfferP99Under1ms() { // GH-90000
-        EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); // GH-90000
+    void singleEventOfferP99Under1ms() { 
+        EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); 
 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            EventLogStore.EventEntry entry = createEventEntry(i); // GH-90000
-            buffer.offer(entry); // GH-90000
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { 
+            EventLogStore.EventEntry entry = createEventEntry(i); 
+            buffer.offer(entry); 
         }
 
         // Benchmark
         long[] latencies = new long[BENCHMARK_ITERATIONS];
 
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            EventLogStore.EventEntry entry = createEventEntry(i); // GH-90000
-            long start = System.nanoTime(); // GH-90000
-            boolean accepted = buffer.offer(entry); // GH-90000
-            long end = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { 
+            EventLogStore.EventEntry entry = createEventEntry(i); 
+            long start = System.nanoTime(); 
+            boolean accepted = buffer.offer(entry); 
+            long end = System.nanoTime(); 
             
-            assertThat(accepted).isTrue(); // GH-90000
-            latencies[i] = (end - start) / 1_000_000; // Convert to ms // GH-90000
+            assertThat(accepted).isTrue(); 
+            latencies[i] = (end - start) / 1_000_000; // Convert to ms 
         }
 
-        long p99 = calculateP99(latencies); // GH-90000
+        long p99 = calculateP99(latencies); 
 
-        System.out.println("Single event offer p99 latency: " + p99 + "ms"); // GH-90000
+        System.out.println("Single event offer p99 latency: " + p99 + "ms"); 
 
-        assertThat(p99) // GH-90000
-            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, SINGLE_EVENT_P99_THRESHOLD_MS) // GH-90000
-            .isLessThanOrEqualTo(SINGLE_EVENT_P99_THRESHOLD_MS); // GH-90000
+        assertThat(p99) 
+            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, SINGLE_EVENT_P99_THRESHOLD_MS) 
+            .isLessThanOrEqualTo(SINGLE_EVENT_P99_THRESHOLD_MS); 
     }
 
     @Test
     @DisplayName("batch drain (100 events) p99 under 10ms")
-    void batchDrainP99Under10ms() { // GH-90000
-        EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); // GH-90000
+    void batchDrainP99Under10ms() { 
+        EventBuffer buffer = new EventBuffer(new InMemoryEventLogStore(), "benchmark-buffer"); 
         int batchSize = 100;
 
         // Warmup
-        for (int i = 0; i < WARMUP_ITERATIONS; i++) { // GH-90000
-            fillBuffer(buffer, batchSize); // GH-90000
-            buffer.drain(batchSize); // GH-90000
+        for (int i = 0; i < WARMUP_ITERATIONS; i++) { 
+            fillBuffer(buffer, batchSize); 
+            buffer.drain(batchSize); 
         }
 
         // Benchmark
         long[] latencies = new long[BENCHMARK_ITERATIONS];
 
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { // GH-90000
-            fillBuffer(buffer, batchSize); // GH-90000
-            long start = System.nanoTime(); // GH-90000
-            List<EventLogStore.EventEntry> drained = buffer.drain(batchSize); // GH-90000
-            long end = System.nanoTime(); // GH-90000
+        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) { 
+            fillBuffer(buffer, batchSize); 
+            long start = System.nanoTime(); 
+            List<EventLogStore.EventEntry> drained = buffer.drain(batchSize); 
+            long end = System.nanoTime(); 
             
-            assertThat(drained).hasSize(batchSize); // GH-90000
-            latencies[i] = (end - start) / 1_000_000; // GH-90000
+            assertThat(drained).hasSize(batchSize); 
+            latencies[i] = (end - start) / 1_000_000; 
         }
 
-        long p99 = calculateP99(latencies); // GH-90000
+        long p99 = calculateP99(latencies); 
 
-        System.out.println("Batch drain (100 events) p99 latency: " + p99 + "ms"); // GH-90000
+        System.out.println("Batch drain (100 events) p99 latency: " + p99 + "ms"); 
 
-        assertThat(p99) // GH-90000
-            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, BATCH_DRAIN_P99_THRESHOLD_MS) // GH-90000
-            .isLessThanOrEqualTo(BATCH_DRAIN_P99_THRESHOLD_MS); // GH-90000
+        assertThat(p99) 
+            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, BATCH_DRAIN_P99_THRESHOLD_MS) 
+            .isLessThanOrEqualTo(BATCH_DRAIN_P99_THRESHOLD_MS); 
     }
 
     @Test
     @DisplayName("buffer spill (1000 events) p99 under 100ms")
-    void bufferSpillP99Under100ms() { // GH-90000
+    void bufferSpillP99Under100ms() { 
         int capacity = 5000;
         int highWaterMark = 4000;
         int spillCount = 1000;
         
-        EventBuffer buffer = new EventBuffer( // GH-90000
-            new InMemoryEventLogStore(), // GH-90000
+        EventBuffer buffer = new EventBuffer( 
+            new InMemoryEventLogStore(), 
             "benchmark-buffer",
             capacity,
             highWaterMark,
@@ -139,38 +139,38 @@ class EventAppendBenchmark extends EventloopTestBase {
         );
 
         // Warmup
-        for (int i = 0; i < 10; i++) { // GH-90000
-            fillBuffer(buffer, highWaterMark + spillCount); // GH-90000
+        for (int i = 0; i < 10; i++) { 
+            fillBuffer(buffer, highWaterMark + spillCount); 
             runPromise(() -> buffer.spillExcess("tenant-123"));
         }
 
         // Benchmark
         long[] latencies = new long[100];
 
-        for (int i = 0; i < 100; i++) { // GH-90000
-            fillBuffer(buffer, highWaterMark + spillCount); // GH-90000
-            long start = System.nanoTime(); // GH-90000
+        for (int i = 0; i < 100; i++) { 
+            fillBuffer(buffer, highWaterMark + spillCount); 
+            long start = System.nanoTime(); 
             int spilled = runPromise(() -> buffer.spillExcess("tenant-123"));
-            long end = System.nanoTime(); // GH-90000
+            long end = System.nanoTime(); 
             
-            assertThat(spilled).isGreaterThanOrEqualTo(spillCount); // GH-90000
-            latencies[i] = (end - start) / 1_000_000; // GH-90000
+            assertThat(spilled).isGreaterThanOrEqualTo(spillCount); 
+            latencies[i] = (end - start) / 1_000_000; 
         }
 
-        long p99 = calculateP99(latencies); // GH-90000
+        long p99 = calculateP99(latencies); 
 
-        System.out.println("Buffer spill (1000 events) p99 latency: " + p99 + "ms"); // GH-90000
+        System.out.println("Buffer spill (1000 events) p99 latency: " + p99 + "ms"); 
 
-        assertThat(p99) // GH-90000
-            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, SPILL_P99_THRESHOLD_MS) // GH-90000
-            .isLessThanOrEqualTo(SPILL_P99_THRESHOLD_MS); // GH-90000
+        assertThat(p99) 
+            .withFailMessage("p99 latency %d ms exceeds threshold %d ms", p99, SPILL_P99_THRESHOLD_MS) 
+            .isLessThanOrEqualTo(SPILL_P99_THRESHOLD_MS); 
     }
 
     @Test
     @DisplayName("concurrent event offer throughput")
-    void concurrentEventOfferThroughput() { // GH-90000
-        EventBuffer buffer = new EventBuffer( // GH-90000
-            new InMemoryEventLogStore(), // GH-90000
+    void concurrentEventOfferThroughput() { 
+        EventBuffer buffer = new EventBuffer( 
+            new InMemoryEventLogStore(), 
             "benchmark-buffer",
             500_000,
             450_000,
@@ -180,167 +180,167 @@ class EventAppendBenchmark extends EventloopTestBase {
         int eventsPerThread = 1000;
         long durationMs = 5000; // 5 second test
 
-        long start = System.currentTimeMillis(); // GH-90000
+        long start = System.currentTimeMillis(); 
         long end = start + durationMs;
 
-        List<Thread> threads = new ArrayList<>(); // GH-90000
-        AtomicLong totalAccepted = new AtomicLong(0); // GH-90000
+        List<Thread> threads = new ArrayList<>(); 
+        AtomicLong totalAccepted = new AtomicLong(0); 
 
-        for (int t = 0; t < threadCount; t++) { // GH-90000
-            Thread thread = new Thread(() -> { // GH-90000
+        for (int t = 0; t < threadCount; t++) { 
+            Thread thread = new Thread(() -> { 
                 int accepted = 0;
-                while (System.currentTimeMillis() < end) { // GH-90000
-                    for (int i = 0; i < eventsPerThread; i++) { // GH-90000
-                        EventLogStore.EventEntry entry = createEventEntry(accepted); // GH-90000
-                        if (buffer.offer(entry)) { // GH-90000
+                while (System.currentTimeMillis() < end) { 
+                    for (int i = 0; i < eventsPerThread; i++) { 
+                        EventLogStore.EventEntry entry = createEventEntry(accepted); 
+                        if (buffer.offer(entry)) { 
                             accepted++;
                         }
                     }
                 }
-                totalAccepted.addAndGet(accepted); // GH-90000
+                totalAccepted.addAndGet(accepted); 
             });
-            threads.add(thread); // GH-90000
-            thread.start(); // GH-90000
+            threads.add(thread); 
+            thread.start(); 
         }
 
-        for (Thread thread : threads) { // GH-90000
+        for (Thread thread : threads) { 
             try {
-                thread.join(); // GH-90000
-            } catch (InterruptedException e) { // GH-90000
-                Thread.currentThread().interrupt(); // GH-90000
+                thread.join(); 
+            } catch (InterruptedException e) { 
+                Thread.currentThread().interrupt(); 
             }
         }
 
-        long actualDuration = System.currentTimeMillis() - start; // GH-90000
-        double throughput = (double) totalAccepted.get() / (actualDuration / 1000.0); // GH-90000
+        long actualDuration = System.currentTimeMillis() - start; 
+        double throughput = (double) totalAccepted.get() / (actualDuration / 1000.0); 
 
-        System.out.println("Concurrent offer throughput: " + throughput + " events/sec"); // GH-90000
-        System.out.println("Total events accepted: " + totalAccepted.get()); // GH-90000
+        System.out.println("Concurrent offer throughput: " + throughput + " events/sec"); 
+        System.out.println("Total events accepted: " + totalAccepted.get()); 
 
         // Target: 10,000 events/sec
-        assertThat(throughput).isGreaterThan(10000.0); // GH-90000
+        assertThat(throughput).isGreaterThan(10000.0); 
     }
 
-    private void fillBuffer(EventBuffer buffer, int count) { // GH-90000
+    private void fillBuffer(EventBuffer buffer, int count) { 
         // Clear buffer first
-        buffer.drain(buffer.size()); // GH-90000
+        buffer.drain(buffer.size()); 
         
-        for (int i = 0; i < count; i++) { // GH-90000
-            EventLogStore.EventEntry entry = createEventEntry(i); // GH-90000
-            buffer.offer(entry); // GH-90000
+        for (int i = 0; i < count; i++) { 
+            EventLogStore.EventEntry entry = createEventEntry(i); 
+            buffer.offer(entry); 
         }
     }
 
-    private EventLogStore.EventEntry createEventEntry(int index) { // GH-90000
-        return EventLogStore.EventEntry.builder() // GH-90000
-            .eventType("event-type-" + (index % 10)) // GH-90000
-            .payload("{\"data\":\"value-" + index + "\"}") // GH-90000
-            .headers(Map.of("header", "value")) // GH-90000
-            .timestamp(Instant.now()) // GH-90000
-            .build(); // GH-90000
+    private EventLogStore.EventEntry createEventEntry(int index) { 
+        return EventLogStore.EventEntry.builder() 
+            .eventType("event-type-" + (index % 10)) 
+            .payload("{\"data\":\"value-" + index + "\"}") 
+            .headers(Map.of("header", "value")) 
+            .timestamp(Instant.now()) 
+            .build(); 
     }
 
-    private long calculateP99(long[] latencies) { // GH-90000
-        java.util.Arrays.sort(latencies); // GH-90000
-        int index = (int) Math.ceil(0.99 * latencies.length) - 1; // GH-90000
-        return latencies[Math.max(0, index)]; // GH-90000
+    private long calculateP99(long[] latencies) { 
+        java.util.Arrays.sort(latencies); 
+        int index = (int) Math.ceil(0.99 * latencies.length) - 1; 
+        return latencies[Math.max(0, index)]; 
     }
 
     /**
      * In-memory EventLogStore implementation for benchmarking.
      */
     private static class InMemoryEventLogStore implements EventLogStore {
-        private final List<EventLogStore.EventEntry> events = new ArrayList<>(); // GH-90000
+        private final List<EventLogStore.EventEntry> events = new ArrayList<>(); 
         private volatile long currentOffset = 0;
 
         @Override
-        public Promise<Offset> append(TenantContext tenant, EventLogStore.EventEntry entry) { // GH-90000
-            events.add(entry); // GH-90000
-            return Promise.of(Offset.of(currentOffset++)); // GH-90000
+        public Promise<Offset> append(TenantContext tenant, EventLogStore.EventEntry entry) { 
+            events.add(entry); 
+            return Promise.of(Offset.of(currentOffset++)); 
         }
 
         @Override
-        public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventLogStore.EventEntry> entries) { // GH-90000
-            events.addAll(entries); // GH-90000
-            List<Offset> offsets = new ArrayList<>(); // GH-90000
-            for (int i = 0; i < entries.size(); i++) { // GH-90000
-                offsets.add(Offset.of(currentOffset++)); // GH-90000
+        public Promise<List<Offset>> appendBatch(TenantContext tenant, List<EventLogStore.EventEntry> entries) { 
+            events.addAll(entries); 
+            List<Offset> offsets = new ArrayList<>(); 
+            for (int i = 0; i < entries.size(); i++) { 
+                offsets.add(Offset.of(currentOffset++)); 
             }
-            return Promise.of(offsets); // GH-90000
+            return Promise.of(offsets); 
         }
 
         @Override
-        public Promise<List<EventLogStore.EventEntry>> read(TenantContext tenant, Offset from, int limit) { // GH-90000
-            int startIdx = (int) Long.parseLong(from.value()); // GH-90000
-            int endIdx = Math.min(startIdx + limit, events.size()); // GH-90000
-            return Promise.of(events.subList(startIdx, endIdx)); // GH-90000
+        public Promise<List<EventLogStore.EventEntry>> read(TenantContext tenant, Offset from, int limit) { 
+            int startIdx = (int) Long.parseLong(from.value()); 
+            int endIdx = Math.min(startIdx + limit, events.size()); 
+            return Promise.of(events.subList(startIdx, endIdx)); 
         }
 
         @Override
-        public Promise<List<EventLogStore.EventEntry>> readByTimeRange( // GH-90000
+        public Promise<List<EventLogStore.EventEntry>> readByTimeRange( 
             TenantContext tenant,
             Instant startTime,
             Instant endTime,
             int limit
         ) {
-            List<EventLogStore.EventEntry> filtered = new ArrayList<>(); // GH-90000
-            for (EventLogStore.EventEntry entry : events) { // GH-90000
-                if (!entry.timestamp().isBefore(startTime) && entry.timestamp().isBefore(endTime)) { // GH-90000
-                    filtered.add(entry); // GH-90000
-                    if (filtered.size() >= limit) break; // GH-90000
+            List<EventLogStore.EventEntry> filtered = new ArrayList<>(); 
+            for (EventLogStore.EventEntry entry : events) { 
+                if (!entry.timestamp().isBefore(startTime) && entry.timestamp().isBefore(endTime)) { 
+                    filtered.add(entry); 
+                    if (filtered.size() >= limit) break; 
                 }
             }
-            return Promise.of(filtered); // GH-90000
+            return Promise.of(filtered); 
         }
 
         @Override
-        public Promise<List<EventLogStore.EventEntry>> readByType( // GH-90000
+        public Promise<List<EventLogStore.EventEntry>> readByType( 
             TenantContext tenant,
             String eventType,
             Offset from,
             int limit
         ) {
-            List<EventLogStore.EventEntry> filtered = new ArrayList<>(); // GH-90000
-            int startIdx = (int) Long.parseLong(from.value()); // GH-90000
-            for (int i = startIdx; i < events.size() && filtered.size() < limit; i++) { // GH-90000
-                EventLogStore.EventEntry entry = events.get(i); // GH-90000
-                if (entry.eventType().equals(eventType)) { // GH-90000
-                    filtered.add(entry); // GH-90000
+            List<EventLogStore.EventEntry> filtered = new ArrayList<>(); 
+            int startIdx = (int) Long.parseLong(from.value()); 
+            for (int i = startIdx; i < events.size() && filtered.size() < limit; i++) { 
+                EventLogStore.EventEntry entry = events.get(i); 
+                if (entry.eventType().equals(eventType)) { 
+                    filtered.add(entry); 
                 }
             }
-            return Promise.of(filtered); // GH-90000
+            return Promise.of(filtered); 
         }
 
         @Override
-        public Promise<Offset> getLatestOffset(TenantContext tenant) { // GH-90000
-            if (events.isEmpty()) { // GH-90000
-                return Promise.of(Offset.of(0)); // GH-90000
+        public Promise<Offset> getLatestOffset(TenantContext tenant) { 
+            if (events.isEmpty()) { 
+                return Promise.of(Offset.of(0)); 
             }
-            return Promise.of(Offset.of(currentOffset - 1)); // GH-90000
+            return Promise.of(Offset.of(currentOffset - 1)); 
         }
 
         @Override
-        public Promise<Offset> getEarliestOffset(TenantContext tenant) { // GH-90000
-            return Promise.of(Offset.of(0)); // GH-90000
+        public Promise<Offset> getEarliestOffset(TenantContext tenant) { 
+            return Promise.of(Offset.of(0)); 
         }
 
         @Override
-        public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventLogStore.EventEntry> handler) { // GH-90000
+        public Promise<Subscription> tail(TenantContext tenant, Offset from, Consumer<EventLogStore.EventEntry> handler) { 
             // Simple implementation that delivers current events and cancels immediately
-            int startIdx = (int) Long.parseLong(from.value()); // GH-90000
-            for (int i = startIdx; i < events.size(); i++) { // GH-90000
-                handler.accept(events.get(i)); // GH-90000
+            int startIdx = (int) Long.parseLong(from.value()); 
+            for (int i = startIdx; i < events.size(); i++) { 
+                handler.accept(events.get(i)); 
             }
-            return Promise.of(new Subscription() { // GH-90000
+            return Promise.of(new Subscription() { 
                 private volatile boolean cancelled = false;
                 
                 @Override
-                public void cancel() { // GH-90000
+                public void cancel() { 
                     cancelled = true;
                 }
                 
                 @Override
-                public boolean isCancelled() { // GH-90000
+                public boolean isCancelled() { 
                     return cancelled;
                 }
             });

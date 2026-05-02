@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("AEP Event Schema Validation Tests")
 class EventSchemaValidationTest {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper(); // GH-90000
+    private static final ObjectMapper objectMapper = new ObjectMapper(); 
 
     // ── Single Event Schema Validation ───────────────────────────────────────
 
     @Test
     @DisplayName("Valid single event conforms to schema")
-    void validSingleEventConformsToSchema() throws Exception { // GH-90000
+    void validSingleEventConformsToSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -50,7 +50,7 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
 
         assertThat(event.has("type")).isTrue();
         assertThat(event.get("type").isTextual()).isTrue();
@@ -64,7 +64,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Missing required field 'type' violates schema")
-    void missingRequiredFieldTypeViolatesSchema() throws Exception { // GH-90000
+    void missingRequiredFieldTypeViolatesSchema() throws Exception { 
         String eventJson = """
                 {
                     "tenantId": "tenant-123",
@@ -74,13 +74,13 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.has("type")).isFalse();
     }
 
     @Test
     @DisplayName("Missing required field 'tenantId' violates schema")
-    void missingRequiredFieldTenantIdViolatesSchema() throws Exception { // GH-90000
+    void missingRequiredFieldTenantIdViolatesSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -90,13 +90,13 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.has("tenantId")).isFalse();
     }
 
     @Test
     @DisplayName("Missing required field 'correlationId' violates schema")
-    void missingRequiredFieldCorrelationIdViolatesSchema() throws Exception { // GH-90000
+    void missingRequiredFieldCorrelationIdViolatesSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -106,13 +106,13 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.has("correlationId")).isFalse();
     }
 
     @Test
     @DisplayName("Missing required field 'timestamp' violates schema")
-    void missingRequiredFieldTimestampViolatesSchema() throws Exception { // GH-90000
+    void missingRequiredFieldTimestampViolatesSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -122,13 +122,13 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.has("timestamp")).isFalse();
     }
 
     @Test
     @DisplayName("Invalid timestamp format violates schema")
-    void invalidTimestampFormatViolatesSchema() throws Exception { // GH-90000
+    void invalidTimestampFormatViolatesSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -139,7 +139,7 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.get("timestamp").isTextual()).isTrue();
         // Additional validation would check ISO-8601 format
     }
@@ -148,7 +148,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Valid batch event conforms to schema")
-    void validBatchEventConformsToSchema() throws Exception { // GH-90000
+    void validBatchEventConformsToSchema() throws Exception { 
         String batchJson = """
                 {
                     "tenantId": "tenant-123",
@@ -165,7 +165,7 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode batch = objectMapper.readTree(batchJson); // GH-90000
+        JsonNode batch = objectMapper.readTree(batchJson); 
 
         assertThat(batch.has("tenantId")).isTrue();
         assertThat(batch.has("events")).isTrue();
@@ -180,7 +180,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Empty events array violates schema")
-    void emptyEventsArrayViolatesSchema() throws Exception { // GH-90000
+    void emptyEventsArrayViolatesSchema() throws Exception { 
         String batchJson = """
                 {
                     "tenantId": "tenant-123",
@@ -188,20 +188,20 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode batch = objectMapper.readTree(batchJson); // GH-90000
+        JsonNode batch = objectMapper.readTree(batchJson); 
         assertThat(batch.get("events").size()).isEqualTo(0);
     }
 
     @Test
     @DisplayName("Missing events array violates schema")
-    void missingEventsArrayViolatesSchema() throws Exception { // GH-90000
+    void missingEventsArrayViolatesSchema() throws Exception { 
         String batchJson = """
                 {
                     "tenantId": "tenant-123"
                 }
                 """;
 
-        JsonNode batch = objectMapper.readTree(batchJson); // GH-90000
+        JsonNode batch = objectMapper.readTree(batchJson); 
         assertThat(batch.has("events")).isFalse();
     }
 
@@ -209,7 +209,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Valid pattern registration event conforms to schema")
-    void validPatternRegistrationConformsToSchema() throws Exception { // GH-90000
+    void validPatternRegistrationConformsToSchema() throws Exception { 
         String patternJson = """
                 {
                     "type": "pattern.register",
@@ -225,7 +225,7 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode pattern = objectMapper.readTree(patternJson); // GH-90000
+        JsonNode pattern = objectMapper.readTree(patternJson); 
         JsonNode payload = pattern.get("payload");
 
         assertThat(payload.has("name")).isTrue();
@@ -235,12 +235,12 @@ class EventSchemaValidationTest {
 
         // Validate enum values
         String type = payload.get("type").asText();
-        assertThat(type).isIn("ANOMALY", "SEQUENCE", "AGGREGATION"); // GH-90000
+        assertThat(type).isIn("ANOMALY", "SEQUENCE", "AGGREGATION"); 
     }
 
     @Test
     @DisplayName("Invalid pattern type violates schema")
-    void invalidPatternTypeViolatesSchema() throws Exception { // GH-90000
+    void invalidPatternTypeViolatesSchema() throws Exception { 
         String patternJson = """
                 {
                     "type": "pattern.register",
@@ -255,24 +255,24 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode pattern = objectMapper.readTree(patternJson); // GH-90000
+        JsonNode pattern = objectMapper.readTree(patternJson); 
         String type = pattern.get("payload").get("type").asText();
 
-        assertThat(type).isNotIn("ANOMALY", "SEQUENCE", "AGGREGATION"); // GH-90000
+        assertThat(type).isNotIn("ANOMALY", "SEQUENCE", "AGGREGATION"); 
     }
 
     // ── Common Event Types Schema Validation ─────────────────────────────────
 
-    @ParameterizedTest(name = "event type = {0}") // GH-90000
-    @ValueSource(strings = {"user.login", "user.logout", "transaction.completed", "api.request", "system.error"}) // GH-90000
+    @ParameterizedTest(name = "event type = {0}") 
+    @ValueSource(strings = {"user.login", "user.logout", "transaction.completed", "api.request", "system.error"}) 
     @DisplayName("Common event types have valid structure")
-    void commonEventTypesHaveValidStructure(String eventType) throws Exception { // GH-90000
-        ObjectNode event = objectMapper.createObjectNode(); // GH-90000
-        event.put("type", eventType); // GH-90000
-        event.put("tenantId", "tenant-123"); // GH-90000
-        event.put("correlationId", "corr-456"); // GH-90000
-        event.put("timestamp", "2026-04-12T12:00:00Z"); // GH-90000
-        event.set("payload", objectMapper.createObjectNode()); // GH-90000
+    void commonEventTypesHaveValidStructure(String eventType) throws Exception { 
+        ObjectNode event = objectMapper.createObjectNode(); 
+        event.put("type", eventType); 
+        event.put("tenantId", "tenant-123"); 
+        event.put("correlationId", "corr-456"); 
+        event.put("timestamp", "2026-04-12T12:00:00Z"); 
+        event.set("payload", objectMapper.createObjectNode()); 
 
         assertThat(event.has("type")).isTrue();
         assertThat(event.get("type").asText()).isEqualTo(eventType);
@@ -286,7 +286,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("User login event payload has required fields")
-    void userLoginPayloadHasRequiredFields() throws Exception { // GH-90000
+    void userLoginPayloadHasRequiredFields() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -310,7 +310,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Transaction event payload has required fields")
-    void transactionPayloadHasRequiredFields() throws Exception { // GH-90000
+    void transactionPayloadHasRequiredFields() throws Exception { 
         String eventJson = """
                 {
                     "type": "transaction.completed",
@@ -337,7 +337,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Event includes schema version")
-    void eventIncludesSchemaVersion() throws Exception { // GH-90000
+    void eventIncludesSchemaVersion() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -349,14 +349,14 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         assertThat(event.has("schemaVersion")).isTrue();
         assertThat(event.get("schemaVersion").asText()).isEqualTo("1.0");
     }
 
     @Test
     @DisplayName("Event without schema version defaults to current version")
-    void eventWithoutSchemaVersionDefaultsToCurrent() throws Exception { // GH-90000
+    void eventWithoutSchemaVersionDefaultsToCurrent() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",
@@ -367,7 +367,7 @@ class EventSchemaValidationTest {
                 }
                 """;
 
-        JsonNode event = objectMapper.readTree(eventJson); // GH-90000
+        JsonNode event = objectMapper.readTree(eventJson); 
         // System should assign default schema version
         assertThat(event.has("schemaVersion")).isFalse();
     }
@@ -376,7 +376,7 @@ class EventSchemaValidationTest {
 
     @Test
     @DisplayName("Event metadata conforms to schema")
-    void eventMetadataConformsToSchema() throws Exception { // GH-90000
+    void eventMetadataConformsToSchema() throws Exception { 
         String eventJson = """
                 {
                     "type": "user.login",

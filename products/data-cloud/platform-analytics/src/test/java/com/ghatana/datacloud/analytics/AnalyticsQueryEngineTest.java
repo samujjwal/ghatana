@@ -27,7 +27,7 @@ import static org.mockito.Mockito.lenient;
  * <ul>
  *   <li>Query submission and execution</li>
  *   <li>Query plan generation for all query types</li>
- *   <li>Query type detection (SELECT, AGGREGATE, TIMESERIES, JOIN)</li> // GH-90000
+ *   <li>Query type detection (SELECT, AGGREGATE, TIMESERIES, JOIN)</li> 
  *   <li>Result caching and retrieval</li>
  *   <li>Error handling and validation</li>
  *   <li>Cost estimation</li>
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.lenient;
  * @doc.pattern Unit Test, Integration Test
  */
 @DisplayName("Analytics Query Engine Tests")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Mock
@@ -49,12 +49,12 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
     private AnalyticsQueryEngine engine;
 
     @BeforeEach
-    void setup() { // GH-90000
+    void setup() { 
         // L2: inject StorageConnector so engine has access to real storage in execution paths
-        engine = new AnalyticsQueryEngine(storageConnector); // GH-90000
-        // Default stub: return empty QueryResult so .map() calls don't NPE // GH-90000
-        lenient().when(storageConnector.query(anyString(), anyString(), any(QuerySpec.class))) // GH-90000
-                .thenReturn(Promise.of(StorageConnector.QueryResult.empty())); // GH-90000
+        engine = new AnalyticsQueryEngine(storageConnector); 
+        // Default stub: return empty QueryResult so .map() calls don't NPE 
+        lenient().when(storageConnector.query(anyString(), anyString(), any(QuerySpec.class))) 
+                .thenReturn(Promise.of(StorageConnector.QueryResult.empty())); 
     }
 
     // ========================================================================
@@ -63,51 +63,51 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should submit and execute SELECT query successfully")
-    void shouldSubmitSelectQuery() { // GH-90000
+    void shouldSubmitSelectQuery() { 
         // GIVEN: Simple SELECT query
         String query = "SELECT * FROM users WHERE age > 25";
-        Map<String, Object> params = Map.of("limit", 100); // GH-90000
+        Map<String, Object> params = Map.of("limit", 100); 
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, params) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, params) 
         );
 
         // THEN: Query executes successfully
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getQueryId()).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getQueryId()).isNotNull(); 
         assertThat(result.getQueryType()).isEqualTo("SELECT");
-        assertThat(result.isOptimized()).isTrue(); // GH-90000
-        assertThat(result.getExecutionTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
-        assertThat(result.getRows()).isNotNull(); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(0); // Empty until StorageConnector integration // GH-90000
+        assertThat(result.isOptimized()).isTrue(); 
+        assertThat(result.getExecutionTimeMs()).isGreaterThanOrEqualTo(0); 
+        assertThat(result.getRows()).isNotNull(); 
+        assertThat(result.getRowCount()).isEqualTo(0); // Empty until StorageConnector integration 
     }
 
     @Test
     @DisplayName("Should submit and execute AGGREGATE query successfully")
-    void shouldSubmitAggregateQuery() { // GH-90000
+    void shouldSubmitAggregateQuery() { 
         // GIVEN: Aggregation query
-        String query = "SELECT COUNT(*), AVG(salary) FROM employees GROUP BY department"; // GH-90000
+        String query = "SELECT COUNT(*), AVG(salary) FROM employees GROUP BY department"; 
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Query executes as AGGREGATE type
         assertThat(result.getQueryType()).isEqualTo("AGGREGATE");
-        assertThat(result.isOptimized()).isTrue(); // GH-90000
+        assertThat(result.isOptimized()).isTrue(); 
     }
 
     @Test
     @DisplayName("Should submit and execute TIMESERIES query successfully")
-    void shouldSubmitTimeseriesQuery() { // GH-90000
-        // GIVEN: Time-series query without aggregation (TIMESERIES takes precedence) // GH-90000
+    void shouldSubmitTimeseriesQuery() { 
+        // GIVEN: Time-series query without aggregation (TIMESERIES takes precedence) 
         String query = "SELECT * FROM events WHERE timestamp > INTERVAL '1 day'";
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Query executes as TIMESERIES type
@@ -116,13 +116,13 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should submit and execute JOIN query successfully")
-    void shouldSubmitJoinQuery() { // GH-90000
+    void shouldSubmitJoinQuery() { 
         // GIVEN: JOIN query
         String query = "SELECT u.*, o.* FROM users u JOIN orders o ON u.id = o.user_id";
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Query executes as JOIN type
@@ -131,37 +131,37 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should reject null tenant ID")
-    void shouldRejectNullTenantId() { // GH-90000
+    void shouldRejectNullTenantId() { 
         // WHEN/THEN: Throws exception for null tenant ID
-        assertThatThrownBy(() -> // GH-90000
-            runPromise(() -> engine.submitQuery(null, "SELECT * FROM users", Map.of())) // GH-90000
-        ).isInstanceOf(NullPointerException.class) // GH-90000
+        assertThatThrownBy(() -> 
+            runPromise(() -> engine.submitQuery(null, "SELECT * FROM users", Map.of())) 
+        ).isInstanceOf(NullPointerException.class) 
          .hasMessageContaining("tenantId");
     }
 
     @Test
     @DisplayName("Should reject null query text")
-    void shouldRejectNullQueryText() { // GH-90000
+    void shouldRejectNullQueryText() { 
         // WHEN/THEN: Throws exception for null query text
-        assertThatThrownBy(() -> // GH-90000
-            runPromise(() -> engine.submitQuery("tenant-1", null, Map.of())) // GH-90000
-        ).isInstanceOf(NullPointerException.class) // GH-90000
+        assertThatThrownBy(() -> 
+            runPromise(() -> engine.submitQuery("tenant-1", null, Map.of())) 
+        ).isInstanceOf(NullPointerException.class) 
          .hasMessageContaining("queryText");
     }
 
     @Test
     @DisplayName("Should handle empty parameters")
-    void shouldHandleEmptyParameters() { // GH-90000
+    void shouldHandleEmptyParameters() { 
         // GIVEN: Query with empty parameters
         String query = "SELECT * FROM users";
 
         // WHEN: Submitting query with empty parameters
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Query executes successfully
-        assertThat(result).isNotNull(); // GH-90000
+        assertThat(result).isNotNull(); 
     }
 
     // ========================================================================
@@ -170,130 +170,130 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should generate query plan for submitted query")
-    void shouldGenerateQueryPlan() { // GH-90000
+    void shouldGenerateQueryPlan() { 
         // GIVEN: Submitted query
         String query = "SELECT * FROM users WHERE status = 'active'";
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // WHEN: Retrieving query plan
-        QueryPlan plan = runPromise(() -> // GH-90000
-            engine.getPlan(result.getQueryId()) // GH-90000
+        QueryPlan plan = runPromise(() -> 
+            engine.getPlan(result.getQueryId()) 
         );
 
         // THEN: Plan is generated correctly
-        assertThat(plan).isNotNull(); // GH-90000
-        assertThat(plan.getQueryId()).isEqualTo(result.getQueryId()); // GH-90000
-        assertThat(plan.getQueryType()).isEqualTo(QueryType.SELECT); // GH-90000
-        assertThat(plan.isOptimized()).isTrue(); // GH-90000
-        assertThat(plan.getEstimatedCost()).isGreaterThan(0); // GH-90000
-        assertThat(plan.getDataSources()).isNotEmpty(); // GH-90000
+        assertThat(plan).isNotNull(); 
+        assertThat(plan.getQueryId()).isEqualTo(result.getQueryId()); 
+        assertThat(plan.getQueryType()).isEqualTo(QueryType.SELECT); 
+        assertThat(plan.isOptimized()).isTrue(); 
+        assertThat(plan.getEstimatedCost()).isGreaterThan(0); 
+        assertThat(plan.getDataSources()).isNotEmpty(); 
     }
 
     @ParameterizedTest
-    @CsvSource({ // GH-90000
+    @CsvSource({ 
         "SELECT * FROM users, SELECT",
-        "SELECT COUNT(*) FROM users GROUP BY status, AGGREGATE", // GH-90000
-        "SELECT SUM(amount) FROM transactions, AGGREGATE", // GH-90000
-        "SELECT AVG(score) FROM tests GROUP BY student, AGGREGATE", // GH-90000
+        "SELECT COUNT(*) FROM users GROUP BY status, AGGREGATE", 
+        "SELECT SUM(amount) FROM transactions, AGGREGATE", 
+        "SELECT AVG(score) FROM tests GROUP BY student, AGGREGATE", 
         "SELECT * FROM users u JOIN orders o ON u.id = o.user_id, JOIN",
         "SELECT * FROM events WHERE timestamp > INTERVAL '1 day', TIMESERIES",
         "SELECT * FROM logs WHERE timestamp > INTERVAL '1 hour', TIMESERIES"
     })
     @DisplayName("Should detect correct query type")
-    void shouldDetectQueryType(String queryText, String expectedType) { // GH-90000
+    void shouldDetectQueryType(String queryText, String expectedType) { 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", queryText, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", queryText, Map.of()) 
         );
 
         // THEN: Correct query type is detected
-        assertThat(result.getQueryType()).isEqualTo(expectedType); // GH-90000
+        assertThat(result.getQueryType()).isEqualTo(expectedType); 
     }
 
     @Test
     @DisplayName("Should estimate query cost based on complexity")
-    void shouldEstimateQueryCost() { // GH-90000
+    void shouldEstimateQueryCost() { 
         // GIVEN: Simple and complex queries
         String simpleQuery = "SELECT * FROM users";
-        String complexQuery = "SELECT u.*, o.*, p.* FROM users u JOIN orders o ON u.id = o.user_id JOIN products p ON o.product_id = p.id WHERE u.status = 'active' AND o.created_at > '2024-01-01' GROUP BY u.department HAVING COUNT(*) > 10"; // GH-90000
+        String complexQuery = "SELECT u.*, o.*, p.* FROM users u JOIN orders o ON u.id = o.user_id JOIN products p ON o.product_id = p.id WHERE u.status = 'active' AND o.created_at > '2024-01-01' GROUP BY u.department HAVING COUNT(*) > 10"; 
 
         // WHEN: Submitting both queries
-        QueryResult simpleResult = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", simpleQuery, Map.of()) // GH-90000
+        QueryResult simpleResult = runPromise(() -> 
+            engine.submitQuery("tenant-1", simpleQuery, Map.of()) 
         );
-        QueryResult complexResult = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", complexQuery, Map.of()) // GH-90000
+        QueryResult complexResult = runPromise(() -> 
+            engine.submitQuery("tenant-1", complexQuery, Map.of()) 
         );
 
         // AND: Retrieving plans
-        QueryPlan simplePlan = runPromise(() -> // GH-90000
-            engine.getPlan(simpleResult.getQueryId()) // GH-90000
+        QueryPlan simplePlan = runPromise(() -> 
+            engine.getPlan(simpleResult.getQueryId()) 
         );
-        QueryPlan complexPlan = runPromise(() -> // GH-90000
-            engine.getPlan(complexResult.getQueryId()) // GH-90000
+        QueryPlan complexPlan = runPromise(() -> 
+            engine.getPlan(complexResult.getQueryId()) 
         );
 
         // THEN: Complex query has higher estimated cost
-        assertThat(complexPlan.getEstimatedCost()).isGreaterThan(simplePlan.getEstimatedCost()); // GH-90000
+        assertThat(complexPlan.getEstimatedCost()).isGreaterThan(simplePlan.getEstimatedCost()); 
     }
 
     @Test
     @DisplayName("Should extract data sources from query")
-    void shouldExtractDataSources() { // GH-90000
+    void shouldExtractDataSources() { 
         // GIVEN: Query with FROM clause
         String query = "SELECT * FROM users WHERE age > 25";
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // AND: Retrieving plan
-        QueryPlan plan = runPromise(() -> // GH-90000
-            engine.getPlan(result.getQueryId()) // GH-90000
+        QueryPlan plan = runPromise(() -> 
+            engine.getPlan(result.getQueryId()) 
         );
 
-        // THEN: Data sources are extracted (JSQLParser returns actual table names) // GH-90000
+        // THEN: Data sources are extracted (JSQLParser returns actual table names) 
         assertThat(plan.getDataSources()).contains("users");
     }
 
     @Test
     @DisplayName("Should extract multiple data sources from JOIN query")
-    void shouldExtractMultipleDataSources() { // GH-90000
+    void shouldExtractMultipleDataSources() { 
         // GIVEN: JOIN query
         String query = "SELECT * FROM users u JOIN orders o ON u.id = o.user_id";
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // AND: Retrieving plan
-        QueryPlan plan = runPromise(() -> // GH-90000
-            engine.getPlan(result.getQueryId()) // GH-90000
+        QueryPlan plan = runPromise(() -> 
+            engine.getPlan(result.getQueryId()) 
         );
 
-        // THEN: Multiple data sources are extracted (JSQLParser extracts actual table names) // GH-90000
-        assertThat(plan.getDataSources()).hasSize(2); // GH-90000
-        assertThat(plan.getDataSources()).contains("users", "orders"); // GH-90000
+        // THEN: Multiple data sources are extracted (JSQLParser extracts actual table names) 
+        assertThat(plan.getDataSources()).hasSize(2); 
+        assertThat(plan.getDataSources()).contains("users", "orders"); 
     }
 
     @Test
     @DisplayName("Should use default source when no FROM clause")
-    void shouldUseDefaultSource() { // GH-90000
+    void shouldUseDefaultSource() { 
         // GIVEN: Query without FROM clause
         String query = "SELECT 1 + 1";
 
         // WHEN: Submitting query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // AND: Retrieving plan
-        QueryPlan plan = runPromise(() -> // GH-90000
-            engine.getPlan(result.getQueryId()) // GH-90000
+        QueryPlan plan = runPromise(() -> 
+            engine.getPlan(result.getQueryId()) 
         );
 
         // THEN: Default source is used
@@ -302,11 +302,11 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should throw exception when retrieving non-existent plan")
-    void shouldThrowExceptionForNonExistentPlan() { // GH-90000
+    void shouldThrowExceptionForNonExistentPlan() { 
         // WHEN/THEN: Throws exception for non-existent plan
-        assertThatThrownBy(() -> // GH-90000
+        assertThatThrownBy(() -> 
             runPromise(() -> engine.getPlan("non-existent-id"))
-        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) 
          .hasMessageContaining("Plan not found");
     }
 
@@ -316,31 +316,31 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should cache query results")
-    void shouldCacheResults() { // GH-90000
+    void shouldCacheResults() { 
         // GIVEN: Submitted query
         String query = "SELECT * FROM users";
-        QueryResult originalResult = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult originalResult = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // WHEN: Retrieving result from cache
-        QueryResult cachedResult = runPromise(() -> // GH-90000
-            engine.getResult(originalResult.getQueryId()) // GH-90000
+        QueryResult cachedResult = runPromise(() -> 
+            engine.getResult(originalResult.getQueryId()) 
         );
 
         // THEN: Same result is returned
-        assertThat(cachedResult.getQueryId()).isEqualTo(originalResult.getQueryId()); // GH-90000
-        assertThat(cachedResult.getQueryType()).isEqualTo(originalResult.getQueryType()); // GH-90000
-        assertThat(cachedResult.getRowCount()).isEqualTo(originalResult.getRowCount()); // GH-90000
+        assertThat(cachedResult.getQueryId()).isEqualTo(originalResult.getQueryId()); 
+        assertThat(cachedResult.getQueryType()).isEqualTo(originalResult.getQueryType()); 
+        assertThat(cachedResult.getRowCount()).isEqualTo(originalResult.getRowCount()); 
     }
 
     @Test
     @DisplayName("Should throw exception when retrieving non-existent result")
-    void shouldThrowExceptionForNonExistentResult() { // GH-90000
+    void shouldThrowExceptionForNonExistentResult() { 
         // WHEN/THEN: Throws exception for non-existent result
-        assertThatThrownBy(() -> // GH-90000
+        assertThatThrownBy(() -> 
             runPromise(() -> engine.getResult("non-existent-id"))
-        ).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        ).isInstanceOf(IllegalArgumentException.class) 
          .hasMessageContaining("Result not found");
     }
 
@@ -350,74 +350,74 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should return empty results until StorageConnector integration")
-    void shouldReturnEmptyResultsForNow() { // GH-90000
+    void shouldReturnEmptyResultsForNow() { 
         // GIVEN: Any query
         String query = "SELECT * FROM users WHERE age > 25";
 
         // WHEN: Executing query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
-        // THEN: Returns empty results (transitional until StorageConnector wired) // GH-90000
-        assertThat(result.getRows()).isEmpty(); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(0); // GH-90000
-        assertThat(result.getColumnCount()).isEqualTo(0); // GH-90000
+        // THEN: Returns empty results (transitional until StorageConnector wired) 
+        assertThat(result.getRows()).isEmpty(); 
+        assertThat(result.getRowCount()).isEqualTo(0); 
+        assertThat(result.getColumnCount()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Should record execution time")
-    void shouldRecordExecutionTime() { // GH-90000
+    void shouldRecordExecutionTime() { 
         // GIVEN: Query
         String query = "SELECT * FROM users";
 
         // WHEN: Executing query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Execution time is recorded
-        assertThat(result.getExecutionTimeMs()).isGreaterThanOrEqualTo(0); // GH-90000
+        assertThat(result.getExecutionTimeMs()).isGreaterThanOrEqualTo(0); 
     }
 
     @Test
     @DisplayName("Should handle multiple concurrent queries")
-    void shouldHandleConcurrentQueries() { // GH-90000
+    void shouldHandleConcurrentQueries() { 
         // GIVEN: Multiple queries
-        List<Promise<QueryResult>> promises = new ArrayList<>(); // GH-90000
-        for (int i = 0; i < 10; i++) { // GH-90000
+        List<Promise<QueryResult>> promises = new ArrayList<>(); 
+        for (int i = 0; i < 10; i++) { 
             String query = "SELECT * FROM users WHERE id = " + i;
-            promises.add(engine.submitQuery("tenant-1", query, Map.of())); // GH-90000
+            promises.add(engine.submitQuery("tenant-1", query, Map.of())); 
         }
 
         // WHEN: Executing all queries concurrently
-        List<QueryResult> results = runPromise(() -> // GH-90000
-            io.activej.promise.Promises.toList(promises) // GH-90000
+        List<QueryResult> results = runPromise(() -> 
+            io.activej.promise.Promises.toList(promises) 
         );
 
         // THEN: All queries complete successfully
-        assertThat(results).hasSize(10); // GH-90000
+        assertThat(results).hasSize(10); 
         assertThat(results).allMatch(r -> r.getQueryType().equals("SELECT"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { // GH-90000
+    @ValueSource(strings = { 
         "SELECT * FROM users",
-        "SELECT COUNT(*) FROM orders GROUP BY status", // GH-90000
+        "SELECT COUNT(*) FROM orders GROUP BY status", 
         "SELECT * FROM users u JOIN orders o ON u.id = o.user_id",
-        "SELECT DATE_TRUNC('day', created_at), COUNT(*) FROM events" // GH-90000
+        "SELECT DATE_TRUNC('day', created_at), COUNT(*) FROM events" 
     })
     @DisplayName("Should execute various query types successfully")
-    void shouldExecuteVariousQueryTypes(String query) { // GH-90000
+    void shouldExecuteVariousQueryTypes(String query) { 
         // WHEN: Executing query
-        QueryResult result = runPromise(() -> // GH-90000
-            engine.submitQuery("tenant-1", query, Map.of()) // GH-90000
+        QueryResult result = runPromise(() -> 
+            engine.submitQuery("tenant-1", query, Map.of()) 
         );
 
         // THEN: Query executes successfully
-        assertThat(result).isNotNull(); // GH-90000
-        assertThat(result.getQueryId()).isNotNull(); // GH-90000
-        assertThat(result.isOptimized()).isTrue(); // GH-90000
+        assertThat(result).isNotNull(); 
+        assertThat(result.getQueryId()).isNotNull(); 
+        assertThat(result.isOptimized()).isTrue(); 
     }
 
     // ========================================================================
@@ -426,113 +426,113 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should build query result with all fields")
-    void shouldBuildCompleteQueryResult() { // GH-90000
+    void shouldBuildCompleteQueryResult() { 
         // GIVEN: Query result builder
-        List<Map<String, Object>> rows = List.of( // GH-90000
-            Map.of("id", 1, "name", "Alice"), // GH-90000
-            Map.of("id", 2, "name", "Bob") // GH-90000
+        List<Map<String, Object>> rows = List.of( 
+            Map.of("id", 1, "name", "Alice"), 
+            Map.of("id", 2, "name", "Bob") 
         );
 
         // WHEN: Building result
-        QueryResult result = QueryResult.builder() // GH-90000
+        QueryResult result = QueryResult.builder() 
             .queryId("query-123")
-            .rows(rows) // GH-90000
-            .rowCount(2) // GH-90000
-            .columnCount(2) // GH-90000
-            .executionTimeMs(150) // GH-90000
+            .rows(rows) 
+            .rowCount(2) 
+            .columnCount(2) 
+            .executionTimeMs(150) 
             .queryType("SELECT")
-            .optimized(true) // GH-90000
-            .build(); // GH-90000
+            .optimized(true) 
+            .build(); 
 
         // THEN: All fields are set correctly
         assertThat(result.getQueryId()).isEqualTo("query-123");
-        assertThat(result.getRows()).hasSize(2); // GH-90000
-        assertThat(result.getRowCount()).isEqualTo(2); // GH-90000
-        assertThat(result.getColumnCount()).isEqualTo(2); // GH-90000
-        assertThat(result.getExecutionTimeMs()).isEqualTo(150); // GH-90000
+        assertThat(result.getRows()).hasSize(2); 
+        assertThat(result.getRowCount()).isEqualTo(2); 
+        assertThat(result.getColumnCount()).isEqualTo(2); 
+        assertThat(result.getExecutionTimeMs()).isEqualTo(150); 
         assertThat(result.getQueryType()).isEqualTo("SELECT");
-        assertThat(result.isOptimized()).isTrue(); // GH-90000
+        assertThat(result.isOptimized()).isTrue(); 
     }
 
     @Test
     @DisplayName("Should build query plan with all fields")
-    void shouldBuildCompleteQueryPlan() { // GH-90000
+    void shouldBuildCompleteQueryPlan() { 
         // WHEN: Building plan
-        QueryPlan plan = QueryPlan.builder() // GH-90000
+        QueryPlan plan = QueryPlan.builder() 
             .queryId("query-123")
-            .queryType(QueryType.AGGREGATE) // GH-90000
-            .dataSources(List.of("source1", "source2")) // GH-90000
-            .estimatedCost(75.5) // GH-90000
-            .optimized(true) // GH-90000
-            .build(); // GH-90000
+            .queryType(QueryType.AGGREGATE) 
+            .dataSources(List.of("source1", "source2")) 
+            .estimatedCost(75.5) 
+            .optimized(true) 
+            .build(); 
 
         // THEN: All fields are set correctly
         assertThat(plan.getQueryId()).isEqualTo("query-123");
-        assertThat(plan.getQueryType()).isEqualTo(QueryType.AGGREGATE); // GH-90000
-        assertThat(plan.getDataSources()).containsExactly("source1", "source2"); // GH-90000
-        assertThat(plan.getEstimatedCost()).isEqualTo(75.5); // GH-90000
-        assertThat(plan.isOptimized()).isTrue(); // GH-90000
+        assertThat(plan.getQueryType()).isEqualTo(QueryType.AGGREGATE); 
+        assertThat(plan.getDataSources()).containsExactly("source1", "source2"); 
+        assertThat(plan.getEstimatedCost()).isEqualTo(75.5); 
+        assertThat(plan.isOptimized()).isTrue(); 
     }
 
     @Test
     @DisplayName("Should build analytics query with all fields")
-    void shouldBuildCompleteAnalyticsQuery() { // GH-90000
+    void shouldBuildCompleteAnalyticsQuery() { 
         // GIVEN: Query builder
-        Map<String, Object> params = Map.of("limit", 100); // GH-90000
+        Map<String, Object> params = Map.of("limit", 100); 
 
         // WHEN: Building query
-        AnalyticsQuery query = AnalyticsQuery.builder() // GH-90000
+        AnalyticsQuery query = AnalyticsQuery.builder() 
             .id("query-123")
             .tenantId("tenant-1")
             .queryText("SELECT * FROM users")
-            .parameters(params) // GH-90000
-            .submittedAt(java.time.Instant.now()) // GH-90000
+            .parameters(params) 
+            .submittedAt(java.time.Instant.now()) 
             .status("SUBMITTED")
-            .build(); // GH-90000
+            .build(); 
 
         // THEN: All fields are set correctly
         assertThat(query.getId()).isEqualTo("query-123");
         assertThat(query.getTenantId()).isEqualTo("tenant-1");
         assertThat(query.getQueryText()).isEqualTo("SELECT * FROM users");
-        assertThat(query.getParameters()).isEqualTo(params); // GH-90000
-        assertThat(query.getSubmittedAt()).isNotNull(); // GH-90000
+        assertThat(query.getParameters()).isEqualTo(params); 
+        assertThat(query.getSubmittedAt()).isNotNull(); 
         assertThat(query.getStatus()).isEqualTo("SUBMITTED");
     }
 
     @Test
     @DisplayName("Should update query status and completion time")
-    void shouldUpdateQueryStatus() { // GH-90000
+    void shouldUpdateQueryStatus() { 
         // GIVEN: Query
-        AnalyticsQuery query = AnalyticsQuery.builder() // GH-90000
+        AnalyticsQuery query = AnalyticsQuery.builder() 
             .id("query-123")
             .tenantId("tenant-1")
             .queryText("SELECT * FROM users")
-            .parameters(Map.of()) // GH-90000
-            .submittedAt(java.time.Instant.now()) // GH-90000
+            .parameters(Map.of()) 
+            .submittedAt(java.time.Instant.now()) 
             .status("SUBMITTED")
-            .build(); // GH-90000
+            .build(); 
 
         // WHEN: Updating status
         query.setStatus("COMPLETED");
-        query.setCompletedAt(java.time.Instant.now()); // GH-90000
+        query.setCompletedAt(java.time.Instant.now()); 
 
         // THEN: Status is updated
         assertThat(query.getStatus()).isEqualTo("COMPLETED");
-        assertThat(query.getCompletedAt()).isNotNull(); // GH-90000
+        assertThat(query.getCompletedAt()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should set error on query failure")
-    void shouldSetErrorOnFailure() { // GH-90000
+    void shouldSetErrorOnFailure() { 
         // GIVEN: Query
-        AnalyticsQuery query = AnalyticsQuery.builder() // GH-90000
+        AnalyticsQuery query = AnalyticsQuery.builder() 
             .id("query-123")
             .tenantId("tenant-1")
             .queryText("SELECT * FROM users")
-            .parameters(Map.of()) // GH-90000
-            .submittedAt(java.time.Instant.now()) // GH-90000
+            .parameters(Map.of()) 
+            .submittedAt(java.time.Instant.now()) 
             .status("RUNNING")
-            .build(); // GH-90000
+            .build(); 
 
         // WHEN: Setting error
         query.setError("Connection timeout");

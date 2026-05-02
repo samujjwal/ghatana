@@ -11,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Unit tests for {@link SttStreamingLatencyEnhancer} (AV-007.4). // GH-90000
+ * Unit tests for {@link SttStreamingLatencyEnhancer} (AV-007.4). 
  */
 @DisplayName("SttStreamingLatencyEnhancer — AV-007.4")
 class SttStreamingLatencyEnhancerTest {
@@ -20,86 +20,86 @@ class SttStreamingLatencyEnhancerTest {
     private SttStreamingLatencyEnhancer enhancer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        emitted  = new ArrayList<>(); // GH-90000
-        enhancer = SttStreamingLatencyEnhancer.builder() // GH-90000
-                .maxBufferChunks(20) // GH-90000
-                .maxChunkAgeMs(200) // GH-90000
-                .emitter(emitted::add) // GH-90000
-                .build(); // GH-90000
+    void setUp() { 
+        emitted  = new ArrayList<>(); 
+        enhancer = SttStreamingLatencyEnhancer.builder() 
+                .maxBufferChunks(20) 
+                .maxChunkAgeMs(200) 
+                .emitter(emitted::add) 
+                .build(); 
     }
 
     @Test
     @DisplayName("Ingesting a chunk returns true and increments counters")
-    void ingestAcceptsChunk() { // GH-90000
-        boolean accepted = enhancer.ingest(new byte[]{1, 2, 3}, 1, 1000L); // GH-90000
-        assertThat(accepted).isTrue(); // GH-90000
-        assertThat(enhancer.stats().chunksReceived()).isEqualTo(1); // GH-90000
+    void ingestAcceptsChunk() { 
+        boolean accepted = enhancer.ingest(new byte[]{1, 2, 3}, 1, 1000L); 
+        assertThat(accepted).isTrue(); 
+        assertThat(enhancer.stats().chunksReceived()).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("Empty audioBytes are rejected (returns false)")
-    void ingestRejectsEmptyBytes() { // GH-90000
-        boolean accepted = enhancer.ingest(new byte[0], 1, 1000L); // GH-90000
-        assertThat(accepted).isFalse(); // GH-90000
+    void ingestRejectsEmptyBytes() { 
+        boolean accepted = enhancer.ingest(new byte[0], 1, 1000L); 
+        assertThat(accepted).isFalse(); 
     }
 
     @Test
     @DisplayName("Null audioBytes throws NullPointerException")
-    void ingestRejectsNullBytes() { // GH-90000
-        assertThatThrownBy(() -> enhancer.ingest(null, 1, 1000L)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void ingestRejectsNullBytes() { 
+        assertThatThrownBy(() -> enhancer.ingest(null, 1, 1000L)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     @Test
     @DisplayName("flush emits remaining buffered chunks")
-    void flushEmitsRemainingChunks() { // GH-90000
-        enhancer.ingest(new byte[]{1, 2}, 1, 1000L); // GH-90000
-        enhancer.flush(); // GH-90000
+    void flushEmitsRemainingChunks() { 
+        enhancer.ingest(new byte[]{1, 2}, 1, 1000L); 
+        enhancer.flush(); 
 
         // After flush, all chunks should be emitted
-        long totalChunks = emitted.stream().mapToInt(SttStreamingLatencyEnhancer.AudioChunkBatch::chunkCount).sum(); // GH-90000
-        assertThat(totalChunks).isEqualTo(1); // GH-90000
+        long totalChunks = emitted.stream().mapToInt(SttStreamingLatencyEnhancer.AudioChunkBatch::chunkCount).sum(); 
+        assertThat(totalChunks).isEqualTo(1); 
     }
 
     @Test
     @DisplayName("Buffer is empty after flush")
-    void bufferEmptyAfterFlush() { // GH-90000
-        enhancer.ingest(new byte[]{1}, 1, 1000L); // GH-90000
-        enhancer.flush(); // GH-90000
-        assertThat(enhancer.bufferSize()).isEqualTo(0); // GH-90000
+    void bufferEmptyAfterFlush() { 
+        enhancer.ingest(new byte[]{1}, 1, 1000L); 
+        enhancer.flush(); 
+        assertThat(enhancer.bufferSize()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("Back-pressure activates when buffer fills to 80%")
-    void backPressureAtHighWaterMark() { // GH-90000
+    void backPressureAtHighWaterMark() { 
         // Fill buffer to 16/20 = 80%
-        for (int i = 0; i < 16; i++) { // GH-90000
-            enhancer.ingest(new byte[]{(byte) i}, i, i * 10L); // GH-90000
+        for (int i = 0; i < 16; i++) { 
+            enhancer.ingest(new byte[]{(byte) i}, i, i * 10L); 
         }
         // Back-pressure may or may not be active depending on flush triggering;
         // main assertion: the enhancer did not throw and is reachable
-        assertThat(enhancer.stats().chunksReceived()).isGreaterThanOrEqualTo(1); // GH-90000
+        assertThat(enhancer.stats().chunksReceived()).isGreaterThanOrEqualTo(1); 
     }
 
     @Test
     @DisplayName("AudioChunkBatch.meetsLatencySla returns true when avg <= 500ms")
-    void audioChunkBatchLatencySla() { // GH-90000
+    void audioChunkBatchLatencySla() { 
         SttStreamingLatencyEnhancer.AudioChunkBatch batch =
-                new SttStreamingLatencyEnhancer.AudioChunkBatch(List.of(), 0, 0L, 1, 300L); // GH-90000
-        assertThat(batch.meetsLatencySla()).isTrue(); // GH-90000
+                new SttStreamingLatencyEnhancer.AudioChunkBatch(List.of(), 0, 0L, 1, 300L); 
+        assertThat(batch.meetsLatencySla()).isTrue(); 
 
         SttStreamingLatencyEnhancer.AudioChunkBatch late =
-                new SttStreamingLatencyEnhancer.AudioChunkBatch(List.of(), 0, 0L, 1, 600L); // GH-90000
-        assertThat(late.meetsLatencySla()).isFalse(); // GH-90000
+                new SttStreamingLatencyEnhancer.AudioChunkBatch(List.of(), 0, 0L, 1, 600L); 
+        assertThat(late.meetsLatencySla()).isFalse(); 
     }
 
     @Test
     @DisplayName("Builder rejects missing emitter")
-    void builderRejectsMissingEmitter() { // GH-90000
-        assertThatThrownBy(() -> SttStreamingLatencyEnhancer.builder() // GH-90000
-                .maxBufferChunks(10) // GH-90000
-                .build()) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void builderRejectsMissingEmitter() { 
+        assertThatThrownBy(() -> SttStreamingLatencyEnhancer.builder() 
+                .maxBufferChunks(10) 
+                .build()) 
+                .isInstanceOf(NullPointerException.class); 
     }
 }

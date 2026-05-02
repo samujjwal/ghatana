@@ -9,9 +9,9 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.impl.StandardHumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.impl.DurableAuditTrailPlugin;
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
-import com.ghatana.plugin.billing.BillingTransaction;
-import com.ghatana.plugin.billing.impl.DurableBillingLedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerTransaction;
+import com.ghatana.plugin.ledger.impl.DurableLedgerPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
 import com.ghatana.plugin.consent.impl.DurableConsentPlugin;
 import org.h2.jdbcx.JdbcDataSource;
@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.*;
  *   <li>The export is blocked until a reviewer approves it.</li>
  *   <li>Each observable step is audit-logged via {@link DurableAuditTrailPlugin}.</li>
  *   <li>After approval the export service fee is posted to the billing ledger
- *       ({@link DurableBillingLedgerPlugin}).</li>
+ *       ({@link DurableLedgerPlugin}).</li>
  *   <li>Assertions verify: consent gate, approval lifecycle, audit trail continuity,
  *       billing isolation, and cross-domain observability.</li>
  * </ol>
@@ -69,7 +69,7 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
 
     // Durable (JDBC/H2) plugins
     private DurableAuditTrailPlugin     auditPlugin;
-    private DurableBillingLedgerPlugin  billingPlugin;
+    private DurableLedgerPlugin  billingPlugin;
     private DurableConsentPlugin        consentPlugin;
 
     // In-memory human approval plugin
@@ -83,7 +83,7 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         JdbcDataSource consentDs = h2ds("flagship_consent_" + nanos);
 
         auditPlugin   = new DurableAuditTrailPlugin(auditDs);
-        billingPlugin = new DurableBillingLedgerPlugin(billingDs);
+        billingPlugin = new DurableLedgerPlugin(billingDs);
         consentPlugin = new DurableConsentPlugin(consentDs);
         approvalPlugin = new StandardHumanApprovalPlugin();
 
@@ -174,15 +174,15 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         assertThat(pendingAfter).isEmpty();
 
         // ── Step 4: Export service fee posted to billing ledger ───────────────
-        BillingTransaction exportFee = BillingTransaction.builder()
+        LedgerTransaction exportFee = LedgerTransaction.builder()
                 .transactionId("tx-export-" + requestId)
-                .sourceProductId("phr")
+                .sourceId("phr")
                 .tenantId(TENANT)
                 .debitAccount("PHR:AR:" + PATIENT_ID)
                 .creditAccount("PHR:REVENUE:export-service")
                 .amount(new BigDecimal("250.00"))
                 .currency("NPR")
-                .type(BillingTransaction.TransactionType.CHARGE)
+                .type(LedgerTransaction.TransactionType.CHARGE)
                 .description("Sensitive-data export fee — requestId=" + requestId)
                 .occurredAt(Instant.now())
                 .build();
@@ -190,7 +190,7 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         String entryId = runPromise(() -> billingPlugin.postTransaction(exportFee));
         assertThat(entryId).isNotBlank();
         assertThat(runPromise(() -> billingPlugin.getPostingStatus("tx-export-" + requestId)))
-                .isEqualTo(BillingLedgerPlugin.PostingStatus.POSTED);
+                .isEqualTo(LedgerPlugin.PostingStatus.POSTED);
 
         logAuditEvent("finance.billing", PATIENT_ID, "EXPORT_FEE_POSTED",
                 "{\"txId\":\"tx-export-" + requestId + "\",\"amount\":\"250.00\"}");
@@ -237,9 +237,9 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
 
         // Because rejected, the product logic must not post a billing charge.
         // Verify: no billing entries for this export request
-        BillingLedgerPlugin.PostingStatus noEntry = runPromise(
+        LedgerPlugin.PostingStatus noEntry = runPromise(
                 () -> billingPlugin.getPostingStatus("tx-export-" + requestId));
-        assertThat(noEntry).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        assertThat(noEntry).isEqualTo(LedgerPlugin.PostingStatus.NOT_FOUND);
     }
 
     // =========================================================================
@@ -255,9 +255,9 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         assertThat(hasConsent).isFalse();
 
         // Because consent is absent the product logic must not proceed to billing
-        BillingLedgerPlugin.PostingStatus noEntry = runPromise(
+        LedgerPlugin.PostingStatus noEntry = runPromise(
                 () -> billingPlugin.getPostingStatus("tx-no-consent-" + PATIENT_ID));
-        assertThat(noEntry).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        assertThat(noEntry).isEqualTo(LedgerPlugin.PostingStatus.NOT_FOUND);
     }
 
     // =========================================================================
@@ -271,9 +271,9 @@ class FlagshipThinSliceDemoIT extends EventloopTestBase {
         logAuditEvent("phr.encounter", "patient-isolation-1", "ENCOUNTER_OPENED", "{}");
 
         // Finance billing check for unrelated transaction
-        BillingLedgerPlugin.PostingStatus missing = runPromise(
+        LedgerPlugin.PostingStatus missing = runPromise(
                 () -> billingPlugin.getPostingStatus("phr-event-should-not-be-here"));
-        assertThat(missing).isEqualTo(BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+        assertThat(missing).isEqualTo(LedgerPlugin.PostingStatus.NOT_FOUND);
 
         // Billing events must not appear in PHR audit
         List<AuditTrailPlugin.AuditEntry> phrEvents = getAuditTrail("patient-isolation-1", "phr.encounter");

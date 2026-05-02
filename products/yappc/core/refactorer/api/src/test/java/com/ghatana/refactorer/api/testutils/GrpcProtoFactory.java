@@ -25,205 +25,205 @@ import java.time.Instant;
 */
 public final class GrpcProtoFactory {
 
-    private GrpcProtoFactory() { // GH-90000
+    private GrpcProtoFactory() { 
         // Utility class
     }
 
     /** Creates a sample DiagnoseRequest for testing. */
-    public static DiagnoseRequest sampleDiagnoseRequest() { // GH-90000
-        return DiagnoseRequest.newBuilder() // GH-90000
+    public static DiagnoseRequest sampleDiagnoseRequest() { 
+        return DiagnoseRequest.newBuilder() 
                 .setRepoRoot("/tmp/test-repo")
                 .addIncludeGlobs("**/*.java")
                 .addIncludeGlobs("**/*.ts")
                 .addLanguages(Language.newBuilder().setId("java").build())
                 .addLanguages(Language.newBuilder().setId("typescript").build())
-                .addPolicies( // GH-90000
-                        PolicyKV.newBuilder() // GH-90000
+                .addPolicies( 
+                        PolicyKV.newBuilder() 
                                 .setKey("java.allowTemporaryAny")
                                 .setValue("false")
-                                .build()) // GH-90000
-                .setBudget( // GH-90000
-                        Budget.newBuilder() // GH-90000
-                                .setMaxPasses(3) // GH-90000
-                                .setMaxEditsPerFile(10) // GH-90000
-                                .setTimeoutSeconds(300) // GH-90000
-                                .build()) // GH-90000
-                .setFormatters(true) // GH-90000
+                                .build()) 
+                .setBudget( 
+                        Budget.newBuilder() 
+                                .setMaxPasses(3) 
+                                .setMaxEditsPerFile(10) 
+                                .setTimeoutSeconds(300) 
+                                .build()) 
+                .setFormatters(true) 
                 .setTenantId("test-tenant")
-                .build(); // GH-90000
+                .build(); 
     }
 
     /** Creates a sample UnifiedDiagnostic for testing. */
-    public static UnifiedDiagnostic sampleDiagnostic() { // GH-90000
-        return UnifiedDiagnostic.newBuilder() // GH-90000
+    public static UnifiedDiagnostic sampleDiagnostic() { 
+        return UnifiedDiagnostic.newBuilder() 
                 .setTool("javac")
                 .setRule("missing-import")
                 .setMessage("Cannot find symbol: List")
                 .setFile("/tmp/test-repo/src/Main.java")
-                .setLine(10) // GH-90000
-                .setColumn(5) // GH-90000
+                .setLine(10) 
+                .setColumn(5) 
                 .setSeverity("ERROR")
                 .setSuggestion("import java.util.List")
                 .setCategory("symbol:List")
-                .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
-                .build(); // GH-90000
+                .setTimestamp(Instant.now().toEpochMilli()) 
+                .build(); 
     }
 
     /** Creates a sample DiagnoseResponse for testing. */
-    public static DiagnoseResponse sampleDiagnoseResponse() { // GH-90000
-        return DiagnoseResponse.newBuilder() // GH-90000
-                .addDiagnostics(sampleDiagnostic()) // GH-90000
+    public static DiagnoseResponse sampleDiagnoseResponse() { 
+        return DiagnoseResponse.newBuilder() 
+                .addDiagnostics(sampleDiagnostic()) 
                 .setExecutionId("exec-123")
-                .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
-                .build(); // GH-90000
+                .setTimestamp(Instant.now().toEpochMilli()) 
+                .build(); 
     }
 
     /** Creates a sample RunRequest for testing. */
-    public static RunRequest sampleRunRequest() { // GH-90000
-        return RunRequest.newBuilder() // GH-90000
-                .setConfig(sampleDiagnoseRequest()) // GH-90000
+    public static RunRequest sampleRunRequest() { 
+        return RunRequest.newBuilder() 
+                .setConfig(sampleDiagnoseRequest()) 
                 .setIdempotencyKey("idem-key-123")
-                .setDryRun(false) // GH-90000
-                .build(); // GH-90000
+                .setDryRun(false) 
+                .build(); 
     }
 
     /** Creates a sample JobId for testing. */
-    public static JobId sampleJobId() { // GH-90000
+    public static JobId sampleJobId() { 
         return JobId.newBuilder().setId("job-123").build();
     }
 
     /** Creates a sample RunStatus for testing. */
-    public static RunStatus sampleRunStatus() { // GH-90000
-        return RunStatus.newBuilder() // GH-90000
+    public static RunStatus sampleRunStatus() { 
+        return RunStatus.newBuilder() 
                 .setJobId("job-123")
                 .setState("RUNNING")
-                .setPass(1) // GH-90000
-                .setStartedAt(Instant.now().toString()) // GH-90000
-                .setUpdatedAt(Instant.now().toString()) // GH-90000
-                .putToolVersions("javac", "21.0.1") // GH-90000
-                .putToolVersions("eslint", "8.45.0") // GH-90000
-                .build(); // GH-90000
+                .setPass(1) 
+                .setStartedAt(Instant.now().toString()) 
+                .setUpdatedAt(Instant.now().toString()) 
+                .putToolVersions("javac", "21.0.1") 
+                .putToolVersions("eslint", "8.45.0") 
+                .build(); 
     }
 
     /** Creates a sample Report for testing. */
-    public static Report sampleReport() { // GH-90000
-        return Report.newBuilder() // GH-90000
+    public static Report sampleReport() { 
+        return Report.newBuilder() 
                 .setJobId("job-123")
-                .setSummaryJson("{\"diagnostics_found\": 5, \"fixes_applied\": 3}") // GH-90000
+                .setSummaryJson("{\"diagnostics_found\": 5, \"fixes_applied\": 3}") 
                 .setDetailsJson("{}")
-                .setGeneratedAt(Instant.now().toString()) // GH-90000
-                .build(); // GH-90000
+                .setGeneratedAt(Instant.now().toString()) 
+                .build(); 
     }
 
     /** Creates a sample ProgressEvent for testing. */
-    public static ProgressEvent sampleProgressEvent() { // GH-90000
-        return ProgressEvent.newBuilder() // GH-90000
+    public static ProgressEvent sampleProgressEvent() { 
+        return ProgressEvent.newBuilder() 
                 .setJobId("job-123")
                 .setEventType("diagnostic")
                 .setMessage("Found missing import")
-                .setCurrentPass(1) // GH-90000
-                .setTotalPasses(3) // GH-90000
-                .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
-                .build(); // GH-90000
+                .setCurrentPass(1) 
+                .setTotalPasses(3) 
+                .setTimestamp(Instant.now().toEpochMilli()) 
+                .build(); 
     }
 
     /** Creates a sample HealthResponse for testing. */
-    public static HealthResponse sampleHealthResponse() { // GH-90000
-        return HealthResponse.newBuilder() // GH-90000
+    public static HealthResponse sampleHealthResponse() { 
+        return HealthResponse.newBuilder() 
                 .setStatus("UP")
-                .putDetails("version", "1.0.0") // GH-90000
-                .putDetails("uptime", "3600") // GH-90000
-                .setTimestamp(Instant.now().toEpochMilli()) // GH-90000
-                .build(); // GH-90000
+                .putDetails("version", "1.0.0") 
+                .putDetails("uptime", "3600") 
+                .setTimestamp(Instant.now().toEpochMilli()) 
+                .build(); 
     }
 
     /** Builder for custom DiagnoseRequest instances. */
-    public static DiagnoseRequestBuilder diagnoseRequest() { // GH-90000
-        return new DiagnoseRequestBuilder(); // GH-90000
+    public static DiagnoseRequestBuilder diagnoseRequest() { 
+        return new DiagnoseRequestBuilder(); 
     }
 
     /** Builder for custom UnifiedDiagnostic instances. */
-    public static UnifiedDiagnosticBuilder diagnostic() { // GH-90000
-        return new UnifiedDiagnosticBuilder(); // GH-90000
+    public static UnifiedDiagnosticBuilder diagnostic() { 
+        return new UnifiedDiagnosticBuilder(); 
     }
 
     public static class DiagnoseRequestBuilder {
-        private final DiagnoseRequest.Builder builder = DiagnoseRequest.newBuilder(); // GH-90000
+        private final DiagnoseRequest.Builder builder = DiagnoseRequest.newBuilder(); 
 
-        public DiagnoseRequestBuilder repoRoot(String repoRoot) { // GH-90000
-            builder.setRepoRoot(repoRoot); // GH-90000
+        public DiagnoseRequestBuilder repoRoot(String repoRoot) { 
+            builder.setRepoRoot(repoRoot); 
             return this;
         }
 
-        public DiagnoseRequestBuilder includeGlobs(String... globs) { // GH-90000
-            for (String glob : globs) { // GH-90000
-                builder.addIncludeGlobs(glob); // GH-90000
+        public DiagnoseRequestBuilder includeGlobs(String... globs) { 
+            for (String glob : globs) { 
+                builder.addIncludeGlobs(glob); 
             }
             return this;
         }
 
-        public DiagnoseRequestBuilder languages(String... languageIds) { // GH-90000
-            for (String id : languageIds) { // GH-90000
-                builder.addLanguages(Language.newBuilder().setId(id).build()); // GH-90000
+        public DiagnoseRequestBuilder languages(String... languageIds) { 
+            for (String id : languageIds) { 
+                builder.addLanguages(Language.newBuilder().setId(id).build()); 
             }
             return this;
         }
 
-        public DiagnoseRequestBuilder tenantId(String tenantId) { // GH-90000
-            builder.setTenantId(tenantId); // GH-90000
+        public DiagnoseRequestBuilder tenantId(String tenantId) { 
+            builder.setTenantId(tenantId); 
             return this;
         }
 
-        public DiagnoseRequest build() { // GH-90000
-            return builder.build(); // GH-90000
+        public DiagnoseRequest build() { 
+            return builder.build(); 
         }
     }
 
     public static class UnifiedDiagnosticBuilder {
-        private final UnifiedDiagnostic.Builder builder = UnifiedDiagnostic.newBuilder(); // GH-90000
+        private final UnifiedDiagnostic.Builder builder = UnifiedDiagnostic.newBuilder(); 
 
-        public UnifiedDiagnosticBuilder tool(String tool) { // GH-90000
-            builder.setTool(tool); // GH-90000
+        public UnifiedDiagnosticBuilder tool(String tool) { 
+            builder.setTool(tool); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder rule(String rule) { // GH-90000
-            builder.setRule(rule); // GH-90000
+        public UnifiedDiagnosticBuilder rule(String rule) { 
+            builder.setRule(rule); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder message(String message) { // GH-90000
-            builder.setMessage(message); // GH-90000
+        public UnifiedDiagnosticBuilder message(String message) { 
+            builder.setMessage(message); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder file(String file) { // GH-90000
-            builder.setFile(file); // GH-90000
+        public UnifiedDiagnosticBuilder file(String file) { 
+            builder.setFile(file); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder location(int line, int column) { // GH-90000
-            builder.setLine(line); // GH-90000
-            builder.setColumn(column); // GH-90000
+        public UnifiedDiagnosticBuilder location(int line, int column) { 
+            builder.setLine(line); 
+            builder.setColumn(column); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder severity(String severity) { // GH-90000
-            builder.setSeverity(severity); // GH-90000
+        public UnifiedDiagnosticBuilder severity(String severity) { 
+            builder.setSeverity(severity); 
             return this;
         }
 
-        public UnifiedDiagnosticBuilder meta(String key, String value) { // GH-90000
-            if ("suggestion".equals(key)) { // GH-90000
-                builder.setSuggestion(value); // GH-90000
+        public UnifiedDiagnosticBuilder meta(String key, String value) { 
+            if ("suggestion".equals(key)) { 
+                builder.setSuggestion(value); 
             } else {
-                builder.setCategory(key + "=" + value); // GH-90000
+                builder.setCategory(key + "=" + value); 
             }
             return this;
         }
 
-        public UnifiedDiagnostic build() { // GH-90000
-            return builder.setTimestamp(Instant.now().toEpochMilli()).build(); // GH-90000
+        public UnifiedDiagnostic build() { 
+            return builder.setTimestamp(Instant.now().toEpochMilli()).build(); 
         }
     }
 }

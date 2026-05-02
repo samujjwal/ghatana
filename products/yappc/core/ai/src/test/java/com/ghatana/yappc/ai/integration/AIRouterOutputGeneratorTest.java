@@ -33,17 +33,17 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
   private AIRouterOutputGenerator<String, String> generator;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    router = mock(AIModelRouter.class); // GH-90000
-    templateEngine = mock(PromptTemplateEngine.class); // GH-90000
+  void setUp() { 
+    router = mock(AIModelRouter.class); 
+    templateEngine = mock(PromptTemplateEngine.class); 
 
     @SuppressWarnings("unchecked")
-    ResultMapper<String> mapper = mock(ResultMapper.class); // GH-90000
+    ResultMapper<String> mapper = mock(ResultMapper.class); 
     when(mapper.mapResponse(any(), any())).thenReturn("mapped-result");
 
     when(templateEngine.buildPrompt(any(), any())).thenReturn("generated prompt");
 
-    generator = new AIRouterOutputGenerator<>(router, templateEngine, mapper); // GH-90000
+    generator = new AIRouterOutputGenerator<>(router, templateEngine, mapper); 
   }
 
   // ===== Basic Generation Tests =====
@@ -54,30 +54,30 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should generate output by routing through AI model router")
-    void shouldGenerateOutput() { // GH-90000
-      AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
-      when(router.route(any())).thenReturn(Promise.of(mockResponse)); // GH-90000
+    void shouldGenerateOutput() { 
+      AIResponse mockResponse = createMockResponse("gpt-4", 200); 
+      when(router.route(any())).thenReturn(Promise.of(mockResponse)); 
 
-      Map<String, Object> context = new HashMap<>(); // GH-90000
-      context.put("stepName", "implement-api"); // GH-90000
+      Map<String, Object> context = new HashMap<>(); 
+      context.put("stepName", "implement-api"); 
 
-      String result = runPromise(() -> generator.generate("build REST API", context)); // GH-90000
+      String result = runPromise(() -> generator.generate("build REST API", context)); 
 
       assertThat(result).isEqualTo("mapped-result");
     }
 
     @Test
     @DisplayName("Should propagate error when router fails")
-    void shouldPropagateRouterError() { // GH-90000
-      when(router.route(any())).thenReturn( // GH-90000
+    void shouldPropagateRouterError() { 
+      when(router.route(any())).thenReturn( 
           Promise.ofException(new RuntimeException("Router failure")));
 
-      Map<String, Object> context = Map.of("stepName", "test"); // GH-90000
+      Map<String, Object> context = Map.of("stepName", "test"); 
 
       try {
-        runPromise(() -> generator.generate("input", context)); // GH-90000
+        runPromise(() -> generator.generate("input", context)); 
         assertThat(false).as("Should have thrown").isTrue();
-      } catch (Exception e) { // GH-90000
+      } catch (Exception e) { 
         assertThat(e.getMessage()).contains("Router failure");
       }
     }
@@ -91,66 +91,66 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should route implementation steps to CODE_GENERATION")
-    void shouldRouteImplementToCodeGen() { // GH-90000
-      AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
-      when(router.route(any())).thenAnswer(invocation -> { // GH-90000
-        AIRequest req = invocation.getArgument(0); // GH-90000
-        assertThat(req.getTaskType()).isEqualTo(TaskType.CODE_GENERATION); // GH-90000
-        return Promise.of(mockResponse); // GH-90000
+    void shouldRouteImplementToCodeGen() { 
+      AIResponse mockResponse = createMockResponse("gpt-4", 200); 
+      when(router.route(any())).thenAnswer(invocation -> { 
+        AIRequest req = invocation.getArgument(0); 
+        assertThat(req.getTaskType()).isEqualTo(TaskType.CODE_GENERATION); 
+        return Promise.of(mockResponse); 
       });
 
-      Map<String, Object> context = new HashMap<>(); // GH-90000
-      context.put("stepName", "implement-api"); // GH-90000
+      Map<String, Object> context = new HashMap<>(); 
+      context.put("stepName", "implement-api"); 
 
-      runPromise(() -> generator.generate("build code", context)); // GH-90000
+      runPromise(() -> generator.generate("build code", context)); 
     }
 
     @Test
     @DisplayName("Should route analysis steps to CODE_ANALYSIS")
-    void shouldRouteAnalyzeToCodeAnalysis() { // GH-90000
-      AIResponse mockResponse = createMockResponse("claude-3", 150); // GH-90000
-      when(router.route(any())).thenAnswer(invocation -> { // GH-90000
-        AIRequest req = invocation.getArgument(0); // GH-90000
-        assertThat(req.getTaskType()).isEqualTo(TaskType.CODE_ANALYSIS); // GH-90000
-        return Promise.of(mockResponse); // GH-90000
+    void shouldRouteAnalyzeToCodeAnalysis() { 
+      AIResponse mockResponse = createMockResponse("claude-3", 150); 
+      when(router.route(any())).thenAnswer(invocation -> { 
+        AIRequest req = invocation.getArgument(0); 
+        assertThat(req.getTaskType()).isEqualTo(TaskType.CODE_ANALYSIS); 
+        return Promise.of(mockResponse); 
       });
 
-      Map<String, Object> context = new HashMap<>(); // GH-90000
-      context.put("stepName", "analyze-architecture"); // GH-90000
+      Map<String, Object> context = new HashMap<>(); 
+      context.put("stepName", "analyze-architecture"); 
 
-      runPromise(() -> generator.generate("review code", context)); // GH-90000
+      runPromise(() -> generator.generate("review code", context)); 
     }
 
     @Test
     @DisplayName("Should route test steps to TEST_GENERATION")
-    void shouldRouteTestToTestGen() { // GH-90000
-      AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
-      when(router.route(any())).thenAnswer(invocation -> { // GH-90000
-        AIRequest req = invocation.getArgument(0); // GH-90000
-        assertThat(req.getTaskType()).isEqualTo(TaskType.TEST_GENERATION); // GH-90000
-        return Promise.of(mockResponse); // GH-90000
+    void shouldRouteTestToTestGen() { 
+      AIResponse mockResponse = createMockResponse("gpt-4", 200); 
+      when(router.route(any())).thenAnswer(invocation -> { 
+        AIRequest req = invocation.getArgument(0); 
+        assertThat(req.getTaskType()).isEqualTo(TaskType.TEST_GENERATION); 
+        return Promise.of(mockResponse); 
       });
 
-      Map<String, Object> context = new HashMap<>(); // GH-90000
-      context.put("stepName", "test-generation"); // GH-90000
+      Map<String, Object> context = new HashMap<>(); 
+      context.put("stepName", "test-generation"); 
 
-      runPromise(() -> generator.generate("generate tests", context)); // GH-90000
+      runPromise(() -> generator.generate("generate tests", context)); 
     }
 
     @Test
     @DisplayName("Should default to GENERAL for unknown step names")
-    void shouldDefaultToGeneral() { // GH-90000
-      AIResponse mockResponse = createMockResponse("gpt-4", 200); // GH-90000
-      when(router.route(any())).thenAnswer(invocation -> { // GH-90000
-        AIRequest req = invocation.getArgument(0); // GH-90000
-        assertThat(req.getTaskType()).isEqualTo(TaskType.GENERAL); // GH-90000
-        return Promise.of(mockResponse); // GH-90000
+    void shouldDefaultToGeneral() { 
+      AIResponse mockResponse = createMockResponse("gpt-4", 200); 
+      when(router.route(any())).thenAnswer(invocation -> { 
+        AIRequest req = invocation.getArgument(0); 
+        assertThat(req.getTaskType()).isEqualTo(TaskType.GENERAL); 
+        return Promise.of(mockResponse); 
       });
 
-      Map<String, Object> context = new HashMap<>(); // GH-90000
-      context.put("stepName", "unknown-step"); // GH-90000
+      Map<String, Object> context = new HashMap<>(); 
+      context.put("stepName", "unknown-step"); 
 
-      runPromise(() -> generator.generate("do something", context)); // GH-90000
+      runPromise(() -> generator.generate("do something", context)); 
     }
   }
 
@@ -162,30 +162,30 @@ class AIRouterOutputGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should expose underlying router")
-    void shouldExposeRouter() { // GH-90000
-      assertThat(generator.getRouter()).isSameAs(router); // GH-90000
+    void shouldExposeRouter() { 
+      assertThat(generator.getRouter()).isSameAs(router); 
     }
 
     @Test
     @DisplayName("Should expose cache statistics")
-    void shouldExposeCacheStats() { // GH-90000
-      CacheStatistics mockStats = mock(CacheStatistics.class); // GH-90000
-      when(router.getCacheStatistics()).thenReturn(mockStats); // GH-90000
+    void shouldExposeCacheStats() { 
+      CacheStatistics mockStats = mock(CacheStatistics.class); 
+      when(router.getCacheStatistics()).thenReturn(mockStats); 
 
-      assertThat(generator.getCacheStatistics()).isSameAs(mockStats); // GH-90000
+      assertThat(generator.getCacheStatistics()).isSameAs(mockStats); 
     }
   }
 
   // ===== Test Helpers =====
 
-  private AIResponse createMockResponse(String modelId, long latencyMs) { // GH-90000
-    AIResponse response = mock(AIResponse.class); // GH-90000
-    when(response.getModelId()).thenReturn(modelId); // GH-90000
-    when(response.isCacheHit()).thenReturn(false); // GH-90000
+  private AIResponse createMockResponse(String modelId, long latencyMs) { 
+    AIResponse response = mock(AIResponse.class); 
+    when(response.getModelId()).thenReturn(modelId); 
+    when(response.isCacheHit()).thenReturn(false); 
 
-    AIResponse.ResponseMetrics metrics = mock(AIResponse.ResponseMetrics.class); // GH-90000
-    when(metrics.getLatencyMs()).thenReturn(latencyMs); // GH-90000
-    when(response.getMetrics()).thenReturn(metrics); // GH-90000
+    AIResponse.ResponseMetrics metrics = mock(AIResponse.ResponseMetrics.class); 
+    when(metrics.getLatencyMs()).thenReturn(latencyMs); 
+    when(response.getMetrics()).thenReturn(metrics); 
 
     return response;
   }

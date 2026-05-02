@@ -23,63 +23,63 @@ class CodecSupportTest {
 
     @Test
     @DisplayName("Should support common audio codecs")
-    void shouldSupportCommonAudioCodecs() { // GH-90000
-        Set<String> audioCodecs = Set.of("AAC", "MP3", "OPUS", "FLAC"); // GH-90000
+    void shouldSupportCommonAudioCodecs() { 
+        Set<String> audioCodecs = Set.of("AAC", "MP3", "OPUS", "FLAC"); 
         String codec = "AAC";
         
-        assertThat(audioCodecs).contains(codec); // GH-90000
-        assertThat(audioCodecs).isNotEmpty(); // GH-90000
+        assertThat(audioCodecs).contains(codec); 
+        assertThat(audioCodecs).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Should support common video codecs")
-    void shouldSupportCommonVideoCodecs() { // GH-90000
-        Set<String> videoCodecs = Set.of("H264", "H265", "VP9", "AV1"); // GH-90000
+    void shouldSupportCommonVideoCodecs() { 
+        Set<String> videoCodecs = Set.of("H264", "H265", "VP9", "AV1"); 
         String codec = "H264";
         
-        assertThat(videoCodecs).contains(codec); // GH-90000
-        assertThat(videoCodecs).isNotEmpty(); // GH-90000
+        assertThat(videoCodecs).contains(codec); 
+        assertThat(videoCodecs).isNotEmpty(); 
     }
 
     @Test
     @DisplayName("Should handle codec negotiation")
-    void shouldHandleCodecNegotiation() { // GH-90000
+    void shouldHandleCodecNegotiation() { 
         String preferredCodec = "AAC";
         String supportedCodec = "MP3";
         
-        assertThat(preferredCodec).isNotNull(); // GH-90000
-        assertThat(supportedCodec).isNotNull(); // GH-90000
+        assertThat(preferredCodec).isNotNull(); 
+        assertThat(supportedCodec).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle codec fallback")
-    void shouldHandleCodecFallback() { // GH-90000
+    void shouldHandleCodecFallback() { 
         String primaryCodec = "AV1";
         String fallbackCodec = "H264";
         
-        assertThat(primaryCodec).isNotNull(); // GH-90000
-        assertThat(fallbackCodec).isNotNull(); // GH-90000
+        assertThat(primaryCodec).isNotNull(); 
+        assertThat(fallbackCodec).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should validate codec compatibility")
-    void shouldValidateCodecCompatibility() { // GH-90000
+    void shouldValidateCodecCompatibility() { 
         String container = "MP4";
         String codec = "H264";
         boolean compatible = true;
         
-        assertThat(container).isNotNull(); // GH-90000
-        assertThat(codec).isNotNull(); // GH-90000
-        assertThat(compatible).isTrue(); // GH-90000
+        assertThat(container).isNotNull(); 
+        assertThat(codec).isNotNull(); 
+        assertThat(compatible).isTrue(); 
     }
 
     @Test
     @DisplayName("Should handle unsupported codecs")
-    void shouldHandleUnsupportedCodecs() { // GH-90000
+    void shouldHandleUnsupportedCodecs() { 
         String unsupportedCodec = "UNKNOWN_CODEC";
         boolean supported = false;
         
-        assertThat(unsupportedCodec).isNotNull(); // GH-90000
-        assertThat(supported).isFalse(); // GH-90000
+        assertThat(unsupportedCodec).isNotNull(); 
+        assertThat(supported).isFalse(); 
     }
 }

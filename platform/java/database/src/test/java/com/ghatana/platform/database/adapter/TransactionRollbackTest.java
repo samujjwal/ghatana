@@ -35,59 +35,59 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rollback on unchecked exception restores pre-transaction state")
-        void rollback_onUncheckedException_restoresPreTransactionState() { // GH-90000
+        void rollback_onUncheckedException_restoresPreTransactionState() { 
             List<String> state = new ArrayList<>(List.of("initial-row"));
-            List<String> snapshot = List.copyOf(state); // GH-90000
+            List<String> snapshot = List.copyOf(state); 
 
             try {
                 state.add("new-row");
                 throw new RuntimeException("constraint violation");
-            } catch (RuntimeException e) { // GH-90000
+            } catch (RuntimeException e) { 
                 // rollback: restore snapshot
-                state.clear(); // GH-90000
-                state.addAll(snapshot); // GH-90000
+                state.clear(); 
+                state.addAll(snapshot); 
             }
 
-            assertThat(state).isEqualTo(snapshot); // GH-90000
+            assertThat(state).isEqualTo(snapshot); 
             assertThat(state).doesNotContain("new-row");
         }
 
         @Test
         @DisplayName("rollback on checked exception restores pre-transaction state")
-        void rollback_onCheckedException_restoresPreTransactionState() { // GH-90000
-            List<Integer> counters = new ArrayList<>(List.of(100, 200)); // GH-90000
-            List<Integer> snapshot = List.copyOf(counters); // GH-90000
+        void rollback_onCheckedException_restoresPreTransactionState() { 
+            List<Integer> counters = new ArrayList<>(List.of(100, 200)); 
+            List<Integer> snapshot = List.copyOf(counters); 
 
             try {
-                counters.set(0, 50); // GH-90000
-                counters.set(1, 250); // GH-90000
-                if (counters.get(0) + counters.get(1) == 300) { // GH-90000
+                counters.set(0, 50); 
+                counters.set(1, 250); 
+                if (counters.get(0) + counters.get(1) == 300) { 
                     throw new Exception("Integrity check failed");
                 }
-            } catch (Exception e) { // GH-90000
-                counters.clear(); // GH-90000
-                counters.addAll(snapshot); // GH-90000
+            } catch (Exception e) { 
+                counters.clear(); 
+                counters.addAll(snapshot); 
             }
 
-            assertThat(counters).isEqualTo(snapshot); // GH-90000
+            assertThat(counters).isEqualTo(snapshot); 
         }
 
         @Test
         @DisplayName("rollback does not affect rows committed before failed transaction")
-        void rollback_doesNotAffectPreviouslyCommittedRows() { // GH-90000
-            List<String> db = new ArrayList<>(); // GH-90000
+        void rollback_doesNotAffectPreviouslyCommittedRows() { 
+            List<String> db = new ArrayList<>(); 
 
             // First transaction – commits
             db.add("committed-row");
 
             // Second transaction – fails and rolls back
-            List<String> snapshotBeforeSecond = List.copyOf(db); // GH-90000
+            List<String> snapshotBeforeSecond = List.copyOf(db); 
             try {
                 db.add("temp-row");
                 throw new RuntimeException("rollback second transaction");
-            } catch (RuntimeException e) { // GH-90000
-                db.clear(); // GH-90000
-                db.addAll(snapshotBeforeSecond); // GH-90000
+            } catch (RuntimeException e) { 
+                db.clear(); 
+                db.addAll(snapshotBeforeSecond); 
             }
 
             assertThat(db).containsExactly("committed-row");
@@ -103,41 +103,41 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("rollback to savepoint undoes only post-savepoint changes")
-        void rollbackToSavepoint_undoesOnlyPostSavepointChanges() { // GH-90000
-            List<String> db = new ArrayList<>(); // GH-90000
+        void rollbackToSavepoint_undoesOnlyPostSavepointChanges() { 
+            List<String> db = new ArrayList<>(); 
 
             // Outer transaction work before savepoint
             db.add("before-savepoint");
-            List<String> savepoint = List.copyOf(db); // GH-90000
+            List<String> savepoint = List.copyOf(db); 
 
             // Work after savepoint
             db.add("after-savepoint-1");
             db.add("after-savepoint-2");
 
             // Rollback to savepoint
-            db.clear(); // GH-90000
-            db.addAll(savepoint); // GH-90000
+            db.clear(); 
+            db.addAll(savepoint); 
 
             assertThat(db).containsExactly("before-savepoint");
-            assertThat(db).doesNotContain("after-savepoint-1", "after-savepoint-2"); // GH-90000
+            assertThat(db).doesNotContain("after-savepoint-1", "after-savepoint-2"); 
         }
 
         @Test
         @DisplayName("multiple savepoints allow fine-grained rollback control")
-        void multipleSavepoints_allowFineGrainedRollbackControl() { // GH-90000
-            List<String> db = new ArrayList<>(); // GH-90000
+        void multipleSavepoints_allowFineGrainedRollbackControl() { 
+            List<String> db = new ArrayList<>(); 
 
             db.add("step-1");
-            List<String> sp1 = List.copyOf(db); // GH-90000
+            List<String> sp1 = List.copyOf(db); 
 
             db.add("step-2");
-            List<String> sp2 = List.copyOf(db); // GH-90000
+            List<String> sp2 = List.copyOf(db); 
 
             db.add("step-3");
 
-            // Rollback to sp1 (drops step-2 and step-3) // GH-90000
-            db.clear(); // GH-90000
-            db.addAll(sp1); // GH-90000
+            // Rollback to sp1 (drops step-2 and step-3) 
+            db.clear(); 
+            db.addAll(sp1); 
 
             assertThat(db).containsExactly("step-1");
         }
@@ -151,22 +151,22 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("inner rollback does not roll back outer transaction")
-        void innerRollback_doesNotRollBackOuterTransaction() { // GH-90000
-            List<String> db = new ArrayList<>(); // GH-90000
-            List<String> outerSnapshot = new ArrayList<>(); // GH-90000
+        void innerRollback_doesNotRollBackOuterTransaction() { 
+            List<String> db = new ArrayList<>(); 
+            List<String> outerSnapshot = new ArrayList<>(); 
 
             // Outer transaction
             db.add("outer-row");
-            outerSnapshot.addAll(db); // GH-90000
+            outerSnapshot.addAll(db); 
 
             // Inner transaction
             try {
                 db.add("inner-row");
                 throw new RuntimeException("inner failure");
-            } catch (RuntimeException e) { // GH-90000
+            } catch (RuntimeException e) { 
                 // Inner rollback only
-                db.clear(); // GH-90000
-                db.addAll(outerSnapshot); // GH-90000
+                db.clear(); 
+                db.addAll(outerSnapshot); 
             }
 
             // Outer commits
@@ -175,21 +175,21 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("outer rollback undoes nested committed work")
-        void outerRollback_undoesNestedCommittedWork() { // GH-90000
-            List<String> db = new ArrayList<>(); // GH-90000
-            List<String> pre = List.copyOf(db); // GH-90000
+        void outerRollback_undoesNestedCommittedWork() { 
+            List<String> db = new ArrayList<>(); 
+            List<String> pre = List.copyOf(db); 
 
             try {
                 db.add("outer-initial");
                 db.add("inner-committed");
 
                 throw new RuntimeException("outer failure after inner committed");
-            } catch (RuntimeException e) { // GH-90000
-                db.clear(); // GH-90000
-                db.addAll(pre); // GH-90000
+            } catch (RuntimeException e) { 
+                db.clear(); 
+                db.addAll(pre); 
             }
 
-            assertThat(db).isEmpty(); // GH-90000
+            assertThat(db).isEmpty(); 
         }
     }
 
@@ -201,42 +201,42 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("deadlock detected causes transaction to roll back")
-        void deadlock_detected_causesTransactionToRollBack() { // GH-90000
-            AtomicBoolean deadlockRolledBack = new AtomicBoolean(false); // GH-90000
-            AtomicInteger completedOperations = new AtomicInteger(0); // GH-90000
+        void deadlock_detected_causesTransactionToRollBack() { 
+            AtomicBoolean deadlockRolledBack = new AtomicBoolean(false); 
+            AtomicInteger completedOperations = new AtomicInteger(0); 
 
             // Simulate: deadlock resolution rolls back the younger transaction
             try {
-                completedOperations.incrementAndGet(); // GH-90000
+                completedOperations.incrementAndGet(); 
                 boolean deadlockDetected = true;
-                if (deadlockDetected) { // GH-90000
+                if (deadlockDetected) { 
                     throw new RuntimeException("Deadlock detected; transaction rolled back");
                 }
-            } catch (RuntimeException e) { // GH-90000
-                deadlockRolledBack.set(true); // GH-90000
+            } catch (RuntimeException e) { 
+                deadlockRolledBack.set(true); 
             }
 
-            assertThat(deadlockRolledBack.get()).isTrue(); // GH-90000
+            assertThat(deadlockRolledBack.get()).isTrue(); 
         }
 
         @Test
         @DisplayName("deadlock victim transaction can retry successfully")
-        void deadlockVictim_canRetrySuccessfully() { // GH-90000
-            AtomicInteger attempts = new AtomicInteger(0); // GH-90000
-            AtomicBoolean succeeded = new AtomicBoolean(false); // GH-90000
+        void deadlockVictim_canRetrySuccessfully() { 
+            AtomicInteger attempts = new AtomicInteger(0); 
+            AtomicBoolean succeeded = new AtomicBoolean(false); 
 
-            while (attempts.get() < 3 && !succeeded.get()) { // GH-90000
-                attempts.incrementAndGet(); // GH-90000
+            while (attempts.get() < 3 && !succeeded.get()) { 
+                attempts.incrementAndGet(); 
                 // Deadlock on first attempt, succeeds on retry
-                if (attempts.get() == 1) { // GH-90000
+                if (attempts.get() == 1) { 
                     // simulate deadlock - skip retry
                     continue;
                 }
-                succeeded.set(true); // GH-90000
+                succeeded.set(true); 
             }
 
-            assertThat(succeeded.get()).isTrue(); // GH-90000
-            assertThat(attempts.get()).isEqualTo(2); // GH-90000
+            assertThat(succeeded.get()).isTrue(); 
+            assertThat(attempts.get()).isEqualTo(2); 
         }
     }
 
@@ -248,25 +248,25 @@ class TransactionRollbackTest extends EventloopTestBase {
 
         @Test
         @DisplayName("READ_COMMITTED prevents dirty reads")
-        void readCommitted_preventsDirtyReads() { // GH-90000
+        void readCommitted_preventsDirtyReads() { 
             String uncommittedValue = "uncommitted-write";
             String committedValue   = "committed-read";
 
             // Simulate: transaction A has dirty write but transaction B reads committed value
             String observedByTransactionB = committedValue; // READ_COMMITTED enforces this
 
-            assertThat(observedByTransactionB).isNotEqualTo(uncommittedValue); // GH-90000
-            assertThat(observedByTransactionB).isEqualTo(committedValue); // GH-90000
+            assertThat(observedByTransactionB).isNotEqualTo(uncommittedValue); 
+            assertThat(observedByTransactionB).isEqualTo(committedValue); 
         }
 
         @Test
         @DisplayName("SERIALIZABLE prevents phantom reads")
-        void serializable_preventsPhantomReads() { // GH-90000
-            List<Integer> firstRead  = List.of(1, 2, 3); // GH-90000
-            List<Integer> secondRead = List.of(1, 2, 3); // no phantom row injected // GH-90000
+        void serializable_preventsPhantomReads() { 
+            List<Integer> firstRead  = List.of(1, 2, 3); 
+            List<Integer> secondRead = List.of(1, 2, 3); // no phantom row injected 
 
             // Under SERIALIZABLE, both reads return same result
-            assertThat(secondRead).isEqualTo(firstRead); // GH-90000
+            assertThat(secondRead).isEqualTo(firstRead); 
         }
     }
 }

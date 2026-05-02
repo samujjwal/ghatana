@@ -44,10 +44,16 @@ class CrossScopeAuditServiceTest {
     private CrossScopeAuditService service;
 
     @BeforeEach
-    void setUp() { 
-        auditStore = new InMemoryAuditStore(); 
-        AuditPolicyResolver resolver = DefaultAuditPolicyResolver.withStandardMappings(); 
-        service = new CrossScopeAuditService(resolver, auditStore); 
+    void setUp() {
+        auditStore = new InMemoryAuditStore();
+        // Use custom retention mappings for test scenarios
+        DefaultRetentionPolicyResolver retentionResolver = new DefaultRetentionPolicyResolver(Map.of(
+            "nepal-2081", 25,
+            "sebon", 10,
+            "gdpr", 7
+        ));
+        AuditPolicyResolver resolver = new DefaultAuditPolicyResolver(retentionResolver);
+        service = new CrossScopeAuditService(resolver, auditStore);
     }
 
     // ==================== Retention Resolution ====================

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.agent.registry.provider;
@@ -31,20 +31,20 @@ class DataCloudAgentLogicProviderTest {
     private DataCloudAgentLogicProvider provider;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        provider = new DataCloudAgentLogicProvider(); // GH-90000
+    void setUp() { 
+        provider = new DataCloudAgentLogicProvider(); 
     }
 
     @Test
     @DisplayName("providerId is 'data-cloud'")
-    void providerIdIsDataCloud() { // GH-90000
+    void providerIdIsDataCloud() { 
         assertThat(provider.getProviderId()).isEqualTo("data-cloud");
     }
 
     @Test
     @DisplayName("exposes exactly three supported refs by default")
-    void exposesThreeSupportedRefs() { // GH-90000
-        assertThat(provider.getSupportedRefs()).containsExactlyInAnyOrder( // GH-90000
+    void exposesThreeSupportedRefs() { 
+        assertThat(provider.getSupportedRefs()).containsExactlyInAnyOrder( 
                 "data-cloud:agent.data-cloud.schema-validator",
                 "data-cloud:agent.data-cloud.data-sync",
                 "data-cloud:agent.data-cloud.anomaly-detector");
@@ -52,49 +52,49 @@ class DataCloudAgentLogicProviderTest {
 
     @Test
     @DisplayName("creates SchemaValidatorAgent for schema-validator ref")
-    void createsSchemaValidatorAgent() { // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
-        TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
+    void createsSchemaValidatorAgent() { 
+        AgentConfig config = mock(AgentConfig.class); 
+        TypedAgent<?, ?> agent = provider.createAgent( 
                 "data-cloud:agent.data-cloud.schema-validator", config);
-        assertThat(agent).isInstanceOf(SchemaValidatorAgent.class); // GH-90000
+        assertThat(agent).isInstanceOf(SchemaValidatorAgent.class); 
     }
 
     @Test
     @DisplayName("creates DataSyncAgent for data-sync ref")
-    void createsDataSyncAgent() { // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
-        TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
+    void createsDataSyncAgent() { 
+        AgentConfig config = mock(AgentConfig.class); 
+        TypedAgent<?, ?> agent = provider.createAgent( 
                 "data-cloud:agent.data-cloud.data-sync", config);
-        assertThat(agent).isInstanceOf(DataSyncAgent.class); // GH-90000
+        assertThat(agent).isInstanceOf(DataSyncAgent.class); 
     }
 
     @Test
     @DisplayName("creates DataAnomalyDetectorAgent for anomaly-detector ref")
-    void createsDataAnomalyDetectorAgent() { // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
-        TypedAgent<?, ?> agent = provider.createAgent( // GH-90000
+    void createsDataAnomalyDetectorAgent() { 
+        AgentConfig config = mock(AgentConfig.class); 
+        TypedAgent<?, ?> agent = provider.createAgent( 
                 "data-cloud:agent.data-cloud.anomaly-detector", config);
-        assertThat(agent).isInstanceOf(DataAnomalyDetectorAgent.class); // GH-90000
+        assertThat(agent).isInstanceOf(DataAnomalyDetectorAgent.class); 
     }
 
     @Test
     @DisplayName("throws IllegalArgumentException for unknown ref")
-    void throwsForUnknownRef() { // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
-        assertThatThrownBy(() -> // GH-90000
-                provider.createAgent("data-cloud:agent.unknown", config)) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    void throwsForUnknownRef() { 
+        AgentConfig config = mock(AgentConfig.class); 
+        assertThatThrownBy(() -> 
+                provider.createAgent("data-cloud:agent.unknown", config)) 
+                .isInstanceOf(IllegalArgumentException.class) 
                 .hasMessageContaining("Unsupported implementationRef");
     }
 
     @Test
     @DisplayName("registerFactory adds a new ref")
-    void registerFactoryAddsRef() { // GH-90000
-        AgentConfig config = mock(AgentConfig.class); // GH-90000
-        provider.registerFactory("data-cloud:agent.custom", c -> new SchemaValidatorAgent()); // GH-90000
+    void registerFactoryAddsRef() { 
+        AgentConfig config = mock(AgentConfig.class); 
+        provider.registerFactory("data-cloud:agent.custom", c -> new SchemaValidatorAgent()); 
 
         assertThat(provider.getSupportedRefs()).contains("data-cloud:agent.custom");
-        assertThat(provider.createAgent("data-cloud:agent.custom", config)) // GH-90000
-                .isInstanceOf(SchemaValidatorAgent.class); // GH-90000
+        assertThat(provider.createAgent("data-cloud:agent.custom", config)) 
+                .isInstanceOf(SchemaValidatorAgent.class); 
     }
 }

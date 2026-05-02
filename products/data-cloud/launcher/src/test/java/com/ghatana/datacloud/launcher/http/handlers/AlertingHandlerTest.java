@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("AlertingHandler")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class AlertingHandlerTest extends EventloopTestBase {
 
     @Mock
@@ -41,30 +41,30 @@ class AlertingHandlerTest extends EventloopTestBase {
     private AlertingHandler handler;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        handler = new AlertingHandler(client, http); // GH-90000
-        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); // GH-90000
+    void setUp() { 
+        handler = new AlertingHandler(client, http); 
+        when(http.errorResponse(400, "X-Tenant-Id header is required")).thenReturn(errorResponse); 
     }
 
     @Test
     @DisplayName("list alerts rejects missing tenant before query access")
-    void listAlertsRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void listAlertsRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleListAlerts(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleListAlerts(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(client, never()).query("default", AlertingHandler.ALERTS_COLLECTION, DataCloudClient.Query.limit(1)); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(client, never()).query("default", AlertingHandler.ALERTS_COLLECTION, DataCloudClient.Query.limit(1)); 
     }
 
     @Test
     @DisplayName("create alert rule rejects missing tenant before loading body")
-    void createAlertRuleRejectsMissingTenant() { // GH-90000
-        when(http.requireTenantIdOrFail(request)).thenReturn(null); // GH-90000
+    void createAlertRuleRejectsMissingTenant() { 
+        when(http.requireTenantIdOrFail(request)).thenReturn(null); 
 
-        HttpResponse response = runPromise(() -> handler.handleCreateAlertRule(request)); // GH-90000
+        HttpResponse response = runPromise(() -> handler.handleCreateAlertRule(request)); 
 
-        assertThat(response).isSameAs(errorResponse); // GH-90000
-        verify(request, never()).loadBody(); // GH-90000
+        assertThat(response).isSameAs(errorResponse); 
+        verify(request, never()).loadBody(); 
     }
 }

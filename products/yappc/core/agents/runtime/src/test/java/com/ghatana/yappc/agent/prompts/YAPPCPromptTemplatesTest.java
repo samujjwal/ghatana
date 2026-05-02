@@ -20,21 +20,21 @@ class YAPPCPromptTemplatesTest {
 
   @Test
   @DisplayName("should resolve implementation alias to a valid template")
-  void shouldResolveImplementationAlias() { // GH-90000
+  void shouldResolveImplementationAlias() { 
     AgentPromptTemplate template = YAPPCPromptTemplates.get("implementation.implement");
 
     assertThat(template.getAgentName()).isEqualTo("DetailedImplementSpecialistAgent");
-    assertThat(template.getTaskTemplate()).contains("{{unitName}}", "{{specification}}"); // GH-90000
+    assertThat(template.getTaskTemplate()).contains("{{unitName}}", "{{specification}}"); 
   }
 
   @Test
   @DisplayName("should render context values into prompt output")
-  void shouldRenderContextValuesIntoPrompt() { // GH-90000
+  void shouldRenderContextValuesIntoPrompt() { 
     AgentPromptTemplate template = YAPPCPromptTemplates.get("architecture.intake");
 
     String rendered =
-        template.render( // GH-90000
-            Map.of( // GH-90000
+        template.render( 
+            Map.of( 
                 "requirements", "Build a secure audit service",
                 "functionalRequirements", "record events",
                 "nonFunctionalRequirements", "durability",
@@ -47,9 +47,9 @@ class YAPPCPromptTemplatesTest {
 
   @Test
   @DisplayName("should reject unknown step ids")
-  void shouldRejectUnknownStepIds() { // GH-90000
+  void shouldRejectUnknownStepIds() { 
     assertThatThrownBy(() -> YAPPCPromptTemplates.get("unknown.step"))
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("No prompt template");
   }
 }

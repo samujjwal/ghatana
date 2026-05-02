@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.api.memory;
@@ -28,27 +28,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Memory Semantic Search Tests")
 class MemorySemanticSearchTest extends EventloopTestBase {
 
-    // ── Embedding model (test stub) ─────────────────────────────────────────── // GH-90000
+    // ── Embedding model (test stub) ─────────────────────────────────────────── 
 
-    record MemoryItem(String id, String tenantId, String content, double[] embedding) {} // GH-90000
+    record MemoryItem(String id, String tenantId, String content, double[] embedding) {} 
 
-    record SearchResult(MemoryItem item, double similarity) {} // GH-90000
+    record SearchResult(MemoryItem item, double similarity) {} 
 
     private SemanticSearchService search;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        search = new SemanticSearchService(); // GH-90000
+    void setUp() { 
+        search = new SemanticSearchService(); 
         // Seed with items using hand-crafted 3-D embeddings for predictable similarity
-        search.index(new MemoryItem("m1", "tenant-A", "java programming language", // GH-90000
+        search.index(new MemoryItem("m1", "tenant-A", "java programming language", 
                 new double[]{1.0, 0.0, 0.0}));
-        search.index(new MemoryItem("m2", "tenant-A", "python scripting interpreted", // GH-90000
+        search.index(new MemoryItem("m2", "tenant-A", "python scripting interpreted", 
                 new double[]{0.9, 0.1, 0.0}));
-        search.index(new MemoryItem("m3", "tenant-A", "database sql relational", // GH-90000
+        search.index(new MemoryItem("m3", "tenant-A", "database sql relational", 
                 new double[]{0.0, 1.0, 0.0}));
-        search.index(new MemoryItem("m4", "tenant-A", "machine learning neural network", // GH-90000
+        search.index(new MemoryItem("m4", "tenant-A", "machine learning neural network", 
                 new double[]{0.0, 0.0, 1.0}));
-        search.index(new MemoryItem("m5", "tenant-B", "java enterprise backend", // GH-90000
+        search.index(new MemoryItem("m5", "tenant-B", "java enterprise backend", 
                 new double[]{1.0, 0.0, 0.0}));
     }
 
@@ -56,50 +56,50 @@ class MemorySemanticSearchTest extends EventloopTestBase {
 
     @Test
     @DisplayName("search returns results ordered by decreasing similarity")
-    void searchReturnsResultsOrderedBySimilarity() { // GH-90000
+    void searchReturnsResultsOrderedBySimilarity() { 
         double[] query = {1.0, 0.0, 0.0}; // matches m1, m2 closely
-        List<SearchResult> results = search.query("tenant-A", query, 10); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 10); 
 
-        for (int i = 0; i < results.size() - 1; i++) { // GH-90000
-            assertThat(results.get(i).similarity()) // GH-90000
-                    .isGreaterThanOrEqualTo(results.get(i + 1).similarity()); // GH-90000
+        for (int i = 0; i < results.size() - 1; i++) { 
+            assertThat(results.get(i).similarity()) 
+                    .isGreaterThanOrEqualTo(results.get(i + 1).similarity()); 
         }
     }
 
     @Test
     @DisplayName("top match is the item with highest cosine similarity to the query")
-    void topMatchHasHighestCosineSimilarity() { // GH-90000
+    void topMatchHasHighestCosineSimilarity() { 
         double[] query = {1.0, 0.0, 0.0}; // unit vector along first dimension
-        List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 5); 
 
-        assertThat(results).isNotEmpty(); // GH-90000
+        assertThat(results).isNotEmpty(); 
         assertThat(results.get(0).item().id()).isEqualTo("m1"); // exact match
-        assertThat(results.get(0).similarity()).isCloseTo(1.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
+        assertThat(results.get(0).similarity()).isCloseTo(1.0, org.assertj.core.data.Offset.offset(0.001)); 
     }
 
     @Test
     @DisplayName("item with zero cosine similarity is ranked last")
-    void zeroSimilarityItemRankedLast() { // GH-90000
-        double[] query = {0.0, 0.0, 1.0}; // perpendicular to m1 (java) and m3 (db) // GH-90000
-        List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
+    void zeroSimilarityItemRankedLast() { 
+        double[] query = {0.0, 0.0, 1.0}; // perpendicular to m1 (java) and m3 (db) 
+        List<SearchResult> results = search.query("tenant-A", query, 5); 
 
-        SearchResult lastResult = results.get(results.size() - 1); // GH-90000
-        assertThat(lastResult.similarity()).isCloseTo(0.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
+        SearchResult lastResult = results.get(results.size() - 1); 
+        assertThat(lastResult.similarity()).isCloseTo(0.0, org.assertj.core.data.Offset.offset(0.001)); 
     }
 
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     @Test
     @DisplayName("search is scoped to the requesting tenant")
-    void searchIsScopedToTenant() { // GH-90000
+    void searchIsScopedToTenant() { 
         double[] query = {1.0, 0.0, 0.0};
-        List<SearchResult> tenantAResults = search.query("tenant-A", query, 10); // GH-90000
-        List<SearchResult> tenantBResults = search.query("tenant-B", query, 10); // GH-90000
+        List<SearchResult> tenantAResults = search.query("tenant-A", query, 10); 
+        List<SearchResult> tenantBResults = search.query("tenant-B", query, 10); 
 
-        Set<String> tenantAIds = tenantAResults.stream() // GH-90000
-                .map(r -> r.item().id()).collect(Collectors.toSet()); // GH-90000
-        Set<String> tenantBIds = tenantBResults.stream() // GH-90000
-                .map(r -> r.item().id()).collect(Collectors.toSet()); // GH-90000
+        Set<String> tenantAIds = tenantAResults.stream() 
+                .map(r -> r.item().id()).collect(Collectors.toSet()); 
+        Set<String> tenantBIds = tenantBResults.stream() 
+                .map(r -> r.item().id()).collect(Collectors.toSet()); 
 
         // m5 belongs to tenant-B only
         assertThat(tenantBIds).contains("m5");
@@ -110,155 +110,155 @@ class MemorySemanticSearchTest extends EventloopTestBase {
 
     @Test
     @DisplayName("top-k limits the result set to k items")
-    void topKLimitsResultSet() { // GH-90000
+    void topKLimitsResultSet() { 
         double[] query = {1.0, 0.0, 0.0};
-        List<SearchResult> results = search.query("tenant-A", query, 2); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 2); 
 
-        assertThat(results).hasSize(2); // GH-90000
+        assertThat(results).hasSize(2); 
     }
 
     @Test
     @DisplayName("top-k larger than index size returns all available items")
-    void topKLargerThanIndexReturnsAllItems() { // GH-90000
+    void topKLargerThanIndexReturnsAllItems() { 
         double[] query = {1.0, 0.0, 0.0};
-        List<SearchResult> results = search.query("tenant-A", query, 100); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 100); 
 
-        assertThat(results.size()).isLessThanOrEqualTo(4); // 4 items for tenant-A // GH-90000
+        assertThat(results.size()).isLessThanOrEqualTo(4); // 4 items for tenant-A 
     }
 
     // ── Filters ───────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("content filter excludes items not matching the keyword")
-    void contentFilterExcludesNonMatchingItems() { // GH-90000
+    void contentFilterExcludesNonMatchingItems() { 
         double[] query = {1.0, 0.0, 0.0};
-        List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "java"); // GH-90000
+        List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "java"); 
 
         assertThat(results).allMatch(r -> r.item().content().contains("java"));
     }
 
     @Test
     @DisplayName("content filter returning no matches produces an empty result list")
-    void contentFilterWithNoMatchesProducesEmptyList() { // GH-90000
+    void contentFilterWithNoMatchesProducesEmptyList() { 
         double[] query = {1.0, 0.0, 0.0};
-        List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "kubernetes"); // GH-90000
+        List<SearchResult> results = search.queryWithContentFilter("tenant-A", query, 10, "kubernetes"); 
 
-        assertThat(results).isEmpty(); // GH-90000
+        assertThat(results).isEmpty(); 
     }
 
     // ── Vector ID mapping ─────────────────────────────────────────────────────
 
     @Test
     @DisplayName("indexed item is retrievable by its exact ID")
-    void indexedItemIsRetrievableById() { // GH-90000
-        assertThat(search.findById("m1")).isPresent(); // GH-90000
-        assertThat(search.findById("m1").get().id()).isEqualTo("m1"); // GH-90000
+    void indexedItemIsRetrievableById() { 
+        assertThat(search.findById("m1")).isPresent(); 
+        assertThat(search.findById("m1").get().id()).isEqualTo("m1"); 
     }
 
     @Test
     @DisplayName("unknown ID returns empty Optional")
-    void unknownIdReturnsEmpty() { // GH-90000
-        assertThat(search.findById("does-not-exist")).isEmpty(); // GH-90000
+    void unknownIdReturnsEmpty() { 
+        assertThat(search.findById("does-not-exist")).isEmpty(); 
     }
 
     @Test
     @DisplayName("search result IDs correspond to indexed items (no phantom IDs)")
-    void searchResultIdsMatchIndexedItems() { // GH-90000
+    void searchResultIdsMatchIndexedItems() { 
         double[] query = {0.0, 1.0, 0.0}; // closest to m3
-        List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 5); 
 
         // Every result ID must be findable in the index
-        results.forEach(r -> // GH-90000
-                assertThat(search.findById(r.item().id())).isPresent()); // GH-90000
+        results.forEach(r -> 
+                assertThat(search.findById(r.item().id())).isPresent()); 
     }
 
     @Test
     @DisplayName("removing an item by ID excludes it from subsequent queries")
-    void removedItemDoesNotAppearInSearch() { // GH-90000
-        search.remove("m3"); // GH-90000
+    void removedItemDoesNotAppearInSearch() { 
+        search.remove("m3"); 
 
         double[] query = {0.0, 1.0, 0.0}; // was closest to m3
-        List<SearchResult> results = search.query("tenant-A", query, 10); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 10); 
 
-        assertThat(results).extracting(r -> r.item().id()) // GH-90000
-                .doesNotContain("m3"); // GH-90000
+        assertThat(results).extracting(r -> r.item().id()) 
+                .doesNotContain("m3"); 
     }
 
     @Test
     @DisplayName("removing an item by ID makes findById return empty")
-    void removedItemNotFoundById() { // GH-90000
-        search.remove("m2"); // GH-90000
-        assertThat(search.findById("m2")).isEmpty(); // GH-90000
+    void removedItemNotFoundById() { 
+        search.remove("m2"); 
+        assertThat(search.findById("m2")).isEmpty(); 
     }
 
     @Test
     @DisplayName("removing an item in one tenant does not affect the other tenant's index")
-    void removeIsScoped() { // GH-90000
+    void removeIsScoped() { 
         search.remove("m5"); // tenant-B item
-        assertThat(search.findById("m5")).isEmpty(); // GH-90000
+        assertThat(search.findById("m5")).isEmpty(); 
 
         // tenant-A items must be intact
-        assertThat(search.findById("m1")).isPresent(); // GH-90000
-        assertThat(search.findById("m2")).isPresent(); // GH-90000
+        assertThat(search.findById("m1")).isPresent(); 
+        assertThat(search.findById("m2")).isPresent(); 
     }
 
     @Test
     @DisplayName("ID uniqueness: indexing a duplicate ID overwrites the previous embedding")
-    void duplicateIdOverwritesPreviousEmbedding() { // GH-90000
+    void duplicateIdOverwritesPreviousEmbedding() { 
         // Overwrite m1's embedding to point in the database direction
-        search.index(new MemoryItem("m1", "tenant-A", "database sql", // GH-90000
-                new double[]{0.0, 1.0, 0.0})); // GH-90000
+        search.index(new MemoryItem("m1", "tenant-A", "database sql", 
+                new double[]{0.0, 1.0, 0.0})); 
 
         double[] query = {0.0, 1.0, 0.0};
-        List<SearchResult> results = search.query("tenant-A", query, 5); // GH-90000
+        List<SearchResult> results = search.query("tenant-A", query, 5); 
 
         // m1 should now score highest with the rewritten embedding
-        assertThat(results.get(0).item().id()).isEqualTo("m1"); // GH-90000
-        assertThat(results.get(0).similarity()).isCloseTo(1.0, org.assertj.core.data.Offset.offset(0.001)); // GH-90000
+        assertThat(results.get(0).item().id()).isEqualTo("m1"); 
+        assertThat(results.get(0).similarity()).isCloseTo(1.0, org.assertj.core.data.Offset.offset(0.001)); 
 
         // findById should return the updated item
-        MemoryItem updated = search.findById("m1").orElseThrow(); // GH-90000
-        assertThat(updated.content()).isEqualTo("database sql"); // GH-90000
+        MemoryItem updated = search.findById("m1").orElseThrow(); 
+        assertThat(updated.content()).isEqualTo("database sql"); 
     }
 
-    // ── Semantic search service (inner, for tests) ──────────────────────────── // GH-90000
+    // ── Semantic search service (inner, for tests) ──────────────────────────── 
 
     static class SemanticSearchService {
-        private final java.util.Map<String, MemoryItem> index = new java.util.LinkedHashMap<>(); // GH-90000
+        private final java.util.Map<String, MemoryItem> index = new java.util.LinkedHashMap<>(); 
 
-        void index(MemoryItem item) { index.put(item.id(), item); } // GH-90000
+        void index(MemoryItem item) { index.put(item.id(), item); } 
 
-        void remove(String id) { index.remove(id); } // GH-90000
+        void remove(String id) { index.remove(id); } 
 
-        java.util.Optional<MemoryItem> findById(String id) { // GH-90000
-            return java.util.Optional.ofNullable(index.get(id)); // GH-90000
+        java.util.Optional<MemoryItem> findById(String id) { 
+            return java.util.Optional.ofNullable(index.get(id)); 
         }
 
-        List<SearchResult> query(String tenantId, double[] queryVector, int topK) { // GH-90000
-            return index.values().stream() // GH-90000
-                    .filter(m -> m.tenantId().equals(tenantId)) // GH-90000
-                    .map(m -> new SearchResult(m, cosine(queryVector, m.embedding()))) // GH-90000
-                    .sorted(Comparator.comparingDouble(SearchResult::similarity).reversed()) // GH-90000
-                    .limit(topK) // GH-90000
-                    .collect(Collectors.toList()); // GH-90000
+        List<SearchResult> query(String tenantId, double[] queryVector, int topK) { 
+            return index.values().stream() 
+                    .filter(m -> m.tenantId().equals(tenantId)) 
+                    .map(m -> new SearchResult(m, cosine(queryVector, m.embedding()))) 
+                    .sorted(Comparator.comparingDouble(SearchResult::similarity).reversed()) 
+                    .limit(topK) 
+                    .collect(Collectors.toList()); 
         }
 
-        List<SearchResult> queryWithContentFilter(String tenantId, double[] queryVector, // GH-90000
+        List<SearchResult> queryWithContentFilter(String tenantId, double[] queryVector, 
                                                    int topK, String keyword) {
-            return query(tenantId, queryVector, topK).stream() // GH-90000
-                    .filter(r -> r.item().content().contains(keyword)) // GH-90000
-                    .collect(Collectors.toList()); // GH-90000
+            return query(tenantId, queryVector, topK).stream() 
+                    .filter(r -> r.item().content().contains(keyword)) 
+                    .collect(Collectors.toList()); 
         }
 
-        private double cosine(double[] a, double[] b) { // GH-90000
+        private double cosine(double[] a, double[] b) { 
             double dot = 0, normA = 0, normB = 0;
-            for (int i = 0; i < a.length; i++) { // GH-90000
+            for (int i = 0; i < a.length; i++) { 
                 dot += a[i] * b[i];
                 normA += a[i] * a[i];
                 normB += b[i] * b[i];
             }
-            if (normA == 0 || normB == 0) return 0; // GH-90000
-            return dot / (Math.sqrt(normA) * Math.sqrt(normB)); // GH-90000
+            if (normA == 0 || normB == 0) return 0; 
+            return dot / (Math.sqrt(normA) * Math.sqrt(normB)); 
         }
     }
 }

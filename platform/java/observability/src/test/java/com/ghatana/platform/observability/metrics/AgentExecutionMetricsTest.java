@@ -15,16 +15,16 @@ class AgentExecutionMetricsTest {
     private AgentExecutionMetrics metrics;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new SimpleMeterRegistry(); // GH-90000
-        metrics = new AgentExecutionMetrics("cognitive-agent", "tenant-alpha", "pipeline-123"); // GH-90000
-        metrics.bindTo(registry); // GH-90000
+    void setUp() { 
+        registry = new SimpleMeterRegistry(); 
+        metrics = new AgentExecutionMetrics("cognitive-agent", "tenant-alpha", "pipeline-123"); 
+        metrics.bindTo(registry); 
     }
 
     @Test
-    void shouldRecordSuccessfulExecution() { // GH-90000
+    void shouldRecordSuccessfulExecution() { 
         // When
-        metrics.recordExecution(System.currentTimeMillis() - 100, true); // GH-90000
+        metrics.recordExecution(System.currentTimeMillis() - 100, true); 
 
         // Then
         assertThat(registry.find("agent.execution.success").counter().count()).isEqualTo(1.0);
@@ -33,9 +33,9 @@ class AgentExecutionMetricsTest {
     }
 
     @Test
-    void shouldRecordFailedExecution() { // GH-90000
+    void shouldRecordFailedExecution() { 
         // When
-        metrics.recordExecution(System.currentTimeMillis() - 50, false); // GH-90000
+        metrics.recordExecution(System.currentTimeMillis() - 50, false); 
 
         // Then
         assertThat(registry.find("agent.execution.failure").counter().count()).isEqualTo(1.0);
@@ -43,9 +43,9 @@ class AgentExecutionMetricsTest {
     }
 
     @Test
-    void shouldRecordStall() { // GH-90000
+    void shouldRecordStall() { 
         // When
-        metrics.recordStall(); // GH-90000
+        metrics.recordStall(); 
 
         // Then
         assertThat(registry.find("agent.execution.stalls").counter().count()).isEqualTo(1.0);

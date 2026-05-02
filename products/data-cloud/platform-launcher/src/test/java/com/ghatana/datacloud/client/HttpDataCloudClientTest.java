@@ -20,50 +20,50 @@ class HttpDataCloudClientTest extends EventloopTestBase {
 
     @Test
     @DisplayName("health and readiness expose explicit unavailable state before close")
-    void healthAndReadinessExposeUnavailableStateBeforeClose() { // GH-90000
+    void healthAndReadinessExposeUnavailableStateBeforeClose() { 
         HttpDataCloudClient client = new HttpDataCloudClient("http://localhost:8080");
 
-        DataCloudClient.HealthStatus health = runPromise(client::healthCheck); // GH-90000
-        Boolean ready = runPromise(client::checkReadiness); // GH-90000
-        DataCloudClient.SystemMetrics metrics = runPromise(client::getMetrics); // GH-90000
+        DataCloudClient.HealthStatus health = runPromise(client::healthCheck); 
+        Boolean ready = runPromise(client::checkReadiness); 
+        DataCloudClient.SystemMetrics metrics = runPromise(client::getMetrics); 
 
-        assertThat(client.isRunning()).isTrue(); // GH-90000
-        assertThat(health).isNotNull(); // GH-90000
-        assertThat(health.isHealthy()).isFalse(); // GH-90000
+        assertThat(client.isRunning()).isTrue(); 
+        assertThat(health).isNotNull(); 
+        assertThat(health.isHealthy()).isFalse(); 
         assertThat(health.getMessage()).contains("not implemented");
         assertThat(health.getComponents()).containsKey("transport");
-        assertThat(ready).isFalse(); // GH-90000
-        assertThat(metrics).isNotNull(); // GH-90000
-        assertThat(metrics.getMetricsByOperation()).containsEntry("unimplemented_operations", 1L); // GH-90000
+        assertThat(ready).isFalse(); 
+        assertThat(metrics).isNotNull(); 
+        assertThat(metrics.getMetricsByOperation()).containsEntry("unimplemented_operations", 1L); 
     }
 
     @Test
     @DisplayName("close flips running state and health reports closed")
-    void closeFlipsRunningStateAndHealthReportsClosed() { // GH-90000
+    void closeFlipsRunningStateAndHealthReportsClosed() { 
         HttpDataCloudClient client = new HttpDataCloudClient("http://localhost:8080");
 
-        client.close(); // GH-90000
+        client.close(); 
 
-        DataCloudClient.HealthStatus health = runPromise(client::healthCheck); // GH-90000
-        Boolean ready = runPromise(client::checkReadiness); // GH-90000
-        DataCloudClient.SystemMetrics metrics = runPromise(client::getMetrics); // GH-90000
+        DataCloudClient.HealthStatus health = runPromise(client::healthCheck); 
+        Boolean ready = runPromise(client::checkReadiness); 
+        DataCloudClient.SystemMetrics metrics = runPromise(client::getMetrics); 
 
-        assertThat(client.isRunning()).isFalse(); // GH-90000
-        assertThat(health.isHealthy()).isFalse(); // GH-90000
+        assertThat(client.isRunning()).isFalse(); 
+        assertThat(health.isHealthy()).isFalse(); 
         assertThat(health.getMessage()).isEqualTo("Client closed");
-        assertThat(ready).isFalse(); // GH-90000
-        assertThat(metrics.getRequestCount()).isZero(); // GH-90000
-        assertThat(metrics.getMetricsByOperation()).isEmpty(); // GH-90000
+        assertThat(ready).isFalse(); 
+        assertThat(metrics.getRequestCount()).isZero(); 
+        assertThat(metrics.getMetricsByOperation()).isEmpty(); 
     }
 
     @Test
     @DisplayName("operations fail after close")
-    void operationsFailAfterClose() { // GH-90000
+    void operationsFailAfterClose() { 
         HttpDataCloudClient client = new HttpDataCloudClient("http://localhost:8080");
-        client.close(); // GH-90000
+        client.close(); 
 
-        assertThatThrownBy(() -> runPromise(() -> client.countEntities("tenant", "users", "*"))) // GH-90000
-            .isInstanceOf(IllegalStateException.class) // GH-90000
+        assertThatThrownBy(() -> runPromise(() -> client.countEntities("tenant", "users", "*"))) 
+            .isInstanceOf(IllegalStateException.class) 
             .hasMessageContaining("closed");
     }
 }

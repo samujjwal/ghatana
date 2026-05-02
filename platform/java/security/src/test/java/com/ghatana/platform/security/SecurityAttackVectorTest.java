@@ -35,69 +35,69 @@ class SecurityAttackVectorTest {
 
     @Test
     @DisplayName("Should reject tampered JWT tokens")
-    void shouldRejectTamperedJwtTokens() { // GH-90000
-        JwtTokenProvider tokenProvider = new JwtTokenProvider(TEST_SECRET, 60_000L); // GH-90000
+    void shouldRejectTamperedJwtTokens() { 
+        JwtTokenProvider tokenProvider = new JwtTokenProvider(TEST_SECRET, 60_000L); 
         String validToken = tokenProvider.createToken("user-1", List.of("USER"), Map.of());
 
         String[] parts = validToken.split("\\.");
-        char payloadLast = parts[1].charAt(parts[1].length() - 1); // GH-90000
+        char payloadLast = parts[1].charAt(parts[1].length() - 1); 
         char replacement = payloadLast == 'a' ? 'b' : 'a';
-        parts[1] = parts[1].substring(0, parts[1].length() - 1) + replacement; // GH-90000
-        String tamperedToken = String.join(".", parts); // GH-90000
+        parts[1] = parts[1].substring(0, parts[1].length() - 1) + replacement; 
+        String tamperedToken = String.join(".", parts); 
 
-        assertThat(tokenProvider.validateToken(validToken)).isTrue(); // GH-90000
-        assertThat(tokenProvider.validateToken(tamperedToken)).isFalse(); // GH-90000
+        assertThat(tokenProvider.validateToken(validToken)).isTrue(); 
+        assertThat(tokenProvider.validateToken(tamperedToken)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should reject expired JWT tokens")
-    void shouldRejectExpiredJwtTokens() { // GH-90000
-        JwtTokenProvider tokenProvider = new JwtTokenProvider(TEST_SECRET, -1L); // GH-90000
+    void shouldRejectExpiredJwtTokens() { 
+        JwtTokenProvider tokenProvider = new JwtTokenProvider(TEST_SECRET, -1L); 
         String expiredToken = tokenProvider.createToken("user-1", List.of("USER"), Map.of());
 
-        assertThat(tokenProvider.validateToken(expiredToken)).isFalse(); // GH-90000
+        assertThat(tokenProvider.validateToken(expiredToken)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should use constant-time comparison for password verification (timing attack resistance)")
-    void shouldUseConstantTimeComparisonForPasswordVerification() { // GH-90000
-        PasswordHasher passwordHasher = new PasswordHasher(); // GH-90000
+    void shouldUseConstantTimeComparisonForPasswordVerification() { 
+        PasswordHasher passwordHasher = new PasswordHasher(); 
 
         String correctPassword = "correctPassword";
         String wrongPassword = "wrongPassword";
-        String hashedPassword = passwordHasher.hash(correctPassword); // GH-90000
+        String hashedPassword = passwordHasher.hash(correctPassword); 
 
-        assertThat(passwordHasher.verify(correctPassword, hashedPassword)).isTrue(); // GH-90000
-        assertThat(passwordHasher.verify(wrongPassword, hashedPassword)).isFalse(); // GH-90000
+        assertThat(passwordHasher.verify(correctPassword, hashedPassword)).isTrue(); 
+        assertThat(passwordHasher.verify(wrongPassword, hashedPassword)).isFalse(); 
     }
 
     @Test
     @DisplayName("Should reject null and empty password/hash inputs")
-    void shouldRejectNullAndEmptyPasswordHashInputs() { // GH-90000
-        PasswordHasher passwordHasher = new PasswordHasher(); // GH-90000
+    void shouldRejectNullAndEmptyPasswordHashInputs() { 
+        PasswordHasher passwordHasher = new PasswordHasher(); 
 
         assertThatThrownBy(() -> passwordHasher.hash(""))
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Password cannot be null or empty");
-        assertThatThrownBy(() -> passwordHasher.verify("", "hash")) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> passwordHasher.verify("", "hash")) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Password cannot be null or empty");
-        assertThatThrownBy(() -> passwordHasher.verify("password", "")) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> passwordHasher.verify("password", "")) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Hash cannot be null or empty");
     }
 
     @Test
     @DisplayName("Should prevent privilege escalation")
-    void shouldPreventPrivilegeEscalation() { // GH-90000
-        InMemoryRolePermissionRegistry registry = new InMemoryRolePermissionRegistry(); // GH-90000
+    void shouldPreventPrivilegeEscalation() { 
+        InMemoryRolePermissionRegistry registry = new InMemoryRolePermissionRegistry(); 
         registry.registerRole("USER", Set.of("entity:read"));
-        registry.registerRole("ADMIN", Set.of("entity:read", "entity:write")); // GH-90000
+        registry.registerRole("ADMIN", Set.of("entity:read", "entity:write")); 
 
-        SyncAuthorizationService authorization = new SyncAuthorizationService(registry); // GH-90000
+        SyncAuthorizationService authorization = new SyncAuthorizationService(registry); 
         User user = User.builder().userId("user-1").username("user").roles(Set.of("USER")).build();
 
-        assertThat(authorization.hasPermission(user, "entity:write")).isFalse(); // GH-90000
-        assertThat(authorization.hasPermission(user, "entity:read")).isTrue(); // GH-90000
+        assertThat(authorization.hasPermission(user, "entity:write")).isFalse(); 
+        assertThat(authorization.hasPermission(user, "entity:read")).isTrue(); 
     }
 }

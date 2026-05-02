@@ -28,93 +28,93 @@ import org.junit.jupiter.api.Test;
 class GrpcIntegrationTest extends IntegrationTestSupport {
 
     @Test
-    void grpcRunCreatesJob() { // GH-90000
+    void grpcRunCreatesJob() { 
         RunRequest request =
-                GrpcTestData.runRequest( // GH-90000
+                GrpcTestData.runRequest( 
                         "/tmp/grpc-run",
                         List.of("**/*.java"),
                         false,
                         "tenant-grpc",
                         "grpc-run-123",
-                        Map.of("policy.strict", "true"), // GH-90000
-                        List.of("java", "python")); // GH-90000
+                        Map.of("policy.strict", "true"), 
+                        List.of("java", "python")); 
 
-        JobId response = grpcBlockingStub.run(request); // GH-90000
+        JobId response = grpcBlockingStub.run(request); 
 
-        assertThat(response.getId()).isNotBlank(); // GH-90000
-        assertThat(harness.getJobService().get(response.getId())).isPresent(); // GH-90000
+        assertThat(response.getId()).isNotBlank(); 
+        assertThat(harness.getJobService().get(response.getId())).isPresent(); 
     }
 
     @Test
-    void grpcDiagnoseReturnsDiagnostics() { // GH-90000
+    void grpcDiagnoseReturnsDiagnostics() { 
         DiagnoseRequest request =
-                GrpcTestData.diagnoseRequest( // GH-90000
+                GrpcTestData.diagnoseRequest( 
                         "/tmp/grpc-diagnose",
-                        List.of("**/*.java", "**/*.ts"), // GH-90000
+                        List.of("**/*.java", "**/*.ts"), 
                         true,
                         "tenant-diagnose",
                         List.of("java"),
-                        Map.of()); // GH-90000
+                        Map.of()); 
 
-        var response = grpcBlockingStub.diagnose(request); // GH-90000
+        var response = grpcBlockingStub.diagnose(request); 
 
-        assertThat(response.getDiagnosticsList()).isNotEmpty(); // GH-90000
-        assertThat(response.getExecutionId()).isNotBlank(); // GH-90000
+        assertThat(response.getDiagnosticsList()).isNotEmpty(); 
+        assertThat(response.getExecutionId()).isNotBlank(); 
     }
 
     @Test
-    void grpcGetStatusAfterRunReturnsQueuedState() { // GH-90000
+    void grpcGetStatusAfterRunReturnsQueuedState() { 
         JobId jobId = createJobViaGrpc("grpc-status-123");
 
-        RunStatus status = grpcBlockingStub.getStatus(jobId); // GH-90000
+        RunStatus status = grpcBlockingStub.getStatus(jobId); 
 
-        assertThat(status.getJobId()).isEqualTo(jobId.getId()); // GH-90000
+        assertThat(status.getJobId()).isEqualTo(jobId.getId()); 
         assertThat(status.getState()).isEqualTo("QUEUED");
-        assertThat(status.getToolVersionsMap()).containsEntry("idempotencyKey", "grpc-status-123"); // GH-90000
+        assertThat(status.getToolVersionsMap()).containsEntry("idempotencyKey", "grpc-status-123"); 
     }
 
     @Test
-    void grpcGetReportAfterRunReturnsSummary() { // GH-90000
+    void grpcGetReportAfterRunReturnsSummary() { 
         JobId jobId = createJobViaGrpc("grpc-report-123");
 
-        Report report = grpcBlockingStub.getReport(jobId); // GH-90000
+        Report report = grpcBlockingStub.getReport(jobId); 
 
-        assertThat(report.getJobId()).isEqualTo(jobId.getId()); // GH-90000
+        assertThat(report.getJobId()).isEqualTo(jobId.getId()); 
         assertThat(report.getSummaryJson()).contains("QUEUED");
     }
 
     @Test
-    void grpcStreamProgressEmitsEvents() { // GH-90000
+    void grpcStreamProgressEmitsEvents() { 
         JobId jobId = createJobViaGrpc("grpc-progress-123");
 
-        Iterator<ProgressEvent> iterator = grpcBlockingStub.streamProgress(jobId); // GH-90000
+        Iterator<ProgressEvent> iterator = grpcBlockingStub.streamProgress(jobId); 
         int count = 0;
-        while (iterator.hasNext()) { // GH-90000
-            ProgressEvent event = iterator.next(); // GH-90000
-            assertThat(event.getJobId()).isEqualTo(jobId.getId()); // GH-90000
+        while (iterator.hasNext()) { 
+            ProgressEvent event = iterator.next(); 
+            assertThat(event.getJobId()).isEqualTo(jobId.getId()); 
             assertThat(event.getEventType()).isEqualTo("progress");
             count++;
         }
-        assertThat(count).isGreaterThanOrEqualTo(3); // GH-90000
+        assertThat(count).isGreaterThanOrEqualTo(3); 
     }
 
     @Test
-    void grpcHealthEndpointReportsUp() { // GH-90000
-        var response = grpcBlockingStub.health(HealthRequest.getDefaultInstance()); // GH-90000
+    void grpcHealthEndpointReportsUp() { 
+        var response = grpcBlockingStub.health(HealthRequest.getDefaultInstance()); 
 
         assertThat(response.getStatus()).isEqualTo("UP");
     }
 
-    private JobId createJobViaGrpc(String idempotencyKey) { // GH-90000
+    private JobId createJobViaGrpc(String idempotencyKey) { 
         RunRequest request =
-                GrpcTestData.runRequest( // GH-90000
+                GrpcTestData.runRequest( 
                         "/tmp/grpc-run",
                         List.of("**/*.java"),
                         false,
                         "tenant-grpc",
                         idempotencyKey,
-                        Map.of(), // GH-90000
+                        Map.of(), 
                         List.of("java"));
-        return grpcBlockingStub.run(request); // GH-90000
+        return grpcBlockingStub.run(request); 
     }
 }

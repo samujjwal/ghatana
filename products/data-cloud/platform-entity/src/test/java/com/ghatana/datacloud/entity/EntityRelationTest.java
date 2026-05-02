@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.entity;
@@ -19,175 +19,175 @@ class EntityRelationTest {
     private static final UUID TEST_UUID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
 
     @Test
-    void shouldCreateValidEntityRelation() { // GH-90000
-        EntityRelation relation = new EntityRelation( // GH-90000
+    void shouldCreateValidEntityRelation() { 
+        EntityRelation relation = new EntityRelation( 
             TEST_UUID,
             "products",
             RelationType.SIMILAR,
             0.87
         );
 
-        assertThat(relation.relatedEntityId()).isEqualTo(TEST_UUID); // GH-90000
+        assertThat(relation.relatedEntityId()).isEqualTo(TEST_UUID); 
         assertThat(relation.collectionName()).isEqualTo("products");
-        assertThat(relation.relationType()).isEqualTo(RelationType.SIMILAR); // GH-90000
-        assertThat(relation.similarity()).isEqualTo(0.87); // GH-90000
+        assertThat(relation.relationType()).isEqualTo(RelationType.SIMILAR); 
+        assertThat(relation.similarity()).isEqualTo(0.87); 
     }
 
     @Test
-    void shouldRejectNullRelatedEntityId() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectNullRelatedEntityId() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             null,
             "products",
             RelationType.SIMILAR,
             0.5
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Related entity ID must not be null");
     }
 
     @Test
-    void shouldRejectNullCollectionName() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectNullCollectionName() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             TEST_UUID,
             null,
             RelationType.SIMILAR,
             0.5
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Collection name must not be blank");
     }
 
     @Test
-    void shouldRejectBlankCollectionName() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectBlankCollectionName() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             TEST_UUID,
             "   ",
             RelationType.SIMILAR,
             0.5
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Collection name must not be blank");
     }
 
     @Test
-    void shouldRejectNullRelationType() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectNullRelationType() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             TEST_UUID,
             "products",
             null,
             0.5
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Relation type must not be null");
     }
 
     @Test
-    void shouldRejectNegativeSimilarity() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectNegativeSimilarity() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             TEST_UUID,
             "products",
             RelationType.SIMILAR,
             -0.1
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Similarity must be between 0.0 and 1.0");
     }
 
     @Test
-    void shouldRejectSimilarityGreaterThanOne() { // GH-90000
-        assertThatThrownBy(() -> new EntityRelation( // GH-90000
+    void shouldRejectSimilarityGreaterThanOne() { 
+        assertThatThrownBy(() -> new EntityRelation( 
             TEST_UUID,
             "products",
             RelationType.SIMILAR,
             1.1
-        )).isInstanceOf(IllegalArgumentException.class) // GH-90000
+        )).isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("Similarity must be between 0.0 and 1.0");
     }
 
     @Test
-    void shouldAcceptBoundarySimilarityValues() { // GH-90000
+    void shouldAcceptBoundarySimilarityValues() { 
         // Minimum boundary
-        EntityRelation minRelation = new EntityRelation( // GH-90000
+        EntityRelation minRelation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.0
         );
-        assertThat(minRelation.similarity()).isZero(); // GH-90000
+        assertThat(minRelation.similarity()).isZero(); 
 
         // Maximum boundary
-        EntityRelation maxRelation = new EntityRelation( // GH-90000
+        EntityRelation maxRelation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 1.0
         );
-        assertThat(maxRelation.similarity()).isEqualTo(1.0); // GH-90000
+        assertThat(maxRelation.similarity()).isEqualTo(1.0); 
     }
 
     @Test
-    void isHighSimilarityShouldReturnTrueForSimilarityAboveThreshold() { // GH-90000
-        EntityRelation highRelation = new EntityRelation( // GH-90000
+    void isHighSimilarityShouldReturnTrueForSimilarityAboveThreshold() { 
+        EntityRelation highRelation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.85
         );
-        assertThat(highRelation.isHighSimilarity()).isTrue(); // GH-90000
+        assertThat(highRelation.isHighSimilarity()).isTrue(); 
 
-        EntityRelation boundaryRelation = new EntityRelation( // GH-90000
+        EntityRelation boundaryRelation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.8
         );
-        assertThat(boundaryRelation.isHighSimilarity()).isTrue(); // GH-90000
+        assertThat(boundaryRelation.isHighSimilarity()).isTrue(); 
     }
 
     @Test
-    void isHighSimilarityShouldReturnFalseForSimilarityBelowThreshold() { // GH-90000
-        EntityRelation lowRelation = new EntityRelation( // GH-90000
+    void isHighSimilarityShouldReturnFalseForSimilarityBelowThreshold() { 
+        EntityRelation lowRelation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.79
         );
-        assertThat(lowRelation.isHighSimilarity()).isFalse(); // GH-90000
+        assertThat(lowRelation.isHighSimilarity()).isFalse(); 
     }
 
     @Test
-    void isSimilarShouldReturnTrueForSimilarType() { // GH-90000
-        EntityRelation similar = new EntityRelation( // GH-90000
+    void isSimilarShouldReturnTrueForSimilarType() { 
+        EntityRelation similar = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.5
         );
-        assertThat(similar.isSimilar()).isTrue(); // GH-90000
+        assertThat(similar.isSimilar()).isTrue(); 
     }
 
     @Test
-    void isSimilarShouldReturnFalseForNonSimilarTypes() { // GH-90000
-        EntityRelation referenced = new EntityRelation( // GH-90000
+    void isSimilarShouldReturnFalseForNonSimilarTypes() { 
+        EntityRelation referenced = new EntityRelation( 
             TEST_UUID, "products", RelationType.REFERENCED, 0.5
         );
-        assertThat(referenced.isSimilar()).isFalse(); // GH-90000
+        assertThat(referenced.isSimilar()).isFalse(); 
 
-        EntityRelation related = new EntityRelation( // GH-90000
+        EntityRelation related = new EntityRelation( 
             TEST_UUID, "products", RelationType.RELATED, 0.5
         );
-        assertThat(related.isSimilar()).isFalse(); // GH-90000
+        assertThat(related.isSimilar()).isFalse(); 
     }
 
     @Test
-    void isReferencedShouldReturnTrueForReferencedType() { // GH-90000
-        EntityRelation referenced = new EntityRelation( // GH-90000
+    void isReferencedShouldReturnTrueForReferencedType() { 
+        EntityRelation referenced = new EntityRelation( 
             TEST_UUID, "products", RelationType.REFERENCED, 0.5
         );
-        assertThat(referenced.isReferenced()).isTrue(); // GH-90000
+        assertThat(referenced.isReferenced()).isTrue(); 
     }
 
     @Test
-    void isReferencedShouldReturnFalseForNonReferencedTypes() { // GH-90000
-        EntityRelation similar = new EntityRelation( // GH-90000
+    void isReferencedShouldReturnFalseForNonReferencedTypes() { 
+        EntityRelation similar = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.5
         );
-        assertThat(similar.isReferenced()).isFalse(); // GH-90000
+        assertThat(similar.isReferenced()).isFalse(); 
     }
 
     @Test
-    void shouldImplementEqualsAndHashCode() { // GH-90000
-        EntityRelation relation1 = new EntityRelation( // GH-90000
+    void shouldImplementEqualsAndHashCode() { 
+        EntityRelation relation1 = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.87
         );
-        EntityRelation relation2 = new EntityRelation( // GH-90000
+        EntityRelation relation2 = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.87
         );
 
-        assertThat(relation1).isEqualTo(relation2); // GH-90000
-        assertThat(relation1.hashCode()).isEqualTo(relation2.hashCode()); // GH-90000
+        assertThat(relation1).isEqualTo(relation2); 
+        assertThat(relation1.hashCode()).isEqualTo(relation2.hashCode()); 
     }
 
     @Test
-    void shouldHaveMeaningfulToString() { // GH-90000
-        EntityRelation relation = new EntityRelation( // GH-90000
+    void shouldHaveMeaningfulToString() { 
+        EntityRelation relation = new EntityRelation( 
             TEST_UUID, "products", RelationType.SIMILAR, 0.87
         );
         assertThat(relation.toString()).contains("EntityRelation");

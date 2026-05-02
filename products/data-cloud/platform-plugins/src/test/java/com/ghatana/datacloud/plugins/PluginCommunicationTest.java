@@ -23,68 +23,68 @@ class PluginCommunicationTest {
 
     @Test
     @DisplayName("Should handle plugin messaging")
-    void shouldHandlePluginMessaging() { // GH-90000
+    void shouldHandlePluginMessaging() { 
         String fromPlugin = "plugin-a";
         String toPlugin = "plugin-b";
         String message = "Hello";
 
-        assertThat(fromPlugin).isNotNull(); // GH-90000
-        assertThat(toPlugin).isNotNull(); // GH-90000
-        assertThat(message).isNotNull(); // GH-90000
+        assertThat(fromPlugin).isNotNull(); 
+        assertThat(toPlugin).isNotNull(); 
+        assertThat(message).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle plugin events")
-    void shouldHandlePluginEvents() { // GH-90000
+    void shouldHandlePluginEvents() { 
         String eventType = "PLUGIN_STARTED";
         String pluginId = "plugin-123";
 
-        assertThat(eventType).isNotNull(); // GH-90000
-        assertThat(pluginId).isNotNull(); // GH-90000
+        assertThat(eventType).isNotNull(); 
+        assertThat(pluginId).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle plugin RPC")
-    void shouldHandlePluginRpc() { // GH-90000
+    void shouldHandlePluginRpc() { 
         String method = "processData";
-        Map<String, Object> params = Map.of("input", "test"); // GH-90000
+        Map<String, Object> params = Map.of("input", "test"); 
 
-        assertThat(method).isNotNull(); // GH-90000
-        assertThat(params).isNotNull(); // GH-90000
+        assertThat(method).isNotNull(); 
+        assertThat(params).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle message queuing")
-    void shouldHandleMessageQueuing() { // GH-90000
+    void shouldHandleMessageQueuing() { 
         int queueSize = 10;
         int maxSize = 1000;
 
-        assertThat(queueSize).isLessThan(maxSize); // GH-90000
+        assertThat(queueSize).isLessThan(maxSize); 
     }
 
     @Test
     @DisplayName("Should handle communication failures")
-    void shouldHandleCommunicationFailures() { // GH-90000
+    void shouldHandleCommunicationFailures() { 
         boolean failed = false;
         String error = null;
 
-        assertThat(failed).isFalse(); // GH-90000
-        assertThat(error).isNull(); // GH-90000
+        assertThat(failed).isFalse(); 
+        assertThat(error).isNull(); 
     }
 
     @Test
     @DisplayName("Should handle plugin discovery")
-    void shouldHandlePluginDiscovery() { // GH-90000
+    void shouldHandlePluginDiscovery() { 
         String[] plugins = {"plugin-a", "plugin-b", "plugin-c"};
 
-        assertThat(plugins).isNotEmpty(); // GH-90000
-        assertThat(plugins.length).isGreaterThan(0); // GH-90000
+        assertThat(plugins).isNotEmpty(); 
+        assertThat(plugins.length).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("Should handle communication monitoring")
-    void shouldHandleCommunicationMonitoring() { // GH-90000
+    void shouldHandleCommunicationMonitoring() { 
         String metric = "message_count";
-        assertThat(metric).isNotNull(); // GH-90000
+        assertThat(metric).isNotNull(); 
     }
 }

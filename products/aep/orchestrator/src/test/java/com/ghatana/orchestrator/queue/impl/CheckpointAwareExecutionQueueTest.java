@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Ghatana Inc. // GH-90000
+ * Copyright (c) 2024 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.orchestrator.queue.impl;
@@ -32,7 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * Unit tests for {@link CheckpointAwareExecutionQueue}.
  *
  * <p>Extends {@link EventloopTestBase} — all Promise-returning operations are
- * executed via {@code runPromise()} to avoid NPE when resolving ActiveJ Promises // GH-90000
+ * executed via {@code runPromise()} to avoid NPE when resolving ActiveJ Promises 
  * outside of an event-loop context.
  *
  * @doc.type class
@@ -41,7 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
  * @doc.pattern Test
  */
 @DisplayName("CheckpointAwareExecutionQueue")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
 
     private static final String TENANT_ID = "tenant-1";
@@ -52,227 +52,227 @@ class CheckpointAwareExecutionQueueTest extends EventloopTestBase {
     private CheckpointAwareExecutionQueue executionQueue;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        executionQueue = new CheckpointAwareExecutionQueue(checkpointStore); // GH-90000
+    void setUp() { 
+        executionQueue = new CheckpointAwareExecutionQueue(checkpointStore); 
     }
 
     @Test
     @DisplayName("enqueue() stores job and tracks it")
-    void shouldEnqueueNewExecution() { // GH-90000
+    void shouldEnqueueNewExecution() { 
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
-        Object triggerData = Map.of("event", "trigger"); // GH-90000
+        Object triggerData = Map.of("event", "trigger"); 
         String idempotencyKey = "unique-key-123";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, triggerData, idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, triggerData, idempotencyKey)); 
 
-        assertThat(executionQueue.size()).isEqualTo(1); // GH-90000
-        assertThat(executionQueue.isEmpty()).isFalse(); // GH-90000
+        assertThat(executionQueue.size()).isEqualTo(1); 
+        assertThat(executionQueue.isEmpty()).isFalse(); 
 
-        verify(checkpointStore).isDuplicate(tenantId, idempotencyKey); // GH-90000
-        verify(checkpointStore).createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any()); // GH-90000
+        verify(checkpointStore).isDuplicate(tenantId, idempotencyKey); 
+        verify(checkpointStore).createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any()); 
     }
 
     @Test
     @DisplayName("enqueue() is idempotent for duplicate idempotency keys")
-    void shouldPreventDuplicateEnqueue() { // GH-90000
+    void shouldPreventDuplicateEnqueue() { 
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
-        Object triggerData = Map.of("event", "trigger"); // GH-90000
+        Object triggerData = Map.of("event", "trigger"); 
         String idempotencyKey = "duplicate-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(true); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(true); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, triggerData, idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, triggerData, idempotencyKey)); 
 
-        assertThat(executionQueue.size()).isEqualTo(0); // GH-90000
-        assertThat(executionQueue.isEmpty()).isTrue(); // GH-90000
+        assertThat(executionQueue.size()).isEqualTo(0); 
+        assertThat(executionQueue.isEmpty()).isTrue(); 
 
-        verify(checkpointStore).isDuplicate(tenantId, idempotencyKey); // GH-90000
-        verify(checkpointStore, never()).createExecution(any(), any(), any(), any(), any()); // GH-90000
+        verify(checkpointStore).isDuplicate(tenantId, idempotencyKey); 
+        verify(checkpointStore, never()).createExecution(any(), any(), any(), any(), any()); 
     }
 
     @Test
     @DisplayName("poll() returns job when execution is allowed")
-    void shouldPollValidJob() { // GH-90000
+    void shouldPollValidJob() { 
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
         String idempotencyKey = "valid-key";
         String instanceId = "instance-123";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint(instanceId, pipelineId, idempotencyKey)); // GH-90000
-        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint(instanceId, pipelineId, idempotencyKey)); 
+        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); 
 
-        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); // GH-90000
+        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); 
 
-        assertThat(polledJobs).isNotNull().hasSize(1); // GH-90000
-        ExecutionJob job = polledJobs.get(0); // GH-90000
-        assertThat(job.getTenantId()).isEqualTo(tenantId); // GH-90000
-        assertThat(job.getPipelineId()).isEqualTo(pipelineId); // GH-90000
-        assertThat(job.getIdempotencyKey()).isEqualTo(idempotencyKey); // GH-90000
-        assertThat(executionQueue.size()).isEqualTo(0); // GH-90000
+        assertThat(polledJobs).isNotNull().hasSize(1); 
+        ExecutionJob job = polledJobs.get(0); 
+        assertThat(job.getTenantId()).isEqualTo(tenantId); 
+        assertThat(job.getPipelineId()).isEqualTo(pipelineId); 
+        assertThat(job.getIdempotencyKey()).isEqualTo(idempotencyKey); 
+        assertThat(executionQueue.size()).isEqualTo(0); 
 
-        verify(checkpointStore).isExecutionAllowed(anyString()); // GH-90000
+        verify(checkpointStore).isExecutionAllowed(anyString()); 
     }
 
     @Test
     @DisplayName("poll() skips job when checkpoint does not allow execution")
-    void shouldSkipJobWithInvalidCheckpoint() { // GH-90000
+    void shouldSkipJobWithInvalidCheckpoint() { 
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
         String idempotencyKey = "invalid-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); // GH-90000
-        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(false); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); 
+        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(false); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); 
 
-        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); // GH-90000
+        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); 
 
-        assertThat(polledJobs).isNotNull().isEmpty(); // GH-90000
-        verify(checkpointStore).isExecutionAllowed(anyString()); // GH-90000
+        assertThat(polledJobs).isNotNull().isEmpty(); 
+        verify(checkpointStore).isExecutionAllowed(anyString()); 
     }
 
     @Test
     @DisplayName("poll() skips job when checkpoint is already completed")
-    void shouldSkipJobWithCompletedCheckpoint() { // GH-90000
+    void shouldSkipJobWithCompletedCheckpoint() { 
         String tenantId = TENANT_ID;
         String pipelineId = "test-pipeline";
         String idempotencyKey = "completed-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); // GH-90000
-        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(false); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); 
+        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(false); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "test"), idempotencyKey)); 
 
-        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); // GH-90000
+        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); 
 
-        assertThat(polledJobs).isNotNull().isEmpty(); // GH-90000
-        verify(checkpointStore).isExecutionAllowed(anyString()); // GH-90000
+        assertThat(polledJobs).isNotNull().isEmpty(); 
+        verify(checkpointStore).isExecutionAllowed(anyString()); 
     }
 
     @Test
     @DisplayName("clear() empties the queue")
-    void shouldClearQueue() { // GH-90000
-        when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance", "pipeline", "key")); // GH-90000
+    void shouldClearQueue() { 
+        when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); 
+        when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) 
+                .thenReturn(createMockCheckpoint("instance", "pipeline", "key")); 
 
-        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-1", Map.of(), "key-1")); // GH-90000
-        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-2", Map.of(), "key-2")); // GH-90000
-        assertThat(executionQueue.size()).isEqualTo(2); // GH-90000
+        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-1", Map.of(), "key-1")); 
+        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-2", Map.of(), "key-2")); 
+        assertThat(executionQueue.size()).isEqualTo(2); 
 
-        runPromise(() -> executionQueue.clear()); // GH-90000
+        runPromise(() -> executionQueue.clear()); 
 
-        assertThat(executionQueue.size()).isEqualTo(0); // GH-90000
-        assertThat(executionQueue.isEmpty()).isTrue(); // GH-90000
+        assertThat(executionQueue.size()).isEqualTo(0); 
+        assertThat(executionQueue.isEmpty()).isTrue(); 
     }
 
     @Test
     @DisplayName("poll() after enqueue returns correct job fields")
-    void shouldPeekAtNextJob() { // GH-90000
+    void shouldPeekAtNextJob() { 
         String tenantId = TENANT_ID;
         String pipelineId = "peek-pipeline";
         String idempotencyKey = "peek-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); // GH-90000
-        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); 
+        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "peek"), idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "peek"), idempotencyKey)); 
 
-        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); // GH-90000
+        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); 
 
-        assertThat(polledJobs).isNotNull().hasSize(1); // GH-90000
-        ExecutionJob polled = polledJobs.get(0); // GH-90000
-        assertThat(polled.getTenantId()).isEqualTo(tenantId); // GH-90000
-        assertThat(polled.getPipelineId()).isEqualTo(pipelineId); // GH-90000
-        assertThat(polled.getIdempotencyKey()).isEqualTo(idempotencyKey); // GH-90000
-        assertThat(executionQueue.size()).isEqualTo(0); // GH-90000
+        assertThat(polledJobs).isNotNull().hasSize(1); 
+        ExecutionJob polled = polledJobs.get(0); 
+        assertThat(polled.getTenantId()).isEqualTo(tenantId); 
+        assertThat(polled.getPipelineId()).isEqualTo(pipelineId); 
+        assertThat(polled.getIdempotencyKey()).isEqualTo(idempotencyKey); 
+        assertThat(executionQueue.size()).isEqualTo(0); 
     }
 
     @Test
     @DisplayName("getStatistics() reflects current queue state")
-    void shouldProvideQueueStatistics() { // GH-90000
-        when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance", "pipeline", "key")); // GH-90000
+    void shouldProvideQueueStatistics() { 
+        when(checkpointStore.isDuplicate(anyString(), anyString())).thenReturn(false); 
+        when(checkpointStore.createExecution(anyString(), anyString(), anyString(), anyString(), any())) 
+                .thenReturn(createMockCheckpoint("instance", "pipeline", "key")); 
 
-        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-1", Map.of(), "key-1")); // GH-90000
-        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-2", Map.of(), "key-2")); // GH-90000
-        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-3", Map.of(), "key-3")); // GH-90000
+        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-1", Map.of(), "key-1")); 
+        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-2", Map.of(), "key-2")); 
+        runPromise(() -> executionQueue.enqueue(TENANT_ID, "pipeline-3", Map.of(), "key-3")); 
 
-        CheckpointAwareExecutionQueue.QueueStatistics stats = executionQueue.getStatistics(); // GH-90000
+        CheckpointAwareExecutionQueue.QueueStatistics stats = executionQueue.getStatistics(); 
 
-        assertThat(stats.getQueueSize()).isEqualTo(3); // GH-90000
-        assertThat(stats.getIdempotencyKeyCount()).isEqualTo(3); // GH-90000
+        assertThat(stats.getQueueSize()).isEqualTo(3); 
+        assertThat(stats.getIdempotencyKeyCount()).isEqualTo(3); 
     }
 
     @Test
     @DisplayName("polled job contains non-null jobId and instanceId")
-    void shouldCalculateQueuedDuration() { // GH-90000
+    void shouldCalculateQueuedDuration() { 
         String tenantId = TENANT_ID;
         String pipelineId = "duration-pipeline";
         String idempotencyKey = "duration-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
-                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); // GH-90000
-        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
+                .thenReturn(createMockCheckpoint("instance-123", pipelineId, idempotencyKey)); 
+        when(checkpointStore.isExecutionAllowed(anyString())).thenReturn(true); 
 
-        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "duration"), idempotencyKey)); // GH-90000
+        runPromise(() -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "duration"), idempotencyKey)); 
 
-        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); // GH-90000
-        assertThat(polledJobs).hasSize(1); // GH-90000
-        ExecutionJob job = polledJobs.get(0); // GH-90000
-        assertThat(job.getJobId()).isNotNull().isNotEmpty(); // GH-90000
-        assertThat(job.getInstanceId()).isNotNull().startsWith(pipelineId + "-"); // GH-90000
+        List<ExecutionJob> polledJobs = runPromise(() -> executionQueue.poll(1, 0)); 
+        assertThat(polledJobs).hasSize(1); 
+        ExecutionJob job = polledJobs.get(0); 
+        assertThat(job.getJobId()).isNotNull().isNotEmpty(); 
+        assertThat(job.getInstanceId()).isNotNull().startsWith(pipelineId + "-"); 
     }
 
     @Test
     @DisplayName("enqueue() propagates CheckpointStore exceptions")
-    void shouldHandleCheckpointStoreException() { // GH-90000
+    void shouldHandleCheckpointStoreException() { 
         String tenantId = TENANT_ID;
         String pipelineId = "error-pipeline";
         String idempotencyKey = "error-key";
 
-        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); // GH-90000
-        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) // GH-90000
+        when(checkpointStore.isDuplicate(tenantId, idempotencyKey)).thenReturn(false); 
+        when(checkpointStore.createExecution(eq(tenantId), eq(pipelineId), anyString(), eq(idempotencyKey), any())) 
                 .thenThrow(new RuntimeException("Checkpoint store error"));
 
-        assertThatThrownBy(() -> runPromise( // GH-90000
-                        () -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "error"), idempotencyKey))) // GH-90000
-                .isInstanceOf(RuntimeException.class) // GH-90000
+        assertThatThrownBy(() -> runPromise( 
+                        () -> executionQueue.enqueue(tenantId, pipelineId, Map.of("data", "error"), idempotencyKey))) 
+                .isInstanceOf(RuntimeException.class) 
                 .hasMessageContaining("Checkpoint store error");
 
-        clearFatalError(); // GH-90000
-        assertThat(executionQueue.size()).isEqualTo(0); // GH-90000
+        clearFatalError(); 
+        assertThat(executionQueue.size()).isEqualTo(0); 
     }
 
-    private PipelineCheckpoint createMockCheckpoint(String instanceId, String pipelineId, String idempotencyKey) { // GH-90000
-        return new PipelineCheckpoint( // GH-90000
+    private PipelineCheckpoint createMockCheckpoint(String instanceId, String pipelineId, String idempotencyKey) { 
+        return new PipelineCheckpoint( 
                 instanceId,
                 TENANT_ID,
                 pipelineId,
                 idempotencyKey,
                 PipelineCheckpointStatus.CREATED,
-                Map.of("test", "state"), // GH-90000
-                Map.of(), // GH-90000
-                Instant.now(), // GH-90000
-                Instant.now(), // GH-90000
+                Map.of("test", "state"), 
+                Map.of(), 
+                Instant.now(), 
+                Instant.now(), 
                 null,
                 null,
                 0,

@@ -156,7 +156,6 @@
 |-------------|---------|---------|
 | **DataCloud** | `DataCloudKernelAdapter` | Data storage and retrieval |
 | **AEP** | `AepKernelAdapter` | Agentic Event Processor integration |
-| **Legacy Systems** | `LegacyCapabilityAdapter` | Backward compatibility |
 
 **Evidence**: `@/home/samujjwal/Developments/ghatana/platform/java/kernel/src/main/java/com/ghatana/kernel/adapter/`
 

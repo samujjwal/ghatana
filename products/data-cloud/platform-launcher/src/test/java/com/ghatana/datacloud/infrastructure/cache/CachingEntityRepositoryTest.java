@@ -29,9 +29,9 @@ import static org.mockito.Mockito.*;
  *
  * <p>Uses Mockito to stub the delegate {@link EntityRepository} so that
  * tests are fully isolated from any database. Extends {@link EventloopTestBase}
- * so that {@code runPromise()} correctly drives ActiveJ Promises. // GH-90000
+ * so that {@code runPromise()} correctly drives ActiveJ Promises. 
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("CachingEntityRepository Tests")
 class CachingEntityRepositoryTest extends EventloopTestBase {
 
@@ -45,11 +45,11 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     private CachingEntityRepository cache;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        meterRegistry = new SimpleMeterRegistry(); // GH-90000
-        // Very short TTL (200 ms) so we can test expiry behaviour without sleeping long // GH-90000
-        cache = new CachingEntityRepository(delegate, meterRegistry, // GH-90000
-                Duration.ofMillis(200), 100L); // GH-90000
+    void setUp() { 
+        meterRegistry = new SimpleMeterRegistry(); 
+        // Very short TTL (200 ms) so we can test expiry behaviour without sleeping long 
+        cache = new CachingEntityRepository(delegate, meterRegistry, 
+                Duration.ofMillis(200), 100L); 
     }
 
     // =========================================================================
@@ -62,45 +62,45 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("null delegate throws NullPointerException")
-        void nullDelegateFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    new CachingEntityRepository(null, meterRegistry)) // GH-90000
-                    .isInstanceOf(NullPointerException.class); // GH-90000
+        void nullDelegateFails() { 
+            assertThatThrownBy(() -> 
+                    new CachingEntityRepository(null, meterRegistry)) 
+                    .isInstanceOf(NullPointerException.class); 
         }
 
         @Test
         @DisplayName("zero TTL throws IllegalArgumentException")
-        void zeroTtlFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    new CachingEntityRepository(delegate, meterRegistry, // GH-90000
+        void zeroTtlFails() { 
+            assertThatThrownBy(() -> 
+                    new CachingEntityRepository(delegate, meterRegistry, 
                             Duration.ZERO, 10L))
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("negative TTL throws IllegalArgumentException")
-        void negativeTtlFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    new CachingEntityRepository(delegate, meterRegistry, // GH-90000
-                            Duration.ofSeconds(-1), 10L)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void negativeTtlFails() { 
+            assertThatThrownBy(() -> 
+                    new CachingEntityRepository(delegate, meterRegistry, 
+                            Duration.ofSeconds(-1), 10L)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("maxSize zero throws IllegalArgumentException")
-        void zeroMaxSizeFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                    new CachingEntityRepository(delegate, meterRegistry, // GH-90000
-                            Duration.ofSeconds(5), 0L)) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void zeroMaxSizeFails() { 
+            assertThatThrownBy(() -> 
+                    new CachingEntityRepository(delegate, meterRegistry, 
+                            Duration.ofSeconds(5), 0L)) 
+                    .isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("null MeterRegistry is accepted (no metrics)")
-        void nullMeterRegistryIsAccepted() { // GH-90000
+        void nullMeterRegistryIsAccepted() { 
             // should not throw
-            var c = new CachingEntityRepository(delegate, null); // GH-90000
-            assertThat(c.estimatedSize()).isZero(); // GH-90000
+            var c = new CachingEntityRepository(delegate, null); 
+            assertThat(c.estimatedSize()).isZero(); 
         }
     }
 
@@ -114,108 +114,108 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("first call is a miss → delegates to repository")
-        void firstCallMissesAndDelegates() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
+        void firstCallMissesAndDelegates() { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(entity))); 
 
-            Optional<Entity> result = runPromise(() -> // GH-90000
-                    cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            Optional<Entity> result = runPromise(() -> 
+                    cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(result).contains(entity); // GH-90000
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); // GH-90000
+            assertThat(result).contains(entity); 
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); 
         }
 
         @Test
         @DisplayName("second call with same key is a hit → delegate not called again")
-        void secondCallHitsCache() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
+        void secondCallHitsCache() { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(entity))); 
 
             // First call — populates cache
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
             // Second call — should hit cache
-            Optional<Entity> secondResult = runPromise(() -> // GH-90000
-                    cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            Optional<Entity> secondResult = runPromise(() -> 
+                    cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(secondResult).contains(entity); // GH-90000
+            assertThat(secondResult).contains(entity); 
             // delegate was called exactly once despite two cache.findById calls
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); // GH-90000
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); 
         }
 
         @Test
         @DisplayName("empty optional is also cached to prevent repeated DB misses")
-        void emptyOptionalIsCached() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void emptyOptionalIsCached() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.empty())); 
 
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
-            Optional<Entity> second = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
+            Optional<Entity> second = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(second).isEmpty(); // GH-90000
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); // GH-90000
+            assertThat(second).isEmpty(); 
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id); 
         }
 
         @Test
         @DisplayName("different entity IDs produce independent cache entries")
-        void differentIdsAreIndependent() { // GH-90000
-            UUID id1 = UUID.randomUUID(); // GH-90000
-            UUID id2 = UUID.randomUUID(); // GH-90000
-            Entity e1 = stubEntity(id1); // GH-90000
-            Entity e2 = stubEntity(id2); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id1)).thenReturn(Promise.of(Optional.of(e1))); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id2)).thenReturn(Promise.of(Optional.of(e2))); // GH-90000
+        void differentIdsAreIndependent() { 
+            UUID id1 = UUID.randomUUID(); 
+            UUID id2 = UUID.randomUUID(); 
+            Entity e1 = stubEntity(id1); 
+            Entity e2 = stubEntity(id2); 
+            when(delegate.findById(TENANT, COLLECTION, id1)).thenReturn(Promise.of(Optional.of(e1))); 
+            when(delegate.findById(TENANT, COLLECTION, id2)).thenReturn(Promise.of(Optional.of(e2))); 
 
-            Optional<Entity> r1 = runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); // GH-90000
-            Optional<Entity> r2 = runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); // GH-90000
-            Optional<Entity> r1Again = runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); // GH-90000
+            Optional<Entity> r1 = runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); 
+            Optional<Entity> r2 = runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); 
+            Optional<Entity> r1Again = runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); 
 
-            assertThat(r1).contains(e1); // GH-90000
-            assertThat(r2).contains(e2); // GH-90000
-            assertThat(r1Again).contains(e1); // GH-90000
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id1); // GH-90000
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id2); // GH-90000
+            assertThat(r1).contains(e1); 
+            assertThat(r2).contains(e2); 
+            assertThat(r1Again).contains(e1); 
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id1); 
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id2); 
         }
 
         @Test
         @DisplayName("different tenants produce independent cache entries (multi-tenancy)")
-        void differentTenantsAreIndependent() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity e1 = stubEntity(id); // GH-90000
-            Entity e2 = stubEntity(id); // GH-90000
-            when(delegate.findById("tenant-A", COLLECTION, id)).thenReturn(Promise.of(Optional.of(e1))); // GH-90000
-            when(delegate.findById("tenant-B", COLLECTION, id)).thenReturn(Promise.of(Optional.of(e2))); // GH-90000
+        void differentTenantsAreIndependent() { 
+            UUID id = UUID.randomUUID(); 
+            Entity e1 = stubEntity(id); 
+            Entity e2 = stubEntity(id); 
+            when(delegate.findById("tenant-A", COLLECTION, id)).thenReturn(Promise.of(Optional.of(e1))); 
+            when(delegate.findById("tenant-B", COLLECTION, id)).thenReturn(Promise.of(Optional.of(e2))); 
 
-            Optional<Entity> rA = runPromise(() -> cache.findById("tenant-A", COLLECTION, id)); // GH-90000
-            Optional<Entity> rB = runPromise(() -> cache.findById("tenant-B", COLLECTION, id)); // GH-90000
+            Optional<Entity> rA = runPromise(() -> cache.findById("tenant-A", COLLECTION, id)); 
+            Optional<Entity> rB = runPromise(() -> cache.findById("tenant-B", COLLECTION, id)); 
 
-            assertThat(rA).contains(e1); // GH-90000
-            assertThat(rB).contains(e2); // GH-90000
+            assertThat(rA).contains(e1); 
+            assertThat(rB).contains(e2); 
             // Both tenants miss independently
-            verify(delegate, times(1)).findById("tenant-A", COLLECTION, id); // GH-90000
-            verify(delegate, times(1)).findById("tenant-B", COLLECTION, id); // GH-90000
+            verify(delegate, times(1)).findById("tenant-A", COLLECTION, id); 
+            verify(delegate, times(1)).findById("tenant-B", COLLECTION, id); 
         }
 
         @Test
         @DisplayName("TTL expiry causes re-fetch from delegate")
-        void ttlExpiryRecallsDelegate() throws InterruptedException { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
+        void ttlExpiryRecallsDelegate() throws InterruptedException { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(entity))); 
 
             // Populate cache
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
-            // Wait for TTL (200 ms) to expire // GH-90000
-            Thread.sleep(350); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
+            // Wait for TTL (200 ms) to expire 
+            Thread.sleep(350); 
             // After expiry, delegate must be called again
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); // GH-90000
+            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); 
         }
     }
 
@@ -229,39 +229,39 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("save delegates to backing repository")
-        void saveDelegates() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
-            when(delegate.save(TENANT, entity)).thenReturn(Promise.of(entity)); // GH-90000
+        void saveDelegates() { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
+            when(delegate.save(TENANT, entity)).thenReturn(Promise.of(entity)); 
 
-            Entity saved = runPromise(() -> cache.save(TENANT, entity)); // GH-90000
+            Entity saved = runPromise(() -> cache.save(TENANT, entity)); 
 
-            assertThat(saved).isSameAs(entity); // GH-90000
-            verify(delegate).save(TENANT, entity); // GH-90000
+            assertThat(saved).isSameAs(entity); 
+            verify(delegate).save(TENANT, entity); 
         }
 
         @Test
         @DisplayName("save invalidates the cached findById entry for the entity")
-        void saveInvalidatesCacheEntry() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity v1 = stubEntity(id); // GH-90000
-            Entity v2 = stubEntity(id); // GH-90000
+        void saveInvalidatesCacheEntry() { 
+            UUID id = UUID.randomUUID(); 
+            Entity v1 = stubEntity(id); 
+            Entity v2 = stubEntity(id); 
 
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(v1))) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(v2))); // GH-90000
-            when(delegate.save(TENANT, v2)).thenReturn(Promise.of(v2)); // GH-90000
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(v1))) 
+                    .thenReturn(Promise.of(Optional.of(v2))); 
+            when(delegate.save(TENANT, v2)).thenReturn(Promise.of(v2)); 
 
             // Populate cache with v1
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
             // Save v2 — should invalidate the v1 entry
-            runPromise(() -> cache.save(TENANT, v2)); // GH-90000
+            runPromise(() -> cache.save(TENANT, v2)); 
             // Next read should miss and get v2 from delegate
-            Optional<Entity> afterSave = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            Optional<Entity> afterSave = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(afterSave).contains(v2); // GH-90000
-            // delegate.findById was called twice (before and after save) // GH-90000
-            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); // GH-90000
+            assertThat(afterSave).contains(v2); 
+            // delegate.findById was called twice (before and after save) 
+            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); 
         }
     }
 
@@ -275,40 +275,40 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delete delegates to backing repository")
-        void deleteDelegates() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.delete(TENANT, COLLECTION, id)).thenReturn(Promise.of(null)); // GH-90000
+        void deleteDelegates() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.delete(TENANT, COLLECTION, id)).thenReturn(Promise.of(null)); 
 
-            runPromise(() -> cache.delete(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.delete(TENANT, COLLECTION, id)); 
 
-            verify(delegate).delete(TENANT, COLLECTION, id); // GH-90000
+            verify(delegate).delete(TENANT, COLLECTION, id); 
         }
 
         @Test
         @DisplayName("delete invalidates the cached findById entry")
-        void deleteInvalidatesCacheEntry() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
+        void deleteInvalidatesCacheEntry() { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
 
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity))) // GH-90000
-                    .thenReturn(Promise.of(Optional.empty())); // GH-90000
-            when(delegate.delete(TENANT, COLLECTION, id)).thenReturn(Promise.of(null)); // GH-90000
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(entity))) 
+                    .thenReturn(Promise.of(Optional.empty())); 
+            when(delegate.delete(TENANT, COLLECTION, id)).thenReturn(Promise.of(null)); 
 
             // Warm the cache
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
             // Delete
-            runPromise(() -> cache.delete(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.delete(TENANT, COLLECTION, id)); 
             // Should miss cache and get empty from delegate
-            Optional<Entity> afterDelete = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            Optional<Entity> afterDelete = runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(afterDelete).isEmpty(); // GH-90000
-            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); // GH-90000
+            assertThat(afterDelete).isEmpty(); 
+            verify(delegate, times(2)).findById(TENANT, COLLECTION, id); 
         }
     }
 
     // =========================================================================
-    // Pass-through operations (collection-scoped) // GH-90000
+    // Pass-through operations (collection-scoped) 
     // =========================================================================
 
     @Nested
@@ -317,48 +317,48 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("findAll always delegates")
-        void findAllAlwaysDelegates() { // GH-90000
-            when(delegate.findAll(any(), any(), any(), any(), anyInt(), anyInt())) // GH-90000
-                    .thenReturn(Promise.of(List.of())); // GH-90000
+        void findAllAlwaysDelegates() { 
+            when(delegate.findAll(any(), any(), any(), any(), anyInt(), anyInt())) 
+                    .thenReturn(Promise.of(List.of())); 
 
-            runPromise(() -> cache.findAll(TENANT, COLLECTION, Map.of(), null, 0, 10)); // GH-90000
-            runPromise(() -> cache.findAll(TENANT, COLLECTION, Map.of(), null, 0, 10)); // GH-90000
+            runPromise(() -> cache.findAll(TENANT, COLLECTION, Map.of(), null, 0, 10)); 
+            runPromise(() -> cache.findAll(TENANT, COLLECTION, Map.of(), null, 0, 10)); 
 
-            verify(delegate, times(2)).findAll(any(), any(), any(), any(), anyInt(), anyInt()); // GH-90000
+            verify(delegate, times(2)).findAll(any(), any(), any(), any(), anyInt(), anyInt()); 
         }
 
         @Test
         @DisplayName("exists always delegates")
-        void existsAlwaysDelegates() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.exists(TENANT, COLLECTION, id)).thenReturn(Promise.of(true)); // GH-90000
+        void existsAlwaysDelegates() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.exists(TENANT, COLLECTION, id)).thenReturn(Promise.of(true)); 
 
-            runPromise(() -> cache.exists(TENANT, COLLECTION, id)); // GH-90000
-            runPromise(() -> cache.exists(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.exists(TENANT, COLLECTION, id)); 
+            runPromise(() -> cache.exists(TENANT, COLLECTION, id)); 
 
-            verify(delegate, times(2)).exists(TENANT, COLLECTION, id); // GH-90000
+            verify(delegate, times(2)).exists(TENANT, COLLECTION, id); 
         }
 
         @Test
         @DisplayName("count always delegates")
-        void countAlwaysDelegates() { // GH-90000
-            when(delegate.count(TENANT, COLLECTION)).thenReturn(Promise.of(42L)); // GH-90000
+        void countAlwaysDelegates() { 
+            when(delegate.count(TENANT, COLLECTION)).thenReturn(Promise.of(42L)); 
 
-            runPromise(() -> cache.count(TENANT, COLLECTION)); // GH-90000
-            runPromise(() -> cache.count(TENANT, COLLECTION)); // GH-90000
+            runPromise(() -> cache.count(TENANT, COLLECTION)); 
+            runPromise(() -> cache.count(TENANT, COLLECTION)); 
 
-            verify(delegate, times(2)).count(TENANT, COLLECTION); // GH-90000
+            verify(delegate, times(2)).count(TENANT, COLLECTION); 
         }
 
         @Test
         @DisplayName("findByQuery always delegates")
-        void findByQueryAlwaysDelegates() { // GH-90000
-            when(delegate.findByQuery(any(), any(), any())).thenReturn(Promise.of(List.of())); // GH-90000
+        void findByQueryAlwaysDelegates() { 
+            when(delegate.findByQuery(any(), any(), any())).thenReturn(Promise.of(List.of())); 
 
-            runPromise(() -> cache.findByQuery(TENANT, COLLECTION, "spec")); // GH-90000
-            runPromise(() -> cache.findByQuery(TENANT, COLLECTION, "spec")); // GH-90000
+            runPromise(() -> cache.findByQuery(TENANT, COLLECTION, "spec")); 
+            runPromise(() -> cache.findByQuery(TENANT, COLLECTION, "spec")); 
 
-            verify(delegate, times(2)).findByQuery(any(), any(), any()); // GH-90000
+            verify(delegate, times(2)).findByQuery(any(), any(), any()); 
         }
     }
 
@@ -372,66 +372,66 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("invalidateCollection evicts all entries for that tenant+collection")
-        void invalidateCollectionEvictsCorrectEntries() { // GH-90000
-            UUID id1 = UUID.randomUUID(); // GH-90000
-            UUID id2 = UUID.randomUUID(); // GH-90000
-            UUID id3 = UUID.randomUUID(); // GH-90000
+        void invalidateCollectionEvictsCorrectEntries() { 
+            UUID id1 = UUID.randomUUID(); 
+            UUID id2 = UUID.randomUUID(); 
+            UUID id3 = UUID.randomUUID(); 
 
-            when(delegate.findById(TENANT, COLLECTION, id1)) // GH-90000
-                .thenReturn(Promise.of(Optional.of(stubEntity(id1)))) // GH-90000
-                .thenReturn(Promise.of(Optional.empty())); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id2)) // GH-90000
-                .thenReturn(Promise.of(Optional.of(stubEntity(id2)))) // GH-90000
-                .thenReturn(Promise.of(Optional.empty())); // GH-90000
-            when(delegate.findById(TENANT, "other", id3)) // GH-90000
-                .thenReturn(Promise.of(Optional.of(stubEntity(id3)))); // GH-90000
+            when(delegate.findById(TENANT, COLLECTION, id1)) 
+                .thenReturn(Promise.of(Optional.of(stubEntity(id1)))) 
+                .thenReturn(Promise.of(Optional.empty())); 
+            when(delegate.findById(TENANT, COLLECTION, id2)) 
+                .thenReturn(Promise.of(Optional.of(stubEntity(id2)))) 
+                .thenReturn(Promise.of(Optional.empty())); 
+            when(delegate.findById(TENANT, "other", id3)) 
+                .thenReturn(Promise.of(Optional.of(stubEntity(id3)))); 
 
             // Warm 2 entries for COLLECTION, 1 for "other"
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); // GH-90000
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); // GH-90000
-            runPromise(() -> cache.findById(TENANT, "other", id3)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); 
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); 
+            runPromise(() -> cache.findById(TENANT, "other", id3)); 
 
-            clearInvocations(delegate); // GH-90000
+            clearInvocations(delegate); 
 
             // Invalidate only COLLECTION
-            cache.invalidateCollection(TENANT, COLLECTION); // GH-90000
+            cache.invalidateCollection(TENANT, COLLECTION); 
 
             // Re-fetch id1 and id2 — should miss after invalidation.
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); // GH-90000
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id1)); 
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id2)); 
 
             // id3 in "other" collection should still be cached — delegate not called again
-            runPromise(() -> cache.findById(TENANT, "other", id3)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, "other", id3)); 
 
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id1); // GH-90000
-            verify(delegate, times(1)).findById(TENANT, COLLECTION, id2); // GH-90000
-            verify(delegate, never()).findById(TENANT, "other", id3); // GH-90000
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id1); 
+            verify(delegate, times(1)).findById(TENANT, COLLECTION, id2); 
+            verify(delegate, never()).findById(TENANT, "other", id3); 
         }
 
         @Test
         @DisplayName("invalidateAll clears every entry")
-        void invalidateAllClearsEverything() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            Entity entity = stubEntity(id); // GH-90000
-            when(delegate.findById(TENANT, COLLECTION, id)) // GH-90000
-                    .thenReturn(Promise.of(Optional.of(entity))); // GH-90000
+        void invalidateAllClearsEverything() { 
+            UUID id = UUID.randomUUID(); 
+            Entity entity = stubEntity(id); 
+            when(delegate.findById(TENANT, COLLECTION, id)) 
+                    .thenReturn(Promise.of(Optional.of(entity))); 
 
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
-            assertThat(cache.estimatedSize()).isGreaterThan(0); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
+            assertThat(cache.estimatedSize()).isGreaterThan(0); 
 
-            cache.invalidateAll(); // GH-90000
-            assertThat(cache.estimatedSize()).isZero(); // GH-90000
+            cache.invalidateAll(); 
+            assertThat(cache.estimatedSize()).isZero(); 
         }
 
         @Test
         @DisplayName("estimatedSize reflects populated cache entries")
-        void estimatedSizeReflectsCacheState() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void estimatedSizeReflectsCacheState() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); 
 
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            assertThat(cache.estimatedSize()).isGreaterThan(0); // GH-90000
+            assertThat(cache.estimatedSize()).isGreaterThan(0); 
         }
     }
 
@@ -445,45 +445,45 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
 
         @Test
         @DisplayName("cache miss increments miss counter")
-        void missIncrementsCounter() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void missIncrementsCounter() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); 
 
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            double misses = meterRegistry.counter("data_cloud.l1_cache.misses", // GH-90000
-                    "operation", "findById").count(); // GH-90000
-            assertThat(misses).isEqualTo(1.0); // GH-90000
+            double misses = meterRegistry.counter("data_cloud.l1_cache.misses", 
+                    "operation", "findById").count(); 
+            assertThat(misses).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("cache hit increments hit counter")
-        void hitIncrementsCounter() { // GH-90000
-            UUID id = UUID.randomUUID(); // GH-90000
-            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void hitIncrementsCounter() { 
+            UUID id = UUID.randomUUID(); 
+            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); 
 
             // First call: miss
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
             // Second call: hit
-            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); // GH-90000
+            runPromise(() -> cache.findById(TENANT, COLLECTION, id)); 
 
-            double hits = meterRegistry.counter("data_cloud.l1_cache.hits", // GH-90000
-                    "operation", "findById").count(); // GH-90000
-            double misses = meterRegistry.counter("data_cloud.l1_cache.misses", // GH-90000
-                    "operation", "findById").count(); // GH-90000
-            assertThat(hits).isEqualTo(1.0); // GH-90000
-            assertThat(misses).isEqualTo(1.0); // GH-90000
+            double hits = meterRegistry.counter("data_cloud.l1_cache.hits", 
+                    "operation", "findById").count(); 
+            double misses = meterRegistry.counter("data_cloud.l1_cache.misses", 
+                    "operation", "findById").count(); 
+            assertThat(hits).isEqualTo(1.0); 
+            assertThat(misses).isEqualTo(1.0); 
         }
 
         @Test
         @DisplayName("no NullPointerException when meterRegistry is null")
-        void noNpeWithNullMetrics() { // GH-90000
-            var c = new CachingEntityRepository(delegate, null, // GH-90000
-                    Duration.ofSeconds(5), 10L); // GH-90000
-            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); // GH-90000
+        void noNpeWithNullMetrics() { 
+            var c = new CachingEntityRepository(delegate, null, 
+                    Duration.ofSeconds(5), 10L); 
+            when(delegate.findById(any(), any(), any())).thenReturn(Promise.of(Optional.empty())); 
 
-            Optional<Entity> result = runPromise(() -> c.findById(TENANT, COLLECTION, UUID.randomUUID())); // GH-90000
-            assertThat(result).isEmpty(); // GH-90000
+            Optional<Entity> result = runPromise(() -> c.findById(TENANT, COLLECTION, UUID.randomUUID())); 
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -492,12 +492,12 @@ class CachingEntityRepositoryTest extends EventloopTestBase {
     // =========================================================================
 
     /** Builds a minimal stub {@link Entity} with the given id. */
-    private static Entity stubEntity(UUID id) { // GH-90000
-        Entity entity = new Entity(); // GH-90000
-        entity.setId(id); // GH-90000
-        entity.setTenantId(TENANT); // GH-90000
-        entity.setCollectionName(COLLECTION); // GH-90000
-        entity.setActive(true); // GH-90000
+    private static Entity stubEntity(UUID id) { 
+        Entity entity = new Entity(); 
+        entity.setId(id); 
+        entity.setTenantId(TENANT); 
+        entity.setCollectionName(COLLECTION); 
+        entity.setActive(true); 
         return entity;
     }
 }

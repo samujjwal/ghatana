@@ -20,7 +20,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 /**
  * @doc.type class
  * @doc.purpose Handles type script java script language service test operations
@@ -37,18 +37,18 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     @Mock private UnifiedDiagnostic mockDiagnostic;
 
     @BeforeEach
-    void setUpTsJsConfig() { // GH-90000
+    void setUpTsJsConfig() { 
         // Initialize service with Reactor from EventloopTestBase
-        tsJsService = new TypeScriptJavaScriptLanguageService(); // GH-90000
+        tsJsService = new TypeScriptJavaScriptLanguageService(); 
 
         // Create a basic configuration
         PolyfixConfig config =
-                new PolyfixConfig( // GH-90000
+                new PolyfixConfig( 
                         List.of("typescript-javascript"),
                         List.of("schemas"),
-                        new PolyfixConfig.Budgets(3, 20), // GH-90000
-                        new PolyfixConfig.Policies(true, true, true, false), // GH-90000
-                        new PolyfixConfig.Tools( // GH-90000
+                        new PolyfixConfig.Budgets(3, 20), 
+                        new PolyfixConfig.Policies(true, true, true, false), 
+                        new PolyfixConfig.Tools( 
                                 "node",
                                 "eslint",
                                 "tsc",
@@ -64,22 +64,22 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
 
         // Initialize project context
         projectContext =
-                new PolyfixProjectContext( // GH-90000
+                new PolyfixProjectContext( 
                         tempDir, // root
                         config, // config
-                        List.of(tsJsService), // languages // GH-90000
-                        Executors.newSingleThreadExecutor(), // exec // GH-90000
-                        LogManager.getLogger(TypeScriptJavaScriptLanguageServiceTest.class) // log // GH-90000
+                        List.of(tsJsService), // languages 
+                        Executors.newSingleThreadExecutor(), // exec 
+                        LogManager.getLogger(TypeScriptJavaScriptLanguageServiceTest.class) // log 
                         );
     }
 
     @Test
-    void testId() { // GH-90000
-        assertEquals("typescript-javascript", tsJsService.id()); // GH-90000
+    void testId() { 
+        assertEquals("typescript-javascript", tsJsService.id()); 
     }
 
     @Test
-    void testSupportsTypeScriptJavaScriptFiles() { // GH-90000
+    void testSupportsTypeScriptJavaScriptFiles() { 
         // TypeScript files
         assertTrue(tsJsService.supports(Path.of("test.ts")));
         assertTrue(tsJsService.supports(Path.of("src/main/ts/module.ts")));
@@ -94,59 +94,59 @@ class TypeScriptJavaScriptLanguageServiceTest extends EventloopTestBase {
     }
 
     @Test
-    void testDoesNotSupportNonTypeScriptJavaScriptFiles() { // GH-90000
+    void testDoesNotSupportNonTypeScriptJavaScriptFiles() { 
         assertFalse(tsJsService.supports(Path.of("test.java")), "Should not support Java files");
-        assertFalse( // GH-90000
+        assertFalse( 
                 tsJsService.supports(Path.of("package.json")), "Should not support package.json");
-        assertFalse( // GH-90000
+        assertFalse( 
                 tsJsService.supports(Path.of("tsconfig.json")), "Should not support tsconfig.json");
     }
 
     @Test
-    void testDiagnoseEmptyProject() { // GH-90000
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> tsJsService.diagnose(projectContext, List.of())); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+    void testDiagnoseEmptyProject() { 
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> tsJsService.diagnose(projectContext, List.of())); 
+        assertNotNull(diagnostics); 
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testDiagnoseValidTypeScriptFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testDiagnoseValidTypeScriptFile(@TempDir Path tempDir) throws Exception { 
         // Create a simple TypeScript file
         Path tsFile = tempDir.resolve("test.ts");
-        Files.writeString( // GH-90000
-                tsFile, "const message: string = 'Hello, TypeScript!';\nconsole.log(message);"); // GH-90000
+        Files.writeString( 
+                tsFile, "const message: string = 'Hello, TypeScript!';\nconsole.log(message);"); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> tsJsService.diagnose(projectContext, List.of(tsFile))); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> tsJsService.diagnose(projectContext, List.of(tsFile))); 
+        assertNotNull(diagnostics); 
         // Should not have any diagnostics for a valid file in this basic implementation
-        assertTrue(diagnostics.isEmpty()); // GH-90000
+        assertTrue(diagnostics.isEmpty()); 
     }
 
     @Test
-    void testDiagnoseEmptyFile(@TempDir Path tempDir) throws Exception { // GH-90000
+    void testDiagnoseEmptyFile(@TempDir Path tempDir) throws Exception { 
         // Create an empty TypeScript file
         Path emptyFile = tempDir.resolve("empty.ts");
-        Files.createFile(emptyFile); // GH-90000
+        Files.createFile(emptyFile); 
 
-        List<UnifiedDiagnostic> diagnostics = runPromise( // GH-90000
-                () -> tsJsService.diagnose(projectContext, List.of(emptyFile))); // GH-90000
-        assertNotNull(diagnostics); // GH-90000
-        assertEquals(1, diagnostics.size()); // GH-90000
+        List<UnifiedDiagnostic> diagnostics = runPromise( 
+                () -> tsJsService.diagnose(projectContext, List.of(emptyFile))); 
+        assertNotNull(diagnostics); 
+        assertEquals(1, diagnostics.size()); 
 
-        UnifiedDiagnostic diagnostic = diagnostics.get(0); // GH-90000
-        assertEquals("Empty TypeScript/JavaScript source file", diagnostic.message()); // GH-90000
-        assertEquals("tsjs.empty_file", diagnostic.rule()); // GH-90000
-        assertEquals(emptyFile.toString(), diagnostic.file()); // GH-90000
+        UnifiedDiagnostic diagnostic = diagnostics.get(0); 
+        assertEquals("Empty TypeScript/JavaScript source file", diagnostic.message()); 
+        assertEquals("tsjs.empty_file", diagnostic.rule()); 
+        assertEquals(emptyFile.toString(), diagnostic.file()); 
     }
 
     @Test
-    void testPlanFixes() { // GH-90000
+    void testPlanFixes() { 
         // Test that planFixes returns an empty list by default
-        List<FixAction> fixes = runPromise( // GH-90000
-                () -> tsJsService.planFixes(mockDiagnostic, projectContext)); // GH-90000
-        assertNotNull(fixes); // GH-90000
-        assertTrue(fixes.isEmpty()); // GH-90000
+        List<FixAction> fixes = runPromise( 
+                () -> tsJsService.planFixes(mockDiagnostic, projectContext)); 
+        assertNotNull(fixes); 
+        assertTrue(fixes.isEmpty()); 
     }
 }

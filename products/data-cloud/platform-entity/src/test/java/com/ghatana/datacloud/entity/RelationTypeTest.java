@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.entity;
@@ -16,11 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RelationTypeTest {
 
     @Test
-    void allEnumValuesShouldBeAccessible() { // GH-90000
+    void allEnumValuesShouldBeAccessible() { 
         // This test ensures all enum values are referenced for coverage
-        RelationType[] types = RelationType.values(); // GH-90000
-        assertThat(types).hasSize(4); // GH-90000
-        assertThat(types).containsExactly( // GH-90000
+        RelationType[] types = RelationType.values(); 
+        assertThat(types).hasSize(4); 
+        assertThat(types).containsExactly( 
             RelationType.SIMILAR,
             RelationType.REFERENCED,
             RelationType.RELATED,
@@ -29,41 +29,41 @@ class RelationTypeTest {
     }
 
     @ParameterizedTest
-    @EnumSource(RelationType.class) // GH-90000
-    void eachEnumValueShouldHaveNonNullName(RelationType type) { // GH-90000
-        assertThat(type.name()).isNotNull().isNotEmpty(); // GH-90000
+    @EnumSource(RelationType.class) 
+    void eachEnumValueShouldHaveNonNullName(RelationType type) { 
+        assertThat(type.name()).isNotNull().isNotEmpty(); 
     }
 
     @Test
-    void similarShouldBeContentBased() { // GH-90000
-        assertThat(RelationType.SIMILAR.isContentBased()).isTrue(); // GH-90000
-        assertThat(RelationType.SIMILAR.isExplicit()).isFalse(); // GH-90000
-        assertThat(RelationType.SIMILAR.isUsageBased()).isFalse(); // GH-90000
+    void similarShouldBeContentBased() { 
+        assertThat(RelationType.SIMILAR.isContentBased()).isTrue(); 
+        assertThat(RelationType.SIMILAR.isExplicit()).isFalse(); 
+        assertThat(RelationType.SIMILAR.isUsageBased()).isFalse(); 
     }
 
     @Test
-    void referencedShouldBeExplicit() { // GH-90000
-        assertThat(RelationType.REFERENCED.isContentBased()).isFalse(); // GH-90000
-        assertThat(RelationType.REFERENCED.isExplicit()).isTrue(); // GH-90000
-        assertThat(RelationType.REFERENCED.isUsageBased()).isFalse(); // GH-90000
+    void referencedShouldBeExplicit() { 
+        assertThat(RelationType.REFERENCED.isContentBased()).isFalse(); 
+        assertThat(RelationType.REFERENCED.isExplicit()).isTrue(); 
+        assertThat(RelationType.REFERENCED.isUsageBased()).isFalse(); 
     }
 
     @Test
-    void relatedShouldBeUsageBased() { // GH-90000
-        assertThat(RelationType.RELATED.isContentBased()).isFalse(); // GH-90000
-        assertThat(RelationType.RELATED.isExplicit()).isFalse(); // GH-90000
-        assertThat(RelationType.RELATED.isUsageBased()).isTrue(); // GH-90000
+    void relatedShouldBeUsageBased() { 
+        assertThat(RelationType.RELATED.isContentBased()).isFalse(); 
+        assertThat(RelationType.RELATED.isExplicit()).isFalse(); 
+        assertThat(RelationType.RELATED.isUsageBased()).isTrue(); 
     }
 
     @Test
-    void hierarchicalShouldBeExplicit() { // GH-90000
-        assertThat(RelationType.HIERARCHICAL.isContentBased()).isFalse(); // GH-90000
-        assertThat(RelationType.HIERARCHICAL.isExplicit()).isTrue(); // GH-90000
-        assertThat(RelationType.HIERARCHICAL.isUsageBased()).isFalse(); // GH-90000
+    void hierarchicalShouldBeExplicit() { 
+        assertThat(RelationType.HIERARCHICAL.isContentBased()).isFalse(); 
+        assertThat(RelationType.HIERARCHICAL.isExplicit()).isTrue(); 
+        assertThat(RelationType.HIERARCHICAL.isUsageBased()).isFalse(); 
     }
 
     @Test
-    void valueOfShouldReturnCorrectEnum() { // GH-90000
+    void valueOfShouldReturnCorrectEnum() { 
         assertThat(RelationType.valueOf("SIMILAR")).isEqualTo(RelationType.SIMILAR);
         assertThat(RelationType.valueOf("REFERENCED")).isEqualTo(RelationType.REFERENCED);
         assertThat(RelationType.valueOf("RELATED")).isEqualTo(RelationType.RELATED);

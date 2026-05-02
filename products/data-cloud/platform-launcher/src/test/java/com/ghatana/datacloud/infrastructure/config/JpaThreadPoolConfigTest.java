@@ -18,100 +18,100 @@ class JpaThreadPoolConfigTest {
 
     @Test
     @DisplayName("builder uses virtual-thread defaults")
-    void builderUsesDefaults() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); // GH-90000
+    void builderUsesDefaults() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); 
 
-        assertThat(config.getType()).isEqualTo(JpaThreadPoolConfig.ThreadPoolType.VIRTUAL); // GH-90000
+        assertThat(config.getType()).isEqualTo(JpaThreadPoolConfig.ThreadPoolType.VIRTUAL); 
         assertThat(config.getThreadNamePrefix()).isEqualTo("jpa-worker");
-        assertThat(config.getQueueSize()).isEqualTo(1000); // GH-90000
-        assertThat(config.getCorePoolSize()).isEqualTo(10); // GH-90000
-        assertThat(config.getMaxPoolSize()).isEqualTo(100); // GH-90000
-        assertThat(config.getKeepAliveSeconds()).isEqualTo(60L); // GH-90000
+        assertThat(config.getQueueSize()).isEqualTo(1000); 
+        assertThat(config.getCorePoolSize()).isEqualTo(10); 
+        assertThat(config.getMaxPoolSize()).isEqualTo(100); 
+        assertThat(config.getKeepAliveSeconds()).isEqualTo(60L); 
     }
 
     @Test
     @DisplayName("builder applies explicit values")
-    void builderAppliesExplicitValues() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) // GH-90000
+    void builderAppliesExplicitValues() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) 
             .threadNamePrefix("db-platform")
-            .queueSize(32) // GH-90000
-            .corePoolSize(4) // GH-90000
-            .maxPoolSize(8) // GH-90000
-            .keepAliveSeconds(15L) // GH-90000
-            .build(); // GH-90000
+            .queueSize(32) 
+            .corePoolSize(4) 
+            .maxPoolSize(8) 
+            .keepAliveSeconds(15L) 
+            .build(); 
 
-        assertThat(config.getType()).isEqualTo(JpaThreadPoolConfig.ThreadPoolType.PLATFORM); // GH-90000
+        assertThat(config.getType()).isEqualTo(JpaThreadPoolConfig.ThreadPoolType.PLATFORM); 
         assertThat(config.getThreadNamePrefix()).isEqualTo("db-platform");
-        assertThat(config.getQueueSize()).isEqualTo(32); // GH-90000
-        assertThat(config.getCorePoolSize()).isEqualTo(4); // GH-90000
-        assertThat(config.getMaxPoolSize()).isEqualTo(8); // GH-90000
-        assertThat(config.getKeepAliveSeconds()).isEqualTo(15L); // GH-90000
+        assertThat(config.getQueueSize()).isEqualTo(32); 
+        assertThat(config.getCorePoolSize()).isEqualTo(4); 
+        assertThat(config.getMaxPoolSize()).isEqualTo(8); 
+        assertThat(config.getKeepAliveSeconds()).isEqualTo(15L); 
     }
 
     @Test
     @DisplayName("toBuilder preserves original values")
-    void toBuilderPreservesOriginalValues() { // GH-90000
-        JpaThreadPoolConfig original = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) // GH-90000
+    void toBuilderPreservesOriginalValues() { 
+        JpaThreadPoolConfig original = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) 
             .threadNamePrefix("original")
-            .queueSize(128) // GH-90000
-            .corePoolSize(6) // GH-90000
-            .maxPoolSize(12) // GH-90000
-            .keepAliveSeconds(45L) // GH-90000
-            .build(); // GH-90000
+            .queueSize(128) 
+            .corePoolSize(6) 
+            .maxPoolSize(12) 
+            .keepAliveSeconds(45L) 
+            .build(); 
 
-        JpaThreadPoolConfig copy = original.toBuilder().build(); // GH-90000
+        JpaThreadPoolConfig copy = original.toBuilder().build(); 
 
-        assertThat(copy.getType()).isEqualTo(original.getType()); // GH-90000
-        assertThat(copy.getThreadNamePrefix()).isEqualTo(original.getThreadNamePrefix()); // GH-90000
-        assertThat(copy.getQueueSize()).isEqualTo(original.getQueueSize()); // GH-90000
-        assertThat(copy.getCorePoolSize()).isEqualTo(original.getCorePoolSize()); // GH-90000
-        assertThat(copy.getMaxPoolSize()).isEqualTo(original.getMaxPoolSize()); // GH-90000
-        assertThat(copy.getKeepAliveSeconds()).isEqualTo(original.getKeepAliveSeconds()); // GH-90000
+        assertThat(copy.getType()).isEqualTo(original.getType()); 
+        assertThat(copy.getThreadNamePrefix()).isEqualTo(original.getThreadNamePrefix()); 
+        assertThat(copy.getQueueSize()).isEqualTo(original.getQueueSize()); 
+        assertThat(copy.getCorePoolSize()).isEqualTo(original.getCorePoolSize()); 
+        assertThat(copy.getMaxPoolSize()).isEqualTo(original.getMaxPoolSize()); 
+        assertThat(copy.getKeepAliveSeconds()).isEqualTo(original.getKeepAliveSeconds()); 
         assertThat(copy.toString()).contains("threadNamePrefix='original'");
     }
 
     @Test
     @DisplayName("thread pool type must not be null")
-    void typeMustNotBeNull() { // GH-90000
-        assertThatNullPointerException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().type(null)); // GH-90000
+    void typeMustNotBeNull() { 
+        assertThatNullPointerException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().type(null)); 
     }
 
     @Test
     @DisplayName("thread name prefix must not be null")
-    void prefixMustNotBeNull() { // GH-90000
-        assertThatNullPointerException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().threadNamePrefix(null)); // GH-90000
+    void prefixMustNotBeNull() { 
+        assertThatNullPointerException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().threadNamePrefix(null)); 
     }
 
     @Test
     @DisplayName("queue size must be positive")
-    void queueSizeMustBePositive() { // GH-90000
-        assertThatIllegalArgumentException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().queueSize(0)); // GH-90000
+    void queueSizeMustBePositive() { 
+        assertThatIllegalArgumentException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().queueSize(0)); 
     }
 
     @Test
     @DisplayName("core pool size must be positive")
-    void corePoolSizeMustBePositive() { // GH-90000
-        assertThatIllegalArgumentException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().corePoolSize(0)); // GH-90000
+    void corePoolSizeMustBePositive() { 
+        assertThatIllegalArgumentException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().corePoolSize(0)); 
     }
 
     @Test
     @DisplayName("max pool size must be positive")
-    void maxPoolSizeMustBePositive() { // GH-90000
-        assertThatIllegalArgumentException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().maxPoolSize(0)); // GH-90000
+    void maxPoolSizeMustBePositive() { 
+        assertThatIllegalArgumentException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().maxPoolSize(0)); 
     }
 
     @Test
     @DisplayName("keep alive seconds must be non negative")
-    void keepAliveMustBeNonNegative() { // GH-90000
-        assertThatIllegalArgumentException() // GH-90000
-            .isThrownBy(() -> JpaThreadPoolConfig.builder().keepAliveSeconds(-1)); // GH-90000
+    void keepAliveMustBeNonNegative() { 
+        assertThatIllegalArgumentException() 
+            .isThrownBy(() -> JpaThreadPoolConfig.builder().keepAliveSeconds(-1)); 
     }
 
     // ------------------------------------------------------------------
@@ -120,94 +120,94 @@ class JpaThreadPoolConfigTest {
 
     @Test
     @DisplayName("createExecutorService returns non-null executor for VIRTUAL type")
-    void createExecutorServiceVirtual() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.VIRTUAL) // GH-90000
-            .queueSize(16) // GH-90000
-            .build(); // GH-90000
+    void createExecutorServiceVirtual() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.VIRTUAL) 
+            .queueSize(16) 
+            .build(); 
 
-        ExecutorService exec = config.createExecutorService(); // GH-90000
-        assertThat(exec).isNotNull(); // GH-90000
-        exec.shutdown(); // GH-90000
+        ExecutorService exec = config.createExecutorService(); 
+        assertThat(exec).isNotNull(); 
+        exec.shutdown(); 
     }
 
     @Test
     @DisplayName("createExecutorService returns non-null executor for PLATFORM type")
-    void createExecutorServicePlatform() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) // GH-90000
-            .corePoolSize(2) // GH-90000
-            .maxPoolSize(4) // GH-90000
-            .queueSize(8) // GH-90000
-            .build(); // GH-90000
+    void createExecutorServicePlatform() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) 
+            .corePoolSize(2) 
+            .maxPoolSize(4) 
+            .queueSize(8) 
+            .build(); 
 
-        ExecutorService exec = config.createExecutorService(); // GH-90000
-        assertThat(exec).isNotNull(); // GH-90000
-        exec.shutdown(); // GH-90000
+        ExecutorService exec = config.createExecutorService(); 
+        assertThat(exec).isNotNull(); 
+        exec.shutdown(); 
     }
 
     @Test
     @DisplayName("createInstrumentedExecutorService registers metrics with registry")
-    void createInstrumentedExecutorServiceRegistersMetrics() { // GH-90000
-        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) // GH-90000
-            .corePoolSize(1) // GH-90000
-            .maxPoolSize(2) // GH-90000
-            .queueSize(4) // GH-90000
-            .build(); // GH-90000
+    void createInstrumentedExecutorServiceRegistersMetrics() { 
+        MeterRegistry registry = new SimpleMeterRegistry(); 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) 
+            .corePoolSize(1) 
+            .maxPoolSize(2) 
+            .queueSize(4) 
+            .build(); 
 
-        ExecutorService exec = config.createInstrumentedExecutorService(registry, "test.jpa.pool"); // GH-90000
-        assertThat(exec).isNotNull(); // GH-90000
+        ExecutorService exec = config.createInstrumentedExecutorService(registry, "test.jpa.pool"); 
+        assertThat(exec).isNotNull(); 
 
         // Micrometer ExecutorServiceMetrics registers at least executor.pool.size
-        assertThat(registry.getMeters()) // GH-90000
+        assertThat(registry.getMeters()) 
             .anyMatch(m -> m.getId().getName().startsWith("executor"));
 
-        exec.shutdown(); // GH-90000
+        exec.shutdown(); 
     }
 
     @Test
     @DisplayName("createInstrumentedExecutorService rejects null registry")
-    void createInstrumentedExecutorServiceNullRegistry() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); // GH-90000
+    void createInstrumentedExecutorServiceNullRegistry() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); 
 
-        assertThatNullPointerException() // GH-90000
-            .isThrownBy(() -> config.createInstrumentedExecutorService(null, "any.prefix")); // GH-90000
+        assertThatNullPointerException() 
+            .isThrownBy(() -> config.createInstrumentedExecutorService(null, "any.prefix")); 
     }
 
     @Test
     @DisplayName("createInstrumentedExecutorService rejects null metricsPrefix")
-    void createInstrumentedExecutorServiceNullPrefix() { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); // GH-90000
-        MeterRegistry registry = new SimpleMeterRegistry(); // GH-90000
+    void createInstrumentedExecutorServiceNullPrefix() { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder().build(); 
+        MeterRegistry registry = new SimpleMeterRegistry(); 
 
-        assertThatNullPointerException() // GH-90000
-            .isThrownBy(() -> config.createInstrumentedExecutorService(registry, null)); // GH-90000
+        assertThatNullPointerException() 
+            .isThrownBy(() -> config.createInstrumentedExecutorService(registry, null)); 
     }
 
     @Test
     @DisplayName("executor throws RejectedExecutionException when queue is full")
-    void executorRejectsWhenQueueFull() throws Exception { // GH-90000
-        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() // GH-90000
-            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) // GH-90000
-            .corePoolSize(1) // GH-90000
-            .maxPoolSize(1) // GH-90000
-            .queueSize(1) // GH-90000
-            .build(); // GH-90000
+    void executorRejectsWhenQueueFull() throws Exception { 
+        JpaThreadPoolConfig config = JpaThreadPoolConfig.builder() 
+            .type(JpaThreadPoolConfig.ThreadPoolType.PLATFORM) 
+            .corePoolSize(1) 
+            .maxPoolSize(1) 
+            .queueSize(1) 
+            .build(); 
 
-        ExecutorService exec = config.createExecutorService(); // GH-90000
+        ExecutorService exec = config.createExecutorService(); 
         // Fill the pool + queue
-        exec.submit(() -> { // GH-90000
-            try { Thread.sleep(200); } catch (InterruptedException ignored) {} // GH-90000
+        exec.submit(() -> { 
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {} 
         });
-        exec.submit(() -> {});  // fills queue // GH-90000
+        exec.submit(() -> {});  // fills queue 
 
         // Next submission must be rejected
-        assertThatThrownBy(() -> exec.submit(() -> {})) // GH-90000
-            .isInstanceOf(RejectedExecutionException.class) // GH-90000
+        assertThatThrownBy(() -> exec.submit(() -> {})) 
+            .isInstanceOf(RejectedExecutionException.class) 
             .hasMessageContaining("queue is full");
 
-        exec.shutdownNow(); // GH-90000
+        exec.shutdownNow(); 
     }
 }

@@ -1,0 +1,171 @@
+# Nexus Schema Registry
+# Fictional logistics platform — example of a product-owned schema pack.
+# Schemas listed here are registered under the product's domain pack;
+# no platform kernel class is aware of these schema names or their structure.
+#
+# Schema entries represent product-owned data structures. The kernel stores and
+# retrieves records generically; domain semantics live here, not in kernel code.
+
+registry:
+  id: nexus-schema-registry
+  product: nexus
+  version: "1.0.0"
+  description: "Nexus logistics product schema registry — shipments, carriers, manifests, customs"
+  schema-version: "1"
+
+schemas:
+
+  # ── Shipment ─────────────────────────────────────────────────────────────────
+
+  - id: nexus.shipment
+    name: "Shipment"
+    version: "1.0.0"
+    description: "Core shipment record including origin, destination, carrier assignment, and state"
+    classification: INTERNAL
+    retention_years: 7
+    fields:
+      - name: shipmentId
+        type: string
+        required: true
+        description: "Globally unique shipment identifier (UUID)"
+      - name: status
+        type: enum
+        values: [DRAFT, BOOKED, PICKED_UP, IN_TRANSIT, CUSTOMS_HOLD, DELIVERED, RETURNED, CANCELLED]
+        required: true
+      - name: originAddress
+        type: object
+        ref: nexus.address
+        required: true
+      - name: destinationAddress
+        type: object
+        ref: nexus.address
+        required: true
+      - name: carrierId
+        type: string
+        required: true
+        description: "Reference to the carrier record managing this shipment"
+      - name: createdAt
+        type: instant
+        required: true
+      - name: updatedAt
+        type: instant
+        required: true
+
+  # ── Carrier ──────────────────────────────────────────────────────────────────
+
+  - id: nexus.carrier
+    name: "Carrier"
+    version: "1.0.0"
+    description: "Carrier profile including certifications, capacity, and rate cards"
+    classification: INTERNAL
+    retention_years: 10
+    fields:
+      - name: carrierId
+        type: string
+        required: true
+      - name: name
+        type: string
+        required: true
+      - name: modes
+        type: array
+        items: enum
+        values: [AIR, OCEAN, ROAD, RAIL, MULTIMODAL]
+        required: true
+      - name: certifications
+        type: array
+        items: string
+        description: "Regulatory certifications held (e.g. IATA-CASS, IMO-DGS-certified)"
+      - name: activeSince
+        type: date
+        required: true
+
+  # ── Cargo Manifest ───────────────────────────────────────────────────────────
+
+  - id: nexus.cargo-manifest
+    name: "CargoManifest"
+    version: "1.0.0"
+    description: "Bill of lading or air waybill document linked to a shipment"
+    classification: CONFIDENTIAL
+    retention_years: 10
+    fields:
+      - name: manifestId
+        type: string
+        required: true
+      - name: shipmentId
+        type: string
+        required: true
+        description: "Foreign key to nexus.shipment"
+      - name: documentType
+        type: enum
+        values: [BILL_OF_LADING, AIR_WAYBILL, SEA_WAYBILL, TRUCK_WAYBILL]
+        required: true
+      - name: issuedAt
+        type: instant
+        required: true
+      - name: totalWeight_kg
+        type: number
+        required: true
+      - name: dangerousGoods
+        type: boolean
+        default: false
+
+  # ── Customs Declaration ───────────────────────────────────────────────────────
+
+  - id: nexus.customs-declaration
+    name: "CustomsDeclaration"
+    version: "1.0.0"
+    description: "Import or export customs declaration record for cross-border shipments"
+    classification: RESTRICTED
+    retention_years: 10
+    fields:
+      - name: declarationId
+        type: string
+        required: true
+      - name: shipmentId
+        type: string
+        required: true
+      - name: declarationType
+        type: enum
+        values: [IMPORT, EXPORT, TRANSIT, RE_EXPORT]
+        required: true
+      - name: hsCode
+        type: string
+        required: true
+        description: "Harmonized System commodity classification code"
+      - name: declaredValueUSD
+        type: number
+        required: true
+      - name: countryOfOrigin
+        type: string
+        required: true
+        description: "ISO 3166-1 alpha-2 country code"
+      - name: exportControlFlag
+        type: boolean
+        default: false
+        description: "True if the goods are subject to export control regulations"
+      - name: status
+        type: enum
+        values: [PENDING, SUBMITTED, CLEARED, HELD, REJECTED]
+        required: true
+
+  # ── Supporting types ─────────────────────────────────────────────────────────
+
+  - id: nexus.address
+    name: "Address"
+    version: "1.0.0"
+    description: "Postal address for shipment origin or destination"
+    classification: INTERNAL
+    fields:
+      - name: street
+        type: string
+        required: true
+      - name: city
+        type: string
+        required: true
+      - name: postalCode
+        type: string
+        required: true
+      - name: countryCode
+        type: string
+        required: true
+        description: "ISO 3166-1 alpha-2 country code"

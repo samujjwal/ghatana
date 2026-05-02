@@ -24,14 +24,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Integration tests for the Data-Cloud HTTP learning endpoints (DC-8). // GH-90000
+ * Integration tests for the Data-Cloud HTTP learning endpoints (DC-8). 
  *
  * <p>Starts a real {@link DataCloudHttpServer} on a random port and makes HTTP calls via the
  * Java standard HttpClient. {@link DataCloudClient} and {@link DataCloudLearningBridge}
  * are mocked so tests remain self-contained.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/learning/** HTTP endpoints (DC-8) // GH-90000
+ * @doc.purpose Integration tests for /api/v1/learning/** HTTP endpoints (DC-8) 
  * @doc.layer product
  * @doc.pattern Test
  */
@@ -43,22 +43,22 @@ class DataCloudHttpServerLearningTest {
     private DataCloudHttpServer server;
     private int port;
     private HttpClient httpClient;
-    private final ObjectMapper mapper = new ObjectMapper(); // GH-90000
+    private final ObjectMapper mapper = new ObjectMapper(); 
 
     @BeforeEach
-    void setUp() throws Exception { // GH-90000
-        mockClient = mock(DataCloudClient.class); // GH-90000
-        mockBridge = mock(DataCloudLearningBridge.class); // GH-90000
-        port       = findFreePort(); // GH-90000
-        httpClient = HttpClient.newBuilder().build(); // GH-90000
+    void setUp() throws Exception { 
+        mockClient = mock(DataCloudClient.class); 
+        mockBridge = mock(DataCloudLearningBridge.class); 
+        port       = findFreePort(); 
+        httpClient = HttpClient.newBuilder().build(); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (server != null) server.stop(); // GH-90000
+    void tearDown() { 
+        if (server != null) server.stop(); 
     }
 
-    // ==================== No bridge (null) ==================== // GH-90000
+    // ==================== No bridge (null) ==================== 
 
     @Nested
     @DisplayName("Learning bridge not wired (null)")
@@ -66,44 +66,44 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("POST /trigger → 503 when bridge is null")
-        void trigger_noBridge_returns503() throws Exception { // GH-90000
-            startWithoutBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); // GH-90000
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+        void trigger_noBridge_returns503() throws Exception { 
+            startWithoutBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
+            assertThat(resp.statusCode()).isEqualTo(503); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("message").toString()).containsIgnoringCase("not available");
         }
 
         @Test
         @DisplayName("GET /status → 503 when bridge is null")
-        void status_noBridge_returns503() throws Exception { // GH-90000
-            startWithoutBridge(); // GH-90000
+        void status_noBridge_returns503() throws Exception { 
+            startWithoutBridge(); 
             HttpResponse<String> resp = get("/api/v1/learning/status");
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
         @Test
         @DisplayName("GET /review → 503 when bridge is null")
-        void review_noBridge_returns503() throws Exception { // GH-90000
-            startWithoutBridge(); // GH-90000
+        void review_noBridge_returns503() throws Exception { 
+            startWithoutBridge(); 
             HttpResponse<String> resp = get("/api/v1/learning/review");
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
         @Test
         @DisplayName("POST /review/:id/approve → 503 when bridge is null")
-        void approve_noBridge_returns503() throws Exception { // GH-90000
-            startWithoutBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/approve", ""); // GH-90000
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+        void approve_noBridge_returns503() throws Exception { 
+            startWithoutBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/approve", ""); 
+            assertThat(resp.statusCode()).isEqualTo(503); 
         }
 
         @Test
         @DisplayName("POST /review/:id/reject → 503 when bridge is null")
-        void reject_noBridge_returns503() throws Exception { // GH-90000
-            startWithoutBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/reject", ""); // GH-90000
-            assertThat(resp.statusCode()).isEqualTo(503); // GH-90000
+        void reject_noBridge_returns503() throws Exception { 
+            startWithoutBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/rev-1/reject", ""); 
+            assertThat(resp.statusCode()).isEqualTo(503); 
         }
     }
 
@@ -115,8 +115,8 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("successful trigger → 200 with COMPLETED result")
-        void trigger_success_returns200() throws Exception { // GH-90000
-            Map<String, Object> result = Map.of( // GH-90000
+        void trigger_success_returns200() throws Exception { 
+            Map<String, Object> result = Map.of( 
                 "status", "COMPLETED",
                 "tenantId", "default",
                 "manual", true,
@@ -126,14 +126,14 @@ class DataCloudHttpServerLearningTest {
                 "durationMs", 42L,
                 "ranAt", "2026-01-24T10:00:00Z"
             );
-            when(mockBridge.runLearning(anyString(), org.mockito.ArgumentMatchers.eq(true))) // GH-90000
-                .thenReturn(result); // GH-90000
+            when(mockBridge.runLearning(anyString(), org.mockito.ArgumentMatchers.eq(true))) 
+                .thenReturn(result); 
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("status")).isEqualTo("COMPLETED");
             assertThat(((Number) body.get("patternsDiscovered")).intValue()).isEqualTo(3);
             assertThat(body.get("timestamp")).isNotNull();
@@ -141,15 +141,15 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("SKIPPED result → still 200")
-        void trigger_skipped_returns200() throws Exception { // GH-90000
-            when(mockBridge.runLearning(anyString(), org.mockito.ArgumentMatchers.eq(true))) // GH-90000
-                .thenReturn(Map.of("status", "SKIPPED", "reason", "already running")); // GH-90000
+        void trigger_skipped_returns200() throws Exception { 
+            when(mockBridge.runLearning(anyString(), org.mockito.ArgumentMatchers.eq(true))) 
+                .thenReturn(Map.of("status", "SKIPPED", "reason", "already running")); 
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/trigger", "{}"); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("status")).isEqualTo("SKIPPED");
         }
     }
@@ -162,21 +162,21 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("returns 200 with all required status fields")
-        void status_wiredBridge_returns200WithFields() throws Exception { // GH-90000
-            when(mockBridge.getStatus()).thenReturn(Map.of( // GH-90000
+        void status_wiredBridge_returns200WithFields() throws Exception { 
+            when(mockBridge.getStatus()).thenReturn(Map.of( 
                 "running",          false,
                 "lastRunTime",      "2026-01-24T09:00:00Z",
                 "nextScheduledRun", "2026-01-24T09:05:00Z",
                 "intervalMinutes",  5L,
                 "pendingReviews",   2L,
-                "lastResult",       Map.of("status", "COMPLETED") // GH-90000
+                "lastResult",       Map.of("status", "COMPLETED") 
             ));
 
-            startWithBridge(); // GH-90000
+            startWithBridge(); 
             HttpResponse<String> resp = get("/api/v1/learning/status");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("running")).isEqualTo(false);
             assertThat(body.get("lastRunTime")).isEqualTo("2026-01-24T09:00:00Z");
             assertThat(body.get("intervalMinutes")).isNotNull();
@@ -193,18 +193,18 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("returns 200 with items and count")
-        void reviewQueue_returns200WithItemsAndCount() throws Exception { // GH-90000
-            Map<String, Map<String, Object>> items = Map.of( // GH-90000
-                "rev-1", Map.of("reviewId", "rev-1", "status", "PENDING", "confidence", 0.3f), // GH-90000
-                "rev-2", Map.of("reviewId", "rev-2", "status", "APPROVED", "confidence", 0.5f) // GH-90000
+        void reviewQueue_returns200WithItemsAndCount() throws Exception { 
+            Map<String, Map<String, Object>> items = Map.of( 
+                "rev-1", Map.of("reviewId", "rev-1", "status", "PENDING", "confidence", 0.3f), 
+                "rev-2", Map.of("reviewId", "rev-2", "status", "APPROVED", "confidence", 0.5f) 
             );
-            when(mockBridge.getReviewQueue()).thenReturn(items); // GH-90000
+            when(mockBridge.getReviewQueue()).thenReturn(items); 
 
-            startWithBridge(); // GH-90000
+            startWithBridge(); 
             HttpResponse<String> resp = get("/api/v1/learning/review");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
             assertThat(body.get("items")).isNotNull();
             assertThat(body.get("timestamp")).isNotNull();
@@ -212,14 +212,14 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("empty review queue → 200 with count=0")
-        void reviewQueue_empty_returnsZeroCount() throws Exception { // GH-90000
-            when(mockBridge.getReviewQueue()).thenReturn(Map.of()); // GH-90000
+        void reviewQueue_empty_returnsZeroCount() throws Exception { 
+            when(mockBridge.getReviewQueue()).thenReturn(Map.of()); 
 
-            startWithBridge(); // GH-90000
+            startWithBridge(); 
             HttpResponse<String> resp = get("/api/v1/learning/review");
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
         }
     }
@@ -232,27 +232,27 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("known review ID → 200 with APPROVED decision")
-        void approve_knownItem_returns200() throws Exception { // GH-90000
+        void approve_knownItem_returns200() throws Exception { 
             when(mockBridge.approveReview("rev-abc")).thenReturn(true);
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-abc/approve", ""); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/rev-abc/approve", ""); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("reviewId")).isEqualTo("rev-abc");
             assertThat(body.get("decision")).isEqualTo("APPROVED");
         }
 
         @Test
         @DisplayName("unknown review ID → 404")
-        void approve_unknownItem_returns404() throws Exception { // GH-90000
+        void approve_unknownItem_returns404() throws Exception { 
             when(mockBridge.approveReview("no-such")).thenReturn(false);
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/no-such/approve", ""); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/no-such/approve", ""); 
 
-            assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(404); 
         }
     }
 
@@ -264,77 +264,77 @@ class DataCloudHttpServerLearningTest {
 
         @Test
         @DisplayName("known review ID → 200 with REJECTED decision")
-        void reject_knownItem_returns200() throws Exception { // GH-90000
+        void reject_knownItem_returns200() throws Exception { 
             when(mockBridge.rejectReview("rev-xyz")).thenReturn(true);
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/rev-xyz/reject", ""); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/rev-xyz/reject", ""); 
 
-            assertThat(resp.statusCode()).isEqualTo(200); // GH-90000
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(200); 
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class); 
             assertThat(body.get("reviewId")).isEqualTo("rev-xyz");
             assertThat(body.get("decision")).isEqualTo("REJECTED");
         }
 
         @Test
         @DisplayName("unknown review ID → 404")
-        void reject_unknownItem_returns404() throws Exception { // GH-90000
+        void reject_unknownItem_returns404() throws Exception { 
             when(mockBridge.rejectReview("ghost")).thenReturn(false);
 
-            startWithBridge(); // GH-90000
-            HttpResponse<String> resp = post("/api/v1/learning/review/ghost/reject", ""); // GH-90000
+            startWithBridge(); 
+            HttpResponse<String> resp = post("/api/v1/learning/review/ghost/reject", ""); 
 
-            assertThat(resp.statusCode()).isEqualTo(404); // GH-90000
+            assertThat(resp.statusCode()).isEqualTo(404); 
         }
     }
 
     // ==================== Helpers ====================
 
-    private void startWithBridge() throws Exception { // GH-90000
-        server = new DataCloudHttpServer(mockClient, port, null, mockBridge, null); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+    private void startWithBridge() throws Exception { 
+        server = new DataCloudHttpServer(mockClient, port, null, mockBridge, null); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
-    private void startWithoutBridge() throws Exception { // GH-90000
-        server = new DataCloudHttpServer(mockClient, port); // GH-90000
-        server.start(); // GH-90000
-        waitForServerReady(port); // GH-90000
+    private void startWithoutBridge() throws Exception { 
+        server = new DataCloudHttpServer(mockClient, port); 
+        server.start(); 
+        waitForServerReady(port); 
     }
 
-    private HttpResponse<String> get(String path) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .GET() // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> get(String path) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .GET() 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private HttpResponse<String> post(String path, String body) throws Exception { // GH-90000
-        HttpRequest req = HttpRequest.newBuilder() // GH-90000
-            .POST(HttpRequest.BodyPublishers.ofString(body)) // GH-90000
-            .uri(URI.create("http://127.0.0.1:" + port + path)) // GH-90000
-            .header("Content-Type", "application/json") // GH-90000
-            .build(); // GH-90000
-        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); // GH-90000
+    private HttpResponse<String> post(String path, String body) throws Exception { 
+        HttpRequest req = HttpRequest.newBuilder() 
+            .POST(HttpRequest.BodyPublishers.ofString(body)) 
+            .uri(URI.create("http://127.0.0.1:" + port + path)) 
+            .header("Content-Type", "application/json") 
+            .build(); 
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { // GH-90000
-        try (ServerSocket ss = new ServerSocket(0)) { // GH-90000
-            return ss.getLocalPort(); // GH-90000
+    private static int findFreePort() throws IOException { 
+        try (ServerSocket ss = new ServerSocket(0)) { 
+            return ss.getLocalPort(); 
         }
     }
 
-    private static void waitForServerReady(int port) throws Exception { // GH-90000
-        long deadline = System.currentTimeMillis() + 5_000; // GH-90000
-        while (System.currentTimeMillis() < deadline) { // GH-90000
+    private static void waitForServerReady(int port) throws Exception { 
+        long deadline = System.currentTimeMillis() + 5_000; 
+        while (System.currentTimeMillis() < deadline) { 
             try {
-                new Socket("127.0.0.1", port).close(); // GH-90000
+                new Socket("127.0.0.1", port).close(); 
                 return;
-            } catch (IOException ignored) { // GH-90000
-                Thread.sleep(50); // GH-90000
+            } catch (IOException ignored) { 
+                Thread.sleep(50); 
             }
         }
-        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); // GH-90000
+        throw new IllegalStateException("Server did not start on port " + port + " within 5 s"); 
     }
 }

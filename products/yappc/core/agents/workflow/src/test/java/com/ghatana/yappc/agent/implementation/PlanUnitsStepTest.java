@@ -33,49 +33,49 @@ class PlanUnitsStepTest extends EventloopTestBase {
   private PlanUnitsStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new PlanUnitsStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new PlanUnitsStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("implementation.plan_units");
   }
 
   @Test
   @DisplayName("Should plan implementation units from architecture baseline")
-  void shouldPlanImplementationUnits() { // GH-90000
+  void shouldPlanImplementationUnits() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("architectureBaselineId", "arch-baseline-001"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // Required by step validation // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("architectureBaselineId", "arch-baseline-001"); 
+    context.put("tenantId", "tenant-abc"); // Required by step validation 
 
     Map<String, Object> baseline =
-        Map.of( // GH-90000
+        Map.of( 
             "baselineId",
             "arch-baseline-001",
             "tenantId",
             "tenant-abc",
             "content",
-            Map.of( // GH-90000
+            Map.of( 
                 "c4ContainerView", "Container1, Container2",
                 "c4ComponentView", "Component1, Component2"),
             "components",
-            List.of()); // GH-90000
+            List.of()); 
     when(dbClient.query(eq("architecture_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(baseline))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+        .thenReturn(Promise.of(List.of(baseline))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("architectureBaselineId")).isEqualTo("arch-baseline-001");
   }
 }

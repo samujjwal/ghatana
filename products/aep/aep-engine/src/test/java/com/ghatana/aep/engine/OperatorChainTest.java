@@ -23,49 +23,49 @@ class OperatorChainTest {
 
     @Test
     @DisplayName("Should compose operator chain")
-    void shouldComposeOperatorChain() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldComposeOperatorChain() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should execute operator chain sequentially")
-    void shouldExecuteOperatorChainSequentially() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldExecuteOperatorChainSequentially() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle operator chain errors")
-    void shouldHandleOperatorChainErrors() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleOperatorChainErrors() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle operator chain rollback")
-    void shouldHandleOperatorChainRollback() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleOperatorChainRollback() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle operator chain state")
-    void shouldHandleOperatorChainState() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleOperatorChainState() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should handle operator chain optimization")
-    void shouldHandleOperatorChainOptimization() { // GH-90000
-        AepEngine engine = Aep.forTesting(); // GH-90000
+    void shouldHandleOperatorChainOptimization() { 
+        AepEngine engine = Aep.forTesting(); 
 
-        assertThat(engine).isNotNull(); // GH-90000
+        assertThat(engine).isNotNull(); 
     }
 }

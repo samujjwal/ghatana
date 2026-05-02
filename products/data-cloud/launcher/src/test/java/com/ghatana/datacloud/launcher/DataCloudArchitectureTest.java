@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.datacloud.launcher;
@@ -27,12 +27,12 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  * <h2>Covered rules</h2>
  * <ul>
  *   <li>Launcher layer must not import platform internals directly.</li>
- *   <li>HTTP handlers must not depend on each other (fan-in / fan-out forbidden).</li> // GH-90000
+ *   <li>HTTP handlers must not depend on each other (fan-in / fan-out forbidden).</li> 
  *   <li>No Spring Reactor / WebFlux in launcher production code.</li>
  *   <li>No raw {@code CompletableFuture} in launcher production code.</li>
- *   <li>No {@code System.out.println} in launcher production code (use SLF4J).</li> // GH-90000
+ *   <li>No {@code System.out.println} in launcher production code (use SLF4J).</li> 
  *   <li>No cyclic dependencies between launcher packages.</li>
- *   <li>Security filter must reside in the {@code http} package (not leaked to handlers).</li> // GH-90000
+ *   <li>Security filter must reside in the {@code http} package (not leaked to handlers).</li> 
  * </ul>
  *
  * @doc.type class
@@ -45,20 +45,20 @@ class DataCloudArchitectureTest {
 
     // ── Class import scopes ───────────────────────────────────────────────────
 
-    /** All launcher production classes (excluding test sources). */ // GH-90000
+    /** All launcher production classes (excluding test sources). */ 
     private static JavaClasses LAUNCHER_CLASSES;
 
     /** Only the launcher module's handler classes. */
     private static JavaClasses HANDLER_CLASSES;
 
     @BeforeAll
-    static void importClasses() { // GH-90000
-        LAUNCHER_CLASSES = new ClassFileImporter() // GH-90000
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
+    static void importClasses() { 
+        LAUNCHER_CLASSES = new ClassFileImporter() 
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) 
             .importPackages("com.ghatana.datacloud.launcher");
 
-        HANDLER_CLASSES = new ClassFileImporter() // GH-90000
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) // GH-90000
+        HANDLER_CLASSES = new ClassFileImporter() 
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) 
                 .importPackages("com.ghatana.datacloud.launcher.http.handlers");
     }
 
@@ -72,11 +72,11 @@ class DataCloudArchitectureTest {
 
         @Test
         @DisplayName("Root launcher must delegate transport and infra wiring to bootstrap classes")
-        void rootLauncherMustNotComposeTransportOrInfrastructureDirectly() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void rootLauncherMustNotComposeTransportOrInfrastructureDirectly() { 
+            ArchRule rule = noClasses() 
                     .that().haveSimpleName("DataCloudLauncher")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage( 
                             "com.ghatana.datacloud.di..",
                             "com.ghatana.datacloud.infrastructure..",
                             "com.ghatana.aiplatform..",
@@ -84,60 +84,60 @@ class DataCloudArchitectureTest {
                             "com.ghatana.datacloud.launcher.grpc..",
                             "javax.sql..",
                             "com.zaxxer.hikari..")
-                    .because( // GH-90000
+                    .because( 
                         "The root launcher should stay thin and delegate transport/resource composition "
                         + "to dedicated bootstrap classes instead of wiring product internals directly.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
 
         @Test
         @DisplayName("Data-Cloud must not use Spring Reactor / WebFlux")
-        void noSpringReactorOrWebFlux() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noSpringReactorOrWebFlux() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher..")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage("reactor.core..", "org.springframework.web.reactive..") // GH-90000
-                    .because( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage("reactor.core..", "org.springframework.web.reactive..") 
+                    .because( 
                         "The Data-Cloud product must use ActiveJ Promises only. "
                         + "Spring Reactor / WebFlux is incompatible with the ActiveJ event loop.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
 
         @Test
         @DisplayName("Data-Cloud production code must not use CompletableFuture")
-        void noCompletableFutureInProductionCode() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noCompletableFutureInProductionCode() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher..")
-                    .should().dependOnClassesThat() // GH-90000
+                    .should().dependOnClassesThat() 
                     .haveFullyQualifiedName("java.util.concurrent.CompletableFuture")
-                    .because( // GH-90000
+                    .because( 
                         "Use ActiveJ Promise for all asynchronous operations. "
                         + "CompletableFuture is not compatible with the single-threaded ActiveJ event loop.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
 
         @Test
         @DisplayName("Data-Cloud launcher must not depend on AEP product packages")
-        void noDirectAepDependencies() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noDirectAepDependencies() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher..")
-                    .should().dependOnClassesThat() // GH-90000
-                    .resideInAnyPackage("com.ghatana.aep..", "com.ghatana.orchestrator..") // GH-90000
-                    .because( // GH-90000
+                    .should().dependOnClassesThat() 
+                    .resideInAnyPackage("com.ghatana.aep..", "com.ghatana.orchestrator..") 
+                    .because( 
                         "Data-Cloud is the backbone layer. Product-specific AEP concerns must stay "
                         + "outside the Data-Cloud launcher boundary.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
 
         @Test
         @DisplayName("Data-Cloud must not use System.out or System.err for logging")
-        void noSystemOutOrSystemErr() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void noSystemOutOrSystemErr() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher..")
-                    .should().accessField(System.class, "out") // GH-90000
-                    .orShould().accessField(System.class, "err") // GH-90000
+                    .should().accessField(System.class, "out") 
+                    .orShould().accessField(System.class, "err") 
                     .because("Use SLF4J Logger for all logging — System.out/err bypasses structured logging.");
-                rule.check(LAUNCHER_CLASSES); // GH-90000
+                rule.check(LAUNCHER_CLASSES); 
         }
     }
 
@@ -151,29 +151,29 @@ class DataCloudArchitectureTest {
 
         @Test
         @DisplayName("HTTP handlers must not depend on other handlers in the same layer")
-        void handlersMustNotDependOnEachOther() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void handlersMustNotDependOnEachOther() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher.http.handlers")
                     .and().haveSimpleNameEndingWith("Handler")
                     .and().doNotHaveSimpleName("HttpHandlerSupport")
-                    .should().dependOnClassesThat() // GH-90000
+                    .should().dependOnClassesThat() 
                     .haveSimpleNameEndingWith("Handler")
-                    .because( // GH-90000
+                    .because( 
                         "Each handler must be independently composable. "
                         + "Cross-handler dependencies create tight coupling and cyclic dependencies.")
-                    .allowEmptyShould(true); // GH-90000
-            rule.check(HANDLER_CLASSES); // GH-90000
+                    .allowEmptyShould(true); 
+            rule.check(HANDLER_CLASSES); 
         }
 
         @Test
         @DisplayName("Handlers must reside in the handlers sub-package")
-        void handlersMustResideInHandlersPackage() { // GH-90000
-            ArchRule rule = classes() // GH-90000
+        void handlersMustResideInHandlersPackage() { 
+            ArchRule rule = classes() 
                     .that().haveSimpleNameEndingWith("Handler")
                     .and().resideInAPackage("com.ghatana.datacloud.launcher..")
                     .should().resideInAPackage("com.ghatana.datacloud.launcher.http.handlers")
                     .because("All HTTP handlers must be in the handlers sub-package for discoverability.");
-                rule.check(LAUNCHER_CLASSES); // GH-90000
+                rule.check(LAUNCHER_CLASSES); 
         }
     }
 
@@ -187,28 +187,28 @@ class DataCloudArchitectureTest {
 
         @Test
         @DisplayName("DataCloudSecurityFilter must reside in the http layer, not handlers")
-        void securityFilterMustNotResideInHandlersPackage() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void securityFilterMustNotResideInHandlersPackage() { 
+            ArchRule rule = noClasses() 
                     .that().haveSimpleNameContaining("SecurityFilter")
                     .and().resideInAPackage("com.ghatana.datacloud.launcher..")
                     .should().resideInAPackage("com.ghatana.datacloud.launcher.http.handlers..")
-                    .because( // GH-90000
+                    .because( 
                         "Security filters are middleware, not handlers. "
                         + "They must remain in the http layer to be applied before route dispatch.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
 
         @Test
         @DisplayName("Handlers must not directly import DataCloudSecurityFilter")
-        void handlersMustNotImportSecurityFilter() { // GH-90000
-            ArchRule rule = noClasses() // GH-90000
+        void handlersMustNotImportSecurityFilter() { 
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher.http.handlers")
-                    .should().dependOnClassesThat() // GH-90000
+                    .should().dependOnClassesThat() 
                     .haveSimpleName("DataCloudSecurityFilter")
-                    .because( // GH-90000
+                    .because( 
                         "Handlers must not be aware of the security filter. "
                         + "Security wrapping is the responsibility of the server composition layer.");
-            rule.check(HANDLER_CLASSES); // GH-90000
+            rule.check(HANDLER_CLASSES); 
         }
     }
 
@@ -222,14 +222,14 @@ class DataCloudArchitectureTest {
 
         @Test
         @DisplayName("Data-Cloud packages must be acyclic (no circular package dependencies)")
-        void dataCloudPackagesMustBeAcyclic() { // GH-90000
-            ArchRule rule = slices() // GH-90000
+        void dataCloudPackagesMustBeAcyclic() { 
+            ArchRule rule = slices() 
                     .matching("com.ghatana.datacloud.launcher.(*)..")
-                    .should().beFreeOfCycles() // GH-90000
-                    .because( // GH-90000
+                    .should().beFreeOfCycles() 
+                    .because( 
                         "Cyclic module dependencies prevent independent deployment "
                         + "and create tight coupling that violates the layered architecture.");
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+            rule.check(LAUNCHER_CLASSES); 
         }
     }
 
@@ -243,17 +243,17 @@ class DataCloudArchitectureTest {
 
         @Test
         @DisplayName("Classes ending with 'Test' must reside in test sources")
-        void testClassesMustBeInTestSources() { // GH-90000
+        void testClassesMustBeInTestSources() { 
             // This test uses only production classes — verifies no *Test class leaked to main
-            ArchRule rule = noClasses() // GH-90000
+            ArchRule rule = noClasses() 
                     .that().resideInAPackage("com.ghatana.datacloud.launcher..")
                     .and().haveSimpleNameEndingWith("Test")
-                    .should().bePublic() // GH-90000
-                    .because( // GH-90000
+                    .should().bePublic() 
+                    .because( 
                         "Test classes must not appear in production source sets. "
                         + "Any Test-suffixed class in main/ is a test leaked to production.")
-                    .allowEmptyShould(true); // GH-90000
-            rule.check(LAUNCHER_CLASSES); // GH-90000
+                    .allowEmptyShould(true); 
+            rule.check(LAUNCHER_CLASSES); 
         }
     }
 }

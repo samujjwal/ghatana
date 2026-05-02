@@ -29,67 +29,67 @@ import static org.mockito.Mockito.mock;
 @DisplayName("AepRegistryModule")
 class AepRegistryModuleTest {
 
-    private final AepRegistryModule module = new AepRegistryModule(); // GH-90000
+    private final AepRegistryModule module = new AepRegistryModule(); 
 
     @Test
     @DisplayName("uses no-op stores when no database is configured")
-    void usesNoopStoresWithoutDataSource() { // GH-90000
-        AgentExecutionHistoryStore historyStore = module.agentExecutionHistoryStore(null, Runnable::run); // GH-90000
-        AgentMemoryPlaneClient memoryClient = module.agentMemoryPlaneClient(null); // GH-90000
+    void usesNoopStoresWithoutDataSource() { 
+        AgentExecutionHistoryStore historyStore = module.agentExecutionHistoryStore(null, Runnable::run); 
+        AgentMemoryPlaneClient memoryClient = module.agentMemoryPlaneClient(null); 
 
-        assertThat(historyStore).isInstanceOf(NoopAgentExecutionHistoryStore.class); // GH-90000
-        assertThat(memoryClient).isInstanceOf(AgentMemoryPlaneClient.Noop.class); // GH-90000
+        assertThat(historyStore).isInstanceOf(NoopAgentExecutionHistoryStore.class); 
+        assertThat(memoryClient).isInstanceOf(AgentMemoryPlaneClient.Noop.class); 
     }
 
     @Test
     @DisplayName("creates durable stores when a database is configured")
-    void createsDurableStoresWithDataSource() throws Exception { // GH-90000
-        DataSource dataSource = mock(DataSource.class); // GH-90000
+    void createsDurableStoresWithDataSource() throws Exception { 
+        DataSource dataSource = mock(DataSource.class); 
         Executor executor = Runnable::run;
 
-        AgentExecutionHistoryStore historyStore = module.agentExecutionHistoryStore(dataSource, executor); // GH-90000
-        AgentMemoryPlaneClient memoryClient = module.agentMemoryPlaneClient(dataSource); // GH-90000
+        AgentExecutionHistoryStore historyStore = module.agentExecutionHistoryStore(dataSource, executor); 
+        AgentMemoryPlaneClient memoryClient = module.agentMemoryPlaneClient(dataSource); 
 
-        assertThat(historyStore).isNotInstanceOf(NoopAgentExecutionHistoryStore.class); // GH-90000
-        assertThat(memoryClient).isNotInstanceOf(AgentMemoryPlaneClient.Noop.class); // GH-90000
-        assertThat(readMemoryPlaneField(memoryClient, "memoryPlane").getSimpleName()) // GH-90000
+        assertThat(historyStore).isNotInstanceOf(NoopAgentExecutionHistoryStore.class); 
+        assertThat(memoryClient).isNotInstanceOf(AgentMemoryPlaneClient.Noop.class); 
+        assertThat(readMemoryPlaneField(memoryClient, "memoryPlane").getSimpleName()) 
             .isEqualTo("PersistentMemoryPlane");
     }
 
     @Test
     @DisplayName("fails fast when an unsupported pipeline registry mode is selected")
-    void failsFastWhenUnsupportedPipelineRegistryModeSelected() { // GH-90000
-        assertThatIllegalStateException() // GH-90000
-            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "noop")) // GH-90000
+    void failsFastWhenUnsupportedPipelineRegistryModeSelected() { 
+        assertThatIllegalStateException() 
+            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "noop")) 
             .withMessageContaining("Unsupported AEP_PIPELINE_REGISTRY_MODE='noop'")
             .withMessageContaining("AEP requires AEP_PIPELINE_REGISTRY_MODE=datacloud");
     }
 
     @Test
     @DisplayName("fails fast when datacloud mode is selected without a base URL")
-    void failsFastWhenDatacloudModeMissingBaseUrl() { // GH-90000
-        assertThatIllegalStateException() // GH-90000
-            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "datacloud")) // GH-90000
+    void failsFastWhenDatacloudModeMissingBaseUrl() { 
+        assertThatIllegalStateException() 
+            .isThrownBy(() -> AepRegistryModule.createPipelineRegistryClient(EnvConfig.fromMap(Map.of()), "datacloud")) 
             .withMessageContaining("AEP_DC_BASE_URL");
     }
 
     @Test
     @DisplayName("creates Data Cloud pipeline registry client when base URL is configured")
-    void createsDataCloudPipelineRegistryClientWhenConfigured() { // GH-90000
-        PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient( // GH-90000
-            EnvConfig.fromMap(Map.of("dc.base.url", "https://datacloud.internal")), // GH-90000
+    void createsDataCloudPipelineRegistryClientWhenConfigured() { 
+        PipelineRegistryClient client = AepRegistryModule.createPipelineRegistryClient( 
+            EnvConfig.fromMap(Map.of("dc.base.url", "https://datacloud.internal")), 
             "datacloud"
         );
 
-        assertThat(client).isInstanceOf(DataCloudPipelineRegistryClientImpl.class); // GH-90000
+        assertThat(client).isInstanceOf(DataCloudPipelineRegistryClientImpl.class); 
     }
 
-    private static Class<?> readMemoryPlaneField(AgentMemoryPlaneClient client, String fieldName) // GH-90000
+    private static Class<?> readMemoryPlaneField(AgentMemoryPlaneClient client, String fieldName) 
             throws NoSuchFieldException, IllegalAccessException {
-        Field field = AgentMemoryPlaneClient.class.getDeclaredField(fieldName); // GH-90000
-        field.setAccessible(true); // GH-90000
-        Object value = field.get(client); // GH-90000
-        assertThat(value).isNotNull(); // GH-90000
-        return value.getClass(); // GH-90000
+        Field field = AgentMemoryPlaneClient.class.getDeclaredField(fieldName); 
+        field.setAccessible(true); 
+        Object value = field.get(client); 
+        assertThat(value).isNotNull(); 
+        return value.getClass(); 
     }
 }

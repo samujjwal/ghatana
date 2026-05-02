@@ -17,15 +17,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Media contract interop tests")
 class MediaContractInteropTest {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(); // GH-90000
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper(); 
 
     @Test
     @DisplayName("runtime settings round-trip through generated media contract")
-    void shouldRoundTripRuntimeSettingsThroughContract() throws IOException { // GH-90000
-        JsonNode fixture = readFixture(); // GH-90000
+    void shouldRoundTripRuntimeSettingsThroughContract() throws IOException { 
+        JsonNode fixture = readFixture(); 
         JsonNode runtime = fixture.get("runtimeConfig");
 
-        AudioVideoRuntimeSettings settings = new AudioVideoRuntimeSettings( // GH-90000
+        AudioVideoRuntimeSettings settings = new AudioVideoRuntimeSettings( 
                 runtime.get("languageTag").asText(),
                 runtime.get("sttSampleRate").asInt(),
                 runtime.get("sttChannels").asInt(),
@@ -46,46 +46,46 @@ class MediaContractInteropTest {
                 runtime.get("deviceAcquireTimeoutMs").asLong(),
                 runtime.get("leakDetectionThresholdMs").asLong());
 
-        AudioVideoRuntimeConfig contract = settings.toContract(); // GH-90000
-        AudioVideoRuntimeSettings roundTrip = AudioVideoRuntimeSettings.fromContract(contract); // GH-90000
+        AudioVideoRuntimeConfig contract = settings.toContract(); 
+        AudioVideoRuntimeSettings roundTrip = AudioVideoRuntimeSettings.fromContract(contract); 
 
-        assertEquals(settings, roundTrip); // GH-90000
-        assertEquals("en-GB", contract.getLanguageTag()); // GH-90000
-        assertEquals(4200L, contract.getDeviceAcquireTimeoutMs()); // GH-90000
+        assertEquals(settings, roundTrip); 
+        assertEquals("en-GB", contract.getLanguageTag()); 
+        assertEquals(4200L, contract.getDeviceAcquireTimeoutMs()); 
     }
 
     @Test
     @DisplayName("processing error round-trip through generated media contract")
-    void shouldRoundTripProcessingErrorThroughContract() throws IOException { // GH-90000
+    void shouldRoundTripProcessingErrorThroughContract() throws IOException { 
         JsonNode error = readFixture().get("errorCodes").get(0);
-        AudioVideoProcessingError processingError = new AudioVideoProcessingError( // GH-90000
+        AudioVideoProcessingError processingError = new AudioVideoProcessingError( 
                 error.get("code").asText(),
                 error.get("category").asText(),
                 error.get("retryable").asBoolean(),
                 error.get("message").asText());
 
-        AudioVideoError contract = processingError.toContract(); // GH-90000
-        AudioVideoProcessingError roundTrip = AudioVideoProcessingError.fromContract(contract); // GH-90000
+        AudioVideoError contract = processingError.toContract(); 
+        AudioVideoProcessingError roundTrip = AudioVideoProcessingError.fromContract(contract); 
 
-        assertEquals(processingError, roundTrip); // GH-90000
-        assertTrue(contract.getRetryable()); // GH-90000
-        assertTrue(contract.getMessage().startsWith("Temporary backend outage")); // GH-90000
+        assertEquals(processingError, roundTrip); 
+        assertTrue(contract.getRetryable()); 
+        assertTrue(contract.getMessage().startsWith("Temporary backend outage")); 
     }
 
-    private static JsonNode readFixture() throws IOException { // GH-90000
-        return OBJECT_MAPPER.readTree(Files.readString(findRepoRoot() // GH-90000
+    private static JsonNode readFixture() throws IOException { 
+        return OBJECT_MAPPER.readTree(Files.readString(findRepoRoot() 
                 .resolve("products/audio-video/test-fixtures/media-contract-fixtures.json")));
     }
 
-    private static Path findRepoRoot() { // GH-90000
+    private static Path findRepoRoot() { 
         Path current = Path.of("").toAbsolutePath();
-        while (current != null) { // GH-90000
+        while (current != null) { 
             if (Files.exists(current.resolve("settings.gradle.kts"))
                     && Files.exists(current.resolve("pnpm-workspace.yaml"))
                     && Files.isDirectory(current.resolve("platform"))) {
                 return current;
             }
-            current = current.getParent(); // GH-90000
+            current = current.getParent(); 
         }
         throw new IllegalStateException("Unable to locate repository root");
     }

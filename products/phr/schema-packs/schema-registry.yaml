@@ -1,0 +1,219 @@
+# PHR Schema Pack Registry
+# Declares PHR-specific data schemas for use with the generic platform schema registry.
+# Products register schemas here; the platform kernel has no knowledge of these schemas.
+
+registry:
+  id: phr-schema-registry
+  name: "PHR Schema Pack Registry"
+  version: "1.0.0"
+  product: phr
+  description: "Healthcare domain entity schemas for patient records, clinical data, and FHIR resources"
+  schema-version: "1"
+
+schemas:
+
+  # ── Patient entity schemas ───────────────────────────────────────────────────
+
+  - id: phr.patient
+    name: "Patient"
+    version: "1.0.0"
+    description: "Core patient identity and demographic record"
+    fields:
+      - name: patientId
+        type: string
+        required: true
+        classification: PHI
+        description: "Unique patient identifier (system-generated)"
+      - name: nationalId
+        type: string
+        required: false
+        classification: SENSITIVE_PHI
+        description: "National ID or citizenship number"
+      - name: givenName
+        type: string
+        required: true
+        classification: PHI
+      - name: familyName
+        type: string
+        required: true
+        classification: PHI
+      - name: dateOfBirth
+        type: date
+        required: true
+        classification: PHI
+      - name: gender
+        type: enum
+        values: [MALE, FEMALE, OTHER, UNKNOWN]
+        required: false
+        classification: PHI
+      - name: contactInfo
+        type: object
+        required: false
+        classification: PHI
+        ref: phr.contact-info
+    retention:
+      years: 25
+      regulation: nepal-2081
+
+  - id: phr.observation
+    name: "Clinical Observation"
+    version: "1.0.0"
+    description: "FHIR-aligned clinical observation (vital signs, lab results, etc.)"
+    fields:
+      - name: observationId
+        type: string
+        required: true
+        classification: PHI
+      - name: patientId
+        type: string
+        required: true
+        classification: PHI
+      - name: observationType
+        type: string
+        required: true
+        classification: PHI
+        description: "Observation code (LOINC or local code)"
+      - name: value
+        type: object
+        required: true
+        classification: PHI
+        description: "Observation value (quantity, string, coded, etc.)"
+      - name: effectiveDate
+        type: datetime
+        required: true
+        classification: PHI
+      - name: status
+        type: enum
+        values: [REGISTERED, PRELIMINARY, FINAL, AMENDED, CANCELLED]
+        required: true
+        classification: PHI
+
+  - id: phr.medication
+    name: "Medication Record"
+    version: "1.0.0"
+    description: "Prescribed medication and administration record"
+    fields:
+      - name: medicationId
+        type: string
+        required: true
+        classification: PHI
+      - name: patientId
+        type: string
+        required: true
+        classification: PHI
+      - name: medicationCode
+        type: string
+        required: true
+        classification: PHI
+        description: "Medication code (RxNorm or local formulary)"
+      - name: prescriberId
+        type: string
+        required: true
+        classification: PHI
+      - name: dosage
+        type: object
+        required: true
+        classification: PHI
+      - name: startDate
+        type: date
+        required: true
+        classification: PHI
+      - name: endDate
+        type: date
+        required: false
+        classification: PHI
+      - name: status
+        type: enum
+        values: [ACTIVE, COMPLETED, STOPPED, CANCELLED]
+        required: true
+        classification: PHI
+
+  - id: phr.consent-record
+    name: "Patient Consent Record"
+    version: "1.0.0"
+    description: "Patient consent grant, delegation, and revocation audit"
+    fields:
+      - name: consentId
+        type: string
+        required: true
+        classification: PHI
+      - name: patientId
+        type: string
+        required: true
+        classification: PHI
+      - name: purpose
+        type: string
+        required: true
+        classification: PHI
+        description: "Consent purpose identifier (maps to ConsentPlugin purpose vocabulary)"
+      - name: status
+        type: enum
+        values: [ACTIVE, REVOKED, EXPIRED, PENDING]
+        required: true
+        classification: PHI
+      - name: grantedAt
+        type: datetime
+        required: true
+        classification: PHI
+      - name: expiresAt
+        type: datetime
+        required: false
+        classification: PHI
+      - name: grantedByActorId
+        type: string
+        required: true
+        classification: PHI
+      - name: scope
+        type: array
+        items: string
+        required: true
+        classification: PHI
+
+  - id: phr.clinical-document
+    name: "Clinical Document"
+    version: "1.0.0"
+    description: "Medical document metadata (reports, discharge summaries, imaging, etc.)"
+    fields:
+      - name: documentId
+        type: string
+        required: true
+        classification: PHI
+      - name: patientId
+        type: string
+        required: true
+        classification: PHI
+      - name: documentType
+        type: string
+        required: true
+        classification: PHI
+      - name: authorId
+        type: string
+        required: true
+        classification: PHI
+      - name: createdAt
+        type: datetime
+        required: true
+        classification: PHI
+      - name: storageRef
+        type: string
+        required: true
+        classification: PHI
+        description: "Secure storage reference (not a public URL)"
+
+  - id: phr.contact-info
+    name: "Contact Information"
+    version: "1.0.0"
+    description: "Patient contact details"
+    fields:
+      - name: phone
+        type: string
+        required: false
+        classification: PHI
+      - name: email
+        type: string
+        required: false
+        classification: PHI
+      - name: address
+        type: object
+        required: false
+        classification: PHI

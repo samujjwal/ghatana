@@ -23,12 +23,12 @@ class PasswordHasherExpansionTest {
     private PasswordHasher hasher;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        hasher = new PasswordHasher(); // GH-90000
+    void setUp() { 
+        hasher = new PasswordHasher(); 
     }
 
     // ============================================
-    // EXTREME LENGTH PASSWORDS (2 tests) // GH-90000
+    // EXTREME LENGTH PASSWORDS (2 tests) 
     // ============================================
 
     @Nested
@@ -37,37 +37,37 @@ class PasswordHasherExpansionTest {
 
         @Test
         @DisplayName("Hash and verify very long password (1000+ chars)")
-        void veryLongPassword() { // GH-90000
+        void veryLongPassword() { 
             // Create a 1000+ character password
-            StringBuilder longPassword = new StringBuilder(); // GH-90000
-            for (int i = 0; i < 100; i++) { // GH-90000
+            StringBuilder longPassword = new StringBuilder(); 
+            for (int i = 0; i < 100; i++) { 
                 longPassword.append("Pass123!");
             }
-            String password = longPassword.toString(); // GH-90000
+            String password = longPassword.toString(); 
 
-            String hashed = hasher.hash(password); // GH-90000
+            String hashed = hasher.hash(password); 
 
             // BCrypt limits input to 72 bytes, so it should still work
             assertThat(hashed).startsWith("$2");
-            assertThat(hasher.verify(password, hashed)).isTrue(); // GH-90000
+            assertThat(hasher.verify(password, hashed)).isTrue(); 
         }
 
         @Test
         @DisplayName("Maximum practical password length handled correctly")
-        void maximumPracticalLength() { // GH-90000
+        void maximumPracticalLength() { 
             // 72 bytes is BCrypt's limit - test near this boundary
-            String password = "A".repeat(71) + "!"; // GH-90000
-            String hashed = hasher.hash(password); // GH-90000
+            String password = "A".repeat(71) + "!"; 
+            String hashed = hasher.hash(password); 
 
-            assertThat(hasher.verify(password, hashed)).isTrue(); // GH-90000
-            // Truncated version (72+ chars) might not match due to BCrypt limit // GH-90000
-            String truncated = "A".repeat(72); // GH-90000
-            assertThat(hasher.verify(truncated, hashed)).isFalse(); // GH-90000
+            assertThat(hasher.verify(password, hashed)).isTrue(); 
+            // Truncated version (72+ chars) might not match due to BCrypt limit 
+            String truncated = "A".repeat(72); 
+            assertThat(hasher.verify(truncated, hashed)).isFalse(); 
         }
     }
 
     // ============================================
-    // UNICODE AND SPECIAL CHARACTER SUPPORT (2 tests) // GH-90000
+    // UNICODE AND SPECIAL CHARACTER SUPPORT (2 tests) 
     // ============================================
 
     @Nested
@@ -76,30 +76,30 @@ class PasswordHasherExpansionTest {
 
         @Test
         @DisplayName("Unicode characters in password hash and verify correctly")
-        void unicodePassword() { // GH-90000
+        void unicodePassword() { 
             String unicodePassword = "用户密码🔐émoji-security";
-            String hashed = hasher.hash(unicodePassword); // GH-90000
+            String hashed = hasher.hash(unicodePassword); 
 
             assertThat(hashed).startsWith("$2");
-            assertThat(hasher.verify(unicodePassword, hashed)).isTrue(); // GH-90000
+            assertThat(hasher.verify(unicodePassword, hashed)).isTrue(); 
 
             // Different unicode should not match
             String differentUnicode = "用户密码🔒émoji-security"; // Different emoji
-            assertThat(hasher.verify(differentUnicode, hashed)).isFalse(); // GH-90000
+            assertThat(hasher.verify(differentUnicode, hashed)).isFalse(); 
         }
 
         @Test
         @DisplayName("All special ASCII characters hash and verify correctly")
-        void specialCharacters() { // GH-90000
-            String specialPassword = "!@#$%^&*()-_=+[]{};:',.<>?/"; // GH-90000
-            String hashed = hasher.hash(specialPassword); // GH-90000
+        void specialCharacters() { 
+            String specialPassword = "!@#$%^&*()-_=+[]{};:',.<>?/"; 
+            String hashed = hasher.hash(specialPassword); 
 
             assertThat(hashed).startsWith("$2");
-            assertThat(hasher.verify(specialPassword, hashed)).isTrue(); // GH-90000
+            assertThat(hasher.verify(specialPassword, hashed)).isTrue(); 
         }
     }
 
     // Note: Hash collision tests are implicit - BCrypt uses salting
-    // so identical passwords always produce different hashes (verified in base tests) // GH-90000
-    // The probability of collision for different passwords is negligible (2^-128 or better) // GH-90000
+    // so identical passwords always produce different hashes (verified in base tests) 
+    // The probability of collision for different passwords is negligible (2^-128 or better) 
 }

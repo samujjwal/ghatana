@@ -17,38 +17,38 @@ class TraceHttpServiceTest {
     private MockTraceStorage storage;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        storage = new MockTraceStorage(); // GH-90000
+    void setUp() { 
+        storage = new MockTraceStorage(); 
     }
 
     @Test
     @DisplayName("Should create service with valid storage")
-    void shouldCreateServiceWithValidStorage() { // GH-90000
+    void shouldCreateServiceWithValidStorage() { 
         // When
-        TraceHttpService service = new TraceHttpService(storage); // GH-90000
+        TraceHttpService service = new TraceHttpService(storage); 
 
         // Then
-        assertThat(service).isNotNull(); // GH-90000
+        assertThat(service).isNotNull(); 
         assertThat(service.getServiceName()).isEqualTo("trace-http-service");
     }
 
     @Test
     @DisplayName("Should throw exception when storage is null")
-    void shouldThrowExceptionWhenStorageIsNull() { // GH-90000
+    void shouldThrowExceptionWhenStorageIsNull() { 
         // When/Then
-        assertThatThrownBy(() -> new TraceHttpService(null)) // GH-90000
-            .isInstanceOf(IllegalArgumentException.class) // GH-90000
+        assertThatThrownBy(() -> new TraceHttpService(null)) 
+            .isInstanceOf(IllegalArgumentException.class) 
             .hasMessageContaining("TraceStorage cannot be null");
     }
 
     @Test
     @DisplayName("Should return correct service name")
-    void shouldReturnCorrectServiceName() { // GH-90000
+    void shouldReturnCorrectServiceName() { 
         // Given
-        TraceHttpService service = new TraceHttpService(storage); // GH-90000
+        TraceHttpService service = new TraceHttpService(storage); 
 
         // When
-        String serviceName = service.getServiceName(); // GH-90000
+        String serviceName = service.getServiceName(); 
 
         // Then
         assertThat(serviceName).isEqualTo("trace-http-service");

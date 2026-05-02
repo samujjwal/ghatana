@@ -1,8 +1,8 @@
 package com.ghatana.integration.phrfinance;
 
-import com.ghatana.plugin.billing.BillingLedgerPlugin;
+import com.ghatana.plugin.ledger.LedgerPlugin;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.plugin.billing.BillingTransaction;
+import com.ghatana.plugin.ledger.LedgerTransaction;
 import com.ghatana.phr.kernel.service.BillingService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
@@ -32,7 +32,7 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         PhrFinanceTestFixtures.StubDataCloudAdapter dataCloud = new PhrFinanceTestFixtures.StubDataCloudAdapter();
         CapturingLedgerAdapter ledger = new CapturingLedgerAdapter();
 
-        BillingService billingService = new BillingService(
+        BillingService billingService = new TestableBillingService(
             PhrFinanceTestFixtures.createTestContext(dataCloud),
             ledger,
             Executors.newCachedThreadPool()
@@ -60,19 +60,19 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         assertThat(closed.status()).isEqualTo(BillingService.EncounterStatus.CLOSED);
         assertThat(ledger.posted).hasSize(1);
 
-        com.ghatana.plugin.billing.BillingTransaction posted = ledger.posted.getFirst();
+        com.ghatana.plugin.ledger.LedgerTransaction posted = ledger.posted.getFirst();
         assertThat(posted.getTransactionId()).isEqualTo("enc:" + created.id());
-        assertThat(posted.getType()).isEqualTo(com.ghatana.plugin.billing.BillingTransaction.TransactionType.CHARGE);
+        assertThat(posted.getType()).isEqualTo(com.ghatana.plugin.ledger.LedgerTransaction.TransactionType.CHARGE);
         assertThat(posted.getDebitAccount()).isEqualTo("PHR:AR:patient-cross-1");
         assertThat(posted.getCreditAccount()).isEqualTo("PHR:REVENUE:provider-cross-1");
     }
 
-    private static final class CapturingLedgerAdapter implements BillingLedgerPlugin {
+    private static final class CapturingLedgerAdapter implements LedgerPlugin {
 
-        private final List<BillingTransaction> posted = new ArrayList<>();
+        private final List<LedgerTransaction> posted = new ArrayList<>();
 
         @Override
-        public Promise<String> postTransaction(BillingTransaction transaction) {
+        public Promise<String> postTransaction(LedgerTransaction transaction) {
             posted.add(transaction);
             return Promise.of("entry-" + posted.size());
         }
@@ -83,23 +83,23 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
         }
 
         @Override
-        public Promise<BillingLedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
+        public Promise<LedgerPlugin.PostingStatus> getPostingStatus(String transactionId) {
             boolean found = posted.stream().anyMatch(tx -> tx.getTransactionId().equals(transactionId));
-            return Promise.of(found ? BillingLedgerPlugin.PostingStatus.POSTED : BillingLedgerPlugin.PostingStatus.NOT_FOUND);
+            return Promise.of(found ? LedgerPlugin.PostingStatus.POSTED : LedgerPlugin.PostingStatus.NOT_FOUND);
         }
 
         @Override
-        public Promise<BillingLedgerPlugin.LedgerAccount> createAccount(String accountId, BillingLedgerPlugin.AccountType type) {
+        public Promise<LedgerPlugin.LedgerAccount> createAccount(String accountId, LedgerPlugin.AccountType type) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public Promise<java.util.Optional<BillingLedgerPlugin.LedgerEntry>> getEntry(String entryId) {
+        public Promise<java.util.Optional<LedgerPlugin.LedgerEntry>> getEntry(String entryId) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 
         @Override
-        public Promise<java.util.List<BillingLedgerPlugin.LedgerEntry>> queryEntries(String accountId, BillingLedgerPlugin.TimeRange range) {
+        public Promise<java.util.List<LedgerPlugin.LedgerEntry>> queryEntries(String accountId, LedgerPlugin.TimeRange range) {
             return Promise.ofException(new UnsupportedOperationException());
         }
 
@@ -135,7 +135,7 @@ class HealthcareBillingToLedgerIT extends EventloopTestBase {
     }
 
     private static class TestableBillingService extends BillingService {
-        public TestableBillingService(KernelContext context, BillingLedgerPlugin ledger, Executor executor) {
+        public TestableBillingService(KernelContext context, LedgerPlugin ledger, Executor executor) {
             super(context, ledger, executor);
         }
 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -48,73 +48,73 @@ class YappcApiTest {
     private YappcApi api;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        YappcConfig config = YappcConfig.builder() // GH-90000
+    void setUp() { 
+        YappcConfig config = YappcConfig.builder() 
                 .packsPath(tempDir.resolve("packs"))
-                .workspacePath(tempDir) // GH-90000
-                .enableCache(false) // GH-90000
-                .build(); // GH-90000
-        api = YappcApi.create(config); // GH-90000
+                .workspacePath(tempDir) 
+                .enableCache(false) 
+                .build(); 
+        api = YappcApi.create(config); 
     }
 
     @AfterEach
-    void tearDown() { // GH-90000
-        if (api != null) { // GH-90000
-            api.shutdown(); // GH-90000
+    void tearDown() { 
+        if (api != null) { 
+            api.shutdown(); 
         }
     }
 
     @Test
     @DisplayName("Should create API with default configuration")
-    void shouldCreateApiWithDefaults() { // GH-90000
-        YappcApi defaultApi = YappcApi.create(); // GH-90000
+    void shouldCreateApiWithDefaults() { 
+        YappcApi defaultApi = YappcApi.create(); 
 
-        assertThat(defaultApi).isNotNull(); // GH-90000
-        assertThat(defaultApi.isReady()).isTrue(); // GH-90000
+        assertThat(defaultApi).isNotNull(); 
+        assertThat(defaultApi.isReady()).isTrue(); 
         assertThat(defaultApi.getVersion()).isEqualTo("1.0.0");
 
-        defaultApi.shutdown(); // GH-90000
+        defaultApi.shutdown(); 
     }
 
     @Test
     @DisplayName("Should create API with builder")
-    void shouldCreateApiWithBuilder() { // GH-90000
-        YappcApi builtApi = YappcApi.builder() // GH-90000
+    void shouldCreateApiWithBuilder() { 
+        YappcApi builtApi = YappcApi.builder() 
                 .packsPath(tempDir.resolve("custom-packs"))
-                .workspacePath(tempDir) // GH-90000
-                .enableCache(true) // GH-90000
-                .build(); // GH-90000
+                .workspacePath(tempDir) 
+                .enableCache(true) 
+                .build(); 
 
-        assertThat(builtApi).isNotNull(); // GH-90000
-        assertThat(builtApi.isReady()).isTrue(); // GH-90000
+        assertThat(builtApi).isNotNull(); 
+        assertThat(builtApi.isReady()).isTrue(); 
 
-        builtApi.shutdown(); // GH-90000
+        builtApi.shutdown(); 
     }
 
     @Test
     @DisplayName("Should provide pack service")
-    void shouldProvidePackService() { // GH-90000
-        PackService packService = api.packs(); // GH-90000
+    void shouldProvidePackService() { 
+        PackService packService = api.packs(); 
 
-        assertThat(packService).isNotNull(); // GH-90000
-        assertThat(packService.list()).isNotNull(); // GH-90000
+        assertThat(packService).isNotNull(); 
+        assertThat(packService.list()).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should provide project service")
-    void shouldProvideProjectService() { // GH-90000
-        ProjectService projectService = api.projects(); // GH-90000
+    void shouldProvideProjectService() { 
+        ProjectService projectService = api.projects(); 
 
-        assertThat(projectService).isNotNull(); // GH-90000
+        assertThat(projectService).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should provide template service")
-    void shouldProvideTemplateService() { // GH-90000
-        TemplateService templateService = api.templates(); // GH-90000
+    void shouldProvideTemplateService() { 
+        TemplateService templateService = api.templates(); 
 
-        assertThat(templateService).isNotNull(); // GH-90000
-        assertThat(templateService.getAvailableHelpers()).contains( // GH-90000
+        assertThat(templateService).isNotNull(); 
+        assertThat(templateService.getAvailableHelpers()).contains( 
                 "lowercase", "uppercase", "capitalize",
                 "camelCase", "pascalCase", "snakeCase", "kebabCase"
         );
@@ -122,23 +122,23 @@ class YappcApiTest {
 
     @Test
     @DisplayName("Should provide dependency service")
-    void shouldProvideDependencyService() { // GH-90000
-        DependencyService dependencyService = api.dependencies(); // GH-90000
+    void shouldProvideDependencyService() { 
+        DependencyService dependencyService = api.dependencies(); 
 
-        assertThat(dependencyService).isNotNull(); // GH-90000
+        assertThat(dependencyService).isNotNull(); 
     }
 
     @Test
     @DisplayName("Should report not ready after shutdown")
-    void shouldReportNotReadyAfterShutdown() { // GH-90000
-        api.shutdown(); // GH-90000
+    void shouldReportNotReadyAfterShutdown() { 
+        api.shutdown(); 
 
-        assertThat(api.isReady()).isFalse(); // GH-90000
+        assertThat(api.isReady()).isFalse(); 
     }
 
     @Test
     @DisplayName("Should return version")
-    void shouldReturnVersion() { // GH-90000
+    void shouldReturnVersion() { 
         assertThat(api.getVersion()).isEqualTo("1.0.0");
     }
 }

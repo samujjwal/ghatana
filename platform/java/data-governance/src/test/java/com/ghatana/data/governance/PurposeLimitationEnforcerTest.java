@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.data.governance;
@@ -24,8 +24,8 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
     private DefaultPurposeLimitationEnforcer enforcer;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        enforcer = new DefaultPurposeLimitationEnforcer(); // GH-90000
+    void setUp() { 
+        enforcer = new DefaultPurposeLimitationEnforcer(); 
     }
 
     @Nested
@@ -34,35 +34,35 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("binding stores allowed purposes")
-        void storesPurposes() { // GH-90000
+        void storesPurposes() { 
             runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
-            Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails")); // GH-90000
+            Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails")); 
             assertThat(allowed).containsExactly("analytics");
         }
 
         @Test
         @DisplayName("rebinding overwrites previous purposes")
-        void rebindingOverwrites() { // GH-90000
+        void rebindingOverwrites() { 
             runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("analytics")));
-            runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("marketing", "support"))); // GH-90000
-            Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails")); // GH-90000
-            assertThat(allowed).containsExactlyInAnyOrder("marketing", "support"); // GH-90000
+            runPromise(() -> enforcer.bindPurpose("t1", "user-emails", Set.of("marketing", "support"))); 
+            Set<String> allowed = runPromise(() -> enforcer.getAllowedPurposes("t1", "user-emails")); 
+            assertThat(allowed).containsExactlyInAnyOrder("marketing", "support"); 
         }
 
         @Test
         @DisplayName("binding with empty set fails")
-        void emptySetFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> enforcer.bindPurpose("t1", "data", Set.of())) // GH-90000
-            ).isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void emptySetFails() { 
+            assertThatThrownBy(() -> 
+                runPromise(() -> enforcer.bindPurpose("t1", "data", Set.of())) 
+            ).isInstanceOf(IllegalArgumentException.class); 
         }
 
         @Test
         @DisplayName("binding with null fails")
-        void nullSetFails() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> enforcer.bindPurpose("t1", "data", null)) // GH-90000
-            ).isInstanceOf(IllegalArgumentException.class); // GH-90000
+        void nullSetFails() { 
+            assertThatThrownBy(() -> 
+                runPromise(() -> enforcer.bindPurpose("t1", "data", null)) 
+            ).isInstanceOf(IllegalArgumentException.class); 
         }
     }
 
@@ -72,20 +72,20 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("allows when purpose is in binding")
-        void allowsPermittedPurpose() { // GH-90000
+        void allowsPermittedPurpose() { 
             runPromise(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
-            runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "analytics")); // GH-90000
+            runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "analytics")); 
         }
 
         @Test
         @DisplayName("throws PurposeViolationException for disallowed purpose")
-        void rejectsDisallowedPurpose() { // GH-90000
+        void rejectsDisallowedPurpose() { 
             runPromise(() -> enforcer.bindPurpose("t1", "emails", Set.of("analytics")));
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "marketing")) // GH-90000
-            ).isInstanceOf(PurposeViolationException.class) // GH-90000
-             .satisfies(ex -> { // GH-90000
-                 PurposeViolationException e = (PurposeViolationException) ex; // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> enforcer.enforceForPurpose("t1", "emails", "marketing")) 
+            ).isInstanceOf(PurposeViolationException.class) 
+             .satisfies(ex -> { 
+                 PurposeViolationException e = (PurposeViolationException) ex; 
                  assertThat(e.requestedPurpose()).isEqualTo("marketing");
                  assertThat(e.allowedPurposes()).containsExactly("analytics");
              });
@@ -93,19 +93,19 @@ class PurposeLimitationEnforcerTest extends EventloopTestBase {
 
         @Test
         @DisplayName("throws PurposeViolationException when no binding exists")
-        void rejectsUnboundData() { // GH-90000
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> enforcer.enforceForPurpose("t1", "unknown-data", "analytics")) // GH-90000
-            ).isInstanceOf(PurposeViolationException.class); // GH-90000
+        void rejectsUnboundData() { 
+            assertThatThrownBy(() -> 
+                runPromise(() -> enforcer.enforceForPurpose("t1", "unknown-data", "analytics")) 
+            ).isInstanceOf(PurposeViolationException.class); 
         }
 
         @Test
         @DisplayName("tenants are isolated")
-        void tenantsAreIsolated() { // GH-90000
+        void tenantsAreIsolated() { 
             runPromise(() -> enforcer.bindPurpose("tenantA", "data", Set.of("analytics")));
-            assertThatThrownBy(() -> // GH-90000
-                runPromise(() -> enforcer.enforceForPurpose("tenantB", "data", "analytics")) // GH-90000
-            ).isInstanceOf(PurposeViolationException.class); // GH-90000
+            assertThatThrownBy(() -> 
+                runPromise(() -> enforcer.enforceForPurpose("tenantB", "data", "analytics")) 
+            ).isInstanceOf(PurposeViolationException.class); 
         }
     }
 }

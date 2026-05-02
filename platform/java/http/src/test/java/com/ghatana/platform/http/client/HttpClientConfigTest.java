@@ -12,175 +12,175 @@ import static org.junit.jupiter.api.Assertions.*;
 class HttpClientConfigTest {
 
     @Test
-    void testDefaultConfiguration() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder().build(); // GH-90000
+    void testDefaultConfiguration() { 
+        HttpClientConfig config = HttpClientConfig.builder().build(); 
 
-        assertEquals(Duration.ofSeconds(10), config.getConnectTimeout()); // GH-90000
-        assertEquals(Duration.ofSeconds(30), config.getReadTimeout()); // GH-90000
-        assertEquals(Duration.ofSeconds(30), config.getCallTimeout()); // GH-90000
-        assertEquals(10, config.getMaxConnections()); // GH-90000
-        assertEquals(Duration.ofMinutes(5), config.getKeepAliveDuration()); // GH-90000
-        assertTrue(config.isRetryOnConnectionFailure()); // GH-90000
-        assertEquals(10.0, config.getRequestsPerSecond()); // GH-90000
-        assertNull(config.getUserAgent()); // GH-90000
+        assertEquals(Duration.ofSeconds(10), config.getConnectTimeout()); 
+        assertEquals(Duration.ofSeconds(30), config.getReadTimeout()); 
+        assertEquals(Duration.ofSeconds(30), config.getCallTimeout()); 
+        assertEquals(10, config.getMaxConnections()); 
+        assertEquals(Duration.ofMinutes(5), config.getKeepAliveDuration()); 
+        assertTrue(config.isRetryOnConnectionFailure()); 
+        assertEquals(10.0, config.getRequestsPerSecond()); 
+        assertNull(config.getUserAgent()); 
     }
 
     @Test
-    void testCustomConfiguration() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .readTimeout(Duration.ofSeconds(15)) // GH-90000
-                .callTimeout(Duration.ofSeconds(60)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .keepAliveDuration(Duration.ofMinutes(10)) // GH-90000
-                .retryOnConnectionFailure(false) // GH-90000
-                .requestsPerSecond(5.0) // GH-90000
+    void testCustomConfiguration() { 
+        HttpClientConfig config = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .readTimeout(Duration.ofSeconds(15)) 
+                .callTimeout(Duration.ofSeconds(60)) 
+                .maxConnections(20) 
+                .keepAliveDuration(Duration.ofMinutes(10)) 
+                .retryOnConnectionFailure(false) 
+                .requestsPerSecond(5.0) 
                 .userAgent("MyApp/1.0")
-                .build(); // GH-90000
+                .build(); 
 
-        assertEquals(Duration.ofSeconds(5), config.getConnectTimeout()); // GH-90000
-        assertEquals(Duration.ofSeconds(15), config.getReadTimeout()); // GH-90000
-        assertEquals(Duration.ofSeconds(60), config.getCallTimeout()); // GH-90000
-        assertEquals(20, config.getMaxConnections()); // GH-90000
-        assertEquals(Duration.ofMinutes(10), config.getKeepAliveDuration()); // GH-90000
-        assertFalse(config.isRetryOnConnectionFailure()); // GH-90000
-        assertEquals(5.0, config.getRequestsPerSecond()); // GH-90000
-        assertEquals("MyApp/1.0", config.getUserAgent()); // GH-90000
+        assertEquals(Duration.ofSeconds(5), config.getConnectTimeout()); 
+        assertEquals(Duration.ofSeconds(15), config.getReadTimeout()); 
+        assertEquals(Duration.ofSeconds(60), config.getCallTimeout()); 
+        assertEquals(20, config.getMaxConnections()); 
+        assertEquals(Duration.ofMinutes(10), config.getKeepAliveDuration()); 
+        assertFalse(config.isRetryOnConnectionFailure()); 
+        assertEquals(5.0, config.getRequestsPerSecond()); 
+        assertEquals("MyApp/1.0", config.getUserAgent()); 
     }
 
     @Test
-    void testToBuilder() { // GH-90000
-        HttpClientConfig original = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
+    void testToBuilder() { 
+        HttpClientConfig original = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
                 .userAgent("Original/1.0")
-                .build(); // GH-90000
+                .build(); 
 
-        HttpClientConfig modified = original.toBuilder() // GH-90000
-                .maxConnections(50) // GH-90000
+        HttpClientConfig modified = original.toBuilder() 
+                .maxConnections(50) 
                 .userAgent("Modified/2.0")
-                .build(); // GH-90000
+                .build(); 
 
         // Original unchanged
-        assertEquals("Original/1.0", original.getUserAgent()); // GH-90000
-        assertEquals(10, original.getMaxConnections()); // GH-90000
+        assertEquals("Original/1.0", original.getUserAgent()); 
+        assertEquals(10, original.getMaxConnections()); 
 
         // Modified has new values
-        assertEquals("Modified/2.0", modified.getUserAgent()); // GH-90000
-        assertEquals(50, modified.getMaxConnections()); // GH-90000
+        assertEquals("Modified/2.0", modified.getUserAgent()); 
+        assertEquals(50, modified.getMaxConnections()); 
 
         // Shared values preserved
-        assertEquals(Duration.ofSeconds(5), modified.getConnectTimeout()); // GH-90000
+        assertEquals(Duration.ofSeconds(5), modified.getConnectTimeout()); 
     }
 
     @Test
-    void testInvalidMaxConnections() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-                HttpClientConfig.builder().maxConnections(0).build() // GH-90000
+    void testInvalidMaxConnections() { 
+        assertThrows(IllegalArgumentException.class, () -> 
+                HttpClientConfig.builder().maxConnections(0).build() 
         );
 
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-                HttpClientConfig.builder().maxConnections(-1).build() // GH-90000
-        );
-    }
-
-    @Test
-    void testInvalidRequestsPerSecond() { // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-                HttpClientConfig.builder().requestsPerSecond(0).build() // GH-90000
-        );
-
-        assertThrows(IllegalArgumentException.class, () -> // GH-90000
-                HttpClientConfig.builder().requestsPerSecond(-1).build() // GH-90000
+        assertThrows(IllegalArgumentException.class, () -> 
+                HttpClientConfig.builder().maxConnections(-1).build() 
         );
     }
 
     @Test
-    void testNullConnectTimeout() { // GH-90000
-        assertThrows(NullPointerException.class, () -> // GH-90000
-                HttpClientConfig.builder().connectTimeout(null).build() // GH-90000
+    void testInvalidRequestsPerSecond() { 
+        assertThrows(IllegalArgumentException.class, () -> 
+                HttpClientConfig.builder().requestsPerSecond(0).build() 
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> 
+                HttpClientConfig.builder().requestsPerSecond(-1).build() 
         );
     }
 
     @Test
-    void testNullReadTimeout() { // GH-90000
-        assertThrows(NullPointerException.class, () -> // GH-90000
-                HttpClientConfig.builder().readTimeout(null).build() // GH-90000
+    void testNullConnectTimeout() { 
+        assertThrows(NullPointerException.class, () -> 
+                HttpClientConfig.builder().connectTimeout(null).build() 
         );
     }
 
     @Test
-    void testNullCallTimeout() { // GH-90000
-        assertThrows(NullPointerException.class, () -> // GH-90000
-                HttpClientConfig.builder().callTimeout(null).build() // GH-90000
+    void testNullReadTimeout() { 
+        assertThrows(NullPointerException.class, () -> 
+                HttpClientConfig.builder().readTimeout(null).build() 
         );
     }
 
     @Test
-    void testNullKeepAliveDuration() { // GH-90000
-        assertThrows(NullPointerException.class, () -> // GH-90000
-                HttpClientConfig.builder().keepAliveDuration(null).build() // GH-90000
+    void testNullCallTimeout() { 
+        assertThrows(NullPointerException.class, () -> 
+                HttpClientConfig.builder().callTimeout(null).build() 
         );
     }
 
     @Test
-    void testNullUserAgent() { // GH-90000
+    void testNullKeepAliveDuration() { 
+        assertThrows(NullPointerException.class, () -> 
+                HttpClientConfig.builder().keepAliveDuration(null).build() 
+        );
+    }
+
+    @Test
+    void testNullUserAgent() { 
         // Null user agent is allowed
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-                .userAgent(null) // GH-90000
-                .build(); // GH-90000
+        HttpClientConfig config = HttpClientConfig.builder() 
+                .userAgent(null) 
+                .build(); 
 
-        assertNull(config.getUserAgent()); // GH-90000
+        assertNull(config.getUserAgent()); 
     }
 
     @Test
-    void testEquals() { // GH-90000
-        HttpClientConfig config1 = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .build(); // GH-90000
+    void testEquals() { 
+        HttpClientConfig config1 = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .maxConnections(20) 
+                .build(); 
 
-        HttpClientConfig config2 = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .build(); // GH-90000
+        HttpClientConfig config2 = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .maxConnections(20) 
+                .build(); 
 
-        HttpClientConfig config3 = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(10)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .build(); // GH-90000
+        HttpClientConfig config3 = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(10)) 
+                .maxConnections(20) 
+                .build(); 
 
-        assertEquals(config1, config2); // GH-90000
-        assertNotEquals(config1, config3); // GH-90000
-        assertNotEquals(config1, null); // GH-90000
-        assertNotEquals(config1, "not a config"); // GH-90000
+        assertEquals(config1, config2); 
+        assertNotEquals(config1, config3); 
+        assertNotEquals(config1, null); 
+        assertNotEquals(config1, "not a config"); 
     }
 
     @Test
-    void testHashCode() { // GH-90000
-        HttpClientConfig config1 = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .build(); // GH-90000
+    void testHashCode() { 
+        HttpClientConfig config1 = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .maxConnections(20) 
+                .build(); 
 
-        HttpClientConfig config2 = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .maxConnections(20) // GH-90000
-                .build(); // GH-90000
+        HttpClientConfig config2 = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .maxConnections(20) 
+                .build(); 
 
-        assertEquals(config1.hashCode(), config2.hashCode()); // GH-90000
+        assertEquals(config1.hashCode(), config2.hashCode()); 
     }
 
     @Test
-    void testToString() { // GH-90000
-        HttpClientConfig config = HttpClientConfig.builder() // GH-90000
-                .connectTimeout(Duration.ofSeconds(5)) // GH-90000
-                .maxConnections(20) // GH-90000
+    void testToString() { 
+        HttpClientConfig config = HttpClientConfig.builder() 
+                .connectTimeout(Duration.ofSeconds(5)) 
+                .maxConnections(20) 
                 .userAgent("TestAgent/1.0")
-                .build(); // GH-90000
+                .build(); 
 
-        String str = config.toString(); // GH-90000
+        String str = config.toString(); 
 
-        assertNotNull(str); // GH-90000
+        assertNotNull(str); 
         assertTrue(str.contains("connectTimeout"));
         assertTrue(str.contains("maxConnections"));
         assertTrue(str.contains("20"));

@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - Updating workspace settings
  * - Managing workspace members
  *
- * @Disabled HTTP server infrastructure not yet implemented (see AbstractIntegrationTest TODO) // GH-90000
+ * @Disabled HTTP server infrastructure not yet implemented (see AbstractIntegrationTest TODO) 
  */
 @DisplayName("Workspace Controller Integration Tests")
 @Disabled("HTTP server infrastructure not yet implemented - see AbstractIntegrationTest line 141-143")
@@ -31,18 +31,18 @@ public class WorkspaceControllerIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Should create a new workspace")
-    public void testCreateWorkspace() throws Exception { // GH-90000
+    public void testCreateWorkspace() throws Exception { 
         // Given
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("Test Workspace");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
 
         // When
-        var response = performPost("/v1/workspaces", requestBody); // GH-90000
+        var response = performPost("/v1/workspaces", requestBody); 
 
         // Then
-        assertEquals(201, response.getCode()); // GH-90000
-        var responseBody = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
-        var workspaceData = TestDataFixtures.parseJson(responseBody); // GH-90000
+        assertEquals(201, response.getCode()); 
+        var responseBody = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); 
+        var workspaceData = TestDataFixtures.parseJson(responseBody); 
 
         assertNotNull(workspaceData.get("id"));
         assertEquals("Test Workspace", workspaceData.get("name").asText());
@@ -50,21 +50,21 @@ public class WorkspaceControllerIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Should retrieve workspace by ID")
-    public void testGetWorkspaceById() throws Exception { // GH-90000
+    public void testGetWorkspaceById() throws Exception { 
         // Given - Create a workspace first
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("Fetch Test");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
-        var createResponse = performPost("/v1/workspaces", requestBody); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
+        var createResponse = performPost("/v1/workspaces", requestBody); 
 
-        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         var workspaceId = workspaceData.get("id").asText();
 
         // When
-        var getResponse = performGet("/v1/workspaces/" + workspaceId); // GH-90000
+        var getResponse = performGet("/v1/workspaces/" + workspaceId); 
 
         // Then
-        assertEquals(200, getResponse.getCode()); // GH-90000
-        var retrievedData = TestDataFixtures.parseJson(getResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        assertEquals(200, getResponse.getCode()); 
+        var retrievedData = TestDataFixtures.parseJson(getResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
 
         assertEquals(workspaceId, retrievedData.get("id").asText());
         assertEquals("Fetch Test", retrievedData.get("name").asText());
@@ -72,17 +72,17 @@ public class WorkspaceControllerIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Should return 404 for non-existent workspace")
-    public void testGetNonExistentWorkspace() throws Exception { // GH-90000
+    public void testGetNonExistentWorkspace() throws Exception { 
         // When
         var response = performGet("/v1/workspaces/non-existent-id");
 
         // Then
-        assertEquals(404, response.getCode()); // GH-90000
+        assertEquals(404, response.getCode()); 
     }
 
     @Test
     @DisplayName("Should list all workspaces")
-    public void testListWorkspaces() throws Exception { // GH-90000
+    public void testListWorkspaces() throws Exception { 
         // Given - Create multiple workspaces
         TestDataFixtures.createCreateWorkspaceRequest("Workspace 1");
         TestDataFixtures.createCreateWorkspaceRequest("Workspace 2");
@@ -91,96 +91,96 @@ public class WorkspaceControllerIT extends AbstractIntegrationTest {
         var response = performGet("/v1/workspaces");
 
         // Then
-        assertEquals(200, response.getCode()); // GH-90000
-        var responseBody = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); // GH-90000
-        var workspaces = TestDataFixtures.parseJson(responseBody); // GH-90000
+        assertEquals(200, response.getCode()); 
+        var responseBody = response.getBody().asString(java.nio.charset.StandardCharsets.UTF_8); 
+        var workspaces = TestDataFixtures.parseJson(responseBody); 
 
-        assertTrue(workspaces.isArray()); // GH-90000
-        assertTrue(workspaces.size() >= 0); // GH-90000
+        assertTrue(workspaces.isArray()); 
+        assertTrue(workspaces.size() >= 0); 
     }
 
     @Test
     @DisplayName("Should update workspace")
-    public void testUpdateWorkspace() throws Exception { // GH-90000
+    public void testUpdateWorkspace() throws Exception { 
         // Given - Create a workspace
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("Original Name");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
-        var createResponse = performPost("/v1/workspaces", requestBody); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
+        var createResponse = performPost("/v1/workspaces", requestBody); 
 
-        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         var workspaceId = workspaceData.get("id").asText();
 
         // When - Update workspace
         var updateRequest = TestDataFixtures.createCreateWorkspaceRequest("Updated Name");
-        var updateResponse = performPut("/v1/workspaces/" + workspaceId, // GH-90000
-            TestDataFixtures.toJson(updateRequest)); // GH-90000
+        var updateResponse = performPut("/v1/workspaces/" + workspaceId, 
+            TestDataFixtures.toJson(updateRequest)); 
 
         // Then
-        assertEquals(200, updateResponse.getCode()); // GH-90000
-        var updatedData = TestDataFixtures.parseJson(updateResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        assertEquals(200, updateResponse.getCode()); 
+        var updatedData = TestDataFixtures.parseJson(updateResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         assertEquals("Updated Name", updatedData.get("name").asText());
     }
 
     @Test
     @DisplayName("Should delete workspace")
-    public void testDeleteWorkspace() throws Exception { // GH-90000
+    public void testDeleteWorkspace() throws Exception { 
         // Given - Create a workspace
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("To Delete");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
-        var createResponse = performPost("/v1/workspaces", requestBody); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
+        var createResponse = performPost("/v1/workspaces", requestBody); 
 
-        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         var workspaceId = workspaceData.get("id").asText();
 
         // When - Delete workspace
-        var deleteResponse = performDelete("/v1/workspaces/" + workspaceId); // GH-90000
+        var deleteResponse = performDelete("/v1/workspaces/" + workspaceId); 
 
         // Then
-        assertEquals(204, deleteResponse.getCode()); // GH-90000
+        assertEquals(204, deleteResponse.getCode()); 
 
         // Verify it's deleted
-        var getResponse = performGet("/v1/workspaces/" + workspaceId); // GH-90000
-        assertEquals(404, getResponse.getCode()); // GH-90000
+        var getResponse = performGet("/v1/workspaces/" + workspaceId); 
+        assertEquals(404, getResponse.getCode()); 
     }
 
     @Test
     @DisplayName("Should add member to workspace")
-    public void testAddWorkspaceMember() throws Exception { // GH-90000
+    public void testAddWorkspaceMember() throws Exception { 
         // Given - Create workspace and user
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("Member Test");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
-        var createResponse = performPost("/v1/workspaces", requestBody); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
+        var createResponse = performPost("/v1/workspaces", requestBody); 
 
-        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         var workspaceId = workspaceData.get("id").asText();
 
-        var memberRequest = TestDataFixtures.createObjectNode(); // GH-90000
-        memberRequest.put("userId", "test-user-id"); // GH-90000
-        memberRequest.put("role", "MEMBER"); // GH-90000
+        var memberRequest = TestDataFixtures.createObjectNode(); 
+        memberRequest.put("userId", "test-user-id"); 
+        memberRequest.put("role", "MEMBER"); 
 
         // When
-        var addMemberResponse = performPost("/v1/workspaces/" + workspaceId + "/members", // GH-90000
-            TestDataFixtures.toJson(memberRequest)); // GH-90000
+        var addMemberResponse = performPost("/v1/workspaces/" + workspaceId + "/members", 
+            TestDataFixtures.toJson(memberRequest)); 
 
         // Then
-        assertEquals(200, addMemberResponse.getCode()); // GH-90000
+        assertEquals(200, addMemberResponse.getCode()); 
     }
 
     @Test
     @DisplayName("Should remove member from workspace")
-    public void testRemoveWorkspaceMember() throws Exception { // GH-90000
+    public void testRemoveWorkspaceMember() throws Exception { 
         // Given - Create workspace and add member first
         var createRequest = TestDataFixtures.createCreateWorkspaceRequest("Member Removal Test");
-        var requestBody = TestDataFixtures.toJson(createRequest); // GH-90000
-        var createResponse = performPost("/v1/workspaces", requestBody); // GH-90000
+        var requestBody = TestDataFixtures.toJson(createRequest); 
+        var createResponse = performPost("/v1/workspaces", requestBody); 
 
-        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); // GH-90000
+        var workspaceData = TestDataFixtures.parseJson(createResponse.getBody().asString(java.nio.charset.StandardCharsets.UTF_8)); 
         var workspaceId = workspaceData.get("id").asText();
 
         // When - Remove member
-        var removeMemberResponse = performDelete("/v1/workspaces/" + workspaceId + "/members/test-user-id"); // GH-90000
+        var removeMemberResponse = performDelete("/v1/workspaces/" + workspaceId + "/members/test-user-id"); 
 
         // Then
-        assertEquals(200, removeMemberResponse.getCode()); // GH-90000
+        assertEquals(200, removeMemberResponse.getCode()); 
     }
 }

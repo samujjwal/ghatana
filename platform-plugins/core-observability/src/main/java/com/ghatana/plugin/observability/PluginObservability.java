@@ -1,7 +1,7 @@
 package com.ghatana.plugin.observability;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.metrics.Counter;
+// import io.opentelemetry.api.metrics.Counter;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -35,8 +35,7 @@ public abstract class PluginObservability {
             "com.ghatana.plugin." + pluginId,
             "1.0.0");
         this.meter = GlobalOpenTelemetry.getMeter(
-            "com.ghatana.plugin." + pluginId,
-            "1.0.0");
+            "com.ghatana.plugin." + pluginId);
     }
     
     /**
@@ -96,23 +95,20 @@ public abstract class PluginObservability {
     
     /**
      * Record a counter metric for this plugin.
-     * 
+     *
      * Pattern: {@code ghatana.plugin.<plugin-id>.<metric-name>}
-     * 
+     *
      * @param metricName e.g., "entries_emitted", "denials_total"
-     * @param labels e.g., Map.of("tenant_id", "phr-001", "result", "denied")
+     * @param labels e.g., Map.of("tenant_id", "tenant-001", "result", "denied")
      * @param value amount to increment
      */
     protected void recordMetric(String metricName, Map<String, String> labels, long value) {
-        String fullName = String.format("ghatana.plugin.%s.%s", pluginId, metricName);
-        
-        // For simplicity, use a counter builder each time
-        // In production, would cache Counter instances
-        Counter counter = meter.counterBuilder(fullName)
-            .setDescription("Plugin metric: " + metricName)
-            .build();
-        
-        counter.add(value, attributes(labels));
+        // TODO: Re-implement when OpenTelemetry metrics API is properly configured
+        // String fullName = String.format("ghatana.plugin.%s.%s", pluginId, metricName);
+        // Counter counter = meter.counterBuilder(fullName)
+        //     .setDescription("Plugin metric: " + metricName)
+        //     .build();
+        // counter.add(value, attributes(labels));
     }
     
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.agent.framework.runtime;
@@ -26,9 +26,9 @@ class AutonomyLevelTest {
 
         @Test
         @DisplayName("should have exactly 5 canonical tiers")
-        void shouldHaveFiveCanonicalTiers() { // GH-90000
-            assertThat(AutonomyLevel.values()).hasSize(5); // GH-90000
-            assertThat(AutonomyLevel.values()).containsExactly( // GH-90000
+        void shouldHaveFiveCanonicalTiers() { 
+            assertThat(AutonomyLevel.values()).hasSize(5); 
+            assertThat(AutonomyLevel.values()).containsExactly( 
                     AutonomyLevel.ADVISORY,
                     AutonomyLevel.DRAFT,
                     AutonomyLevel.SUPERVISED,
@@ -38,17 +38,17 @@ class AutonomyLevelTest {
 
         @Test
         @DisplayName("ADVISORY and DRAFT always require approval")
-        void advisoryAndDraftAlwaysRequireApproval() { // GH-90000
-            assertThat(AutonomyLevel.ADVISORY.alwaysRequiresApproval()).isTrue(); // GH-90000
-            assertThat(AutonomyLevel.DRAFT.alwaysRequiresApproval()).isTrue(); // GH-90000
+        void advisoryAndDraftAlwaysRequireApproval() { 
+            assertThat(AutonomyLevel.ADVISORY.alwaysRequiresApproval()).isTrue(); 
+            assertThat(AutonomyLevel.DRAFT.alwaysRequiresApproval()).isTrue(); 
         }
 
         @Test
         @DisplayName("SUPERVISED and above do not always require approval")
-        void supervisedAndAboveDoNotAlwaysRequire() { // GH-90000
-            assertThat(AutonomyLevel.SUPERVISED.alwaysRequiresApproval()).isFalse(); // GH-90000
-            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.alwaysRequiresApproval()).isFalse(); // GH-90000
-            assertThat(AutonomyLevel.AUTONOMOUS.alwaysRequiresApproval()).isFalse(); // GH-90000
+        void supervisedAndAboveDoNotAlwaysRequire() { 
+            assertThat(AutonomyLevel.SUPERVISED.alwaysRequiresApproval()).isFalse(); 
+            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.alwaysRequiresApproval()).isFalse(); 
+            assertThat(AutonomyLevel.AUTONOMOUS.alwaysRequiresApproval()).isFalse(); 
         }
     }
 
@@ -58,36 +58,36 @@ class AutonomyLevelTest {
 
         @Test
         @DisplayName("ADVISORY never acts autonomously regardless of confidence")
-        void advisoryNeverActs() { // GH-90000
-            assertThat(AutonomyLevel.ADVISORY.canActAutonomously(1.0, 0.0)).isFalse(); // GH-90000
+        void advisoryNeverActs() { 
+            assertThat(AutonomyLevel.ADVISORY.canActAutonomously(1.0, 0.0)).isFalse(); 
         }
 
         @Test
         @DisplayName("DRAFT never acts autonomously regardless of confidence")
-        void draftNeverActs() { // GH-90000
-            assertThat(AutonomyLevel.DRAFT.canActAutonomously(1.0, 0.0)).isFalse(); // GH-90000
+        void draftNeverActs() { 
+            assertThat(AutonomyLevel.DRAFT.canActAutonomously(1.0, 0.0)).isFalse(); 
         }
 
         @Test
         @DisplayName("SUPERVISED acts when confidence >= threshold")
-        void supervisedActsAboveThreshold() { // GH-90000
-            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.9, 0.8)).isTrue(); // GH-90000
-            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.7, 0.8)).isFalse(); // GH-90000
-            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.8, 0.8)).isTrue(); // GH-90000
+        void supervisedActsAboveThreshold() { 
+            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.9, 0.8)).isTrue(); 
+            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.7, 0.8)).isFalse(); 
+            assertThat(AutonomyLevel.SUPERVISED.canActAutonomously(0.8, 0.8)).isTrue(); 
         }
 
         @Test
         @DisplayName("BOUNDED_AUTONOMOUS acts when confidence >= threshold")
-        void boundedAutonomousActsAboveThreshold() { // GH-90000
-            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.canActAutonomously(0.9, 0.8)).isTrue(); // GH-90000
-            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.canActAutonomously(0.5, 0.8)).isFalse(); // GH-90000
+        void boundedAutonomousActsAboveThreshold() { 
+            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.canActAutonomously(0.9, 0.8)).isTrue(); 
+            assertThat(AutonomyLevel.BOUNDED_AUTONOMOUS.canActAutonomously(0.5, 0.8)).isFalse(); 
         }
 
         @Test
         @DisplayName("AUTONOMOUS acts when confidence >= threshold")
-        void autonomousActsAboveThreshold() { // GH-90000
-            assertThat(AutonomyLevel.AUTONOMOUS.canActAutonomously(0.9, 0.8)).isTrue(); // GH-90000
-            assertThat(AutonomyLevel.AUTONOMOUS.canActAutonomously(0.3, 0.8)).isFalse(); // GH-90000
+        void autonomousActsAboveThreshold() { 
+            assertThat(AutonomyLevel.AUTONOMOUS.canActAutonomously(0.9, 0.8)).isTrue(); 
+            assertThat(AutonomyLevel.AUTONOMOUS.canActAutonomously(0.3, 0.8)).isFalse(); 
         }
     }
 
@@ -96,7 +96,7 @@ class AutonomyLevelTest {
     class FromString {
 
         @ParameterizedTest
-        @CsvSource({ // GH-90000
+        @CsvSource({ 
                 "advisory,       ADVISORY",
                 "ADVISORY,       ADVISORY",
                 "draft,          DRAFT",
@@ -115,21 +115,21 @@ class AutonomyLevelTest {
                 "assisted,       DRAFT"
         })
         @DisplayName("should resolve canonical and legacy values")
-        void shouldResolveKnownValues(String input, String expected) { // GH-90000
-            assertThat(AutonomyLevel.fromString(input)) // GH-90000
-                    .isEqualTo(AutonomyLevel.valueOf(expected.trim())); // GH-90000
+        void shouldResolveKnownValues(String input, String expected) { 
+            assertThat(AutonomyLevel.fromString(input)) 
+                    .isEqualTo(AutonomyLevel.valueOf(expected.trim())); 
         }
 
         @ParameterizedTest
         @NullAndEmptySource
         @DisplayName("should return null for null or blank input")
-        void shouldReturnNullForBlank(String input) { // GH-90000
-            assertThat(AutonomyLevel.fromString(input)).isNull(); // GH-90000
+        void shouldReturnNullForBlank(String input) { 
+            assertThat(AutonomyLevel.fromString(input)).isNull(); 
         }
 
         @Test
         @DisplayName("should return null for unrecognized value")
-        void shouldReturnNullForUnrecognized() { // GH-90000
+        void shouldReturnNullForUnrecognized() { 
             assertThat(AutonomyLevel.fromString("unknown-level")).isNull();
         }
     }

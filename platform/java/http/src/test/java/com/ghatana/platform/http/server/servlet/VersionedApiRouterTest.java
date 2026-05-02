@@ -23,18 +23,18 @@ class VersionedApiRouterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("create() returns a router with no versions registered")
-    void createReturnsEmptyRouter() { // GH-90000
+    void createReturnsEmptyRouter() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api");
-        assertThat(router.getVersions()).isEmpty(); // GH-90000
-        assertThat(router.getLatestVersion()).isNull(); // GH-90000
+        assertThat(router.getVersions()).isEmpty(); 
+        assertThat(router.getLatestVersion()).isNull(); 
     }
 
     @Test
     @DisplayName("version() registers a version and updates getLatestVersion")
-    void versionRegistersAndUpdatesLatest() { // GH-90000
+    void versionRegistersAndUpdatesLatest() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> s.addRoute(HttpMethod.GET, "/items", // GH-90000
-                        req -> HttpResponse.ok200().build())); // GH-90000
+                .version("v1", s -> s.addRoute(HttpMethod.GET, "/items", 
+                        req -> HttpResponse.ok200().build())); 
 
         assertThat(router.getVersions()).containsExactly("v1");
         assertThat(router.getLatestVersion()).isEqualTo("v1");
@@ -42,48 +42,48 @@ class VersionedApiRouterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("version() with multiple versions tracks last as latest")
-    void multipleVersionsLastIsLatest() { // GH-90000
+    void multipleVersionsLastIsLatest() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> {}) // GH-90000
-                .version("v2", s -> {}); // GH-90000
+                .version("v1", s -> {}) 
+                .version("v2", s -> {}); 
 
-        assertThat(router.getVersions()).containsExactly("v1", "v2"); // GH-90000
+        assertThat(router.getVersions()).containsExactly("v1", "v2"); 
         assertThat(router.getLatestVersion()).isEqualTo("v2");
     }
 
     @Test
     @DisplayName("version() throws NullPointerException for null version")
-    void versionThrowsForNullVersion() { // GH-90000
+    void versionThrowsForNullVersion() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api");
-        assertThatThrownBy(() -> router.version(null, s -> {})) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+        assertThatThrownBy(() -> router.version(null, s -> {})) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ── deprecate ─────────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("deprecate() marks a registered version as deprecated")
-    void deprecateMarksVersion() { // GH-90000
+    void deprecateMarksVersion() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> {}) // GH-90000
-                .deprecate("v1", "2026-12-31"); // GH-90000
+                .version("v1", s -> {}) 
+                .deprecate("v1", "2026-12-31"); 
 
         assertThat(router.isDeprecated("v1")).isTrue();
     }
 
     @Test
     @DisplayName("deprecate() throws IllegalArgumentException for non-registered version")
-    void deprecateThrowsForUnknownVersion() { // GH-90000
+    void deprecateThrowsForUnknownVersion() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api");
-        assertThatThrownBy(() -> router.deprecate("v99", "2026-01-01")) // GH-90000
-                .isInstanceOf(IllegalArgumentException.class); // GH-90000
+        assertThatThrownBy(() -> router.deprecate("v99", "2026-01-01")) 
+                .isInstanceOf(IllegalArgumentException.class); 
     }
 
     @Test
     @DisplayName("isDeprecated returns false for non-deprecated version")
-    void isDeprecatedFalseForActiveVersion() { // GH-90000
+    void isDeprecatedFalseForActiveVersion() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v2", s -> {}); // GH-90000
+                .version("v2", s -> {}); 
 
         assertThat(router.isDeprecated("v2")).isFalse();
     }
@@ -92,49 +92,49 @@ class VersionedApiRouterTest extends EventloopTestBase {
 
     @Test
     @DisplayName("registerRoutes copies version routes onto target servlet")
-    void registerRoutesPopulatesTargetServlet() { // GH-90000
+    void registerRoutesPopulatesTargetServlet() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> s.addRoute(HttpMethod.GET, "/ping", // GH-90000
-                        req -> HttpResponse.ok200().withBody("pong".getBytes()).build())) // GH-90000
-                .version("v2", s -> s.addRoute(HttpMethod.GET, "/ping", // GH-90000
-                        req -> HttpResponse.ok200().withBody("pong-v2".getBytes()).build())); // GH-90000
+                .version("v1", s -> s.addRoute(HttpMethod.GET, "/ping", 
+                        req -> HttpResponse.ok200().withBody("pong".getBytes()).build())) 
+                .version("v2", s -> s.addRoute(HttpMethod.GET, "/ping", 
+                        req -> HttpResponse.ok200().withBody("pong-v2".getBytes()).build())); 
 
-        RoutingServlet target = new RoutingServlet(); // GH-90000
-        router.registerRoutes(target); // GH-90000
+        RoutingServlet target = new RoutingServlet(); 
+        router.registerRoutes(target); 
 
         // Routes were registered — target has entries for both versions
-        assertThat(target.getRouteCount()).isGreaterThan(0); // GH-90000
+        assertThat(target.getRouteCount()).isGreaterThan(0); 
     }
 
     @Test
     @DisplayName("registerRoutes throws NullPointerException for null target")
-    void registerRoutesThrowsForNullTarget() { // GH-90000
+    void registerRoutesThrowsForNullTarget() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> {}); // GH-90000
+                .version("v1", s -> {}); 
 
-        assertThatThrownBy(() -> router.registerRoutes(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+        assertThatThrownBy(() -> router.registerRoutes(null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
     // ── create guard ─────────────────────────────────────────────────────────
 
     @Test
     @DisplayName("create() throws NullPointerException for null basePath")
-    void createThrowsForNullBasePath() { // GH-90000
-        assertThatThrownBy(() -> VersionedApiRouter.create(null)) // GH-90000
-                .isInstanceOf(NullPointerException.class); // GH-90000
+    void createThrowsForNullBasePath() { 
+        assertThatThrownBy(() -> VersionedApiRouter.create(null)) 
+                .isInstanceOf(NullPointerException.class); 
     }
 
-    // ── getVersions() immutability ──────────────────────────────────────────── // GH-90000
+    // ── getVersions() immutability ──────────────────────────────────────────── 
 
     @Test
     @DisplayName("getVersions returns an unmodifiable list")
-    void getVersionsReturnsUnmodifiableList() { // GH-90000
+    void getVersionsReturnsUnmodifiableList() { 
         VersionedApiRouter router = VersionedApiRouter.create("/api")
-                .version("v1", s -> {}); // GH-90000
+                .version("v1", s -> {}); 
 
-        List<String> versions = router.getVersions(); // GH-90000
+        List<String> versions = router.getVersions(); 
         assertThatThrownBy(() -> versions.add("v99"))
-                .isInstanceOf(UnsupportedOperationException.class); // GH-90000
+                .isInstanceOf(UnsupportedOperationException.class); 
     }
 }

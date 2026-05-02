@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.server.http;
@@ -28,163 +28,163 @@ class AepHttpServerBuilderTest {
     private static final String ALLOW_IN_MEMORY_RUN_HISTORY = "AEP_ALLOW_IN_MEMORY_RUN_HISTORY";
 
     @Test
-    void shouldBuildServerWithRequiredParameters() { // GH-90000
+    void shouldBuildServerWithRequiredParameters() { 
         // Arrange & Act
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
 
-        AepHttpServer server = AepHttpServer.builder() // GH-90000
-            .engine(mockEngine) // GH-90000
-            .port(8080) // GH-90000
-            .build(); // GH-90000
+        AepHttpServer server = AepHttpServer.builder() 
+            .engine(mockEngine) 
+            .port(8080) 
+            .build(); 
 
         // Assert
-        assertNotNull(server); // GH-90000
+        assertNotNull(server); 
         // The server should be constructible with minimal parameters
     }
 
     @Test
-    void shouldBuildServerWithAllParameters() { // GH-90000
+    void shouldBuildServerWithAllParameters() { 
         // Arrange
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
-        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT); // GH-90000
-        DataSource dataSource = mock(javax.sql.DataSource.class); // GH-90000
-        JedisPool jedisPool = mock(redis.clients.jedis.JedisPool.class); // GH-90000
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
+        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT); 
+        DataSource dataSource = mock(javax.sql.DataSource.class); 
+        JedisPool jedisPool = mock(redis.clients.jedis.JedisPool.class); 
 
         // Act
-        AepHttpServer server = AepHttpServer.builder() // GH-90000
-            .engine(mockEngine) // GH-90000
-            .port(8080) // GH-90000
-            .prometheusRegistry(registry) // GH-90000
-            .dataSource(dataSource) // GH-90000
-            .jedisPool(jedisPool) // GH-90000
-            .build(); // GH-90000
+        AepHttpServer server = AepHttpServer.builder() 
+            .engine(mockEngine) 
+            .port(8080) 
+            .prometheusRegistry(registry) 
+            .dataSource(dataSource) 
+            .jedisPool(jedisPool) 
+            .build(); 
 
         // Assert
-        assertNotNull(server); // GH-90000
+        assertNotNull(server); 
     }
 
     @Test
-    void shouldRequirePortParameter() { // GH-90000
+    void shouldRequirePortParameter() { 
         // This test verifies that the builder enforces required parameters
-        // The actual validation should be in the builder's build() method // GH-90000
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
-        assertThrows(IllegalArgumentException.class, () -> { // GH-90000
-            AepHttpServer.builder() // GH-90000
-                .engine(mockEngine) // GH-90000
-                .build(); // GH-90000
+        // The actual validation should be in the builder's build() method 
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
+        assertThrows(IllegalArgumentException.class, () -> { 
+            AepHttpServer.builder() 
+                .engine(mockEngine) 
+                .build(); 
         });
     }
 
     @Test
-    void shouldAllowChainingOfBuilderMethods() { // GH-90000
+    void shouldAllowChainingOfBuilderMethods() { 
         // Arrange
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT); // GH-90000
+        AepEngine mockEngine = mock(AepEngine.class); 
+        PrometheusMeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT); 
 
         // Act - verify method chaining works
-        AepHttpServer.Builder builder = AepHttpServer.builder() // GH-90000
-            .engine(mockEngine) // GH-90000
-            .port(8080) // GH-90000
-            .prometheusRegistry(registry); // GH-90000
+        AepHttpServer.Builder builder = AepHttpServer.builder() 
+            .engine(mockEngine) 
+            .port(8080) 
+            .prometheusRegistry(registry); 
 
         // Assert
-        assertNotNull(builder); // GH-90000
+        assertNotNull(builder); 
         // If we got here without exception, chaining works
     }
 
     @Test
-    void shouldSupportOptionalParameters() { // GH-90000
+    void shouldSupportOptionalParameters() { 
         // Arrange & Act
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
-        AepHttpServer server = AepHttpServer.builder() // GH-90000
-            .engine(mockEngine) // GH-90000
-            .port(8080) // GH-90000
-            .prometheusRegistry(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) // optional // GH-90000
-            .build(); // GH-90000
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
+        AepHttpServer server = AepHttpServer.builder() 
+            .engine(mockEngine) 
+            .port(8080) 
+            .prometheusRegistry(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)) // optional 
+            .build(); 
 
         // Assert
-        assertNotNull(server); // GH-90000
+        assertNotNull(server); 
     }
 
     @Test
-    void shouldFailClosedInProductionWhenDurableRunHistoryIsNotConfigured() { // GH-90000
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
+    void shouldFailClosedInProductionWhenDurableRunHistoryIsNotConfigured() { 
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
 
-        String previousProfile = System.getProperty(AEP_PROFILE); // GH-90000
-        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY); // GH-90000
+        String previousProfile = System.getProperty(AEP_PROFILE); 
+        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY); 
 
         try {
-            System.setProperty(AEP_PROFILE, "production"); // GH-90000
-            System.clearProperty(ALLOW_IN_MEMORY_RUN_HISTORY); // GH-90000
+            System.setProperty(AEP_PROFILE, "production"); 
+            System.clearProperty(ALLOW_IN_MEMORY_RUN_HISTORY); 
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> // GH-90000
-                AepHttpServer.builder() // GH-90000
-                    .engine(mockEngine) // GH-90000
-                    .port(8080) // GH-90000
-                    .build() // GH-90000
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> 
+                AepHttpServer.builder() 
+                    .engine(mockEngine) 
+                    .port(8080) 
+                    .build() 
             );
 
             assertTrue(exception.getMessage().contains("EventLogStore"));
         } finally {
-            restoreSystemProperty(AEP_PROFILE, previousProfile); // GH-90000
-            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); // GH-90000
+            restoreSystemProperty(AEP_PROFILE, previousProfile); 
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); 
         }
     }
 
     @Test
-    void shouldAllowExplicitEmbeddedOverrideForInMemoryRunHistoryInProduction() { // GH-90000
-        AepEngine mockEngine = mock(AepEngine.class); // GH-90000
-        EventCloud mockEventCloud = mock(EventCloud.class); // GH-90000
-        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); // GH-90000
+    void shouldAllowExplicitEmbeddedOverrideForInMemoryRunHistoryInProduction() { 
+        AepEngine mockEngine = mock(AepEngine.class); 
+        EventCloud mockEventCloud = mock(EventCloud.class); 
+        when(mockEngine.eventCloud()).thenReturn(mockEventCloud); 
 
-        String previousProfile = System.getProperty(AEP_PROFILE); // GH-90000
-        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY); // GH-90000
+        String previousProfile = System.getProperty(AEP_PROFILE); 
+        String previousAllowInMemory = System.getProperty(ALLOW_IN_MEMORY_RUN_HISTORY); 
 
         try {
-            System.setProperty(AEP_PROFILE, "production"); // GH-90000
-            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true"); // GH-90000
+            System.setProperty(AEP_PROFILE, "production"); 
+            System.setProperty(ALLOW_IN_MEMORY_RUN_HISTORY, "true"); 
 
-            AepHttpServer server = AepHttpServer.builder() // GH-90000
-                .engine(mockEngine) // GH-90000
-                .port(8080) // GH-90000
-                .build(); // GH-90000
+            AepHttpServer server = AepHttpServer.builder() 
+                .engine(mockEngine) 
+                .port(8080) 
+                .build(); 
 
-            assertNotNull(server); // GH-90000
+            assertNotNull(server); 
         } finally {
-            restoreSystemProperty(AEP_PROFILE, previousProfile); // GH-90000
-            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); // GH-90000
+            restoreSystemProperty(AEP_PROFILE, previousProfile); 
+            restoreSystemProperty(ALLOW_IN_MEMORY_RUN_HISTORY, previousAllowInMemory); 
         }
     }
 
     @Test
-    void shouldHaveImmutableBuilderState() { // GH-90000
+    void shouldHaveImmutableBuilderState() { 
         // Arrange
-        AepHttpServer.Builder builder = AepHttpServer.builder() // GH-90000
-            .port(8080); // GH-90000
+        AepHttpServer.Builder builder = AepHttpServer.builder() 
+            .port(8080); 
         
         // Act - try to modify after setting
-        builder.port(9090); // GH-90000
+        builder.port(9090); 
         
-        // Assert - the builder should accept the change (builders are mutable by design) // GH-90000
+        // Assert - the builder should accept the change (builders are mutable by design) 
         // This test documents the builder pattern behavior
-        assertNotNull(builder); // GH-90000
+        assertNotNull(builder); 
     }
 
-    private static void restoreSystemProperty(String key, String value) { // GH-90000
-        if (value == null) { // GH-90000
-            System.clearProperty(key); // GH-90000
+    private static void restoreSystemProperty(String key, String value) { 
+        if (value == null) { 
+            System.clearProperty(key); 
         } else {
-            System.setProperty(key, value); // GH-90000
+            System.setProperty(key, value); 
         }
     }
 }

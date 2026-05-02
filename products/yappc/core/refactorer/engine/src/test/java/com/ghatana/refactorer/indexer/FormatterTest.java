@@ -18,30 +18,30 @@ import org.junit.jupiter.api.Test;
  * @doc.pattern Test
 */
 public class FormatterTest {
-    private static final Logger logger = LogManager.getLogger(FormatterTest.class); // GH-90000
+    private static final Logger logger = LogManager.getLogger(FormatterTest.class); 
     private static final String FIXTURE_DIR = "test-fixtures/ts-formatting";
 
     @Test
-    void testFormatting() throws Exception { // GH-90000
+    void testFormatting() throws Exception { 
         // Get the test file paths from resources
-        Path sourcePath = getResourcePath(FIXTURE_DIR + "/src/badlyFormatted.ts"); // GH-90000
-        Path expectedPath = getResourcePath(FIXTURE_DIR + "/src/formatted.expected.ts"); // GH-90000
+        Path sourcePath = getResourcePath(FIXTURE_DIR + "/src/badlyFormatted.ts"); 
+        Path expectedPath = getResourcePath(FIXTURE_DIR + "/src/formatted.expected.ts"); 
 
         // Verify files exist
-        assertTrue(Files.exists(sourcePath), "Test file should exist: " + sourcePath); // GH-90000
-        assertTrue( // GH-90000
-                Files.exists(expectedPath), "Expected output file should exist: " + expectedPath); // GH-90000
+        assertTrue(Files.exists(sourcePath), "Test file should exist: " + sourcePath); 
+        assertTrue( 
+                Files.exists(expectedPath), "Expected output file should exist: " + expectedPath); 
 
         // Read file contents
-        String sourceContent = Files.readString(sourcePath); // GH-90000
-        String expectedContent = Files.readString(expectedPath); // GH-90000
+        String sourceContent = Files.readString(sourcePath); 
+        String expectedContent = Files.readString(expectedPath); 
 
         // Verify content
-        assertFalse(sourceContent.isBlank(), "Source file should not be empty"); // GH-90000
-        assertFalse(expectedContent.isBlank(), "Expected file should not be empty"); // GH-90000
+        assertFalse(sourceContent.isBlank(), "Source file should not be empty"); 
+        assertFalse(expectedContent.isBlank(), "Expected file should not be empty"); 
 
         // For now, just verify the test files contain the expected content
-        assertTrue( // GH-90000
+        assertTrue( 
                 expectedContent.contains("export function calculateTotal"),
                 "Expected content not found in: " + expectedPath);
 
@@ -49,29 +49,29 @@ public class FormatterTest {
     }
 
     /** Helper method to get the path to a test resource file. */
-    private Path getResourcePath(String resourcePath) throws IOException { // GH-90000
-        // First try to get it as a file (for IDE) // GH-90000
-        Path path = Paths.get("modules/indexer/src/test/resources", resourcePath); // GH-90000
-        if (Files.exists(path)) { // GH-90000
+    private Path getResourcePath(String resourcePath) throws IOException { 
+        // First try to get it as a file (for IDE) 
+        Path path = Paths.get("modules/indexer/src/test/resources", resourcePath); 
+        if (Files.exists(path)) { 
             return path;
         }
 
-        // Then try to get it from classpath (for Gradle) // GH-90000
-        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) { // GH-90000
-            if (is == null) { // GH-90000
-                throw new IOException("Resource not found: " + resourcePath); // GH-90000
+        // Then try to get it from classpath (for Gradle) 
+        try (InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourcePath)) { 
+            if (is == null) { 
+                throw new IOException("Resource not found: " + resourcePath); 
             }
             // Create a temp file with the resource content
-            Path tempFile = Files.createTempFile("test-", ".tmp"); // GH-90000
-            tempFile.toFile().deleteOnExit(); // GH-90000
-            Files.write(tempFile, is.readAllBytes()); // GH-90000
+            Path tempFile = Files.createTempFile("test-", ".tmp"); 
+            tempFile.toFile().deleteOnExit(); 
+            Files.write(tempFile, is.readAllBytes()); 
             return tempFile;
         }
     }
 
     // This would be implemented to actually format the code in a real implementation
     @SuppressWarnings("unused")
-    private String formatCode(String source) { // GH-90000
+    private String formatCode(String source) { 
         // Note: Actual formatting logic using Prettier or similar not yet implemented
         return source;
     }

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -42,51 +42,51 @@ class PluginSandboxTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testPermissiveSandbox() { // GH-90000
+    void testPermissiveSandbox() { 
         Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = PluginSandbox.permissive(workspace); // GH-90000
+        PluginSandbox sandbox = PluginSandbox.permissive(workspace); 
 
         assertTrue(sandbox.isWriteAllowed(workspace.resolve("file.txt")));
         assertTrue(sandbox.isWriteAllowed(workspace.resolve("subdir/file.txt")));
-        assertEquals(Duration.ofMinutes(5), sandbox.timeout()); // GH-90000
-        assertFalse(sandbox.dryRunOnly()); // GH-90000
-        assertTrue(sandbox.allowNetworkAccess()); // GH-90000
+        assertEquals(Duration.ofMinutes(5), sandbox.timeout()); 
+        assertFalse(sandbox.dryRunOnly()); 
+        assertTrue(sandbox.allowNetworkAccess()); 
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testRestrictiveSandbox() { // GH-90000
+    void testRestrictiveSandbox() { 
         Path allowed = Paths.get("/workspace");
-        PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed)); // GH-90000
+        PluginSandbox sandbox = PluginSandbox.restrictive(List.of(allowed)); 
 
         assertTrue(sandbox.isWriteAllowed(allowed.resolve("file.txt")));
         assertFalse(sandbox.isWriteAllowed(Paths.get("/etc/passwd")));
         assertFalse(sandbox.isWriteAllowed(Paths.get("/sys/config")));
-        assertEquals(Duration.ofMinutes(1), sandbox.timeout()); // GH-90000
-        assertFalse(sandbox.dryRunOnly()); // GH-90000
-        assertFalse(sandbox.allowNetworkAccess()); // GH-90000
+        assertEquals(Duration.ofMinutes(1), sandbox.timeout()); 
+        assertFalse(sandbox.dryRunOnly()); 
+        assertFalse(sandbox.allowNetworkAccess()); 
     }
 
     @Test
-    void testDryRunSandbox() { // GH-90000
-        PluginSandbox sandbox = PluginSandbox.dryRun(); // GH-90000
+    void testDryRunSandbox() { 
+        PluginSandbox sandbox = PluginSandbox.dryRun(); 
 
         assertFalse(sandbox.isWriteAllowed(Paths.get("/any/path")));
-        assertEquals(Duration.ofSeconds(30), sandbox.timeout()); // GH-90000
-        assertTrue(sandbox.dryRunOnly()); // GH-90000
-        assertFalse(sandbox.allowNetworkAccess()); // GH-90000
+        assertEquals(Duration.ofSeconds(30), sandbox.timeout()); 
+        assertTrue(sandbox.dryRunOnly()); 
+        assertFalse(sandbox.allowNetworkAccess()); 
     }
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testIsWriteAllowedWithDeniedPaths() { // GH-90000
+    void testIsWriteAllowedWithDeniedPaths() { 
         Path workspace = Paths.get("/workspace");
         Path denied = workspace.resolve("restricted");
 
-        PluginSandbox sandbox = new PluginSandbox( // GH-90000
-                List.of(workspace), // GH-90000
-                List.of(denied), // GH-90000
-                Duration.ofMinutes(1), // GH-90000
+        PluginSandbox sandbox = new PluginSandbox( 
+                List.of(workspace), 
+                List.of(denied), 
+                Duration.ofMinutes(1), 
                 false,
                 true);
 
@@ -96,12 +96,12 @@ class PluginSandboxTest {
 
     @Test
     @DisabledOnOs(OS.WINDOWS)
-    void testIsWriteAllowedOutsideAllowedPaths() { // GH-90000
+    void testIsWriteAllowedOutsideAllowedPaths() { 
         Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = new PluginSandbox( // GH-90000
-                List.of(workspace), // GH-90000
-                List.of(), // GH-90000
-                Duration.ofMinutes(1), // GH-90000
+        PluginSandbox sandbox = new PluginSandbox( 
+                List.of(workspace), 
+                List.of(), 
+                Duration.ofMinutes(1), 
                 false,
                 true);
 
@@ -110,12 +110,12 @@ class PluginSandboxTest {
     }
 
     @Test
-    void testDryRunBlocksAllWrites() { // GH-90000
+    void testDryRunBlocksAllWrites() { 
         Path workspace = Paths.get("/workspace");
-        PluginSandbox sandbox = new PluginSandbox( // GH-90000
-                List.of(workspace), // GH-90000
-                List.of(), // GH-90000
-                Duration.ofMinutes(1), // GH-90000
+        PluginSandbox sandbox = new PluginSandbox( 
+                List.of(workspace), 
+                List.of(), 
+                Duration.ofMinutes(1), 
                 true, // dry run
                 true);
 

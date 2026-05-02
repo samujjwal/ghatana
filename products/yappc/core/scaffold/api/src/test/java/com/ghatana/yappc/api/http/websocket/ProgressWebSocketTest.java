@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2025 Ghatana Platform Contributors // GH-90000
+ * Copyright (c) 2025 Ghatana Platform Contributors 
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); // GH-90000
+ * Licensed under the Apache License, Version 2.0 (the "License"); 
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -36,34 +36,34 @@ class ProgressWebSocketTest {
     private ProgressWebSocket webSocket;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        webSocket = new ProgressWebSocket(); // GH-90000
+    void setUp() { 
+        webSocket = new ProgressWebSocket(); 
     }
 
     @Test
     @DisplayName("should start with zero connections")
-    void shouldStartWithZeroConnections() { // GH-90000
-        assertThat(webSocket.getConnectionCount()).isZero(); // GH-90000
+    void shouldStartWithZeroConnections() { 
+        assertThat(webSocket.getConnectionCount()).isZero(); 
     }
 
     @Test
     @DisplayName("should report disconnected for unknown session")
-    void shouldReportDisconnectedForUnknownSession() { // GH-90000
+    void shouldReportDisconnectedForUnknownSession() { 
         assertThat(webSocket.isConnected("unknown-session")).isFalse();
     }
 
     @Test
     @DisplayName("should handle broadcast to non-existent session gracefully")
-    void shouldHandleBroadcastToNonExistentSessionGracefully() { // GH-90000
+    void shouldHandleBroadcastToNonExistentSessionGracefully() { 
         // Should not throw
-        webSocket.broadcast("non-existent", "test message"); // GH-90000
-        webSocket.sendComplete("non-existent", "result"); // GH-90000
-        webSocket.sendError("non-existent", "error"); // GH-90000
+        webSocket.broadcast("non-existent", "test message"); 
+        webSocket.sendComplete("non-existent", "result"); 
+        webSocket.sendError("non-existent", "error"); 
     }
 
     @Test
     @DisplayName("should handle broadcast to all with no connections")
-    void shouldHandleBroadcastToAllWithNoConnections() { // GH-90000
+    void shouldHandleBroadcastToAllWithNoConnections() { 
         // Should not throw
         webSocket.broadcastToAll("test message");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.aep.eventcloud;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
  * Tests for {@link EventCloudPlugin} lifecycle and capabilities.
  */
 @DisplayName("EventCloudPlugin")
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 class EventCloudPluginTest extends EventloopTestBase {
 
     @Mock
@@ -45,156 +45,156 @@ class EventCloudPluginTest extends EventloopTestBase {
     private EventCloudPlugin plugin;
 
     @BeforeEach
-    void setUp() { // GH-90000
-        // Construct directly with platform types (factory wraps legacy data-cloud SPI; tests use platform mocks) // GH-90000
-        plugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode()); // GH-90000
+    void setUp() { 
+        // Construct directly with platform types (factory wraps legacy data-cloud SPI; tests use platform mocks) 
+        plugin = new EventCloudPlugin(eventLogStore, entityStore, EventCloudPluginConfig.embeddedMode()); 
     }
 
     @Test
-    void shouldHaveCorrectMetadata() { // GH-90000
+    void shouldHaveCorrectMetadata() { 
         assertThat(plugin.metadata().id()).isEqualTo("aep-event-cloud");
         assertThat(plugin.metadata().name()).isEqualTo("AEP Event-Cloud Plugin");
         assertThat(plugin.metadata().version()).isEqualTo("1.0.0");
-        assertThat(plugin.metadata().capabilities()) // GH-90000
-            .contains("event-storage", "event-streaming", "entity-registry"); // GH-90000
+        assertThat(plugin.metadata().capabilities()) 
+            .contains("event-storage", "event-streaming", "entity-registry"); 
     }
 
     @Test
-    void shouldStartInUnloadedState() { // GH-90000
-        assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); // GH-90000
+    void shouldStartInUnloadedState() { 
+        assertThat(plugin.getState()).isEqualTo(PluginState.UNLOADED); 
     }
 
     @Test
-    void shouldTransitionThroughLifecycleStates() { // GH-90000
+    void shouldTransitionThroughLifecycleStates() { 
         // GIVEN
         // WHEN: initialize
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
         // THEN
-        assertThat(plugin.getState()).isEqualTo(PluginState.INITIALIZED); // GH-90000
+        assertThat(plugin.getState()).isEqualTo(PluginState.INITIALIZED); 
 
         // WHEN: start
-        runPromise(() -> plugin.start()); // GH-90000
+        runPromise(() -> plugin.start()); 
         // THEN
-        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); // GH-90000
+        assertThat(plugin.getState()).isEqualTo(PluginState.RUNNING); 
 
         // WHEN: stop
-        runPromise(() -> plugin.stop()); // GH-90000
+        runPromise(() -> plugin.stop()); 
         // THEN
-        assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED); // GH-90000
+        assertThat(plugin.getState()).isEqualTo(PluginState.STOPPED); 
     }
 
     @Test
-    void shouldExposeCapabilitiesAfterInitialization() { // GH-90000
+    void shouldExposeCapabilitiesAfterInitialization() { 
         // GIVEN
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
 
         // WHEN
-        var capabilities = plugin.getCapabilities(); // GH-90000
+        var capabilities = plugin.getCapabilities(); 
 
         // THEN
-        assertThat(capabilities).hasSize(3); // GH-90000
+        assertThat(capabilities).hasSize(3); 
     }
 
     @Test
-    void shouldExposeNoCapabilitiesBeforeInitialization() { // GH-90000
-        assertThat(plugin.getCapabilities()).isEmpty(); // GH-90000
+    void shouldExposeNoCapabilitiesBeforeInitialization() { 
+        assertThat(plugin.getCapabilities()).isEmpty(); 
     }
 
     @Test
-    void shouldRegisterDefaultChannelsOnStart() { // GH-90000
+    void shouldRegisterDefaultChannelsOnStart() { 
         // GIVEN
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
 
         // WHEN
-        runPromise(() -> plugin.start()); // GH-90000
+        runPromise(() -> plugin.start()); 
 
         // THEN
-        assertThat(plugin.channelRegistry().channelCount()).isEqualTo(5); // GH-90000
-        assertThat(plugin.channelRegistry().getChannel(EventChannel.EVENTS_INTAKE.name())) // GH-90000
-            .isPresent(); // GH-90000
-        assertThat(plugin.channelRegistry().getChannel(EventChannel.PIPELINE_RUNS.name())) // GH-90000
-            .isPresent(); // GH-90000
-        assertThat(plugin.channelRegistry().getChannel(EventChannel.AGENT_DECISIONS.name())) // GH-90000
-            .isPresent(); // GH-90000
-        assertThat(plugin.channelRegistry().getChannel(EventChannel.LEARNING_EPISODES.name())) // GH-90000
-            .isPresent(); // GH-90000
-        assertThat(plugin.channelRegistry().getChannel(EventChannel.POLICY_PROMOTIONS.name())) // GH-90000
-            .isPresent(); // GH-90000
+        assertThat(plugin.channelRegistry().channelCount()).isEqualTo(5); 
+        assertThat(plugin.channelRegistry().getChannel(EventChannel.EVENTS_INTAKE.name())) 
+            .isPresent(); 
+        assertThat(plugin.channelRegistry().getChannel(EventChannel.PIPELINE_RUNS.name())) 
+            .isPresent(); 
+        assertThat(plugin.channelRegistry().getChannel(EventChannel.AGENT_DECISIONS.name())) 
+            .isPresent(); 
+        assertThat(plugin.channelRegistry().getChannel(EventChannel.LEARNING_EPISODES.name())) 
+            .isPresent(); 
+        assertThat(plugin.channelRegistry().getChannel(EventChannel.POLICY_PROMOTIONS.name())) 
+            .isPresent(); 
     }
 
     @Test
-    void shouldProvideEventCloudFacadeAfterInitialization() { // GH-90000
+    void shouldProvideEventCloudFacadeAfterInitialization() { 
         // GIVEN
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
 
         // THEN
-        assertThat(plugin.eventCloud()).isNotNull(); // GH-90000
-        assertThat(plugin.eventCloud()).isInstanceOf(DataCloudBackedEventCloud.class); // GH-90000
+        assertThat(plugin.eventCloud()).isNotNull(); 
+        assertThat(plugin.eventCloud()).isInstanceOf(DataCloudBackedEventCloud.class); 
     }
 
     @Test
-    void shouldProvideConnectorAfterInitialization() { // GH-90000
+    void shouldProvideConnectorAfterInitialization() { 
         // GIVEN
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
 
         // THEN
-        assertThat(plugin.connector()).isNotNull(); // GH-90000
-        assertThat(plugin.connector()).isInstanceOf(DataCloudEventCloudConnector.class); // GH-90000
+        assertThat(plugin.connector()).isNotNull(); 
+        assertThat(plugin.connector()).isInstanceOf(DataCloudEventCloudConnector.class); 
     }
 
     @Test
-    void shouldReportHealthyWhenRunning() { // GH-90000
+    void shouldReportHealthyWhenRunning() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
-            .thenReturn(Promise.of(Offset.zero())); // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
+            .thenReturn(Promise.of(Offset.zero())); 
 
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
-        runPromise(() -> plugin.start()); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
+        runPromise(() -> plugin.start()); 
 
         // WHEN
-        HealthStatus health = runPromise(() -> plugin.healthCheck()); // GH-90000
+        HealthStatus health = runPromise(() -> plugin.healthCheck()); 
 
         // THEN
-        assertThat(health.isHealthy()).isTrue(); // GH-90000
+        assertThat(health.isHealthy()).isTrue(); 
     }
 
     @Test
-    void shouldReportUnhealthyWhenNotRunning() { // GH-90000
+    void shouldReportUnhealthyWhenNotRunning() { 
         // WHEN
-        HealthStatus health = runPromise(() -> plugin.healthCheck()); // GH-90000
+        HealthStatus health = runPromise(() -> plugin.healthCheck()); 
 
         // THEN
-        assertThat(health.isHealthy()).isFalse(); // GH-90000
+        assertThat(health.isHealthy()).isFalse(); 
     }
 
     @Test
-    void shouldReportUnhealthyWhenDataCloudUnreachable() { // GH-90000
+    void shouldReportUnhealthyWhenDataCloudUnreachable() { 
         // GIVEN
-        when(eventLogStore.getLatestOffset(any(TenantContext.class))) // GH-90000
+        when(eventLogStore.getLatestOffset(any(TenantContext.class))) 
             .thenReturn(Promise.ofException(new RuntimeException("Connection refused")));
 
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
-        runPromise(() -> plugin.start()); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
+        runPromise(() -> plugin.start()); 
 
         // WHEN
-        HealthStatus health = runPromise(() -> plugin.healthCheck()); // GH-90000
+        HealthStatus health = runPromise(() -> plugin.healthCheck()); 
 
         // THEN
-        assertThat(health.isHealthy()).isFalse(); // GH-90000
+        assertThat(health.isHealthy()).isFalse(); 
         assertThat(health.getMessage()).contains("Data-Cloud unreachable");
     }
 
     @Test
-    void shouldClearChannelsOnStop() { // GH-90000
+    void shouldClearChannelsOnStop() { 
         // GIVEN
-        runPromise(() -> plugin.initialize(pluginContext)); // GH-90000
-        runPromise(() -> plugin.start()); // GH-90000
-        assertThat(plugin.channelRegistry().channelCount()).isPositive(); // GH-90000
+        runPromise(() -> plugin.initialize(pluginContext)); 
+        runPromise(() -> plugin.start()); 
+        assertThat(plugin.channelRegistry().channelCount()).isPositive(); 
 
         // WHEN
-        runPromise(() -> plugin.stop()); // GH-90000
+        runPromise(() -> plugin.stop()); 
 
         // THEN
-        assertThat(plugin.channelRegistry().channelCount()).isZero(); // GH-90000
+        assertThat(plugin.channelRegistry().channelCount()).isZero(); 
     }
 }

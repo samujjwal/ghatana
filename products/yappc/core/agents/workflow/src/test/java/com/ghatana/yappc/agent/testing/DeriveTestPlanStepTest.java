@@ -33,40 +33,40 @@ class DeriveTestPlanStepTest extends EventloopTestBase {
   private DeriveTestPlanStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new DeriveTestPlanStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new DeriveTestPlanStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("testing.derive_test_plan");
   }
 
   @Test
   @DisplayName("Should derive test plan from implementation")
-  void shouldDeriveTestPlan() { // GH-90000
+  void shouldDeriveTestPlan() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("requirementsBaselineId", "req-001"); // GH-90000
-    context.put("implementationBaselineId", "impl-001"); // GH-90000
-    context.put("tenantId", "tenant-abc"); // GH-90000
-    context.put( // GH-90000
-        "units", List.of(Map.of("unitId", "u1", "name", "AuthService", "tests", List.of()))); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("requirementsBaselineId", "req-001"); 
+    context.put("implementationBaselineId", "impl-001"); 
+    context.put("tenantId", "tenant-abc"); 
+    context.put( 
+        "units", List.of(Map.of("unitId", "u1", "name", "AuthService", "tests", List.of()))); 
 
     // Mock database queries to return baselines
     Map<String, Object> reqBaseline =
-        Map.of( // GH-90000
+        Map.of( 
             "baselineId",
             "req-001",
             "content",
-            Map.of( // GH-90000
+            Map.of( 
                 "requirements",
-                List.of( // GH-90000
-                    Map.of("id", "req1", "category", "FUNCTIONAL", "description", "User login"), // GH-90000
-                    Map.of( // GH-90000
+                List.of( 
+                    Map.of("id", "req1", "category", "FUNCTIONAL", "description", "User login"), 
+                    Map.of( 
                         "id",
                         "req2",
                         "category",
@@ -74,25 +74,25 @@ class DeriveTestPlanStepTest extends EventloopTestBase {
                         "description",
                         "Response time < 1s"))));
     Map<String, Object> implBaseline =
-        Map.of( // GH-90000
+        Map.of( 
             "baselineId",
             "impl-001",
             "units",
-            List.of(Map.of("unitId", "u1", "name", "AuthService"))); // GH-90000
+            List.of(Map.of("unitId", "u1", "name", "AuthService"))); 
 
     when(dbClient.query(eq("requirements_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(reqBaseline))); // GH-90000
+        .thenReturn(Promise.of(List.of(reqBaseline))); 
     when(dbClient.query(eq("implementation_published"), any(), anyInt()))
-        .thenReturn(Promise.of(List.of(implBaseline))); // GH-90000
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+        .thenReturn(Promise.of(List.of(implBaseline))); 
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("implementationBaselineId")).isEqualTo("impl-001");
   }
 }

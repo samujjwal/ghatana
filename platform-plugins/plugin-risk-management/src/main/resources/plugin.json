@@ -1,0 +1,44 @@
+{
+  "pluginId": "com.ghatana.plugin.risk-management",
+  "version": "1.2.0",
+  "description": "Generic risk assessment and decision scoring framework. Products register their own factor evaluators for domain-specific risk models; no product-specific risk logic is built in.",
+  "tier": "T2",
+  "capabilities": [
+    "risk:calculate",
+    "risk:set-limits",
+    "risk:get-alerts",
+    "risk:generate-report",
+    "risk:register-evaluator"
+  ],
+  "dependencies": [
+    "com.ghatana.plugin.audit"
+  ],
+  "requiredKernelVersion": "1.0.0",
+  "resourceQuotas": {
+    "maxMemoryMb": 256,
+    "maxCpuPercent": 20,
+    "maxThreads": 8
+  },
+  "configSchema": {
+    "defaultRiskModel": {
+      "type": "string",
+      "required": false,
+      "description": "Default risk model ID when none is specified in a scoring request. Defaults to 'OPERATIONAL'."
+    },
+    "alertThresholdHigh": {
+      "type": "number",
+      "required": false,
+      "description": "Risk score threshold [0.0, 1.0] above which a HIGH alert is raised. Defaults to 0.75."
+    },
+    "alertThresholdCritical": {
+      "type": "number",
+      "required": false,
+      "description": "Risk score threshold [0.0, 1.0] above which a CRITICAL alert is raised. Defaults to 0.90."
+    },
+    "explainabilityEnabled": {
+      "type": "boolean",
+      "required": false,
+      "description": "Whether factor-level explainability context is attached to scoring results. Defaults to true."
+    }
+  }
+}

@@ -60,7 +60,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("retrieve by DataRecord UUID succeeds after store")
-    void retrieveByRecordUuidSucceedsAfterStore() { // GH-90000
+    void retrieveByRecordUuidSucceedsAfterStore() { 
         UUID recordId = UUID.randomUUID();
         EntityRecord record = recordWithId(recordId, Map.of("sourceEntityId", "ext-abc"));
 
@@ -74,7 +74,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("retrieve by external string entity ID returns empty – ID translation is required")
-    void retrieveByExternalStringIdReturnsEmpty() { // GH-90000
+    void retrieveByExternalStringIdReturnsEmpty() { 
         UUID recordId = UUID.randomUUID();
         String externalEntityId = "ext-entity-abc-123";
         EntityRecord record = recordWithId(recordId, Map.of("sourceEntityId", externalEntityId));
@@ -91,7 +91,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("sourceEntityId preserved in record metadata is recoverable after store")
-    void sourceEntityIdPreservedInMetadataAfterStore() { // GH-90000
+    void sourceEntityIdPreservedInMetadataAfterStore() { 
         UUID recordId = UUID.randomUUID();
         String externalId = "preserve-me-007";
         EntityRecord record = recordWithId(recordId, Map.of("sourceEntityId", externalId));
@@ -111,7 +111,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("delete by DataRecord UUID removes the stored record")
-    void deleteByRecordUuidRemovesRecord() { // GH-90000
+    void deleteByRecordUuidRemovesRecord() { 
         UUID recordId = UUID.randomUUID();
         runPromise(() -> plugin.store(recordWithId(recordId, Map.of()), "tenant-dc-l2"));
 
@@ -125,7 +125,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("delete by external entity string ID is a no-op – record remains under its UUID key")
-    void deleteByExternalEntityIdLeavesRecordIntact() { // GH-90000
+    void deleteByExternalEntityIdLeavesRecordIntact() { 
         UUID recordId = UUID.randomUUID();
         String externalEntityId = "ext-entity-xyz";
         runPromise(() -> plugin.store(
@@ -148,7 +148,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findSimilar by DataRecord UUID locates near neighbors")
-    void findSimilarByRecordUuidLocatesNeighbors() { // GH-90000
+    void findSimilarByRecordUuidLocatesNeighbors() { 
         UUID idA = UUID.randomUUID();
         UUID idB = UUID.randomUUID();
         float[] embA = {1f, 0f, 0f};
@@ -166,7 +166,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("findSimilar by external entity string ID returns empty – ID translation required")
-    void findSimilarByExternalEntityIdReturnsEmpty() { // GH-90000
+    void findSimilarByExternalEntityIdReturnsEmpty() { 
         UUID recordId = UUID.randomUUID();
         String externalId = "ext-sim-99";
 
@@ -188,7 +188,7 @@ class VectorMemoryPluginIdMappingTest extends EventloopTestBase {
 
     @Test
     @DisplayName("same DataRecord UUID in different tenants is independently stored and isolated")
-    void sameUuidAcrossTenantsIsIsolated() { // GH-90000
+    void sameUuidAcrossTenantsIsIsolated() { 
         UUID sharedId = UUID.randomUUID();
         EntityRecord t1Record = recordWithId(sharedId, Map.of("sourceEntityId", "ent-t1"));
         EntityRecord t2Record = recordWithId(sharedId, Map.of("sourceEntityId", "ent-t2"));

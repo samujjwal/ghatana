@@ -31,77 +31,77 @@ class PolicyCheckStepTest extends EventloopTestBase {
   private PolicyCheckStep step;
 
   @BeforeEach
-  void setUp() { // GH-90000
-    dbClient = mock(DatabaseClient.class); // GH-90000
-    eventClient = mock(EventPublisher.class); // GH-90000
-    step = new PolicyCheckStep(dbClient, eventClient); // GH-90000
+  void setUp() { 
+    dbClient = mock(DatabaseClient.class); 
+    eventClient = mock(EventPublisher.class); 
+    step = new PolicyCheckStep(dbClient, eventClient); 
   }
 
   @Test
   @DisplayName("Should return correct step ID")
-  void shouldReturnCorrectStepId() { // GH-90000
+  void shouldReturnCorrectStepId() { 
     assertThat(step.getStepId()).isEqualTo("requirements.policycheck");
   }
 
   @Test
   @DisplayName("Should run policy checks and pass requirements")
-  void shouldRunPolicyChecks() { // GH-90000
+  void shouldRunPolicyChecks() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("requirementId", "req-001"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("requirementId", "req-001"); 
+    context.put( 
         "functionalRequirements",
-        List.of("User shall be able to login", "System shall support user registration")); // GH-90000
+        List.of("User shall be able to login", "System shall support user registration")); 
     context.put("nonFunctionalRequirements", List.of("Response time < 100ms"));
-    context.put("acceptanceCriteria", List.of("Login successful", "Registration complete")); // GH-90000
+    context.put("acceptanceCriteria", List.of("Login successful", "Registration complete")); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     assertThat(result.get("overallAction")).isNotNull();
     assertThat(result.get("requirementId")).isEqualTo("req-001");
   }
 
   @Test
   @DisplayName("Should fail when requirementId is missing")
-  void shouldFailWhenRequirementIdMissing() { // GH-90000
+  void shouldFailWhenRequirementIdMissing() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
     context.put("functionalRequirements", List.of("Some requirement"));
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN/THEN
-    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) // GH-90000
-        .isInstanceOf(IllegalArgumentException.class) // GH-90000
+    assertThatThrownBy(() -> runPromise(() -> step.execute(context))) 
+        .isInstanceOf(IllegalArgumentException.class) 
         .hasMessageContaining("requirementId");
   }
 
   @Test
   @DisplayName("Should detect forbidden content in requirements")
-  void shouldDetectForbiddenContent() { // GH-90000
+  void shouldDetectForbiddenContent() { 
     // GIVEN
-    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); // GH-90000
-    context.put("requirementId", "req-002"); // GH-90000
-    context.put( // GH-90000
+    WorkflowContext context = WorkflowContext.forWorkflow("workflow-123", "tenant-abc"); 
+    context.put("requirementId", "req-002"); 
+    context.put( 
         "functionalRequirements", List.of("User shall disable audit logging for performance"));
-    context.put("nonFunctionalRequirements", List.of()); // GH-90000
-    context.put("acceptanceCriteria", List.of()); // GH-90000
+    context.put("nonFunctionalRequirements", List.of()); 
+    context.put("acceptanceCriteria", List.of()); 
 
-    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
-    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); // GH-90000
+    when(dbClient.insert(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), any())).thenReturn(Promise.of((Void) null)); 
+    when(eventClient.publish(anyString(), anyString(), any())).thenReturn(Promise.of((Void) null)); 
 
     // WHEN
-    WorkflowContext result = runPromise(() -> step.execute(context)); // GH-90000
+    WorkflowContext result = runPromise(() -> step.execute(context)); 
 
     // THEN
-    assertThat(result).isNotNull(); // GH-90000
+    assertThat(result).isNotNull(); 
     // Policy should flag forbidden content
     assertThat(result.get("overallAction")).isIn("WARN", "REQUIRE_REVIEW", "BLOCK");
   }

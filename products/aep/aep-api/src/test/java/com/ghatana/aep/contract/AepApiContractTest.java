@@ -1,5 +1,5 @@
 /**
- * AEP (Agentic Event Processor) Contract Test Suite // GH-90000
+ * AEP (Agentic Event Processor) Contract Test Suite 
  *
  * Validates that AEP request/response payloads conform to the OpenAPI contract.
  * Tests are pure JSON-schema assertions: no HTTP server is required.
@@ -30,17 +30,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("AEP API Contract Tests")
 class AepApiContractTest {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper(); // GH-90000
+    private static final ObjectMapper MAPPER = new ObjectMapper(); 
 
     // ── Health / Info Response Schema ─────────────────────────────────────────
 
     @Test
     @DisplayName("Health response conforms to contract schema")
-    void healthResponse_conformsToSchema() throws Exception { // GH-90000
+    void healthResponse_conformsToSchema() throws Exception { 
         String json = """
                 {"status":"UP","service":"aep","timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("status")).isTrue();
         assertThat(node.get("status").asText()).matches("UP|DOWN|DEGRADED");
@@ -50,11 +50,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Readiness response conforms to contract schema")
-    void readinessResponse_conformsToSchema() throws Exception { // GH-90000
+    void readinessResponse_conformsToSchema() throws Exception { 
         String json = """
                 {"status":"READY","timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("status")).isTrue();
         assertThat(node.get("status").asText()).matches("READY|NOT_READY");
@@ -63,11 +63,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Liveness response conforms to contract schema")
-    void livenessResponse_conformsToSchema() throws Exception { // GH-90000
+    void livenessResponse_conformsToSchema() throws Exception { 
         String json = """
                 {"status":"LIVE","timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("status")).isTrue();
         assertThat(node.get("status").asText()).matches("LIVE|NOT_LIVE");
@@ -76,11 +76,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Info response conforms to contract schema")
-    void infoResponse_conformsToSchema() throws Exception { // GH-90000
+    void infoResponse_conformsToSchema() throws Exception { 
         String json = """
                 {"service":"aep","version":"1.0.0","description":"Agentic Event Processor","timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("service")).isTrue();
         assertThat(node.get("service").isTextual()).isTrue();
@@ -94,22 +94,22 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Process event request requires 'type' field")
-    void processEvent_request_requiresType() throws Exception { // GH-90000
-        ObjectNode requestMissingType = MAPPER.createObjectNode(); // GH-90000
-        requestMissingType.set("payload", MAPPER.createObjectNode()); // GH-90000
+    void processEvent_request_requiresType() throws Exception { 
+        ObjectNode requestMissingType = MAPPER.createObjectNode(); 
+        requestMissingType.set("payload", MAPPER.createObjectNode()); 
 
         assertThat(requestMissingType.has("type"))
             .as("request without 'type' violates contract")
-            .isFalse(); // GH-90000
+            .isFalse(); 
     }
 
     @Test
     @DisplayName("Valid process event request conforms to contract")
-    void processEvent_request_validShape() throws Exception { // GH-90000
+    void processEvent_request_validShape() throws Exception { 
         String json = """
                 {"type":"user.login","payload":{"userId":"user-1","ip":"10.0.0.1"}}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("type")).isTrue();
         assertThat(node.get("type").isTextual()).isTrue();
@@ -119,11 +119,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Process event success response conforms to contract schema")
-    void processEvent_response_successShape() throws Exception { // GH-90000
+    void processEvent_response_successShape() throws Exception { 
         String json = """
                 {"eventId":"evt-1","success":true,"detections":[],"timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("eventId")).isTrue();
         assertThat(node.has("success")).isTrue();
@@ -134,11 +134,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Process event error response conforms to contract schema")
-    void processEvent_response_errorShape() throws Exception { // GH-90000
+    void processEvent_response_errorShape() throws Exception { 
         String json = """
                 {"error":"MISSING_TENANT_HEADER","message":"X-Tenant-Id header is required"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("error")).isTrue();
         assertThat(node.get("error").isTextual()).isTrue();
@@ -149,21 +149,21 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Batch event request requires 'events' array")
-    void processEventBatch_request_requiresEventsArray() throws Exception { // GH-90000
-        ObjectNode requestMissingEvents = MAPPER.createObjectNode(); // GH-90000
+    void processEventBatch_request_requiresEventsArray() throws Exception { 
+        ObjectNode requestMissingEvents = MAPPER.createObjectNode(); 
 
         assertThat(requestMissingEvents.has("events"))
             .as("request without 'events' array violates contract")
-            .isFalse(); // GH-90000
+            .isFalse(); 
     }
 
     @Test
     @DisplayName("Valid batch event request conforms to contract")
-    void processEventBatch_request_validShape() throws Exception { // GH-90000
+    void processEventBatch_request_validShape() throws Exception { 
         String json = """
                 {"events":[{"type":"user.login","payload":{}},{"type":"user.logout","payload":{}}]}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("events")).isTrue();
         assertThat(node.get("events").isArray()).isTrue();
@@ -176,7 +176,7 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Batch event success response conforms to contract schema")
-    void processEventBatch_response_successShape() throws Exception { // GH-90000
+    void processEventBatch_response_successShape() throws Exception { 
         String json = """
                 {
                   "tenantId":"test-tenant",
@@ -188,7 +188,7 @@ class AepApiContractTest {
                   "timestamp":"2026-04-12T12:00:00Z"
                 }
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("tenantId")).isTrue();
         assertThat(node.has("total")).isTrue();
@@ -205,13 +205,13 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Pattern registration request requires all mandatory fields")
-    void registerPattern_request_requiresMandatoryFields() { // GH-90000
-        ObjectNode full = MAPPER.createObjectNode(); // GH-90000
-        full.put("name", "Test Pattern"); // GH-90000
-        full.put("description", "Test"); // GH-90000
-        full.put("type", "ANOMALY"); // GH-90000
-        full.put("specification", "count > 5 within 60s"); // GH-90000
-        full.set("config", MAPPER.createObjectNode()); // GH-90000
+    void registerPattern_request_requiresMandatoryFields() { 
+        ObjectNode full = MAPPER.createObjectNode(); 
+        full.put("name", "Test Pattern"); 
+        full.put("description", "Test"); 
+        full.put("type", "ANOMALY"); 
+        full.put("specification", "count > 5 within 60s"); 
+        full.set("config", MAPPER.createObjectNode()); 
 
         assertThat(full.has("name")).isTrue();
         assertThat(full.has("description")).isTrue();
@@ -222,14 +222,14 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Pattern response conforms to contract schema")
-    void registerPattern_response_conformsToSchema() throws Exception { // GH-90000
+    void registerPattern_response_conformsToSchema() throws Exception { 
         String json = """
                 {
                   "pattern":{"patternId":"pat-1","name":"Test","status":"DRAFT"},
                   "timestamp":"2026-04-12T12:00:00Z"
                 }
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("pattern")).isTrue();
         assertThat(node.has("timestamp")).isTrue();
@@ -237,11 +237,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("Pattern list response conforms to contract schema")
-    void listPatterns_response_conformsToSchema() throws Exception { // GH-90000
+    void listPatterns_response_conformsToSchema() throws Exception { 
         String json = """
                 {"patterns":[],"count":0,"timestamp":"2026-04-12T12:00:00Z"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("patterns")).isTrue();
         assertThat(node.get("patterns").isArray()).isTrue();
@@ -254,11 +254,11 @@ class AepApiContractTest {
 
     @Test
     @DisplayName("All error responses have required 'error' and 'message' fields")
-    void errorResponses_haveRequiredFields() throws Exception { // GH-90000
+    void errorResponses_haveRequiredFields() throws Exception { 
         String json = """
                 {"error":"VALIDATION_ERROR","message":"Request body is missing required field: type"}
                 """;
-        JsonNode node = MAPPER.readTree(json); // GH-90000
+        JsonNode node = MAPPER.readTree(json); 
 
         assertThat(node.has("error")).isTrue();
         assertThat(node.get("error").isTextual()).isTrue();
@@ -267,10 +267,10 @@ class AepApiContractTest {
 
     // ── API Version ───────────────────────────────────────────────────────────
 
-    @ParameterizedTest(name = "version = {0}") // GH-90000
-    @ValueSource(strings = {"1.0.0", "1.0", "1"}) // GH-90000
+    @ParameterizedTest(name = "version = {0}") 
+    @ValueSource(strings = {"1.0.0", "1.0", "1"}) 
     @DisplayName("API version strings conform to semantic versioning pattern")
-    void apiVersion_conformsToSemver(String version) { // GH-90000
+    void apiVersion_conformsToSemver(String version) { 
         assertThat(version).matches("\\d+(\\.\\d+(\\.\\d+)?)?");
     }
 }

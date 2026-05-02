@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. // GH-90000
+ * Copyright (c) 2026 Ghatana Inc. 
  * All rights reserved.
  */
 package com.ghatana.governance;
@@ -31,22 +31,22 @@ class PolicyEngineImplTest extends EventloopTestBase {
     private PolicyEngineImpl engine;
 
     @Override
-    protected Duration eventloopTimeout() { // GH-90000
-        return Duration.ofSeconds(15); // GH-90000
+    protected Duration eventloopTimeout() { 
+        return Duration.ofSeconds(15); 
     }
 
     @Override
-    protected boolean breakOnFatalError() { // GH-90000
+    protected boolean breakOnFatalError() { 
         return false;
     }
 
     @BeforeEach
-    void setUp() { // GH-90000
-        registry = new PolicyRegistry(); // GH-90000
-        auditRecords = new ArrayList<>(); // GH-90000
-        engine = new PolicyEngineImpl( // GH-90000
+    void setUp() { 
+        registry = new PolicyRegistry(); 
+        auditRecords = new ArrayList<>(); 
+        engine = new PolicyEngineImpl( 
                 registry,
-                Executors.newVirtualThreadPerTaskExecutor(), // GH-90000
+                Executors.newVirtualThreadPerTaskExecutor(), 
                 auditRecords::add);
     }
 
@@ -60,89 +60,89 @@ class PolicyEngineImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should register and retrieve policies")
-        void shouldRegisterAndRetrieve() { // GH-90000
-            CompiledPolicy policy = buildPolicy("p1", "Test Policy", // GH-90000
+        void shouldRegisterAndRetrieve() { 
+            CompiledPolicy policy = buildPolicy("p1", "Test Policy", 
                     1, "ALLOW", List.of("WRITE_REVERSIBLE"), List.of(), List.of());
 
-            registry.register(policy); // GH-90000
+            registry.register(policy); 
 
-            assertThat(registry.size()).isEqualTo(1); // GH-90000
-            assertThat(registry.getAll()).hasSize(1); // GH-90000
+            assertThat(registry.size()).isEqualTo(1); 
+            assertThat(registry.getAll()).hasSize(1); 
             assertThat(registry.getAll().getFirst().id()).isEqualTo("p1");
         }
 
         @Test
         @DisplayName("should match by action class")
-        void shouldMatchByActionClass() { // GH-90000
-            registry.register(buildPolicy("p1", "Write Policy", // GH-90000
+        void shouldMatchByActionClass() { 
+            registry.register(buildPolicy("p1", "Write Policy", 
                     1, "ALLOW", List.of("WRITE_REVERSIBLE"), List.of(), List.of()));
-            registry.register(buildPolicy("p2", "Read Policy", // GH-90000
+            registry.register(buildPolicy("p2", "Read Policy", 
                     2, "ALLOW", List.of("READ"), List.of(), List.of()));
 
-            PolicyEvaluationContext ctx = buildContext("WRITE_REVERSIBLE", "high", "tenant-1"); // GH-90000
-            List<CompiledPolicy> matching = registry.findMatching(ctx); // GH-90000
+            PolicyEvaluationContext ctx = buildContext("WRITE_REVERSIBLE", "high", "tenant-1"); 
+            List<CompiledPolicy> matching = registry.findMatching(ctx); 
 
-            assertThat(matching).hasSize(1); // GH-90000
+            assertThat(matching).hasSize(1); 
             assertThat(matching.getFirst().id()).isEqualTo("p1");
         }
 
         @Test
         @DisplayName("should match by criticality")
-        void shouldMatchByCriticality() { // GH-90000
-            registry.register(buildPolicy("p1", "High Crit", // GH-90000
+        void shouldMatchByCriticality() { 
+            registry.register(buildPolicy("p1", "High Crit", 
                     1, "DENY", List.of(), List.of("critical"), List.of()));
 
-            PolicyEvaluationContext highCtx = buildContext("WRITE_IRREVERSIBLE", "critical", "tenant-1"); // GH-90000
-            PolicyEvaluationContext lowCtx = buildContext("WRITE_IRREVERSIBLE", "low", "tenant-1"); // GH-90000
+            PolicyEvaluationContext highCtx = buildContext("WRITE_IRREVERSIBLE", "critical", "tenant-1"); 
+            PolicyEvaluationContext lowCtx = buildContext("WRITE_IRREVERSIBLE", "low", "tenant-1"); 
 
-            assertThat(registry.findMatching(highCtx)).hasSize(1); // GH-90000
-            assertThat(registry.findMatching(lowCtx)).isEmpty(); // GH-90000
+            assertThat(registry.findMatching(highCtx)).hasSize(1); 
+            assertThat(registry.findMatching(lowCtx)).isEmpty(); 
         }
 
         @Test
         @DisplayName("should return policies ordered by priority")
-        void shouldReturnOrderedByPriority() { // GH-90000
-            registry.register(buildPolicy("p-low", "Low Priority", // GH-90000
-                    10, "ALLOW", List.of(), List.of(), List.of())); // GH-90000
-            registry.register(buildPolicy("p-high", "High Priority", // GH-90000
-                    1, "DENY", List.of(), List.of(), List.of())); // GH-90000
+        void shouldReturnOrderedByPriority() { 
+            registry.register(buildPolicy("p-low", "Low Priority", 
+                    10, "ALLOW", List.of(), List.of(), List.of())); 
+            registry.register(buildPolicy("p-high", "High Priority", 
+                    1, "DENY", List.of(), List.of(), List.of())); 
 
-            List<CompiledPolicy> matching = registry.findMatching( // GH-90000
-                    buildContext("WRITE_REVERSIBLE", "medium", "tenant-1")); // GH-90000
+            List<CompiledPolicy> matching = registry.findMatching( 
+                    buildContext("WRITE_REVERSIBLE", "medium", "tenant-1")); 
 
-            assertThat(matching).hasSize(2); // GH-90000
+            assertThat(matching).hasSize(2); 
             assertThat(matching.get(0).id()).isEqualTo("p-high");
             assertThat(matching.get(1).id()).isEqualTo("p-low");
         }
 
         @Test
         @DisplayName("replaceAll should swap all policies atomically")
-        void replaceAllShouldSwapPolicies() { // GH-90000
-            registry.register(buildPolicy("old", "Old", // GH-90000
-                    1, "ALLOW", List.of(), List.of(), List.of())); // GH-90000
+        void replaceAllShouldSwapPolicies() { 
+            registry.register(buildPolicy("old", "Old", 
+                    1, "ALLOW", List.of(), List.of(), List.of())); 
 
-            registry.replaceAll(List.of( // GH-90000
-                    buildPolicy("new1", "New1", 1, "DENY", List.of(), List.of(), List.of()), // GH-90000
-                    buildPolicy("new2", "New2", 2, "ALLOW", List.of(), List.of(), List.of()))); // GH-90000
+            registry.replaceAll(List.of( 
+                    buildPolicy("new1", "New1", 1, "DENY", List.of(), List.of(), List.of()), 
+                    buildPolicy("new2", "New2", 2, "ALLOW", List.of(), List.of(), List.of()))); 
 
-            assertThat(registry.size()).isEqualTo(2); // GH-90000
-            assertThat(registry.getAll().stream().map(CompiledPolicy::id)) // GH-90000
-                    .containsExactlyInAnyOrder("new1", "new2"); // GH-90000
+            assertThat(registry.size()).isEqualTo(2); 
+            assertThat(registry.getAll().stream().map(CompiledPolicy::id)) 
+                    .containsExactlyInAnyOrder("new1", "new2"); 
         }
 
         @Test
         @DisplayName("disabled policies should not match")
-        void disabledPoliciesShouldNotMatch() { // GH-90000
-            CompiledPolicy disabled = new CompiledPolicy( // GH-90000
+        void disabledPoliciesShouldNotMatch() { 
+            CompiledPolicy disabled = new CompiledPolicy( 
                     "disabled", "Disabled Policy", 1,
-                    List.of(), List.of(), List.of(), // GH-90000
-                    "DENY", List.of(), List.of(), // GH-90000
-                    Map.of(), false); // enabled=false // GH-90000
+                    List.of(), List.of(), List.of(), 
+                    "DENY", List.of(), List.of(), 
+                    Map.of(), false); // enabled=false 
 
-            registry.register(disabled); // GH-90000
+            registry.register(disabled); 
 
-            assertThat(registry.findMatching( // GH-90000
-                    buildContext("WRITE_IRREVERSIBLE", "high", "tenant-1"))).isEmpty(); // GH-90000
+            assertThat(registry.findMatching( 
+                    buildContext("WRITE_IRREVERSIBLE", "high", "tenant-1"))).isEmpty(); 
         }
     }
 
@@ -156,10 +156,10 @@ class PolicyEngineImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("WRITE_IRREVERSIBLE with no policies should DENY (hard default)")
-        void writeIrreversibleWithNoPoliciesShouldDeny() { // GH-90000
-            PolicyEvaluationContext ctx = buildContext("WRITE_IRREVERSIBLE", "high", "tenant-1"); // GH-90000
+        void writeIrreversibleWithNoPoliciesShouldDeny() { 
+            PolicyEvaluationContext ctx = buildContext("WRITE_IRREVERSIBLE", "high", "tenant-1"); 
 
-            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); // GH-90000
+            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); 
 
             assertThat(record.decision()).isEqualTo("DENY");
             assertThat(record.reasons()).anyMatch(r -> r.toLowerCase().contains("irreversible"));
@@ -167,60 +167,60 @@ class PolicyEngineImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("POLICY_CHANGE with no policies should require approval (hard default)")
-        void policyChangeWithNoPoliciesShouldRequireApproval() { // GH-90000
-            PolicyEvaluationContext ctx = buildContext("POLICY_CHANGE", "high", "tenant-1"); // GH-90000
+        void policyChangeWithNoPoliciesShouldRequireApproval() { 
+            PolicyEvaluationContext ctx = buildContext("POLICY_CHANGE", "high", "tenant-1"); 
 
-            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); // GH-90000
+            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); 
 
             assertThat(record.decision()).isEqualTo("ALLOW_WITH_APPROVAL");
         }
 
         @Test
         @DisplayName("READ with no policies should ALLOW (safe default)")
-        void readWithNoPoliciesShouldAllow() { // GH-90000
-            PolicyEvaluationContext ctx = buildContext("READ", "low", "tenant-1"); // GH-90000
+        void readWithNoPoliciesShouldAllow() { 
+            PolicyEvaluationContext ctx = buildContext("READ", "low", "tenant-1"); 
 
-            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); // GH-90000
+            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); 
 
             assertThat(record.decision()).isEqualTo("ALLOW");
         }
 
         @Test
         @DisplayName("most restrictive policy wins when multiple match")
-        void mostRestrictiveWins() { // GH-90000
-            registry.register(buildPolicy("p-allow", "Allow Policy", // GH-90000
+        void mostRestrictiveWins() { 
+            registry.register(buildPolicy("p-allow", "Allow Policy", 
                     1, "ALLOW", List.of("WRITE_REVERSIBLE"), List.of(), List.of()));
-            registry.register(buildPolicy("p-deny", "Deny Policy", // GH-90000
+            registry.register(buildPolicy("p-deny", "Deny Policy", 
                     2, "DENY", List.of("WRITE_REVERSIBLE"), List.of(), List.of()));
 
-            PolicyEvaluationContext ctx = buildContext("WRITE_REVERSIBLE", "high", "tenant-1"); // GH-90000
-            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); // GH-90000
+            PolicyEvaluationContext ctx = buildContext("WRITE_REVERSIBLE", "high", "tenant-1"); 
+            PolicyDecisionRecord record = runPromise(() -> engine.evaluateContext(ctx)); 
 
             assertThat(record.decision()).isEqualTo("DENY");
         }
 
         @Test
         @DisplayName("should record audit decision for every evaluation")
-        void shouldRecordAuditDecision() { // GH-90000
-            PolicyEvaluationContext ctx = buildContext("READ", "low", "tenant-1"); // GH-90000
+        void shouldRecordAuditDecision() { 
+            PolicyEvaluationContext ctx = buildContext("READ", "low", "tenant-1"); 
 
-            runPromise(() -> engine.evaluateContext(ctx)); // GH-90000
+            runPromise(() -> engine.evaluateContext(ctx)); 
 
-            assertThat(auditRecords).hasSize(1); // GH-90000
+            assertThat(auditRecords).hasSize(1); 
             assertThat(auditRecords.getFirst().context().tenantId()).isEqualTo("tenant-1");
         }
 
         @Test
         @DisplayName("tenant-scoped policy should only match its tenant")
-        void tenantScopedPolicyShouldOnlyMatchItsTenant() { // GH-90000
-            registry.register(buildPolicy("p-acme", "ACME Only", // GH-90000
+        void tenantScopedPolicyShouldOnlyMatchItsTenant() { 
+            registry.register(buildPolicy("p-acme", "ACME Only", 
                     1, "DENY", List.of(), List.of(), List.of("acme-tenant")));
 
-            PolicyEvaluationContext acmeCtx = buildContext("WRITE_REVERSIBLE", "high", "acme-tenant"); // GH-90000
-            PolicyEvaluationContext otherCtx = buildContext("WRITE_REVERSIBLE", "low", "other-tenant"); // GH-90000
+            PolicyEvaluationContext acmeCtx = buildContext("WRITE_REVERSIBLE", "high", "acme-tenant"); 
+            PolicyEvaluationContext otherCtx = buildContext("WRITE_REVERSIBLE", "low", "other-tenant"); 
 
-            PolicyDecisionRecord acmeRecord = runPromise(() -> engine.evaluateContext(acmeCtx)); // GH-90000
-            PolicyDecisionRecord otherRecord = runPromise(() -> engine.evaluateContext(otherCtx)); // GH-90000
+            PolicyDecisionRecord acmeRecord = runPromise(() -> engine.evaluateContext(acmeCtx)); 
+            PolicyDecisionRecord otherRecord = runPromise(() -> engine.evaluateContext(otherCtx)); 
 
             assertThat(acmeRecord.decision()).isEqualTo("DENY");
             assertThat(otherRecord.decision()).isEqualTo("ALLOW"); // no policies match, low criticality
@@ -237,20 +237,20 @@ class PolicyEngineImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return true for allowed actions")
-        void shouldReturnTrueForAllowed() { // GH-90000
-            Boolean result = runPromise(() -> engine.evaluate("any-policy", // GH-90000
-                    Map.of("actionClass", "READ", "criticality", "low"))); // GH-90000
+        void shouldReturnTrueForAllowed() { 
+            Boolean result = runPromise(() -> engine.evaluate("any-policy", 
+                    Map.of("actionClass", "READ", "criticality", "low"))); 
 
-            assertThat(result).isTrue(); // GH-90000
+            assertThat(result).isTrue(); 
         }
 
         @Test
         @DisplayName("should return false for denied actions (hard default)")
-        void shouldReturnFalseForDenied() { // GH-90000
-            Boolean result = runPromise(() -> engine.evaluate("any-policy", // GH-90000
-                    Map.of("actionClass", "WRITE_IRREVERSIBLE", "criticality", "critical"))); // GH-90000
+        void shouldReturnFalseForDenied() { 
+            Boolean result = runPromise(() -> engine.evaluate("any-policy", 
+                    Map.of("actionClass", "WRITE_IRREVERSIBLE", "criticality", "critical"))); 
 
-            assertThat(result).isFalse(); // GH-90000
+            assertThat(result).isFalse(); 
         }
     }
 
@@ -264,19 +264,19 @@ class PolicyEngineImplTest extends EventloopTestBase {
 
         @Test
         @DisplayName("should return true for registered policy")
-        void shouldReturnTrueForRegistered() { // GH-90000
-            registry.register(buildPolicy("my-policy", "My Policy", // GH-90000
-                    1, "ALLOW", List.of(), List.of(), List.of())); // GH-90000
+        void shouldReturnTrueForRegistered() { 
+            registry.register(buildPolicy("my-policy", "My Policy", 
+                    1, "ALLOW", List.of(), List.of(), List.of())); 
 
             Boolean exists = runPromise(() -> engine.policyExists("my-policy"));
-            assertThat(exists).isTrue(); // GH-90000
+            assertThat(exists).isTrue(); 
         }
 
         @Test
         @DisplayName("should return false for unregistered policy")
-        void shouldReturnFalseForUnregistered() { // GH-90000
+        void shouldReturnFalseForUnregistered() { 
             Boolean exists = runPromise(() -> engine.policyExists("nonexistent"));
-            assertThat(exists).isFalse(); // GH-90000
+            assertThat(exists).isFalse(); 
         }
     }
 
@@ -284,23 +284,23 @@ class PolicyEngineImplTest extends EventloopTestBase {
     // Helpers
     // =========================================================================
 
-    private CompiledPolicy buildPolicy( // GH-90000
+    private CompiledPolicy buildPolicy( 
             String id, String name, int priority, String decision,
             List<String> actionClasses, List<String> criticalities,
             List<String> tenantScopes) {
-        return new CompiledPolicy( // GH-90000
+        return new CompiledPolicy( 
                 id, name, priority,
                 actionClasses, criticalities, tenantScopes,
-                decision, List.of(), List.of(), // GH-90000
-                Map.of(), true); // GH-90000
+                decision, List.of(), List.of(), 
+                Map.of(), true); 
     }
 
-    private PolicyEvaluationContext buildContext( // GH-90000
+    private PolicyEvaluationContext buildContext( 
             String actionClass, String criticality, String tenantId) {
-        return new PolicyEvaluationContext( // GH-90000
+        return new PolicyEvaluationContext( 
                 "agent-1", tenantId, actionClass,
                 "target-type", "target-1", "tool-1",
                 criticality, "REVERSIBLE",
-                Map.of(), Instant.now()); // GH-90000
+                Map.of(), Instant.now()); 
     }
 }

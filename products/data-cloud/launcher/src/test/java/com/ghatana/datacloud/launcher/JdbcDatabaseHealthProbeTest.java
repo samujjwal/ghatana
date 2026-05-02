@@ -25,19 +25,19 @@ import static org.mockito.Mockito.when;
 class JdbcDatabaseHealthProbeTest {
 
     @Test
-    void reportsUpWhenConnectionIsValid() throws Exception { // GH-90000
-        DataSource dataSource = mock(DataSource.class); // GH-90000
-        Connection connection = mock(Connection.class); // GH-90000
-        DatabaseMetaData metadata = mock(DatabaseMetaData.class); // GH-90000
+    void reportsUpWhenConnectionIsValid() throws Exception { 
+        DataSource dataSource = mock(DataSource.class); 
+        Connection connection = mock(Connection.class); 
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class); 
 
-        when(dataSource.getConnection()).thenReturn(connection); // GH-90000
-        when(connection.isValid(5)).thenReturn(true); // GH-90000
-        when(connection.getMetaData()).thenReturn(metadata); // GH-90000
+        when(dataSource.getConnection()).thenReturn(connection); 
+        when(connection.isValid(5)).thenReturn(true); 
+        when(connection.getMetaData()).thenReturn(metadata); 
         when(metadata.getDatabaseProductName()).thenReturn("PostgreSQL");
         when(metadata.getDatabaseProductVersion()).thenReturn("16.2");
         when(metadata.getDriverName()).thenReturn("PostgreSQL JDBC Driver");
 
-        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 5).get(); // GH-90000
+        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 5).get(); 
 
         assertThat(snapshot.get("status")).isEqualTo("UP");
         assertThat(snapshot.get("databaseProduct")).isEqualTo("PostgreSQL");
@@ -47,14 +47,14 @@ class JdbcDatabaseHealthProbeTest {
     }
 
     @Test
-    void reportsDownWhenValidationFails() throws Exception { // GH-90000
-        DataSource dataSource = mock(DataSource.class); // GH-90000
-        Connection connection = mock(Connection.class); // GH-90000
+    void reportsDownWhenValidationFails() throws Exception { 
+        DataSource dataSource = mock(DataSource.class); 
+        Connection connection = mock(Connection.class); 
 
-        when(dataSource.getConnection()).thenReturn(connection); // GH-90000
-        when(connection.isValid(3)).thenReturn(false); // GH-90000
+        when(dataSource.getConnection()).thenReturn(connection); 
+        when(connection.isValid(3)).thenReturn(false); 
 
-        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 3).get(); // GH-90000
+        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 3).get(); 
 
         assertThat(snapshot.get("status")).isEqualTo("DOWN");
         assertThat(snapshot.get("message")).isEqualTo("Connection validation failed");
@@ -62,11 +62,11 @@ class JdbcDatabaseHealthProbeTest {
     }
 
     @Test
-    void reportsDownWhenConnectionThrows() throws Exception { // GH-90000
-        DataSource dataSource = mock(DataSource.class); // GH-90000
+    void reportsDownWhenConnectionThrows() throws Exception { 
+        DataSource dataSource = mock(DataSource.class); 
         when(dataSource.getConnection()).thenThrow(new SQLException("database unavailable"));
 
-        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 4).get(); // GH-90000
+        Map<String, Object> snapshot = new JdbcDatabaseHealthProbe(dataSource, 4).get(); 
 
         assertThat(snapshot.get("status")).isEqualTo("DOWN");
         assertThat((String) snapshot.get("message")).contains("SQLException").contains("database unavailable");

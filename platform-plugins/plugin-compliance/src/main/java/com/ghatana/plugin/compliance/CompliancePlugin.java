@@ -9,16 +9,11 @@ import java.util.Map;
 /**
  * Compliance Plugin - Generic compliance rule engine.
  *
- * <p>Supports multiple regulatory frameworks:</p>
- * <ul>
- *   <li>SOX (Finance)</li>
- *   <li>PCI-DSS (Finance)</li>
- *   <li>HIPAA (PHR)</li>
- *   <li>GDPR (general)</li>
- * </ul>
+ * <p>Products register domain-specific rule packs via {@link #registerRuleSet}. The engine
+ * evaluates entities against registered rules without built-in regulatory assumptions.</p>
  *
  * @doc.type interface
- * @doc.purpose Compliance plugin interface
+ * @doc.purpose Generic compliance rule engine — rule packs are product-supplied
  * @doc.layer platform
  * @doc.pattern Plugin
  * @since 1.0.0

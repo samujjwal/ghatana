@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer test
  * @doc.pattern Test
  */
-@ExtendWith(MockitoExtension.class) // GH-90000
+@ExtendWith(MockitoExtension.class) 
 @DisplayName("AuthenticationInterceptor Tests")
 class AuthenticationInterceptorTest {
 
@@ -43,103 +43,103 @@ class AuthenticationInterceptorTest {
     private AuthenticationProvider authenticationProvider;
 
     @AfterEach
-    void cleanup() { // GH-90000
-        TenantContext.clear(); // GH-90000
+    void cleanup() { 
+        TenantContext.clear(); 
     }
 
     @Test
     @DisplayName("GIVEN public method WHEN no auth header THEN request bypasses authentication")
-    void shouldBypassAuthenticationForPublicMethod() { // GH-90000
-        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
+    void shouldBypassAuthenticationForPublicMethod() { 
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); 
         TestServerCall call = new TestServerCall("grpc.health.v1.Health/Check");
-        Metadata headers = new Metadata(); // GH-90000
-        AtomicReference<Boolean> started = new AtomicReference<>(false); // GH-90000
+        Metadata headers = new Metadata(); 
+        AtomicReference<Boolean> started = new AtomicReference<>(false); 
 
-        ServerCallHandler<StringValue, StringValue> handler = (c, h) -> { // GH-90000
-            started.set(true); // GH-90000
-            return new ServerCall.Listener<>() {}; // GH-90000
+        ServerCallHandler<StringValue, StringValue> handler = (c, h) -> { 
+            started.set(true); 
+            return new ServerCall.Listener<>() {}; 
         };
 
-        interceptor.interceptCall(call, headers, handler); // GH-90000
+        interceptor.interceptCall(call, headers, handler); 
 
-        assertThat(started.get()).isTrue(); // GH-90000
-        verify(authenticationProvider, never()).authenticate(any(Credentials.class)); // GH-90000
-        assertThat(call.closedStatus).isNull(); // GH-90000
+        assertThat(started.get()).isTrue(); 
+        verify(authenticationProvider, never()).authenticate(any(Credentials.class)); 
+        assertThat(call.closedStatus).isNull(); 
     }
 
     @Test
     @DisplayName("GIVEN missing auth header WHEN protected method THEN closes as UNAUTHENTICATED")
-    void shouldRejectMissingAuthorizationHeader() { // GH-90000
-        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
+    void shouldRejectMissingAuthorizationHeader() { 
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); 
         TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
-        Metadata headers = new Metadata(); // GH-90000
+        Metadata headers = new Metadata(); 
 
-        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); // GH-90000
+        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); 
 
-        assertThat(call.closedStatus).isNotNull(); // GH-90000
-        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); // GH-90000
+        assertThat(call.closedStatus).isNotNull(); 
+        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); 
     }
 
     @Test
     @DisplayName("GIVEN invalid token WHEN provider returns empty THEN closes as UNAUTHENTICATED")
-    void shouldRejectInvalidToken() { // GH-90000
-        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
+    void shouldRejectInvalidToken() { 
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); 
         TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
-        Metadata headers = new Metadata(); // GH-90000
-        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer invalid-token"); // GH-90000
+        Metadata headers = new Metadata(); 
+        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer invalid-token"); 
 
-        when(authenticationProvider.authenticate(any(Credentials.class))) // GH-90000
-            .thenReturn(Promise.of(Optional.empty())); // GH-90000
+        when(authenticationProvider.authenticate(any(Credentials.class))) 
+            .thenReturn(Promise.of(Optional.empty())); 
 
-        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); // GH-90000
+        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); 
 
-        assertThat(call.closedStatus).isNotNull(); // GH-90000
-        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); // GH-90000
+        assertThat(call.closedStatus).isNotNull(); 
+        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); 
     }
 
     @Test
     @DisplayName("GIVEN expired token WHEN provider throws THEN closes as UNAUTHENTICATED")
-    void shouldRejectExpiredToken() { // GH-90000
-        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
+    void shouldRejectExpiredToken() { 
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); 
         TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
-        Metadata headers = new Metadata(); // GH-90000
-        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer expired-token"); // GH-90000
+        Metadata headers = new Metadata(); 
+        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer expired-token"); 
 
-        when(authenticationProvider.authenticate(any(Credentials.class))) // GH-90000
+        when(authenticationProvider.authenticate(any(Credentials.class))) 
             .thenReturn(Promise.ofException(new IllegalStateException("token expired")));
 
-        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); // GH-90000
+        interceptor.interceptCall(call, headers, (c, h) -> new ServerCall.Listener<>() {}); 
 
-        assertThat(call.closedStatus).isNotNull(); // GH-90000
-        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); // GH-90000
+        assertThat(call.closedStatus).isNotNull(); 
+        assertThat(call.closedStatus.getCode()).isEqualTo(Status.UNAUTHENTICATED.getCode()); 
     }
 
     @Test
     @DisplayName("GIVEN valid token and tenant header WHEN protected method THEN auth context and tenant context are set")
-    void shouldPopulateAuthAndTenantContextForValidToken() { // GH-90000
-        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); // GH-90000
+    void shouldPopulateAuthAndTenantContextForValidToken() { 
+        AuthenticationInterceptor interceptor = new AuthenticationInterceptor(authenticationProvider); 
         TestServerCall call = new TestServerCall("stt.STTService/Transcribe");
-        Metadata headers = new Metadata(); // GH-90000
-        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer valid-token"); // GH-90000
-        headers.put(AuthenticationInterceptor.TENANT_ID_KEY, "tenant-123"); // GH-90000
+        Metadata headers = new Metadata(); 
+        headers.put(AuthenticationInterceptor.AUTHORIZATION_KEY, "Bearer valid-token"); 
+        headers.put(AuthenticationInterceptor.TENANT_ID_KEY, "tenant-123"); 
 
-        User user = new User("user-1", "alice", Set.of("ADMIN", "USER")); // GH-90000
-        when(authenticationProvider.authenticate(any(Credentials.class))) // GH-90000
-            .thenReturn(Promise.of(Optional.of(user))); // GH-90000
+        User user = new User("user-1", "alice", Set.of("ADMIN", "USER")); 
+        when(authenticationProvider.authenticate(any(Credentials.class))) 
+            .thenReturn(Promise.of(Optional.of(user))); 
 
-        AtomicReference<AuthenticationInterceptor.AuthContext> observed = new AtomicReference<>(); // GH-90000
-        ServerCallHandler<StringValue, StringValue> handler = (c, h) -> { // GH-90000
-            observed.set(AuthenticationInterceptor.getCurrentAuth().orElse(null)); // GH-90000
-            return new ServerCall.Listener<>() {}; // GH-90000
+        AtomicReference<AuthenticationInterceptor.AuthContext> observed = new AtomicReference<>(); 
+        ServerCallHandler<StringValue, StringValue> handler = (c, h) -> { 
+            observed.set(AuthenticationInterceptor.getCurrentAuth().orElse(null)); 
+            return new ServerCall.Listener<>() {}; 
         };
 
-        interceptor.interceptCall(call, headers, handler); // GH-90000
+        interceptor.interceptCall(call, headers, handler); 
 
-        assertThat(call.closedStatus).isNull(); // GH-90000
-        assertThat(observed.get()).isNotNull(); // GH-90000
+        assertThat(call.closedStatus).isNull(); 
+        assertThat(observed.get()).isNotNull(); 
         assertThat(observed.get().userId()).isEqualTo("user-1");
         assertThat(observed.get().tenantId()).isEqualTo("tenant-123");
-        assertThat(observed.get().isAdmin()).isTrue(); // GH-90000
+        assertThat(observed.get().isAdmin()).isTrue(); 
         assertThat(TenantContext.getCurrentTenantId()).isEqualTo("tenant-123");
     }
 
@@ -147,39 +147,39 @@ class AuthenticationInterceptorTest {
         private final MethodDescriptor<StringValue, StringValue> method;
         private Status closedStatus;
 
-        private TestServerCall(String fullMethodName) { // GH-90000
-            this.method = MethodDescriptor.<StringValue, StringValue>newBuilder() // GH-90000
-                .setType(MethodDescriptor.MethodType.UNARY) // GH-90000
-                .setFullMethodName(fullMethodName) // GH-90000
-                .setRequestMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance())) // GH-90000
-                .setResponseMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance())) // GH-90000
-                .build(); // GH-90000
+        private TestServerCall(String fullMethodName) { 
+            this.method = MethodDescriptor.<StringValue, StringValue>newBuilder() 
+                .setType(MethodDescriptor.MethodType.UNARY) 
+                .setFullMethodName(fullMethodName) 
+                .setRequestMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance())) 
+                .setResponseMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance())) 
+                .build(); 
         }
 
         @Override
-        public void request(int numMessages) { // GH-90000
+        public void request(int numMessages) { 
         }
 
         @Override
-        public void sendHeaders(Metadata headers) { // GH-90000
+        public void sendHeaders(Metadata headers) { 
         }
 
         @Override
-        public void sendMessage(StringValue message) { // GH-90000
+        public void sendMessage(StringValue message) { 
         }
 
         @Override
-        public void close(Status status, Metadata trailers) { // GH-90000
+        public void close(Status status, Metadata trailers) { 
             this.closedStatus = status;
         }
 
         @Override
-        public boolean isCancelled() { // GH-90000
+        public boolean isCancelled() { 
             return false;
         }
 
         @Override
-        public MethodDescriptor<StringValue, StringValue> getMethodDescriptor() { // GH-90000
+        public MethodDescriptor<StringValue, StringValue> getMethodDescriptor() { 
             return method;
         }
     }

@@ -21,8 +21,8 @@
 |-----------|------|------|-----------------|
 | `plugin-audit-trail` | `platform-plugins/plugin-audit-trail` | GOVERNANCE | Tamper-evident event ledger |
 | `plugin-compliance` | `platform-plugins/plugin-compliance` | GOVERNANCE | Rule-based regulatory evaluation |
-| `plugin-consent` | `platform-plugins/plugin-consent` | SECURITY | Patient consent lifecycle |
-| `plugin-billing-ledger` | `platform-plugins/plugin-billing-ledger` | FINANCIAL | Double-entry ledger integrity |
+| `plugin-consent` | `platform-plugins/plugin-consent` | SECURITY | Consent, authorization grant, delegation, revocation, and purpose-bound access lifecycle |
+| `plugin-ledger` | `platform-plugins/plugin-ledger` | FINANCIAL | Double-entry ledger integrity |
 | `plugin-fraud-detection` | `platform-plugins/plugin-fraud-detection` | SECURITY | ML-backed fraud signal |
 | `plugin-risk-management` | `platform-plugins/plugin-risk-management` | ANALYTICS | Risk scoring and gating |
 | `plugin-human-approval` | `platform-plugins/plugin-human-approval` | WORKFLOW | Human-in-the-loop approval gates |
@@ -51,7 +51,7 @@
 | `plugin-audit-trail` | ✅ | ✅ | ✅ | ⚠️ | ⚠️ |
 | `plugin-compliance` | ✅ | ✅ | — | — | ⚠️ |
 | `plugin-consent` | ✅ | — | ⚠️ | — | — |
-| `plugin-billing-ledger` | ⚠️ | ✅ | — | — | — |
+| `plugin-ledger` | ⚠️ | ✅ | — | — | — |
 | `plugin-fraud-detection` | — | ✅ | ⚠️ | — | — |
 | `plugin-risk-management` | — | ✅ | — | — | — |
 | `plugin-human-approval` | ✅ | ✅ | ⚠️ | ⚠️ | — |
@@ -105,7 +105,7 @@
 | `data-cloud-kernel-bridge` | data-cloud | phr, finance, aep, yappc | DataCloud capability into kernel |
 | `aep-kernel-bridge` | aep | aep, yappc | AEP agent runtime into kernel |
 | `yappc-kernel-bridge` | yappc | yappc | YAPPC code-gen into kernel |
-| `phr-fhir-interop` | phr | phr | FHIR R4 server lifecycle + providers |
+| `phr-fhir-interop` | phr | phr | PHR-owned FHIR R4 server lifecycle + providers (product extension, not a kernel bridge) |
 
 ---
 
@@ -116,7 +116,7 @@
 | `plugin-audit-trail` | ✅ | ✅ | ✅ | 80% |
 | `plugin-compliance` | ✅ | ✅ (`ComplianceTenantIsolationTest`) | ✅ | 80% |
 | `plugin-consent` | ✅ | ✅ | ✅ | 80% |
-| `plugin-billing-ledger` | ✅ | ✅ | ✅ | 80% |
+| `plugin-ledger` | ✅ | ✅ | ✅ | 80% |
 | `plugin-fraud-detection` | ✅ | ✅ | ✅ | 80% |
 | `plugin-risk-management` | ✅ | ✅ | ✅ | 80% |
 | `plugin-human-approval` | ✅ | ✅ | ✅ | 80% |

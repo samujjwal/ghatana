@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 
 public class PerformanceTest {
     @Test
-    public void testBasic() { // GH-90000
+    public void testBasic() { 
         // Simple test to verify the test setup
-        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> { // GH-90000
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> { 
             // Verifies the test harness is wired correctly.
         });
     }

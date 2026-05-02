@@ -31,39 +31,39 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
     // ── In-memory S3 bucket simulation ────────────────────────────────────────
 
     static class InMemoryS3Bucket {
-        private final Map<String, byte[]> objects = new HashMap<>(); // GH-90000
+        private final Map<String, byte[]> objects = new HashMap<>(); 
         private final String bucketName;
 
-        InMemoryS3Bucket(String bucketName) { // GH-90000
+        InMemoryS3Bucket(String bucketName) { 
             this.bucketName = bucketName;
         }
 
-        void putObject(String key, byte[] data) { // GH-90000
+        void putObject(String key, byte[] data) { 
             if (key == null || key.isBlank()) throw new IllegalArgumentException("Key must not be blank");
-            objects.put(key, data); // GH-90000
+            objects.put(key, data); 
         }
 
-        Optional<byte[]> getObject(String key) { // GH-90000
-            return Optional.ofNullable(objects.get(key)); // GH-90000
+        Optional<byte[]> getObject(String key) { 
+            return Optional.ofNullable(objects.get(key)); 
         }
 
-        List<String> listObjects(String prefix) { // GH-90000
-            return objects.keySet().stream() // GH-90000
-                    .filter(k -> prefix == null || k.startsWith(prefix)) // GH-90000
-                    .sorted() // GH-90000
-                    .toList(); // GH-90000
+        List<String> listObjects(String prefix) { 
+            return objects.keySet().stream() 
+                    .filter(k -> prefix == null || k.startsWith(prefix)) 
+                    .sorted() 
+                    .toList(); 
         }
 
-        void deleteObject(String key) { // GH-90000
-            objects.remove(key); // GH-90000
+        void deleteObject(String key) { 
+            objects.remove(key); 
         }
 
-        boolean exists(String key) { // GH-90000
-            return objects.containsKey(key); // GH-90000
+        boolean exists(String key) { 
+            return objects.containsKey(key); 
         }
 
-        int objectCount() { // GH-90000
-            return objects.size(); // GH-90000
+        int objectCount() { 
+            return objects.size(); 
         }
     }
 
@@ -75,37 +75,37 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("put object stores data retrievable by key")
-        void putObject_storesDataRetrievableByKey() { // GH-90000
+        void putObject_storesDataRetrievableByKey() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            byte[] data = "Hello, S3!".getBytes(); // GH-90000
+            byte[] data = "Hello, S3!".getBytes(); 
 
-            bucket.putObject("folder/hello.txt", data); // GH-90000
+            bucket.putObject("folder/hello.txt", data); 
             Optional<byte[]> retrieved = bucket.getObject("folder/hello.txt");
 
-            assertThat(retrieved).isPresent(); // GH-90000
-            assertThat(retrieved.get()).isEqualTo(data); // GH-90000
+            assertThat(retrieved).isPresent(); 
+            assertThat(retrieved.get()).isEqualTo(data); 
         }
 
         @Test
         @DisplayName("put object with blank key throws exception")
-        void putObject_withBlankKey_throwsException() { // GH-90000
+        void putObject_withBlankKey_throwsException() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
-            assertThatThrownBy(() -> bucket.putObject("", new byte[]{1})) // GH-90000
-                    .isInstanceOf(IllegalArgumentException.class) // GH-90000
+            assertThatThrownBy(() -> bucket.putObject("", new byte[]{1})) 
+                    .isInstanceOf(IllegalArgumentException.class) 
                     .hasMessageContaining("Key must not be blank");
         }
 
         @Test
         @DisplayName("overwriting existing key replaces old data")
-        void overwritingExistingKey_replacesOldData() { // GH-90000
+        void overwritingExistingKey_replacesOldData() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            bucket.putObject("file.txt", "version1".getBytes()); // GH-90000
-            bucket.putObject("file.txt", "version2".getBytes()); // GH-90000
+            bucket.putObject("file.txt", "version1".getBytes()); 
+            bucket.putObject("file.txt", "version2".getBytes()); 
 
             Optional<byte[]> retrieved = bucket.getObject("file.txt");
 
-            assertThat(retrieved).isPresent(); // GH-90000
+            assertThat(retrieved).isPresent(); 
             assertThat(new String(retrieved.get())).isEqualTo("version2");
         }
     }
@@ -118,25 +118,25 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("get existing object returns data")
-        void getExistingObject_returnsData() { // GH-90000
+        void getExistingObject_returnsData() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            byte[] expected = "data bytes".getBytes(); // GH-90000
-            bucket.putObject("docs/readme.md", expected); // GH-90000
+            byte[] expected = "data bytes".getBytes(); 
+            bucket.putObject("docs/readme.md", expected); 
 
             Optional<byte[]> result = bucket.getObject("docs/readme.md");
 
-            assertThat(result).isPresent(); // GH-90000
-            assertThat(result.get()).isEqualTo(expected); // GH-90000
+            assertThat(result).isPresent(); 
+            assertThat(result.get()).isEqualTo(expected); 
         }
 
         @Test
         @DisplayName("get non-existent object returns empty optional")
-        void getNonExistentObject_returnsEmptyOptional() { // GH-90000
+        void getNonExistentObject_returnsEmptyOptional() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
             Optional<byte[]> result = bucket.getObject("does-not-exist.txt");
 
-            assertThat(result).isEmpty(); // GH-90000
+            assertThat(result).isEmpty(); 
         }
     }
 
@@ -148,38 +148,38 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("list all objects (null prefix) returns all keys sorted")
-        void listAllObjects_returnsAllKeysSorted() { // GH-90000
+        void listAllObjects_returnsAllKeysSorted() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            bucket.putObject("b/file.txt", new byte[]{}); // GH-90000
-            bucket.putObject("a/file.txt", new byte[]{}); // GH-90000
-            bucket.putObject("c/file.txt", new byte[]{}); // GH-90000
+            bucket.putObject("b/file.txt", new byte[]{}); 
+            bucket.putObject("a/file.txt", new byte[]{}); 
+            bucket.putObject("c/file.txt", new byte[]{}); 
 
-            List<String> keys = bucket.listObjects(null); // GH-90000
+            List<String> keys = bucket.listObjects(null); 
 
-            assertThat(keys).containsExactly("a/file.txt", "b/file.txt", "c/file.txt"); // GH-90000
+            assertThat(keys).containsExactly("a/file.txt", "b/file.txt", "c/file.txt"); 
         }
 
         @Test
         @DisplayName("list with prefix filters to matching keys only")
-        void listWithPrefix_filtersToMatchingKeysOnly() { // GH-90000
+        void listWithPrefix_filtersToMatchingKeysOnly() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            bucket.putObject("images/cat.jpg",  new byte[]{}); // GH-90000
-            bucket.putObject("images/dog.jpg",  new byte[]{}); // GH-90000
-            bucket.putObject("docs/readme.md",  new byte[]{}); // GH-90000
+            bucket.putObject("images/cat.jpg",  new byte[]{}); 
+            bucket.putObject("images/dog.jpg",  new byte[]{}); 
+            bucket.putObject("docs/readme.md",  new byte[]{}); 
 
             List<String> imageKeys = bucket.listObjects("images/");
 
-            assertThat(imageKeys).containsExactlyInAnyOrder("images/cat.jpg", "images/dog.jpg"); // GH-90000
+            assertThat(imageKeys).containsExactlyInAnyOrder("images/cat.jpg", "images/dog.jpg"); 
         }
 
         @Test
         @DisplayName("list on empty bucket returns empty list")
-        void listOnEmptyBucket_returnsEmptyList() { // GH-90000
+        void listOnEmptyBucket_returnsEmptyList() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
 
-            List<String> keys = bucket.listObjects(null); // GH-90000
+            List<String> keys = bucket.listObjects(null); 
 
-            assertThat(keys).isEmpty(); // GH-90000
+            assertThat(keys).isEmpty(); 
         }
     }
 
@@ -191,25 +191,25 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("delete existing object removes it from bucket")
-        void deleteExistingObject_removesFromBucket() { // GH-90000
+        void deleteExistingObject_removesFromBucket() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            bucket.putObject("temp.txt", new byte[]{1, 2, 3}); // GH-90000
+            bucket.putObject("temp.txt", new byte[]{1, 2, 3}); 
 
             bucket.deleteObject("temp.txt");
 
             assertThat(bucket.exists("temp.txt")).isFalse();
-            assertThat(bucket.objectCount()).isEqualTo(0); // GH-90000
+            assertThat(bucket.objectCount()).isEqualTo(0); 
         }
 
         @Test
         @DisplayName("delete non-existent object is a no-op")
-        void deleteNonExistentObject_isNoOp() { // GH-90000
+        void deleteNonExistentObject_isNoOp() { 
             InMemoryS3Bucket bucket = new InMemoryS3Bucket("my-bucket");
-            bucket.putObject("existing.txt", new byte[]{}); // GH-90000
+            bucket.putObject("existing.txt", new byte[]{}); 
 
             bucket.deleteObject("non-existent.txt");
 
-            assertThat(bucket.objectCount()).isEqualTo(1); // GH-90000
+            assertThat(bucket.objectCount()).isEqualTo(1); 
         }
     }
 
@@ -221,18 +221,18 @@ class S3ConnectorIntegrationTest extends EventloopTestBase {
 
         @Test
         @DisplayName("multi-part upload reassembles parts in correct order")
-        void multiPartUpload_reassemblesPartsInOrder() { // GH-90000
-            List<byte[]> parts = new ArrayList<>(); // GH-90000
-            parts.add("Part1".getBytes()); // GH-90000
-            parts.add("Part2".getBytes()); // GH-90000
-            parts.add("Part3".getBytes()); // GH-90000
+        void multiPartUpload_reassemblesPartsInOrder() { 
+            List<byte[]> parts = new ArrayList<>(); 
+            parts.add("Part1".getBytes()); 
+            parts.add("Part2".getBytes()); 
+            parts.add("Part3".getBytes()); 
 
             // Complete: join all parts
-            int totalSize = parts.stream().mapToInt(p -> p.length).sum(); // GH-90000
+            int totalSize = parts.stream().mapToInt(p -> p.length).sum(); 
             byte[] assembled = new byte[totalSize];
             int offset = 0;
-            for (byte[] part : parts) { // GH-90000
-                System.arraycopy(part, 0, assembled, offset, part.length); // GH-90000
+            for (byte[] part : parts) { 
+                System.arraycopy(part, 0, assembled, offset, part.length); 
                 offset += part.length;
             }
 

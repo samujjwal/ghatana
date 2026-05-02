@@ -22,8 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-@ExtendWith(MockitoExtension.class) // GH-90000
-@MockitoSettings(strictness = Strictness.LENIENT) // GH-90000
+@ExtendWith(MockitoExtension.class) 
+@MockitoSettings(strictness = Strictness.LENIENT) 
 @Slf4j
 /**
  * @doc.type class
@@ -46,162 +46,162 @@ class PolyfixOrchestratorTest {
     // No LanguageService mocks needed for these tests
 
     @BeforeEach
-    void setUp() throws IOException { // GH-90000
-        System.setProperty("test.environment", "true"); // GH-90000
+    void setUp() throws IOException { 
+        System.setProperty("test.environment", "true"); 
         tempDir = Files.createTempDirectory("polyfix-test-");
-        tempDir.toFile().deleteOnExit(); // GH-90000
+        tempDir.toFile().deleteOnExit(); 
 
         // Create a proper logger for testing
-        testLog = org.apache.logging.log4j.LogManager.getLogger(PolyfixOrchestratorTest.class); // GH-90000
+        testLog = org.apache.logging.log4j.LogManager.getLogger(PolyfixOrchestratorTest.class); 
     }
 
-    private PolyfixProjectContext createTestContext() { // GH-90000
+    private PolyfixProjectContext createTestContext() { 
         // Minimal context: no language services and no budget stubs to avoid unnecessary stubbing
-        return new PolyfixProjectContext(tempDir, mockConfig, List.of(), mockExecutor, testLog); // GH-90000
+        return new PolyfixProjectContext(tempDir, mockConfig, List.of(), mockExecutor, testLog); 
     }
 
     @Test
-    void run_shouldGenerateReportWhenReportDirIsConfigured() throws IOException { // GH-90000
+    void run_shouldGenerateReportWhenReportDirIsConfigured() throws IOException { 
         // Given
         Path reportDir = tempDir.resolve("reports");
         // Ensure the report directory exists before creating the orchestrator
-        Files.createDirectories(reportDir); // GH-90000
+        Files.createDirectories(reportDir); 
 
-        try (MockedStatic<DiagnosticsRunner> mockedRunner = // GH-90000
-                Mockito.mockStatic(DiagnosticsRunner.class)) { // GH-90000
+        try (MockedStatic<DiagnosticsRunner> mockedRunner = 
+                Mockito.mockStatic(DiagnosticsRunner.class)) { 
             // Create the test context with mocks BEFORE stubbing runAll
-            testContext = createTestContext(); // GH-90000
+            testContext = createTestContext(); 
 
             // Mock the static method to return an empty list of diagnostics for this context
-            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenReturn(List.of()); // GH-90000
+            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenReturn(List.of()); 
 
             // Create the orchestrator with the report directory
-            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(null, reportDir); // GH-90000
+            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(null, reportDir); 
 
             // Run the orchestrator with the test context
-            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); // GH-90000
+            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); 
 
             // Then
-            assertNotNull(summary, "Run should complete successfully"); // GH-90000
-            assertEquals(1, summary.passes(), "Should complete in one pass with no issues"); // GH-90000
-            assertEquals(0, summary.editsApplied(), "No edits should be applied"); // GH-90000
+            assertNotNull(summary, "Run should complete successfully"); 
+            assertEquals(1, summary.passes(), "Should complete in one pass with no issues"); 
+            assertEquals(0, summary.editsApplied(), "No edits should be applied"); 
 
             // Verify report was generated
-            assertTrue(Files.exists(reportDir), "Report directory should be created"); // GH-90000
-            assertTrue( // GH-90000
-                    countFilesWithExtension(reportDir, "json") > 0, // GH-90000
+            assertTrue(Files.exists(reportDir), "Report directory should be created"); 
+            assertTrue( 
+                    countFilesWithExtension(reportDir, "json") > 0, 
                     "At least one JSON report should be generated. Found files: "
-                            + String.join( // GH-90000
+                            + String.join( 
                                     ", ",
-                                    Files.list(reportDir) // GH-90000
-                                            .map(Path::toString) // GH-90000
-                                            .toArray(String[]::new))); // GH-90000
+                                    Files.list(reportDir) 
+                                            .map(Path::toString) 
+                                            .toArray(String[]::new))); 
 
             // Verify the static method was called with our test context
-            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); // GH-90000
+            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); 
         }
     }
 
     @Test
-    void run_shouldNotFailWhenReportDirIsNull() { // GH-90000
-        try (MockedStatic<DiagnosticsRunner> mockedRunner = // GH-90000
-                Mockito.mockStatic(DiagnosticsRunner.class)) { // GH-90000
+    void run_shouldNotFailWhenReportDirIsNull() { 
+        try (MockedStatic<DiagnosticsRunner> mockedRunner = 
+                Mockito.mockStatic(DiagnosticsRunner.class)) { 
             // Create the test context with mocks BEFORE stubbing runAll
-            testContext = createTestContext(); // GH-90000
+            testContext = createTestContext(); 
 
-            // Mock diagnostics to return no issues (empty list) for this context // GH-90000
-            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenReturn(List.of()); // GH-90000
+            // Mock diagnostics to return no issues (empty list) for this context 
+            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenReturn(List.of()); 
 
             // Create the orchestrator without a report directory
-            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(); // GH-90000
+            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(); 
 
             // Run the orchestrator with the test context
-            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); // GH-90000
+            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); 
 
             // Then - should complete without throwing exceptions
-            assertNotNull(summary, "Run should complete successfully"); // GH-90000
-            assertEquals(1, summary.passes(), "Should complete in one pass with no issues"); // GH-90000
-            assertEquals(0, summary.editsApplied(), "No edits should be applied"); // GH-90000
+            assertNotNull(summary, "Run should complete successfully"); 
+            assertEquals(1, summary.passes(), "Should complete in one pass with no issues"); 
+            assertEquals(0, summary.editsApplied(), "No edits should be applied"); 
 
             // Verify the static method was called with our test context
-            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); // GH-90000
+            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); 
         }
     }
 
     @Test
-    void run_shouldIncludeErrorInReportWhenExceptionOccurs() throws IOException { // GH-90000
+    void run_shouldIncludeErrorInReportWhenExceptionOccurs() throws IOException { 
         // Given
         Path reportDir = tempDir.resolve("error-reports");
         // Ensure the report directory exists before creating the orchestrator
-        Files.createDirectories(reportDir); // GH-90000
+        Files.createDirectories(reportDir); 
 
-        try (MockedStatic<DiagnosticsRunner> mockedRunner = // GH-90000
-                Mockito.mockStatic(DiagnosticsRunner.class)) { // GH-90000
+        try (MockedStatic<DiagnosticsRunner> mockedRunner = 
+                Mockito.mockStatic(DiagnosticsRunner.class)) { 
             // Create the test context with mocks first
-            testContext = createTestContext(); // GH-90000
+            testContext = createTestContext(); 
 
             // Now mock the diagnostics to throw an exception
             RuntimeException testError = new RuntimeException("Test error");
-            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenThrow(testError); // GH-90000
+            mockedRunner.when(() -> DiagnosticsRunner.runAll(testContext)).thenThrow(testError); 
 
             // Create the orchestrator with the report directory
-            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(null, reportDir); // GH-90000
+            PolyfixOrchestrator orchestrator = new PolyfixOrchestrator(null, reportDir); 
 
             // When - run the orchestrator with the test context
-            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); // GH-90000
+            PolyfixOrchestrator.RunSummary summary = orchestrator.run(testContext); 
 
             // Then
-            assertNotNull(summary, "Run should complete with error"); // GH-90000
-            assertTrue( // GH-90000
+            assertNotNull(summary, "Run should complete with error"); 
+            assertTrue( 
                     summary.status().contains("ERROR"),
-                    "Status should indicate an error occurred. Actual status: " + summary.status()); // GH-90000
-            assertTrue( // GH-90000
+                    "Status should indicate an error occurred. Actual status: " + summary.status()); 
+            assertTrue( 
                     summary.status().contains("Test error"),
-                    "Status should include the error message. Actual status: " + summary.status()); // GH-90000
+                    "Status should include the error message. Actual status: " + summary.status()); 
 
             // Verify error report was generated
-            assertTrue(Files.exists(reportDir), "Report directory should be created"); // GH-90000
+            assertTrue(Files.exists(reportDir), "Report directory should be created"); 
             List<Path> reportFiles;
-            try (var files = Files.list(reportDir)) { // GH-90000
-                reportFiles = files.toList(); // GH-90000
+            try (var files = Files.list(reportDir)) { 
+                reportFiles = files.toList(); 
             }
 
-            assertTrue( // GH-90000
-                    countFilesWithExtension(reportDir, "json") > 0, // GH-90000
+            assertTrue( 
+                    countFilesWithExtension(reportDir, "json") > 0, 
                     "Error report should be generated. Found files: "
-                            + String.join( // GH-90000
+                            + String.join( 
                                     ", ",
-                                    reportFiles.stream() // GH-90000
-                                            .map(Path::toString) // GH-90000
-                                            .toArray(String[]::new))); // GH-90000
+                                    reportFiles.stream() 
+                                            .map(Path::toString) 
+                                            .toArray(String[]::new))); 
 
             Path reportFile =
-                    reportFiles.stream() // GH-90000
-                            .filter(Files::isRegularFile) // GH-90000
+                    reportFiles.stream() 
+                            .filter(Files::isRegularFile) 
                             .filter(p -> p.toString().toLowerCase().endsWith(".json"))
-                            .findFirst() // GH-90000
+                            .findFirst() 
                             .orElseThrow(() -> new AssertionError("No JSON report generated"));
 
-            String reportContent = Files.readString(reportFile); // GH-90000
-            assertTrue( // GH-90000
+            String reportContent = Files.readString(reportFile); 
+            assertTrue( 
                     reportContent.contains("ERROR"),
                     "Report content should include error status. Content: " + reportContent);
-            assertTrue( // GH-90000
+            assertTrue( 
                     reportContent.contains("Test error"),
                     "Report content should include error message. Content: " + reportContent);
 
             // Verify the static method was called with our test context
-            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); // GH-90000
+            mockedRunner.verify(() -> DiagnosticsRunner.runAll(testContext)); 
         }
     }
 
     // Helper method to count files with a specific extension in a directory
-    private long countFilesWithExtension(Path directory, String extension) { // GH-90000
-        try (var files = Files.list(directory)) { // GH-90000
-            return files.filter(Files::isRegularFile) // GH-90000
-                    .filter(p -> p.toString().toLowerCase().endsWith("." + extension.toLowerCase())) // GH-90000
-                    .count(); // GH-90000
-        } catch (IOException e) { // GH-90000
+    private long countFilesWithExtension(Path directory, String extension) { 
+        try (var files = Files.list(directory)) { 
+            return files.filter(Files::isRegularFile) 
+                    .filter(p -> p.toString().toLowerCase().endsWith("." + extension.toLowerCase())) 
+                    .count(); 
+        } catch (IOException e) { 
             return 0;
         }
     }

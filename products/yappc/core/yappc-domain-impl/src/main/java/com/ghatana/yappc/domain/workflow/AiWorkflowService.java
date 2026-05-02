@@ -330,8 +330,8 @@ public class AiWorkflowService {
                 // the flag at the next step boundary and exits without being forcibly killed.
                 // For non-running states (PAUSED/PENDING/DRAFT/AWAITING_REVIEW) no agent is
                 // executing, so the cancel is immediate.
-                boolean pastHardKillTimeout = cancellationRegistry.isHardKillRequired(workflowId, tenantId);
                 int attemptNumber = cancellationRegistry.signal(workflowId, tenantId);
+                boolean pastHardKillTimeout = cancellationRegistry.isHardKillRequired(workflowId, tenantId);
 
                 String cancelMethod;
                 if (workflow.status() == AiWorkflowInstance.WorkflowStatus.IN_PROGRESS) {

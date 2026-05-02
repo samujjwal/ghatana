@@ -1,0 +1,152 @@
+# Nexus Logistics Boundary Policy Pack
+# Fictional logistics platform — example of a product-specific policy pack.
+# This pack loads into the generic platform BoundaryPolicyResolver.
+# No platform kernel changes are required to activate these rules.
+#
+# Rule schema: BoundaryPolicyRule { ruleId, scope, action, condition, outcome }
+# Outcomes: ALLOW | DENY | REQUIRE_CONSENT | REQUIRE_APPROVAL | AUDIT
+
+pack:
+  id: nexus-logistics-boundary-policy
+  name: "Nexus Logistics Boundary Policy Pack"
+  version: "1.0.0"
+  product: nexus
+  description: "Logistics-domain boundary access rules for shipments, carriers, manifests, and customs declarations"
+  schema-version: "1"
+
+rules:
+
+  # ── Shipment access ──────────────────────────────────────────────────────────
+
+  - ruleId: NEXUS-BR-001
+    description: "Shipment read accessible to logistics operations roles; external reads denied"
+    scope: nexus.shipment-tracking
+    action: READ
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [logistics-ops, carrier-agent, customer, admin, dispatcher]
+    outcome: DENY
+
+  - ruleId: NEXUS-BR-002
+    description: "Shipment status update (milestone) restricted to carrier agent or dispatcher"
+    scope: nexus.shipment-tracking
+    action: UPDATE_STATUS
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [carrier-agent, dispatcher, admin]
+    outcome: DENY
+
+  - ruleId: NEXUS-BR-003
+    description: "Shipment cancellation after pickup requires ops-lead approval"
+    scope: nexus.shipment-tracking
+    action: CANCEL
+    conditions:
+      - field: shipment.status
+        operator: NOT_IN
+        values: [DRAFT, BOOKED]
+      - field: actor.role
+        operator: NOT_IN
+        values: [ops-lead, admin]
+    outcome: REQUIRE_APPROVAL
+
+  # ── Carrier management ───────────────────────────────────────────────────────
+
+  - ruleId: NEXUS-BR-010
+    description: "Carrier onboarding requires compliance officer sign-off"
+    scope: nexus.carrier-management
+    action: ONBOARD
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, admin]
+    outcome: REQUIRE_APPROVAL
+
+  - ruleId: NEXUS-BR-011
+    description: "Carrier rate read accessible to logistics ops and finance; others denied"
+    scope: nexus.carrier-management
+    action: READ_RATE
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [logistics-ops, finance, admin, dispatcher]
+    outcome: DENY
+
+  # ── Cargo manifest ───────────────────────────────────────────────────────────
+
+  - ruleId: NEXUS-BR-020
+    description: "Manifest export requires compliance officer or admin; other actors denied"
+    scope: nexus.manifest-processing
+    action: EXPORT
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, admin]
+    outcome: DENY
+
+  - ruleId: NEXUS-BR-021
+    description: "Dangerous-goods manifests require DGR-certified carrier agent to write"
+    scope: nexus.manifest-processing
+    action: WRITE
+    conditions:
+      - field: manifest.dangerousGoods
+        operator: EQ
+        value: "true"
+      - field: actor.certifications
+        operator: NOT_CONTAINS
+        value: IATA-DGR-certified
+    outcome: DENY
+
+  # ── Customs declarations ──────────────────────────────────────────────────────
+
+  - ruleId: NEXUS-BR-030
+    description: "Customs declaration submission restricted to compliance officer or customs agent"
+    scope: nexus.customs-compliance
+    action: SUBMIT
+    conditions:
+      - field: actor.role
+        operator: NOT_IN
+        values: [compliance-officer, customs-agent, admin]
+    outcome: DENY
+
+  - ruleId: NEXUS-BR-031
+    description: "Export-controlled goods declaration requires additional compliance clearance"
+    scope: nexus.customs-compliance
+    action: SUBMIT
+    conditions:
+      - field: declaration.exportControlFlag
+        operator: EQ
+        value: "true"
+      - field: compliance.exportControlCleared
+        operator: NOT_EQ
+        value: "true"
+    outcome: REQUIRE_APPROVAL
+
+  - ruleId: NEXUS-BR-032
+    description: "Customs declaration data export to external scopes denied without explicit gate"
+    scope: nexus.customs-compliance
+    action: EXPORT
+    conditions:
+      - field: target.scope
+        operator: NOT_IN
+        values: [nexus.shipment-tracking, nexus.manifest-processing, nexus.audit-trail]
+      - field: compliance.approved
+        operator: NOT_EQ
+        value: "true"
+    outcome: DENY
+
+  # ── Cross-scope isolation ─────────────────────────────────────────────────────
+
+  - ruleId: NEXUS-BR-040
+    description: "Nexus shipment data must not flow to non-nexus scopes without explicit gate"
+    scope: nexus.shipment-tracking
+    action: EXPORT
+    conditions:
+      - field: target.scope
+        operator: NOT_IN
+        values: [nexus.carrier-management, nexus.customs-compliance, nexus.audit-trail]
+      - field: compliance.approved
+        operator: NOT_EQ
+        value: "true"
+    outcome: DENY

@@ -20,7 +20,7 @@ public class PlatformBoundaryRules {
      */
     @ArchTest
     static final ArchRule PLATFORM_SHOULD_NOT_DEPEND_ON_PRODUCTS =
-        noClasses() // GH-90000
+        noClasses() 
             .that().resideInAPackage("com.ghatana.platform..")
             .should().dependOnClassesThat().resideInAPackage("com.ghatana.products..")
             .because("Platform modules must not depend on product modules to maintain clean architecture");
@@ -31,10 +31,10 @@ public class PlatformBoundaryRules {
      */
     @ArchTest
     static final ArchRule PLATFORM_SHOULD_ONLY_DEPEND_ON_ALLOWED_PACKAGES =
-        classes() // GH-90000
+        classes() 
             .that().resideInAPackage("com.ghatana.platform..")
-            .should().onlyAccessClassesThat() // GH-90000
-            .resideInAnyPackage( // GH-90000
+            .should().onlyAccessClassesThat() 
+            .resideInAnyPackage( 
                 "com.ghatana.platform..",
                 "java..",
                 "javax..",
@@ -61,11 +61,11 @@ public class PlatformBoundaryRules {
      */
     @ArchTest
     static final ArchRule PLATFORM_API_SHOULD_NOT_DEPEND_ON_IMPLEMENTATION =
-        noClasses() // GH-90000
+        noClasses() 
             .that().resideInAPackage("com.ghatana.platform..api")
             .and().haveSimpleNameEndingWith("Api")
-            .should().dependOnClassesThat() // GH-90000
-            .resideInAnyPackage("..impl..", "..internal..", "..impl..") // GH-90000
+            .should().dependOnClassesThat() 
+            .resideInAnyPackage("..impl..", "..internal..", "..impl..") 
             .because("API interfaces should not depend on implementation details");
 
     /**
@@ -74,10 +74,10 @@ public class PlatformBoundaryRules {
      */
     @ArchTest
     static final ArchRule PLATFORM_TESTS_SHOULD_NOT_ACCESS_INTERNALS =
-        noClasses() // GH-90000
+        noClasses() 
             .that().resideInAPackage("..test..")
             .and().resideInAPackage("com.ghatana.platform..")
-            .should().dependOnClassesThat() // GH-90000
-            .resideInAnyPackage("..internal..", "..impl..") // GH-90000
+            .should().dependOnClassesThat() 
+            .resideInAnyPackage("..internal..", "..impl..") 
             .because("Tests should validate public contracts, not implementation details");
 }
