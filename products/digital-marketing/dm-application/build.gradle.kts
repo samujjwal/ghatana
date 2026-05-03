@@ -15,6 +15,7 @@ dependencies {
     api(project(":platform-kernel:kernel-core"))
     api(project(":platform:java:core"))
     api(project(":platform:java:observability"))
+    api(project(":platform:java:security"))
     api(project(":platform-plugins:plugin-compliance"))
 
     compileOnly(libs.spotbugs.annotations)

@@ -5,6 +5,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.application.suppression.SuppressionRepository;
 import com.ghatana.digitalmarketing.domain.lead.Lead;
 import com.ghatana.digitalmarketing.domain.lead.LeadStatus;
+import com.ghatana.platform.security.port.HashingPort;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -29,6 +30,7 @@ public final class LeadServiceImpl implements LeadService {
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final LeadRepository repository;
     private final SuppressionRepository suppressionRepository;
+    private final HashingPort hashingPort;
 
     /**
      * Constructs the service with required dependencies.
@@ -36,17 +38,20 @@ public final class LeadServiceImpl implements LeadService {
      * @param kernelAdapter kernel adapter for auth and audit; must not be null
      * @param repository lead persistence port; must not be null
      * @param suppressionRepository suppression persistence port; must not be null
+     * @param hashingPort hashing port for PII protection; must not be null
      */
     public LeadServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             LeadRepository repository,
-            SuppressionRepository suppressionRepository) {
+            SuppressionRepository suppressionRepository,
+            HashingPort hashingPort) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.suppressionRepository = Objects.requireNonNull(
             suppressionRepository,
             "suppressionRepository must not be null"
         );
+        this.hashingPort = Objects.requireNonNull(hashingPort, "hashingPort must not be null");
     }
 
     @Override
@@ -60,15 +65,16 @@ public final class LeadServiceImpl implements LeadService {
                     throw new SecurityException("Actor " + ctx.getActor().getPrincipalId()
                         + " is not authorized to capture leads");
                 }
-                return suppressionRepository.findActiveByEmail(ctx.getWorkspaceId(), command.email())
-                    .then(activeSuppression -> {
-                        if (activeSuppression.isPresent()) {
-                            throw new IllegalArgumentException(
-                                "Lead email is suppressed for workspace: " + command.email()
-                            );
-                        }
-                        return repository.existsByEmail(ctx.getWorkspaceId(), command.campaignId(), command.email());
-                    });
+                return hashingPort.hashContactPoint(command.email())
+                    .then(contactPointHash -> suppressionRepository.findActiveByContactPointHash(ctx.getWorkspaceId(), contactPointHash)
+                        .then(activeSuppression -> {
+                            if (activeSuppression.isPresent()) {
+                                throw new IllegalArgumentException(
+                                    "Lead email is suppressed for workspace: " + command.email()
+                                );
+                            }
+                            return repository.existsByEmail(ctx.getWorkspaceId(), command.campaignId(), command.email());
+                        }));
             })
             .then(exists -> {
                 if (exists) {

@@ -46,7 +46,7 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
             .updatedAt(now)
             .build();
 
-        logger.info("Creating agency client: {} for tenant: {}", clientName, tenantId.value());
+        logger.info("Creating agency client: {} for tenant: {}", clientName, tenantId.getValue());
         return repository.save(client);
     }
 
@@ -58,13 +58,13 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
 
     @Override
     public Promise<java.util.List<AgencyClient>> getClientsForTenant(DmTenantId tenantId) {
-        logger.info("Fetching all agency clients for tenant: {}", tenantId.value());
+        logger.info("Fetching all agency clients for tenant: {}", tenantId.getValue());
         return repository.findByTenant(tenantId);
     }
 
     @Override
     public Promise<java.util.List<AgencyClient>> getActiveClientsForTenant(DmTenantId tenantId) {
-        logger.info("Fetching active agency clients for tenant: {}", tenantId.value());
+        logger.info("Fetching active agency clients for tenant: {}", tenantId.getValue());
         return repository.findActiveByTenant(tenantId);
     }
 
@@ -103,6 +103,6 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
     @Override
     public Promise<AgencyClient> getClientByWorkspace(DmWorkspaceId workspaceId) {
         return repository.findByWorkspace(workspaceId)
-            .then(clientOpt -> clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found for workspace: " + workspaceId.value())));
+            .then(clientOpt -> clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found for workspace: " + workspaceId.getValue())));
     }
 }

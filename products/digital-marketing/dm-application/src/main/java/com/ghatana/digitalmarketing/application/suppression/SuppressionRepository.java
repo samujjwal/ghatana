@@ -18,5 +18,5 @@ public interface SuppressionRepository {
 
     Promise<SuppressionEntry> save(SuppressionEntry entry);
 
-    Promise<Optional<SuppressionEntry>> findActiveByEmail(DmWorkspaceId workspaceId, String email);
+    Promise<Optional<SuppressionEntry>> findActiveByContactPointHash(DmWorkspaceId workspaceId, String contactPointHash);
 }

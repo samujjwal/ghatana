@@ -3,7 +3,7 @@ package com.ghatana.digitalmarketing.application.ai;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionLogEntry;
-import com.ghatana.digitalmarketing.domain.transparency.AiActionLogRepository;
+import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

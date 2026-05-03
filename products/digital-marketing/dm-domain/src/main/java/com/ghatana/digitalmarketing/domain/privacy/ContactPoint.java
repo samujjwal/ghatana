@@ -102,7 +102,7 @@ public record ContactPoint(
 /**
  * Types of contact points.
  */
-public enum ContactPointType {
+enum ContactPointType {
     EMAIL,
     PHONE
 }

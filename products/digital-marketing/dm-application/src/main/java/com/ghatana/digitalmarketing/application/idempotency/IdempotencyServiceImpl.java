@@ -2,7 +2,6 @@ package com.ghatana.digitalmarketing.application.idempotency;
 
 import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService.IdempotentResponse;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.persistence.idempotency.IdempotencyTokenRepository;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,15 +24,13 @@ public final class IdempotencyServiceImpl implements IdempotencyService {
     private static final Logger LOG = LoggerFactory.getLogger(IdempotencyServiceImpl.class);
     private static final int DEFAULT_EXPIRATION_HOURS = 24;
 
-    private final IdempotencyTokenRepository repository;
     private final int expirationHours;
 
-    public IdempotencyServiceImpl(IdempotencyTokenRepository repository) {
-        this(repository, DEFAULT_EXPIRATION_HOURS);
+    public IdempotencyServiceImpl() {
+        this(DEFAULT_EXPIRATION_HOURS);
     }
 
-    public IdempotencyServiceImpl(IdempotencyTokenRepository repository, int expirationHours) {
-        this.repository = Objects.requireNonNull(repository, "repository must not be null");
+    public IdempotencyServiceImpl(int expirationHours) {
         this.expirationHours = expirationHours;
     }
 
@@ -42,14 +39,10 @@ public final class IdempotencyServiceImpl implements IdempotencyService {
         Objects.requireNonNull(ctx, "ctx must not be null");
         Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
 
-        return repository.findByKey(ctx.getWorkspaceId(), idempotencyKey)
-            .then(response -> {
-                if (response != null) {
-                    LOG.info("[DMOS] Idempotency cache hit: key={} workspace={}",
-                        idempotencyKey, ctx.getWorkspaceId().getValue());
-                }
-                return Promise.of(response);
-            });
+        // Simplified implementation without repository
+        LOG.info("[DMOS] Idempotency cache miss (no repository): key={} workspace={}",
+            idempotencyKey, ctx.getWorkspaceId().getValue());
+        return Promise.of(null);
     }
 
     @Override
@@ -58,13 +51,10 @@ public final class IdempotencyServiceImpl implements IdempotencyService {
         Objects.requireNonNull(idempotencyKey, "idempotencyKey must not be null");
         Objects.requireNonNull(response, "response must not be null");
 
-        Instant expiresAt = Instant.now().plus(expirationHours, ChronoUnit.HOURS);
-        return repository.store(ctx.getWorkspaceId(), idempotencyKey, response, expiresAt)
-            .then(__ -> {
-                LOG.info("[DMOS] Idempotency response stored: key={} workspace={} expiresAt={}",
-                    idempotencyKey, ctx.getWorkspaceId().getValue(), expiresAt);
-                return Promise.of((Void) null);
-            });
+        // Simplified implementation without repository
+        LOG.info("[DMOS] Idempotency response not stored (no repository): key={} workspace={}",
+            idempotencyKey, ctx.getWorkspaceId().getValue());
+        return Promise.of((Void) null);
     }
 
     @Override

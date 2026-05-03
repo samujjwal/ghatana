@@ -48,7 +48,7 @@ public final class AttributionModelServiceImpl implements AttributionModelServic
             .updatedAt(now)
             .build();
 
-        logger.info("Creating attribution model: {} for workspace: {}", modelName, workspaceId.value());
+        logger.info("Creating attribution model: {} for workspace: {}", modelName, workspaceId.getValue());
         return repository.save(model);
     }
 
@@ -61,7 +61,7 @@ public final class AttributionModelServiceImpl implements AttributionModelServic
     @Override
     public Promise<AttributionModel> getActiveModel(DmWorkspaceId workspaceId) {
         return repository.findActiveByWorkspace(workspaceId)
-            .then(modelOpt -> modelOpt.orElseThrow(() -> new IllegalArgumentException("No active attribution model for workspace: " + workspaceId.value())));
+            .then(modelOpt -> modelOpt.orElseThrow(() -> new IllegalArgumentException("No active attribution model for workspace: " + workspaceId.getValue())));
     }
 
     @Override

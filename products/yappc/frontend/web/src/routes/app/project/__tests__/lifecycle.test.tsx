@@ -55,14 +55,9 @@ vi.mock('../../../../services/canvas/lifecycle', () => ({
 
   vi.mock('../../../../hooks/useAuth', () => ({
     useAuth: () => ({
+      user: { id: 'user-1', email: 'user@example.com' },
       isAuthenticated: true,
-      currentUser: { id: 'user-1', email: 'user@example.com' },
-      currentSession: null,
-      getToken: () => null,
-      getAuthHeader: () => null,
-      hasPermission: () => false,
-      hasRole: () => false,
-      logout: vi.fn().mockResolvedValue(undefined),
+      getAuthorizationHeader: () => null,
     }),
   }));
 
@@ -72,7 +67,8 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
       {
         id: 'rec-1',
         title: 'Capture enhancement feedback',
-        description: 'Summarize the latest operator learnings into an evolution backlog.',
+        description:
+          'Summarize the latest operator learnings into an evolution backlog.',
         confidence: 0.91,
         priority: 'high',
         persona: 'product',
@@ -102,7 +98,8 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
         expectedValue: 0.1,
         actualValue: 3.5,
         deviation: 3400,
-        message: 'Deployment error rate is materially above the readiness baseline.',
+        message:
+          'Deployment error rate is materially above the readiness baseline.',
         detectedAt: '2026-04-17T12:05:00.000Z',
       },
     ],
@@ -111,7 +108,8 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
     data: {
       id: 'task-1',
       title: 'Automate release checklist',
-      description: 'Run the staged release checklist and attach the resulting evidence.',
+      description:
+        'Run the staged release checklist and attach the resulting evidence.',
       phase: 'IMPROVE',
       flowStage: 9,
       persona: 'operator',
@@ -146,7 +144,8 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
           {
             id: 'proceed',
             title: 'Proceed with one-click promotion',
-            reasoning: 'No blocking risks detected in current lifecycle context.',
+            reasoning:
+              'No blocking risks detected in current lifecycle context.',
             impact: 'medium',
           },
         ],
@@ -178,7 +177,7 @@ function renderRoute() {
   return render(
     <QueryClientProvider client={queryClient}>
       <LifecycleRoute />
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
 }
 
@@ -187,7 +186,10 @@ describe('Lifecycle route', () => {
     vi.clearAllMocks();
     mockExecuteTask.mockReset();
     mockApplyAutomationPlan.mockReset();
-    mockExecuteTask.mockResolvedValue({ taskId: 'task-1', status: 'completed' });
+    mockExecuteTask.mockResolvedValue({
+      taskId: 'task-1',
+      status: 'completed',
+    });
     mockApplyAutomationPlan.mockResolvedValue({
       execution: null,
       canAutoAdvance: true,
@@ -202,18 +204,32 @@ describe('Lifecycle route', () => {
     expect(screen.getByTestId('lifecycle-summary-status-card')).toBeDefined();
     expect(screen.getByText('Phase summary')).toBeDefined();
     expect(screen.getByText(/readiness is under active risk\./)).toBeDefined();
-    expect(screen.getByText('1 critical anomaly signal should be resolved before promotion decisions.')).toBeDefined();
+    expect(
+      screen.getByText(
+        '1 critical anomaly signal should be resolved before promotion decisions.'
+      )
+    ).toBeDefined();
     expect(screen.getByText('Recommended next steps')).toBeDefined();
     expect(screen.getByText('Suggested task')).toBeDefined();
     expect(screen.getByText('Automate release checklist')).toBeDefined();
     expect(screen.getByText('Readiness anomalies')).toBeDefined();
     expect(screen.getByText('Observed evidence')).toBeDefined();
     expect(screen.getByText('Decision support')).toBeDefined();
-    expect(screen.getByText('Evidence-based defaults with explicit review thresholds and progressive disclosure.')).toBeDefined();
-    expect(screen.getByTestId('decision-review-threshold').textContent).toContain('Review required');
+    expect(
+      screen.getByText(
+        'Evidence-based defaults with explicit review thresholds and progressive disclosure.'
+      )
+    ).toBeDefined();
+    expect(
+      screen.getByTestId('decision-review-threshold').textContent
+    ).toContain('Review required');
     expect(screen.getByText('Capture enhancement feedback')).toBeDefined();
     expect(screen.getByText('Deployment Error Rate')).toBeDefined();
-    expect(screen.getByText('Deployment error rate is materially above the readiness baseline.')).toBeDefined();
+    expect(
+      screen.getByText(
+        'Deployment error rate is materially above the readiness baseline.'
+      )
+    ).toBeDefined();
     expect(screen.getByText('Elevated deployment friction')).toBeDefined();
   });
 
@@ -233,7 +249,9 @@ describe('Lifecycle route', () => {
       });
     });
 
-    expect(screen.getByTestId('workflow-automation-feedback').textContent).toContain('Suggested task started');
+    expect(
+      screen.getByTestId('workflow-automation-feedback').textContent
+    ).toContain('Suggested task started');
   });
 
   it('applies one-click automation plan from decision support panel', async () => {

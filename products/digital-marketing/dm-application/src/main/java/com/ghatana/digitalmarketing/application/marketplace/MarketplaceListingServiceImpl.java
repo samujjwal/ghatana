@@ -35,7 +35,7 @@ public final class MarketplaceListingServiceImpl implements MarketplaceListingSe
             .listingId(listingId)
             .name(name)
             .description(description)
-            .authorTenantId(authorTenantId.value())
+            .authorTenantId(authorTenantId.getValue())
             .version(version)
             .status("DRAFT")
             .rating(0.0)
@@ -44,7 +44,7 @@ public final class MarketplaceListingServiceImpl implements MarketplaceListingSe
             .updatedAt(now)
             .build();
 
-        logger.info("Creating marketplace listing: {} for tenant: {}", name, authorTenantId.value());
+        logger.info("Creating marketplace listing: {} for tenant: {}", name, authorTenantId.getValue());
         return repository.save(listing);
     }
 
@@ -62,7 +62,7 @@ public final class MarketplaceListingServiceImpl implements MarketplaceListingSe
 
     @Override
     public Promise<java.util.List<MarketplaceListing>> getListingsByAuthor(DmTenantId authorTenantId) {
-        logger.info("Fetching marketplace listings for author: {}", authorTenantId.value());
+        logger.info("Fetching marketplace listings for author: {}", authorTenantId.getValue());
         return repository.findByAuthor(authorTenantId);
     }
 
@@ -156,13 +156,13 @@ public final class MarketplaceListingServiceImpl implements MarketplaceListingSe
 
     @Override
     public Promise<Void> installListing(DmTenantId tenantId, String listingId) {
-        logger.info("Installing marketplace listing: {} for tenant: {}", listingId, tenantId.value());
+        logger.info("Installing marketplace listing: {} for tenant: {}", listingId, tenantId.getValue());
         return recordDownload(listingId);
     }
 
     @Override
     public Promise<Void> uninstallListing(DmTenantId tenantId, String listingId) {
-        logger.info("Uninstalling marketplace listing: {} for tenant: {}", listingId, tenantId.value());
+        logger.info("Uninstalling marketplace listing: {} for tenant: {}", listingId, tenantId.getValue());
         return Promise.of(null);
     }
 

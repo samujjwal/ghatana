@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.application.suppression;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.suppression.SuppressionEntry;
+import com.ghatana.platform.security.port.HashingPort;
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -23,12 +24,15 @@ public final class SuppressionServiceImpl implements SuppressionService {
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final SuppressionRepository repository;
+    private final HashingPort hashingPort;
 
     public SuppressionServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
-            SuppressionRepository repository) {
+            SuppressionRepository repository,
+            HashingPort hashingPort) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this.hashingPort = Objects.requireNonNull(hashingPort, "hashingPort must not be null");
     }
 
     @Override
@@ -41,32 +45,34 @@ public final class SuppressionServiceImpl implements SuppressionService {
                 if (!allowed) {
                     return Promise.ofException(new SecurityException("Actor not authorized to add suppression"));
                 }
-                return repository.findActiveByEmail(ctx.getWorkspaceId(), command.email())
-                    .then(existing -> {
-                        if (existing.isPresent()) {
-                            return Promise.of(existing.get());
-                        }
-                        Instant now = Instant.now();
-                        SuppressionEntry entry = SuppressionEntry.builder()
-                            .id(UUID.randomUUID().toString())
-                            .workspaceId(ctx.getWorkspaceId())
-                            .email(command.email())
-                            .reason(command.reason())
-                            .active(true)
-                            .createdAt(now)
-                            .updatedAt(now)
-                            .createdBy(ctx.getActor().getPrincipalId())
-                            .build();
+                // Hash the email for PII protection
+                return hashingPort.hashContactPoint(command.email())
+                    .then(contactPointHash -> repository.findActiveByContactPointHash(ctx.getWorkspaceId(), contactPointHash)
+                        .then(existing -> {
+                            if (existing.isPresent()) {
+                                return Promise.of(existing.get());
+                            }
+                            Instant now = Instant.now();
+                            SuppressionEntry entry = SuppressionEntry.builder()
+                                .id(UUID.randomUUID().toString())
+                                .workspaceId(ctx.getWorkspaceId())
+                                .contactPointHash(contactPointHash)
+                                .reason(command.reason())
+                                .active(true)
+                                .createdAt(now)
+                                .updatedAt(now)
+                                .createdBy(ctx.getActor().getPrincipalId())
+                                .build();
 
-                        return repository.save(entry);
-                    })
-                    .then(saved -> kernelAdapter.recordAudit(
-                            ctx,
-                            "suppression/" + saved.getEmail(),
-                            "suppression-add",
-                            Map.of("reason", saved.getReason())
-                        ).map(__ -> saved)
-                    );
+                            return repository.save(entry);
+                        })
+                        .then(saved -> kernelAdapter.recordAudit(
+                                ctx,
+                                "suppression/" + saved.getContactPointHash(),
+                                "suppression-add",
+                                Map.of("reason", saved.getReason())
+                            ).map(__ -> saved)
+                        ));
             });
     }
 
@@ -80,21 +86,23 @@ public final class SuppressionServiceImpl implements SuppressionService {
                 if (!allowed) {
                     return Promise.ofException(new SecurityException("Actor not authorized to remove suppression"));
                 }
-                return repository.findActiveByEmail(ctx.getWorkspaceId(), email)
-                    .then(existing -> {
-                        if (existing.isEmpty()) {
-                            return Promise.ofException(new NoSuchElementException("Suppression not found for email: " + email));
-                        }
-                        SuppressionEntry deactivated = existing.get().deactivate();
-                        return repository.save(deactivated);
-                    })
-                    .then(saved -> kernelAdapter.recordAudit(
-                            ctx,
-                            "suppression/" + saved.getEmail(),
-                            "suppression-remove",
-                            Map.of("active", Boolean.toString(saved.isActive()))
-                        ).map(__ -> saved)
-                    );
+                // Hash the email for PII protection
+                return hashingPort.hashContactPoint(email)
+                    .then(contactPointHash -> repository.findActiveByContactPointHash(ctx.getWorkspaceId(), contactPointHash)
+                        .then(existing -> {
+                            if (existing.isEmpty()) {
+                                return Promise.ofException(new NoSuchElementException("Suppression not found for email: " + email));
+                            }
+                            SuppressionEntry deactivated = existing.get().deactivate();
+                            return repository.save(deactivated);
+                        })
+                        .then(saved -> kernelAdapter.recordAudit(
+                                ctx,
+                                "suppression/" + saved.getContactPointHash(),
+                                "suppression-remove",
+                                Map.of("active", Boolean.toString(saved.isActive()))
+                            ).map(__ -> saved)
+                        ));
             });
     }
 
@@ -103,7 +111,9 @@ public final class SuppressionServiceImpl implements SuppressionService {
         Objects.requireNonNull(ctx, "ctx must not be null");
         Objects.requireNonNull(email, "email must not be null");
 
-        return repository.findActiveByEmail(ctx.getWorkspaceId(), email)
-            .map(java.util.Optional::isPresent);
+        // Hash the email for PII protection
+        return hashingPort.hashContactPoint(email)
+            .then(contactPointHash -> repository.findActiveByContactPointHash(ctx.getWorkspaceId(), contactPointHash)
+                .map(java.util.Optional::isPresent));
     }
 }

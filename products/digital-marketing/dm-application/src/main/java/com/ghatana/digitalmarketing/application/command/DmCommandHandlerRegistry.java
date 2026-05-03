@@ -7,7 +7,6 @@ import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
-import com.ghatana.digitalmarketing.domain.command.DmCommandHandler;
 import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 
 import java.util.Map;

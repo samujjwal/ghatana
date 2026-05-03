@@ -10,7 +10,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Hex;
+import java.util.HexFormat;
 
 /**
  * Service that provides secure hashing operations for PII protection.
@@ -24,6 +24,7 @@ import java.util.Hex;
 public class HashingService {
     private static final Logger logger = LoggerFactory.getLogger(HashingService.class);
     private static final String HMAC_ALGORITHM = "HmacSHA256";
+    private static final HexFormat HEX_FORMAT = HexFormat.of();
 
     private final String salt;
     private final Eventloop eventloop;
@@ -50,7 +51,7 @@ public class HashingService {
      * @return A promise that completes with the hex-encoded hash
      */
     public Promise<String> hashContactPoint(String contactPoint) {
-        return Promise.ofBlocking(eventloop, () -> hash(contactPoint))
+        return hash(contactPoint)
             .mapException(e -> {
                 logger.error("Failed to hash contact point", e);
                 return new EncryptionException("Failed to hash contact point", e);
@@ -70,7 +71,7 @@ public class HashingService {
                 SecretKeySpec secretKey = new SecretKeySpec(salt.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
                 mac.init(secretKey);
                 byte[] hashBytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-                return Hex.formatHex(hashBytes);
+                return HEX_FORMAT.formatHex(hashBytes);
             } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                 throw new EncryptionException("Failed to compute HMAC-SHA256 hash", e);
             }
