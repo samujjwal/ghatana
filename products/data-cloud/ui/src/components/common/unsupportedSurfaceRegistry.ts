@@ -32,7 +32,7 @@ export const alertsSurfaceBoundary = {
 } satisfies UnsupportedSurfaceDefinition;
 
 export const smartWorkflowGenerationBoundary = {
-  title: 'AI pipeline builder unavailable',
+  title: 'Pipeline builder unavailable',
   summary:
     'Natural-language pipeline generation is not exposed by the current Data Cloud launcher API. Use this page to capture intent, then continue in the manual pipeline editor.',
   details: [

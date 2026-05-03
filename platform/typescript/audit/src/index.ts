@@ -131,6 +131,34 @@ function getStorageKeys(storage: Storage): string[] {
   return keys;
 }
 
+/**
+ * High-risk actions for which local sessionStorage backup is prohibited.
+ *
+ * These actions involve sensitive PII, policy bodies, privacy data,
+ * or irreversible mutations that must never be stored in browser storage —
+ * even in minimized form — to satisfy data-minimization and breach-risk requirements.
+ *
+ * Enforcement: `storeLocally` is a no-op for events with these action types
+ * regardless of the `enableLocalBackup` config flag.
+ */
+export const HIGH_RISK_AUDIT_ACTIONS = new Set<AuditEvent["action"]>([
+  "redaction",
+  "purge",
+  "retention_classify",
+  "consent_change",
+  "policy_approve",
+  "policy_reject",
+  "bulk_delete",
+]);
+
+/**
+ * Returns true when the action's payload must never be cached locally,
+ * regardless of the service-level `enableLocalBackup` setting.
+ */
+export function isHighRiskAuditAction(action: AuditEvent["action"]): boolean {
+  return HIGH_RISK_AUDIT_ACTIONS.has(action);
+}
+
 // ---------------------------------------------------------------------------
 // Service factory
 // ---------------------------------------------------------------------------
@@ -225,8 +253,18 @@ export function createAuditLogService(config: AuditLogServiceConfig) {
      * NOTE: Base64 obfuscation is not encryption. For high-risk privacy
      * events, set `enableLocalBackup: false` in the service config so
      * that failed events are never persisted in browser storage.
+     *
+     * High-risk actions (redaction, purge, retention_classify, consent_change,
+     * policy_approve, policy_reject, bulk_delete) are ALWAYS blocked from local
+     * storage regardless of the `enableLocalBackup` config flag, because their
+     * payloads carry sensitive policy bodies, PII references, or irreversible
+     * mutation metadata that must not be cached in browser storage.
      */
     storeLocally(event: AuditEvent): void {
+      // Enforce high-risk action block unconditionally.
+      if (isHighRiskAuditAction(event.action)) {
+        return;
+      }
       try {
         // Minimize: strip PII fields before local backup
         const minimal = {

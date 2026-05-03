@@ -64,9 +64,7 @@ public final class LineageHandler {
      */
     public Promise<HttpResponse> handleGetLineage(HttpRequest request) {
         if (lineagePlugin == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                    "Lineage tracking is not enabled — configure lineage-plugin in launcher bootstrap",
-                    60));
+            return Promise.of(http.errorResponse(501, "Lineage tracking is not enabled — configure lineage-plugin in launcher bootstrap"));
         }
 
         String collection = request.getPathParameter("collection");
@@ -159,9 +157,7 @@ public final class LineageHandler {
      */
     public Promise<HttpResponse> handleGetImpact(HttpRequest request) {
         if (lineagePlugin == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                    "Lineage tracking is not enabled — configure lineage-plugin in launcher bootstrap",
-                    60));
+            return Promise.of(http.errorResponse(501, "Lineage tracking is not enabled — configure lineage-plugin in launcher bootstrap"));
         }
 
         String collection = request.getPathParameter("collection");

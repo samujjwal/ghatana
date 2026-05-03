@@ -65,9 +65,7 @@ public class EntityExportHandler {
      */
     public Promise<HttpResponse> handleExportEntities(HttpRequest request) {
         if (exportService == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Export service is not configured on this server",
-                60));
+            return Promise.of(http.errorResponse(501, "Export service is not configured on this server"));
         }
 
         String collection = request.getPathParameter("collection");
@@ -136,9 +134,7 @@ public class EntityExportHandler {
      */
     public Promise<HttpResponse> handleExportEntitiesWithApproval(HttpRequest request) {
         if (exportService == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Export service is not configured on this server",
-                60));
+            return Promise.of(http.errorResponse(501, "Export service is not configured on this server"));
         }
 
         String collection = request.getPathParameter("collection");

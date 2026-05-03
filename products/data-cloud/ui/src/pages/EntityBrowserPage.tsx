@@ -258,12 +258,12 @@ function AiSuggestionPanel({
       className="border-b border-indigo-100 bg-indigo-50"
       data-testid="ai-suggestion-panel"
       role="complementary"
-      aria-label="AI exploration suggestions"
+      aria-label="Exploration suggestions"
     >
       <div className="flex items-center gap-2 px-4 py-2 cursor-pointer select-none" onClick={() => setExpanded((v) => !v)}>
         <span className="text-indigo-500 text-sm">✨</span>
         <span className="text-xs font-semibold text-indigo-700">
-          AI Suggestions
+          Suggestions
           {isFallback && (
             <span className="ml-1.5 text-indigo-400 font-normal">(heuristic)</span>
           )}
@@ -272,7 +272,7 @@ function AiSuggestionPanel({
         <button
           onClick={(e) => { e.stopPropagation(); onDismiss(); }}
           className="ml-2 text-gray-300 hover:text-gray-500 text-xs"
-          aria-label="Dismiss AI suggestions"
+          aria-label="Dismiss suggestions"
         >
           ✕
         </button>

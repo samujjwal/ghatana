@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.refactorer.server.testutils.IntegrationTestSupport;
 import com.ghatana.refactorer.server.testutils.TestJobs;
 import java.net.URI;
+import java.time.Duration;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;

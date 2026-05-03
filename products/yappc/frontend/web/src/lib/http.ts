@@ -1,8 +1,26 @@
+async function readResponseBody(response: Response): Promise<string> {
+  const maybeText = (response as unknown as { text?: () => Promise<string> }).text;
+  if (typeof maybeText === 'function') {
+    return maybeText.call(response);
+  }
+
+  const maybeJson = (response as unknown as { json?: () => Promise<unknown> }).json;
+  if (typeof maybeJson === 'function') {
+    const payload = await maybeJson.call(response);
+    if (typeof payload === 'string') {
+      return payload;
+    }
+    return JSON.stringify(payload ?? {});
+  }
+
+  return '';
+}
+
 export async function parseJsonResponse<T>(
   response: Response,
   context: string,
 ): Promise<T> {
-  const raw = await response.text();
+  const raw = await readResponseBody(response);
 
   if (!raw) {
     throw new Error(`${context} returned an empty response`);
@@ -38,7 +56,7 @@ export async function readErrorResponse(
   response: Response,
   fallback: string,
 ): Promise<string> {
-  const raw = await response.text();
+  const raw = await readResponseBody(response);
 
   if (!raw) {
     return fallback;

@@ -333,7 +333,7 @@ export function CommandBar({ className }: CommandBarProps) {
                 <Sparkles className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                 <p className="text-sm">No matching commands found.</p>
                 <p className="text-xs mt-1">
-                  Press Enter to ask the AI assistant
+                  Press Enter to ask the assistant
                 </p>
               </div>
             )}

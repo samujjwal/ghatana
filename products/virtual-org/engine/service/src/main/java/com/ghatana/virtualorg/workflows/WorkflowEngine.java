@@ -216,15 +216,15 @@ public class WorkflowEngine {
         return step.getExecutor().processTask(request)
             .map(response -> {
                 log.debug("Step [{}/{}] completed: {} → {}",
-                    index + 1, total, step.getStepName(), response.getStatus());
+                    index + 1, total, step.getStepName(), response.getSuccess() ? "SUCCESS" : "FAILURE");
                 outputs.put(step.getStepId(), response.getResult());
                 return builder
                     .withOutput(step.getStepId(), response.getResult())
-                    .withMetric("step_" + index + "_status", response.getStatus().getNumber());
+                    .withMetric("step_" + index + "_status", response.getSuccess() ? 1 : 0);
             })
             .mapException(e -> {
                 log.error("Step [{}/{}] failed: {}", index + 1, total, step.getStepName(), e);
-                return new RuntimeException("Step '" + step.getStepName() + "' failed", e);
+                throw new RuntimeException("Step '" + step.getStepName() + "' failed", e);
             });
     }
 

@@ -10,7 +10,7 @@
  * @doc.pattern Service
  */
 
-import { LifecyclePhase } from '@/types/lifecycle';
+import { LifecyclePhase, LIFECYCLE_PHASE } from '@/types/lifecycle';
 import type {
   PhaseGate,
   GateStatus,
@@ -676,7 +676,11 @@ export class PhaseGateService {
           nextPhase
         );
         gateStatus = await validateGate(gate, context);
-        if (gateStatus.status === 'blocked') {
+        // A blocked outgoing gate marks past or future phases as blocked.
+        // The current phase stays 'in_progress' — being in a phase means you
+        // haven't tried to transition out yet, so the outgoing gate state is
+        // informational only.
+        if (gateStatus.status === 'blocked' && phaseIndex !== currentIndex) {
           status = 'blocked';
         }
       }
@@ -700,7 +704,7 @@ export class PhaseGateService {
     const phases: PhaseProgress[] = [];
     const blockedGates: string[] = [];
 
-    for (const phase of Object.values(LifecyclePhase)) {
+    for (const phase of LIFECYCLE_PHASE) {
       const progress = await this.getPhaseProgress(projectId, phase);
       phases.push(progress);
 

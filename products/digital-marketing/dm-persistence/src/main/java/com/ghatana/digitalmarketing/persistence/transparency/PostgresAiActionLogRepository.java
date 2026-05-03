@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Production PostgreSQL adapter for {@link AiActionLogRepository}.
@@ -80,15 +81,17 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
         "LIMIT ?";
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresAiActionLogRepository(DataSource dataSource) {
+    public PostgresAiActionLogRepository(DataSource dataSource, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
     @Override
     public Promise<AiActionLogEntry> save(AiActionLogEntry entry) {
         Objects.requireNonNull(entry, "entry must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(INSERT_SQL)) {
                 stmt.setString(1, entry.actionId());
@@ -148,7 +151,7 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
     public Promise<Optional<AiActionLogEntry>> findById(String workspaceId, String actionId) {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(actionId, "actionId must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
                 stmt.setString(1, actionId);
@@ -176,7 +179,7 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
             int limit) {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         int effectiveLimit = limit <= 0 ? 50 : Math.min(limit, 200);
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_WORKSPACE_SQL)) {
                 String corrId = (correlationId != null && !correlationId.isBlank())

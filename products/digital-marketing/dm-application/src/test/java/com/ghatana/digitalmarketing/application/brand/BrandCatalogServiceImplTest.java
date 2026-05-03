@@ -146,6 +146,44 @@ class BrandCatalogServiceImplTest extends EventloopTestBase {
             )));
     }
 
+    @Test
+    @DisplayName("UpsertBrandProfileCommand handles null lists")
+    void shouldHandleNullListsInCommand() {
+        BrandCatalogService.UpsertBrandProfileCommand command = new BrandCatalogService.UpsertBrandProfileCommand(
+            "Acme",
+            "Direct",
+            null,
+            null
+        );
+
+        assertThat(command.brandColors()).isNotNull().isEmpty();
+        assertThat(command.targetGeographies()).isNotNull().isEmpty();
+    }
+
+    @Test
+    @DisplayName("UpsertBrandProfileCommand rejects blank displayName")
+    void shouldRejectBlankDisplayName() {
+        assertThatThrownBy(() -> new BrandCatalogService.UpsertBrandProfileCommand(
+            "", "Tone", List.of(), List.of()
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("CreateOfferCommand rejects invalid inputs")
+    void shouldRejectInvalidOfferInputs() {
+        assertThatThrownBy(() -> new BrandCatalogService.CreateOfferCommand(
+            "", "desc", new BigDecimal("10.00"), "USD"
+        )).isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> new BrandCatalogService.CreateOfferCommand(
+            "Offer", "desc", new BigDecimal("-1.00"), "USD"
+        )).isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> new BrandCatalogService.CreateOfferCommand(
+            "Offer", "desc", null, "USD"
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
     private static final class InMemoryBrandProfileRepository implements BrandProfileRepository {
         private final ConcurrentHashMap<String, BrandProfile> store = new ConcurrentHashMap<>();
 

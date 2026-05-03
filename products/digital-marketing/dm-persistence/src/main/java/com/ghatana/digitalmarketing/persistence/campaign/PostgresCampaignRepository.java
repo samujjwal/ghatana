@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Production PostgreSQL adapter for {@link CampaignRepository}.
@@ -46,15 +47,17 @@ public final class PostgresCampaignRepository implements CampaignRepository {
         "FROM dmos_campaigns WHERE id = ? AND workspace_id = ?";
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresCampaignRepository(DataSource dataSource) {
+    public PostgresCampaignRepository(DataSource dataSource, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
     @Override
     public Promise<Campaign> save(Campaign campaign) {
         Objects.requireNonNull(campaign, "campaign must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(UPSERT_SQL)) {
                 stmt.setString(1, campaign.getId());
@@ -80,7 +83,7 @@ public final class PostgresCampaignRepository implements CampaignRepository {
     public Promise<Optional<Campaign>> findById(DmWorkspaceId workspaceId, String campaignId) {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(campaignId, "campaignId must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
                 stmt.setString(1, campaignId);

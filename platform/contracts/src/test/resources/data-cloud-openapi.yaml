@@ -4028,6 +4028,53 @@ paths:
       responses:
         "200": { description: Aggregation result. }
 
+  /api/v1/analytics/query/{queryId}:
+    get:
+      summary: Get analytics query result
+      operationId: apiV1AnalyticsQueryQueryIdGet
+      tags: [analytics]
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Query result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
+        "404": { description: Query not found. }
+        "503": { description: Analytics engine not wired. }
+
+  /api/v1/analytics/query/{queryId}/plan:
+    get:
+      summary: Get analytics query execution plan
+      operationId: apiV1AnalyticsQueryQueryIdPlanGet
+      tags: [analytics]
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "200":
+          description: Query execution plan.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queryId: { type: string }
+                  plan:
+                    type: object
+                    additionalProperties: true
+        "404": { description: Query not found. }
+        "503": { description: Analytics engine not wired. }
+
   /api/v1/analytics/explain:
     post:
       summary: Explain a query — return its execution plan without running it
@@ -6965,6 +7012,42 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
+        "503": { description: Analytics engine not available. }
+
+  /api/v1/queries/explain:
+    post:
+      summary: Explain a workflow execution query
+      operationId: apiV1QueriesExplainPost
+      tags: [analytics]
+      parameters:
+        - $ref: "#/components/parameters/tenantIdQuery"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: Query to explain
+                parameters:
+                  type: object
+                  additionalProperties: true
+      responses:
+        "200":
+          description: Query explanation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  queryId: { type: string }
+                  explanation:
+                    type: object
+                    additionalProperties: true
+        "400": { description: Invalid query. }
         "503": { description: Analytics engine not available. }
 
   /api/v1/lineage/{collection}:

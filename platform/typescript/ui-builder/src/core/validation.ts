@@ -197,12 +197,45 @@ function validateActionBindings(
 // Preview Trust Policy
 // ============================================================================
 
-const TRUST_RANK: Record<string, number> = {
+/**
+ * Rank order for preview trust levels (lowest → highest).
+ * These correspond to `ComponentPreviewRestrictions.minimumTrustLevel` values.
+ */
+const PREVIEW_TRUST_RANK: Record<string, number> = {
   'untrusted': 0,
   'semi-trusted': 1,
   'trusted-controlled': 2,
   'trusted-local': 3,
 };
+
+/**
+ * Maps platform TrustLevel values (from `@ghatana/platform-events`) to their
+ * equivalent preview trust rank. A document's `metadata.trustLevel` is typed
+ * as the platform TrustLevel enum, but preview restrictions use the lowercase
+ * `ComponentPreviewRestrictions.minimumTrustLevel` vocabulary. This function
+ * bridges the two naming conventions.
+ *
+ * Mapping (platform → preview minimum level equivalent):
+ *   UNTRUSTED               → 'untrusted'           rank 0
+ *   IMPORTED_REVIEW_REQUIRED → 'semi-trusted'       rank 1
+ *   GENERATED_TRUSTED       → 'trusted-controlled'  rank 2
+ *   TRUSTED_WORKSPACE       → 'trusted-local'        rank 3
+ */
+function platformTrustRank(platformTrustLevel: string): number {
+  switch (platformTrustLevel) {
+    case 'UNTRUSTED':
+      return 0;
+    case 'IMPORTED_REVIEW_REQUIRED':
+      return 1;
+    case 'GENERATED_TRUSTED':
+      return 2;
+    case 'TRUSTED_WORKSPACE':
+      return 3;
+    default:
+      // Lowercase preview levels may appear in tests or migration contexts.
+      return PREVIEW_TRUST_RANK[platformTrustLevel] ?? 0;
+  }
+}
 
 /**
  * Validates that the document trust level satisfies the minimum required by
@@ -214,8 +247,8 @@ function validatePreviewTrustPolicy(
   errors: ValidationError[],
   warnings: ValidationWarning[],
 ): void {
-  const docTrust = document.metadata.trustLevel ?? 'untrusted';
-  const docRank = TRUST_RANK[String(docTrust)] ?? 0;
+  const docTrustRaw = document.metadata.trustLevel;
+  const docRank = docTrustRaw ? platformTrustRank(String(docTrustRaw)) : 0;
 
   for (const [nodeId, instance] of document.nodes) {
     const contract = contracts.get(instance.contractName);
@@ -223,14 +256,14 @@ function validatePreviewTrustPolicy(
     if (!previewRestrictions) continue;
 
     const requiredTrust = previewRestrictions.minimumTrustLevel;
-    const requiredRank = TRUST_RANK[requiredTrust] ?? 0;
+    const requiredRank = PREVIEW_TRUST_RANK[requiredTrust] ?? 0;
 
     if (docRank < requiredRank) {
       errors.push({
         code: 'TRUST_LEVEL_INSUFFICIENT',
         message:
           `Node "${nodeId}" (${instance.contractName}) requires minimumTrustLevel ` +
-          `"${requiredTrust}" but the document trust level is "${String(docTrust)}".`,
+          `"${requiredTrust}" but the document trust level is "${String(docTrustRaw ?? 'unset')}".`,
         nodeId,
         path: 'metadata.trustLevel',
       });

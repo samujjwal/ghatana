@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Production PostgreSQL adapter for {@link ApprovalSnapshotRepository}.
@@ -58,16 +59,18 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
         "WHERE request_id = ? AND workspace_id = ?";
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresApprovalSnapshotRepository(DataSource dataSource) {
+    public PostgresApprovalSnapshotRepository(DataSource dataSource, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
     @Override
     public Promise<ApprovalSnapshot> save(String workspaceId, ApprovalSnapshot snapshot) {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(snapshot, "snapshot must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(UPSERT_SQL)) {
                 stmt.setString(1, snapshot.requestId());
@@ -114,7 +117,7 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
     public Promise<Optional<ApprovalSnapshot>> findByRequestId(String workspaceId, String requestId) {
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
         Objects.requireNonNull(requestId, "requestId must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_SQL)) {
                 stmt.setString(1, requestId);

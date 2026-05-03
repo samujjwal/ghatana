@@ -4,3 +4,5 @@ export { PipelineToolbar } from './PipelineToolbar';
 export { PipelinePropertyPanel } from './PipelinePropertyPanel';
 export { PipelineErrorBoundary } from './PipelineErrorBoundary';
 export { StageNode, ConnectorNode } from './nodes';
+export { GuidedPipelineFlow } from './GuidedPipelineFlow';
+export type { GuidedPipelineFlowProps, GuidedStageSuggestion } from './GuidedPipelineFlow';

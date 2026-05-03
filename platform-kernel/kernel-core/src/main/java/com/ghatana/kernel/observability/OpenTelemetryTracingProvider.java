@@ -197,7 +197,7 @@ public final class OpenTelemetryTracingProvider implements TracingPort {
 
         @Override
         public void end(long endTimestamp) {
-            otelSpan.end(endTimestamp);
+            otelSpan.end(java.time.Instant.ofEpochMilli(endTimestamp));
         }
 
         @Override

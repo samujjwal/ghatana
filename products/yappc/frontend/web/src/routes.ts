@@ -17,6 +17,10 @@ import {
  */
 
 export default [
+  // Standalone builder preview runtime — loaded in an iframe by LivePreviewPanel.
+  // Must be outside all layout wrappers so no navigation chrome is injected.
+  route('preview/builder', 'routes/preview-builder.tsx'),
+
   // Root layout
   layout('routes/_root.tsx', [
     // Landing / home

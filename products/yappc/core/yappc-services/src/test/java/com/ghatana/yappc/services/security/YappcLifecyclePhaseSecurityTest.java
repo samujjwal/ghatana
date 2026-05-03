@@ -15,7 +15,7 @@ import com.ghatana.yappc.domain.run.RunResult;
 import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
-import com.ghatana.yappc.services.evolve.EvolutionPlan;
+import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
@@ -309,7 +309,7 @@ class YappcLifecyclePhaseSecurityTest extends EventloopTestBase {
             RunResult run = RunResult.builder()
                     .id("run-audit-security-001")
                     .runSpecRef("spec-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(5))
                     .completedAt(Instant.now())

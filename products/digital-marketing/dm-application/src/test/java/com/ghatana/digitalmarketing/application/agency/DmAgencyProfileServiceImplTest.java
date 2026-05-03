@@ -114,6 +114,13 @@ class DmAgencyProfileServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> new DmAgencyProfileService.CreateAgencyProfileCommand(""));
     }
 
+    @Test
+    @DisplayName("CreateAgencyProfileCommand rejects null displayName")
+    void commandValidationNull() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new DmAgencyProfileService.CreateAgencyProfileCommand(null));
+    }
+
     // ── In-memory repository ──────────────────────────────────────────────────
 
     static final class InMemoryAgencyRepository implements DmAgencyProfileRepository {

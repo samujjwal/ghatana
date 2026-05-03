@@ -16,7 +16,7 @@ import com.ghatana.yappc.domain.run.RunResult;
 import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
-import com.ghatana.yappc.services.evolve.EvolutionPlan;
+import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.intent.IntentService;
@@ -297,7 +297,7 @@ class YappcAiPhasePerformanceBaselineTest extends EventloopTestBase {
             stubRunResult = RunResult.builder()
                     .id("run-perf-001")
                     .runSpecRef("spec-perf-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(5))
                     .completedAt(Instant.now())
@@ -350,7 +350,7 @@ class YappcAiPhasePerformanceBaselineTest extends EventloopTestBase {
             RunResult runResult = RunResult.builder()
                     .id("run-learn-perf-001")
                     .runSpecRef("spec-learn-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(10))
                     .completedAt(Instant.now())
@@ -404,7 +404,7 @@ class YappcAiPhasePerformanceBaselineTest extends EventloopTestBase {
             RunResult runResult = RunResult.builder()
                     .id("run-evolve-perf-001")
                     .runSpecRef("spec-evolve-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(15))
                     .completedAt(Instant.now())
@@ -472,7 +472,7 @@ class YappcAiPhasePerformanceBaselineTest extends EventloopTestBase {
                 RunResult runResult = RunResult.builder()
                         .id("run-pipeline-" + i)
                         .runSpecRef("spec-" + i)
-                        .status(RunStatus.SUCCEEDED)
+                        .status(RunStatus.SUCCESS)
                         .taskResults(List.of())
                         .startedAt(Instant.now().minusSeconds(5))
                         .completedAt(Instant.now())

@@ -196,10 +196,12 @@ export const executeBatchAtom = atom(
 /**
  * Add a node to the canvas.
  */
-export class AddNodeCommand implements CanvasCommand {
+export class AddNodeCommand<T extends Record<string, unknown> = Record<string, unknown>> implements CanvasCommand {
     readonly label: string;
-    constructor(private readonly node: Node<ArtifactNodeData>) {
-        this.label = `Add ${node.data?.title ?? node.id}`;
+    constructor(private readonly node: Node<T>) {
+        const titledData = this.node.data as { title?: unknown } | undefined;
+        const title = typeof titledData?.title === 'string' ? titledData.title : undefined;
+        this.label = `Add ${title ?? this.node.id}`;
     }
     execute(_: Getter, set: Setter) {
         set(nodesAtom, (prev) => {

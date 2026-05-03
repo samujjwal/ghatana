@@ -346,6 +346,28 @@ class AdCopyGeneratorServiceImplTest extends EventloopTestBase {
                 "", List.of(), List.of(), List.of()));
     }
 
+    @Test
+    @DisplayName("GenerateAdCopyCommand accepts null voiceTone")
+    void commandAcceptsNullVoiceTone() {
+        AdCopyGeneratorService.GenerateAdCopyCommand cmd =
+            new AdCopyGeneratorService.GenerateAdCopyCommand(
+                "item-1", "strat-1", "Brand", "Offer", "Area", "https://example.com",
+                null, List.of(), List.of(), List.of());
+        assertThat(cmd.voiceTone()).isNull();
+    }
+
+    @Test
+    @DisplayName("GenerateAdCopyCommand accepts empty lists")
+    void commandAcceptsEmptyLists() {
+        AdCopyGeneratorService.GenerateAdCopyCommand cmd =
+            new AdCopyGeneratorService.GenerateAdCopyCommand(
+                "item-1", "strat-1", "Brand", "Offer", "Area", "https://example.com",
+                "", List.of(), List.of(), List.of());
+        assertThat(cmd.keywordThemes()).isEmpty();
+        assertThat(cmd.negativeKeywords()).isEmpty();
+        assertThat(cmd.claimIds()).isEmpty();
+    }
+
     // -------------------------------------------------------------------------
     // getLatestApproved
     // -------------------------------------------------------------------------

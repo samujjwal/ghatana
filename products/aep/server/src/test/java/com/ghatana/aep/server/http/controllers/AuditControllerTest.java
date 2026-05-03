@@ -114,7 +114,7 @@ class AuditControllerTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
             JsonNode json = parseBody(response);
-            assertThat(json.get("error").asText()).contains("tenantId");
+            assertThat(json.get("message").asText()).contains("tenantId");
         }
 
         @Test
@@ -131,7 +131,7 @@ class AuditControllerTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
             JsonNode json = parseBody(response);
-            assertThat(json.get("error").asText()).contains("action");
+            assertThat(json.get("message").asText()).contains("action");
         }
 
         @Test
@@ -148,7 +148,7 @@ class AuditControllerTest extends EventloopTestBase {
 
             assertThat(response.getCode()).isEqualTo(400);
             JsonNode json = parseBody(response);
-            assertThat(json.get("error").asText()).contains("status");
+            assertThat(json.get("message").asText()).contains("status");
         }
 
         @Test

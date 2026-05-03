@@ -66,6 +66,7 @@ Do NOT create a new library when:
 | `@ghatana/sso-client` | SSO authentication client (Fastify plugin via `./security/fastify` subpath only) | Platform | ✅ Active |
 | `@ghatana/domain-components` | Canonical domain-specific components (privacy, security, voice, nlp, selection) | Platform | ✅ Active |
 | `@ghatana/accessibility` | Canonical accessibility audit + audit log components and hooks | Platform | ✅ Active |
+| `@ghatana/product-shell` | Shared product shell layout primitives — sidebar, header, nav, notifications, mode selector, boundary surfaces | Platform | ✅ Active |
 
 ### Deprecated Packages — Fix Forward
 

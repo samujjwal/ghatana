@@ -19,7 +19,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
+import io.activej.eventloop.Eventloop;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -55,7 +57,8 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
         ds.setUrl(POSTGRES.getJdbcUrl());
         ds.setUser(POSTGRES.getUsername());
         ds.setPassword(POSTGRES.getPassword());
-        repository = new PostgresAiActionLogRepository(ds);
+        Executor executor = Runnable::run;
+        repository = new PostgresAiActionLogRepository(ds, executor);
     }
 
     @BeforeEach

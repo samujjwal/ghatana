@@ -103,9 +103,14 @@ class CrossProductBoundaryArchTest {
                 .resideInAPackage("com.ghatana.yappc..")
                 .should()
                 .dependOnClassesThat()
-                .resideInAPackage("com.ghatana.aep..")
+                .resideInAnyPackage(
+                        "com.ghatana.aep.orchestrator..",
+                        "com.ghatana.aep.central..",
+                        "com.ghatana.aep.runtime..",
+                        "com.ghatana.aep.pipeline..")
                 .because("YAPPC must not depend on AEP product-internal packages. " +
-                        "Cross-product calls must go through platform contracts or shared SPI.");
+                        "Cross-product calls must go through platform contracts or shared SPI. " +
+                        "AEP operator contracts (registry, event) are allowed as they are public SPI.");
 
         rule.check(ALL_PRODUCT_CLASSES);
     }

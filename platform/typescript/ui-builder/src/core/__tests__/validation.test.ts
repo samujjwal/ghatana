@@ -428,3 +428,125 @@ describe('@ghatana/ui-builder/core - Validation', () => {
     });
   });
 });
+
+// ============================================================================
+// Platform TrustLevel enum → preview trust-level rank tests
+// Regression coverage for the fix in validation.ts where platform TrustLevel
+// values (GENERATED_TRUSTED, TRUSTED_WORKSPACE, UNTRUSTED,
+// IMPORTED_REVIEW_REQUIRED) must be correctly compared against the preview
+// minimumTrustLevel values (untrusted, semi-trusted, trusted-controlled,
+// trusted-local).
+// ============================================================================
+
+describe('validateDocument — platform TrustLevel rank mapping', () => {
+  function makeSemiTrustedContract(name: string): ComponentContract {
+    return makeContract(name, {
+      preview: {
+        minimumTrustLevel: 'semi-trusted',
+        requiresNetwork: false,
+        requiresStorage: false,
+        requiresConsent: false,
+        allowedHosts: [],
+        cspDirectives: {},
+      },
+    });
+  }
+
+  function makeTrustedLocalContract(name: string): ComponentContract {
+    return makeContract(name, {
+      preview: {
+        minimumTrustLevel: 'trusted-local',
+        requiresNetwork: false,
+        requiresStorage: false,
+        requiresConsent: false,
+        allowedHosts: [],
+        cspDirectives: {},
+      },
+    });
+  }
+
+  it('GENERATED_TRUSTED (rank 2) satisfies semi-trusted (rank 1) — should not error', () => {
+    const node = makeInstance(createNodeId(), 'Widget');
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        trustLevel: 'GENERATED_TRUSTED' as never,
+      },
+    });
+    const result = validateDocument(doc, new Map([['Widget', makeSemiTrustedContract('Widget')]]));
+    expect(result.errors.filter((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toHaveLength(0);
+  });
+
+  it('TRUSTED_WORKSPACE (rank 3) satisfies trusted-local (rank 2) — should not error', () => {
+    const node = makeInstance(createNodeId(), 'Widget');
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        trustLevel: 'TRUSTED_WORKSPACE' as never,
+      },
+    });
+    const result = validateDocument(doc, new Map([['Widget', makeTrustedLocalContract('Widget')]]));
+    expect(result.errors.filter((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toHaveLength(0);
+  });
+
+  it('UNTRUSTED (rank 0) fails semi-trusted (rank 1) — should error', () => {
+    const node = makeInstance(createNodeId(), 'Widget');
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        trustLevel: 'UNTRUSTED' as never,
+      },
+    });
+    const result = validateDocument(doc, new Map([['Widget', makeSemiTrustedContract('Widget')]]));
+    expect(result.errors.some((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toBe(true);
+  });
+
+  it('IMPORTED_REVIEW_REQUIRED (rank 1) satisfies untrusted (rank 0) — should not error', () => {
+    const node = makeInstance(createNodeId(), 'Widget');
+    const contract = makeContract('Widget', {
+      preview: {
+        minimumTrustLevel: 'untrusted',
+        requiresNetwork: false,
+        requiresStorage: false,
+        requiresConsent: false,
+        allowedHosts: [],
+        cspDirectives: {},
+      },
+    });
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        trustLevel: 'IMPORTED_REVIEW_REQUIRED' as never,
+      },
+    });
+    const result = validateDocument(doc, new Map([['Widget', contract]]));
+    expect(result.errors.filter((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toHaveLength(0);
+  });
+
+  it('IMPORTED_REVIEW_REQUIRED (rank 1) fails trusted-local (rank 2) — should error', () => {
+    const node = makeInstance(createNodeId(), 'Widget');
+    const doc = makeDoc({
+      rootNodes: [node.id],
+      nodes: new Map([[node.id, node]]),
+      metadata: {
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        trustLevel: 'IMPORTED_REVIEW_REQUIRED' as never,
+      },
+    });
+    const result = validateDocument(doc, new Map([['Widget', makeTrustedLocalContract('Widget')]]));
+    expect(result.errors.some((e) => e.code === 'TRUST_LEVEL_INSUFFICIENT')).toBe(true);
+  });
+});

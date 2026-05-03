@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -498,10 +499,10 @@ class DomainExpansionTest {
 
         @Test
         @DisplayName("Many pipelines built concurrently")
-        void concurrentPipelineBuilder() throws Exception { 
+        void concurrentPipelineBuilder() throws Exception {
             int threadCount = 20;
-            CountDownLatch latch = new CountDownLatch(threadCount); 
-            List<PipelineSpec> specs = new ArrayList<>(); 
+            CountDownLatch latch = new CountDownLatch(threadCount);
+            List<PipelineSpec> specs = Collections.synchronizedList(new ArrayList<>());
 
             ExecutorService exec = Executors.newFixedThreadPool(threadCount); 
             try {

@@ -66,6 +66,13 @@ class DataCloudHttpServerWorkflowExecutionTest {
     void setUp() throws Exception {
         mockClient = mock(DataCloudClient.class);
         mockCapability = mock(WorkflowExecutionCapability.class);
+        // Set up default mock returns to prevent NullPointerException
+        when(mockCapability.execute(anyString(), anyString(), any()))
+                .thenReturn(Promise.of(makeSnapshot(EXECUTION_ID, "RUNNING")));
+        when(mockCapability.cancelExecution(anyString(), anyString()))
+                .thenReturn(Promise.of(makeSnapshot(EXECUTION_ID, "CANCELLED")));
+        when(mockCapability.retryExecution(anyString(), anyString()))
+                .thenReturn(Promise.of(makeSnapshot(EXECUTION_ID, "RUNNING")));
         port = findFreePort();
         httpClient = HttpClient.newBuilder().build();
     }
@@ -84,6 +91,14 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
     private void startServerWithoutCapability() throws Exception {
         server = new DataCloudHttpServer(mockClient, port);
+        server.start();
+        waitForServerReady(port);
+    }
+
+    private void startServerWithStrictTenantResolution() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+                .withWorkflowExecutionCapability(mockCapability)
+                .withStrictTenantResolution(true);
         server.start();
         waitForServerReady(port);
     }
@@ -121,6 +136,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                 .POST(HttpRequest.BodyPublishers.ofString(""))
                 .uri(URI.create("http://127.0.0.1:" + port + path))
                 .header("X-Tenant-Id", TENANT_ID)
+                .header("Content-Type", "application/json")
                 .build();
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
     }
@@ -198,7 +214,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
         @Test
         @DisplayName("returns 400 when tenant header is missing")
         void executePipeline_missingTenant_returns400() throws Exception {
-            startServer();
+            startServerWithStrictTenantResolution();
 
             HttpRequest req = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString("{}"))

@@ -14,7 +14,7 @@
     "build:data-cloud-ui": "pnpm --filter '@data-cloud/ui' build",
     "build:yappc": "pnpm --filter './products/yappc/**' build",
     "dev": "pnpm -r --parallel --filter './products/*/ui' dev",
-    "dev:data-cloud": "pnpm --filter '@ghatana/data-cloud-ui' dev",
+    "dev:data-cloud": "pnpm --filter '@data-cloud/ui' dev",
     "test": "pnpm -r test",
     "test:ui": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' test",
     "lint": "pnpm -r lint",

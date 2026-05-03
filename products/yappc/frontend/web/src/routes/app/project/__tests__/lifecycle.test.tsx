@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LifecyclePhase } from '../../../../types/lifecycle';
 
 const { mockExecuteTask } = vi.hoisted(() => ({
@@ -136,6 +137,21 @@ vi.mock('../../../../hooks/useLifecycleData', () => ({
 
 import LifecycleRoute from '../lifecycle';
 
+function renderRoute() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <LifecycleRoute />
+    </QueryClientProvider>,
+  );
+}
+
 describe('Lifecycle route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -149,7 +165,7 @@ describe('Lifecycle route', () => {
   });
 
   it('renders the lifecycle explorer and learn/evolve insight surface', () => {
-    render(<LifecycleRoute />);
+    renderRoute();
 
     expect(screen.getByTestId('lifecycle-explorer')).toBeDefined();
     expect(screen.getByTestId('lifecycle-insights-section')).toBeDefined();
@@ -172,7 +188,7 @@ describe('Lifecycle route', () => {
   });
 
   it('starts the next workflow automation task from the lifecycle route', async () => {
-    render(<LifecycleRoute />);
+    renderRoute();
 
     fireEvent.click(screen.getByTestId('workflow-automation-trigger'));
 
@@ -191,7 +207,7 @@ describe('Lifecycle route', () => {
   });
 
   it('applies one-click automation plan from decision support panel', async () => {
-    render(<LifecycleRoute />);
+    renderRoute();
 
     fireEvent.click(screen.getByTestId('ai-one-click-approval-trigger'));
 

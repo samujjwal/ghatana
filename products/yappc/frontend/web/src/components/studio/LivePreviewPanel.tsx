@@ -57,13 +57,12 @@ export function LivePreviewPanel({
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const previewPolicy = useMemo(() => {
-    const trustedOrigins = (() => {
-      if (!previewUrl || previewUrl === 'about:blank') {
-        return [] as string[];
-      }
+    // Default to the built-in same-origin preview runtime so postMessage can flow.
+    const resolvedPreviewUrl = previewUrl ?? '/preview/builder';
 
+    const trustedOrigins = (() => {
       try {
-        return [new URL(previewUrl, window.location.origin).origin];
+        return [new URL(resolvedPreviewUrl, window.location.origin).origin];
       } catch {
         return [] as string[];
       }
@@ -271,7 +270,7 @@ export function LivePreviewPanel({
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-h-[200px]">
             <iframe
               ref={iframeRef}
-              src={previewUrl || 'about:blank'}
+              src={previewUrl ?? '/preview/builder'}
               title="Live Preview"
               className="w-full h-full border-0"
               sandbox={previewPolicy.sandbox.join(' ')}

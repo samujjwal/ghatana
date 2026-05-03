@@ -41,6 +41,7 @@ import {
 } from 'react-router';
 import { BarChart3, FileText, Database, Shield, Settings } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from '@ghatana/theme';
 import { ProtectedRoute } from '@/components/security/ProtectedRoute';
 import { RoleProtectedRoute } from '@/components/security/RoleProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
@@ -382,7 +383,8 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter>
           <Suspense
             fallback={
               <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-400 dark:bg-gray-950">
@@ -447,6 +449,7 @@ export function App() {
             </Routes>
           </Suspense>
         </BrowserRouter>
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -239,13 +239,12 @@ public class SeniorEngineerAgent extends AbstractVirtualOrgAgent {
         OptionProto chosenOption = options.stream()
             .filter(opt -> {
                 String lowerReasoning = reasoning.toLowerCase(java.util.Locale.ROOT);
-                String optId = opt.getOptionId().toLowerCase(java.util.Locale.ROOT);
-                String optTitle = opt.getTitle().toLowerCase(java.util.Locale.ROOT);
-                return lowerReasoning.contains(optId) || lowerReasoning.contains(optTitle);
+                String optDesc = opt.getDescription().toLowerCase(java.util.Locale.ROOT);
+                return lowerReasoning.contains(optDesc);
             })
             .findFirst()
             .orElseGet(() -> {
-                log.warn("LLM reasoning did not reference any option ID or title; " +
+                log.warn("LLM reasoning did not reference any option description; " +
                     "defaulting to options[0]. Reasoning length={}", reasoning.length());
                 return options.get(0);
             });

@@ -113,11 +113,21 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/entities/:collection", entityHandler::handleQueryEntities)
             .with(HttpMethod.DELETE, "/api/v1/entities/:collection/:id", entityHandler::handleDeleteEntity)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/batch", entityHandler::handleBatchSaveEntities)
-            .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", entityHandler::handleBatchDeleteEntities)
-            .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/export", exportHandler::handleExportEntitiesWithApproval)
-            .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
-            .with(HttpMethod.GET, "/api/v1/anomalies", anomalyHandler::handleQueryAnomalies)
+            .with(HttpMethod.DELETE, "/api/v1/entities/:collection/batch", entityHandler::handleBatchDeleteEntities);
+        
+        if (exportHandler != null) {
+            builder
+                .with(HttpMethod.GET, "/api/v1/entities/:collection/export", exportHandler::handleExportEntities)
+                .with(HttpMethod.POST, "/api/v1/entities/:collection/export", exportHandler::handleExportEntitiesWithApproval);
+        }
+        
+        if (anomalyHandler != null) {
+            builder
+                .with(HttpMethod.POST, "/api/v1/entities/:collection/anomalies", anomalyHandler::handleDetectAnomalies)
+                .with(HttpMethod.GET, "/api/v1/anomalies", anomalyHandler::handleQueryAnomalies);
+        }
+        
+        builder
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate", validationHandler::handleValidateEntity)
             .with(HttpMethod.POST, "/api/v1/entities/:collection/validate/batch", validationHandler::handleBatchValidateEntities);
         return this;
@@ -146,13 +156,18 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/pipelines", pipelineCheckpointHandler::handleSavePipeline)
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleGetPipeline)
             .with(HttpMethod.PUT, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleUpdatePipeline)
-            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline)
-            // Pipeline execution
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
+            .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline);
+        
+        // Pipeline execution - only register if workflowExecutionHandler is available
+        if (workflowExecutionHandler != null) {
+            builder
+                .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
+                .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
+                .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
+                .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
+                .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
+        }
+        
         return this;
     }
 
@@ -248,9 +263,11 @@ public class DataCloudRouterBuilder {
             WorkflowExecutionHandler workflowExecutionHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsHandler::handleAnalyticsQuery)
+            .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId", analyticsHandler::handleAnalyticsGetResult)
+            .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId/plan", analyticsHandler::handleAnalyticsGetPlan)
             .with(HttpMethod.DELETE, "/api/v1/analytics/queries/:queryId", analyticsHandler::handleAnalyticsCancelQuery)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregation", analyticsHandler::handleAnalyticsAggregate)
-            .with(HttpMethod.POST, "/api/v1/analytics/explain", workflowExecutionHandler::handleExplainQuery);
+            .with(HttpMethod.POST, "/api/v1/analytics/explain", analyticsHandler::handleAnalyticsExplain);
         return this;
     }
 
@@ -271,6 +288,7 @@ public class DataCloudRouterBuilder {
      * Adds execution routes.
      */
     public DataCloudRouterBuilder withExecutionRoutes(WorkflowExecutionHandler workflowExecutionHandler) {
+        if (workflowExecutionHandler == null) return this;
         builder
             .with(HttpMethod.GET, "/api/v1/executions/:executionId", workflowExecutionHandler::handleGetExecution)
             .with(HttpMethod.GET, "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleGetExecutionLogs)
@@ -279,7 +297,8 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/rollback", workflowExecutionHandler::handleRollbackExecution)
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/checkpoint", workflowExecutionHandler::handleCheckpointExecution)
             .with(HttpMethod.GET, "/api/v1/executions/:executionId/checkpoints", workflowExecutionHandler::handleListExecutionCheckpoints)
-            .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreExecution);
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreExecution)
+            .with(HttpMethod.POST, "/api/v1/queries/explain", workflowExecutionHandler::handleExplainQuery);
         return this;
     }
 
@@ -428,6 +447,7 @@ public class DataCloudRouterBuilder {
      * Adds entity lineage graph endpoints.
      */
     public DataCloudRouterBuilder withLineageRoutes(LineageHandler lineageHandler) {
+        if (lineageHandler == null) return this;
         builder
             .with(HttpMethod.GET, "/api/v1/lineage/:collection", lineageHandler::handleGetLineage)
             .with(HttpMethod.GET, "/api/v1/lineage/:collection/impact", lineageHandler::handleGetImpact);

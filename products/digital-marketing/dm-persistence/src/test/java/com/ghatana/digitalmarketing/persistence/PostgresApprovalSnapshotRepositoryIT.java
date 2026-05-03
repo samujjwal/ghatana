@@ -16,6 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -52,7 +53,8 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
         ds.setUrl(POSTGRES.getJdbcUrl());
         ds.setUser(POSTGRES.getUsername());
         ds.setPassword(POSTGRES.getPassword());
-        repository = new PostgresApprovalSnapshotRepository(ds);
+        Executor executor = Runnable::run;
+        repository = new PostgresApprovalSnapshotRepository(ds, executor);
     }
 
     @BeforeEach

@@ -28,24 +28,51 @@ export const ButtonContract: ComponentContract = {
   props: [
     {
       name: 'variant',
-      type: 'string',
+      type: 'enum',
       required: false,
-      defaultValue: 'contained',
-      description: 'Visual style variant.',
+      defaultValue: 'solid',
+      description: 'Visual style variant matching the @ghatana/design-system Button variants.',
+      builderMetadata: {
+        control: 'select',
+        category: 'appearance',
+        order: 0,
+        bindable: false,
+      },
+      validation: {
+        enum: ['solid', 'outline', 'ghost'],
+      },
     },
     {
       name: 'color',
-      type: 'string',
+      type: 'enum',
       required: false,
       defaultValue: 'primary',
-      description: 'Color palette key.',
+      description: 'Color palette key (tone) matching the design system Button tone prop.',
+      builderMetadata: {
+        control: 'select',
+        category: 'appearance',
+        order: 1,
+        bindable: false,
+      },
+      validation: {
+        enum: ['primary', 'secondary', 'success', 'warning', 'danger', 'info'],
+      },
     },
     {
       name: 'size',
-      type: 'string',
+      type: 'enum',
       required: false,
-      defaultValue: 'medium',
-      description: 'Size variant.',
+      defaultValue: 'md',
+      description: 'Size variant matching the design system Button size prop.',
+      builderMetadata: {
+        control: 'select',
+        category: 'appearance',
+        order: 2,
+        bindable: false,
+      },
+      validation: {
+        enum: ['sm', 'md', 'lg'],
+      },
     },
     {
       name: 'disabled',
@@ -53,6 +80,12 @@ export const ButtonContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Whether the button is disabled.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'state',
+        order: 0,
+        bindable: true,
+      },
     },
     {
       name: 'fullWidth',
@@ -60,12 +93,24 @@ export const ButtonContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Whether to expand to full container width.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'state',
+        order: 1,
+        bindable: false,
+      },
     },
     {
       name: 'children',
       type: 'string',
       required: true,
       description: 'Button label text.',
+      builderMetadata: {
+        control: 'text',
+        category: 'content',
+        order: 0,
+        bindable: true,
+      },
     },
   ],
   slots: [],
@@ -355,26 +400,40 @@ export const TextFieldContract: ComponentContract = {
       required: true,
       defaultValue: 'Label',
       description: 'Visible label for the input.',
+      builderMetadata: {
+        control: 'text',
+        category: 'label',
+        order: 0,
+        bindable: true,
+      },
     },
     {
       name: 'placeholder',
       type: 'string',
       required: false,
       description: 'Placeholder text shown when the field is empty.',
-    },
-    {
-      name: 'variant',
-      type: 'string',
-      required: false,
-      defaultValue: 'outlined',
-      description: 'Visual style variant.',
+      builderMetadata: {
+        control: 'text',
+        category: 'label',
+        order: 1,
+        bindable: true,
+      },
     },
     {
       name: 'size',
-      type: 'string',
+      type: 'enum',
       required: false,
       defaultValue: 'medium',
-      description: 'Size variant.',
+      description: 'Size variant matching the design system TextField size prop.',
+      builderMetadata: {
+        control: 'select',
+        category: 'appearance',
+        order: 0,
+        bindable: false,
+      },
+      validation: {
+        enum: ['small', 'medium'],
+      },
     },
     {
       name: 'required',
@@ -382,6 +441,12 @@ export const TextFieldContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Marks the field as required.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'behavior',
+        order: 0,
+        bindable: true,
+      },
     },
     {
       name: 'disabled',
@@ -389,6 +454,12 @@ export const TextFieldContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Whether the field is disabled.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'behavior',
+        order: 1,
+        bindable: true,
+      },
     },
     {
       name: 'fullWidth',
@@ -396,6 +467,12 @@ export const TextFieldContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Whether to expand to full container width.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'appearance',
+        order: 1,
+        bindable: false,
+      },
     },
     {
       name: 'multiline',
@@ -403,6 +480,12 @@ export const TextFieldContract: ComponentContract = {
       required: false,
       defaultValue: false,
       description: 'Whether to render as a textarea.',
+      builderMetadata: {
+        control: 'toggle',
+        category: 'behavior',
+        order: 2,
+        bindable: false,
+      },
     },
   ],
   slots: [],
@@ -551,29 +634,62 @@ export const TypographyContract: ComponentContract = {
   props: [
     {
       name: 'variant',
-      type: 'string',
+      type: 'enum',
       required: false,
       defaultValue: 'body1',
-      description: 'Typography scale variant (h1–h6, body1, body2, caption, overline).',
+      description: 'Typography scale variant matching the @ghatana/design-system Typography variant prop.',
+      builderMetadata: {
+        control: 'select',
+        category: 'styling',
+        order: 0,
+        bindable: false,
+      },
+      validation: {
+        enum: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'subtitle1', 'subtitle2', 'body1', 'body2', 'caption', 'overline', 'button', 'code'],
+      },
     },
     {
       name: 'children',
       type: 'string',
       required: true,
       description: 'The text content.',
+      builderMetadata: {
+        control: 'text',
+        category: 'content',
+        order: 0,
+        bindable: true,
+      },
     },
     {
       name: 'color',
-      type: 'string',
+      type: 'enum',
       required: false,
-      description: 'Text color token key.',
+      description: 'Text color token key matching the design system Typography color prop.',
+      builderMetadata: {
+        control: 'select',
+        category: 'styling',
+        order: 1,
+        bindable: false,
+      },
+      validation: {
+        enum: ['default', 'subtle', 'muted', 'primary', 'secondary', 'success', 'warning', 'danger', 'info'],
+      },
     },
     {
       name: 'align',
-      type: 'string',
+      type: 'enum',
       required: false,
-      defaultValue: 'left',
+      defaultValue: 'start',
       description: 'Text alignment.',
+      builderMetadata: {
+        control: 'select',
+        category: 'styling',
+        order: 2,
+        bindable: false,
+      },
+      validation: {
+        enum: ['start', 'center', 'end', 'justify'],
+      },
     },
   ],
   slots: [],
@@ -699,10 +815,19 @@ export const BoxContract: ComponentContract = {
   props: [
     {
       name: 'display',
-      type: 'string',
+      type: 'enum',
       required: false,
       defaultValue: 'block',
-      description: 'CSS display value (block, flex, inline-flex, grid).',
+      description: 'CSS display value.',
+      builderMetadata: {
+        control: 'select',
+        category: 'layout',
+        order: 0,
+        bindable: false,
+      },
+      validation: {
+        enum: ['block', 'flex', 'inline-flex', 'grid', 'inline-block', 'none'],
+      },
     },
     {
       name: 'padding',
@@ -710,6 +835,16 @@ export const BoxContract: ComponentContract = {
       required: false,
       defaultValue: 2,
       description: 'Spacing scale padding (0–10).',
+      builderMetadata: {
+        control: 'number',
+        category: 'spacing',
+        order: 0,
+        bindable: false,
+      },
+      validation: {
+        min: 0,
+        max: 10,
+      },
     },
     {
       name: 'margin',
@@ -717,12 +852,28 @@ export const BoxContract: ComponentContract = {
       required: false,
       defaultValue: 0,
       description: 'Spacing scale margin (0–10).',
+      builderMetadata: {
+        control: 'number',
+        category: 'spacing',
+        order: 1,
+        bindable: false,
+      },
+      validation: {
+        min: 0,
+        max: 10,
+      },
     },
     {
       name: 'backgroundColor',
       type: 'string',
       required: false,
       description: 'Background color token key.',
+      builderMetadata: {
+        control: 'text',
+        category: 'styling',
+        order: 0,
+        bindable: false,
+      },
     },
     {
       name: 'borderRadius',
@@ -730,24 +881,61 @@ export const BoxContract: ComponentContract = {
       required: false,
       defaultValue: 0,
       description: 'Border radius scale value (0–10).',
+      builderMetadata: {
+        control: 'number',
+        category: 'styling',
+        order: 1,
+        bindable: false,
+      },
+      validation: {
+        min: 0,
+        max: 10,
+      },
     },
     {
       name: 'flexDirection',
-      type: 'string',
+      type: 'enum',
       required: false,
-      description: 'Flex direction (row, column, row-reverse, column-reverse).',
+      description: 'Flex direction. Only applies when display is flex or inline-flex.',
+      builderMetadata: {
+        control: 'select',
+        category: 'layout',
+        order: 1,
+        bindable: false,
+      },
+      validation: {
+        enum: ['row', 'column', 'row-reverse', 'column-reverse'],
+      },
     },
     {
       name: 'justifyContent',
-      type: 'string',
+      type: 'enum',
       required: false,
-      description: 'Flex/grid justification.',
+      description: 'Flex/grid main-axis alignment.',
+      builderMetadata: {
+        control: 'select',
+        category: 'layout',
+        order: 2,
+        bindable: false,
+      },
+      validation: {
+        enum: ['flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'],
+      },
     },
     {
       name: 'alignItems',
-      type: 'string',
+      type: 'enum',
       required: false,
-      description: 'Flex/grid alignment.',
+      description: 'Flex/grid cross-axis alignment.',
+      builderMetadata: {
+        control: 'select',
+        category: 'layout',
+        order: 3,
+        bindable: false,
+      },
+      validation: {
+        enum: ['flex-start', 'flex-end', 'center', 'baseline', 'stretch'],
+      },
     },
   ],
   slots: [

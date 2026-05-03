@@ -56,6 +56,7 @@ import type {
   StageNodeData,
   StageKind,
 } from '@/types/pipeline.types';
+import { GuidedPipelineFlow } from '@/components/pipeline/GuidedPipelineFlow';
 
 // ─── Tooltip Helper ─────────────────────────────────────────────────────
 
@@ -146,6 +147,11 @@ export function PipelineBuilderPage() {
   // ── Discard-changes confirmation dialog ──────────────────────────
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [pendingNewAction, setPendingNewAction] = useState(false);
+
+  // ── Guided vs canvas mode ─────────────────────────────────────
+  // New pipelines default to the guided goal-first flow.
+  // Existing pipelines always open in canvas mode.
+  const [builderMode, setBuilderMode] = useState<'guided' | 'canvas'>(isNewPipeline ? 'guided' : 'canvas');
 
   // ── Mobile viewport advisory ──────────────────────────────────
   const [mobileAdvisoryDismissed, setMobileAdvisoryDismissed] = useState(false);
@@ -357,6 +363,11 @@ export function PipelineBuilderPage() {
   const [pipelineStatus] = useAtom(pipelineStatusAtom);
   const [validationResult] = useAtom(validationAtom);
 
+  // Derive a simple boolean for the guided flow checklist.
+  // null = not yet validated, true = passed, false = failed.
+  const guidedValidationPassed: boolean | null =
+    validationResult === null ? null : (validationResult?.isValid ?? false);
+
   const handleRunNow = useCallback(async () => {
     if (!pipeline.id) {
       toast.error('Save the pipeline before running.');
@@ -480,6 +491,28 @@ export function PipelineBuilderPage() {
   }, [suggestions, nodes, edges, setNodes, pushHistory, setDirty]);
 
   // ── Render ─────────────────────────────────────────────────────
+
+  // Guided mode: shown by default for new pipelines until the user switches to canvas.
+  if (builderMode === 'guided' && isNewPipeline) {
+    return (
+      <>
+        <Toaster richColors position="top-right" />
+        <GuidedPipelineFlow
+          onRequestSuggestions={requestSuggestions}
+          suggestions={suggestions}
+          suggestionsLoading={suggestionsLoading}
+          onApplySuggestions={handleApplySuggestions}
+          onValidate={handleValidate}
+          validating={validating}
+          validationPassed={guidedValidationPassed}
+          onRunNow={handleRunNow}
+          running={running}
+          onSwitchToAdvanced={() => setBuilderMode('canvas')}
+          canManagePipelines={canManagePipelines}
+        />
+      </>
+    );
+  }
 
   if (isLoadingPipeline) {
     return (

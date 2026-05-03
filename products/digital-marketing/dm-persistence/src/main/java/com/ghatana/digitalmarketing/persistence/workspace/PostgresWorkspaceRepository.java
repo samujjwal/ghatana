@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * Production PostgreSQL adapter for {@link WorkspaceRepository}.
@@ -53,15 +54,17 @@ public final class PostgresWorkspaceRepository implements WorkspaceRepository {
         "FROM dmos_workspaces WHERE tenant_id = ? ORDER BY created_at";
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresWorkspaceRepository(DataSource dataSource) {
+    public PostgresWorkspaceRepository(DataSource dataSource, Executor executor) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
+        this.executor = Objects.requireNonNull(executor, "executor must not be null");
     }
 
     @Override
     public Promise<Workspace> save(Workspace workspace) {
         Objects.requireNonNull(workspace, "workspace must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(UPSERT_SQL)) {
                 stmt.setString(1, workspace.getId().getValue());
@@ -88,7 +91,7 @@ public final class PostgresWorkspaceRepository implements WorkspaceRepository {
     public Promise<Optional<Workspace>> findById(DmTenantId tenantId, DmWorkspaceId workspaceId) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
         Objects.requireNonNull(workspaceId, "workspaceId must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
                 stmt.setString(1, workspaceId.getValue());
@@ -110,7 +113,7 @@ public final class PostgresWorkspaceRepository implements WorkspaceRepository {
     @Override
     public Promise<List<Workspace>> listByTenant(DmTenantId tenantId) {
         Objects.requireNonNull(tenantId, "tenantId must not be null");
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(SELECT_BY_TENANT_SQL)) {
                 stmt.setString(1, tenantId.getValue());

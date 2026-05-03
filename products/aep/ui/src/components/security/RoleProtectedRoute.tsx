@@ -70,7 +70,7 @@ export function RoleProtectedRoute({
   // If a routePath is provided, also check registry-based capability
   const pathToCheck = routePath ?? location.pathname;
   const effectiveRole =
-    roles.find((r) => ["admin", "operator", "viewer"].includes(r)) ?? "viewer";
+    roles.find((r) => ["admin", "operator", "auditor", "viewer"].includes(r)) ?? "viewer";
   const registryAllows = canAccessRoute(
     effectiveRole as UserRole,
     pathToCheck

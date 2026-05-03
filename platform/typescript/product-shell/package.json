@@ -1,0 +1,37 @@
+{
+  "name": "@ghatana/product-shell",
+  "version": "0.1.0",
+  "description": "Shared product shell layout primitives for Ghatana products — generic sidebar, header, navigation, search, notifications, and boundary surfaces.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit && tsup src/index.ts --format esm --dts",
+    "type-check": "tsc --noEmit",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@ghatana/design-system": "workspace:*",
+    "@ghatana/platform-utils": "workspace:*",
+    "@ghatana/theme": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": "^0.400.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  }
+}

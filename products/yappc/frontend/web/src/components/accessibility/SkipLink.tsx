@@ -41,7 +41,9 @@ export const SkipLink: React.FC<SkipLinkProps> = ({
     const target = document.getElementById(targetId);
     if (target) {
       target.focus();
-      target.scrollIntoView({ behavior: 'smooth' });
+      if (typeof target.scrollIntoView === 'function') {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 

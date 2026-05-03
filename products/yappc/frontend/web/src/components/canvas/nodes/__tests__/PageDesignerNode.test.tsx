@@ -17,6 +17,8 @@ import { createPageArtifactDocument } from '../../page/pageArtifactDocument';
 // --------------------------------------------------------------------------
 
 const mockExecuteCommand = vi.fn();
+const mockPersistenceSave = vi.fn().mockResolvedValue(undefined);
+const mockPersistenceLoad = vi.fn().mockResolvedValue(null);
 vi.mock('@xyflow/react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@xyflow/react')>();
   return {
@@ -33,39 +35,102 @@ vi.mock('@xyflow/react', async (importOriginal) => {
 vi.mock('@/components/canvas/page/PageDesigner', () => ({
   PageDesigner: ({
     onDocumentChange,
+    onImportArtifacts,
+    onAIChangeRecord,
   }: {
     onDocumentChange?: (doc: unknown, validation: { valid: boolean; errors: unknown[]; warnings: unknown[] }) => void;
+    onImportArtifacts?: (artifacts: readonly unknown[]) => void;
+    onAIChangeRecord?: (record: unknown) => void;
   }) => (
-    <div
-      data-testid="page-designer-full"
-      onClick={() =>
-        onDocumentChange?.(
-          {
-            id: 'doc-1',
-            version: '1',
-            name: 'Home Page',
-            designSystem: {
-              id: 'ds',
-              name: 'DS',
+    <div>
+      <button
+        data-testid="page-designer-full"
+        onClick={() =>
+          onDocumentChange?.(
+            {
+              id: 'doc-1',
               version: '1',
-              tokenSetIds: [],
-              componentContracts: [],
-              themeId: 'default',
+              name: 'Home Page',
+              designSystem: {
+                id: 'ds',
+                name: 'DS',
+                version: '1',
+                tokenSetIds: [],
+                componentContracts: [],
+                themeId: 'default',
+              },
+              rootNodes: [],
+              nodes: new Map(),
+              metadata: {
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                trustLevel: 'GENERATED_TRUSTED',
+                dataClassification: 'INTERNAL',
+              },
             },
-            rootNodes: [],
-            nodes: new Map(),
-            metadata: {
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              trustLevel: 'GENERATED_TRUSTED',
-              dataClassification: 'INTERNAL',
+            { valid: true, errors: [], warnings: [] },
+          )
+        }
+      />
+      <button
+        data-testid="trigger-import-artifacts"
+        onClick={() =>
+          onImportArtifacts?.([
+            createPageArtifactDocument({ artifactId: 'import-1', name: 'Imported A', createdBy: 'import' }),
+            createPageArtifactDocument({ artifactId: 'import-2', name: 'Imported B', createdBy: 'import' }),
+          ])
+        }
+      />
+      <button
+        data-testid="trigger-ai-record"
+        onClick={() =>
+          onAIChangeRecord?.({
+            artifactId: 'artifact-1',
+            documentId: 'doc-1',
+            lineage: {
+              actionId: 'ai-1',
+              hookKind: 'property-completion',
+              reason: 'Synthetic AI change for node test',
+              confidence: 0.9,
+              reversible: true,
+              reviewState: 'pending',
+              affectedNodeIds: [],
+              appliedAt: new Date().toISOString(),
+              evidence: [],
             },
-          },
-          { valid: true, errors: [], warnings: [] },
-        )
-      }
-    />
+          })
+        }
+      />
+    </div>
   ),
+}));
+
+vi.mock('../../page/pageArtifactPersistence', () => ({
+  HttpPageArtifactPersistenceAdapter: class {
+    async save(document: unknown) {
+      await mockPersistenceSave(document);
+    }
+    async load(artifactId: string) {
+      return mockPersistenceLoad(artifactId);
+    }
+  },
+  LocalStoragePageArtifactPersistenceAdapter: class {
+    async save(document: unknown) {
+      await mockPersistenceSave(document);
+    }
+    async load(artifactId: string) {
+      return mockPersistenceLoad(artifactId);
+    }
+  },
+  ResilientPageArtifactPersistenceAdapter: class {
+    async save(document: unknown) {
+      await mockPersistenceSave(document);
+    }
+    async load(artifactId: string) {
+      return mockPersistenceLoad(artifactId);
+    }
+  },
+  isConflictError: (err: unknown) => err instanceof Error && err.name === 'PageArtifactConflictError',
 }));
 
 vi.mock('@/components/studio/LivePreviewPanel', () => ({
@@ -94,7 +159,7 @@ vi.mock('@ghatana/design-system', async (importOriginal) => {
     IconButton: ({ children, onClick, 'aria-label': ariaLabel }: { children: React.ReactNode; onClick?: (e: React.MouseEvent) => void; 'aria-label'?: string }) => (
       <button onClick={onClick} aria-label={ariaLabel}>{children}</button>
     ),
-    Typography: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+    Typography: ({ children, ...rest }: React.PropsWithChildren<Record<string, unknown>>) => <span {...rest}>{children}</span>,
   };
 });
 
@@ -144,6 +209,9 @@ function makeNodeProps(
 describe('PageDesignerNode', () => {
   beforeEach(() => {
     mockExecuteCommand.mockClear();
+    mockPersistenceSave.mockClear();
+    mockPersistenceLoad.mockClear();
+    mockPersistenceLoad.mockResolvedValue(null);
   });
 
   describe('collapsed state (default)', () => {
@@ -205,6 +273,32 @@ describe('PageDesignerNode', () => {
       expect(screen.getByTestId('handle-bottom')).toBeTruthy();
       expect(screen.getByTestId('handle-left')).toBeTruthy();
     });
+
+    it('shows AI lineage count badge when page document has AI change records', () => {
+      const pageDocument = {
+        ...createPageArtifactDocument({ artifactId: 'artifact-1', name: 'Home Page', createdBy: 'tester' }),
+        aiChangeRecords: [
+          {
+            artifactId: 'artifact-1',
+            documentId: 'doc-1',
+            lineage: {
+              actionId: 'ai-1',
+              hookKind: 'property-completion',
+              reason: 'Imported from decompile',
+              confidence: 0.9,
+              reversible: true,
+              reviewState: 'pending',
+              affectedNodeIds: [],
+              appliedAt: new Date().toISOString(),
+              evidence: [],
+            },
+          },
+        ],
+      };
+
+      render(<PageDesignerNode {...makeNodeProps({ pageDocument })} />);
+      expect(screen.getByTestId('page-node-ai-lineage-count')).toHaveTextContent('AI 1');
+    });
   });
 
   describe('expand / collapse', () => {
@@ -243,6 +337,59 @@ describe('PageDesignerNode', () => {
       // The stub calls onDocumentChange on click
       fireEvent.click(designer);
       expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
+    });
+
+    it('creates additional page-designer nodes for imported artifacts beyond the first one', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument })} />);
+
+      fireEvent.click(screen.getByTestId('trigger-import-artifacts'));
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
+    });
+
+    it('records AI lineage updates in node data when PageDesigner emits an AI change', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-main',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument })} />);
+      fireEvent.click(screen.getByTestId('trigger-ai-record'));
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('conflict resolution', () => {
+    it('shows conflict controls and reloads from server when Reload is clicked', async () => {
+      const conflicted = {
+        ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page', createdBy: 'tester' }),
+        syncStatus: 'error' as const,
+      };
+
+      mockPersistenceLoad.mockResolvedValue({ ...conflicted, syncStatus: 'synced' });
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+      expect(mockPersistenceLoad).toHaveBeenCalledWith('artifact-main');
+    });
+
+    it('shows conflict controls and force-saves when Force Save is clicked', () => {
+      const conflicted = {
+        ...createPageArtifactDocument({ artifactId: 'artifact-main', name: 'Home Page', createdBy: 'tester' }),
+        syncStatus: 'error' as const,
+      };
+
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument: conflicted })} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Force Save' }));
+      expect(mockPersistenceSave).toHaveBeenCalled();
     });
   });
 

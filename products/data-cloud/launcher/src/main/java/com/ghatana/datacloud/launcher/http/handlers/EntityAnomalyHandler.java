@@ -104,9 +104,7 @@ public class EntityAnomalyHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleDetectAnomalies(HttpRequest request) {
         if (anomalyDetector == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Anomaly detection capability is not configured on this server",
-                60));
+            return Promise.of(http.errorResponse(501, "Anomaly detection capability is not configured on this server"));
         }
 
         String collection = request.getPathParameter("collection");
@@ -199,9 +197,7 @@ public class EntityAnomalyHandler {
      */
     public Promise<HttpResponse> handleQueryAnomalies(HttpRequest request) {
         if (eventLogStore == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Anomaly event store is not configured — durable persistence unavailable",
-                60));
+            return Promise.of(http.errorResponse(501, "Anomaly event store is not configured — durable persistence unavailable"));
         }
 
         String tenantId = http.requireTenantIdOrFail(request);

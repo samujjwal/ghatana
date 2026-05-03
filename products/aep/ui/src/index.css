@@ -2,56 +2,60 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme {
-  /* Primary Palette - Blue (platform-compliant) */
-  --color-primary-50: #e3f2fd;
-  --color-primary-100: #bbdefb;
-  --color-primary-200: #90caf9;
-  --color-primary-300: #64b5f6;
-  --color-primary-400: #42a5f5;
-  --color-primary-500: #1976d2;
-  --color-primary-600: #1565c0;
-  --color-primary-700: #0d47a1;
-  --color-primary-800: #0a3880;
-  --color-primary-900: #072a60;
-  --color-primary-950: #072a60;
-
-  /* Secondary Palette - Purple (better accessibility) */
-  --color-secondary-50: #f3e8ff;
-  --color-secondary-100: #d8b4fe;
-  --color-secondary-200: #c084fc;
-  --color-secondary-300: #a855f7;
-  --color-secondary-400: #9333ea;
-  --color-secondary-500: #7c3aed;
-  --color-secondary-600: #6d28d9;
-  --color-secondary-700: #5b21b6;
-  --color-secondary-800: #4c1d95;
-  --color-secondary-900: #3b0764;
-
-  /* Semantic Colors */
-  --color-bg-paper: var(--color-white);
-  --color-text-primary: rgba(0, 0, 0, 0.87);
-  --color-text-secondary: rgba(0, 0, 0, 0.6);
-  --color-divider: rgba(0, 0, 0, 0.2); /* Increased opacity for accessibility */
-}
-
-@layer base {
-  :root {
-    --color-bg-paper: #ffffff;
-    --color-text-primary: rgba(0, 0, 0, 0.87);
-    --color-text-secondary: rgba(0, 0, 0, 0.6);
-    --color-divider: rgba(0, 0, 0, 0.2);
-  }
-
-  .dark {
-    --color-bg-paper: #0d1117;
-    --color-text-primary: #e6edf3;
-    --color-text-secondary: #8b949e;
-    --color-divider: #484f58;
-  }
-}
+/*
+ * Platform semantic tokens are injected by @ghatana/theme ThemeProvider.
+ * Local overrides below apply only to AEP-specific surface tokens.
+ */
 
 html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* Accessibility: Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Accessibility: Respect high-contrast preferences */
+@media (prefers-contrast: more) {
+  :root {
+    --color-text-primary: black;
+    --color-text-secondary: black;
+    --color-divider: black;
+  }
+  .dark {
+    --color-text-primary: white;
+    --color-text-secondary: white;
+    --color-divider: white;
+  }
+}
+
+/* Accessibility: Focus states for keyboard navigation */
+:focus-visible {
+  outline: 2px solid rgba(25, 118, 210, 0.6);
+  outline-offset: 2px;
+}
+
+@media (prefers-contrast: high) {
+  :focus-visible {
+    outline: 3px solid #0000ff;
+    outline-offset: 2px;
+  }
+}
+
+.dark :focus-visible {
+  outline: 2px solid rgba(56, 139, 253, 0.6);
+  outline-offset: 2px;
+}
+
   color-scheme: dark;
 }
 

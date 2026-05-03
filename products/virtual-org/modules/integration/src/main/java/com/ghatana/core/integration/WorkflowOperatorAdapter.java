@@ -264,13 +264,13 @@ public class WorkflowOperatorAdapter extends AbstractOperator {
         @Override
         public Promise<OperatorResult> process(Event event) {
             logger.info("Processing event for task: taskId={}, type={}, state={}",
-                task.getTaskId(), event.getType(), task.getStatus());
+                task.getTaskId(), event.getType(), task.getState());
 
             // Route the event based on the task's state machine.
             // PENDING/ASSIGNED tasks should not process events — they must be started first.
             if (!running) {
                 logger.warn("Task {} is not running (state={}); ignoring event type={}",
-                    task.getTaskId(), task.getStatus(), event.getType());
+                    task.getTaskId(), task.getState(), event.getType());
                 return Promise.of(OperatorResult.failed(
                     "Task " + task.getTaskId() + " is not in running state"));
             }

@@ -74,7 +74,19 @@ class DmMediaMixModelServiceImplTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("markFitting transitions to FITTING")
+    @DisplayName("submit with null workspaceId defaults to context workspaceId")
+    void submitWithNullWorkspaceId() {
+        DmMediaMixModelService.SubmitMediaMixModelCommand cmd =
+            new DmMediaMixModelService.SubmitMediaMixModelCommand(
+                "Q1 Attribution", null, List.of("ch-1", "ch-2"),
+                Instant.parse("2024-01-01T00:00:00Z"), Instant.parse("2024-03-31T00:00:00Z")
+            );
+        DmMediaMixModel model = runPromise(() -> service.submit(ctx, cmd));
+        assertThat(model.getWorkspaceId()).isEqualTo("ws-1");
+    }
+
+    @Test
+    @DisplayName("submit with non-null workspaceId preserves it")
     void markFittingSuccess() {
         DmMediaMixModel submitted = runPromise(() -> service.submit(ctx, cmd()));
         DmMediaMixModel fitting = runPromise(() -> service.markFitting(ctx, submitted.getId()));

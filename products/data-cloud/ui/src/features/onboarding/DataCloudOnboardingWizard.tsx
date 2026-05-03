@@ -73,8 +73,8 @@ const WIZARD_STEPS: WizardStep[] = [
   },
   {
     id: 'ai',
-    title: 'Enable AI Assist',
-    description: 'Optional — connect an LLM for natural-language queries.',
+    title: 'Enable Automation Assist',
+    description: 'Optional — connect a model for natural-language queries.',
   },
   {
     id: 'done',

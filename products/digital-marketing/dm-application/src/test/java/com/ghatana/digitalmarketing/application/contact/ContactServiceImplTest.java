@@ -88,6 +88,22 @@ class ContactServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("registerContact command accepts null displayName")
+    void shouldAcceptNullDisplayName() {
+        ContactService.RegisterContactCommand cmd = new ContactService.RegisterContactCommand("test@example.com", null);
+        assertThat(cmd.email()).isEqualTo("test@example.com");
+        assertThat(cmd.displayName()).isNull();
+    }
+
+    @Test
+    @DisplayName("registerContact command accepts empty displayName")
+    void shouldAcceptEmptyDisplayName() {
+        ContactService.RegisterContactCommand cmd = new ContactService.RegisterContactCommand("test@example.com", "");
+        assertThat(cmd.email()).isEqualTo("test@example.com");
+        assertThat(cmd.displayName()).isEqualTo("");
+    }
+
+    @Test
     @DisplayName("registerContact rejects when not authorized")
     void shouldDenyRegisterWhenNotAuthorized() {
         kernelAdapter.setAuthorization("contacts/*", "write", false);

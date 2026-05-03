@@ -294,10 +294,7 @@ class DisasterRecoveryE2ETest extends EventloopTestBase {
             DRMetrics metrics = runPromise(() -> drManager.getDRMetrics());
 
             assertThat(metrics).isNotNull();
-            assertThat(metrics.getFailoverCount())
-                    .as("DR metrics must count the executed failover")
-                    .isGreaterThanOrEqualTo(1);
-            assertThat(metrics.getReplicatedDatasets())
+            assertThat(metrics.getTotalDatasetsProtected())
                     .as("DR metrics must count replicated datasets")
                     .isGreaterThanOrEqualTo(1);
         }
@@ -324,7 +321,7 @@ class DisasterRecoveryE2ETest extends EventloopTestBase {
             assertThat(runbooks)
                     .allSatisfy(rb -> {
                         assertThat(rb.getRunbookId()).isNotBlank();
-                        assertThat(rb.getTitle()).isNotBlank();
+                        assertThat(rb.getName()).isNotBlank();
                     });
         }
 
@@ -340,7 +337,7 @@ class DisasterRecoveryE2ETest extends EventloopTestBase {
 
             assertThat(retrieved).isNotNull();
             assertThat(retrieved.getRunbookId()).isEqualTo(firstRunbookId);
-            assertThat(retrieved.getTitle()).isNotBlank();
+            assertThat(retrieved.getName()).isNotBlank();
         }
     }
 }

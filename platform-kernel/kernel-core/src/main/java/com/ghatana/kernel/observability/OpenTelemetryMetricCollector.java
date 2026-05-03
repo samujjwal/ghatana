@@ -5,6 +5,7 @@ import io.opentelemetry.api.metrics.LongCounter;
 import io.opentelemetry.api.metrics.LongHistogram;
 import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.metrics.ObservableDoubleGauge;
+import io.opentelemetry.api.metrics.ObservableLongGauge;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,11 +25,12 @@ public final class OpenTelemetryMetricCollector implements MetricCollectorPort {
     private final Meter meter;
     private final Map<String, LongCounter> counters = new ConcurrentHashMap<>();
     private final Map<String, ObservableDoubleGauge> gauges = new ConcurrentHashMap<>();
+    private final Map<String, ObservableLongGauge> longGauges = new ConcurrentHashMap<>();
     private final Map<String, LongHistogram> histograms = new ConcurrentHashMap<>();
     private final Map<String, LongHistogram> timers = new ConcurrentHashMap<>();
 
     public OpenTelemetryMetricCollector(OpenTelemetry openTelemetry) {
-        this.meter = openTelemetry.getMeter("ghatana.kernel", "1.0.0");
+        this.meter = openTelemetry.getMeter("ghatana.kernel");
     }
 
     @Override
@@ -46,7 +48,7 @@ public final class OpenTelemetryMetricCollector implements MetricCollectorPort {
         // OpenTelemetry gauges are typically set via callbacks, but for simplicity
         // we'll record as a histogram or use a different approach
         // For now, we'll use a simple recording approach
-        ObservableDoubleGauge gauge = gauges.computeIfAbsent(name, n -> 
+        ObservableLongGauge gauge = longGauges.computeIfAbsent(name, n ->
             meter.gaugeBuilder(n)
                 .setDescription("Gauge metric")
                 .ofLongs()

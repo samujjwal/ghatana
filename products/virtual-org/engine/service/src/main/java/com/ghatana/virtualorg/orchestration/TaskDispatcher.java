@@ -266,7 +266,7 @@ public class TaskDispatcher {
             attempt + 1, maxAttempts, role, intervalMs);
 
         // Schedule the next poll via Promise.ofBlocking (non-blocking on the event loop).
-        return Promise.ofBlocking(io.activej.eventloop.Eventloop.getCurrentEventloop(), () -> {
+        return Promise.ofBlocking(() -> {
             Thread.sleep(intervalMs);
             return null;
         }).then(() -> pollForAgent(task, role, attempt + 1, maxAttempts, intervalMs));

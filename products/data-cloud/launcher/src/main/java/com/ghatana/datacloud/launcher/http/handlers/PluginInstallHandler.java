@@ -214,10 +214,8 @@ public final class PluginInstallHandler {
      */
     public Promise<HttpResponse> handleUpgradePlugin(HttpRequest request) {
         if (!pluginUpgradeEnabled) {
-            log.debug("Plugin upgrade requested but pluginUpgradeEnabled=false — returning 503");
-            return Promise.of(http.serviceUnavailableResponse(
-                "Plugin hot-swap upgrade is not enabled on this instance",
-                300));
+            log.debug("Plugin upgrade requested but pluginUpgradeEnabled=false — returning 501");
+            return Promise.of(http.errorResponse(501, "Plugin hot-swap upgrade is not enabled on this instance"));
         }
         String pluginId = request.getPathParameter("id");
         String tenantId = http.requireTenantIdOrFail(request);

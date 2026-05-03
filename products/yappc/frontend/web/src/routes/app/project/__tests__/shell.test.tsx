@@ -58,6 +58,7 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
   return {
     ...actual,
     useQuery: () => ({ data: null, isLoading: false }),
+    useQueryClient: () => ({ prefetchQuery: vi.fn(), invalidateQueries: vi.fn() }),
   };
 });
 

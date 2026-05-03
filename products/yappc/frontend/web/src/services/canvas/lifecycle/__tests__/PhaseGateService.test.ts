@@ -19,7 +19,7 @@ import {
   usePhaseGates,
   type TransitionRequest,
 } from '../PhaseGateService';
-import { LifecyclePhase } from '@/types/lifecycle';
+import { LIFECYCLE_PHASE, LifecyclePhase } from '@/types/lifecycle';
 import { PHASE_GATES } from '@/shared/types/phase-gates';
 import {
   type LifecycleArtifactKind,
@@ -211,8 +211,8 @@ describe('PhaseGateService - gate operations', () => {
     await service.initializeProject(PROJECT_ID);
   });
 
-  it('getAllGates returns all 6 phase gates', () => {
-    expect(service.getAllGates()).toHaveLength(6);
+  it('getAllGates returns all canonical phase gates', () => {
+    expect(service.getAllGates()).toHaveLength(PHASE_GATES.length);
     expect(service.getAllGates()).toBe(PHASE_GATES);
   });
 
@@ -438,32 +438,32 @@ describe('PhaseGateService - progress tracking', () => {
     expect(progress.status).toBe('completed');
   });
 
-  it('getPhaseProgress returns "blocked" for the current phase when artifacts are missing', async () => {
-    // SHAPE is current but gate:shape-to-validate has no artifacts → blocked
+  it('getPhaseProgress returns "in_progress" for the current phase when artifacts are missing', async () => {
+    // Current phase remains in_progress; blocking applies to transition gates.
     const progress = await service.getPhaseProgress(
       PROJECT_ID,
       LifecyclePhase.SHAPE
     );
-    expect(progress.status).toBe('blocked');
+    expect(progress.status).toBe('in_progress');
   });
 
-  it('getPhaseProgress returns "not_started" for IMPROVE (last phase — no outgoing gate)', async () => {
-    // IMPROVE has no following phase, so the gate-blocking override never fires
+  it('getPhaseProgress returns "blocked" for IMPROVE (legacy alias of LEARN with outgoing gate)', async () => {
     const progress = await service.getPhaseProgress(
       PROJECT_ID,
       LifecyclePhase.IMPROVE
     );
-    expect(progress.status).toBe('not_started');
+    expect(progress.status).toBe('blocked');
   });
 
   it.each([
     [LifecyclePhase.INTENT, 3] as const,
-    [LifecyclePhase.SHAPE, 3] as const,
-    [LifecyclePhase.VALIDATE, 3] as const,
-    [LifecyclePhase.GENERATE, 2] as const,
-    [LifecyclePhase.RUN, 2] as const,
+    [LifecyclePhase.CONTEXT, 3] as const,
+    [LifecyclePhase.PLAN, 3] as const,
+    [LifecyclePhase.EXECUTE, 2] as const,
+    [LifecyclePhase.VERIFY, 2] as const,
     [LifecyclePhase.OBSERVE, 2] as const,
-    [LifecyclePhase.IMPROVE, 2] as const,
+    [LifecyclePhase.LEARN, 2] as const,
+    [LifecyclePhase.INSTITUTIONALIZE, 1] as const,
   ])(
     'getPhaseProgress(%s) uses catalog-derived total of %i artifacts',
     async (phase, expectedTotal) => {
@@ -472,9 +472,9 @@ describe('PhaseGateService - progress tracking', () => {
     }
   );
 
-  it('getLifecycleProgress includes a PhaseProgress entry for every phase', async () => {
+  it('getLifecycleProgress includes a PhaseProgress entry for every canonical phase', async () => {
     const progress = await service.getLifecycleProgress(PROJECT_ID);
-    expect(progress.phases).toHaveLength(Object.values(LifecyclePhase).length);
+    expect(progress.phases).toHaveLength(LIFECYCLE_PHASE.length);
   });
 
   it('getLifecycleProgress projectId and currentPhase are correct', async () => {
@@ -500,6 +500,27 @@ describe('PhaseGateService - progress tracking', () => {
 // ---------------------------------------------------------------------------
 
 describe('usePhaseGates', () => {
+  beforeEach(() => {
+    // ApiBackedProjectPhaseRepository makes real fetch calls to
+    // http://localhost:7002. In tests there is no server running, and on
+    // Windows a TCP connection to a closed port can take 30-60 s per attempt
+    // to time out. getLifecycleProgress loops over all lifecycle phases and
+    // calls repository.getState() for each one, so without this mock the
+    // getProgress test hangs for ~8 × 60 s ≈ 480 s before timing out.
+    //
+    // The repository already has try/catch fallback logic: if the fetch
+    // throws it falls back to LocalStorageProjectPhaseRepository. Mocking
+    // fetch to reject immediately ensures the fallback path is exercised
+    // without waiting for a real TCP timeout.
+    vi.spyOn(global, 'fetch').mockRejectedValue(
+      new Error('Network unavailable in test environment')
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('initializes with loading=true', () => {
     const { result } = renderHook(() => usePhaseGates(PROJECT_ID));
     expect(result.current.loading).toBe(true);
@@ -522,7 +543,7 @@ describe('usePhaseGates', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(Object.keys(result.current.gateStatuses)).toHaveLength(6);
+    expect(Object.keys(result.current.gateStatuses)).toHaveLength(PHASE_GATES.length);
   });
 
   it('transition with bypass changes currentPhase', async () => {
@@ -563,6 +584,6 @@ describe('usePhaseGates', () => {
       progress = await result.current.getProgress();
     });
 
-    expect(progress?.phases).toHaveLength(7);
+    expect(progress?.phases).toHaveLength(LIFECYCLE_PHASE.length);
   });
 });

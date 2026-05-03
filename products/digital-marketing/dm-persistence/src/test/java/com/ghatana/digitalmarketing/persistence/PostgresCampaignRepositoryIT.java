@@ -19,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,7 +59,8 @@ class PostgresCampaignRepositoryIT extends EventloopTestBase {
         ds.setUrl(POSTGRES.getJdbcUrl());
         ds.setUser(POSTGRES.getUsername());
         ds.setPassword(POSTGRES.getPassword());
-        repository = new PostgresCampaignRepository(ds);
+        Executor executor = Runnable::run;
+        repository = new PostgresCampaignRepository(ds, executor);
     }
 
     @BeforeEach

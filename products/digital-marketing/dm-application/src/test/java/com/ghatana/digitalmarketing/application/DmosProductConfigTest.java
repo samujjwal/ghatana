@@ -84,4 +84,29 @@ class DmosProductConfigTest {
     void versionDefaultsToLocal() {
         assertThat(DmosProductConfig.VERSION).isEqualTo("local");
     }
+
+    @Test
+    @DisplayName("stringEnv returns defaultValue when env var is null")
+    void stringEnv_returnsDefaultValueWhenNull() {
+        // Test the static method logic indirectly by checking the default values
+        // When env var is not set, the default value is used
+        assertThat(DmosProductConfig.ENVIRONMENT).isEqualTo("development");
+        assertThat(DmosProductConfig.VERSION).isEqualTo("local");
+    }
+
+    @Test
+    @DisplayName("boolEnv returns defaultValue when env var is not set")
+    void boolEnv_returnsDefaultValueWhenNotSet() {
+        // When env var is not set, the default value (true) is used
+        assertThat(DmosProductConfig.AI_FEATURES_ENABLED).isTrue();
+        assertThat(DmosProductConfig.GOOGLE_ADS_CONNECTOR_ENABLED).isTrue();
+    }
+
+    @Test
+    @DisplayName("intEnv returns defaultValue when env var is not set")
+    void intEnv_returnsDefaultValueWhenNotSet() {
+        // When env var is not set, the default value is used
+        assertThat(DmosProductConfig.MAX_INTAKE_FIELDS).isEqualTo(50);
+        assertThat(DmosProductConfig.MAX_AD_COPY_VARIANTS).isEqualTo(5);
+    }
 }

@@ -39,6 +39,14 @@ export const RouteCapabilitySchema = z.object({
   label: z.string().min(1),
   /** Required role for access */
   minimumRole: z.enum(["viewer", "operator", "admin"]).default("viewer"),
+  /**
+   * Whether auditor role can access this route.
+   * Auditors have read-only access to governance, audit, compliance, lineage,
+   * operations history, and privacy-status surfaces, but cannot mutate
+   * pipelines, policies, privacy actions, connectors, plugins, or executions.
+   * Defaults to true for viewer-minimum routes, false for operator-minimum routes.
+   */
+  auditorAllowed: z.boolean().optional(),
   /** Functional lifecycle state */
   lifecycle: RouteLifecycleSchema.default("active"),
   /** Capabilities this route provides */
@@ -78,6 +86,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/operate",
     label: "Runs & Alerts",
     minimumRole: "viewer",
+    // Auditor can observe run status and alerts (read-only).
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["monitoring", "runs", "alerts"],
     discoverable: true,
@@ -89,6 +99,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/operate/costs",
     label: "Costs",
     minimumRole: "operator",
+    // Auditor does not have access to budget/cost data by default.
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["costs", "budget"],
     discoverable: true,
@@ -100,6 +112,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/operate/reviews",
     label: "Review Queue",
     minimumRole: "operator",
+    // Auditor cannot participate in HITL decision-making (mutations only).
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["hitl", "review"],
     discoverable: true,
@@ -111,6 +125,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/operate/runs/:runId",
     label: "Run Detail",
     minimumRole: "viewer",
+    // Auditor can inspect run lineage, decisions, and evidence.
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["run-detail", "lineage"],
     discoverable: false,
@@ -120,6 +136,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/operate/operations",
     label: "Operations",
     minimumRole: "operator",
+    // Auditor can review historical operations for compliance traceability.
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["operations-center"],
     discoverable: true,
@@ -131,6 +149,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/build/pipelines",
     label: "Pipelines",
     minimumRole: "viewer",
+    // Auditor can view pipeline list (read-only).
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["pipeline-list"],
     discoverable: true,
@@ -142,6 +162,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/build/pipelines/new",
     label: "Pipeline Builder",
     minimumRole: "operator",
+    // Auditor cannot create or modify pipelines.
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["pipeline-builder"],
     discoverable: true,
@@ -153,6 +175,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/build/patterns",
     label: "Patterns",
     minimumRole: "operator",
+    // Auditor cannot create patterns.
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["pattern-studio"],
     discoverable: true,
@@ -164,6 +188,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/learn/episodes",
     label: "Episodes",
     minimumRole: "viewer",
+    // Auditor can review learning episodes (read-only).
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["learning"],
     discoverable: true,
@@ -175,6 +201,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/learn/memory",
     label: "Memory",
     minimumRole: "operator",
+    // Auditor cannot view agent memory (potential PII).
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["memory-explorer"],
     discoverable: true,
@@ -186,6 +214,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/govern",
     label: "Governance",
     minimumRole: "operator",
+    // Auditor has full read access to governance: policies, compliance, audit trail.
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["governance", "policies", "compliance", "audit"],
     discoverable: true,
@@ -197,6 +227,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/govern/privacy",
     label: "Privacy Requests",
     minimumRole: "operator",
+    // Auditor can view privacy request status but cannot submit or approve.
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["privacy", "gdpr", "ccpa"],
     discoverable: true,
@@ -208,6 +240,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/catalog/agents",
     label: "Agents",
     minimumRole: "viewer",
+    // Auditor can view agent registry.
+    auditorAllowed: true,
     lifecycle: "active",
     capabilities: ["agent-registry"],
     discoverable: true,
@@ -219,6 +253,8 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
     path: "/catalog/marketplace",
     label: "Marketplace",
     minimumRole: "viewer",
+    // Auditor cannot acquire or enable marketplace agents.
+    auditorAllowed: false,
     lifecycle: "active",
     capabilities: ["marketplace"],
     discoverable: true,
@@ -243,14 +279,30 @@ export const aepRouteRegistry: RouteCapabilityRegistry = {
 // Registry queries
 // ---------------------------------------------------------------------------
 
-const roleHierarchy: Record<UserRole, number> = {
+/**
+ * Role hierarchy for non-auditor roles.
+ * Auditor access is route-specific via `auditorAllowed` and is handled
+ * separately in `canAccessRoute` and `getDiscoverableRoutes`.
+ */
+const roleHierarchy: Record<Exclude<UserRole, "auditor">, number> = {
   viewer: 0,
   operator: 1,
   admin: 2,
-  auditor: 0,
 };
 
-function roleMeetsMinimum(role: UserRole, minimum: UserRole): boolean {
+function roleMeetsMinimum(
+  role: UserRole,
+  minimum: Exclude<UserRole, "auditor">,
+  route: RouteCapability
+): boolean {
+  if (role === "auditor") {
+    // Auditor access is determined per-route by the `auditorAllowed` flag.
+    // When not explicitly set, auditors can access viewer-minimum routes only.
+    if (route.auditorAllowed !== undefined) {
+      return route.auditorAllowed;
+    }
+    return minimum === "viewer";
+  }
   return roleHierarchy[role] >= roleHierarchy[minimum];
 }
 
@@ -266,7 +318,7 @@ export function getDiscoverableRoutes(
   return Object.values(aepRouteRegistry).filter(
     (route) =>
       route.discoverable &&
-      roleMeetsMinimum(role, route.minimumRole) &&
+      roleMeetsMinimum(role, route.minimumRole, route) &&
       (includesBoundary || route.lifecycle !== "boundary")
   );
 }
@@ -317,6 +369,7 @@ export function getRouteByPath(
 /**
  * Check if a role can access a specific path.
  * Supports parameterized paths via pattern matching.
+ * Auditor access is determined per-route by the `auditorAllowed` flag.
  */
 export function canAccessRoute(
   role: UserRole,
@@ -324,7 +377,7 @@ export function canAccessRoute(
 ): boolean {
   const route = getRouteByPath(path);
   if (!route) return false;
-  return roleMeetsMinimum(role, route.minimumRole);
+  return roleMeetsMinimum(role, route.minimumRole, route);
 }
 
 /**

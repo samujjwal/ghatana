@@ -18,6 +18,7 @@ import { Navigate, useNavigate } from 'react-router';
 import { DefaultLayout } from './layouts/DefaultLayout';
 import { LoadingState } from './components/common/LoadingState';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
+import { RoleProtectedRoute } from './components/security/RoleProtectedRoute';
 import {
   isAgentCatalogSurfaceEnabled,
   isAlertsSurfaceEnabled,
@@ -289,72 +290,73 @@ export const routes: RouteObject[] = [
       // Trust - Governance & Compliance
       {
         path: 'trust',
-        element: withSuspense(TrustCenter),
+        element: <RoleProtectedRoute routePath="/trust">{withSuspense(TrustCenter)}</RoleProtectedRoute>,
       },
 
       // Insights - Unified Analytics
       {
         path: 'insights',
-        element: withSuspense(InsightsPage),
+        element: <RoleProtectedRoute routePath="/insights">{withSuspense(InsightsPage)}</RoleProtectedRoute>,
       },
 
       // Alerts - operator-facing alert triage console (restored as canonical route)
       {
         path: 'alerts',
-        element: isAlertsSurfaceEnabled() ? withSuspense(AlertsPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/alerts">{isAlertsSurfaceEnabled() ? withSuspense(AlertsPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
 
       // Operations Console - Operator-facing diagnostics and tools
       {
         path: 'operations',
-        element: withSuspense(OperationsConsole),
+        element: <RoleProtectedRoute routePath="/operations">{withSuspense(OperationsConsole)}</RoleProtectedRoute>,
       },
       {
         path: 'operations/jobs',
-        element: withSuspense(OperationsJobCenterPage),
+        element: <RoleProtectedRoute routePath="/operations/jobs">{withSuspense(OperationsJobCenterPage)}</RoleProtectedRoute>,
       },
 
       // AEP Integration Pages
       // Event Explorer — real-time AEP event stream explorer (restored as canonical route)
       {
         path: 'events',
-        element: withSuspense(EventExplorerPage),
+        element: <RoleProtectedRoute routePath="/events">{withSuspense(EventExplorerPage)}</RoleProtectedRoute>,
       },
       // Memory Plane Viewer — restored as canonical route
       {
         path: 'memory',
-        element: isMemorySurfaceEnabled() ? withSuspense(MemoryPlaneViewerPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/memory">{isMemorySurfaceEnabled() ? withSuspense(MemoryPlaneViewerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
       // Entity Browser — restored as canonical route
       {
         path: 'entities',
-        element: isEntityBrowserSurfaceEnabled() ? withSuspense(EntityBrowserPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/entities">{isEntityBrowserSurfaceEnabled() ? withSuspense(EntityBrowserPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
       // Context Explorer — restored as canonical route
       {
         path: 'context',
-        element: isContextSurfaceEnabled() ? withSuspense(ContextExplorerPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/context">{isContextSurfaceEnabled() ? withSuspense(ContextExplorerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
       // Data Fabric — restored as canonical operator-facing route
       {
         path: 'fabric',
-        element: isFabricSurfaceEnabled() ? withSuspense(DataFabricPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/fabric">{isFabricSurfaceEnabled() ? withSuspense(DataFabricPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
       // Agent Catalog — restored as canonical operator-facing route
       {
         path: 'agents',
-        element: isAgentCatalogSurfaceEnabled() ? withSuspense(AgentPluginManagerPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/agents">{isAgentCatalogSurfaceEnabled() ? withSuspense(AgentPluginManagerPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
 
       // Settings
       {
         path: 'settings',
-        element: isSettingsSurfaceEnabled() ? withSuspense(SettingsPage) : withSuspense(NotFound),
+        element: <RoleProtectedRoute routePath="/settings">{isSettingsSurfaceEnabled() ? withSuspense(SettingsPage) : withSuspense(NotFound)}</RoleProtectedRoute>,
       },
 
       // Plugins
       {
         path: 'plugins',
+        element: <RoleProtectedRoute routePath="/plugins" />,
         children: [
           {
             index: true,

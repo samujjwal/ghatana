@@ -143,4 +143,27 @@ describe('LivePreviewPanel - Platform Preview Protocol', () => {
       );
     });
   });
+
+  describe('Default preview URL', () => {
+    it('uses /preview/builder as the iframe src when previewUrl is not provided', () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+      const iframe = screen.queryByTitle('Live Preview');
+      if (iframe) {
+        expect(iframe).toHaveAttribute('src', '/preview/builder');
+      }
+    });
+
+    it('resolvePreviewExecutionPolicy receives window.location.origin as trustedOrigin when no previewUrl is given', () => {
+      render(<LivePreviewPanel document={baseDocument} />);
+      // resolvePreviewExecutionPolicy is called with a sandboxProfile that
+      // has trustedOrigins derived from '/preview/builder' resolved against
+      // window.location.origin (which is 'http://localhost' in jsdom).
+      expect(resolvePreviewExecutionPolicyMock).toHaveBeenCalledWith(
+        baseDocument,
+        expect.objectContaining({
+          trustedOrigins: expect.arrayContaining([expect.stringMatching(/^http/)]),
+        }),
+      );
+    });
+  });
 });

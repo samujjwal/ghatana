@@ -97,6 +97,15 @@ class ContentItemServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("createItem with non-null description preserves it")
+    void shouldPreserveNonNullDescription() {
+        ContentItemService.CreateContentItemCommand cmd =
+            new ContentItemService.CreateContentItemCommand("Ad Copy", ContentItemType.AD, "Test description");
+        ContentItem item = runPromise(() -> service.createItem(ctx, cmd));
+        assertThat(item.getDescription()).isEqualTo("Test description");
+    }
+
+    @Test
     @DisplayName("createItem denied throws SecurityException")
     void shouldDenyUnauthorizedCreateItem() {
         kernelAdapter.denyAll = true;

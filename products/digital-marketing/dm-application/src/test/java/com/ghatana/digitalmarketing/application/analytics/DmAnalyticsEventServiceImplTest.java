@@ -104,6 +104,29 @@ class DmAnalyticsEventServiceImplTest extends EventloopTestBase {
                 "", "page_view", null, null, null, null, null, null, null, Map.of()));
     }
 
+    @Test
+    @DisplayName("ingest with null properties defaults to empty map")
+    void ingestWithNullProperties() {
+        DmAnalyticsEventService.IngestAnalyticsEventCommand cmd =
+            new DmAnalyticsEventService.IngestAnalyticsEventCommand(
+                "session-1", "page_view", "https://example.com",
+                "google", "cpc", "summer-sale", null, null, "visitor-1", null);
+        DmAnalyticsEvent event = runPromise(() -> service.ingest(ctx, cmd));
+        assertThat(event.getProperties()).isNotNull().isEmpty();
+    }
+
+    @Test
+    @DisplayName("ingest with non-null properties preserves them")
+    void ingestWithNonNullProperties() {
+        Map<String, String> props = Map.of("key1", "value1", "key2", "value2");
+        DmAnalyticsEventService.IngestAnalyticsEventCommand cmd =
+            new DmAnalyticsEventService.IngestAnalyticsEventCommand(
+                "session-1", "page_view", "https://example.com",
+                "google", "cpc", "summer-sale", null, null, "visitor-1", props);
+        DmAnalyticsEvent event = runPromise(() -> service.ingest(ctx, cmd));
+        assertThat(event.getProperties()).isEqualTo(props);
+    }
+
     private DmAnalyticsEventService.IngestAnalyticsEventCommand cmd() {
         return new DmAnalyticsEventService.IngestAnalyticsEventCommand(
             "session-1", "page_view", "https://example.com",

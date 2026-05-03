@@ -126,6 +126,14 @@ class DmPublicApiKeyServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("IssuePublicApiKeyCommand rejects null displayName")
+    void commandValidationNullDisplayName() {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new DmPublicApiKeyService.IssuePublicApiKeyCommand(
+                null, "hash", List.of(), null));
+    }
+
+    @Test
     @DisplayName("IssuePublicApiKeyCommand rejects null keyHash")
     void commandValidationNullHash() {
         assertThatExceptionOfType(IllegalArgumentException.class)

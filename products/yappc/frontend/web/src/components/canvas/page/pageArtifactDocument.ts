@@ -5,9 +5,62 @@ import {
   type BuilderDocument,
   type RoundTripFidelity,
   type SerializedDocument,
+  type AIActionLineage,
+  type AIHookKind,
+  type AIReviewState,
+  AIActionLineageTracker,
+  createLineageEntry,
 } from '@ghatana/ui-builder';
+import { getContractMap } from './registry';
 type DataClassification = NonNullable<BuilderDocument['metadata']['dataClassification']>;
 type TrustLevel = NonNullable<BuilderDocument['metadata']['trustLevel']>;
+
+// ---------------------------------------------------------------------------
+// AI Change Record
+// ---------------------------------------------------------------------------
+
+/**
+ * Product-layer record for an AI-originated change applied to a page artifact.
+ * Wraps the platform `AIActionLineage` type and adds artifact-scoped context.
+ *
+ * @doc.type interface
+ * @doc.purpose Product-scoped AI change record for page artifact governance
+ * @doc.layer product
+ */
+export interface PageArtifactAIChangeRecord {
+  /** The underlying platform lineage entry. */
+  readonly lineage: AIActionLineage;
+  /** The artifact this change was applied to. */
+  readonly artifactId: string;
+  /** The document version at the time the change was applied. */
+  readonly documentId: string;
+}
+
+/**
+ * Creates a new `AIChangeRecord` for a given artifact using the platform
+ * `createLineageEntry` factory.
+ */
+export function createAIChangeRecord(
+  artifactId: string,
+  documentId: string,
+  hookKind: AIHookKind,
+  reason: string,
+  confidence: number,
+  affectedNodeIds: readonly string[],
+  options?: {
+    readonly reversible?: boolean;
+    readonly reviewState?: AIReviewState;
+    readonly correlationId?: string;
+    readonly evidence?: readonly string[];
+  },
+): PageArtifactAIChangeRecord {
+  const lineage = createLineageEntry(hookKind, reason, confidence, affectedNodeIds, options);
+  return { lineage, artifactId, documentId };
+}
+
+/** Re-export the platform tracker for use in product code. */
+export { AIActionLineageTracker };
+export type { AIActionLineage, AIHookKind, AIReviewState };
 
 export type PageArtifactSource =
   | 'created-in-builder'
@@ -36,6 +89,7 @@ export interface PageArtifactDocument {
   readonly updatedBy: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly aiChangeRecords?: readonly PageArtifactAIChangeRecord[];
   readonly validationSummary?: {
     readonly valid: boolean;
     readonly errorCount: number;
@@ -45,6 +99,8 @@ export interface PageArtifactDocument {
 
 export function createEmptyBuilderDocument(name: string, author: string): BuilderDocument {
   const now = new Date().toISOString();
+  const contractMap = getContractMap();
+  const componentContracts = Array.from(contractMap.values());
 
   return {
     id: createDocumentId(),
@@ -55,7 +111,7 @@ export function createEmptyBuilderDocument(name: string, author: string): Builde
       name: 'Ghatana Design System',
       version: '1.0.0',
       tokenSetIds: [],
-      componentContracts: [],
+      componentContracts,
       themeId: 'default',
     },
     rootNodes: [],
@@ -123,6 +179,17 @@ export function updatePageArtifactDocument(
     updatedBy,
     updatedAt: now,
     validationSummary,
+  };
+}
+
+export function appendAIChangeRecord(
+  pageDocument: PageArtifactDocument,
+  record: PageArtifactAIChangeRecord,
+): PageArtifactDocument {
+  return {
+    ...pageDocument,
+    aiChangeRecords: [...(pageDocument.aiChangeRecords ?? []), record],
+    updatedAt: new Date().toISOString(),
   };
 }
 

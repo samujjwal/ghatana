@@ -177,6 +177,34 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("notifyUser logs notification dispatch")
+    void shouldNotifyUser() {
+        adapter.start();
+
+        runPromise(() -> adapter.notifyUser(
+            ctx,
+            "user-123",
+            "dmos.campaign.launched",
+            Map.of("campaignName", "Q4 Promo")
+        ));
+
+        // Should complete without error - the implementation logs the notification
+    }
+
+    @Test
+    @DisplayName("notifyUser rejects calls before start")
+    void shouldRejectNotifyBeforeStart() {
+        assertThatIllegalStateException()
+            .isThrownBy(() -> adapter.notifyUser(
+                ctx,
+                "user-123",
+                "dmos.campaign.launched",
+                Map.of("campaignName", "Q4 Promo")
+            ))
+            .withMessageContaining("not started");
+    }
+
+    @Test
     @DisplayName("constructor rejects null required dependencies")
     void shouldRejectNullDependencies() {
         assertThatNullPointerException()

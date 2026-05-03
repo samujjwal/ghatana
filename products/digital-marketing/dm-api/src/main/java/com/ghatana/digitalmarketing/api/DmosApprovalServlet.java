@@ -15,6 +15,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.approval.ApprovalSnapshot;
 import com.ghatana.digitalmarketing.domain.approval.ApprovalTargetType;
 import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
 import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
@@ -261,8 +262,10 @@ public final class DmosApprovalServlet {
                     approvalService.getApprovalStatus(ctx, requestId),
                     approvalService.getSnapshot(ctx, requestId))
                 .then(tuple -> {
-                    var recordOpt = tuple.get(0);
-                    var snapshotOpt = tuple.get(1);
+                    @SuppressWarnings("unchecked")
+                    Optional<ApprovalRecord> recordOpt = (Optional<ApprovalRecord>) tuple.get(0);
+                    @SuppressWarnings("unchecked")
+                    Optional<ApprovalSnapshot> snapshotOpt = (Optional<ApprovalSnapshot>) tuple.get(1);
                     if (recordOpt.isEmpty()) {
                         return Promise.of(notFound("Approval not found: " + requestId));
                     }
@@ -317,6 +320,7 @@ public final class DmosApprovalServlet {
             return approvalService.listPendingApprovals(ctx, subjectId)
                 .map(list -> list.stream().map(record -> toDmosApprovalDto(ctx, record, null)).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
+                .map(r -> (HttpResponse) r)
                 .then(r -> Promise.of(r), e -> mapServiceError("list-pending", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(badRequest("Invalid request: " + e.getMessage()));

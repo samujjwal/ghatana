@@ -72,9 +72,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return request.loadBody().then(buf -> {
@@ -141,9 +139,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return executionCapability.getExecution(tenantId, executionId)
@@ -187,9 +183,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return executionCapability.cancelExecution(tenantId, executionId)
@@ -216,9 +210,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return executionCapability.getExecution(tenantId, executionId)
@@ -260,9 +252,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return executionCapability.cancelExecution(tenantId, executionId)
@@ -286,9 +276,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return executionCapability.retryExecution(tenantId, executionId)
@@ -313,9 +301,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         return request.loadBody().then(buf -> {
@@ -366,7 +352,8 @@ public class WorkflowExecutionHandler {
                         "executionId", executionId,
                         "tenantId", tenantId,
                         "checkpointId", checkpointId,
-                        "savedAt", savedAt
+                        "savedAt", savedAt,
+                        "status", "checkpointed"
                     )))
                     .whenException(e -> log.error("Failed to save checkpoint for execution {} tenant {}: {}", executionId, tenantId, e.getMessage()));
             } catch (Exception e) {
@@ -413,9 +400,7 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Workflow execution capability is not available in this deployment.",
-                60));
+            return Promise.of(http.errorResponse(501, "Workflow execution capability is not available in this deployment."));
         }
 
         // Restore: retry the execution from its last saved state (capability handles state recovery)

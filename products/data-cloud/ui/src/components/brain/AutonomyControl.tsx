@@ -113,7 +113,7 @@ export function AutonomyControl({ domains, onPolicyChange }: AutonomyControlProp
   return (
     <BaseCard
       title="Autonomy Control Center"
-      subtitle="Configure AI autonomy per domain"
+      subtitle="Configure autonomy levels per domain"
     >
       <div className="space-y-4">
         {DEFAULT_DOMAINS.map((domain, index) => {

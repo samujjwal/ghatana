@@ -1,4 +1,4 @@
-﻿package com.ghatana.stt.engine;
+package com.ghatana.stt.engine;
 
 import com.ghatana.stt.engine.WhisperTranscriptionEngine.*;
 import org.junit.jupiter.api.*;

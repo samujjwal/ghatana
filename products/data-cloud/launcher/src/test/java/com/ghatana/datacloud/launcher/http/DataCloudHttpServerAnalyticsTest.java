@@ -382,7 +382,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("engine not wired → 503")
         void explain_noEngine_returns503() throws Exception { 
-            startServer(); 
+            startServerNoEngine(); 
             HttpResponse<String> resp = post("/api/v1/analytics/explain", 
                     "{\"query\":\"SELECT 1\"}");
             assertThat(resp.statusCode()).isEqualTo(503); 

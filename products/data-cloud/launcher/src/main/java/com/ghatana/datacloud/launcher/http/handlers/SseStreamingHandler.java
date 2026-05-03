@@ -536,9 +536,7 @@ public class SseStreamingHandler {
      */
     public Promise<HttpResponse> handleStreamingQuerySse(HttpRequest request) {
         if (openSearchConnector == null) {
-            return Promise.of(http.serviceUnavailableResponse(
-                "Streaming query is not enabled; configure an OpenSearchConnector",
-                60));
+            return Promise.of(http.errorResponse(501, "Streaming query is not enabled; configure an OpenSearchConnector"));
         }
 
         String collection = request.getPathParameter("collection");

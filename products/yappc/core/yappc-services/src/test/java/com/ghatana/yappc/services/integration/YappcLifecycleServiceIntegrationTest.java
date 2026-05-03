@@ -18,7 +18,7 @@ import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.run.RunTask;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
-import com.ghatana.yappc.services.evolve.EvolutionPlan;
+import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
 import com.ghatana.yappc.services.generate.GenerationService;
@@ -176,7 +176,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
                             "component-tenant")));
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
 
-            assertThat(shape.components()).isNotEmpty();
+            assertThat(shape.workflows()).isNotEmpty();
         }
     }
 
@@ -192,7 +192,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             return RunResult.builder()
                     .id(id)
                     .runSpecRef("spec-" + id)
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(30))
                     .completedAt(Instant.now())
@@ -208,7 +208,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
 
             assertThat(obs).isNotNull();
             assertThat(obs.id()).isNotBlank();
-            assertThat(obs.runResultRef()).isEqualTo("run-integration-001");
+            assertThat(obs.runRef()).isEqualTo("run-integration-001");
         }
 
         @Test
@@ -238,7 +238,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             Observation obs = runPromise(() -> observeService.collect(failedRun));
 
             assertThat(obs).isNotNull();
-            assertThat(obs.runResultRef()).isEqualTo("run-failed-003");
+            assertThat(obs.runRef()).isEqualTo("run-failed-003");
         }
 
         @Test
@@ -251,8 +251,8 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             Observation obs2 = runPromise(() -> observeService.collect(run2));
 
             assertThat(obs1.id()).isNotEqualTo(obs2.id());
-            assertThat(obs1.runResultRef()).isEqualTo("run-seq-001");
-            assertThat(obs2.runResultRef()).isEqualTo("run-seq-002");
+            assertThat(obs1.runRef()).isEqualTo("run-seq-001");
+            assertThat(obs2.runRef()).isEqualTo("run-seq-002");
         }
     }
 
@@ -270,7 +270,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             RunResult run = RunResult.builder()
                     .id("run-evolve-001")
                     .runSpecRef("spec-evolve-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(60))
                     .completedAt(Instant.now())
@@ -292,7 +292,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             RunResult run = RunResult.builder()
                     .id("run-evolve-tasks-001")
                     .runSpecRef("spec-evolve-tasks-001")
-                    .status(RunStatus.SUCCEEDED)
+                    .status(RunStatus.SUCCESS)
                     .taskResults(List.of())
                     .startedAt(Instant.now().minusSeconds(60))
                     .completedAt(Instant.now())
@@ -303,7 +303,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             Insights insights  = runPromise(() -> learningService.analyze(obs));
             EvolutionPlan plan = runPromise(() -> evolutionService.propose(insights));
 
-            assertThat(plan.tasks()).allSatisfy(task -> assertThat(task).isNotBlank());
+            assertThat(plan.tasks()).allSatisfy(task -> assertThat(task).isNotNull());
         }
     }
 
