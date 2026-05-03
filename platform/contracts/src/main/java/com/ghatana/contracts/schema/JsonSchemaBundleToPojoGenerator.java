@@ -524,9 +524,7 @@ public class JsonSchemaBundleToPojoGenerator {
     private static String applySuffix(String name, String suffix) {
         if (suffix == null || suffix.isEmpty()) return name;
         // Avoid double suffix if already present (case-sensitive check)
-        // By convention., Proto suffix is added to proto-generated classes; so replace it with
-        // suffix
-        // TODO: pass source suffix as parameter
+        // By convention, Proto suffix is added to proto-generated classes; replace with suffix
         if (name.endsWith(PROTO)) name = name.substring(0, name.length() - PROTO.length());
         return name.endsWith(suffix) ? name : name + suffix;
     }

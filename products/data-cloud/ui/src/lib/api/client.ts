@@ -323,6 +323,12 @@ export class ApiClient {
     const headers = new Headers({
       ...this.defaultHeaders,
       ...extraHeaders,
+      // F-048: Propagate a per-request correlation ID so every span in the
+      // backend can be correlated back to the originating browser request.
+      "X-Correlation-ID":
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     });
     const tenantId = SessionBootstrap.getTenantId();
     if (tenantId) {

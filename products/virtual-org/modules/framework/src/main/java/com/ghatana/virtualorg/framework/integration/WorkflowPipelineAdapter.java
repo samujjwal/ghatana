@@ -1,6 +1,11 @@
 package com.ghatana.virtualorg.framework.integration;
 
 import com.ghatana.platform.domain.event.Event;
+import com.ghatana.platform.domain.event.GEvent;
+import com.ghatana.platform.domain.event.EventId;
+import com.ghatana.platform.domain.event.EventTime;
+import com.ghatana.platform.domain.event.EventStats;
+import com.ghatana.platform.domain.event.EventRelations;
 import com.ghatana.core.operator.OperatorId;
 import com.ghatana.core.operator.catalog.OperatorCatalog;
 import com.ghatana.core.pipeline.Pipeline;
@@ -187,10 +192,32 @@ public class WorkflowPipelineAdapter {
      * @return enriched event
      */
     private Event enrichWithStepMetadata(Event event, WorkflowDefinition.WorkflowStep step) {
-        // TODO: Implement proper event enrichment once Event builder API is stable
-        // For now, just return the original event
-        logger.debug("Event enrichment not yet implemented for step: {}", step.getId());
-        return event;
+        if (!(event instanceof GEvent gEvent)) {
+            logger.debug("Event is not a GEvent; returning original event for step: {}", step.getId());
+            return event;
+        }
+
+        // Copy existing headers, add step metadata for tracing.
+        java.util.Map<String, String> enrichedHeaders = new java.util.HashMap<>();
+        // Copy existing headers via getHeader — GEvent stores them in the headers map.
+        // We reconstruct by reading the known well-known header keys.
+        enrichedHeaders.put("correlationId",
+            gEvent.getCorrelationId() != null ? gEvent.getCorrelationId() : "");
+        enrichedHeaders.put("causationId",
+            gEvent.getCausationId() != null ? gEvent.getCausationId() : "");
+        // Step-specific metadata.
+        enrichedHeaders.put("workflow.stepId", step.getId());
+        enrichedHeaders.put("workflow.stepDescription", step.getDescription());
+        enrichedHeaders.put("workflow.stepRole", step.getAssignedRole());
+        enrichedHeaders.put("workflow.enrichedAt",
+            java.time.Instant.now().toString());
+
+        logger.debug("Enriched event with step metadata: stepId={}, role={}",
+            step.getId(), step.getAssignedRole());
+
+        return gEvent.toBuilder()
+            .headers(enrichedHeaders)
+            .build();
     }
 
     /**
@@ -202,10 +229,34 @@ public class WorkflowPipelineAdapter {
      * @return error event
      */
     private Event createErrorEvent(Event originalEvent, Exception exception, WorkflowDefinition workflow) {
-        // TODO: Implement proper error event creation once Event builder API is stable
-        // For now, just return the original event
-        logger.error("Error event creation not yet implemented for workflow: {}", workflow.getName(), exception);
-        return originalEvent;
+        logger.error("Workflow pipeline error: workflow={}, error={}",
+            workflow.getName(), exception.getMessage(), exception);
+
+        java.util.Map<String, String> errorHeaders = new java.util.HashMap<>();
+        errorHeaders.put("correlationId",
+            originalEvent.getCorrelationId() != null ? originalEvent.getCorrelationId() : "");
+        errorHeaders.put("causationId", originalEvent.getHeader("id") != null
+            ? originalEvent.getHeader("id") : "");
+        errorHeaders.put("error.workflow", workflow.getName());
+        errorHeaders.put("error.type",
+            exception.getClass().getSimpleName());
+        errorHeaders.put("error.timestamp",
+            java.time.Instant.now().toString());
+
+        java.util.Map<String, Object> errorPayload = new java.util.HashMap<>();
+        errorPayload.put("errorMessage", exception.getMessage());
+        errorPayload.put("workflowName", workflow.getName());
+        errorPayload.put("originalEventType", originalEvent.getType());
+        errorPayload.put("originalEventId", originalEvent.getHeader("id"));
+        if (exception.getCause() != null) {
+            errorPayload.put("causeMessage", exception.getCause().getMessage());
+        }
+
+        return GEvent.builder()
+            .type("workflow.error")
+            .headers(errorHeaders)
+            .payload(errorPayload)
+            .build();
     }
 
     /**

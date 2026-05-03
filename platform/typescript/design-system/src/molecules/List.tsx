@@ -158,9 +158,9 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
   children,
 }) => {
   const sizeConfig = {
-    sm: { padding: '0.5rem', gap: '0.5rem', fontSize: 14 }, // TODO: Replace with tokens when available
-    md: { padding: '0.75rem', gap: '0.75rem', fontSize: 16 }, // TODO: Replace with tokens when available
-    lg: { padding: '1rem', gap: '1rem', fontSize: 18 }, // TODO: Replace with tokens when available
+    sm: { padding: tokens.spacing[2], gap: tokens.spacing[2], fontSize: tokens.typography.fontSize.sm },
+    md: { padding: tokens.spacing[3], gap: tokens.spacing[3], fontSize: tokens.typography.fontSize.base },
+    lg: { padding: tokens.spacing[4], gap: tokens.spacing[4], fontSize: tokens.typography.fontSize.lg },
   };
 
   const config = sizeConfig[size];
@@ -179,16 +179,16 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
     const baseStyles: React.CSSProperties = {
       display: 'flex',
       alignItems: 'center',
-      gap: '0.5rem', // TODO: Replace with tokens.spacing[2] when available
+      gap: tokens.spacing[2],
       padding: config.padding,
-      borderRadius: '0.25rem', // TODO: Replace with tokens.borderRadius.md when available
+      borderRadius: tokens.borderRadius.md,
       cursor: item.disabled ? 'not-allowed' : selectable ? 'pointer' : 'default',
-      transition: 'all 0.2s ease-in-out', // TODO: Replace with tokens.transitions when available
+      transition: `all ${tokens.transitions.transitions.fast} ease-in-out`,
       opacity: item.disabled ? 0.5 : 1,
-      backgroundColor: item.selected ? '#E3F2FD' : 'transparent', // TODO: Replace with tokens.colors.primary[50] when available
+      backgroundColor: item.selected ? tokens.colors.palette.primary[50] : 'transparent',
       border:
         variant === 'bordered'
-          ? '1px solid #E0E0E0' // TODO: Replace with tokens when available
+          ? `1px solid ${tokens.colors.palette.neutral[200]}`
           : 'none',
     };
 
@@ -198,31 +198,31 @@ export const InteractiveList: React.FC<InteractiveListProps> = ({
   const dividerStyles: React.CSSProperties = {
     height: orientation === 'vertical' ? '1px' : 'auto',
     width: orientation === 'vertical' ? '100%' : '1px',
-    backgroundColor: '#E0E0E0', // TODO: Replace with tokens.colors.neutral[200] when available
+    backgroundColor: tokens.colors.palette.neutral[200],
   };
 
   const labelStyles: React.CSSProperties = {
-    fontFamily: 'Inter, system-ui, sans-serif', // TODO: Replace with tokens.typography.fontFamily.sans when available
+    fontFamily: tokens.typography.fontFamily.sans,
     fontSize: config.fontSize,
-    fontWeight: 500, // TODO: Replace with tokens.typography.fontWeight.medium when available
-    color: '#212121', // TODO: Replace with tokens.colors.neutral[900] when available
+    fontWeight: tokens.typography.fontWeight.medium,
+    color: tokens.colors.palette.neutral[900],
   };
 
   const descriptionStyles: React.CSSProperties = {
-    fontFamily: 'Inter, system-ui, sans-serif', // TODO: Replace with tokens.typography.fontFamily.sans when available
-    fontSize: 14, // TODO: Replace with tokens.typography.fontSize.sm when available
-    color: '#757575', // TODO: Replace with tokens.colors.neutral[600] when available
-    marginTop: '0.25rem', // TODO: Replace with tokens.spacing[1] when available
+    fontFamily: tokens.typography.fontFamily.sans,
+    fontSize: tokens.typography.fontSize.sm,
+    color: tokens.colors.palette.neutral[600],
+    marginTop: tokens.spacing[1],
   };
 
   const badgeStyles: React.CSSProperties = {
     marginLeft: 'auto',
-    padding: '0.25rem 0.5rem', // TODO: Replace with tokens.spacing[1] and tokens.spacing[2] when available
-    backgroundColor: '#E3F2FD', // TODO: Replace with tokens.colors.primary[100] when available
-    color: '#1976D2', // TODO: Replace with tokens.colors.primary[700] when available
-    borderRadius: '9999px', // TODO: Replace with tokens.borderRadius.full when available
-    fontSize: 12, // TODO: Replace with tokens.typography.fontSize.xs when available
-    fontWeight: 600, // TODO: Replace with tokens.typography.fontWeight.semibold when available
+    padding: `${tokens.spacing[1]} ${tokens.spacing[2]}`,
+    backgroundColor: tokens.colors.palette.primary[100],
+    color: tokens.colors.palette.primary[700],
+    borderRadius: tokens.borderRadius.full,
+    fontSize: tokens.typography.fontSize.xs,
+    fontWeight: tokens.typography.fontWeight.semibold,
   };
 
   const renderItem = (item: InteractiveListItem, index: number) => {

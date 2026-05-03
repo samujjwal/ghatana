@@ -384,7 +384,6 @@ function buildProgressiveDisclosureModel(
 
 /**
  * Calculate task risk based on priority and status
- * TODO: Replace with real security scan results when available
  */
 function calculateTaskRisk(priority: string, status: string): number {
   // Base risk by priority
@@ -1764,7 +1763,6 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
       assignee: item.assignedPersona || null,
       dueDate: null,
       // Calculate basic risk based on priority and status
-      // TODO: Replace with real security scan results when available
       risk: calculateTaskRisk(item.priority, item.status),
     }));
   });

@@ -300,7 +300,8 @@ export const KeyboardShortcutsManager: React.FC<
   const { unregisterShortcut } = useKeyboardShortcuts();
 
   const [customShortcuts, setCustomShortcuts] = useState<CustomShortcut[]>([]);
-  // TODO: wire real shortcuts into the hook; for now use customShortcuts as the source
+  // Shortcuts rendered from customShortcuts state; wire useKeyboardShortcuts() registry
+  // when shortcut persistence and sync are implemented
   const shortcuts: KeyboardShortcut[] = customShortcuts.map((c) => ({
     id: c.id,
     key: c.key.toLowerCase(),

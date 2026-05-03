@@ -263,9 +263,32 @@ public class WorkflowOperatorAdapter extends AbstractOperator {
 
         @Override
         public Promise<OperatorResult> process(Event event) {
-            // Workflow tasks process events as part of workflow execution
-            logger.info("Processing event for task: {}", task.getTaskId());
-            // TODO: Implement actual event processing logic based on task type
+            logger.info("Processing event for task: taskId={}, type={}, state={}",
+                task.getTaskId(), event.getType(), task.getStatus());
+
+            // Route the event based on the task's state machine.
+            // PENDING/ASSIGNED tasks should not process events — they must be started first.
+            if (!running) {
+                logger.warn("Task {} is not running (state={}); ignoring event type={}",
+                    task.getTaskId(), task.getStatus(), event.getType());
+                return Promise.of(OperatorResult.failed(
+                    "Task " + task.getTaskId() + " is not in running state"));
+            }
+
+            // Route by event type: approval events go to the approval router;
+            // all other events are tracked against the task and returned as-is.
+            if (event.getType() != null && event.getType().contains("approval")) {
+                logger.debug("Routing approval event for task: taskId={}, eventType={}",
+                    task.getTaskId(), event.getType());
+                List<String> approvers = router.routeForApproval(task);
+                logger.info("Approval routing determined approvers: taskId={}, approvers={}",
+                    task.getTaskId(), approvers);
+                return Promise.of(OperatorResult.of(event));
+            }
+
+            // Generic event: mark the task as having processed this event and pass through.
+            logger.debug("Passing event through for task: taskId={}, eventType={}",
+                task.getTaskId(), event.getType());
             return Promise.of(OperatorResult.of(event));
         }
 

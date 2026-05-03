@@ -215,5 +215,94 @@ class MethodSecurityCheckerTest {
         @RequiresRole("VIEWER")
         public void classAdminMethodViewerRequired() { 
         }
+
+        @RequiresPermission("entity:read:all")
+        public void readPermissionMethod() {
+        }
+
+        @RequiresPermission(anyOf = {"entity:read:all", "entity:write:all"})
+        public void readOrWritePermissionMethod() {
+        }
+
+        @RequiresPermission(value = "event:write:all", requireAll = true,
+                anyOf = {"event:write:all", "admin:*:*"})
+        public void writeAndAdminPermissionMethod() {
+        }
+    }
+
+    @Nested
+    @DisplayName("RequiresPermission Annotation Tests")
+    class RequiresPermissionAnnotationTests {
+
+        @Test
+        @DisplayName("Should deny access when principal is null and @RequiresPermission is present")
+        void shouldDenyAccessWhenPrincipalNullAndRequiresPermission() throws NoSuchMethodException {
+            MethodSecurityChecker checker = new MethodSecurityChecker(null);
+            Method method = TestHandler.class.getMethod("readPermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should grant access when principal role matches required permission (role-as-permission)")
+        void shouldGrantAccessWhenRoleMatchesPermission() throws NoSuchMethodException {
+            Principal principal = new Principal("user1", List.of("entity:read:all"), "tenant1");
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal);
+            Method method = TestHandler.class.getMethod("readPermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should deny access when principal role does not match required permission")
+        void shouldDenyAccessWhenRoleDoesNotMatchPermission() throws NoSuchMethodException {
+            Principal principal = new Principal("user1", List.of("entity:read:own"), "tenant1");
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal);
+            Method method = TestHandler.class.getMethod("readPermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should grant access when principal has any of the required permissions (OR semantics)")
+        void shouldGrantAccessWhenPrincipalHasAnyPermission() throws NoSuchMethodException {
+            Principal principal = new Principal("user1", List.of("entity:write:all"), "tenant1");
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal);
+            Method method = TestHandler.class.getMethod("readOrWritePermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isTrue();
+        }
+
+        @Test
+        @DisplayName("Should deny access when principal has none of the required permissions (OR semantics)")
+        void shouldDenyAccessWhenPrincipalHasNoneOfPermissions() throws NoSuchMethodException {
+            Principal principal = new Principal("user1", List.of("entity:delete:all"), "tenant1");
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal);
+            Method method = TestHandler.class.getMethod("readOrWritePermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isFalse();
+        }
+
+        @Test
+        @DisplayName("Should be case-insensitive in permission matching")
+        void shouldBeCaseInsensitiveInPermissionMatching() throws NoSuchMethodException {
+            Principal principal = new Principal("user1", List.of("ENTITY:READ:ALL"), "tenant1");
+            MethodSecurityChecker checker = new MethodSecurityChecker(principal);
+            Method method = TestHandler.class.getMethod("readPermissionMethod");
+
+            boolean result = checker.checkMethodLevelAccess(method);
+
+            assertThat(result).isTrue();
+        }
     }
 }

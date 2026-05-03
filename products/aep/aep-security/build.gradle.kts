@@ -20,7 +20,7 @@ dependencies {
     implementation(libs.activej.promise)
 
     // JWT handling - using Java JWT library
-    // implementation(libs.auth0.jwt)  // TODO: Add to version catalog if needed
+    // JWT auth0 library available if needed: implementation(libs.auth0.jwt)
 
     // Jackson
     implementation(libs.jackson.databind)

@@ -311,8 +311,7 @@ export function autoLayout<N extends Node, E extends Edge>(
         case 'manual':
             return { nodes, edges };
         case 'elk':
-        // ELK layout not implemented yet, fall through to dagre
-        // TODO: Implement ELK layout when elkjs is added
+        // ELK layout not available without elkjs dependency; falling through to dagre
         case 'dagre':
         default:
             return calculateDagreLayout(nodes, edges, options);

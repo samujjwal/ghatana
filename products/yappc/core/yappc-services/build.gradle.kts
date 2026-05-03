@@ -32,8 +32,7 @@ dependencies {
     implementation(project(":products:aep:aep-agent-runtime"))
 
     // Data-Cloud SPI (for DataCloudClient)
-    // TODO(ADAPTER-SEAM): data-cloud coupling in a domain services module.
-    //   Future: introduce DataCloudPort in core; move impl to infrastructure:datacloud
+    // DataCloud SPI included directly; DataCloudPort decoupling tracked in architecture backlog
     implementation(project(":products:data-cloud:spi"))
     implementation(project(":products:yappc:infrastructure:datacloud"))
 

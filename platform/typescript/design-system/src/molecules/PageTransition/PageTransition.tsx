@@ -138,8 +138,8 @@ export function usePageTransition(): TransitionType {
     return 'none';
   }
 
-  // Default fade transition
-  // TODO: Detect navigation direction (forward/back) and return appropriate type
+  // Default fade transition — forward/back navigation detection
+  // requires router history integration (e.g. via a navigation direction context)
   return 'fade';
 }
 

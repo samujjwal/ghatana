@@ -232,8 +232,23 @@ public class SeniorEngineerAgent extends AbstractVirtualOrgAgent {
         String reasoning = llmClient.generate(systemPrompt, userPrompt, 0.7f, 2048)
             .toCompletableFuture().join();
 
-        // Select best option (simplified - should parse LLM response)
-        OptionProto chosenOption = options.get(0); // TODO: Parse LLM's choice
+        // Parse the LLM's choice from the reasoning text.
+        // The LLM is instructed to reference option IDs or option titles in its output.
+        // Strategy: scan for the first option whose ID or title appears in the reasoning;
+        // fall back to the first available option if no match is found.
+        OptionProto chosenOption = options.stream()
+            .filter(opt -> {
+                String lowerReasoning = reasoning.toLowerCase(java.util.Locale.ROOT);
+                String optId = opt.getOptionId().toLowerCase(java.util.Locale.ROOT);
+                String optTitle = opt.getTitle().toLowerCase(java.util.Locale.ROOT);
+                return lowerReasoning.contains(optId) || lowerReasoning.contains(optTitle);
+            })
+            .findFirst()
+            .orElseGet(() -> {
+                log.warn("LLM reasoning did not reference any option ID or title; " +
+                    "defaulting to options[0]. Reasoning length={}", reasoning.length());
+                return options.get(0);
+            });
 
         return DecisionProto.newBuilder()
                 .setDecisionId(generateId())

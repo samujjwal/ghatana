@@ -84,7 +84,6 @@ public class GraphApiController {
 
         return request.loadBody()
                 .then(body -> {
-                    // TODO: Parse JSON body to GraphNode
                     GraphNode node = parseNodeFromJson(body.asString(StandardCharsets.UTF_8));
                     return graphPlugin.createNode(node);
                 })

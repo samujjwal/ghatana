@@ -11,7 +11,7 @@
   "scripts": {
     "build": "pnpm -r --filter './platform/typescript/**' --filter './products/*/ui' build",
     "build:platform": "pnpm -r --filter './platform/typescript/**' build",
-    "build:data-cloud-ui": "pnpm --filter '@ghatana/data-cloud-ui' build",
+    "build:data-cloud-ui": "pnpm --filter '@data-cloud/ui' build",
     "build:yappc": "pnpm --filter './products/yappc/**' build",
     "dev": "pnpm -r --parallel --filter './products/*/ui' dev",
     "dev:data-cloud": "pnpm --filter '@ghatana/data-cloud-ui' dev",
@@ -28,6 +28,8 @@
     "check:truth-surfaces": "node ./scripts/check-truth-surfaces.mjs",
     "check:data-cloud-ui-contracts": "pnpm --dir ./products/data-cloud/ui exec vitest run src/__tests__/pages/ContractBacked.test.tsx src/__tests__/api/capabilities.service.test.ts",
     "check:tsconfig-strict": "node ./scripts/check-typescript-strict.js",
+    "check:production-readiness": "node ./scripts/check-production-readiness.mjs",
+    "check:audit-todo-burndown": "node ./scripts/generate-audit-todo-burndown.mjs",
     "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
     "check:license-policy": "./scripts/check-license-policy.sh",
     "check:cross-workspace-deps": "node ./scripts/check-cross-workspace-deps.mjs",

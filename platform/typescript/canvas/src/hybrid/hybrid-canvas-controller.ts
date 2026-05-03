@@ -307,12 +307,28 @@ export class HybridCanvasController implements HybridCanvasAPI {
     nodes?: string[];
     edges?: string[];
   }): void {
+    const nodeIds = ids.nodes ?? [];
+    const elementIds = ids.elements ?? [];
+    let bounds: Rect | null = null;
+    if (nodeIds.length > 0) {
+      const allNodes = this.store.get(nodesAtom);
+      const selected = allNodes.filter((n) => nodeIds.includes(n.id));
+      if (selected.length > 0) {
+        const xs = selected.map((n) => n.position.x);
+        const ys = selected.map((n) => n.position.y);
+        const x2s = selected.map((n) => n.position.x + ((n as { measured?: { width?: number } }).measured?.width ?? 100));
+        const y2s = selected.map((n) => n.position.y + ((n as { measured?: { height?: number } }).measured?.height ?? 40));
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        bounds = { x: minX, y: minY, width: Math.max(...x2s) - minX, height: Math.max(...y2s) - minY };
+      }
+    }
     this.store.set(selectionAtom, {
-      elementIds: ids.elements ?? [],
-      nodeIds: ids.nodes ?? [],
+      elementIds,
+      nodeIds,
       edgeIds: ids.edges ?? [],
       isMultiSelect: false,
-      bounds: null, // TODO: Calculate bounds
+      bounds,
     });
   }
 

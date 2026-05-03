@@ -8,7 +8,6 @@
  * @doc.purpose Top-level pipeline builder page
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useCallback, useEffect, useState } from 'react';
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
@@ -126,19 +125,19 @@ export function PipelineBuilderPage() {
   const [validating, setValidating] = useState(false);
   const [running, setRunning] = useState(false);
 
-  // ── AI Assistance ───────────────────────────────────────────────
+  // ── Guided Assistance ───────────────────────────────────────────────
   // Open by default for new pipelines to enable intent-first authoring (TASK-L2)
   const isNewPipeline = !pipelineId;
-  const [aiOpen, setAiOpen] = useState(isNewPipeline);
-  const [aiDescription, setAiDescription] = useState('');
-  const [aiGoal, setAiGoal] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<
+  const [suggestionsOpen, setSuggestionsOpen] = useState(isNewPipeline);
+  const [suggestionDescription, setSuggestionDescription] = useState('');
+  const [suggestionGoal, setSuggestionGoal] = useState('');
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<
     { label: string; kind: StageKind; description: string }[] | null
   >(null);
-  const [aiExplanation, setAiExplanation] = useState('');
-  const [aiConfidence, setAiConfidence] = useState(0);
-  const [aiSources, setAiSources] = useState<AiAssistSource[]>([]);
+  const [suggestionExplanation, setSuggestionExplanation] = useState('');
+  const [suggestionConfidence, setSuggestionConfidence] = useState(0);
+  const [suggestionSources, setSuggestionSources] = useState<AiAssistSource[]>([]);
 
   // ── Responsive panel toggles ────────────────────────────────────
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
@@ -412,9 +411,9 @@ export function PipelineBuilderPage() {
     setPendingNewAction(false);
   }, []);
 
-  const requestAiSuggestions = useCallback(async (description: string, goal?: string) => {
+  const requestSuggestions = useCallback(async (description: string, goal?: string) => {
     if (!description.trim()) return;
-    setAiLoading(true);
+    setSuggestionsLoading(true);
     try {
       const result = await suggestPipelineStages(
         {
@@ -430,32 +429,32 @@ export function PipelineBuilderPage() {
         },
         tenantId,
       );
-      setAiSuggestions(
+      setSuggestions(
         result.suggestedStages.map((s) => ({
           label: s.name,
           kind: (s.kind as StageKind) ?? 'custom',
           description: s.description ?? '',
         })),
       );
-      setAiExplanation(result.rationale ?? result.message ?? 'AI suggestions prepared from the current tenant context.');
-      setAiConfidence(result.confidence);
-      setAiSources(normalizeAiSources(result.evidence));
+      setSuggestionExplanation(result.rationale ?? result.message ?? 'Suggestions prepared from the current tenant context.');
+      setSuggestionConfidence(result.confidence);
+      setSuggestionSources(normalizeAiSources(result.evidence));
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`AI suggestion failed: ${msg}`);
+      toast.error(`Suggestion failed: ${msg}`);
     } finally {
-      setAiLoading(false);
+      setSuggestionsLoading(false);
     }
   }, [nodes, tenantId]);
 
-  const handleAiSuggest = useCallback(async () => {
-    await requestAiSuggestions(aiDescription, aiGoal || undefined);
-  }, [aiDescription, aiGoal, requestAiSuggestions]);
+  const handleSuggest = useCallback(async () => {
+    await requestSuggestions(suggestionDescription, suggestionGoal || undefined);
+  }, [suggestionDescription, suggestionGoal, requestSuggestions]);
 
   const handleApplySuggestions = useCallback(() => {
-    if (!aiSuggestions) return;
+    if (!suggestions) return;
     const startX = 100 + nodes.length * 250;
-    const newNodes = aiSuggestions.map((s, index) => ({
+    const newNodes = suggestions.map((s: { label: string; kind: StageKind; description: string }, index: number) => ({
       id: `stage-${nodes.length + index}`,
       type: 'stage' as const,
       position: { x: startX + index * 250, y: 200 },
@@ -473,12 +472,12 @@ export function PipelineBuilderPage() {
     setNodes(updatedNodes);
     pushHistory(updatedNodes, edges);
     setDirty(true);
-    setAiSuggestions(null);
-    setAiDescription('');
-    setAiGoal('');
-    setAiSources([]);
+    setSuggestions(null);
+    setSuggestionDescription('');
+    setSuggestionGoal('');
+    setSuggestionSources([]);
     toast.success(`Added ${newNodes.length} suggested stage(s)`);
-  }, [aiSuggestions, nodes, edges, setNodes, pushHistory, setDirty]);
+  }, [suggestions, nodes, edges, setNodes, pushHistory, setDirty]);
 
   // ── Render ─────────────────────────────────────────────────────
 
@@ -596,15 +595,15 @@ export function PipelineBuilderPage() {
           canPersistChanges={canManagePipelines}
           canRunPipelines={canManagePipelines}
         />
-        {aiOpen && (
+        {suggestionsOpen && (
           <div className="border-b border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-950">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                AI Stage Assistant
+                Suggested stages
               </h3>
               <button
                 type="button"
-                onClick={() => setAiOpen(false)}
+                onClick={() => setSuggestionsOpen(false)}
                 className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 Close
@@ -613,28 +612,28 @@ export function PipelineBuilderPage() {
             <div className="flex gap-2 mb-2">
               <input
                 type="text"
-                value={aiDescription}
-                onChange={(e) => setAiDescription(e.target.value)}
+                value={suggestionDescription}
+                onChange={(e) => setSuggestionDescription(e.target.value)}
                 placeholder="Describe what this pipeline should do..."
                 className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') void handleAiSuggest();
+                  if (e.key === 'Enter') void handleSuggest();
                 }}
               />
               <input
                 type="text"
-                value={aiGoal}
-                onChange={(e) => setAiGoal(e.target.value)}
+                value={suggestionGoal}
+                onChange={(e) => setSuggestionGoal(e.target.value)}
                 placeholder="Goal (optional)"
                 className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               />
               <button
                 type="button"
-                onClick={() => void handleAiSuggest()}
-                disabled={aiLoading || !aiDescription.trim()}
+                onClick={() => void handleSuggest()}
+                disabled={suggestionsLoading || !suggestionDescription.trim()}
                 className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {aiLoading ? 'Thinking...' : 'Suggest'}
+                {suggestionsLoading ? 'Preparing...' : 'Suggest'}
               </button>
             </div>
             <div className="mt-2 flex gap-2 flex-wrap">
@@ -648,8 +647,8 @@ export function PipelineBuilderPage() {
                   key={t.label}
                   type="button"
                   onClick={() => {
-                    setAiDescription(t.template);
-                    void requestAiSuggestions(t.template, aiGoal || undefined);
+                    setSuggestionDescription(t.template);
+                    void requestSuggestions(t.template, suggestionGoal || undefined);
                   }}
                   className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950"
                 >
@@ -657,18 +656,18 @@ export function PipelineBuilderPage() {
                 </button>
               ))}
             </div>
-            {aiSuggestions && (
+            {suggestions && (
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {getAiRoutingLabel(getAiRouting(aiConfidence))}
+                    {getAiRoutingLabel(getAiRouting(suggestionConfidence))}
                   </p>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => {
-                        setAiSuggestions(null);
-                        setAiSources([]);
+                        setSuggestions(null);
+                        setSuggestionSources([]);
                       }}
                       className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
                     >
@@ -677,23 +676,23 @@ export function PipelineBuilderPage() {
                     <button
                       type="button"
                       onClick={handleApplySuggestions}
-                      disabled={getAiRouting(aiConfidence) === 'advisory'}
+                      disabled={getAiRouting(suggestionConfidence) === 'advisory'}
                       className="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
                     >
-                      {getAiRouting(aiConfidence) === 'reviewable' ? 'Apply after review' : 'Apply suggestions'}
+                      {getAiRouting(suggestionConfidence) === 'reviewable' ? 'Apply after review' : 'Apply suggestions'}
                     </button>
                   </div>
                 </div>
                 <ConfidenceExplanation
-                  tier={getAiConfidenceTier(aiConfidence)}
-                  score={aiConfidence}
-                  reasoning={aiExplanation || getAiRoutingDescription(getAiRouting(aiConfidence))}
-                  evidenceUrl={aiSources.find((source) => source.href)?.href}
+                  tier={getAiConfidenceTier(suggestionConfidence)}
+                  score={suggestionConfidence}
+                  reasoning={suggestionExplanation || getAiRoutingDescription(getAiRouting(suggestionConfidence))}
+                  evidenceUrl={suggestionSources.find((source) => source.href)?.href}
                   className="mb-2"
                 />
-                {aiSources.length > 0 && (
+                {suggestionSources.length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-2 text-[11px] text-gray-500 dark:text-gray-400">
-                    {aiSources.map((source) => (
+                    {suggestionSources.map((source) => (
                       source.href ? (
                         <a
                           key={source.label}
@@ -715,13 +714,13 @@ export function PipelineBuilderPage() {
                     ))}
                   </div>
                 )}
-                {getAiRouting(aiConfidence) === 'advisory' && (
+                {getAiRouting(suggestionConfidence) === 'advisory' && (
                   <p className="mb-2 text-xs font-medium text-amber-700 dark:text-amber-300">
                     Advisory only: inspect the suggested stages and evidence before adding them manually.
                   </p>
                 )}
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {aiSuggestions.map((s, i) => (
+                  {suggestions.map((s, i) => (
                     <div
                       key={i}
                       className="flex-shrink-0 rounded-md border border-gray-200 bg-white px-3 py-2 text-xs dark:border-gray-700 dark:bg-gray-900"

@@ -10,11 +10,14 @@ dependencies {
     testImplementation(project(":products:data-cloud:spi"))
     testImplementation(project(":products:yappc:infrastructure:datacloud"))
     testImplementation(project(":products:yappc:libs:java:yappc-domain"))
+    testImplementation(project(":products:yappc:core:yappc-services"))
     testImplementation(project(":platform:java:governance"))
     testImplementation(libs.jackson.databind)
     testImplementation(libs.jackson.datatype.jsr310)
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(libs.archunit.junit5)
+    testImplementation(libs.micrometer.core)
 }
 
 tasks.test {

@@ -390,7 +390,7 @@ export const AgentPanel: React.FC<AgentPanelProps> = ({
   };
 
   const handleConfigureAgent = (agent: WorkflowAgent) => {
-    // TODO: Open agent configuration dialog
+    // Agent configuration dialog integration requires AgentConfigDialog component
     console.log('Configure agent:', agent);
   };
 

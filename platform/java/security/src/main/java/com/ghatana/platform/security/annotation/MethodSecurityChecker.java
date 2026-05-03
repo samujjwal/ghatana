@@ -200,13 +200,24 @@ public class MethodSecurityChecker {
             return false;
         }
 
-        // For now, we'll log a warning since we don't have a permission checking infrastructure
-        // This would need to be integrated with AccessControlService or similar
-        log.warn("@RequiresPermission annotation found on {} but permission checking not yet implemented. " +
-            "Required permissions: {}", context, Arrays.toString(permissionsToCheck));
-
-        // TODO: Integrate with AccessControlService when permission checking infrastructure is ready
-        // For now, we'll allow access if the principal is authenticated
-        return true;
+        // Permission checking uses roles-as-permissions: a principal is granted a permission
+        // if their role set contains the permission name (role parity).
+        // Full AccessControlService integration can be wired via constructor if needed.
+        Set<String> principalRoles = principal.getRoles().stream()
+            .map(String::toUpperCase)
+            .collect(java.util.stream.Collectors.toSet());
+        boolean hasAccess;
+        if (requireAll && permissionsToCheck.length > 1) {
+            hasAccess = Arrays.stream(permissionsToCheck)
+                .allMatch(p -> principalRoles.contains(p.toUpperCase()));
+        } else {
+            hasAccess = Arrays.stream(permissionsToCheck)
+                .anyMatch(p -> principalRoles.contains(p.toUpperCase()));
+        }
+        if (!hasAccess) {
+            log.debug("Access denied to {}: principal missing required permissions {} (has roles: {})",
+                context, Arrays.toString(permissionsToCheck), principalRoles);
+        }
+        return hasAccess;
     }
 }

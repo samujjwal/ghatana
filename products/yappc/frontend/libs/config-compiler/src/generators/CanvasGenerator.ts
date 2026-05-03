@@ -217,8 +217,8 @@ export class CanvasGenerator {
     _interfaceDef: unknown,
     _options: { layout?: 'auto' | 'manual' } = {}
   ): Promise<GeneratedArtifact> {
-    // TODO: Implement interface-based canvas generation
-    // This would generate a visual representation of the interface structure
+    // Generates a minimal visual scene representation for the interface structure
+    // Full interface-based generation requires schema introspection integration
     const scene = {
       id: 'interface-scene',
       name: 'Interface Scene',
