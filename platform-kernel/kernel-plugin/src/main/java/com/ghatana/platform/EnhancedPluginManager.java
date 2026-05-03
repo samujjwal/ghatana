@@ -4,6 +4,7 @@
  */
 package com.ghatana.platform.plugin;
 
+import com.ghatana.kernel.plugin.PluginManifest;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -138,11 +139,18 @@ public final class EnhancedPluginManager {
                 PluginTier tier = PluginTier.fromManifest(manifest);
                 tierEnforcer.validateTier(tier);
 
-                // Verify capabilities
-                capabilityVerifier.verifyCapabilities(manifest.getCapabilities());
+                // Verify capabilities (convert KernelCapability to String)
+                Set<String> capabilityNames = manifest.getCapabilities().stream()
+                    .map(cap -> cap.toString())
+                    .collect(java.util.stream.Collectors.toSet());
+                capabilityVerifier.verifyCapabilities(capabilityNames);
 
-                // Check resource quotas
-                resourceEnforcer.validateQuotas(manifest.getResourceQuotas());
+                // Check resource quotas (convert kernel-core to kernel-plugin wrapper)
+                PluginResourceQuota pluginQuotas = PluginResourceQuota.builder()
+                    .maxMemoryMB((int) manifest.getResourceQuotas().getMaxMemoryMb())
+                    .maxCpuPercent((int) manifest.getResourceQuotas().getMaxCpuPercent())
+                    .build();
+                resourceEnforcer.validateQuotas(pluginQuotas);
 
                 // Resolve dependencies
                 dependencyResolver.resolveDependencies(manifest);
@@ -241,7 +249,7 @@ public final class EnhancedPluginManager {
         return PluginManifest.builder()
             .pluginId(pluginPath.getFileName().toString())
             .version("1.0.0")
-            .tier(PluginTier.T2)
+            .tier(com.ghatana.kernel.plugin.PluginTier.T2)
             .build();
     }
 

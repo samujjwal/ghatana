@@ -7,38 +7,23 @@ package com.ghatana.platform.plugin;
 import java.util.Objects;
 
 /**
- * Resource quotas for a plugin.
+ * Resource quotas for a plugin - delegates to kernel-core PluginResourceQuota.
  *
  * @doc.type class
- * @doc.purpose Plugin resource quotas - memory, CPU, file descriptors with tier defaults
+ * @doc.purpose Plugin resource quotas - delegates to kernel-core
  * @doc.layer platform
- * @doc.pattern ValueObject
+ * @doc.pattern Adapter
  * @author Ghatana Platform Team
  * @since 1.0.0
+ * @deprecated Use {@link com.ghatana.kernel.plugin.PluginResourceQuota} from kernel-core instead
  */
+@Deprecated(forRemoval = true, since = "1.0.0")
 public final class PluginResourceQuota {
 
-    private final PluginTier tier;
-    private final int maxMemoryMB;
-    private final int maxCpuPercent;
-    private final int maxFileDescriptors;
-    private final long maxNetworkConnections;
+    private final com.ghatana.kernel.plugin.PluginResourceQuota kernelQuota;
 
-    private PluginResourceQuota(Builder builder) {
-        this.tier = Objects.requireNonNull(builder.tier, "tier");
-        this.maxMemoryMB = builder.maxMemoryMB;
-        this.maxCpuPercent = builder.maxCpuPercent;
-        this.maxFileDescriptors = builder.maxFileDescriptors;
-        this.maxNetworkConnections = builder.maxNetworkConnections;
-    }
-
-    /**
-     * Gets the plugin tier.
-     *
-     * @return the tier
-     */
-    public PluginTier tier() {
-        return tier;
+    private PluginResourceQuota(com.ghatana.kernel.plugin.PluginResourceQuota kernelQuota) {
+        this.kernelQuota = kernelQuota;
     }
 
     /**
@@ -47,7 +32,7 @@ public final class PluginResourceQuota {
      * @return max memory in MB
      */
     public int maxMemoryMB() {
-        return maxMemoryMB;
+        return (int) kernelQuota.getMaxMemoryMb();
     }
 
     /**
@@ -56,7 +41,7 @@ public final class PluginResourceQuota {
      * @return max CPU percentage
      */
     public int maxCpuPercent() {
-        return maxCpuPercent;
+        return (int) kernelQuota.getMaxCpuPercent();
     }
 
     /**
@@ -65,57 +50,34 @@ public final class PluginResourceQuota {
      * @return max file descriptors
      */
     public int maxFileDescriptors() {
-        return maxFileDescriptors;
+        return kernelQuota.getMaxFileDescriptors();
     }
 
     /**
-     * Gets the maximum network connections.
+     * Gets the plugin tier.
      *
-     * @return max network connections
+     * @return the tier
      */
-    public long maxNetworkConnections() {
-        return maxNetworkConnections;
+    public PluginTier tier() {
+        return fromKernelTier(kernelQuota.getTier());
+    }
+
+    private static PluginTier fromKernelTier(com.ghatana.kernel.plugin.PluginTier kernelTier) {
+        switch (kernelTier) {
+            case T1: return PluginTier.T1;
+            case T2: return PluginTier.T2;
+            case T3: return PluginTier.T3;
+            default: return PluginTier.T2;
+        }
     }
 
     /**
-     * Creates default quotas for a tier.
+     * Creates default quotas.
      *
      * @return default quotas
      */
     public static PluginResourceQuota defaults() {
-        return defaults(PluginTier.T2);
-    }
-
-    /**
-     * Creates default quotas for a specific tier.
-     *
-     * @param tier the plugin tier
-     * @return default quotas for the tier
-     */
-    public static PluginResourceQuota defaults(PluginTier tier) {
-        return switch (tier) {
-            case T1 -> new PluginResourceQuota(
-                new Builder().tier(PluginTier.T1)
-                    .maxMemoryMB(64)
-                    .maxCpuPercent(5)
-                    .maxFileDescriptors(10)
-                    .maxNetworkConnections(0)
-            );
-            case T2 -> new PluginResourceQuota(
-                new Builder().tier(PluginTier.T2)
-                    .maxMemoryMB(512)
-                    .maxCpuPercent(25)
-                    .maxFileDescriptors(100)
-                    .maxNetworkConnections(0)
-            );
-            case T3 -> new PluginResourceQuota(
-                new Builder().tier(PluginTier.T3)
-                    .maxMemoryMB(2048)
-                    .maxCpuPercent(75)
-                    .maxFileDescriptors(1000)
-                    .maxNetworkConnections(100)
-            );
-        };
+        return new PluginResourceQuota(com.ghatana.kernel.plugin.PluginResourceQuota.defaults());
     }
 
     /**
@@ -131,21 +93,15 @@ public final class PluginResourceQuota {
      * Builder for PluginResourceQuota.
      */
     public static final class Builder {
-        private PluginTier tier = PluginTier.T2;
-        private int maxMemoryMB = 512;
-        private int maxCpuPercent = 25;
+        private long maxCpuPercent = 50;
+        private long maxMemoryMb = 512;
+        private long maxExecutionTimeMs = 30000;
+        private int maxConcurrentOperations = 10;
         private int maxFileDescriptors = 100;
-        private long maxNetworkConnections = 0;
-
-        private Builder() {}
-
-        public Builder tier(PluginTier tier) {
-            this.tier = tier;
-            return this;
-        }
+        private com.ghatana.kernel.plugin.PluginTier tier = com.ghatana.kernel.plugin.PluginTier.T2;
 
         public Builder maxMemoryMB(int maxMemoryMB) {
-            this.maxMemoryMB = maxMemoryMB;
+            this.maxMemoryMb = maxMemoryMB;
             return this;
         }
 
@@ -159,36 +115,31 @@ public final class PluginResourceQuota {
             return this;
         }
 
-        public Builder maxNetworkConnections(long maxNetworkConnections) {
-            this.maxNetworkConnections = maxNetworkConnections;
+        public Builder tier(com.ghatana.kernel.plugin.PluginTier tier) {
+            this.tier = tier;
             return this;
         }
 
         public PluginResourceQuota build() {
-            return new PluginResourceQuota(this);
+            return new PluginResourceQuota(
+                com.ghatana.kernel.plugin.PluginResourceQuota.builder()
+                    .maxCpuPercent(maxCpuPercent)
+                    .maxMemoryMb(maxMemoryMb)
+                    .maxExecutionTimeMs(maxExecutionTimeMs)
+                    .maxConcurrentOperations(maxConcurrentOperations)
+                    .maxFileDescriptors(maxFileDescriptors)
+                    .tier(tier)
+                    .build()
+            );
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PluginResourceQuota that = (PluginResourceQuota) o;
-        return tier == that.tier &&
-               maxMemoryMB == that.maxMemoryMB &&
-               maxCpuPercent == that.maxCpuPercent &&
-               maxFileDescriptors == that.maxFileDescriptors &&
-               maxNetworkConnections == that.maxNetworkConnections;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(tier, maxMemoryMB, maxCpuPercent, maxFileDescriptors, maxNetworkConnections);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("PluginResourceQuota{tier=%s, memory=%dMB, cpu=%d%%, fds=%d, connections=%d}",
-            tier, maxMemoryMB, maxCpuPercent, maxFileDescriptors, maxNetworkConnections);
+    /**
+     * Converts to kernel-core PluginResourceQuota.
+     *
+     * @return kernel-core PluginResourceQuota
+     */
+    public com.ghatana.kernel.plugin.PluginResourceQuota toKernelQuota() {
+        return kernelQuota;
     }
 }

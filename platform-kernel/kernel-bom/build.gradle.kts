@@ -21,7 +21,7 @@ description = "Platform Kernel BOM - aggregates all kernel modules"
 
 dependencies {
     constraints {
-        // Kernel core modules
+        // Kernel core modules - use full project paths for BOM (published artifact)
         api(project(":platform-kernel:kernel-core"))
         api(project(":platform-kernel:kernel-plugin"))
         api(project(":platform-kernel:kernel-persistence"))

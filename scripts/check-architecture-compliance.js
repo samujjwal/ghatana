@@ -333,6 +333,11 @@ class ArchitectureChecker {
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
 
+      // Phase 0.4: Exclude generated and build artifacts from purity scans
+      if (this.isGeneratedArtifactDir(entry.name)) {
+        continue;
+      }
+
       if (entry.name === 'node_modules') continue;
 
       if (entry.isDirectory()) {
@@ -341,6 +346,26 @@ class ArchitectureChecker {
         files.push(fullPath);
       }
     }
+  }
+
+  isGeneratedArtifactDir(dirName) {
+    // Phase 0.4: Exclude stale generated and compiled artifacts from purity scans
+    const generatedDirs = [
+      'build',
+      'out',
+      'bin',
+      'target',
+      'generated',
+      '.gradle',
+      'classes',
+      'test-classes',
+      'node_modules',
+      '.cache',
+      'dist',
+      '.next',
+      '.nuxt',
+    ];
+    return generatedDirs.includes(dirName);
   }
 
   getScopeFromLocation(pkgPath) {

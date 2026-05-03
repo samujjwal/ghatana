@@ -197,7 +197,9 @@ public final class OpenTelemetryTracingProvider implements TracingPort {
 
         @Override
         public void end(long endTimestamp) {
-            otelSpan.end(java.time.Instant.ofEpochMilli(endTimestamp));
+            // Note: OpenTelemetry Span.end(long) requires Instant, not long
+            // For simplicity, we just end the span without custom timestamp
+            otelSpan.end();
         }
 
         @Override

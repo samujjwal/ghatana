@@ -4,6 +4,7 @@ import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDependency;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -32,6 +33,10 @@ public final class PluginManifest {
     private final Set<KernelDependency> dependencies;
     private final Set<String> requiredKernelVersions;
     private final Set<String> tags;
+    // Extended fields for kernel-plugin compatibility (Phase 0.3 amendment)
+    private final PluginTier tier;
+    private final PluginResourceQuota resourceQuotas;
+    private final Map<String, Object> configSchema;
 
     private PluginManifest(Builder builder) {
         this.pluginId = Objects.requireNonNull(builder.pluginId, "pluginId cannot be null");
@@ -44,6 +49,9 @@ public final class PluginManifest {
         this.dependencies = Set.copyOf(builder.dependencies);
         this.requiredKernelVersions = Set.copyOf(builder.requiredKernelVersions);
         this.tags = Set.copyOf(builder.tags);
+        this.tier = builder.tier;
+        this.resourceQuotas = builder.resourceQuotas != null ? builder.resourceQuotas : PluginResourceQuota.defaults();
+        this.configSchema = builder.configSchema != null ? Map.copyOf(builder.configSchema) : Map.of();
     }
 
     // Getters
@@ -57,6 +65,9 @@ public final class PluginManifest {
     public Set<KernelDependency> getDependencies() { return dependencies; }
     public Set<String> getRequiredKernelVersions() { return requiredKernelVersions; }
     public Set<String> getTags() { return tags; }
+    public PluginTier getTier() { return tier; }
+    public PluginResourceQuota getResourceQuotas() { return resourceQuotas; }
+    public Map<String, Object> getConfigSchema() { return configSchema; }
 
     /**
      * Checks if this plugin is compatible with a kernel version.
@@ -103,6 +114,10 @@ public final class PluginManifest {
         private Set<KernelDependency> dependencies = new HashSet<>();
         private Set<String> requiredKernelVersions = new HashSet<>();
         private Set<String> tags = new HashSet<>();
+        // Extended fields for kernel-plugin compatibility
+        private PluginTier tier;
+        private PluginResourceQuota resourceQuotas;
+        private Map<String, Object> configSchema;
 
         public Builder pluginId(String pluginId) {
             this.pluginId = pluginId;
@@ -151,6 +166,21 @@ public final class PluginManifest {
 
         public Builder tag(String tag) {
             this.tags.add(tag);
+            return this;
+        }
+
+        public Builder tier(PluginTier tier) {
+            this.tier = tier;
+            return this;
+        }
+
+        public Builder resourceQuotas(PluginResourceQuota resourceQuotas) {
+            this.resourceQuotas = resourceQuotas;
+            return this;
+        }
+
+        public Builder configSchema(Map<String, Object> configSchema) {
+            this.configSchema = configSchema;
             return this;
         }
 

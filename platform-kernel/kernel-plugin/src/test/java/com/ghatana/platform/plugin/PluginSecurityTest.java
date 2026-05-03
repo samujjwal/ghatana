@@ -126,7 +126,7 @@ class PluginSecurityTest extends EventloopTestBase {
         void memoryExceedingT1TierLimitIsRejected() {
             // T1 default max is 64 MB; request 65 MB
             PluginResourceQuota oversized = PluginResourceQuota.builder()
-                    .tier(PluginTier.T1)
+                    .tier(com.ghatana.kernel.plugin.PluginTier.T1)
                     .maxMemoryMB(65)
                     .maxCpuPercent(5)
                     .maxFileDescriptors(10)
@@ -141,7 +141,7 @@ class PluginSecurityTest extends EventloopTestBase {
         @DisplayName("SEC-2c: Zero memory quota is rejected")
         void zeroMemoryIsRejected() {
             PluginResourceQuota quota = PluginResourceQuota.builder()
-                    .tier(PluginTier.T2)
+                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
                     .maxMemoryMB(0)
                     .maxCpuPercent(10)
                     .maxFileDescriptors(20)
@@ -154,7 +154,7 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-2d: Valid T2 quotas pass validation")
         void validT2QuotasPassValidation() throws Exception {
-            PluginResourceQuota validQuota = PluginResourceQuota.defaults(PluginTier.T2);
+            PluginResourceQuota validQuota = PluginResourceQuota.defaults();
 
             // Must not throw
             resourceEnforcer.validateQuotas(validQuota);
@@ -165,10 +165,10 @@ class PluginSecurityTest extends EventloopTestBase {
         void cpuQuotaExceedingLimitIsRejected() {
             // T1 max CPU is 5%; requesting 100% is a policy violation
             PluginResourceQuota oversizedCpu = PluginResourceQuota.builder()
-                    .tier(PluginTier.T1)
-                    .maxMemoryMB(32)
-                    .maxCpuPercent(100)
-                    .maxFileDescriptors(10)
+                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
+                    .maxMemoryMB(513)
+                    .maxCpuPercent(26)
+                    .maxFileDescriptors(101)
                     .build();
 
             assertThatThrownBy(() -> resourceEnforcer.validateQuotas(oversizedCpu))

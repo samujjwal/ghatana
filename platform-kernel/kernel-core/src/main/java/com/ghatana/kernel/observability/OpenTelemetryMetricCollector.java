@@ -45,17 +45,9 @@ public final class OpenTelemetryMetricCollector implements MetricCollectorPort {
 
     @Override
     public void recordGauge(String name, double value, String... tags) {
-        // OpenTelemetry gauges are typically set via callbacks, but for simplicity
-        // we'll record as a histogram or use a different approach
-        // For now, we'll use a simple recording approach
-        ObservableLongGauge gauge = longGauges.computeIfAbsent(name, n ->
-            meter.gaugeBuilder(n)
-                .setDescription("Gauge metric")
-                .ofLongs()
-                .buildWithCallback(measurement -> {})
-        );
-        // Note: OpenTelemetry gauges require a callback-based approach
-        // This is a simplified implementation
+        // OpenTelemetry gauges are callback-based (ObservableGauge)
+        // For simplicity, we skip gauge recording in this stub implementation
+        // A production implementation would use ObservableGauge with callbacks
     }
 
     @Override

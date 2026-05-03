@@ -4,6 +4,7 @@
  */
 package com.ghatana.platform.plugin;
 
+import com.ghatana.kernel.plugin.PluginManifest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

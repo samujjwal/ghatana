@@ -6,6 +6,7 @@ import com.ghatana.platform.health.HealthStatus;
 import com.ghatana.kernel.module.KernelModule;
 import com.ghatana.kernel.plugin.KernelPlugin;
 import com.ghatana.kernel.registry.KernelRegistryImpl;
+import com.ghatana.kernel.plugin.PluginManifest;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
