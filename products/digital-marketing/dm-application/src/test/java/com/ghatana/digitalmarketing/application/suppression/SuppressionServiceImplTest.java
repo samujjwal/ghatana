@@ -8,6 +8,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.suppression.SuppressionEntry;
+import com.ghatana.platform.security.port.HashingPort;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,8 @@ class SuppressionServiceImplTest extends EventloopTestBase {
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
         repository = new InMemorySuppressionRepository();
-        service = new SuppressionServiceImpl(kernelAdapter, repository);
+        HashingPort hashingPort = new MockHashingPort();
+        service = new SuppressionServiceImpl(kernelAdapter, repository, hashingPort);
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -54,7 +56,7 @@ class SuppressionServiceImplTest extends EventloopTestBase {
             new SuppressionService.AddSuppressionCommand("a@example.com", "unsubscribe")
         ));
 
-        assertThat(entry.getEmail()).isEqualTo("a@example.com");
+        assertThat(entry.getContactPointHash()).isEqualTo("hash-a@example.com");
         assertThat(entry.isActive()).isTrue();
         assertThat(kernelAdapter.auditActions()).contains("suppression-add");
     }
@@ -73,6 +75,7 @@ class SuppressionServiceImplTest extends EventloopTestBase {
         ));
 
         assertThat(second.getId()).isEqualTo(first.getId());
+        assertThat(second.getContactPointHash()).isEqualTo("hash-b@example.com");
     }
 
     @Test
@@ -117,13 +120,20 @@ class SuppressionServiceImplTest extends EventloopTestBase {
 
         @Override
         public Promise<SuppressionEntry> save(SuppressionEntry entry) {
-            store.put(entry.getWorkspaceId().getValue() + ":" + entry.getEmail(), entry);
+            store.put(entry.getWorkspaceId().getValue() + ":" + entry.getContactPointHash(), entry);
             return Promise.of(entry);
         }
 
-        @Override
         public Promise<Optional<SuppressionEntry>> findActiveByEmail(DmWorkspaceId workspaceId, String email) {
             SuppressionEntry found = store.get(workspaceId.getValue() + ":" + email);
+            if (found != null && found.isActive()) {
+                return Promise.of(Optional.of(found));
+            }
+            return Promise.of(Optional.empty());
+        }
+
+        public Promise<Optional<SuppressionEntry>> findActiveByContactPointHash(DmWorkspaceId workspaceId, String contactPointHash) {
+            SuppressionEntry found = store.get(workspaceId.getValue() + ":" + contactPointHash);
             if (found != null && found.isActive()) {
                 return Promise.of(Optional.of(found));
             }
@@ -177,6 +187,53 @@ class SuppressionServiceImplTest extends EventloopTestBase {
         ) {
             auditActions.add(action);
             return Promise.of("audit-1");
+        }
+
+        @Override
+        public Promise<Double> evaluateRisk(
+            DmOperationContext context,
+            String entityId,
+            String riskModelId,
+            Map<String, Object> factors
+        ) {
+            return Promise.of(0.0);
+        }
+
+        @Override
+        public Promise<Void> notifyUser(
+            DmOperationContext context,
+            String recipientId,
+            String template,
+            Map<String, String> attributes
+        ) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(true);
+        }
+    }
+
+    private static final class MockHashingPort implements HashingPort {
+        @Override
+        public Promise<String> hashContactPoint(String contactPoint) {
+            return Promise.of("hash-" + contactPoint);
+        }
+
+        @Override
+        public Promise<String> hash(String data) {
+            return Promise.of("hash-" + data);
+        }
+
+        @Override
+        public Promise<Boolean> verifyContactPoint(String contactPoint, String expectedHash) {
+            return Promise.of(expectedHash.equals("hash-" + contactPoint));
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return "MockHash";
         }
     }
 }

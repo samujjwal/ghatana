@@ -9,6 +9,7 @@ import io.activej.promise.Promise;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL adapter for {@link DataSubjectRequestRepository} (DMOS-P1-017).
@@ -21,14 +22,16 @@ import java.util.List;
 public final class PostgresDataSubjectRequestRepository implements DataSubjectRequestRepository {
 
     private final Connection connection;
+    private final Executor executor;
 
-    public PostgresDataSubjectRequestRepository(Connection connection) {
+    public PostgresDataSubjectRequestRepository(Connection connection, Executor executor) {
         this.connection = connection;
+        this.executor = executor;
     }
 
     @Override
     public Promise<DataSubjectRequest> save(DataSubjectRequest request) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO dmos_data_subject_requests (
                     id, tenant_id, workspace_id, request_type, contact_point_hash,
@@ -45,8 +48,8 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, request.getId());
-                stmt.setString(2, request.getTenantId().value());
-                stmt.setString(3, request.getWorkspaceId().value());
+                stmt.setString(2, request.getTenantId().getValue());
+                stmt.setString(3, request.getWorkspaceId().getValue());
                 stmt.setString(4, request.getRequestType().name());
                 stmt.setString(5, request.getContactPointHash());
                 stmt.setString(6, request.getStatus().name());
@@ -65,7 +68,7 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
     @Override
     public Promise<DataSubjectRequest> findById(String id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, workspace_id, request_type, contact_point_hash,
                        status, submitted_at, submitted_by, completed_at, completed_by,
@@ -88,7 +91,7 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
     @Override
     public Promise<List<DataSubjectRequest>> findByTenantAndWorkspace(DmTenantId tenantId, DmWorkspaceId workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, workspace_id, request_type, contact_point_hash,
                        status, submitted_at, submitted_by, completed_at, completed_by,
@@ -99,8 +102,8 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
                 """;
 
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, tenantId.value());
-                stmt.setString(2, workspaceId.value());
+                stmt.setString(1, tenantId.getValue());
+                stmt.setString(2, workspaceId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 List<DataSubjectRequest> results = new ArrayList<>();
@@ -114,7 +117,7 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
     @Override
     public Promise<List<DataSubjectRequest>> findByContactPointHash(String contactPointHash) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, workspace_id, request_type, contact_point_hash,
                        status, submitted_at, submitted_by, completed_at, completed_by,
@@ -139,7 +142,7 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
     @Override
     public Promise<List<DataSubjectRequest>> findByStatus(DataSubjectRequest.RequestStatus status) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, workspace_id, request_type, contact_point_hash,
                        status, submitted_at, submitted_by, completed_at, completed_by,
@@ -169,7 +172,7 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
 
     @Override
     public Promise<Void> delete(String id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_data_subject_requests WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, id);
@@ -182,8 +185,8 @@ public final class PostgresDataSubjectRequestRepository implements DataSubjectRe
     private DataSubjectRequest mapRow(ResultSet rs) throws SQLException {
         return DataSubjectRequest.builder()
             .id(rs.getString("id"))
-            .tenantId(new DmTenantId(rs.getString("tenant_id")))
-            .workspaceId(new DmWorkspaceId(rs.getString("workspace_id")))
+            .tenantId(DmTenantId.of(rs.getString("tenant_id")))
+            .workspaceId(DmWorkspaceId.of(rs.getString("workspace_id")))
             .requestType(DataSubjectRequest.RequestType.valueOf(rs.getString("request_type")))
             .contactPointHash(rs.getString("contact_point_hash"))
             .status(DataSubjectRequest.RequestStatus.valueOf(rs.getString("status")))

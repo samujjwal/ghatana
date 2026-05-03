@@ -11,6 +11,7 @@ import io.activej.promise.Promise;
  * @doc.type interface
  * @doc.purpose Service interface for agency client operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public interface AgencyClientService {
 

@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ai.analyzers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.RequirementChangedEvent;
 import io.activej.promise.Promise;
@@ -27,14 +27,14 @@ public final class RequirementsConsistencyChecker {
   private static final TypeReference<List<Map<String, Object>>> ISSUE_LIST_TYPE =
       new TypeReference<>() {};
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final ObjectMapper objectMapper;
 
-  public RequirementsConsistencyChecker(YAPPCAIService aiService) {
+  public RequirementsConsistencyChecker(YAPPCAIInterface aiService) {
     this(aiService, new ObjectMapper());
   }
 
-  RequirementsConsistencyChecker(YAPPCAIService aiService, ObjectMapper objectMapper) {
+  RequirementsConsistencyChecker(YAPPCAIInterface aiService, ObjectMapper objectMapper) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
     this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
   }

@@ -24,7 +24,8 @@ class ApprovalSnapshotTest {
             null,
             2,
             "brand-manager",
-            NOW
+            NOW,
+            1L
         );
     }
 
@@ -52,7 +53,7 @@ class ApprovalSnapshotTest {
     void shouldAcceptNullValidationResultId() {
         ApprovalSnapshot snapshot = new ApprovalSnapshot(
             "req-1", ApprovalTargetType.STRATEGY, "s-1", "ws-1",
-            "summary", null, 1, "brand-manager", NOW);
+            "summary", null, 1, "brand-manager", NOW, 1L);
         assertThat(snapshot.validationResultId()).isNull();
     }
 
@@ -61,7 +62,7 @@ class ApprovalSnapshotTest {
     void shouldAcceptNonNullValidationResultId() {
         ApprovalSnapshot snapshot = new ApprovalSnapshot(
             "req-1", ApprovalTargetType.STRATEGY, "s-1", "ws-1",
-            "summary", "vr-99", 1, "brand-manager", NOW);
+            "summary", "vr-99", 1, "brand-manager", NOW, 1L);
         assertThat(snapshot.validationResultId()).isEqualTo("vr-99");
     }
 
@@ -71,7 +72,7 @@ class ApprovalSnapshotTest {
         assertThat(valid("req-min").riskLevel()).isEqualTo(2);
         ApprovalSnapshot s = new ApprovalSnapshot(
             "req-min", ApprovalTargetType.SOW, "s-1", "ws-1",
-            "summary", null, 1, "brand-manager", NOW);
+            "summary", null, 1, "brand-manager", NOW, 1L);
         assertThat(s.riskLevel()).isEqualTo(1);
     }
 
@@ -80,7 +81,7 @@ class ApprovalSnapshotTest {
     void shouldAcceptRiskLevelMax() {
         ApprovalSnapshot s = new ApprovalSnapshot(
             "req-max", ApprovalTargetType.BUDGET, "b-1", "ws-1",
-            "summary", null, 5, "exec-sponsor", NOW);
+            "summary", null, 5, "exec-sponsor", NOW, 1L);
         assertThat(s.riskLevel()).isEqualTo(5);
     }
 
@@ -93,7 +94,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullRequestId() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot(null, ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -101,7 +102,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullTargetType() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", null, "cv-1", "ws-1",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -109,7 +110,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullTargetId() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, null, "ws-1",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -117,7 +118,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullTargetWorkspaceId() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", null,
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -125,7 +126,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullSnapshotSummary() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                null, null, 2, "brand-manager", NOW));
+                null, null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -133,7 +134,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullRequiredApproverRole() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "summary", null, 2, null, NOW));
+                "summary", null, 2, null, NOW, 1L));
     }
 
     @Test
@@ -141,7 +142,7 @@ class ApprovalSnapshotTest {
     void shouldRejectNullSnapshotAt() {
         assertThatNullPointerException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "summary", null, 2, "brand-manager", null));
+                "summary", null, 2, "brand-manager", null, 1L));
     }
 
     // -------------------------------------------------------------------------
@@ -153,7 +154,7 @@ class ApprovalSnapshotTest {
     void shouldRejectBlankRequestId() {
         assertThatIllegalArgumentException().isThrownBy(() ->
             new ApprovalSnapshot("  ", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -161,7 +162,7 @@ class ApprovalSnapshotTest {
     void shouldRejectBlankTargetId() {
         assertThatIllegalArgumentException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "", "ws-1",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -169,7 +170,7 @@ class ApprovalSnapshotTest {
     void shouldRejectBlankTargetWorkspaceId() {
         assertThatIllegalArgumentException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "  ",
-                "summary", null, 2, "brand-manager", NOW));
+                "summary", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -177,7 +178,7 @@ class ApprovalSnapshotTest {
     void shouldRejectBlankSnapshotSummary() {
         assertThatIllegalArgumentException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "", null, 2, "brand-manager", NOW));
+                "", null, 2, "brand-manager", NOW, 1L));
     }
 
     @Test
@@ -185,7 +186,7 @@ class ApprovalSnapshotTest {
     void shouldRejectBlankRequiredApproverRole() {
         assertThatIllegalArgumentException().isThrownBy(() ->
             new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                "summary", null, 2, "  ", NOW));
+                "summary", null, 2, "  ", NOW, 1L));
     }
 
     // -------------------------------------------------------------------------
@@ -198,7 +199,7 @@ class ApprovalSnapshotTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() ->
                 new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                    "summary", null, 0, "brand-manager", NOW))
+                    "summary", null, 0, "brand-manager", NOW, 1L))
             .withMessageContaining("riskLevel must be 1-5");
     }
 
@@ -208,7 +209,7 @@ class ApprovalSnapshotTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() ->
                 new ApprovalSnapshot("req-1", ApprovalTargetType.CONTENT_VERSION, "cv-1", "ws-1",
-                    "summary", null, 6, "brand-manager", NOW))
+                    "summary", null, 6, "brand-manager", NOW, 1L))
             .withMessageContaining("riskLevel must be 1-5");
     }
 

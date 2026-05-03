@@ -1,27 +1,26 @@
 package com.ghatana.yappc.agents.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 @DisplayName("FlakyTestDetector Tests")
 class FlakyTestDetectorTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  private InMemoryYAPPCAIService aiService;
 
-  FlakyTestDetectorTest() { 
-    MockitoAnnotations.openMocks(this); 
+  @BeforeEach
+  void setUp() {
+    aiService = new InMemoryYAPPCAIService();
   }
 
   @Test
@@ -69,18 +68,18 @@ class FlakyTestDetectorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("detectFlakyTests uses AI suggestions when available")
-  void detectFlakyTestsUsesAiSuggestionsWhenAvailable() { 
-    when(aiService.reason(anyString())).thenReturn(Promise.of("Use a stable fake backend."));
+  void detectFlakyTestsUsesAiSuggestionsWhenAvailable() {
+    aiService.setReasonResponse("Use a stable fake backend.");
 
-    FlakyTestDetector detector = new FlakyTestDetector(aiService); 
+    FlakyTestDetector detector = new FlakyTestDetector(aiService);
 
     List<FlakyTestDetector.FlakyTestReport> reports =
-        runPromise( 
-            () -> 
-                detector.detectFlakyTests( 
-                    List.of( 
-                        record("ExternalTest", "serviceCall", FlakyTestDetector.TestResult.PASSED, 50, 1, "dev"), 
-                        record("ExternalTest", "serviceCall", FlakyTestDetector.TestResult.FAILED, 50, 1, "dev")))); 
+        runPromise(
+            () ->
+                detector.detectFlakyTests(
+                    List.of(
+                        record("ExternalTest", "serviceCall", FlakyTestDetector.TestResult.PASSED, 50, 1, "dev"),
+                        record("ExternalTest", "serviceCall", FlakyTestDetector.TestResult.FAILED, 50, 1, "dev"))));
 
     assertThat(reports.getFirst().fixSuggestion()).isEqualTo("Use a stable fake backend.");
   }
@@ -103,10 +102,10 @@ class FlakyTestDetectorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("detectFlakyTests handles null history and blank AI suggestions")
-  void detectFlakyTestsHandlesNullHistoryAndBlankAiSuggestions() { 
-    when(aiService.reason(anyString())).thenReturn(Promise.of(" "));
+  void detectFlakyTestsHandlesNullHistoryAndBlankAiSuggestions() {
+    aiService.setReasonResponse(" ");
 
-    FlakyTestDetector detector = new FlakyTestDetector(aiService); 
+    FlakyTestDetector detector = new FlakyTestDetector(aiService);
 
     assertThat(runPromise(() -> detector.detectFlakyTests(null))).isEmpty(); 
 
@@ -138,8 +137,8 @@ class FlakyTestDetectorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("detectFlakyTests covers empty history null suggestions blank environments and summary helpers")
-  void detectFlakyTestsCoversEmptyHistoryNullSuggestionsBlankEnvironmentsAndSummaryHelpers() { 
-    when(aiService.reason(anyString())).thenReturn(Promise.of(null)); 
+  void detectFlakyTestsCoversEmptyHistoryNullSuggestionsBlankEnvironmentsAndSummaryHelpers() {
+    aiService.setReasonResponse(null);
 
     FlakyTestDetector detector = new FlakyTestDetector(aiService); 
 
@@ -358,13 +357,51 @@ class FlakyTestDetectorTest extends EventloopTestBase {
       long durationMillis,
       int executionOrder,
       String environment) {
-    return new FlakyTestDetector.TestRunRecord( 
+    return new FlakyTestDetector.TestRunRecord(
         testClass,
         testMethod,
         result,
-        Duration.ofMillis(durationMillis), 
+        Duration.ofMillis(durationMillis),
         executionOrder,
         environment,
         Instant.parse("2026-04-06T00:00:00Z"));
+  }
+
+  private static final class InMemoryYAPPCAIService implements YAPPCAIInterface {
+    private String reasonResponse = null;
+
+    void setReasonResponse(String response) {
+      this.reasonResponse = response;
+    }
+
+    @Override
+    public Promise<String> reason(String prompt) {
+      return Promise.of(reasonResponse);
+    }
+
+    @Override
+    public Promise<String> reason(String prompt, Map<String, Object> context) {
+      return Promise.of(reasonResponse);
+    }
+
+    @Override
+    public Promise<String> generateCode(String description) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateCode(String description, Map<String, Object> context) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateTests(String code) {
+      return Promise.of("generated tests");
+    }
+
+    @Override
+    public Promise<String> generateTests(String code, Map<String, Object> context) {
+      return Promise.of("generated tests");
+    }
   }
 }

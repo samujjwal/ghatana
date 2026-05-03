@@ -251,17 +251,29 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
         clientSocket.close(4001, 'Authentication required');
         return;
       }
+      let payload: JwtPayload;
       try {
-        verifyJwt(token, config.jwtSecret);
+        payload = verifyJwt(token, config.jwtSecret);
       } catch {
         clientSocket.close(4003, 'Invalid or expired token');
         return;
       }
 
+      const correlationId = resolveCorrelationId(req);
+      const tenantId = extractPayloadTenantId(payload) ?? extractHeaderTenantId(req.headers['x-tenant-id']);
+
       const backendWsUrl = config.backendUrl.replace(/^http/, 'ws') + '/api/v1/tail/events';
-      const backendWs = new WebSocket(backendWsUrl, {
-        headers: { authorization: `Bearer ${token}` },
-      });
+      const backendHeaders: Record<string, string> = {
+        authorization: `Bearer ${token}`,
+        [CORRELATION_ID_HEADER]: correlationId,
+        'x-gateway-trusted': 'true',
+        'x-gateway-source': 'aep-gateway',
+      };
+      if (tenantId) {
+        backendHeaders['x-tenant-id'] = tenantId;
+      }
+
+      const backendWs = new WebSocket(backendWsUrl, { headers: backendHeaders });
 
       backendWs.on('message', (data) => {
         if (clientSocket.readyState === WebSocket.OPEN) {

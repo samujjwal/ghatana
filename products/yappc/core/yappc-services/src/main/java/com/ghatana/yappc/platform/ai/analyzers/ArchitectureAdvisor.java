@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ai.analyzers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.ArchitectureChangedEvent;
 import io.activej.promise.Promise;
@@ -27,14 +27,14 @@ public final class ArchitectureAdvisor {
   private static final TypeReference<List<Map<String, Object>>> ISSUE_LIST_TYPE =
       new TypeReference<>() {};
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final ObjectMapper objectMapper;
 
-  public ArchitectureAdvisor(YAPPCAIService aiService) {
+  public ArchitectureAdvisor(YAPPCAIInterface aiService) {
     this(aiService, new ObjectMapper());
   }
 
-  ArchitectureAdvisor(YAPPCAIService aiService, ObjectMapper objectMapper) {
+  ArchitectureAdvisor(YAPPCAIInterface aiService, ObjectMapper objectMapper) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
     this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
   }

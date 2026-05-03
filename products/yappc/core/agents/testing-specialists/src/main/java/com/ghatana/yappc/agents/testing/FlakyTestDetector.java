@@ -1,6 +1,7 @@
 package com.ghatana.yappc.agents.testing;
 
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,13 +21,13 @@ import java.util.Objects;
 public final class FlakyTestDetector {
   private static final double FLAKINESS_THRESHOLD = 0.10;
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
 
   public FlakyTestDetector() {
     this.aiService = null;
   }
 
-  public FlakyTestDetector(YAPPCAIService aiService) {
+  public FlakyTestDetector(YAPPCAIInterface aiService) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
   }
 

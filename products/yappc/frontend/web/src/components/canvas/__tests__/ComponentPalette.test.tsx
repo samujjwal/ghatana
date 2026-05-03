@@ -20,7 +20,7 @@ describe('ComponentPalette', () => {
         render(<ComponentPalette onAddComponent={mockAdd} />);
 
         // Title present
-        expect(screen.getByText('Palette')).toBeTruthy();
+        expect(screen.getByText('Components Library')).toBeTruthy();
 
         // Sample component present
         expect(screen.getByText('Frontend App')).toBeTruthy();
@@ -39,17 +39,13 @@ describe('ComponentPalette', () => {
 
     it('calls onAddComponent with default position when add icon is clicked', () => {
         const mockAdd = vi.fn();
-        const { container } = render(<ComponentPalette onAddComponent={mockAdd} />);
+        render(<ComponentPalette onAddComponent={mockAdd} />);
 
         // Find the list item for the UI 'Table' component
-        const labelNode = screen.getByText('Table');
-        expect(labelNode).toBeTruthy();
+        const paletteItem = screen.getByTestId('palette-item-component-table');
+        expect(paletteItem).toBeTruthy();
 
-        // Find closest list item element and its button (IconButton)
-        const listItem = labelNode.closest('li');
-        expect(listItem).toBeTruthy();
-
-        const addButton = listItem!.querySelector('button');
+        const addButton = paletteItem.querySelector('button');
         expect(addButton).toBeTruthy();
 
         // Click the add button

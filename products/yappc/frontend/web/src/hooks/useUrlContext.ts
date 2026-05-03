@@ -10,7 +10,7 @@
  * @doc.pattern Context Hook
  */
 
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 export interface UrlContext {
   /** Workspace slug or ID from the URL, e.g. /w/:workspaceId/... */

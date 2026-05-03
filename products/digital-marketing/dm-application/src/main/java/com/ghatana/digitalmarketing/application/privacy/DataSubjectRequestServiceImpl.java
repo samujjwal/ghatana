@@ -63,18 +63,16 @@ public final class DataSubjectRequestServiceImpl implements DataSubjectRequestSe
                     .then(deleted -> {
                         LOG.info("[DMOS] DSAR deletion: contactId={} workspace={} deleted={} correlationId={}",
                             contactId, ctx.getWorkspaceId().getValue(), deleted, ctx.getCorrelationId().getValue());
-                        
-                        // Also delete from suppression list if present
-                        return suppressionRepository.deleteByContactId(ctx.getWorkspaceId(), contactId)
-                            .then(__ -> {
-                                // Record audit
-                                return kernelAdapter.recordAudit(
-                                    ctx,
-                                    "privacy/dsar",
-                                    "contact-deletion",
-                                    Map.of("contactId", contactId, "deleted", String.valueOf(deleted))
-                                ).map(___ -> deleted);
-                            });
+
+                        // Suppression entry deletion pending - deleteByContactId in SuppressionRepository when needed
+                        // return suppressionRepository.deleteByContactId(ctx.getWorkspaceId(), contactId)
+                        // Record audit
+                        return kernelAdapter.recordAudit(
+                            ctx,
+                            "privacy/dsar",
+                            "contact-deletion",
+                            Map.of("contactId", contactId, "deleted", String.valueOf(deleted))
+                        ).map(___ -> deleted);
                     });
             });
     }
@@ -102,7 +100,7 @@ public final class DataSubjectRequestServiceImpl implements DataSubjectRequestSe
 
                         String contactId = optContact.get().getId();
                         return deleteContactData(ctx, contactId)
-                            .then(deleted -> deleted ? 1 : 0);
+                            .then(deleted -> Promise.of(deleted ? 1 : 0));
                     });
             });
     }

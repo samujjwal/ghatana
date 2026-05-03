@@ -23,6 +23,9 @@ describe('AuthProvider', () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     localStorage.clear();
+    // Clear cookies set during tests
+    document.cookie = 'accessToken=; Max-Age=0; path=/';
+    document.cookie = 'refreshToken=; Max-Age=0; path=/';
   });
 
   it('keeps guest state when there is no stored auth token', async () => {
@@ -42,7 +45,7 @@ describe('AuthProvider', () => {
   });
 
   it('hydrates currentUserAtom from /api/auth/me when a valid token exists', async () => {
-    localStorage.setItem('auth-session', JSON.stringify({ token: 'access-token-1' }));
+    document.cookie = 'accessToken=access-token-1';
     fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -71,10 +74,8 @@ describe('AuthProvider', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', {
-      headers: {
-        Accept: 'application/json',
-        Authorization: 'Bearer access-token-1',
-      },
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
     });
   });
 
@@ -96,27 +97,15 @@ describe('AuthProvider', () => {
   });
 
   it('refreshes the stored session and retries /api/auth/me once when the access token is expired', async () => {
-    localStorage.setItem(
-      'auth-session',
-      JSON.stringify({
-        token: 'expired-token',
-        refreshToken: 'refresh-token-1',
-      })
-    );
+    document.cookie = 'accessToken=expired-token';
+    document.cookie = 'refreshToken=refresh-token-1';
     fetchMock
       .mockResolvedValueOnce(new Response(null, { status: 401 }))
       .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            accessToken: 'access-token-2',
-            refreshToken: 'refresh-token-2',
-            expiresIn: 1800,
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        )
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       )
       .mockResolvedValueOnce(
         new Response(
@@ -149,32 +138,24 @@ describe('AuthProvider', () => {
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/auth/me', {
-      headers: {
-        Accept: 'application/json',
-        Authorization: 'Bearer expired-token',
-      },
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
     });
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/auth/refresh', {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ refreshToken: 'refresh-token-1' }),
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
     });
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/auth/me', {
-      headers: {
-        Accept: 'application/json',
-        Authorization: 'Bearer access-token-2',
-      },
-    });
-    expect(JSON.parse(localStorage.getItem('auth-session') ?? '{}')).toMatchObject({
-      token: 'access-token-2',
-      refreshToken: 'refresh-token-2',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
     });
   });
 
   it('clears the stale stored session when refresh also fails', async () => {
+    document.cookie = 'accessToken=expired-token';
+    document.cookie = 'refreshToken=refresh-token-1';
+    // Also set legacy localStorage key so we can assert it is cleaned up
     localStorage.setItem(
       'auth-session',
       JSON.stringify({

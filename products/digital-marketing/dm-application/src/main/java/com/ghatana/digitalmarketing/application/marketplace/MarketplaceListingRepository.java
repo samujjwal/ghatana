@@ -12,6 +12,7 @@ import java.util.Optional;
  * @doc.type interface
  * @doc.purpose Repository interface for marketplace listing operations
  * @doc.layer application
+ * @doc.pattern Repository
  */
 public interface MarketplaceListingRepository {
 

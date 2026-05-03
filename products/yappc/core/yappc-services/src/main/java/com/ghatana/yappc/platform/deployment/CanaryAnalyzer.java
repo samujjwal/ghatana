@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.deployment;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -18,14 +18,14 @@ import java.util.Objects;
  */
 public final class CanaryAnalyzer {
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final MetricsProvider metricsProvider;
   private final DeploymentController deploymentController;
   private final DecisionPublisher decisionPublisher;
   private final ObjectMapper objectMapper;
 
   public CanaryAnalyzer(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       MetricsProvider metricsProvider,
       DeploymentController deploymentController,
       DecisionPublisher decisionPublisher) {
@@ -33,7 +33,7 @@ public final class CanaryAnalyzer {
   }
 
   CanaryAnalyzer(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       MetricsProvider metricsProvider,
       DeploymentController deploymentController,
       DecisionPublisher decisionPublisher,

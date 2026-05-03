@@ -62,7 +62,6 @@ describe('AuthService', () => {
       body: JSON.stringify({
         email: 'sam@yappc.local',
         password: 'secret',
-        rememberMe: false,
       }),
     }));
     expect(result).toMatchObject({
@@ -80,25 +79,7 @@ describe('AuthService', () => {
     });
   });
 
-  it('maps registration into the canonical backend payload before logging in', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse({ user: { id: 'user-1' } }, 201))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          user: {
-            id: 'user-1',
-            email: 'sam@yappc.local',
-            name: 'Sam User',
-            role: 'EDITOR',
-          },
-          tokens: {
-            accessToken: 'access-token-2',
-            refreshToken: 'refresh-token-2',
-            expiresIn: 900,
-          },
-        })
-      );
-
+  it('returns an error when registration endpoint is unavailable', async () => {
     const result = await authService.register({
       firstName: 'Sam',
       lastName: 'User',
@@ -107,29 +88,9 @@ describe('AuthService', () => {
       password: 'secret',
     });
 
-    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/auth/register', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({
-        email: 'sam@yappc.local',
-        password: 'secret',
-        name: 'Sam User',
-      }),
-    }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/auth/login', expect.objectContaining({
-      method: 'POST',
-      body: JSON.stringify({
-        email: 'sam@yappc.local',
-        password: 'secret',
-        rememberMe: false,
-      }),
-    }));
-    expect(result).toMatchObject({
-      success: true,
-      token: 'access-token-2',
-      user: {
-        role: 'user',
-      },
-    });
+    expect(result.success).toBe(false);
+    expect(result.error).toBeDefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('refreshes tokens with the canonical refresh payload', async () => {

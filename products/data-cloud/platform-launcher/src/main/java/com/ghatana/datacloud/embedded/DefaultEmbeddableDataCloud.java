@@ -94,9 +94,9 @@ public final class DefaultEmbeddableDataCloud implements EmbeddableDataCloud {
      * <p><b>Storage Backend Creation:</b>
      * <ul>
      *   <li>{@link EmbeddedConfig.EmbeddedStorageType#IN_MEMORY} → {@link InMemoryStore}</li>
-     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#ROCKS_DB} → {@link RocksDBStore} (TODO)</li>
-     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#SQLITE} → {@link SQLiteStore} (TODO)</li>
-     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#H2} → {@link H2Store} (TODO)</li>
+     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#ROCKS_DB} → {@link RocksDBStore} (pending)</li>
+     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#SQLITE} → {@link SQLiteStore} (pending)</li>
+     *   <li>{@link EmbeddedConfig.EmbeddedStorageType#H2} → {@link H2Store} (pending)</li>
      * </ul>
      *
      * @param config deployment configuration

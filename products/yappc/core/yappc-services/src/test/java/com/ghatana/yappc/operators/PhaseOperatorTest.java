@@ -12,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * @doc.type class
@@ -24,77 +22,111 @@ import static org.mockito.Mockito.*;
 class PhaseOperatorTest extends EventloopTestBase {
 
     @Test
-    void shouldExecuteIntentPhase() { 
+    void shouldExecuteIntentPhase() {
         // GIVEN
-        IntentService intentService = mock(IntentService.class); 
-        IntentSpec expectedSpec = IntentSpec.builder() 
+        InMemoryIntentService intentService = new InMemoryIntentService();
+        IntentSpec expectedSpec = IntentSpec.builder()
                 .id("intent-123")
                 .productName("Test Product")
                 .description("Test product intent")
-                .goals(List.of()) 
-                .personas(List.of()) 
-                .constraints(List.of()) 
-                .build(); 
+                .goals(List.of())
+                .personas(List.of())
+                .constraints(List.of())
+                .build();
 
-        when(intentService.capture(any(IntentInput.class))) 
-                .thenReturn(Promise.of(expectedSpec)); 
+        intentService.setCaptureResult(expectedSpec);
 
-        PhaseOperator operator = new PhaseOperator( 
+        PhaseOperator operator = new PhaseOperator(
                 PhaseType.INTENT, intentService, null, null, null, null, null, null, null);
 
-        IntentInput input = IntentInput.builder() 
+        IntentInput input = IntentInput.builder()
                 .rawText("Build an app")
                 .format("text")
-                .build(); 
+                .build();
 
         // WHEN
-        Object result = runPromise(() -> operator.execute(input)); 
+        Object result = runPromise(() -> operator.execute(input));
 
         // THEN
-        assertNotNull(result); 
-        assertInstanceOf(IntentSpec.class, result); 
-        assertEquals("intent-123", ((IntentSpec) result).id()); 
-        verify(intentService, times(1)).capture(any(IntentInput.class)); 
+        assertNotNull(result);
+        assertInstanceOf(IntentSpec.class, result);
+        assertEquals("intent-123", ((IntentSpec) result).id());
+        assertEquals(1, intentService.getCaptureCallCount());
     }
 
     @Test
-    void shouldReturnOperatorId() { 
+    void shouldReturnOperatorId() {
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( 
+        PhaseOperator operator = new PhaseOperator(
                 PhaseType.SHAPE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        String operatorId = operator.getOperatorId(); 
+        String operatorId = operator.getOperatorId();
 
         // THEN
-        assertEquals("yappc.phase.shape", operatorId); 
+        assertEquals("yappc.phase.shape", operatorId);
     }
 
     @Test
-    void shouldReturnMetadata() { 
+    void shouldReturnMetadata() {
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( 
+        PhaseOperator operator = new PhaseOperator(
                 PhaseType.VALIDATE, null, null, null, null, null, null, null, null);
 
         // WHEN
-        Map<String, String> metadata = operator.getMetadata(); 
+        Map<String, String> metadata = operator.getMetadata();
 
         // THEN
-        assertNotNull(metadata); 
+        assertNotNull(metadata);
         assertEquals("VALIDATE", metadata.get("phase"));
         assertEquals("yappc.phase.validate", metadata.get("operator_id"));
         assertEquals("1.0.0", metadata.get("version"));
     }
 
     @Test
-    void shouldHandleInvalidInputType() { 
+    void shouldHandleInvalidInputType() {
         // GIVEN
-        PhaseOperator operator = new PhaseOperator( 
-                PhaseType.INTENT, mock(IntentService.class), null, null, null, null, null, null, null); 
+        PhaseOperator operator = new PhaseOperator(
+                PhaseType.INTENT, new InMemoryIntentService(), null, null, null, null, null, null, null);
 
         // WHEN/THEN
-        Exception e = assertThrows(Exception.class, () -> 
+        Exception e = assertThrows(Exception.class, () ->
                 runPromise(() -> operator.execute("invalid input")));
         assertTrue(e.getMessage().contains("Invalid input type"));
+    }
+
+    private static final class InMemoryIntentService implements IntentService {
+        private IntentSpec captureResult = null;
+        private com.ghatana.yappc.domain.intent.IntentAnalysis analyzeResult = null;
+        private int captureCallCount = 0;
+        private int analyzeCallCount = 0;
+
+        void setCaptureResult(IntentSpec result) {
+            this.captureResult = result;
+        }
+
+        void setAnalyzeResult(com.ghatana.yappc.domain.intent.IntentAnalysis result) {
+            this.analyzeResult = result;
+        }
+
+        int getCaptureCallCount() {
+            return captureCallCount;
+        }
+
+        int getAnalyzeCallCount() {
+            return analyzeCallCount;
+        }
+
+        @Override
+        public Promise<IntentSpec> capture(IntentInput input) {
+            captureCallCount++;
+            return Promise.of(captureResult);
+        }
+
+        @Override
+        public Promise<com.ghatana.yappc.domain.intent.IntentAnalysis> analyze(IntentSpec spec) {
+            analyzeCallCount++;
+            return Promise.of(analyzeResult);
+        }
     }
 }

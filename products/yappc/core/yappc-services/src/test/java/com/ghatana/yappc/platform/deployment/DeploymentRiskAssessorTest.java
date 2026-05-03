@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("DeploymentRiskAssessor Tests")
 class DeploymentRiskAssessorTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
 
   @Test
   @DisplayName("assess parses AI deployment recommendation")

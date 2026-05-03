@@ -18,6 +18,19 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('@ghatana/design-system', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@ghatana/design-system')>();
+    return {
+        ...actual,
+        useTheme: () => ({
+            breakpoints: {
+                down: () => '(max-width: 900px)',
+            },
+        }),
+        useMediaQuery: () => false,
+    };
+});
+
 import { UnifiedCanvasToolbar } from '../UnifiedCanvasToolbar';
 import type { CanvasMode } from 'yappc-core/types/canvasMode';
 import type { AbstractionLevel } from 'yappc-core/types/abstractionLevel';

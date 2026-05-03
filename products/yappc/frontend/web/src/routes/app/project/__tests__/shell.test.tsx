@@ -108,29 +108,29 @@ describe('Project shell — navigation tabs', () => {
 
   it('renders the tab bar with all expected tabs', () => {
     render(<Layout />);
-    const tabs = ['Overview', 'Canvas', 'Workspace', 'Lifecycle', 'Deploy', 'Settings'];
+    const tabs = ['Intent', 'Shape', 'Validate', 'Generate', 'Run', 'Evolve'];
     for (const label of tabs) {
       expect(screen.getByText(label)).toBeDefined();
     }
     expect(screen.queryByText('Preview')).toBeNull();
   });
 
-  it('renders an Overview tab linking to the project root route', () => {
+  it('renders an Intent tab linking to the intent route', () => {
     render(<Layout />);
-    const overviewTab = screen
+    const intentTab = screen
       .getAllByRole('tab')
-      .find((el) => el.textContent?.includes('Overview'));
-    expect(overviewTab).toBeDefined();
-    expect(overviewTab?.getAttribute('href')).toContain('/p/proj-42/');
+      .find((el) => el.textContent?.includes('Intent'));
+    expect(intentTab).toBeDefined();
+    expect(intentTab?.getAttribute('href')).toContain('/p/proj-42/intent');
   });
 
-  it('renders a Lifecycle tab linking to the lifecycle route', () => {
+  it('renders a Validate tab linking to the validate route', () => {
     render(<Layout />);
-    const lifecycleTab = screen
+    const validateTab = screen
       .getAllByRole('tab')
-      .find((el) => el.textContent?.includes('Lifecycle'));
-    expect(lifecycleTab).toBeDefined();
-    expect(lifecycleTab?.getAttribute('href')).toContain('lifecycle');
+      .find((el) => el.textContent?.includes('Validate'));
+    expect(validateTab).toBeDefined();
+    expect(validateTab?.getAttribute('href')).toContain('/p/proj-42/validate');
   });
 
   it('renders the Project navigation tablist element', () => {

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ops.CapacityAdvisor.CapacityRecommendation;
 import com.ghatana.yappc.platform.ops.CapacityAdvisor.CapacityRequest;
 import com.ghatana.yappc.platform.ops.CapacityAdvisor.CostSnapshot;
@@ -23,7 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("CapacityAdvisor Tests")
 class CapacityAdvisorTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
   @Mock private CapacityAdvisor.UsageProvider usageProvider;
   @Mock private CapacityAdvisor.CostProvider costProvider;
 

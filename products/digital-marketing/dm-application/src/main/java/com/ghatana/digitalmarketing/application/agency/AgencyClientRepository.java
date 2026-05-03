@@ -13,6 +13,7 @@ import java.util.Optional;
  * @doc.type interface
  * @doc.purpose Repository interface for agency client operations
  * @doc.layer application
+ * @doc.pattern Repository
  */
 public interface AgencyClientRepository {
 

@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ops;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.time.Clock;
@@ -25,19 +25,19 @@ public final class IncidentCorrelator {
 
   private static final Duration DEFAULT_CORRELATION_WINDOW = Duration.ofMinutes(30);
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final IncidentStore incidentStore;
   private final OwnershipResolver ownershipResolver;
   private final ObjectMapper objectMapper;
   private final Clock clock;
 
   public IncidentCorrelator(
-      YAPPCAIService aiService, IncidentStore incidentStore, OwnershipResolver ownershipResolver) {
+      YAPPCAIInterface aiService, IncidentStore incidentStore, OwnershipResolver ownershipResolver) {
     this(aiService, incidentStore, ownershipResolver, new ObjectMapper(), Clock.systemUTC());
   }
 
   IncidentCorrelator(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       IncidentStore incidentStore,
       OwnershipResolver ownershipResolver,
       ObjectMapper objectMapper,

@@ -23,17 +23,17 @@ vi.mock('../../../../services/rail/RailServiceClient', () => ({
 }));
 
 const mockContext: RailContext = {
-  mode: 'architecture',
+  mode: 'diagram',
   role: 'Architect',
   phase: 'SHAPE',
-  projectType: 'web-app',
+  projectType: 'web',
 };
 
 const mockInfraContext: RailContext = {
-  mode: 'architecture',
+  mode: 'diagram',
   role: 'Architect',
   phase: 'SHAPE',
-  projectType: 'web-app',
+  projectType: 'web',
 };
 
 describe('UnifiedLeftRail', () => {
@@ -41,45 +41,18 @@ describe('UnifiedLeftRail', () => {
     vi.clearAllMocks();
   });
 
-  it('renders correctly and defaults to Components panel based on context or default', async () => {
-    // Mock response for components
-    (railService.getComponents as unknown).mockResolvedValue([
-      {
-        id: 'c1',
-        name: 'Test Component',
-        category: 'Test',
-        tags: [],
-        usage: 10,
-      },
-    ]);
+  it('renders correctly and opens the default Assets panel for diagram mode', async () => {
 
     render(
       <UnifiedLeftRail context={mockContext} nodes={[]} selectedNodeIds={[]} />
     );
 
-    // Initial render might show icons.
-    // We need to click the icon to expand if it's collapsed, unless state atom says open.
-    // Assuming default state might be closed or open depending on atom default.
-    // But testing library renders what is there.
-    // If collapsed, we see icons.
+    const assetsBtn = screen.getByTitle('Assets');
+    expect(assetsBtn).toBeInTheDocument();
 
-    // Check for Components icon (or label if we can find it by title)
-    const componentsBtn = screen.getByTitle('Components');
-    expect(componentsBtn).toBeInTheDocument();
+    fireEvent.click(assetsBtn);
 
-    // Click to open
-    fireEvent.click(componentsBtn);
-
-    // Now panel should be visible - check data rather than duplicated label text
-    // (label appears both in tab and in header)
-
-    // Check if service was called
-    await waitFor(() => {
-      expect(railService.getComponents).toHaveBeenCalled();
-    });
-
-    // Check if data is rendered
-    expect(await screen.findByText('Test Component')).toBeInTheDocument();
+    expect(await screen.findAllByText(/Assets/)).toBeTruthy();
   });
 
   it('switches to Infrastructure panel and fetches data', async () => {

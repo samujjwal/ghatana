@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ops;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -18,18 +18,18 @@ import java.util.Objects;
  */
 public final class CapacityAdvisor {
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final UsageProvider usageProvider;
   private final CostProvider costProvider;
   private final ObjectMapper objectMapper;
 
   public CapacityAdvisor(
-      YAPPCAIService aiService, UsageProvider usageProvider, CostProvider costProvider) {
+      YAPPCAIInterface aiService, UsageProvider usageProvider, CostProvider costProvider) {
     this(aiService, usageProvider, costProvider, new ObjectMapper());
   }
 
   CapacityAdvisor(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       UsageProvider usageProvider,
       CostProvider costProvider,
       ObjectMapper objectMapper) {

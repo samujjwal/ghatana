@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL adapter for MarketplaceListingRepository (DMOS-P3-004).
@@ -20,20 +21,23 @@ import java.util.Optional;
  * @doc.type class
  * @doc.purpose PostgreSQL persistence adapter for marketplace listings
  * @doc.layer persistence
+ * @doc.pattern Repository
  */
 public final class PostgresMarketplaceListingRepository implements MarketplaceListingRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresMarketplaceListingRepository.class);
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresMarketplaceListingRepository(DataSource dataSource) {
+    public PostgresMarketplaceListingRepository(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
+        this.executor = executor;
     }
 
     @Override
     public Promise<MarketplaceListing> save(MarketplaceListing listing) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO dmos_marketplace_listings
                 (listing_id, name, description, author_tenant_id, version, status, rating, download_count, created_at, updated_at)
@@ -74,7 +78,7 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<Optional<MarketplaceListing>> findById(String listingId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_marketplace_listings WHERE listing_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -96,7 +100,7 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<List<MarketplaceListing>> findPublished() {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_marketplace_listings WHERE status = 'PUBLISHED' ORDER BY rating DESC, created_at DESC";
 
             try (Connection conn = dataSource.getConnection();
@@ -117,13 +121,13 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<List<MarketplaceListing>> findByAuthor(DmTenantId authorTenantId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_marketplace_listings WHERE author_tenant_id = ? ORDER BY created_at DESC";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, authorTenantId.value());
+                stmt.setString(1, authorTenantId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 List<MarketplaceListing> listings = new ArrayList<>();
@@ -140,7 +144,7 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<MarketplaceListing> update(MarketplaceListing listing) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 UPDATE dmos_marketplace_listings
                 SET name = ?, description = ?, version = ?, status = ?, rating = ?, download_count = ?, updated_at = ?
@@ -171,7 +175,7 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<Void> delete(String listingId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_marketplace_listings WHERE listing_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -190,7 +194,7 @@ public final class PostgresMarketplaceListingRepository implements MarketplaceLi
 
     @Override
     public Promise<Void> incrementDownloadCount(String listingId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "UPDATE dmos_marketplace_listings SET download_count = download_count + 1 WHERE listing_id = ?";
 
             try (Connection conn = dataSource.getConnection();

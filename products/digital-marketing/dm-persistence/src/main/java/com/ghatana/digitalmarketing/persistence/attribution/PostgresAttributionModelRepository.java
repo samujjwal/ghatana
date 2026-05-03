@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL adapter for AttributionModelRepository (DMOS-P3-005).
@@ -23,20 +24,23 @@ import java.util.Optional;
  * @doc.type class
  * @doc.purpose PostgreSQL persistence adapter for attribution models
  * @doc.layer persistence
+ * @doc.pattern Repository
  */
 public final class PostgresAttributionModelRepository implements AttributionModelRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresAttributionModelRepository.class);
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresAttributionModelRepository(DataSource dataSource) {
+    public PostgresAttributionModelRepository(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
+        this.executor = executor;
     }
 
     @Override
     public Promise<AttributionModel> save(AttributionModel model) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO dmos_attribution_models
                 (model_id, tenant_id, workspace_id, model_name, model_type, touchpoint_weights, confidence_interval_lower, confidence_interval_upper, active, created_at, updated_at)
@@ -55,8 +59,8 @@ public final class PostgresAttributionModelRepository implements AttributionMode
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
                 stmt.setString(1, model.getModelId());
-                stmt.setString(2, model.getTenantId().value());
-                stmt.setString(3, model.getWorkspaceId().value());
+                stmt.setString(2, model.getTenantId().getValue());
+                stmt.setString(3, model.getWorkspaceId().getValue());
                 stmt.setString(4, model.getModelName());
                 stmt.setString(5, model.getModelType());
                 stmt.setString(6, mapToJson(model.getTouchpointWeights()));
@@ -78,7 +82,7 @@ public final class PostgresAttributionModelRepository implements AttributionMode
 
     @Override
     public Promise<Optional<AttributionModel>> findById(String modelId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_attribution_models WHERE model_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -100,13 +104,13 @@ public final class PostgresAttributionModelRepository implements AttributionMode
 
     @Override
     public Promise<Optional<AttributionModel>> findActiveByWorkspace(DmWorkspaceId workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_attribution_models WHERE workspace_id = ? AND active = true";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, workspaceId.value());
+                stmt.setString(1, workspaceId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
@@ -122,13 +126,13 @@ public final class PostgresAttributionModelRepository implements AttributionMode
 
     @Override
     public Promise<List<AttributionModel>> findByTenant(DmTenantId tenantId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_attribution_models WHERE tenant_id = ? ORDER BY created_at DESC";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, tenantId.value());
+                stmt.setString(1, tenantId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 List<AttributionModel> models = new ArrayList<>();
@@ -145,7 +149,7 @@ public final class PostgresAttributionModelRepository implements AttributionMode
 
     @Override
     public Promise<AttributionModel> update(AttributionModel model) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 UPDATE dmos_attribution_models
                 SET model_name = ?, model_type = ?, touchpoint_weights = ?::jsonb, confidence_interval_lower = ?, confidence_interval_upper = ?, active = ?, updated_at = ?
@@ -176,7 +180,7 @@ public final class PostgresAttributionModelRepository implements AttributionMode
 
     @Override
     public Promise<Void> delete(String modelId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_attribution_models WHERE model_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -196,8 +200,8 @@ public final class PostgresAttributionModelRepository implements AttributionMode
     private AttributionModel mapRow(ResultSet rs) throws SQLException {
         return AttributionModel.builder()
             .modelId(rs.getString("model_id"))
-            .tenantId(new DmTenantId(rs.getString("tenant_id")))
-            .workspaceId(new DmWorkspaceId(rs.getString("workspace_id")))
+            .tenantId(DmTenantId.of(rs.getString("tenant_id")))
+            .workspaceId(DmWorkspaceId.of(rs.getString("workspace_id")))
             .modelName(rs.getString("model_name"))
             .modelType(rs.getString("model_type"))
             .touchpointWeights(parseJson(rs.getString("touchpoint_weights")))

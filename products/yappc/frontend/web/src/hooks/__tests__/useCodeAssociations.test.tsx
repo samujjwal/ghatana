@@ -59,7 +59,7 @@ describe('useCodeAssociations', () => {
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-        expect(fetch).toHaveBeenCalledWith('/api/artifacts/art-1/code-associations');
+        expect(fetch).toHaveBeenCalledWith('/api/artifacts/art-1/code-associations', expect.objectContaining({ method: 'GET' }));
         expect(result.current.data).toEqual(mockData);
     });
 
@@ -108,11 +108,10 @@ describe('useCreateCodeAssociation', () => {
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-        expect(fetch).toHaveBeenCalledWith('/api/code-associations', {
+        expect(fetch).toHaveBeenCalledWith('/api/code-associations', expect.objectContaining({
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(input),
-        });
+        }));
 
         expect(result.current.data).toEqual(mockResponse);
     });
@@ -173,9 +172,9 @@ describe('useDeleteCodeAssociation', () => {
 
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-        expect(fetch).toHaveBeenCalledWith('/api/code-associations/assoc-1', {
+        expect(fetch).toHaveBeenCalledWith('/api/code-associations/assoc-1', expect.objectContaining({
             method: 'DELETE',
-        });
+        }));
     });
 
     it('invalidates queries after deletion', async () => {

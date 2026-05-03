@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("CanaryAnalyzer Tests")
 class CanaryAnalyzerTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
 
   @Test
   @DisplayName("evaluate holds when the sample size is too small")

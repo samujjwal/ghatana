@@ -1,6 +1,6 @@
 package com.ghatana.yappc.platform.collab;
 
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import jakarta.validation.constraints.NotNull;
 import java.util.LinkedHashMap;
@@ -16,9 +16,9 @@ import java.util.Objects;
  */
 public final class MergeSuggestionService {
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
 
-  public MergeSuggestionService(@NotNull YAPPCAIService aiService) {
+  public MergeSuggestionService(@NotNull YAPPCAIInterface aiService) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
   }
 

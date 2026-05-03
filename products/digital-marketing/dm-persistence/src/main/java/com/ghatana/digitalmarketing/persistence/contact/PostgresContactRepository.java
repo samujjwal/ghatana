@@ -3,7 +3,8 @@ package com.ghatana.digitalmarketing.persistence.contact;
 import com.ghatana.digitalmarketing.application.contact.ContactRepository;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.contact.Contact;
-import com.ghatana.digitalmarketing.persistence.DmPersistenceException;
+import com.ghatana.digitalmarketing.domain.contact.ConsentStatus;
+import com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL implementation of ContactRepository with PII-safe lookups using email hash.
@@ -33,19 +35,22 @@ public class PostgresContactRepository implements ContactRepository {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresContactRepository.class);
 
     private final DataSource dataSource;
+    private final Executor executor;
 
     /**
      * Creates a new PostgresContactRepository.
      *
      * @param dataSource the PostgreSQL data source
+     * @param executor the executor for blocking operations
      */
-    public PostgresContactRepository(DataSource dataSource) {
+    public PostgresContactRepository(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
+        this.executor = executor;
     }
 
     @Override
     public Promise<Contact> save(Contact contact) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO contacts (id, workspace_id, email_hash, encrypted_email, display_name,
                                       consent_status, consent_purpose, consent_recorded_at,
@@ -83,7 +88,7 @@ public class PostgresContactRepository implements ContactRepository {
                     if (rs.next()) {
                         return mapRowToContact(rs);
                     }
-                    throw new DmPersistenceException("Failed to save contact");
+                    throw new DmPersistenceException("Failed to save contact", new IllegalStateException("Contact not found after save"));
                 }
             } catch (SQLException e) {
                 LOG.error("Failed to save contact: {}", contact.getId(), e);
@@ -94,7 +99,7 @@ public class PostgresContactRepository implements ContactRepository {
 
     @Override
     public Promise<Optional<Contact>> findById(DmWorkspaceId workspaceId, String contactId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM contacts WHERE id = ? AND workspace_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -118,7 +123,7 @@ public class PostgresContactRepository implements ContactRepository {
 
     @Override
     public Promise<Optional<Contact>> findByEmailHash(DmWorkspaceId workspaceId, String emailHash) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM contacts WHERE email_hash = ? AND workspace_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -151,7 +156,7 @@ public class PostgresContactRepository implements ContactRepository {
 
     @Override
     public Promise<List<Contact>> listMarketingEligible(DmWorkspaceId workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT * FROM contacts
                 WHERE workspace_id = ?
@@ -181,7 +186,7 @@ public class PostgresContactRepository implements ContactRepository {
 
     @Override
     public Promise<Integer> countMarketingEligible(DmWorkspaceId workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT COUNT(*) FROM contacts
                 WHERE workspace_id = ?
@@ -209,7 +214,7 @@ public class PostgresContactRepository implements ContactRepository {
 
     @Override
     public Promise<Boolean> deleteById(DmWorkspaceId workspaceId, String contactId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM contacts WHERE id = ? AND workspace_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -236,7 +241,7 @@ public class PostgresContactRepository implements ContactRepository {
             .emailHash(rs.getString("email_hash"))
             .encryptedEmail(rs.getString("encrypted_email"))
             .displayName(rs.getString("display_name"))
-            .consentStatus(Contact.ConsentStatus.valueOf(rs.getString("consent_status")))
+            .consentStatus(ConsentStatus.valueOf(rs.getString("consent_status")))
             .consentPurpose(rs.getString("consent_purpose"))
             .consentRecordedAt(rs.getObject("consent_recorded_at", java.time.Instant.class))
             .suppressed(rs.getBoolean("suppressed"))

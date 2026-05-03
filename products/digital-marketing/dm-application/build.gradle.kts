@@ -24,6 +24,7 @@ dependencies {
     testImplementation(libs.bundles.testing.core)
     testImplementation(project(":platform-kernel:kernel-testing"))
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":products:digital-marketing:dm-infra"))
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

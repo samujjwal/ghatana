@@ -18,8 +18,8 @@ describe('OnboardingStatusService', () => {
         ok: false,
       }));
 
-      localStorage.setItem('onboarding_complete', 'true');
-      localStorage.setItem('yappc_primary_persona', 'developer');
+      localStorage.setItem('onboarding_complete', JSON.stringify('true'));
+      localStorage.setItem('yappc_primary_persona', JSON.stringify('developer'));
       localStorage.setItem('yappc_active_personas', JSON.stringify(['developer', 'designer']));
 
       const status = await getOnboardingStatus();

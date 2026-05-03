@@ -14,7 +14,7 @@
 
 import React, { useMemo, useCallback, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Button } from '@ghatana/design-system';
+import { Button, Input, Select } from '@ghatana/design-system';
 import {
   FlowCanvas,
   FlowControls,
@@ -402,6 +402,20 @@ export function DataFabricPage(): React.ReactElement {
 
   return (
     <div className="flex flex-col h-full bg-white" data-testid="data-fabric-page">
+      {/* Preview banner — Data Fabric metrics are backed by the live /data-fabric/metrics endpoint;
+           however this surface is experimental and disabled in production by default.
+           When enabled (via VITE_FEATURE_FABRIC=true in non-production profiles), metrics shown
+           here reflect real backend data but the surface has not yet been hardened for GA. */}
+      <div
+        className="flex items-center gap-3 border-b border-amber-200 bg-amber-50 px-6 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+        role="status"
+        aria-label="Data Fabric preview notice"
+      >
+        <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 dark:bg-amber-900/60 dark:text-amber-200">
+          Preview
+        </span>
+        Data Fabric is an experimental surface. Metrics reflect the backend API when available, but this view is not yet recommended for production operational decisions.
+      </div>
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <div>
@@ -440,32 +454,30 @@ export function DataFabricPage(): React.ReactElement {
       {migrateOpen && (
         <div className="px-6 py-3 border-b border-amber-200 bg-amber-50 flex items-center gap-3 flex-wrap">
           <span className="text-sm font-medium text-amber-800">Manual tier migration</span>
-          <input
-            type="text"
-            placeholder="Collection / stream name"
+          <Input
             aria-label="Collection or stream name for tier migration"
+            placeholder="Collection / stream name"
             value={migrateCollection}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMigrateCollection(e.target.value)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-52"
+            className="w-52"
           />
-          <select
+          <Select
             aria-label="Target tier for migration"
             value={migrateTargetTier}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
               setMigrateTargetTier(e.target.value as MigrationTargetTier)
             }
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
-          >
-            <option value="WARM">→ WARM (L1→L2 Iceberg)</option>
-            <option value="COLD">→ COLD (L2→L3 S3 Archive)</option>
-          </select>
-          <input
-            type="text"
-            placeholder="Reason for migration"
+            options={[
+              { value: 'WARM', label: '→ WARM (L1→L2 Iceberg)' },
+              { value: 'COLD', label: '→ COLD (L2→L3 S3 Archive)' },
+            ]}
+          />
+          <Input
             aria-label="Reason for migration"
+            placeholder="Reason for migration"
             value={migrationReason}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => setMigrationReason(event.target.value)}
-            className="border border-gray-300 rounded px-2 py-1 text-sm w-56"
+            className="w-56"
           />
           <GuardedAction
             label="Start governed migration"

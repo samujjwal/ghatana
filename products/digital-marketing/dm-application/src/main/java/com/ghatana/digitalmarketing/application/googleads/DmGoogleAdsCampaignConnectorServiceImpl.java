@@ -78,7 +78,7 @@ public final class DmGoogleAdsCampaignConnectorServiceImpl implements DmGoogleAd
                     return Promise.ofException(new SecurityException("Not authorized to execute connector actions"));
                 }
                 // Check CONNECTOR_WRITE approval requirement (DMOS-P1-008)
-                return kernelAdapter.requireApproval(ctx, ApprovalTargetType.CONNECTOR_WRITE, request.internalCampaignId());
+                return kernelAdapter.requestApproval(ctx, "CONNECTOR_WRITE", request.internalCampaignId(), "Connector write operation");
             })
             .then(approval -> requireValidConnector(ctx, request.connectorId())
                 .then(connector -> requireLaunchedPaidSearchCampaign(ctx, request.internalCampaignId())
@@ -88,7 +88,7 @@ public final class DmGoogleAdsCampaignConnectorServiceImpl implements DmGoogleAd
                             GoogleAdsCampaignCreatePayload payload = new GoogleAdsCampaignCreatePayload(
                                 connector.getId(),
                                 campaign.getId(),
-                                request.dailyBudget(),
+                                request.dailyBudget().toString(),
                                 request.serviceArea(),
                                 request.keywordTheme()
                             );

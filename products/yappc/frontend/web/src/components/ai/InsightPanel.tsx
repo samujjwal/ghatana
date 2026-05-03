@@ -117,7 +117,7 @@ export function InsightPanel({
                       </div>
                     )}
                     <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-                      <ConfidenceBadge score={insight.confidence} size="sm" />
+                      <ConfidenceBadge score={insight.confidence * 100} size="sm" />
                       {insight.sourceRef && <span>{insight.sourceRef}</span>}
                       <span>{new Date(insight.createdAt).toLocaleString()}</span>
                     </div>

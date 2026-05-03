@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agents.testing;
 
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Locale;
@@ -20,13 +20,13 @@ public final class TestCodeGenerator {
   private static final Pattern TYPE_PATTERN =
       Pattern.compile("(?:class|interface|record)\\s+([A-Za-z_][A-Za-z0-9_]*)");
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
 
   public TestCodeGenerator() {
     this.aiService = null;
   }
 
-  public TestCodeGenerator(YAPPCAIService aiService) {
+  public TestCodeGenerator(YAPPCAIInterface aiService) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
   }
 

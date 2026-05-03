@@ -128,7 +128,7 @@ public final class DmWorkflowWorker {
                         .toList();
                     return Promises.all(tasks).toVoid();
                 })
-                .whenComplete(result -> {
+                .whenComplete((result, e) -> {
                     long duration = ChronoUnit.MILLIS.between(tickStartTime, Instant.now());
                     span.setAttribute("duration.ms", duration);
                     LOG.debug("[DMOS-WORKER] tick completed in {}ms", duration);
@@ -164,12 +164,12 @@ public final class DmWorkflowWorker {
                 .then(wf -> {
                     long duration = ChronoUnit.MILLIS.between(workflowStartTime, Instant.now());
                     observability.recordWorkflowDuration(workflow.getName(), duration);
-                    return executeCurrentStep(wf);
+                    return executeCurrentStep(wf).map(__ -> null);
                 });
         }
         if (workflow.getStatus() == DmWorkflowStatus.RUNNING) {
             return executeCurrentStep(workflow)
-                .whenComplete(result -> {
+                .whenComplete((result, e) -> {
                     long duration = ChronoUnit.MILLIS.between(workflowStartTime, Instant.now());
                     observability.recordWorkflowDuration(workflow.getName(), duration);
                 });
@@ -177,10 +177,10 @@ public final class DmWorkflowWorker {
         return Promise.of(null);
     }
 
-    private Promise<Void> startWorkflow(DmWorkflowExecution workflow) {
+    private Promise<DmWorkflowExecution> startWorkflow(DmWorkflowExecution workflow) {
         LOG.info("[DMOS-WORKER] starting workflow id={} name={}", workflow.getId(), workflow.getName());
         return workflowRepository.update(workflow.start())
-            .then(this::executeCurrentStep);
+            .then(updated -> Promise.of(updated));
     }
 
     private Promise<Void> executeCurrentStep(DmWorkflowExecution workflow) {

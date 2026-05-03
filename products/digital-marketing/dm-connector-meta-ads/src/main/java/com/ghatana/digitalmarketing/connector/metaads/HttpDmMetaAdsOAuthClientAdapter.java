@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.concurrent.Executor;
 
 /**
  * OAuth client adapter for Meta Ads (Facebook Marketing API).
@@ -27,20 +28,22 @@ public final class HttpDmMetaAdsOAuthClientAdapter {
     private final HttpClient httpClient;
     private final String clientId;
     private final String clientSecret;
+    private final Executor executor;
 
-    public HttpDmMetaAdsOAuthClientAdapter(String clientId, String clientSecret) {
+    public HttpDmMetaAdsOAuthClientAdapter(String clientId, String clientSecret, Executor executor) {
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
         this.clientId = clientId;
         this.clientSecret = clientSecret;
+        this.executor = executor;
     }
 
     /**
      * Exchange authorization code for access token.
      */
     public Promise<String> exchangeCodeForToken(String code, String redirectUri) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_OAUTH_URL +
                 "?client_id=" + clientId +
                 "&client_secret=" + clientSecret +
@@ -73,7 +76,7 @@ public final class HttpDmMetaAdsOAuthClientAdapter {
      * Refresh access token.
      */
     public Promise<String> refreshToken(String refreshToken) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_OAUTH_URL +
                 "?grant_type=refresh_token" +
                 "&client_id=" + clientId +
@@ -105,7 +108,7 @@ public final class HttpDmMetaAdsOAuthClientAdapter {
      * Validate access token.
      */
     public Promise<Boolean> validateToken(String accessToken) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = "https://graph.facebook.com/v19.0/debug_token?input_token=" + accessToken;
 
             HttpRequest request = HttpRequest.newBuilder()

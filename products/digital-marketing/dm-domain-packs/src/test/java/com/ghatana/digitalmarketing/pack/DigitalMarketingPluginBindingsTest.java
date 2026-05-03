@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 /**
@@ -45,7 +46,15 @@ class DigitalMarketingPluginBindingsTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("registerAll() registers all seven DMOS rule sets")
+    @DisplayName("constructor rejects null compliancePlugin")
+    void shouldRejectNullCompliancePlugin() {
+        assertThatNullPointerException()
+            .isThrownBy(() -> new DigitalMarketingPluginBindings(null))
+            .withMessageContaining("compliancePlugin");
+    }
+
+    @Test
+    @DisplayName("registerAll() handles all rule sets with valid rules")
     void shouldRegisterAllRuleSets() {
         runPromise(() -> bindings.registerAll());
 
@@ -69,18 +78,70 @@ class DigitalMarketingPluginBindingsTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("constructor rejects null compliancePlugin")
-    void shouldRejectNullCompliancePlugin() {
-        assertThatNullPointerException()
-            .isThrownBy(() -> new DigitalMarketingPluginBindings(null))
-            .withMessageContaining("compliancePlugin");
+    @DisplayName("registerAll() throws when rule set is empty")
+    void shouldThrowWhenRuleSetIsEmpty() {
+        compliancePlugin.setNextRuleSetEmpty(true);
+
+        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("is empty");
+    }
+
+    @Test
+    @DisplayName("registerAll() throws when rule ID is blank")
+    void shouldThrowWhenRuleIdIsBlank() {
+        compliancePlugin.setNextRuleIdBlank(true);
+
+        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("blank ID");
+    }
+
+    @Test
+    @DisplayName("registerAll() throws when rule ID has invalid prefix")
+    void shouldThrowWhenRuleIdHasInvalidPrefix() {
+        compliancePlugin.setNextRuleIdInvalidPrefix(true);
+
+        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("invalid prefix");
+    }
+
+    @Test
+    @DisplayName("registerAll() throws when rule ID is duplicate")
+    void shouldThrowWhenRuleIdIsDuplicate() {
+        compliancePlugin.setNextRuleIdDuplicate(true);
+
+        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("Duplicate rule ID");
     }
 
     private static final class RecordingCompliancePlugin implements CompliancePlugin {
         private final Map<String, List<ComplianceRule>> registeredRuleSets = new LinkedHashMap<>();
+        private boolean nextRuleSetEmpty = false;
+        private boolean nextRuleIdBlank = false;
+        private boolean nextRuleIdInvalidPrefix = false;
+        private boolean nextRuleIdDuplicate = false;
 
         Map<String, List<ComplianceRule>> registeredRuleSets() {
             return registeredRuleSets;
+        }
+
+        void setNextRuleSetEmpty(boolean value) {
+            this.nextRuleSetEmpty = value;
+        }
+
+        void setNextRuleIdBlank(boolean value) {
+            this.nextRuleIdBlank = value;
+        }
+
+        void setNextRuleIdInvalidPrefix(boolean value) {
+            this.nextRuleIdInvalidPrefix = value;
+        }
+
+        void setNextRuleIdDuplicate(boolean value) {
+            this.nextRuleIdDuplicate = value;
         }
 
         @Override
@@ -90,8 +151,30 @@ class DigitalMarketingPluginBindingsTest extends EventloopTestBase {
 
         @Override
         public Promise<Void> registerRuleSet(String ruleSetId, List<ComplianceRule> rules) {
+            if (nextRuleSetEmpty) {
+                rules = List.of();
+            }
+            if (nextRuleIdBlank && !rules.isEmpty()) {
+                rules = List.of(createTestRule(""));
+            }
+            if (nextRuleIdInvalidPrefix && !rules.isEmpty()) {
+                rules = List.of(createTestRule("INVALID-001"));
+            }
+            if (nextRuleIdDuplicate && !rules.isEmpty()) {
+                rules = List.of(createTestRule("DM-001"), createTestRule("DM-001"));
+            }
             registeredRuleSets.put(ruleSetId, List.copyOf(rules));
             return Promise.of(null);
+        }
+
+        private ComplianceRule createTestRule(String ruleId) {
+            return new ComplianceRule(
+                ruleId,
+                "test-type",
+                "Test rule",
+                ComplianceRule.Severity.HIGH,
+                "true"
+            );
         }
 
         @Override

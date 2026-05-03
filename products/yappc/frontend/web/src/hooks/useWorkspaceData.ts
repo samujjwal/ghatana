@@ -39,7 +39,12 @@ import {
 } from '@/state/atoms/workspaceAtom';
 
 export type ProjectSetupSuggestion = ProjectSetupSuggestionContract;
-export type CreateWorkspaceRequest = CreateWorkspaceRequestContract;
+export type CreateWorkspaceRequest = CreateWorkspaceRequestContract & {
+  /** Optional persona selections carried during onboarding. */
+  personaSelections?: string[];
+  /** Optional default project to create alongside the workspace. */
+  defaultProject?: { name: string; type: string };
+};
 
 // ============================================================================
 // API Functions

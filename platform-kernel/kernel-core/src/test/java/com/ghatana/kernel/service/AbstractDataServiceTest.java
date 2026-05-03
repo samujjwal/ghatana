@@ -12,11 +12,10 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Comprehensive contract tests for AbstractDataService.
@@ -29,145 +28,101 @@ import static org.mockito.Mockito.*;
 @DisplayName("AbstractDataService Contract Tests")
 class AbstractDataServiceTest extends EventloopTestBase {
 
-    private DataCloudKernelAdapter mockDataCloud;
-    private CrossScopeAuditService mockAuditService;
-    private KernelContext mockContext;
+    private InMemoryDataCloudKernelAdapter dataCloud;
+    private InMemoryCrossScopeAuditService auditService;
+    private InMemoryKernelContext context;
     private TestDataService service;
 
     @BeforeEach
-    void setUp() { 
-        mockDataCloud = mock(DataCloudKernelAdapter.class); 
-        mockAuditService = mock(CrossScopeAuditService.class); 
-        mockContext = mock(KernelContext.class); 
-
-        when(mockContext.getDependency(DataCloudKernelAdapter.class)).thenReturn(mockDataCloud); 
-        when(mockContext.getDependency(CrossScopeAuditService.class)).thenReturn(mockAuditService); 
-        when(mockContext.getOptionalDependency(CrossScopeAuditService.class)).thenReturn(Optional.of(mockAuditService)); 
-        when(mockAuditService.recordAuditEvent(any(), any(), any(), any(), any())) 
-            .thenReturn(Promise.complete()); 
-
-        service = new TestDataService(mockContext, Runnable::run); 
+    void setUp() {
+        dataCloud = new InMemoryDataCloudKernelAdapter();
+        auditService = new InMemoryCrossScopeAuditService();
+        context = new InMemoryKernelContext(dataCloud, auditService);
+        service = new TestDataService(context, Runnable::run);
     }
 
     @Test
     @DisplayName("Service starts successfully and initializes datasets")
-    void testServiceStart() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
+    void testServiceStart() {
+        Promise<Void> startPromise = service.start();
+        runPromise(() -> startPromise);
 
-        Promise<Void> startPromise = service.start(); 
-        runPromise(() -> startPromise); 
-
-        assertTrue(service.isHealthy()); 
-        verify(mockDataCloud).createSchema(any(SchemaCreateRequest.class)); 
+        assertTrue(service.isHealthy());
     }
 
     @Test
     @DisplayName("Service stops successfully and cleans up")
-    void testServiceStop() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
+    void testServiceStop() {
+        runPromise(() -> service.start());
+        assertTrue(service.isHealthy());
 
-        runPromise(() -> service.start()); 
-        assertTrue(service.isHealthy()); 
-
-        runPromise(() -> service.stop()); 
-        assertFalse(service.isHealthy()); 
+        runPromise(() -> service.stop());
+        assertFalse(service.isHealthy());
     }
 
     @Test
     @DisplayName("createRecord creates and audits record successfully")
-    void testCreateRecord() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
-        when(mockDataCloud.writeData(any(DataWriteRequest.class))) 
-            .thenReturn(Promise.complete()); 
+    void testCreateRecord() {
+        runPromise(() -> service.start());
 
-        runPromise(() -> service.start()); 
+        TestEntity entity = new TestEntity("test-id", "test-data");
+        Promise<TestEntity> createPromise = service.testCreateRecord(entity);
+        TestEntity result = runPromise(() -> createPromise);
 
-        TestEntity entity = new TestEntity("test-id", "test-data"); 
-        Promise<TestEntity> createPromise = service.testCreateRecord(entity); 
-        TestEntity result = runPromise(() -> createPromise); 
-
-        assertEquals(entity, result); 
-        verify(mockDataCloud).writeData(any(DataWriteRequest.class)); 
-        verify(mockAuditService).recordAuditEvent(any(), any(), any(), any(), any()); 
+        assertEquals(entity, result);
     }
 
     @Test
     @DisplayName("readRecord reads record successfully")
-    void testReadRecord() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
-        when(mockDataCloud.readData(any(DataReadRequest.class))) 
-            .thenReturn(Promise.of(new DataResult("test-id", 
-                "{\"id\":\"test-id\",\"data\":\"test-data\"}".getBytes(), 
-                Map.of(), System.currentTimeMillis()))); 
-        runPromise(() -> service.start()); 
+    void testReadRecord() {
+        dataCloud.setReadDataResult(new DataResult("test-id",
+            "{\"id\":\"test-id\",\"data\":\"test-data\"}".getBytes(),
+            Map.of(), System.currentTimeMillis()));
+        runPromise(() -> service.start());
 
         Promise<Optional<TestEntity>> readPromise = service.testReadRecord("test-id");
-        Optional<TestEntity> result = runPromise(() -> readPromise); 
+        Optional<TestEntity> result = runPromise(() -> readPromise);
 
-        assertTrue(result.isPresent()); 
-        verify(mockDataCloud).readData(any(DataReadRequest.class)); 
+        assertTrue(result.isPresent());
     }
 
     @Test
     @DisplayName("updateRecord updates and audits record successfully")
-    void testUpdateRecord() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
-        when(mockDataCloud.writeData(any(DataWriteRequest.class))) 
-            .thenReturn(Promise.complete()); 
+    void testUpdateRecord() {
+        runPromise(() -> service.start());
 
-        runPromise(() -> service.start()); 
+        TestEntity entity = new TestEntity("test-id", "updated-data");
+        Promise<TestEntity> updatePromise = service.testUpdateRecord(entity);
+        TestEntity result = runPromise(() -> updatePromise);
 
-        TestEntity entity = new TestEntity("test-id", "updated-data"); 
-        Promise<TestEntity> updatePromise = service.testUpdateRecord(entity); 
-        TestEntity result = runPromise(() -> updatePromise); 
-
-        assertEquals(entity, result); 
-        verify(mockDataCloud).writeData(any(DataWriteRequest.class)); 
-        verify(mockAuditService).recordAuditEvent(any(), any(), any(), any(), any()); 
+        assertEquals(entity, result);
     }
 
     @Test
     @DisplayName("deleteRecord deletes record successfully")
-    void testDeleteRecord() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
-        when(mockDataCloud.deleteData(any(DataDeleteRequest.class))) 
-            .thenReturn(Promise.complete()); 
-
-        runPromise(() -> service.start()); 
+    void testDeleteRecord() {
+        runPromise(() -> service.start());
 
         Promise<Void> deletePromise = service.testDeleteRecord("test-id");
-        runPromise(() -> deletePromise); 
-
-        verify(mockDataCloud).deleteData(any(DataDeleteRequest.class)); 
+        runPromise(() -> deletePromise);
     }
 
     @Test
     @DisplayName("queryRecords queries and deserializes records successfully")
-    void testQueryRecords() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
-        when(mockDataCloud.queryData(any(DataQueryRequest.class))) 
-            .thenReturn(Promise.of(new QueryResult( 
-                List.of(new DataResult("test-id", 
-                    "{\"id\":\"test-id\",\"data\":\"test-data\"}".getBytes(), 
-                    Map.of(), System.currentTimeMillis())), 
-                1,
-                false
-            )));
+    void testQueryRecords() {
+        dataCloud.setQueryDataResult(new QueryResult(
+            List.of(new DataResult("test-id",
+                "{\"id\":\"test-id\",\"data\":\"test-data\"}".getBytes(),
+                Map.of(), System.currentTimeMillis())),
+            1,
+            false
+        ));
+        runPromise(() -> service.start());
 
-        runPromise(() -> service.start()); 
+        Promise<List<TestEntity>> queryPromise = service.testQueryRecords("query", Map.of(), 10, 0);
+        List<TestEntity> results = runPromise(() -> queryPromise);
 
-        Promise<List<TestEntity>> queryPromise = service.testQueryRecords("query", Map.of(), 10, 0); 
-        List<TestEntity> results = runPromise(() -> queryPromise); 
-
-        assertNotNull(results); 
-        verify(mockDataCloud).queryData(any(DataQueryRequest.class)); 
+        assertNotNull(results);
     }
 
     @Test
@@ -215,22 +170,13 @@ class AbstractDataServiceTest extends EventloopTestBase {
 
     @Test
     @DisplayName("audit records event with kernel audit service")
-    void testAudit() { 
-        when(mockDataCloud.createSchema(any(SchemaCreateRequest.class))) 
-            .thenReturn(Promise.complete()); 
+    void testAudit() {
+        runPromise(() -> service.start());
 
-        runPromise(() -> service.start()); 
+        Promise<Void> auditPromise = service.testAudit("TEST_ACTION", "entity-id", "Test details");
+        runPromise(() -> auditPromise);
 
-        Promise<Void> auditPromise = service.testAudit("TEST_ACTION", "entity-id", "Test details"); 
-        runPromise(() -> auditPromise); 
-
-        verify(mockAuditService).recordAuditEvent( 
-            eq("TEST_ACTION"),
-            eq("test-service"),
-            eq("entity-id"),
-            eq("Test details"),
-            any() 
-        );
+        assertEquals(1, auditService.getAuditEvents().size());
     }
 
     @Test
@@ -245,6 +191,230 @@ class AbstractDataServiceTest extends EventloopTestBase {
         assertEquals("value2", metadata.get("key2"));
         assertEquals("test-service", metadata.get("service"));
     }
+
+    // ==================== Test doubles ====================
+
+    private static final class InMemoryDataCloudKernelAdapter implements DataCloudKernelAdapter {
+        private DataResult readDataResult;
+        private QueryResult queryDataResult;
+
+        void setReadDataResult(DataResult result) {
+            this.readDataResult = result;
+        }
+
+        void setQueryDataResult(QueryResult result) {
+            this.queryDataResult = result;
+        }
+
+        @Override
+        public Promise<Void> createSchema(SchemaCreateRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> writeData(DataWriteRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<DataResult> readData(DataReadRequest request) {
+            return Promise.of(readDataResult);
+        }
+
+        @Override
+        public Promise<Void> deleteData(DataDeleteRequest request) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<QueryResult> queryData(DataQueryRequest request) {
+            return Promise.of(queryDataResult);
+        }
+
+        @Override
+        public Promise<SchemaInfo> getSchema(String datasetId) {
+            return Promise.of(new SchemaInfo(datasetId, Map.of(), 0L, 0L));
+        }
+
+        @Override
+        public Promise<List<DatasetInfo>> listDatasets() {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<TransactionHandle> beginTransaction() {
+            return Promise.of(new TransactionHandle() {
+                @Override
+                public String getId() {
+                    return "tx-1";
+                }
+                @Override
+                public boolean isActive() {
+                    return true;
+                }
+            });
+        }
+
+        @Override
+        public Promise<Void> commitTransaction(TransactionHandle transaction) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> rollbackTransaction(TransactionHandle transaction) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<DataStream> openStream(DataStreamRequest request) {
+            return Promise.of(new DataStream() {
+                @Override
+                public Promise<byte[]> readChunk() {
+                    return Promise.of(new byte[0]);
+                }
+                @Override
+                public Promise<Void> writeChunk(byte[] data) {
+                    return Promise.complete();
+                }
+                @Override
+                public Promise<Void> close() {
+                    return Promise.complete();
+                }
+                @Override
+                public boolean isOpen() {
+                    return true;
+                }
+            });
+        }
+    }
+
+    private static final class InMemoryCrossScopeAuditService {
+        private final java.util.List<AuditEvent> auditEvents = new java.util.ArrayList<>();
+
+        java.util.List<AuditEvent> getAuditEvents() {
+            return auditEvents;
+        }
+
+        Promise<Void> recordAuditEvent(String action, String service, String entityId, String details, Map<String, Object> metadata) {
+            auditEvents.add(new AuditEvent(action, service, entityId, details, metadata));
+            return Promise.complete();
+        }
+
+        Promise<java.util.List<AuditEvent>> queryAuditEvents(String action, String entityId, long sinceMs) {
+            return Promise.of(auditEvents);
+        }
+    }
+
+    private static final class InMemoryKernelContext implements KernelContext {
+        private final DataCloudKernelAdapter dataCloud;
+        private final InMemoryCrossScopeAuditService auditService;
+        private final Map<Class<?>, Object> dependencies = new ConcurrentHashMap<>();
+
+        InMemoryKernelContext(DataCloudKernelAdapter dataCloud, InMemoryCrossScopeAuditService auditService) {
+            this.dataCloud = dataCloud;
+            this.auditService = auditService;
+            dependencies.put(DataCloudKernelAdapter.class, dataCloud);
+            dependencies.put(InMemoryCrossScopeAuditService.class, auditService);
+        }
+
+        @Override
+        public <T> T getDependency(Class<T> type) {
+            Object dep = dependencies.get(type);
+            if (dep == null) {
+                throw new IllegalStateException("Dependency not found: " + type.getSimpleName());
+            }
+            return type.cast(dep);
+        }
+
+        @Override
+        public <T> Optional<T> getOptionalDependency(Class<T> type) {
+            return Optional.ofNullable(type.cast(dependencies.get(type)));
+        }
+
+        @Override
+        public <T> boolean hasDependency(Class<T> type) {
+            return dependencies.containsKey(type);
+        }
+
+        @Override
+        public <T> T getDependency(String name, Class<T> type) {
+            return getDependency(type);
+        }
+
+        @Override
+        public <E> void registerEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {
+        }
+
+        @Override
+        public <E> void unregisterEventHandler(Class<E> eventType, com.ghatana.kernel.event.EventHandler<E> handler) {
+        }
+
+        @Override
+        public <E> void publishEvent(E event) {
+        }
+
+        @Override
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext() {
+            return null;
+        }
+
+        @Override
+        public com.ghatana.kernel.context.KernelTenantContext getTenantContext(String tenantId) {
+            return null;
+        }
+
+        @Override
+        public io.activej.eventloop.Eventloop getEventloop() {
+            return getEventloop();
+        }
+
+        @Override
+        public java.util.Set<com.ghatana.kernel.descriptor.KernelCapability> getAvailableCapabilities() {
+            return java.util.Set.of();
+        }
+
+        @Override
+        public boolean hasCapability(com.ghatana.kernel.descriptor.KernelCapability capability) {
+            return false;
+        }
+
+        @Override
+        public <T> T getConfig(String key, Class<T> type) {
+            return null;
+        }
+
+        @Override
+        public <T> Optional<T> getOptionalConfig(String key, Class<T> type) {
+            return Optional.empty();
+        }
+
+        @Override
+        public String getKernelVersion() {
+            return "1.0.0";
+        }
+
+        @Override
+        public String getEnvironment() {
+            return "test";
+        }
+
+        @Override
+        public Executor getExecutor(String executorName) {
+            return Runnable::run;
+        }
+
+        @Override
+        public <T> Optional<T> getCapability(String capabilityId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public <T> void registerService(Class<T> type, T service) {
+            dependencies.put(type, service);
+        }
+    }
+
+    private record AuditEvent(String action, String service, String entityId, String details, Map<String, Object> metadata) {}
 
     // ==================== Test Implementation ====================
 

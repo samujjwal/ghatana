@@ -18,7 +18,7 @@ import {
   getArtifactsForPhase,
   createArtifactTag,
 } from '../lifecycle-artifacts';
-import { LifecyclePhase } from '@/types/lifecycle';
+import { LifecyclePhase, LIFECYCLE_PHASE } from '@/types/lifecycle';
 
 describe('LifecycleArtifactKind', () => {
   it('exposes all 17 artifact kinds', () => {
@@ -225,8 +225,7 @@ describe('getArtifactsForPhase', () => {
   });
 
   it('covers all 17 artifact kinds across all phases', () => {
-    const allPhases = Object.values(LifecyclePhase);
-    const allKinds = allPhases.flatMap((phase) => getArtifactsForPhase(phase));
+    const allKinds = LIFECYCLE_PHASE.flatMap((phase) => getArtifactsForPhase(phase));
     expect(allKinds).toHaveLength(17);
     expect(new Set(allKinds).size).toBe(17); // no duplicates
   });

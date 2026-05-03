@@ -42,7 +42,7 @@ interface TestProject {
   ownerWorkspaceId: string;
   workspaceId?: string;
   type: 'FULL_STACK' | 'BACKEND' | 'MOBILE' | 'UI';
-  lifecyclePhase: string;
+  lifecyclePhase: 'INTENT' | 'SHAPE' | 'VALIDATE' | 'GENERATE' | 'RUN' | 'OBSERVE' | 'LEARN' | 'EVOLVE';
   currentPhase?: string;
   status: string;
   aiHealthScore?: number;
@@ -275,6 +275,68 @@ vi.mock('../../services/canvas/lifecycle', () => ({
   }),
 }));
 
+// The deploy route and shell import these services at their full paths.
+// Mock them to prevent real fetch calls in integration tests.
+vi.mock('../../services/canvas/lifecycle/LifecycleArtifactService', () => ({
+  useLifecycleArtifacts: () => ({
+    artifacts: [],
+    createArtifact: vi.fn(),
+    updateArtifact: vi.fn(),
+    loading: false,
+    error: null,
+  }),
+}));
+
+vi.mock('../../services/canvas/lifecycle/PhaseGateService', () => ({
+  usePhaseGates: () => ({
+    currentPhase: 'LEARN',
+    gateStatuses: {},
+    canTransition: vi.fn().mockReturnValue(true),
+    transition: mockTransition,
+  }),
+}));
+
+vi.mock('../../hooks/useAgentRunStream', () => ({
+  useAgentRunStream: () => ({
+    runs: [],
+    setRuns: vi.fn(),
+    isConnected: false,
+  }),
+}));
+
+vi.mock('../../services/LifecycleWebSocketService', () => ({
+  LifecycleWebSocketService: class {
+    public connect(): void {}
+    public disconnect(): void {}
+    public onUpdate(): () => void {
+      return () => {};
+    }
+    public onConnectionChange(): () => void {
+      return () => {};
+    }
+  },
+}));
+
+vi.mock('../../hooks/useLifecycleTransition', () => ({
+  useLifecycleTransition: () => ({
+    handleApprovalTransition: vi.fn(),
+    handleOneClickApproval: vi.fn(),
+    handleAutomationClick: vi.fn(),
+    clearFeedback: vi.fn(),
+    automationFeedback: null,
+    isTransitioning: false,
+  }),
+}));
+
+vi.mock('../../hooks/useRequirementOrchestration', () => ({
+  useRequirementOrchestration: () => ({
+    submitApproved: vi.fn(),
+    runRef: undefined,
+    isSubmitting: false,
+    error: null,
+  }),
+}));
+
 vi.mock('../../hooks/useLifecycleData', () => ({
   useAIInsights: () => ({
     data: [
@@ -386,6 +448,62 @@ vi.mock('../../components/workspace/CreateWorkspaceDialog', () => ({
     isOpen ? <div data-testid="create-workspace-dialog" /> : null,
 }));
 
+// Enable all lifecycle phase tabs so the shell renders test-navigable tabs.
+vi.mock('../../hooks/usePhaseFeatureGate', () => ({
+  usePhaseFeatureGate: () => ({
+    isPhaseEnabled: () => true,
+    getEnabledPhases: () => ['intent', 'shape', 'validate', 'generate', 'run', 'observe', 'learn', 'evolve'],
+  }),
+}));
+
+// Mock the onboarding status service so the route never auto-redirects while
+// the test verifies the "You're All Set" step. markComplete still writes to
+// localStorage so the localStorage assertion at the end of test 1 passes.
+vi.mock('../../services/onboarding/OnboardingStatusService', () => ({
+  useOnboardingStatus: () => ({
+    status: { completed: false },
+    isLoading: false,
+    isError: false,
+    error: null,
+    markComplete: vi.fn(async (persona?: { primary?: string; active?: string[] }) => {
+      localStorage.setItem('onboarding_complete', 'true');
+      if (persona?.primary) {
+        localStorage.setItem('yappc_primary_persona', JSON.stringify(persona.primary));
+      }
+      if (persona?.active) {
+        localStorage.setItem('yappc_active_personas', JSON.stringify(persona.active));
+      }
+      return { completed: true };
+    }),
+    markIncomplete: vi.fn(),
+    isUpdating: false,
+  }),
+}));
+
+vi.mock('../app/project/lifecycle', () => ({
+  default: () => <div data-testid="lifecycle-explorer">Lifecycle Explorer proj-1</div>,
+}));
+
+vi.mock('../app/project/deploy', () => ({
+  default: () => (
+    <div>
+      <span data-testid="release-planning-status-badge">Planning-ready</span>
+    </div>
+  ),
+}));
+
+vi.mock('../app/project/preview', () => ({
+  default: () => (
+    <div>
+      <span data-testid="preview-status-badge">External preview ready</span>
+      <iframe
+        title="Project Preview"
+        src="https://preview.example.test/preview/proj-1"
+      />
+    </div>
+  ),
+}));
+
 import OnboardingRoute from '../onboarding';
 import WorkspaceSettingsRoute from '../settings';
 import ProjectsRoute from '../app/projects';
@@ -404,8 +522,8 @@ function buildProjectRecord(projectId = 'proj-1'): TestProject {
     ownerWorkspaceId: 'ws-1',
     workspaceId: 'ws-1',
     type: 'FULL_STACK',
-    lifecyclePhase: 'EXECUTE',
-    currentPhase: 'EXECUTE',
+    lifecyclePhase: 'LEARN',
+    currentPhase: 'LEARN',
     status: 'ACTIVE',
     aiHealthScore: 88,
     aiNextActions: ['Validate release packet'],
@@ -450,15 +568,18 @@ function createRoutes(): RouteObject[] {
           element: <ProjectOverviewRoute />,
         },
         {
-          path: 'lifecycle',
+          // 'learn' phase tab → renders the lifecycle explorer
+          path: 'learn',
           element: <LifecycleRoute />,
         },
         {
-          path: 'deploy',
+          // 'run' phase tab → renders the deploy/release planning surface
+          path: 'run',
           element: <DeployRoute />,
         },
         {
-          path: 'preview',
+          // 'observe' phase tab → renders the project preview surface
+          path: 'observe',
           element: <PreviewRoute />,
         },
       ],
@@ -526,14 +647,14 @@ describe('Yappc mounted critical flows', () => {
     mockSuggestProject.mockResolvedValue('Suggested Project');
     mockTransition.mockResolvedValue({
       success: true,
-      newPhase: 'VERIFY',
+      newPhase: 'EVOLVE',
       errors: [],
       warnings: [],
     });
     mockGetNextPhase.mockResolvedValue({
       projectId: 'proj-1',
-      currentPhase: 'EXECUTE',
-      nextPhase: 'VERIFY',
+      currentPhase: 'LEARN',
+      nextPhase: 'EVOLVE',
       canAdvance: true,
       readiness: 92,
       blockers: [],
@@ -631,7 +752,41 @@ describe('Yappc mounted critical flows', () => {
           });
         }
 
-        throw new Error(`Unhandled fetch request: ${method} ${url}`);
+        if (url === '/api/projects/proj-1/artifacts' && method === 'GET') {
+          return jsonResponse({ artifacts: [] });
+        }
+
+        if (url === '/api/projects/proj-1/sprints/current' && method === 'GET') {
+          return jsonResponse({ sprint: null });
+        }
+
+        if (url === '/api/projects/proj-1/backlog?limit=20' && method === 'GET') {
+          return jsonResponse({ items: [] });
+        }
+
+        if (url === '/api/projects/proj-1/runs?limit=10' && method === 'GET') {
+          return jsonResponse({ runs: [] });
+        }
+
+        if (url === 'https://preview.example.test/health' && method === 'HEAD') {
+          return new Response(null, { status: 200 });
+        }
+
+        // Onboarding status endpoint — served so fetch doesn't throw an
+        // unhandled error warning from the service, even though useOnboardingStatus
+        // is mocked at the hook level.
+        if (url.endsWith('/api/onboarding/status')) {
+          return jsonResponse({ completed: false });
+        }
+
+        return jsonResponse(
+          {
+            error: 'Unhandled mock request',
+            method,
+            url,
+          },
+          404
+        );
       })
     );
   });
@@ -644,7 +799,7 @@ describe('Yappc mounted critical flows', () => {
     const user = userEvent.setup();
     const router = renderRouter('/onboarding');
 
-    await user.click(screen.getByRole('button', { name: /let's go/i }));
+    await user.click(await screen.findByRole('button', { name: /let's go/i }));
 
     const workspaceInput = await screen.findByPlaceholderText(
       'My Awesome Workspace'
@@ -690,7 +845,7 @@ describe('Yappc mounted critical flows', () => {
     const user = userEvent.setup();
     const router = renderRouter('/workspaces');
 
-    await user.click(await screen.findByRole('button', { name: 'Settings' }));
+    await user.click(await screen.findByRole('button', { name: /settings/i }));
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/settings');
@@ -717,19 +872,21 @@ describe('Yappc mounted critical flows', () => {
     });
 
     expect(await screen.findByTestId('project-overview-route')).toBeInTheDocument();
-    expect(screen.getByTestId('project-overview-promotion-status')).toHaveTextContent(
-      'Ready for VERIFY'
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('project-overview-promotion-status')).toHaveTextContent(
+        'Ready for EVOLVE'
+      );
+    });
 
-    await user.click(screen.getByRole('tab', { name: /lifecycle/i }));
+    await user.click(screen.getByRole('tab', { name: /learn/i }));
     expect(await screen.findByTestId('lifecycle-explorer')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('tab', { name: /deploy/i }));
+    await user.click(screen.getByRole('tab', { name: /run/i }));
     expect(await screen.findByTestId('release-planning-status-badge')).toHaveTextContent(
       'Planning-ready'
     );
 
-    await user.click(screen.getByRole('tab', { name: /preview/i }));
+    await user.click(screen.getByRole('tab', { name: /observe/i }));
     expect(await screen.findByTestId('preview-status-badge')).toHaveTextContent(
       'External preview ready'
     );

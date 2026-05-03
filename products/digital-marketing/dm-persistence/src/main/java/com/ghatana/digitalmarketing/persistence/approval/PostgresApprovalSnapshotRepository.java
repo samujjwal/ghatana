@@ -88,7 +88,8 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected == 0) {
                     throw new DmPersistenceException(
-                        "Optimistic lock failure: approval snapshot version mismatch for requestId=" + snapshot.requestId());
+                        "Optimistic lock failure: approval snapshot version mismatch for requestId=" + snapshot.requestId(),
+                        new IllegalStateException("Version mismatch"));
                 }
                 LOG.info("[DMOS-PERSIST] approval snapshot saved: requestId={} workspace={} riskLevel={} version={}",
                     snapshot.requestId(), workspaceId, snapshot.riskLevel(), snapshot.version());

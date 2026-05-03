@@ -43,10 +43,10 @@ class MigrationValidationIT {
         flyway.validate();
 
         // Run migrations on fresh database
-        int migrationsApplied = flyway.migrate();
+        var migrateResult = flyway.migrate();
 
         // Verify at least the known migrations are applied
-        assert migrationsApplied >= 5 : "Expected at least 5 migrations to be applied";
+        assert migrateResult.migrationsExecuted >= 5 : "Expected at least 5 migrations to be applied";
     }
 
     @Test
@@ -61,9 +61,9 @@ class MigrationValidationIT {
         flyway.migrate();
 
         // Second run should not apply new migrations
-        int migrationsAppliedSecondRun = flyway.migrate();
+        var migrateResultSecondRun = flyway.migrate();
 
-        assert migrationsAppliedSecondRun == 0 : "Migrations should be idempotent";
+        assert migrateResultSecondRun.migrationsExecuted == 0 : "Migrations should be idempotent";
     }
 
     @Test
@@ -78,6 +78,7 @@ class MigrationValidationIT {
 
         // Verify the schema version
         var info = flyway.info();
-        assert info.pending().isEmpty() : "No pending migrations should remain after migration";
+        assert info.pending().length == 0 : "No pending migrations should remain after migration";
+        assert info.all().length > 0 : "Migrations should have been applied";
     }
 }

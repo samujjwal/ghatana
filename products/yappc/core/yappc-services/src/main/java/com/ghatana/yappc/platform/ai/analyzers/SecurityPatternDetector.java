@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ai.analyzers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.CodeChangedEvent;
 import io.activej.promise.Promise;
@@ -34,14 +34,14 @@ public final class SecurityPatternDetector {
   private static final Pattern DESERIALIZATION_PATTERN =
       Pattern.compile("ObjectInputStream|readObject\\s*\\(");
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final ObjectMapper objectMapper;
 
-  public SecurityPatternDetector(YAPPCAIService aiService) {
+  public SecurityPatternDetector(YAPPCAIInterface aiService) {
     this(aiService, new ObjectMapper());
   }
 
-  SecurityPatternDetector(YAPPCAIService aiService, ObjectMapper objectMapper) {
+  SecurityPatternDetector(YAPPCAIInterface aiService, ObjectMapper objectMapper) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
     this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
   }

@@ -7,7 +7,9 @@ import io.activej.promise.Promise;
 
 import java.sql.*;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL adapter for {@link DmGoogleAdsCredentialRepository} (DMOS-P1-015).
@@ -24,15 +26,17 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
 
     private final Connection connection;
     private final ContactEncryptionService encryptionService;
+    private final Executor executor;
 
-    public PostgresDmGoogleAdsCredentialRepository(Connection connection, ContactEncryptionService encryptionService) {
+    public PostgresDmGoogleAdsCredentialRepository(Connection connection, ContactEncryptionService encryptionService, Executor executor) {
         this.connection = connection;
         this.encryptionService = encryptionService;
+        this.executor = executor;
     }
 
     @Override
     public Promise<DmGoogleAdsCredential> save(DmGoogleAdsCredential credential) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO dmos_google_ads_credentials (
                     id, tenant_id, connector_id, access_token, refresh_token,
@@ -72,7 +76,7 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
 
     @Override
     public Promise<Optional<DmGoogleAdsCredential>> findById(String id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, connector_id, access_token, refresh_token,
                        expires_at, scopes, created_at, updated_at, revoked, revoked_at
@@ -94,7 +98,7 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
 
     @Override
     public Promise<Optional<DmGoogleAdsCredential>> findByConnectorId(String connectorId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT id, tenant_id, connector_id, access_token, refresh_token,
                        expires_at, scopes, created_at, updated_at, revoked, revoked_at
@@ -121,7 +125,7 @@ public final class PostgresDmGoogleAdsCredentialRepository implements DmGoogleAd
 
     @Override
     public Promise<Void> delete(String id) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_google_ads_credentials WHERE id = ?";
             try (PreparedStatement stmt = connection.prepareStatement(sql)) {
                 stmt.setString(1, id);

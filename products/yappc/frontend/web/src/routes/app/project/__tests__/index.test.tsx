@@ -64,7 +64,7 @@ describe('project overview route', () => {
               type: 'FULL_STACK',
               ownerWorkspaceId: 'ws-9',
               ownerWorkspace: { id: 'ws-9', name: 'Workspace Nine' },
-              lifecyclePhase: 'EXECUTE',
+              lifecyclePhase: 'SHAPE',
               status: 'ACTIVE',
               aiHealthScore: 82,
               aiNextActions: ['Approve the release packet', 'Check deployment readiness'],
@@ -95,8 +95,8 @@ describe('project overview route', () => {
 
     mockGetNextPhase.mockResolvedValue({
       projectId: 'proj-42',
-      currentPhase: 'EXECUTE',
-      nextPhase: 'VERIFY',
+      currentPhase: 'SHAPE',
+      nextPhase: 'VALIDATE',
       canAdvance: false,
       readiness: 54,
       blockers: ['Missing approved documentation artifact'],
@@ -111,7 +111,7 @@ describe('project overview route', () => {
     renderRoute();
 
     expect(await screen.findByTestId('project-overview-route')).toBeDefined();
-    expect(screen.getByTestId('project-overview-phase').textContent).toContain('Execute');
+  expect(screen.getByTestId('project-overview-phase').textContent).toContain('Shape');
     await waitFor(() => {
       expect(screen.getByTestId('project-overview-promotion-status').textContent).toContain('Blocked before promotion');
     });
@@ -132,7 +132,7 @@ describe('project overview route', () => {
               type: 'FULL_STACK',
               ownerWorkspaceId: 'ws-9',
               ownerWorkspace: { id: 'ws-9', name: 'Workspace Nine' },
-              lifecyclePhase: 'PLAN',
+              lifecyclePhase: 'SHAPE',
               status: 'ACTIVE',
               aiHealthScore: 50,
               aiNextActions: [],

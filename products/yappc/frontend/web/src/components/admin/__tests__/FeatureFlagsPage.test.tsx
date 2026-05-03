@@ -190,6 +190,8 @@ describe('FeatureFlagsPage', () => {
     await waitFor(() =>
       expect(screen.getByTestId('flag-audit-drawer')).toBeInTheDocument()
     );
-    expect(screen.getByText('"Initial enable"')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText(/Initial enable/)).toBeInTheDocument()
+    );
   });
 });

@@ -10,6 +10,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.concurrent.Executor;
 
 /**
  * Campaign API client adapter for Meta Ads (Facebook Marketing API).
@@ -25,19 +26,21 @@ public final class HttpDmMetaAdsCampaignApiClientAdapter {
 
     private final HttpClient httpClient;
     private final String accessToken;
+    private final Executor executor;
 
-    public HttpDmMetaAdsCampaignApiClientAdapter(String accessToken) {
+    public HttpDmMetaAdsCampaignApiClientAdapter(String accessToken, Executor executor) {
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
         this.accessToken = accessToken;
+        this.executor = executor;
     }
 
     /**
      * Create a campaign in Meta Ads.
      */
     public Promise<String> createCampaign(String accountId, String campaignData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/act_" + accountId + "/campaigns";
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -64,7 +67,7 @@ public final class HttpDmMetaAdsCampaignApiClientAdapter {
      * Get campaign by ID.
      */
     public Promise<String> getCampaign(String accountId, String campaignId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + campaignId +
                 "?fields=id,name,status,daily_budget,lifetime_budget,start_time,end_time";
 
@@ -90,7 +93,7 @@ public final class HttpDmMetaAdsCampaignApiClientAdapter {
      * List campaigns for an account.
      */
     public Promise<String> listCampaigns(String accountId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/act_" + accountId + "/campaigns" +
                 "?fields=id,name,status,daily_budget,lifetime_budget,start_time,end_time";
 
@@ -116,7 +119,7 @@ public final class HttpDmMetaAdsCampaignApiClientAdapter {
      * Update a campaign.
      */
     public Promise<String> updateCampaign(String campaignId, String campaignData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + campaignId;
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -143,7 +146,7 @@ public final class HttpDmMetaAdsCampaignApiClientAdapter {
      * Delete a campaign.
      */
     public Promise<Void> deleteCampaign(String campaignId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + campaignId;
 
             HttpRequest request = HttpRequest.newBuilder()

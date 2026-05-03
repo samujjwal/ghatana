@@ -336,11 +336,11 @@ describe('RecentProjectsStrip', () => {
     it('shows lifecycle phase badge', () => {
         render(
             <MemoryRouter>
-                <RecentProjectsStrip projects={[makeProject({ lifecyclePhase: 'EXECUTE' as LifecyclePhase })]} />
+                <RecentProjectsStrip projects={[makeProject({ lifecyclePhase: 'GENERATE' as LifecyclePhase })]} />
             </MemoryRouter>,
         );
         // Phase label text (formatted from lifecycle helpers)
-        expect(screen.getAllByText(/execute/i).length).toBeGreaterThan(0);
+        expect(screen.getAllByText(/generate/i).length).toBeGreaterThan(0);
     });
 
     it('shows AI health score when provided', () => {

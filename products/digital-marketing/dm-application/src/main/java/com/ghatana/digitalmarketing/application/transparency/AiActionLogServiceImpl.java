@@ -61,7 +61,8 @@ public final class AiActionLogServiceImpl implements AiActionLogService {
                     command.summary(),
                     command.details(),
                     command.relatedEntityId(),
-                    Instant.now()
+                    Instant.now(),
+                    0L
                 );
                 return repository.save(entry);
             });

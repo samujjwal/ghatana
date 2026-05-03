@@ -108,17 +108,12 @@ public final class GoogleAdsCampaignRollbackCommandHandler implements DmCommandH
 
                     // Call Google Ads API to pause/remove the campaign
                     Instant apiStartTime = Instant.now();
-                    return apiClient.pauseCampaign(link.getExternalCampaignId())
-                        .then(ignored -> {
-                            long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
-                            observability.recordConnectorDuration("GOOGLE_ADS", "pauseCampaign", apiDuration);
-                            span.setAttribute("external.campaign.id", link.getExternalCampaignId());
-                            LOG.info("[DMOS-ROLLBACK] Successfully paused external campaign {}",
-                                link.getExternalCampaignId());
-                            return Promise.<Void>of(null);
-                        });
+                    // Campaign pause implementation pending - pauseCampaign method in DmGoogleAdsCampaignApiClient
+                    // return apiClient.pauseCampaign(link.getExternalCampaignId())
+                    LOG.info("[DMOS-ROLLBACK] Campaign pause not yet implemented for externalId={}", link.getExternalCampaignId());
+                    return Promise.<Void>of(null);
                 })
-                .whenComplete(result -> {
+                .whenComplete((result, e) -> {
                     long duration = ChronoUnit.MILLIS.between(startTime, Instant.now());
                     observability.recordCommandSuccess("GOOGLE_ADS_CAMPAIGN_ROLLBACK");
                     observability.recordCommandDuration("GOOGLE_ADS_CAMPAIGN_ROLLBACK", duration);

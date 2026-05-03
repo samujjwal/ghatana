@@ -7,6 +7,7 @@ import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
+import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.NoSuchElementException;
@@ -110,18 +112,26 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
             return validateConnector(command, payload.connectorId())
                 .then(connector -> {
                     LOG.info("[DMOS-HANDLER] Connector validated: {}", connector.getId());
-                    return validateCredential(command, connector.getId());
+                    return validateCredential(command, connector.getId())
+                        .then(credential -> Promise.of(new Object[]{connector, credential}));
                 })
-                .then(credential -> {
-                    LOG.info("[DMOS-HANDLER] Credential validated");
-                    return validateCampaign(command, payload.internalCampaignId());
+                .then(arr -> {
+                    Object[] parts = (Object[]) arr;
+                    var connector = (DmConnectorConfig) parts[0];
+                    var credential = (DmGoogleAdsCredential) parts[1];
+                    return validateCampaign(command, payload.internalCampaignId())
+                        .then(campaign -> Promise.of(new Object[]{connector, credential, campaign}));
                 })
-                .then(campaign -> {
+                .then(arr -> {
+                    Object[] parts = (Object[]) arr;
+                    var connector = (DmConnectorConfig) parts[0];
+                    var credential = (DmGoogleAdsCredential) parts[1];
+                    var campaign = (Campaign) parts[2];
                     LOG.info("[DMOS-HANDLER] Campaign validated: {}", campaign.getName());
                     DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest providerRequest =
                         new DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest(
                             campaign.getName(),
-                            payload.dailyBudget(),
+                            new BigDecimal(payload.dailyBudget()),
                             payload.serviceArea(),
                             payload.keywordTheme()
                         );
@@ -138,7 +148,7 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
                                 DmGoogleAdsCampaignLink.builder()
                                     .id(UUID.randomUUID().toString())
                                     .tenantId(command.getTenantId())
-                                    .connectorId(credential.getConnectorId())
+                                    .connectorId(connector.getId())
                                     .internalCampaignId(campaign.getId())
                                     .externalCampaignId(externalCampaignId)
                                     .createdAt(Instant.now())
@@ -150,7 +160,7 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
                             });
                         });
                 })
-                .whenComplete(result -> {
+                .whenComplete((result, e) -> {
                     long duration = ChronoUnit.MILLIS.between(startTime, Instant.now());
                     observability.recordCommandSuccess("GOOGLE_ADS_CAMPAIGN_CREATE");
                     observability.recordCommandDuration("GOOGLE_ADS_CAMPAIGN_CREATE", duration);
@@ -217,7 +227,7 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
     }
 
     private Promise<Campaign> validateCampaign(DmCommand command, String campaignId) {
-        return campaignRepository.findById(command.getWorkspaceId(), campaignId)
+        return campaignRepository.findById(DmWorkspaceId.of(command.getWorkspaceId()), campaignId)
             .then(opt -> {
                 if (opt.isEmpty()) {
                     LOG.warn("[DMOS-HANDLER] Campaign not found: campaignId={}", campaignId);

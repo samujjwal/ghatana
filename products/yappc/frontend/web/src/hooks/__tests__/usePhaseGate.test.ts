@@ -57,11 +57,11 @@ describe('usePhaseGate', () => {
     vi.clearAllMocks();
   });
 
-  it('returns isLoading true while fetching artifacts', () => {
+  it('returns isLoading true while fetching artifacts', async () => {
     mockFetch.mockReturnValue(new Promise(() => {})); // never resolves
 
     // Lazy import to avoid module hoisting issues
-    const { usePhaseGate } = vi.importActual('../usePhaseGate') as typeof import('../usePhaseGate');
+    const { usePhaseGate } = await vi.importActual('../usePhaseGate') as typeof import('../usePhaseGate');
     // Re-import fresh after mocks are set
     const { result } = renderHook(() => usePhaseGate('shape'), {
       wrapper: makeWrapper(),
@@ -92,7 +92,7 @@ describe('usePhaseGate', () => {
       wrapper: makeWrapper(),
     });
 
-    await waitFor(() => !result.current.isLoading);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.canAdvance).toBe(false);
   });
@@ -117,7 +117,7 @@ describe('usePhaseGate', () => {
       wrapper: makeWrapper(),
     });
 
-    await waitFor(() => !result.current.isLoading);
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.canAdvance).toBe(true);
   });

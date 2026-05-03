@@ -4,7 +4,7 @@
  */
 package com.ghatana.yappc.services.lifecycle.assessment;
 
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -56,12 +56,12 @@ public final class AIReadinessAssessor {
     /** Minimum test coverage before the run phase advances to review. */
     static final int    COVERAGE_THRESHOLD_REVIEW  = 60;
 
-    private final YAPPCAIService aiService;
+    private final YAPPCAIInterface aiService;
 
     /**
      * @param aiService AI service used for LLM reasoning-based gate evaluation
      */
-    public AIReadinessAssessor(@NotNull YAPPCAIService aiService) {
+    public AIReadinessAssessor(@NotNull YAPPCAIInterface aiService) {
         this.aiService = Objects.requireNonNull(aiService, "aiService must not be null");
     }
 

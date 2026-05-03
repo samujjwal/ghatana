@@ -2,7 +2,7 @@ package com.ghatana.digitalmarketing.persistence.idempotency;
 
 import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService.IdempotentResponse;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
-import com.ghatana.digitalmarketing.persistence.DmPersistenceException;
+import com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL implementation of IdempotencyTokenRepository.
@@ -29,14 +30,20 @@ public class PostgresIdempotencyTokenRepository implements IdempotencyTokenRepos
     private static final int DEFAULT_EXPIRATION_HOURS = 24;
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresIdempotencyTokenRepository(DataSource dataSource) {
+    private Promise<IdempotentResponse> unwrapOptional(Optional<IdempotentResponse> opt) {
+        return opt.isPresent() ? Promise.of(opt.get()) : Promise.of((IdempotentResponse) null);
+    }
+
+    public PostgresIdempotencyTokenRepository(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
+        this.executor = executor;
     }
 
     @Override
     public Promise<IdempotentResponse> findByKey(DmWorkspaceId workspaceId, String idempotencyKey) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 SELECT response_payload, response_status, response_headers
                 FROM idempotency_tokens
@@ -63,12 +70,12 @@ public class PostgresIdempotencyTokenRepository implements IdempotencyTokenRepos
                 LOG.error("Failed to find idempotency token: {}", idempotencyKey, e);
                 throw new DmPersistenceException("Failed to find idempotency token", e);
             }
-        }).then(opt -> opt.isPresent() ? Promise.of(opt.get()) : Promise.of(null));
+        }).then(opt -> unwrapOptional((Optional<IdempotentResponse>) opt));
     }
 
     @Override
     public Promise<Void> store(DmWorkspaceId workspaceId, String idempotencyKey, IdempotentResponse response, Instant expiresAt) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO idempotency_tokens (id, tenant_id, workspace_id, operation_key,
                                                    response_payload, response_status, response_headers,
@@ -103,7 +110,7 @@ public class PostgresIdempotencyTokenRepository implements IdempotencyTokenRepos
 
     @Override
     public Promise<Integer> deleteExpired() {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM idempotency_tokens WHERE expires_at < NOW()";
 
             try (Connection conn = dataSource.getConnection();

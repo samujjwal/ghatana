@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("IncidentCorrelator Tests")
 class IncidentCorrelatorTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
 
   @Test
   @DisplayName("correlateAlert groups related alerts into an open incident")

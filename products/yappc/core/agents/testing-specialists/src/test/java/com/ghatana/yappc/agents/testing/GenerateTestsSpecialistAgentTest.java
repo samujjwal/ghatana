@@ -1,11 +1,6 @@
 package com.ghatana.yappc.agents.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.ghatana.agent.framework.api.AgentContext;
 import com.ghatana.agent.framework.memory.EventLogMemoryStore;
@@ -14,58 +9,58 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.agent.ValidationResult;
 import com.ghatana.yappc.agent.StepRequest;
 import com.ghatana.yappc.agent.StepResult;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 @DisplayName("GenerateTestsSpecialistAgent Tests")
 class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  private InMemoryYAPPCAIService aiService;
 
-  GenerateTestsSpecialistAgentTest() { 
-    MockitoAnnotations.openMocks(this); 
+  @BeforeEach
+  void setUp() {
+    aiService = new InMemoryYAPPCAIService();
   }
 
   @Test
   @DisplayName("generate tests generator uses specification and code generators")
-  void generateTestsGeneratorUsesSpecificationAndCodeGenerators() { 
-    when(aiService.reason(anyString(), anyMap())).thenReturn(Promise.of( 
-            "SCENARIO: handles valid request\n"
-                + "CATEGORY: HAPPY_PATH\n"
-                + "GIVEN: valid input\n"
-                + "WHEN: the subject runs\n"
-                + "THEN: a result is returned\n"
-                + "COVERAGE: main-flow"));
+  void generateTestsGeneratorUsesSpecificationAndCodeGenerators() {
+    aiService.setReasonResponse(
+        "SCENARIO: handles valid request\n"
+            + "CATEGORY: HAPPY_PATH\n"
+            + "GIVEN: valid input\n"
+            + "WHEN: the subject runs\n"
+            + "THEN: a result is returned\n"
+            + "COVERAGE: main-flow");
 
     TestSpecificationGenerator specificationGenerator =
-        new TestSpecificationGenerator(aiService); 
-    TestCodeGenerator codeGenerator = new TestCodeGenerator(); 
+        new TestSpecificationGenerator(aiService);
+    TestCodeGenerator codeGenerator = new TestCodeGenerator();
     GenerateTestsSpecialistAgent.GenerateTestsGenerator generator =
-        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); 
+        new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator);
 
     GenerateTestsInput input =
-        new GenerateTestsInput( 
+        new GenerateTestsInput(
             "plan-1",
             List.of("primary path"),
             "unit",
             "java",
             "junit5",
             "SampleService",
-            "public class SampleService { public SampleService() {} }", 
+            "public class SampleService { public SampleService() {} }",
             List.of("service must return data"));
 
     StepResult<GenerateTestsOutput> result =
-    runPromise(() -> generator.generate(StepRequest.of("request-1", input), agentContext())); 
+    runPromise(() -> generator.generate(StepRequest.of("request-1", input), agentContext()));
 
     assertThat(result.output().generatedTestFiles()).containsExactly("SampleServiceTest.java");
-    assertThat(result.output().implementedScenarios()) 
-      .containsExactly( 
+    assertThat(result.output().implementedScenarios())
+      .containsExactly(
         "handles valid request",
         "SampleService rejects invalid input",
         "SampleService respects boundary limits");
@@ -160,25 +155,8 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
     @Test
     @DisplayName("generator covers fallback scenarios metadata and alternate coverage branches")
     void generatorCoversFallbackScenariosMetadataAndAlternateCoverageBranches() { 
-      TestSpecificationGenerator specificationGenerator = mock(TestSpecificationGenerator.class); 
-    TestCodeGenerator codeGenerator = mock(TestCodeGenerator.class); 
-      when(specificationGenerator.generateSpecifications(any())) 
-        .thenReturn( 
-          Promise.of( 
-            List.of( 
-              new TestScenario( 
-                "generated from spec",
-                TestScenario.ScenarioCategory.HAPPY_PATH,
-                "source exists",
-                "scenario generation runs",
-                "spec-backed flow is used",
-                List.of("spec")))));
-    when(codeGenerator.generateTestCode(anyString(), any(), any(), any())) 
-      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("DerivedTest.java", "", TestCodeGenerator.TestFramework.JUNIT5))) 
-      .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("RegexTest.java", "line1\nline2", TestCodeGenerator.TestFramework.JUNIT5))) 
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("PerfTest.java", "line1", TestCodeGenerator.TestFramework.JUNIT5))) 
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("SpecTest.ts", null, TestCodeGenerator.TestFramework.VITEST))) 
-        .thenReturn(Promise.of(new TestCodeGenerator.GeneratedTestArtifact("NoMatchTest.java", "line", TestCodeGenerator.TestFramework.JUNIT5))); 
+      TestSpecificationGenerator specificationGenerator = new TestSpecificationGenerator(new InMemoryYAPPCAIService());
+      TestCodeGenerator codeGenerator = new TestCodeGenerator(new InMemoryYAPPCAIService()); 
 
     GenerateTestsSpecialistAgent.GenerateTestsGenerator generator =
         new GenerateTestsSpecialistAgent.GenerateTestsGenerator(specificationGenerator, codeGenerator); 
@@ -277,17 +255,55 @@ class GenerateTestsSpecialistAgentTest extends EventloopTestBase {
     assertThat(generator.getMetadata().getName()).isEqualTo("GenerateTestsGenerator");
   }
 
-  private AgentContext agentContext() { 
-    return AgentContext.builder() 
+  private AgentContext agentContext() {
+    return AgentContext.builder()
         .agentId("GenerateTestsSpecialistAgent")
         .turnId("turn-1")
         .tenantId("tenant-1")
         .userId("system")
         .sessionId("testing")
-        .memoryStore(new EventLogMemoryStore()) 
-        .config(Map.of()) 
-        .remainingBudget(10.0) 
-        .build(); 
+        .memoryStore(new EventLogMemoryStore())
+        .config(Map.of())
+        .remainingBudget(10.0)
+        .build();
+  }
+
+  private static final class InMemoryYAPPCAIService implements YAPPCAIInterface {
+    private String reasonResponse = null;
+
+    void setReasonResponse(String response) {
+      this.reasonResponse = response;
+    }
+
+    @Override
+    public Promise<String> reason(String prompt, Map<String, Object> context) {
+      return Promise.of(reasonResponse);
+    }
+
+    @Override
+    public Promise<String> reason(String prompt) {
+      return Promise.of(reasonResponse);
+    }
+
+    @Override
+    public Promise<String> generateCode(String description) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateCode(String description, Map<String, Object> context) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateTests(String code) {
+      return Promise.of("generated tests");
+    }
+
+    @Override
+    public Promise<String> generateTests(String code, Map<String, Object> context) {
+      return Promise.of("generated tests");
+    }
   }
 
   private static final class TestableGenerateTestsAgent extends GenerateTestsSpecialistAgent {

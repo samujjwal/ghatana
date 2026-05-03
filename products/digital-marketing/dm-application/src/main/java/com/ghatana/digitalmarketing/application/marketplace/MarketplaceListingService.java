@@ -10,6 +10,7 @@ import io.activej.promise.Promise;
  * @doc.type interface
  * @doc.purpose Service interface for marketplace listing operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public interface MarketplaceListingService {
 

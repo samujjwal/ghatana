@@ -578,6 +578,11 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
             const workspace = await createWorkspace.mutateAsync({
                 name: workspaceName,
                 createDefaultProject: true,
+                personaSelections: selectedPersonas,
+                defaultProject: {
+                    name: projectName,
+                    type: mapProjectTypeToApiType(projectType),
+                },
             });
 
             // Sync onboarding completion and persona preferences to server

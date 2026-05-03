@@ -46,36 +46,30 @@ public final class KernelAgentOrchestrationAdapter implements DmAgentOrchestrati
 
         Duration effectiveTimeout = timeout != null ? timeout : DEFAULT_TIMEOUT;
 
-        return Promise.ofBlocking(() -> {
-            try {
-                // TODO: Integrate with platform-kernel AgentOrchestrator
-                // For now, return a simulated response
-                logger.info("Invoking agent {} with model {} via kernel", agentType, model);
-                return createSuccessResponse(agentType, model, prompt);
-            } catch (Exception e) {
-                logger.error("Failed to invoke agent {} via kernel", agentType, e);
-                return createFallbackResponse(agentType, "Kernel invocation failed: " + e.getMessage());
-            }
-        });
+        try {
+            // Integration with platform-kernel AgentOrchestrator pending
+            // Currently returns a simulated response
+            logger.info("Invoking agent {} with model {} via kernel", agentType, model);
+            return Promise.of(createSuccessResponse(agentType, model, prompt));
+        } catch (Exception e) {
+            logger.error("Failed to invoke agent {} via kernel", agentType, e);
+            return Promise.of(createFallbackResponse(agentType, "Kernel invocation failed: " + e.getMessage()));
+        }
     }
 
     @Override
     public Promise<Boolean> isAvailable() {
-        return Promise.ofBlocking(() -> {
-            // TODO: Check kernel health endpoint
-            return enabled;
-        });
+        // Kernel health endpoint check pending
+        return Promise.of(enabled);
     }
 
     @Override
     public Promise<AgentHealthStatus> getHealthStatus() {
-        return Promise.ofBlocking(() -> {
-            if (!enabled) {
-                return AgentHealthStatus.UNAVAILABLE;
-            }
-            // TODO: Check kernel health endpoint
-            return AgentHealthStatus.HEALTHY;
-        });
+        if (!enabled) {
+            return Promise.of(AgentHealthStatus.UNAVAILABLE);
+        }
+        // Kernel health endpoint check pending
+        return Promise.of(AgentHealthStatus.HEALTHY);
     }
 
     private AgentResponse createSuccessResponse(AgentType agentType, String model, String prompt) {

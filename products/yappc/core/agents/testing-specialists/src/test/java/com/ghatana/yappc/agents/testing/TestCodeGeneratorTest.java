@@ -1,34 +1,31 @@
 package com.ghatana.yappc.agents.testing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 @DisplayName("TestCodeGenerator Tests")
 class TestCodeGeneratorTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  private InMemoryYAPPCAIService aiService;
 
-  TestCodeGeneratorTest() { 
-    MockitoAnnotations.openMocks(this); 
+  @BeforeEach
+  void setUp() {
+    aiService = new InMemoryYAPPCAIService();
   }
 
   @TempDir Path tempDir;
@@ -89,20 +86,19 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateTestCode prefers AI output and strips markdown fences")
-  void generateTestCodePrefersAiOutputAndStripsMarkdownFences() { 
-    when(aiService.generateTests(anyString(), anyMap())) 
-        .thenReturn(Promise.of("```java\nclass GeneratedTest {}\n```"));
+  void generateTestCodePrefersAiOutputAndStripsMarkdownFences() {
+    aiService.setGenerateTestsResponse("```java\nclass GeneratedTest {}\n```");
 
-    TestCodeGenerator generator = new TestCodeGenerator(aiService); 
+    TestCodeGenerator generator = new TestCodeGenerator(aiService);
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( 
-            () -> 
-                generator.generateTestCode( 
+        runPromise(
+            () ->
+                generator.generateTestCode(
                     "Generated",
                     "public class Generated {}",
-                    List.of( 
-                        new TestScenario( 
+                    List.of(
+                        new TestScenario(
                             "uses ai",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "ai is available",
@@ -112,24 +108,23 @@ class TestCodeGeneratorTest extends EventloopTestBase {
                     TestCodeGenerator.TestFramework.JUNIT5));
 
     assertThat(artifact.sourceCode()).isEqualTo("class GeneratedTest {}");
-    verify(aiService).generateTests(anyString(), anyMap()); 
   }
 
   @Test
   @DisplayName("generateTestCode falls back when AI returns blank source")
-  void generateTestCodeFallsBackWhenAiReturnsBlankSource() { 
-    when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of("   "));
+  void generateTestCodeFallsBackWhenAiReturnsBlankSource() {
+    aiService.setGenerateTestsResponse("   ");
 
-    TestCodeGenerator generator = new TestCodeGenerator(aiService); 
+    TestCodeGenerator generator = new TestCodeGenerator(aiService);
 
     TestCodeGenerator.GeneratedTestArtifact artifact =
-        runPromise( 
-            () -> 
-                generator.generateTestCode( 
+        runPromise(
+            () ->
+                generator.generateTestCode(
                     "FallbackSubject",
-                    "public class FallbackSubject { public FallbackSubject() {} }", 
-                    List.of( 
-                        new TestScenario( 
+                    "public class FallbackSubject { public FallbackSubject() {} }",
+                    List.of(
+                        new TestScenario(
                             "fallback scenario",
                             TestScenario.ScenarioCategory.HAPPY_PATH,
                             "state is ready",
@@ -143,8 +138,8 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generateTestCode handles null AI output and generated subject fallback")
-    void generateTestCodeHandlesNullAiOutputAndGeneratedSubjectFallback() { 
-        when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of(null)); 
+    void generateTestCodeHandlesNullAiOutputAndGeneratedSubjectFallback() {
+        aiService.setGenerateTestsResponse(null);
 
         TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
@@ -170,8 +165,8 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
     @Test
     @DisplayName("generateTestCode preserves fenced output without newline delimiter")
-    void generateTestCodePreservesFencedOutputWithoutNewlineDelimiter() { 
-        when(aiService.generateTests(anyString(), anyMap())).thenReturn(Promise.of("```java```"));
+    void generateTestCodePreservesFencedOutputWithoutNewlineDelimiter() {
+        aiService.setGenerateTestsResponse("```java```");
 
         TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
@@ -196,11 +191,8 @@ class TestCodeGeneratorTest extends EventloopTestBase {
 
   @Test
   @DisplayName("generateTestCode handles partial fences extracted types and null vitest source")
-  void generateTestCodeHandlesPartialFencesExtractedTypesAndNullVitestSource() { 
-    when(aiService.generateTests(anyString(), anyMap())) 
-        .thenReturn(Promise.of("```java\nclass PartialFence {}"))
-        .thenReturn(Promise.of(""))
-        .thenReturn(Promise.of(""));
+  void generateTestCodeHandlesPartialFencesExtractedTypesAndNullVitestSource() {
+    aiService.setGenerateTestsResponses("```java\nclass PartialFence {}", "", "");
 
     TestCodeGenerator generator = new TestCodeGenerator(aiService); 
 
@@ -302,6 +294,61 @@ class TestCodeGeneratorTest extends EventloopTestBase {
             sourceDir.resolve("com/example/CalculatorService.java").toString(),
             sourceDir.resolve("com/example/" + testFileName).toString()); 
 
-    assertThat(result).isZero(); 
+    assertThat(result).isZero();
+  }
+
+  private static final class InMemoryYAPPCAIService implements YAPPCAIInterface {
+    private String generateTestsResponse = null;
+    private final java.util.List<String> generateTestsResponses = new java.util.ArrayList<>();
+    private int generateTestsCallCount = 0;
+
+    void setGenerateTestsResponse(String response) {
+      this.generateTestsResponse = response;
+    }
+
+    void setGenerateTestsResponses(String... responses) {
+      this.generateTestsResponses.clear();
+      this.generateTestsResponses.addAll(java.util.Arrays.asList(responses));
+    }
+
+    @Override
+    public Promise<String> reason(String prompt) {
+      return Promise.of("reasoned response");
+    }
+
+    @Override
+    public Promise<String> reason(String prompt, Map<String, Object> context) {
+      return Promise.of("reasoned response");
+    }
+
+    @Override
+    public Promise<String> generateCode(String description) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateCode(String description, Map<String, Object> context) {
+      return Promise.of("generated code");
+    }
+
+    @Override
+    public Promise<String> generateTests(String code) {
+      if (!generateTestsResponses.isEmpty()) {
+        String response = generateTestsResponses.get(generateTestsCallCount % generateTestsResponses.size());
+        generateTestsCallCount++;
+        return Promise.of(response);
+      }
+      return Promise.of(generateTestsResponse);
+    }
+
+    @Override
+    public Promise<String> generateTests(String code, Map<String, Object> context) {
+      if (!generateTestsResponses.isEmpty()) {
+        String response = generateTestsResponses.get(generateTestsCallCount % generateTestsResponses.size());
+        generateTestsCallCount++;
+        return Promise.of(response);
+      }
+      return Promise.of(generateTestsResponse);
+    }
   }
 }

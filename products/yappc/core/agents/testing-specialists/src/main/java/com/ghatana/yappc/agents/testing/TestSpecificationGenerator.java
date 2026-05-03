@@ -1,6 +1,6 @@
 package com.ghatana.yappc.agents.testing;
 
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,9 +20,9 @@ import java.util.regex.Pattern;
 public final class TestSpecificationGenerator {
   private static final Pattern FIELD_PATTERN = Pattern.compile("^(SCENARIO|CATEGORY|GIVEN|WHEN|THEN|COVERAGE):\\s*(.+)$");
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
 
-  public TestSpecificationGenerator(YAPPCAIService aiService) {
+  public TestSpecificationGenerator(YAPPCAIInterface aiService) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
   }
 

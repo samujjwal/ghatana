@@ -410,7 +410,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
     @DisplayName("ApprovalSnapshot rejects blank requestId")
     void snapshotRejectsBlankRequestId() {
         assertThatThrownBy(() -> new ApprovalSnapshot(
-            " ", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 2, "role", Instant.now()))
+            " ", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 2, "role", Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -418,11 +418,11 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
     @DisplayName("ApprovalSnapshot rejects invalid riskLevel")
     void snapshotRejectsInvalidRisk() {
         assertThatThrownBy(() -> new ApprovalSnapshot(
-            "req-1", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 0, "role", Instant.now()))
+            "req-1", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 0, "role", Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
 
         assertThatThrownBy(() -> new ApprovalSnapshot(
-            "req-2", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 6, "role", Instant.now()))
+            "req-2", ApprovalTargetType.CONTENT_VERSION, "t-1", "ws-1", "desc", null, 6, "role", Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -431,7 +431,7 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
     void snapshotAcceptsNullValidationResultId() {
         ApprovalSnapshot snapshot = new ApprovalSnapshot(
             "req-ok", ApprovalTargetType.STRATEGY, "s-1", "ws-1",
-            "Approve strategy", null, 3, ROLE_MARKETING_DIRECTOR, Instant.now());
+            "Approve strategy", null, 3, ROLE_MARKETING_DIRECTOR, Instant.now(), 1L);
 
         assertThat(snapshot.validationResultId()).isNull();
         assertThat(snapshot.riskLevel()).isEqualTo(3);

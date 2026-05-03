@@ -575,7 +575,7 @@ class DmosApprovalServletTest extends EventloopTestBase {
         private static ApprovalSnapshot sampleSnapshot(String requestId) {
             return new ApprovalSnapshot(
                 requestId, ApprovalTargetType.CONTENT_VERSION, "cv-1",
-                "ws-1", "Approve ad copy", null, 2, "brand-manager", Instant.now());
+                "ws-1", "Approve ad copy", null, 2, "brand-manager", Instant.now(), 0L);
         }
 
         @Override

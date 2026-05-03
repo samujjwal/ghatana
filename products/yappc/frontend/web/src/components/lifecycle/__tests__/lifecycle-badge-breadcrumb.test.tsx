@@ -124,12 +124,12 @@ describe('LifecycleBreadcrumb', () => {
   it('renders artifact title when both kind and title provided', () => {
     render(
       <LifecycleBreadcrumb
-        currentPhase="PLAN"
+        currentPhase="VALIDATE"
         selectedArtifactKind="prd"
         selectedArtifactTitle="My PRD"
       />
     );
-    expect(screen.getByText('Plan')).toBeTruthy();
+    expect(screen.getByText('Validate')).toBeTruthy();
     expect(screen.getByText('My PRD')).toBeTruthy();
   });
 
@@ -156,7 +156,7 @@ describe('LifecycleBreadcrumb', () => {
     const onClearArtifact = vi.fn();
     render(
       <LifecycleBreadcrumb
-        currentPhase="EXECUTE"
+        currentPhase="GENERATE"
         selectedArtifactKind="prd"
         selectedArtifactTitle="PRD Doc"
         onClearArtifact={onClearArtifact}

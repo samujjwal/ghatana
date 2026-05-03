@@ -30,12 +30,11 @@ describe('ComponentPalette drag integration', () => {
         const mockAdd = vi.fn();
         render(<ComponentPalette onAddComponent={mockAdd} />);
 
-        const labelNode = screen.getByText('Frontend App');
-        const listItem = labelNode.closest('li') as HTMLElement;
-        expect(listItem).toBeTruthy();
+        const paletteItem = screen.getByTestId('palette-item-component');
+        expect(paletteItem).toBeTruthy();
 
         // Read the mock payload and emulate computing a drop point via @xyflow/react project
-        const payloadAttr = listItem.getAttribute('data-dndkit-payload');
+        const payloadAttr = paletteItem.getAttribute('data-dndkit-payload');
         expect(payloadAttr).toBeTruthy();
         const payload = JSON.parse(payloadAttr || '{}');
         expect(payload).toHaveProperty('id');

@@ -186,7 +186,7 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
 
         AiActionLogEntry updated = new AiActionLogEntry(
             "act-8", "ws-f", "corr-8",
-            AiActionType.DRAFT_GENERATED, AiActionStatus.COMPLETED,
+            AiActionType.DRAFT_GENERATED, AiActionStatus.EXECUTED,
             "system", true, null,
             List.of(), List.of(),
             "Updated summary", "Updated details", null,
@@ -215,7 +215,7 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
         // Try to update with wrong version
         AiActionLogEntry stale = new AiActionLogEntry(
             "act-9", "ws-g", "corr-9",
-            AiActionType.ACTION_EXECUTED, AiActionStatus.COMPLETED,
+            AiActionType.ACTION_EXECUTED, AiActionStatus.EXECUTED,
             "system", true, null,
             List.of(), List.of(),
             "Stale update", "Stale details", null,

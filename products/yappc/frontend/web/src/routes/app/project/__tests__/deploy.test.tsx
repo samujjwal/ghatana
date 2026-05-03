@@ -35,12 +35,15 @@ vi.mock('../../../../components/deploy/DeployPanelHost', () => ({
   DeployPanelHost: () => <div data-testid="deploy-panel-host">Deploy panel</div>,
 }));
 
-vi.mock('../../../../services/canvas/lifecycle', () => ({
+vi.mock('../../../../services/canvas/lifecycle/LifecycleArtifactService', () => ({
   useLifecycleArtifacts: () => ({
     createArtifact: mockCreateArtifact,
     updateArtifact: mockUpdateArtifact,
     artifacts: [],
   }),
+}));
+
+vi.mock('../../../../services/canvas/lifecycle/PhaseGateService', () => ({
   usePhaseGates: () => ({
     currentPhase: LifecyclePhase.GENERATE,
     transition: mockTransition,
@@ -127,6 +130,7 @@ describe('deploy route', () => {
     render(<DeployRoute />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Advance to VERIFY' }));
+    fireEvent.click(await screen.findByTestId('confirm-advance-button'));
 
     await waitFor(() => {
       expect(mockTransition).toHaveBeenCalledWith(LifecyclePhase.VERIFY, 'user-42', {
@@ -160,6 +164,7 @@ describe('deploy route', () => {
     render(<DeployRoute />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Advance to VERIFY' }));
+    fireEvent.click(await screen.findByTestId('confirm-advance-button'));
 
     expect((await screen.findByTestId('phase-preview-error')).textContent).toContain(
       'Build verification failed.'

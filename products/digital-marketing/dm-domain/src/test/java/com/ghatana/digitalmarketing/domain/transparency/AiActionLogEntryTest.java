@@ -27,7 +27,8 @@ class AiActionLogEntryTest {
             "Generated strategy recommendation",
             "Used 30-day strategy inputs and approved claims set",
             "strategy-1",
-            Instant.now()
+            Instant.now(),
+            1L
         );
     }
 
@@ -46,7 +47,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "act-1", "ws-1", "corr-1", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", true, 1.5,
-            List.of(), List.of(), "sum", "details", null, Instant.now()))
+            List.of(), List.of(), "sum", "details", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("confidence");
     }
@@ -66,7 +67,7 @@ class AiActionLogEntryTest {
         AiActionLogEntry e = new AiActionLogEntry(
             "act-1", "ws-1", "corr-1", AiActionType.RECOMMENDATION_GENERATED,
             AiActionStatus.PROPOSED, "agent", true, null,
-            null, null, "sum", "details", null, Instant.now());
+            null, null, "sum", "details", null, Instant.now(), 1L);
         assertThat(e.evidenceLinks()).isEmpty();
         assertThat(e.policyChecks()).isEmpty();
         assertThat(e.confidence()).isNull();
@@ -78,7 +79,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "", "ws-1", "corr-1", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, null,
-            null, null, "sum", "detail", null, Instant.now()))
+            null, null, "sum", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -88,7 +89,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "", "corr-1", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, null,
-            null, null, "sum", "detail", null, Instant.now()))
+            null, null, "sum", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -98,7 +99,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "ws", "", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, null,
-            null, null, "sum", "detail", null, Instant.now()))
+            null, null, "sum", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -108,7 +109,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "ws", "corr", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "", false, null,
-            null, null, "sum", "detail", null, Instant.now()))
+            null, null, "sum", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -118,7 +119,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "ws", "corr", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, null,
-            null, null, "", "detail", null, Instant.now()))
+            null, null, "", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -128,7 +129,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "ws", "corr", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, null,
-            null, null, "sum", "", null, Instant.now()))
+            null, null, "sum", "", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -138,7 +139,7 @@ class AiActionLogEntryTest {
         assertThatThrownBy(() -> new AiActionLogEntry(
             "a", "ws", "corr", AiActionType.ACTION_EXECUTED,
             AiActionStatus.EXECUTED, "agent", false, -0.1,
-            null, null, "sum", "detail", null, Instant.now()))
+            null, null, "sum", "detail", null, Instant.now(), 1L))
             .isInstanceOf(IllegalArgumentException.class);
     }
 }

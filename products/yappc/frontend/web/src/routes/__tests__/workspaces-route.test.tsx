@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockNavigate = vi.fn();
@@ -38,9 +39,12 @@ import { useWorkspaceContext } from '../../hooks/useWorkspaceData';
 import WorkspacesRoute from '../app/workspaces';
 
 function renderRoute(): void {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <MemoryRouter>
-      <WorkspacesRoute />
+      <QueryClientProvider client={queryClient}>
+        <WorkspacesRoute />
+      </QueryClientProvider>
     </MemoryRouter>
   );
 }
@@ -52,7 +56,7 @@ describe('WorkspacesRoute', () => {
     mockSuggestWorkspace.mockResolvedValue('Starter Workspace');
   });
 
-  it('auto-creates a starter workspace on the first empty-state entry', async () => {
+  it('creates starter workspace only after explicit confirmation on empty-state entry', async () => {
     vi.mocked(useWorkspaceContext).mockReturnValue({
       workspaces: [],
       currentWorkspace: undefined,
@@ -65,10 +69,21 @@ describe('WorkspacesRoute', () => {
       refetch: vi.fn(),
     });
 
+    const user = userEvent.setup();
+
     renderRoute();
 
     await waitFor(() => {
       expect(mockSuggestWorkspace).toHaveBeenCalledTimes(1);
+    });
+
+    await user.click(
+      await screen.findByRole('button', {
+        name: /create\s+"?starter workspace"?\s+workspace/i,
+      })
+    );
+
+    await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalledWith({
         name: 'Starter Workspace',
         createDefaultProject: true,

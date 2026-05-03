@@ -9,6 +9,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.Executor;
 
 /**
  * Performance API client adapter for Meta Ads (Facebook Marketing API).
@@ -24,19 +25,21 @@ public final class HttpDmMetaAdsPerformanceApiClientAdapter {
 
     private final HttpClient httpClient;
     private final String accessToken;
+    private final Executor executor;
 
-    public HttpDmMetaAdsPerformanceApiClientAdapter(String accessToken) {
+    public HttpDmMetaAdsPerformanceApiClientAdapter(String accessToken, Executor executor) {
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
         this.accessToken = accessToken;
+        this.executor = executor;
     }
 
     /**
      * Get campaign insights (performance data).
      */
     public Promise<String> getCampaignInsights(String campaignId, String datePreset, String fields) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + campaignId + "/insights" +
                 "?date_preset=" + datePreset +
                 "&fields=" + fields +
@@ -64,7 +67,7 @@ public final class HttpDmMetaAdsPerformanceApiClientAdapter {
      * Get ad set insights.
      */
     public Promise<String> getAdSetInsights(String adSetId, String datePreset, String fields) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + adSetId + "/insights" +
                 "?date_preset=" + datePreset +
                 "&fields=" + fields +
@@ -92,7 +95,7 @@ public final class HttpDmMetaAdsPerformanceApiClientAdapter {
      * Get ad insights.
      */
     public Promise<String> getAdInsights(String adId, String datePreset, String fields) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = META_API_BASE + "/" + adId + "/insights" +
                 "?date_preset=" + datePreset +
                 "&fields=" + fields +
@@ -120,7 +123,7 @@ public final class HttpDmMetaAdsPerformanceApiClientAdapter {
      * Sync performance data for an account.
      */
     public Promise<String> syncAccountPerformance(String accountId, String datePreset) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String fields = "impressions,clicks,spend,cpc,ctr,conversions,cost_per_conversion";
             String url = META_API_BASE + "/act_" + accountId + "/insights" +
                 "?date_preset=" + datePreset +

@@ -11,9 +11,6 @@ import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,8 +18,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Tests for enable/disable plugin runtime controls in {@link PluginRegistry}.
@@ -33,18 +28,15 @@ import static org.mockito.Mockito.*;
  * @doc.pattern Test
  */
 @DisplayName("PluginRegistry Enable/Disable Tests")
-@ExtendWith(MockitoExtension.class) 
 class PluginRegistryEnableDisableTest extends EventloopTestBase {
 
-    @Mock
-    private CapabilityRegistry capabilityRegistry;
-
+    private InMemoryCapabilityRegistry capabilityRegistry;
     private PluginRegistry pluginRegistry;
 
     @BeforeEach
-    void setUp() { 
-        lenient().doNothing().when(capabilityRegistry).registerCapability(any(KernelCapability.class)); 
-        pluginRegistry = new PluginRegistry(capabilityRegistry); 
+    void setUp() {
+        capabilityRegistry = new InMemoryCapabilityRegistry();
+        pluginRegistry = new PluginRegistry(capabilityRegistry);
     }
 
     @Test
@@ -137,7 +129,35 @@ class PluginRegistryEnableDisableTest extends EventloopTestBase {
             .isInstanceOf(UnsupportedOperationException.class); 
     }
 
-    // ==================== Test fixture ====================
+    // ==================== Test doubles ====================
+
+    private static final class InMemoryCapabilityRegistry implements CapabilityRegistry {
+        private final java.util.Map<String, KernelCapability> capabilities = new java.util.HashMap<>();
+
+        @Override
+        public void registerCapability(KernelCapability capability, Object implementation) {
+            capabilities.put(capability.getCapabilityId(), capability);
+        }
+
+        @Override
+        public <T> Optional<T> getCapability(KernelCapability capability, Class<T> type) {
+            return Optional.empty();
+        }
+
+        @Override
+        public boolean hasCapability(KernelCapability capability) {
+            return capabilities.containsKey(capability.getCapabilityId());
+        }
+
+        public void unregisterCapability(String capabilityId) {
+            capabilities.remove(capabilityId);
+        }
+
+        @Override
+        public List<KernelCapability> getCapabilities() {
+            return List.copyOf(capabilities.values());
+        }
+    }
 
     static class StubPlugin implements KernelPlugin {
         private final String id;

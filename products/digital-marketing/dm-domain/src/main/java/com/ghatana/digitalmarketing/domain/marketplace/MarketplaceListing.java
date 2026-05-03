@@ -10,6 +10,7 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Represents a marketplace listing for playbooks
  * @doc.layer domain
+ * @doc.pattern Entity
  */
 public final class MarketplaceListing {
 

@@ -3,11 +3,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useRequirementOrchestration } from '../useRequirementOrchestration';
-import * as AepClient from '../services/aep/AepOrchestrationClient';
+import * as AepClient from '../../services/aep/AepOrchestrationClient';
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -83,7 +83,7 @@ describe('useRequirementOrchestration', () => {
       });
     });
 
-    expect(result.current.runRef?.runId).toBe('run-42');
+    await waitFor(() => expect(result.current.runRef?.runId).toBe('run-42'));
   });
 
   it('surfaces errors without throwing', async () => {
@@ -103,6 +103,6 @@ describe('useRequirementOrchestration', () => {
       });
     });
 
-    expect(result.current.error?.message).toBe('network failure');
+    await waitFor(() => expect(result.current.error?.message).toBe('network failure'));
   });
 });

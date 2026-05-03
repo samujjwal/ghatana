@@ -17,7 +17,15 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TypeSelectorModal } from '../TypeSelectorModal';
-import { ArtifactType } from '@/types/fow-stages';
+import type { ArtifactType } from '../workspace/artifact-templates';
+
+function getConfirmButton(): HTMLElement {
+    return screen.getByRole('button', { name: /Change (Type|Anyway)/i });
+}
+
+function getRecommendedHeading(): HTMLElement {
+    return screen.getByText(/These conversions preserve data and structure/i);
+}
 
 describe('TypeSelectorModal', () => {
     const mockOnClose = vi.fn();
@@ -61,9 +69,9 @@ describe('TypeSelectorModal', () => {
         it('should show recommended types for code type', () => {
             render(<TypeSelectorModal {...defaultProps} currentType="code" />);
 
-            expect(screen.getByText('Recommended Types')).toBeInTheDocument();
+            expect(getRecommendedHeading()).toBeInTheDocument();
             expect(screen.getAllByText(/Test Case/i)[0]).toBeInTheDocument();
-            expect(screen.getAllByText(/Markdown Document/i)[0]).toBeInTheDocument();
+            expect(screen.getAllByText(/API Specification/i)[0]).toBeInTheDocument();
         });
 
         it('should mark compatible types with "Recommended" chip', () => {
@@ -127,7 +135,7 @@ describe('TypeSelectorModal', () => {
             await user.click(testType);
 
             // Button should be enabled
-            const changeButton = screen.getByRole('button', { name: /Change Type/i });
+            const changeButton = getConfirmButton();
             expect(changeButton).not.toBeDisabled();
         });
 
@@ -139,7 +147,7 @@ describe('TypeSelectorModal', () => {
             await user.click(testType);
 
             // Selected item - verify selection by checking button is now enabled
-            const changeButton = screen.getByRole('button', { name: /Change Type/i });
+            const changeButton = getConfirmButton();
             expect(changeButton).not.toBeDisabled();
         });
 
@@ -147,7 +155,7 @@ describe('TypeSelectorModal', () => {
             render(<TypeSelectorModal {...defaultProps} currentType="code" />);
 
             // Current type is code, so button should be disabled by default
-            const changeButton = screen.getByRole('button', { name: /Change Type/i });
+            const changeButton = getConfirmButton();
             expect(changeButton).toBeDisabled();
         });
     });
@@ -273,7 +281,7 @@ describe('TypeSelectorModal', () => {
             await user.click(screen.getAllByText(/Markdown Document/i)[0]);
 
             // Should end with last selection
-            const changeButton = screen.getByRole('button', { name: /Change Type/i });
+            const changeButton = getConfirmButton();
             expect(changeButton).not.toBeDisabled();
         });
 
@@ -324,21 +332,20 @@ describe('TypeSelectorModal', () => {
 
     describe('Different Current Types', () => {
         it('should show correct compatible types for documentation', () => {
-            render(<TypeSelectorModal {...defaultProps} currentType="documentation" />);
+            render(<TypeSelectorModal {...defaultProps} currentType="brief" />);
 
-            expect(screen.getByText('Recommended Types')).toBeInTheDocument();
-            // Documentation has many compatible types
-            expect(screen.getAllByText(/Code Editor/i)[0]).toBeInTheDocument();
+            expect(getRecommendedHeading()).toBeInTheDocument();
+            expect(screen.getAllByText(/User Story/i)[0]).toBeInTheDocument();
         });
 
         it('should show correct compatible types for requirements', () => {
             render(<TypeSelectorModal {...defaultProps} currentType="requirement" />);
 
-            expect(screen.getByText('Recommended Types')).toBeInTheDocument();
+            expect(getRecommendedHeading()).toBeInTheDocument();
         });
 
         it('should handle architecture diagram type', () => {
-            render(<TypeSelectorModal {...defaultProps} currentType="architecture" />);
+            render(<TypeSelectorModal {...defaultProps} currentType="mockup" />);
 
             expect(screen.getAllByText(/Architecture Diagram/i)[0]).toBeInTheDocument();
         });

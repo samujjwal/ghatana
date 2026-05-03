@@ -8,7 +8,7 @@
  * @doc.layer product
  */
 
-import { renderHook } from '@tanstack/react-query';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { usePhaseFeatureGate } from '../usePhaseFeatureGate';
 

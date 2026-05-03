@@ -32,8 +32,8 @@
 
 import React, { useState } from 'react';
 import { Loader2, AlertCircle, FileText, Sparkles } from 'lucide-react';
-import { AIAssistLabel } from '../ai/AIAssistLabel';
-import type { AIAssistSource } from '../ai/AIAssistLabel';
+import { AIAssistLabel } from '../../ai/AIAssistLabel';
+import type { AIAssistSource } from '../../ai/AIAssistLabel';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

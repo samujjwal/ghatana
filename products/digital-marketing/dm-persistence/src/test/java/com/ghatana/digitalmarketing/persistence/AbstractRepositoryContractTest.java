@@ -57,8 +57,8 @@ public abstract class AbstractRepositoryContractTest<T> {
     @DisplayName("save stores entity and findById retrieves it")
     void save_storesEntityAndFindByIdRetrievesIt() {
         Repository<T> repository = getRepository();
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
 
         T entity = createTestEntity(tenantId, workspaceId);
 
@@ -72,8 +72,8 @@ public abstract class AbstractRepositoryContractTest<T> {
     @DisplayName("update modifies existing entity")
     void update_modifiesExistingEntity() {
         Repository<T> repository = getRepository();
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
 
         T entity = createTestEntity(tenantId, workspaceId);
         T saved = repository.save(entity).getResult();
@@ -88,8 +88,8 @@ public abstract class AbstractRepositoryContractTest<T> {
     @DisplayName("delete removes entity from storage")
     void delete_removesEntityFromStorage() {
         Repository<T> repository = getRepository();
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
 
         T entity = createTestEntity(tenantId, workspaceId);
         T saved = repository.save(entity).getResult();
@@ -114,10 +114,10 @@ public abstract class AbstractRepositoryContractTest<T> {
     @DisplayName("tenant isolation: entities from different tenants are isolated")
     void tenantIsolation_entitiesFromDifferentTenantsAreIsolated() {
         Repository<T> repository = getRepository();
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
 
-        DmTenantId tenant1 = new DmTenantId("tenant-123");
-        DmTenantId tenant2 = new DmTenantId("tenant-789");
+        DmTenantId tenant1 = DmTenantId.of("tenant-123");
+        DmTenantId tenant2 = DmTenantId.of("tenant-789");
 
         T entity1 = createTestEntity(tenant1, workspaceId);
         T entity2 = createTestEntity(tenant2, workspaceId);

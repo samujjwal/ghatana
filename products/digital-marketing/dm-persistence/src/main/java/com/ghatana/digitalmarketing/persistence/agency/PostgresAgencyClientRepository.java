@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * PostgreSQL adapter for AgencyClientRepository (DMOS-P3-003).
@@ -21,20 +22,23 @@ import java.util.Optional;
  * @doc.type class
  * @doc.purpose PostgreSQL persistence adapter for agency clients
  * @doc.layer persistence
+ * @doc.pattern Repository
  */
 public final class PostgresAgencyClientRepository implements AgencyClientRepository {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresAgencyClientRepository.class);
 
     private final DataSource dataSource;
+    private final Executor executor;
 
-    public PostgresAgencyClientRepository(DataSource dataSource) {
+    public PostgresAgencyClientRepository(DataSource dataSource, Executor executor) {
         this.dataSource = dataSource;
+        this.executor = executor;
     }
 
     @Override
     public Promise<AgencyClient> save(AgencyClient client) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 INSERT INTO dmos_agency_clients
                 (client_id, tenant_id, workspace_id, client_name, contact_email, contact_phone, branding_theme, active, created_at, updated_at)
@@ -52,8 +56,8 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
                 stmt.setString(1, client.getClientId());
-                stmt.setString(2, client.getTenantId().value());
-                stmt.setString(3, client.getWorkspaceId().value());
+                stmt.setString(2, client.getTenantId().getValue());
+                stmt.setString(3, client.getWorkspaceId().getValue());
                 stmt.setString(4, client.getClientName());
                 stmt.setString(5, client.getContactEmail());
                 stmt.setString(6, client.getContactPhone());
@@ -74,7 +78,7 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<Optional<AgencyClient>> findById(String clientId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_agency_clients WHERE client_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -96,13 +100,13 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<List<AgencyClient>> findByTenant(DmTenantId tenantId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_agency_clients WHERE tenant_id = ? ORDER BY created_at DESC";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, tenantId.value());
+                stmt.setString(1, tenantId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 List<AgencyClient> clients = new ArrayList<>();
@@ -119,13 +123,13 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<List<AgencyClient>> findActiveByTenant(DmTenantId tenantId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_agency_clients WHERE tenant_id = ? AND active = true ORDER BY created_at DESC";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, tenantId.value());
+                stmt.setString(1, tenantId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 List<AgencyClient> clients = new ArrayList<>();
@@ -142,13 +146,13 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<Optional<AgencyClient>> findByWorkspace(DmWorkspaceId workspaceId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "SELECT * FROM dmos_agency_clients WHERE workspace_id = ?";
 
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-                stmt.setString(1, workspaceId.value());
+                stmt.setString(1, workspaceId.getValue());
                 ResultSet rs = stmt.executeQuery();
 
                 if (rs.next()) {
@@ -164,7 +168,7 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<AgencyClient> update(AgencyClient client) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = """
                 UPDATE dmos_agency_clients
                 SET client_name = ?, contact_email = ?, contact_phone = ?, branding_theme = ?, active = ?, updated_at = ?
@@ -194,7 +198,7 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
 
     @Override
     public Promise<Void> delete(String clientId) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String sql = "DELETE FROM dmos_agency_clients WHERE client_id = ?";
 
             try (Connection conn = dataSource.getConnection();
@@ -214,8 +218,8 @@ public final class PostgresAgencyClientRepository implements AgencyClientReposit
     private AgencyClient mapRow(ResultSet rs) throws SQLException {
         return AgencyClient.builder()
             .clientId(rs.getString("client_id"))
-            .tenantId(new DmTenantId(rs.getString("tenant_id")))
-            .workspaceId(new DmWorkspaceId(rs.getString("workspace_id")))
+            .tenantId(DmTenantId.of(rs.getString("tenant_id")))
+            .workspaceId(DmWorkspaceId.of(rs.getString("workspace_id")))
             .clientName(rs.getString("client_name"))
             .contactEmail(rs.getString("contact_email"))
             .contactPhone(rs.getString("contact_phone"))

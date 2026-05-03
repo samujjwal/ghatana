@@ -16,6 +16,7 @@ import java.util.UUID;
  * @doc.type class
  * @doc.purpose Service implementation for agency client operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public final class AgencyClientServiceImpl implements AgencyClientService {
 
@@ -36,7 +37,7 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
         AgencyClient client = AgencyClient.builder()
             .clientId(clientId)
             .tenantId(tenantId)
-            .workspaceId(new DmWorkspaceId(workspaceId))
+            .workspaceId(DmWorkspaceId.of(workspaceId))
             .clientName(clientName)
             .contactEmail(contactEmail)
             .contactPhone(contactPhone)
@@ -53,7 +54,7 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
     @Override
     public Promise<AgencyClient> getClient(String clientId) {
         return repository.findById(clientId)
-            .then(clientOpt -> clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found: " + clientId)));
+            .then(clientOpt -> Promise.of(clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found: " + clientId))));
     }
 
     @Override
@@ -103,6 +104,6 @@ public final class AgencyClientServiceImpl implements AgencyClientService {
     @Override
     public Promise<AgencyClient> getClientByWorkspace(DmWorkspaceId workspaceId) {
         return repository.findByWorkspace(workspaceId)
-            .then(clientOpt -> clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found for workspace: " + workspaceId.getValue())));
+            .then(clientOpt -> Promise.of(clientOpt.orElseThrow(() -> new IllegalArgumentException("Agency client not found for workspace: " + workspaceId.getValue()))));
     }
 }

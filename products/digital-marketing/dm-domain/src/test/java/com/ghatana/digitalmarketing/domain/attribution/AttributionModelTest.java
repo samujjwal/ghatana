@@ -23,8 +23,8 @@ class AttributionModelTest {
     @Test
     @DisplayName("builder creates valid attribution model")
     void builder_createsValidAttributionModel() {
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
         Instant now = Instant.now();
         Map<String, Double> weights = Map.of("search", 0.4, "social", 0.3, "email", 0.3);
 
@@ -54,8 +54,8 @@ class AttributionModelTest {
     void builder_createsInactiveModel() {
         AttributionModel model = AttributionModel.builder()
             .modelId("model-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .modelName("Multi-Touch Model")
             .modelType("LINEAR")
             .active(false)
@@ -71,8 +71,8 @@ class AttributionModelTest {
     void builder_handlesNullOptionalFields() {
         AttributionModel model = AttributionModel.builder()
             .modelId("model-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .modelName("Multi-Touch Model")
             .modelType("LINEAR")
             .active(true)

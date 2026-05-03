@@ -40,6 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -145,9 +146,8 @@ public final class DmosApprovalServlet {
 
     private Promise<HttpResponse> handleSubmitInternal(HttpRequest request, String workspaceId, 
                                                          DmOperationContext ctx, String idempotencyKey) {
-        if (ctx == null) {
-            ctx = buildContext(request, workspaceId);
-        }
+        final DmOperationContext effectiveCtx = ctx != null ? ctx : buildContext(request, workspaceId);
+        final String effectiveIdempotencyKey = idempotencyKey;
 
         return request.loadBody()
             .then(body -> {
@@ -176,15 +176,15 @@ public final class DmosApprovalServlet {
                         req.validationResultId()
                     );
 
-                    return approvalService.submitForApproval(ctx, command)
+                    return approvalService.submitForApproval(effectiveCtx, command)
                         .map(this::toRecordResponse)
                         .then(record -> {
                             // P0-6.2: Store response for idempotency
-                            if (idempotencyService != null && idempotencyKey != null) {
+                            if (idempotencyService != null && effectiveIdempotencyKey != null) {
                                 try {
                                     String responseBody = MAPPER.writeValueAsString(record);
                                     IdempotentResponse response = new IdempotentResponse(responseBody, 201, null);
-                                    return idempotencyService.storeResponse(ctx, idempotencyKey, response)
+                                    return idempotencyService.storeResponse(effectiveCtx, effectiveIdempotencyKey, response)
                                         .then(__ -> Promise.of(jsonResponse(201, record)));
                                 } catch (Exception e) {
                                     LOG.warn("Failed to store idempotency response", e);
@@ -318,7 +318,7 @@ public final class DmosApprovalServlet {
         try {
             DmOperationContext ctx = buildContext(request, workspaceId);
             return approvalService.listPendingApprovals(ctx, subjectId)
-                .map(list -> list.stream().map(record -> toDmosApprovalDto(ctx, record, null)).toList())
+                .map(list -> list.stream().map(this::toRecordResponse).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
                 .map(r -> (HttpResponse) r)
                 .then(r -> Promise.of(r), e -> mapServiceError("list-pending", e));

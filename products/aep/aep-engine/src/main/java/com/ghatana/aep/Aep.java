@@ -163,6 +163,26 @@ public final class Aep {
             return discovered.get();
         }
 
+        // Fail-closed: refuse in-memory fallback unless explicitly permitted.
+        // Production launchers must register a durable EventCloud implementation via
+        // META-INF/services/com.ghatana.aep.event.EventCloud. An in-memory fallback
+        // silently loses all events across restarts and is unsafe for production use.
+        boolean allowInMemory = Boolean.TRUE.equals(
+            config.customConfig().get(AepConfig.ALLOW_IN_MEMORY_EVENT_CLOUD_KEY));
+        if (!allowInMemory) {
+            throw new IllegalStateException(
+                "No durable EventCloud implementation found via ServiceLoader. "
+                + "Register a production-grade EventCloud provider in "
+                + "META-INF/services/com.ghatana.aep.event.EventCloud, "
+                + "or set AepConfig.customConfig with key \""
+                + AepConfig.ALLOW_IN_MEMORY_EVENT_CLOUD_KEY
+                + "\" to true to explicitly allow the in-memory fallback (development/test only).");
+        }
+
+        logger.warn(
+            "No durable EventCloud implementation discovered. "
+            + "Falling back to in-memory storage — events will NOT survive restarts. "
+            + "This is only acceptable for development and test profiles.");
         return new InMemoryEventCloud();
     }
 
@@ -184,6 +204,15 @@ public final class Aep {
         public static final String IDEMPOTENCY_MAX_KEYS_PER_TENANT_KEY = "idempotencyMaxKeysPerTenant";
         public static final String CONSENT_PROVIDER_KEY = "consentProvider";
         public static final String ASYNC_TIMEOUT_MS_KEY = "asyncTimeoutMs";
+        /**
+         * Explicit opt-in key for in-memory EventCloud fallback.
+         *
+         * <p>Setting this to {@code true} allows the AEP engine to fall back to an in-memory
+         * EventCloud when no durable ServiceLoader provider is discovered.  This is intentionally
+         * opt-in and must only be used in development or test profiles.  Enabling it in a
+         * production deployment will cause silent event loss on restart.
+         */
+        public static final String ALLOW_IN_MEMORY_EVENT_CLOUD_KEY = "allowInMemoryEventCloud";
         public static final String RATE_LIMIT_ENABLED_KEY = AepRateLimiter.ENABLED_KEY;
         public static final String RATE_LIMIT_MAX_REQUESTS_PER_MINUTE_KEY = AepRateLimiter.MAX_REQUESTS_PER_MINUTE_KEY;
         public static final String RATE_LIMIT_BURST_SIZE_KEY = AepRateLimiter.BURST_SIZE_KEY;
@@ -231,6 +260,7 @@ public final class Aep {
                 .enableTracing(false)
                 .anomalyThreshold(0.9)
                 .asyncTimeout(Duration.ofSeconds(2))
+                .allowInMemoryEventCloud(true)
                 .build();
         }
 
@@ -357,10 +387,33 @@ public final class Aep {
                 return this;
             }
 
+            /**
+             * Explicitly permit the in-memory EventCloud fallback when no ServiceLoader provider
+             * is available.  Only set this to {@code true} in development or test profiles.
+             */
+            public Builder allowInMemoryEventCloud(boolean allow) {
+                this.customConfig.put(ALLOW_IN_MEMORY_EVENT_CLOUD_KEY, allow);
+                return this;
+            }
+
             public AepConfig build() {
                 return new AepConfig(instanceId, workerThreads, maxPipelinesPerTenant,
                     enableMetrics, enableTracing, anomalyThreshold, customConfig);
             }
+        }
+
+        /**
+         * Whether the in-memory EventCloud fallback is permitted.
+         *
+         * <p>Returns {@code true} only when explicitly configured via
+         * {@link Builder#allowInMemoryEventCloud(boolean)} or
+         * {@link AepConfig#ALLOW_IN_MEMORY_EVENT_CLOUD_KEY}.
+         * Defaults to {@code false} so production launchers fail-closed when no durable
+         * EventCloud provider is registered.
+         */
+        public boolean allowInMemoryEventCloud() {
+            Object raw = customConfig.get(ALLOW_IN_MEMORY_EVENT_CLOUD_KEY);
+            return raw instanceof Boolean value && value;
         }
 
         public long idempotencyTtlSeconds() {

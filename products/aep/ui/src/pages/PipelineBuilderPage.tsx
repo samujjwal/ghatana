@@ -14,6 +14,7 @@ import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useSearchParams, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
+import { Button } from '@ghatana/design-system';
 import { useAuth } from '@/context/AuthContext';
 import {
   PipelineCanvas,
@@ -567,21 +568,21 @@ export function PipelineBuilderPage() {
               You have unsaved changes. Starting a new pipeline will discard them permanently.
             </p>
             <div className="flex justify-end gap-3">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={handleDiscardCancel}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
                 Keep editing
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                onClick={handleDiscardConfirm}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                variant="danger"
                 autoFocus
+                onClick={handleDiscardConfirm}
               >
                 Discard changes
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -598,13 +599,15 @@ export function PipelineBuilderPage() {
                 Drag-and-drop and advanced stage editing work best on a desktop. You can view and make basic edits here.
               </p>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setMobileAdvisoryDismissed(true)}
-              className="text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline flex-shrink-0"
+              className="flex-shrink-0"
             >
               Dismiss
-            </button>
+            </Button>
           </div>
         </div>
       )}

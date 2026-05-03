@@ -22,8 +22,8 @@ class AgencyClientTest {
     @Test
     @DisplayName("builder creates valid agency client")
     void builder_createsValidAgencyClient() {
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
         Instant now = Instant.now();
 
         AgencyClient client = AgencyClient.builder()
@@ -51,8 +51,8 @@ class AgencyClientTest {
     void builder_createsInactiveClient() {
         AgencyClient client = AgencyClient.builder()
             .clientId("client-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .clientName("Acme Corp")
             .active(false)
             .createdAt(Instant.now())
@@ -67,8 +67,8 @@ class AgencyClientTest {
     void builder_handlesNullOptionalFields() {
         AgencyClient client = AgencyClient.builder()
             .clientId("client-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .clientName("Acme Corp")
             .active(true)
             .createdAt(Instant.now())

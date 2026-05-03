@@ -96,7 +96,8 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
                             command.validationResultId(),
                             command.riskLevel(),
                             requiredRole,
-                            Instant.now()
+                            Instant.now(),
+                            0L
                         );
                         return snapshotRepository.save(ctx.getWorkspaceId().getValue(), snapshot)
                             .then(saved -> {

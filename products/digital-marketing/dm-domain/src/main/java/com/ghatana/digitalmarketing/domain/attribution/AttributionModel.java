@@ -12,6 +12,7 @@ import java.util.Map;
  * @doc.type class
  * @doc.purpose Represents a multi-touch attribution model
  * @doc.layer domain
+ * @doc.pattern Entity
  */
 public final class AttributionModel {
 

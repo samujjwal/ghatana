@@ -13,6 +13,7 @@ import java.util.Optional;
  * @doc.type interface
  * @doc.purpose Repository interface for attribution model operations
  * @doc.layer application
+ * @doc.pattern Repository
  */
 public interface AttributionModelRepository {
 

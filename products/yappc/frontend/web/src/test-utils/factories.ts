@@ -2,7 +2,44 @@
 /* Use native crypto.randomUUID to avoid uuid dependency in tests */
 const uuidv4 = () => crypto.randomUUID();
 
-import { faker } from 'yappc-core/testing/mocks/faker-shim';
+const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const pick = (values) => values[randomInt(0, values.length - 1)];
+const words = ['alpha', 'beta', 'gamma', 'delta', 'omega', 'pixel', 'vector', 'canvas'];
+const names = ['Alex Chen', 'Sam Rivera', 'Taylor Brooks', 'Jordan Lee'];
+
+const faker = {
+  internet: {
+    email: () => `user${randomInt(1000, 9999)}@example.com`,
+    userName: () => `user_${randomInt(1000, 9999)}`,
+    password: (length = 12) => `Pw${uuidv4().replace(/-/g, '').slice(0, Math.max(length, 4))}`,
+    url: () => `https://example.com/${pick(words)}`,
+    color: () => `#${randomInt(0, 0xffffff).toString(16).padStart(6, '0')}`,
+  },
+  person: {
+    fullName: () => pick(names),
+  },
+  date: {
+    recent: () => new Date(Date.now() - randomInt(0, 7) * 24 * 60 * 60 * 1000),
+    past: () => new Date(Date.now() - randomInt(8, 365) * 24 * 60 * 60 * 1000),
+    future: () => new Date(Date.now() + randomInt(1, 365) * 24 * 60 * 60 * 1000),
+  },
+  lorem: {
+    sentence: () => `${pick(words)} ${pick(words)} ${pick(words)}.`,
+    paragraph: () => `${pick(words)} ${pick(words)} ${pick(words)} ${pick(words)} ${pick(words)}.`,
+  },
+  datatype: {
+    boolean: () => Math.random() >= 0.5,
+  },
+  number: {
+    int: (input = {}) => {
+      if (typeof input === 'number') {
+        return randomInt(0, input);
+      }
+      return randomInt(input.min ?? 0, input.max ?? 1000);
+    },
+    float: ({ min = 0, max = 1 } = {}) => min + Math.random() * (max - min),
+  },
+};
 
 /**
  *

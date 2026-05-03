@@ -51,16 +51,16 @@ public final class DmosObservability {
     }
 
     private void initializeMetrics() {
-        this.commandSuccessCounter = metrics.counter("dmos.command.success", "DMOS command success count");
-        this.commandFailureCounter = metrics.counter("dmos.command.failure", "DMOS command failure count");
-        this.connectorFailureCounter = metrics.counter("dmos.connector.failure", "DMOS connector failure count");
-        this.dlqCounter = metrics.counter("dmos.dlq.count", "DMOS dead-letter queue count");
+        this.commandSuccessCounter = metrics.counter("dmos.command.success");
+        this.commandFailureCounter = metrics.counter("dmos.command.failure");
+        this.connectorFailureCounter = metrics.counter("dmos.connector.failure");
+        this.dlqCounter = metrics.counter("dmos.dlq.count");
 
-        this.apiDurationTimer = metrics.timer("dmos.api.duration", "DMOS API request duration");
-        this.commandDurationTimer = metrics.timer("dmos.command.duration", "DMOS command execution duration");
-        this.workflowDurationTimer = metrics.timer("dmos.workflow.duration", "DMOS workflow execution duration");
-        this.connectorDurationTimer = metrics.timer("dmos.connector.duration", "DMOS connector call duration");
-        this.approvalLatencyTimer = metrics.timer("dmos.approval.latency", "DMOS approval request latency");
+        this.apiDurationTimer = metrics.timer("dmos.api.duration");
+        this.commandDurationTimer = metrics.timer("dmos.command.duration");
+        this.workflowDurationTimer = metrics.timer("dmos.workflow.duration");
+        this.connectorDurationTimer = metrics.timer("dmos.connector.duration");
+        this.approvalLatencyTimer = metrics.timer("dmos.approval.latency");
     }
 
     /**

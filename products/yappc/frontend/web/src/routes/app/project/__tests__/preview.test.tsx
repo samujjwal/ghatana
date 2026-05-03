@@ -30,7 +30,7 @@ describe('preview route', () => {
     expect(screen.getByText('A preview host must be configured before this screen can expose a live preview.')).toBeDefined();
   });
 
-  it('shows external preview status and opens the configured host in a new tab', () => {
+  it('shows external preview status and opens the configured host in a new tab', async () => {
     vi.stubEnv('VITE_FEATURE_PROJECT_PREVIEW', 'true');
     vi.stubEnv('VITE_PREVIEW_BASE_URL', 'https://preview.example.test');
     const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);

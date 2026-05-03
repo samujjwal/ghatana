@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>The full plugin ecosystem (8 plugin types, health monitor, version compare, dependency graph)
  * exists in the product. This handler closes the only gap: the backend endpoints that
- * {@code PluginsPage.tsx} and {@code PluginDetailsPage.tsx} make TODO calls against.
+ * {@code PluginsPage.tsx} and {@code PluginDetailsPage.tsx} make calls against.
  *
  * <p>Implementation note: actual runtime class-loading of JAR archives is a platform concern
  * not yet supported by the {@link StoragePluginRegistry} SPI. The endpoints therefore accept

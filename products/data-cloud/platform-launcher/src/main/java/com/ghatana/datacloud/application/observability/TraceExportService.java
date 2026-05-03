@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * Failed spans moved to DLQ for later retry/analysis: - Exporter unavailable
  * (connection timeout) - Serialization errors - Malformed span data
  *
- * DLQ implementation (TODO): - Store in local file or database - Periodic retry
+ * DLQ implementation pending: - Store in local file or database - Periodic retry
  * attempts - Operator dashboard for inspection
  *
  * <p>

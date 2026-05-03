@@ -13,39 +13,32 @@ import { LiveProgressNarrative } from '../LiveProgressNarrative';
 type MessageHandler = (e: MessageEvent) => void;
 type EventHandler = () => void;
 
-interface MockEventSourceInstance {
-  onmessage: MessageHandler | null;
-  onerror: EventHandler | null;
-  addEventListener: (type: string, handler: EventHandler) => void;
-  close: () => void;
+let mockInstance: MockEventSourceClass | null = null;
+
+class MockEventSourceClass {
   url: string;
   withCredentials: boolean;
+  onmessage: MessageHandler | null = null;
+  onerror: EventHandler | null = null;
+  close = vi.fn();
+  private doneHandlers: EventHandler[] = [];
+
+  constructor(url: string, opts?: { withCredentials?: boolean }) {
+    this.url = url;
+    this.withCredentials = opts?.withCredentials ?? false;
+    mockInstance = this;
+  }
+
+  addEventListener(type: string, handler: EventHandler) {
+    if (type === 'done') this.doneHandlers.push(handler);
+  }
+
+  _triggerDone() {
+    this.doneHandlers.forEach((h) => h());
+  }
 }
 
-let mockInstance: MockEventSourceInstance | null = null;
-const MockEventSource = vi.fn().mockImplementation(
-  (url: string, opts?: { withCredentials?: boolean }): MockEventSourceInstance => {
-    const doneHandlers: EventHandler[] = [];
-    const instance: MockEventSourceInstance = {
-      url,
-      withCredentials: opts?.withCredentials ?? false,
-      onmessage: null,
-      onerror: null,
-      addEventListener: (type: string, handler: EventHandler) => {
-        if (type === 'done') doneHandlers.push(handler);
-      },
-      close: vi.fn(),
-    };
-    // Expose done triggering for test control
-    (instance as MockEventSourceInstance & { _triggerDone: () => void })._triggerDone = () => {
-      doneHandlers.forEach((h) => h());
-    };
-    mockInstance = instance;
-    return instance;
-  }
-);
-
-vi.stubGlobal('EventSource', MockEventSource);
+vi.stubGlobal('EventSource', MockEventSourceClass);
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -90,7 +83,7 @@ describe('LiveProgressNarrative', () => {
           data: JSON.stringify({ id: 'evt-1', text: 'Step 1 complete', timestamp: new Date().toISOString() }),
         })
       );
-      (mockInstance as MockEventSourceInstance & { _triggerDone: () => void })._triggerDone();
+        mockInstance?._triggerDone();
     });
 
     await waitFor(() => {
@@ -115,7 +108,7 @@ describe('LiveProgressNarrative', () => {
           data: JSON.stringify({ id: 'e2', text: 'Line B', timestamp: new Date().toISOString() }),
         })
       );
-      (mockInstance as MockEventSourceInstance & { _triggerDone: () => void })._triggerDone();
+        mockInstance?._triggerDone();
     });
 
     await waitFor(() => {

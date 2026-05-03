@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.lead.Lead;
 import com.ghatana.digitalmarketing.domain.lead.LeadStatus;
 import com.ghatana.digitalmarketing.domain.suppression.SuppressionEntry;
+import com.ghatana.platform.security.port.HashingPort;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +44,8 @@ class LeadServiceImplTest extends EventloopTestBase {
         kernelAdapter = new RecordingKernelAdapter();
         repository    = new InMemoryLeadRepository();
         suppressionRepository = new InMemorySuppressionRepository();
-        service = new LeadServiceImpl(kernelAdapter, repository, suppressionRepository);
+        HashingPort hashingPort = new MockHashingPort();
+        service = new LeadServiceImpl(kernelAdapter, repository, suppressionRepository, hashingPort);
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
@@ -59,12 +61,15 @@ class LeadServiceImplTest extends EventloopTestBase {
     @Test
     @DisplayName("constructor throws on null dependencies")
     void shouldRejectNullDependencies() {
+        HashingPort hashingPort = new MockHashingPort();
         assertThatNullPointerException()
-            .isThrownBy(() -> new LeadServiceImpl(null, repository, suppressionRepository));
+            .isThrownBy(() -> new LeadServiceImpl(null, repository, suppressionRepository, hashingPort));
         assertThatNullPointerException()
-            .isThrownBy(() -> new LeadServiceImpl(kernelAdapter, null, suppressionRepository));
+            .isThrownBy(() -> new LeadServiceImpl(kernelAdapter, null, suppressionRepository, hashingPort));
         assertThatNullPointerException()
-            .isThrownBy(() -> new LeadServiceImpl(kernelAdapter, repository, null));
+            .isThrownBy(() -> new LeadServiceImpl(kernelAdapter, repository, null, hashingPort));
+        assertThatNullPointerException()
+            .isThrownBy(() -> new LeadServiceImpl(kernelAdapter, repository, suppressionRepository, null));
     }
 
     @Test
@@ -253,25 +258,32 @@ class LeadServiceImplTest extends EventloopTestBase {
             SuppressionEntry entry = SuppressionEntry.builder()
                 .id("sup-" + email)
                 .workspaceId(workspaceId)
-                .email(email)
+                .contactPointHash("hash-" + email)
                 .reason("test")
                 .active(true)
                 .createdAt(java.time.Instant.now())
                 .updatedAt(java.time.Instant.now())
                 .createdBy("test")
                 .build();
-            store.put(workspaceId.getValue() + ":" + email, entry);
+            store.put(workspaceId.getValue() + ":" + "hash-" + email, entry);
         }
 
         @Override
         public Promise<SuppressionEntry> save(SuppressionEntry entry) {
-            store.put(entry.getWorkspaceId().getValue() + ":" + entry.getEmail(), entry);
+            store.put(entry.getWorkspaceId().getValue() + ":" + entry.getContactPointHash(), entry);
             return Promise.of(entry);
         }
 
-        @Override
         public Promise<Optional<SuppressionEntry>> findActiveByEmail(DmWorkspaceId workspaceId, String email) {
             SuppressionEntry found = store.get(workspaceId.getValue() + ":" + email);
+            if (found != null && found.isActive()) {
+                return Promise.of(Optional.of(found));
+            }
+            return Promise.of(Optional.empty());
+        }
+
+        public Promise<Optional<SuppressionEntry>> findActiveByContactPointHash(DmWorkspaceId workspaceId, String contactPointHash) {
+            SuppressionEntry found = store.get(workspaceId.getValue() + ":" + contactPointHash);
             if (found != null && found.isActive()) {
                 return Promise.of(Optional.of(found));
             }
@@ -329,6 +341,51 @@ class LeadServiceImplTest extends EventloopTestBase {
                 Map<String, Object> attributes) {
             auditActions.add(action);
             return Promise.of("audit-1");
+        }
+
+        @Override
+        public Promise<Double> evaluateRisk(
+                DmOperationContext context,
+                String entityId,
+                String riskModelId,
+                Map<String, Object> factors) {
+            return Promise.of(0.0);
+        }
+
+        @Override
+        public Promise<Void> notifyUser(
+                DmOperationContext context,
+                String recipientId,
+                String template,
+                Map<String, String> attributes) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(true);
+        }
+    }
+
+    private static final class MockHashingPort implements HashingPort {
+        @Override
+        public Promise<String> hashContactPoint(String contactPoint) {
+            return Promise.of("hash-" + contactPoint);
+        }
+
+        @Override
+        public Promise<String> hash(String data) {
+            return Promise.of("hash-" + data);
+        }
+
+        @Override
+        public Promise<Boolean> verifyContactPoint(String contactPoint, String expectedHash) {
+            return Promise.of(expectedHash.equals("hash-" + contactPoint));
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return "MockHash";
         }
     }
 }

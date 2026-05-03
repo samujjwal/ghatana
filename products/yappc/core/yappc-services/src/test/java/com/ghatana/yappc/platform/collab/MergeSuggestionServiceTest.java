@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import io.activej.promise.Promise;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
@@ -19,7 +20,7 @@ import org.mockito.MockitoAnnotations;
 @DisplayName("MergeSuggestionService Tests")
 class MergeSuggestionServiceTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
 
   MergeSuggestionServiceTest() { 
     MockitoAnnotations.openMocks(this); 

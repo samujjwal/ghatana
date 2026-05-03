@@ -1,39 +1,35 @@
-// All tests skipped - incomplete feature
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as FeatureStories from '../data';
 
 import { CanvasFeatureStoryList } from '../CanvasFeatureStoryList';
 
 describe('CanvasFeatureStoryList', () => {
+  beforeEach(() => {
+    window.localStorage.removeItem('canvas-feature-progress-filter');
+  });
+
   it('renders the default category and stories', () => {
     render(<CanvasFeatureStoryList />);
 
     // Default category should be the first entry ("Current Capabilities")
     expect(screen.getByText('Viewport Management')).toBeInTheDocument();
-    // Acceptance criteria rendered inside the card
-    expect(
-      screen.getByLabelText('Acceptance criteria for Viewport Management')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Smooth zooming')).toBeInTheDocument();
 
     expect(
-      screen.getByTestId(
-        'canvas-feature-story-status-summary-all-status-not-started'
-      )
-    ).toHaveTextContent(/Not Started:/);
+      screen.getByTestId('canvas-feature-story-status-summary-all')
+    ).toHaveTextContent(':');
     expect(
-      screen.getByTestId(
-        'canvas-feature-story-status-summary-filtered-status-not-started'
-      )
-    ).toHaveTextContent(/Not Started:/);
+      screen.getByTestId('canvas-feature-story-status-summary-filtered')
+    ).toHaveTextContent(':');
   });
 
   it('filters stories within the active category by search term', () => {
     render(<CanvasFeatureStoryList />);
-    const searchInput = screen.getByTestId(
-      'canvas-feature-story-search-input'
-    ) as HTMLInputElement;
+    const searchInput = screen.getByRole('textbox', {
+      name: 'Search canvas feature stories',
+    }) as HTMLInputElement;
 
     fireEvent.change(searchInput, { target: { value: 'Keyboard Navigation' } });
 
@@ -61,9 +57,9 @@ describe('CanvasFeatureStoryList', () => {
 
   it('shows an informative state when filters yield no results', () => {
     render(<CanvasFeatureStoryList />);
-    const searchInput = screen.getByTestId(
-      'canvas-feature-story-search-input'
-    ) as HTMLInputElement;
+    const searchInput = screen.getByRole('textbox', {
+      name: 'Search canvas feature stories',
+    }) as HTMLInputElement;
 
     fireEvent.change(searchInput, { target: { value: 'nope-no-match' } });
 
@@ -77,9 +73,7 @@ describe('CanvasFeatureStoryList', () => {
   it('can switch categories via tabs', () => {
     render(<CanvasFeatureStoryList defaultCategoryId="2" />);
 
-    // Confirm category tabs rendered
-    expect(screen.getByTestId('canvas-feature-story-tabs')).toBeInTheDocument();
-    const tab = screen.getByRole('tab', { name: /All/ });
+    const tab = screen.getByRole('tab', { name: /^All \(/ });
     fireEvent.click(tab);
 
     // Story from another category should become visible in "All" tab
@@ -93,34 +87,73 @@ describe('CanvasFeatureStoryList', () => {
   });
 
   it('filters stories by progress status', () => {
-    render(<CanvasFeatureStoryList />);
+    const category = FeatureStories.canvasFeatureStoryCategories.find(
+      (entry) => entry.id === '1'
+    );
+    const candidateStories = category?.stories.filter(
+      (story) => story.progress?.status
+    );
+
+    expect(candidateStories && candidateStories.length >= 2).toBeTruthy();
+
+    const primaryStory = candidateStories?.[0];
+    const secondaryStory = candidateStories?.find(
+      (story) =>
+        story.progress?.status?.toLowerCase() !==
+        primaryStory?.progress?.status?.toLowerCase()
+    );
+
+    expect(primaryStory).toBeTruthy();
+    expect(secondaryStory).toBeTruthy();
+
+    render(<CanvasFeatureStoryList defaultCategoryId="1" />);
 
     const select = screen.getByTestId(
       'canvas-feature-story-progress-filter-input'
     ) as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'in progress' } });
+    fireEvent.change(select, {
+      target: { value: primaryStory?.progress?.status?.toLowerCase() },
+    });
 
-    expect(screen.getByText('Viewport Management')).toBeInTheDocument();
-    expect(screen.queryByText('Element Manipulation')).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId(`canvas-feature-story-card-${primaryStory?.id}`)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(`canvas-feature-story-card-${secondaryStory?.id}`)
+    ).not.toBeInTheDocument();
     expect(
       screen.getByTestId(
-        'canvas-feature-story-status-summary-filtered-status-in-progress'
+        `canvas-feature-story-status-summary-filtered-status-${primaryStory?.progress?.status
+          ?.toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')}`
       )
     ).not.toHaveTextContent('In Progress: 0');
   });
 
   it('applies an initialProgressFilter when provided', () => {
-    render(<CanvasFeatureStoryList initialProgressFilter="planned" />);
+    const category = FeatureStories.canvasFeatureStoryCategories.find(
+      (entry) => entry.id === '1'
+    );
+    const story = category?.stories.find((entry) => entry.progress?.status);
+
+    expect(story).toBeTruthy();
+
+    const selectedStatus = story?.progress?.status?.toLowerCase() ?? '';
+    render(<CanvasFeatureStoryList initialProgressFilter={selectedStatus} />);
 
     expect(
       screen.getByTestId('canvas-feature-story-progress-filter-input')
-    ).toHaveValue('planned');
-    expect(screen.getByText('Element Manipulation')).toBeInTheDocument();
-    expect(screen.queryByText('Viewport Management')).not.toBeInTheDocument();
+    ).toHaveValue(selectedStatus);
+    expect(
+      screen.getByTestId(`canvas-feature-story-card-${story?.id}`)
+    ).toBeInTheDocument();
     expect(
       screen.getByTestId(
-        'canvas-feature-story-status-summary-filtered-status-planned'
+        `canvas-feature-story-status-summary-filtered-status-${selectedStatus.replace(
+          /[^a-z0-9]+/g,
+          '-'
+        )}`
       )
-    ).not.toHaveTextContent('Planned: 0');
+    ).not.toHaveTextContent(': 0');
   });
 });

@@ -77,27 +77,27 @@ describe('mapAuthSessionToUser — tenantId mapping', () => {
 
 describe('mapAuthSessionToUser — name and workspaceIds', () => {
   it('constructs a full name from firstName and lastName', () => {
-    const result = mapAuthSessionToUser({ id: 'u1', firstName: 'Alice', lastName: 'Bob' });
+    const result = mapAuthSessionToUser({ id: 'u1', firstName: 'Alice', lastName: 'Bob', tenantId: 'test-tenant' });
     expect(result.name).toBe('Alice Bob');
   });
 
   it('falls back to id when no name parts are present', () => {
-    const result = mapAuthSessionToUser({ id: 'user-42' });
+    const result = mapAuthSessionToUser({ id: 'user-42', tenantId: 'test-tenant' });
     expect(result.name).toBe('user-42');
   });
 
   it('falls back to the generated name field when first and last name are absent', () => {
-    const result = mapAuthSessionToUser({ id: 'u1', name: 'Platform Operator' });
+    const result = mapAuthSessionToUser({ id: 'u1', name: 'Platform Operator', tenantId: 'test-tenant' });
     expect(result.name).toBe('Platform Operator');
   });
 
   it('propagates workspaceIds from API response', () => {
-    const result = mapAuthSessionToUser({ id: 'u1', workspaceIds: ['ws-1', 'ws-2'] });
+    const result = mapAuthSessionToUser({ id: 'u1', workspaceIds: ['ws-1', 'ws-2'], tenantId: 'test-tenant' });
     expect(result.workspaceIds).toEqual(['ws-1', 'ws-2']);
   });
 
   it('defaults workspaceIds to empty array when absent', () => {
-    const result = mapAuthSessionToUser({ id: 'u1' });
+    const result = mapAuthSessionToUser({ id: 'u1', tenantId: 'test-tenant' });
     expect(result.workspaceIds).toEqual([]);
   });
 });

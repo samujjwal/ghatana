@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.RequirementChangedEvent;
 import io.activej.promise.Promise;
@@ -22,7 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("RequirementsConsistencyChecker Tests")
 class RequirementsConsistencyCheckerTest extends EventloopTestBase {
 
-  @Mock private YAPPCAIService aiService;
+  @Mock private YAPPCAIInterface aiService;
 
   @Test
   @DisplayName("analyze returns deterministic findings for placeholders and duplicate requirements")

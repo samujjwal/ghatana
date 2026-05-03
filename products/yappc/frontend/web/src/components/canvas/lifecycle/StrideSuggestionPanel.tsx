@@ -31,8 +31,8 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, AlertCircle, ShieldPlus } from 'lucide-react';
-import { AIAssistLabel } from '../ai/AIAssistLabel';
-import type { AIAssistSource } from '../ai/AIAssistLabel';
+import { AIAssistLabel } from '../../ai/AIAssistLabel';
+import type { AIAssistSource } from '../../ai/AIAssistLabel';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

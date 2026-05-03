@@ -13,6 +13,7 @@ import java.util.Map;
  * @doc.type interface
  * @doc.purpose Service interface for attribution model operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public interface AttributionModelService {
 

@@ -76,7 +76,6 @@ public interface AdCopyGeneratorService {
             Objects.requireNonNull(primaryOffer, "primaryOffer must not be null");
             Objects.requireNonNull(serviceArea, "serviceArea must not be null");
             Objects.requireNonNull(landingPageUrl, "landingPageUrl must not be null");
-            Objects.requireNonNull(voiceTone, "voiceTone must not be null");
             Objects.requireNonNull(keywordThemes, "keywordThemes must not be null");
             Objects.requireNonNull(negativeKeywords, "negativeKeywords must not be null");
             Objects.requireNonNull(claimIds, "claimIds must not be null");

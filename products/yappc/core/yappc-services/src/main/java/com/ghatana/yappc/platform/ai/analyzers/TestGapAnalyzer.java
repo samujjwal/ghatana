@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ai.analyzers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.CodeChangedEvent;
 import io.activej.promise.Promise;
@@ -27,20 +27,20 @@ public final class TestGapAnalyzer {
   private static final TypeReference<List<Map<String, Object>>> ISSUE_LIST_TYPE =
       new TypeReference<>() {};
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final CoverageReportProvider coverageReportProvider;
   private final TestHistoryProvider testHistoryProvider;
   private final ObjectMapper objectMapper;
 
   public TestGapAnalyzer(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       CoverageReportProvider coverageReportProvider,
       TestHistoryProvider testHistoryProvider) {
     this(aiService, coverageReportProvider, testHistoryProvider, new ObjectMapper());
   }
 
   TestGapAnalyzer(
-      YAPPCAIService aiService,
+      YAPPCAIInterface aiService,
       CoverageReportProvider coverageReportProvider,
       TestHistoryProvider testHistoryProvider,
       ObjectMapper objectMapper) {

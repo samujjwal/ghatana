@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -83,7 +84,7 @@ public final class GovernedAgentWorkflowService {
                         response.success(),
                         response.errorMessage(),
                         determineApprovalRequired(response),
-                        savedLog.getId()
+                        savedLog.actionId()
                     ));
             });
     }
@@ -111,22 +112,28 @@ public final class GovernedAgentWorkflowService {
         DmWorkspaceId workspaceId,
         String principalId
     ) {
-        return AiActionLogEntry.builder()
-            .id(java.util.UUID.randomUUID().toString())
-            .tenantId(tenantId)
-            .workspaceId(workspaceId)
-            .agentType(agentType.name())
-            .prompt(prompt)
-            .model(model != null ? model : "default")
-            .output(response.output())
-            .confidence(response.confidence())
-            .evidenceLocation(response.evidenceLocation())
-            .durationMs(response.duration().toMillis())
-            .success(response.success())
-            .errorMessage(response.errorMessage())
-            .createdAt(Instant.now())
-            .createdBy(principalId)
-            .build();
+        String correlationId = "corr-" + java.util.UUID.randomUUID().toString();
+        List<String> evidenceLinks = response.evidenceLocation() != null 
+            ? List.of(response.evidenceLocation()) 
+            : List.of();
+        
+        return new AiActionLogEntry(
+            java.util.UUID.randomUUID().toString(),
+            workspaceId.getValue(),
+            correlationId,
+            com.ghatana.digitalmarketing.domain.transparency.AiActionType.ACTION_EXECUTED,
+            com.ghatana.digitalmarketing.domain.transparency.AiActionStatus.EXECUTED,
+            principalId,
+            response.success(),
+            response.confidence(),
+            evidenceLinks,
+            List.of(),
+            "Agent execution: " + agentType.name(),
+            response.output(),
+            null,
+            Instant.now(),
+            0L
+        );
     }
 
     /**

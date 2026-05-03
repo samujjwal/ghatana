@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @doc.layer service
  * @doc.pattern Facade + Factory
  */
-public final class YAPPCAIService {
+public final class YAPPCAIService implements YAPPCAIInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(YAPPCAIService.class);
     private static final String[] HALLUCINATION_MARKERS = {

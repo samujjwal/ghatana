@@ -3,13 +3,17 @@ package com.ghatana.digitalmarketing.application.marketplace;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.domain.marketplace.MarketplaceListing;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests for MarketplaceListingServiceImpl (DMOS-P3-004).
@@ -21,14 +25,19 @@ import static org.mockito.Mockito.when;
 @DisplayName("MarketplaceListingServiceImpl")
 class MarketplaceListingServiceImplTest {
 
+    private InMemoryMarketplaceListingRepository repository;
+    private MarketplaceListingServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        repository = new InMemoryMarketplaceListingRepository();
+        service = new MarketplaceListingServiceImpl(repository);
+    }
+
     @Test
     @DisplayName("createListing creates and saves marketplace listing")
     void createListing_createsAndSavesMarketplaceListing() {
-        MarketplaceListingRepository repository = mock(MarketplaceListingRepository.class);
-        when(repository.save(any(MarketplaceListing.class))).thenReturn(Promise.of(mock(MarketplaceListing.class)));
-
-        MarketplaceListingServiceImpl service = new MarketplaceListingServiceImpl(repository);
-        DmTenantId tenantId = new DmTenantId("tenant-123");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
 
         var promise = service.createListing(tenantId, "Lead Generation Playbook", "A playbook for lead generation", "1.0.0");
         assertThat(promise).isNotNull();
@@ -37,20 +46,17 @@ class MarketplaceListingServiceImplTest {
     @Test
     @DisplayName("getListing retrieves marketplace listing by ID")
     void getListing_retrievesMarketplaceListingById() {
-        MarketplaceListingRepository repository = mock(MarketplaceListingRepository.class);
         MarketplaceListing listing = MarketplaceListing.builder()
             .listingId("listing-789")
             .name("Lead Generation Playbook")
             .authorTenantId("tenant-123")
             .version("1.0.0")
             .status("PUBLISHED")
-            .createdAt(java.time.Instant.now())
-            .updatedAt(java.time.Instant.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
             .build();
 
-        when(repository.findById("listing-789")).thenReturn(Promise.of(java.util.Optional.of(listing)));
-
-        MarketplaceListingServiceImpl service = new MarketplaceListingServiceImpl(repository);
+        repository.save(listing).getResult();
         var promise = service.getListing("listing-789");
         assertThat(promise).isNotNull();
     }
@@ -58,10 +64,6 @@ class MarketplaceListingServiceImplTest {
     @Test
     @DisplayName("getPublishedListings returns published listings")
     void getPublishedListings_returnsPublishedListings() {
-        MarketplaceListingRepository repository = mock(MarketplaceListingRepository.class);
-        when(repository.findPublished()).thenReturn(Promise.of(java.util.List.of()));
-
-        MarketplaceListingServiceImpl service = new MarketplaceListingServiceImpl(repository);
         var promise = service.getPublishedListings();
         assertThat(promise).isNotNull();
     }
@@ -69,21 +71,17 @@ class MarketplaceListingServiceImplTest {
     @Test
     @DisplayName("submitForReview submits listing for review")
     void submitForReview_submitsListingForReview() {
-        MarketplaceListingRepository repository = mock(MarketplaceListingRepository.class);
         MarketplaceListing listing = MarketplaceListing.builder()
             .listingId("listing-789")
             .name("Lead Generation Playbook")
             .authorTenantId("tenant-123")
             .version("1.0.0")
             .status("DRAFT")
-            .createdAt(java.time.Instant.now())
-            .updatedAt(java.time.Instant.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
             .build();
 
-        when(repository.findById("listing-789")).thenReturn(Promise.of(java.util.Optional.of(listing)));
-        when(repository.update(any(MarketplaceListing.class))).thenReturn(Promise.of(listing));
-
-        MarketplaceListingServiceImpl service = new MarketplaceListingServiceImpl(repository);
+        repository.save(listing).getResult();
         var promise = service.submitForReview("listing-789");
         assertThat(promise).isNotNull();
     }
@@ -91,22 +89,74 @@ class MarketplaceListingServiceImplTest {
     @Test
     @DisplayName("approveListing approves listing")
     void approveListing_approvesListing() {
-        MarketplaceListingRepository repository = mock(MarketplaceListingRepository.class);
         MarketplaceListing listing = MarketplaceListing.builder()
             .listingId("listing-789")
             .name("Lead Generation Playbook")
             .authorTenantId("tenant-123")
             .version("1.0.0")
             .status("PENDING_REVIEW")
-            .createdAt(java.time.Instant.now())
-            .updatedAt(java.time.Instant.now())
+            .createdAt(Instant.now())
+            .updatedAt(Instant.now())
             .build();
 
-        when(repository.findById("listing-789")).thenReturn(Promise.of(java.util.Optional.of(listing)));
-        when(repository.update(any(MarketplaceListing.class))).thenReturn(Promise.of(listing));
-
-        MarketplaceListingServiceImpl service = new MarketplaceListingServiceImpl(repository);
+        repository.save(listing).getResult();
         var promise = service.approveListing("listing-789");
         assertThat(promise).isNotNull();
+    }
+
+    // ── test doubles ─────────────────────────────────────────────────────────
+
+    private static final class InMemoryMarketplaceListingRepository implements MarketplaceListingRepository {
+        private final ConcurrentHashMap<String, MarketplaceListing> store = new ConcurrentHashMap<>();
+
+        @Override
+        public Promise<MarketplaceListing> save(MarketplaceListing listing) {
+            store.put(listing.getListingId(), listing);
+            return Promise.of(listing);
+        }
+
+        @Override
+        public Promise<Optional<MarketplaceListing>> findById(String listingId) {
+            return Promise.of(Optional.ofNullable(store.get(listingId)));
+        }
+
+        @Override
+        public Promise<List<MarketplaceListing>> findByAuthor(DmTenantId authorTenantId) {
+            List<MarketplaceListing> result = new ArrayList<>();
+            for (MarketplaceListing listing : store.values()) {
+                if (listing.getAuthorTenantId().equals(authorTenantId)) {
+                    result.add(listing);
+                }
+            }
+            return Promise.of(result);
+        }
+
+        @Override
+        public Promise<List<MarketplaceListing>> findPublished() {
+            List<MarketplaceListing> result = new ArrayList<>();
+            for (MarketplaceListing listing : store.values()) {
+                if ("PUBLISHED".equals(listing.getStatus())) {
+                    result.add(listing);
+                }
+            }
+            return Promise.of(result);
+        }
+
+        @Override
+        public Promise<Void> incrementDownloadCount(String listingId) {
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<Void> delete(String listingId) {
+            store.remove(listingId);
+            return Promise.complete();
+        }
+
+        @Override
+        public Promise<MarketplaceListing> update(MarketplaceListing listing) {
+            store.put(listing.getListingId(), listing);
+            return Promise.of(listing);
+        }
     }
 }

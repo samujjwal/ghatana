@@ -504,8 +504,8 @@ describe('PhaseActionService', () => {
       expect(PHASE_ACTION_HANDLERS['improve-add-feature']).toBeDefined();
     });
 
-    it('has 21 handlers total', () => {
-      expect(Object.keys(PHASE_ACTION_HANDLERS).length).toBe(21);
+    it('has 22 handlers total', () => {
+      expect(Object.keys(PHASE_ACTION_HANDLERS).length).toBe(22);
     });
   });
 
@@ -522,7 +522,7 @@ describe('PhaseActionService', () => {
       (global.fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: false,
         status: 500,
-        json: async () => ({ message: 'Internal Server Error' }),
+        text: async () => '',
       });
 
       await expect(handleCreateVision(mockContext)).rejects.toThrow('API request failed');

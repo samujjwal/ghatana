@@ -36,9 +36,18 @@ const mockService = {
   }),
 };
 
-vi.mock('../../services/LifecycleWebSocketService', () => ({
-  LifecycleWebSocketService: vi.fn(() => mockService),
-}));
+vi.mock('../../services/LifecycleWebSocketService', () => {
+  class MockLifecycleWebSocketService {
+    connect = mockService.connect;
+    disconnect = mockService.disconnect;
+    onUpdate = mockService.onUpdate;
+    onConnectionChange = mockService.onConnectionChange;
+  }
+
+  return {
+    LifecycleWebSocketService: MockLifecycleWebSocketService,
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Helpers

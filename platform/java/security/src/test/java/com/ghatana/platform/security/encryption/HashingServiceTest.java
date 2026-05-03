@@ -1,5 +1,6 @@
 package com.ghatana.platform.security.encryption;
 
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
@@ -15,15 +16,14 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer core
  */
 @DisplayName("HashingService Tests")
-class HashingServiceTest {
+class HashingServiceTest extends EventloopTestBase {
 
     private static final String TEST_SALT = "test-salt-for-hmac-sha256";
-    private final Eventloop eventloop = Eventloop.create().withCurrentThread();
 
     @Test
     @DisplayName("Should hash contact point consistently")
     void shouldHashContactPointConsistently() {
-        HashingService service = new HashingService(TEST_SALT, eventloop);
+        HashingService service = new HashingService(TEST_SALT, eventloop());
         String email = "test@example.com";
 
         String hash1 = runPromise(() -> service.hashContactPoint(email));
@@ -37,7 +37,7 @@ class HashingServiceTest {
     @Test
     @DisplayName("Should produce different hashes for different inputs")
     void shouldProduceDifferentHashesForDifferentInputs() {
-        HashingService service = new HashingService(TEST_SALT, eventloop);
+        HashingService service = new HashingService(TEST_SALT, eventloop());
         String email1 = "test@example.com";
         String email2 = "different@example.com";
 
@@ -50,7 +50,7 @@ class HashingServiceTest {
     @Test
     @DisplayName("Should verify contact point hash correctly")
     void shouldVerifyContactPointHashCorrectly() {
-        HashingService service = new HashingService(TEST_SALT, eventloop);
+        HashingService service = new HashingService(TEST_SALT, eventloop());
         String email = "test@example.com";
 
         String hash = runPromise(() -> service.hashContactPoint(email));
@@ -62,7 +62,7 @@ class HashingServiceTest {
     @Test
     @DisplayName("Should reject invalid contact point hash")
     void shouldRejectInvalidContactPointHash() {
-        HashingService service = new HashingService(TEST_SALT, eventloop);
+        HashingService service = new HashingService(TEST_SALT, eventloop());
         String email = "test@example.com";
         String wrongHash = "wronghashvalue";
 
@@ -74,38 +74,26 @@ class HashingServiceTest {
     @Test
     @DisplayName("Should throw exception for null salt")
     void shouldThrowExceptionForNullSalt() {
-        Eventloop eventloop = Eventloop.create().withCurrentThread();
-        
         org.junit.jupiter.api.Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new HashingService(null, eventloop)
+            () -> new HashingService(null, eventloop())
         );
     }
 
     @Test
     @DisplayName("Should throw exception for blank salt")
     void shouldThrowExceptionForBlankSalt() {
-        Eventloop eventloop = Eventloop.create().withCurrentThread();
-        
         org.junit.jupiter.api.Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new HashingService("", eventloop)
+            () -> new HashingService("", eventloop())
         );
     }
 
     @Test
     @DisplayName("Should return correct algorithm name")
     void shouldReturnCorrectAlgorithmName() {
-        HashingService service = new HashingService(TEST_SALT, eventloop);
+        HashingService service = new HashingService(TEST_SALT, eventloop());
         
         assertThat(service.getAlgorithm()).isEqualTo("HmacSHA256");
-    }
-
-    private <T> T runPromise(io.activej.promise.Promise<T> promise) {
-        try {
-            return promise.block();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }

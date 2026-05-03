@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 /**
  * Task dispatcher for multi-agent coordination and load balancing.
@@ -48,7 +49,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><b>Usage</b><br>
  * <pre>{@code
  * TaskQueue queue = new TaskQueue(100);
- * TaskDispatcher dispatcher = new TaskDispatcher(queue);
+ * Executor executor = Executors.newSingleThreadExecutor();
+ * TaskDispatcher dispatcher = new TaskDispatcher(queue, executor);
  *
  * // Register agents by role
  * dispatcher.registerAgent(seniorEngineer1);
@@ -83,9 +85,11 @@ public class TaskDispatcher {
     private final Map<String, VirtualOrgAgent> agents = new ConcurrentHashMap<>();
     private final Map<AgentRoleProto, List<String>> roleToAgents = new ConcurrentHashMap<>();
     private final TaskQueue taskQueue;
+    private final Executor executor;
 
-    public TaskDispatcher(@NotNull TaskQueue taskQueue) {
+    public TaskDispatcher(@NotNull TaskQueue taskQueue, @NotNull Executor executor) {
         this.taskQueue = taskQueue;
+        this.executor = executor;
         log.info("Initialized TaskDispatcher");
     }
 
@@ -266,7 +270,7 @@ public class TaskDispatcher {
             attempt + 1, maxAttempts, role, intervalMs);
 
         // Schedule the next poll via Promise.ofBlocking (non-blocking on the event loop).
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             Thread.sleep(intervalMs);
             return null;
         }).then(() -> pollForAgent(task, role, attempt + 1, maxAttempts, intervalMs));

@@ -97,6 +97,7 @@ describe('ApprovalDetail', () => {
       storyTrace: 'US-42',
       confidence: 0.87,
       rationale: 'High keyword density for authentication domain.',
+      source: 'MODEL',
     };
 
     render(
@@ -118,7 +119,7 @@ describe('ApprovalDetail', () => {
     expect(screen.getByText('Given a valid SSO token, the user is logged in')).toBeTruthy();
     expect(screen.getByText('Invalid tokens return 401')).toBeTruthy();
     expect(screen.getByText('US-42')).toBeTruthy();
-    expect(screen.getByText('87%')).toBeTruthy();
+    expect(screen.getAllByText('87%').length).toBeGreaterThan(0);
     expect(screen.getByText('High keyword density for authentication domain.')).toBeTruthy();
   });
 
@@ -129,6 +130,7 @@ describe('ApprovalDetail', () => {
       storyTrace: '',
       confidence: 0.9,
       rationale: '',
+      source: 'MODEL',
     };
 
     render(
@@ -145,7 +147,7 @@ describe('ApprovalDetail', () => {
       />
     );
 
-    const confidenceChip = screen.getByText('90%');
+    const confidenceChip = screen.getByLabelText('Confidence: 90%');
     expect(confidenceChip.className).toMatch(/emerald/);
   });
 
@@ -156,6 +158,7 @@ describe('ApprovalDetail', () => {
       storyTrace: '',
       confidence: 0.7,
       rationale: '',
+      source: 'MODEL',
     };
 
     render(
@@ -172,7 +175,7 @@ describe('ApprovalDetail', () => {
       />
     );
 
-    const confidenceChip = screen.getByText('70%');
+    const confidenceChip = screen.getByLabelText('Confidence: 70%');
     expect(confidenceChip.className).toMatch(/amber/);
   });
 

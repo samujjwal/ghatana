@@ -35,6 +35,7 @@ import com.ghatana.virtualorg.v1.ExecutionOptionsProto;
 import java.util.Collections;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 
 /**
  * Example launcher demonstrating the Virtual Organization Agent system setup and execution.
@@ -351,7 +352,7 @@ public class VirtualOrgLauncher {
 
         // Create task dispatcher
         TaskQueue taskQueue = new TaskQueue(100);
-        TaskDispatcher dispatcher = new TaskDispatcher(taskQueue);
+        TaskDispatcher dispatcher = new TaskDispatcher(taskQueue, Executors.newSingleThreadExecutor());
 
         // Create agents
         VirtualOrgAgent agent1 = factory.createAgent(AgentRoleProto.AGENT_ROLE_SENIOR_ENGINEER);

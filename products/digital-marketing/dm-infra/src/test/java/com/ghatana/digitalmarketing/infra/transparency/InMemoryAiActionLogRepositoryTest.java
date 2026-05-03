@@ -163,7 +163,8 @@ class InMemoryAiActionLogRepositoryTest extends EventloopTestBase {
             "Test summary",
             "Test details",
             relatedEntityId,
-            Instant.now()
+            Instant.now(),
+            0L
         );
     }
 }

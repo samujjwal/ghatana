@@ -258,9 +258,6 @@ export const SHAPE_TEMPLATES: ShapeTemplate[] = [
     },
 ];
 
-// Export templates for use in unified canvas
-export { SHAPE_TEMPLATES };
-
 interface ShapeLibraryProps {
     /** Called when user wants to insert shape immediately (double-click or drag-drop) */
     onShapeInsert?: (template: ShapeTemplate, position?: { x: number; y: number }) => void;

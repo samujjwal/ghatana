@@ -107,7 +107,8 @@ class InMemoryApprovalSnapshotRepositoryTest extends EventloopTestBase {
             "val-result-123",
             2,
             "COMPLIANCE_OFFICER",
-            Instant.now()
+            Instant.now(),
+            0L
         );
     }
 }

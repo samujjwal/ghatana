@@ -427,14 +427,28 @@ export default function Component() {
         );
     }
 
-    const topRecommendations = recommendations.slice(0, 3);
-    const topInsights = insights.slice(0, 3);
-    const activeReadinessAnomalies = readinessAnomalies
-        .filter((alert) => String(alert.status).toUpperCase() !== 'RESOLVED')
-        .slice(0, 3);
-    const criticalAnomalyCount = activeReadinessAnomalies.filter(
-        (alert) => String(alert.severity).toUpperCase() === 'CRITICAL'
-    ).length;
+    const topRecommendations = React.useMemo(
+        () => recommendations.slice(0, 3),
+        [recommendations]
+    );
+    const topInsights = React.useMemo(
+        () => insights.slice(0, 3),
+        [insights]
+    );
+    const activeReadinessAnomalies = React.useMemo(
+        () =>
+            readinessAnomalies
+                .filter((alert) => String(alert.status).toUpperCase() !== 'RESOLVED')
+                .slice(0, 3),
+        [readinessAnomalies]
+    );
+    const criticalAnomalyCount = React.useMemo(
+        () =>
+            activeReadinessAnomalies.filter(
+                (alert) => String(alert.severity).toUpperCase() === 'CRITICAL'
+            ).length,
+        [activeReadinessAnomalies]
+    );
     const phaseSummary = buildPhaseSummary({
         stageLabel: FOW_STAGE_LABELS[currentStage],
         criticalAnomalyCount,
@@ -800,7 +814,7 @@ export default function Component() {
                                 'mt-4 rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50',
                             disabled: executeTask.isPending,
                             'data-testid': 'workflow-automation-trigger',
-                            onClick: handleAutomationClick,
+                            onClick: () => void handleAutomationClick(nextTask.id, nextTask.title),
                         },
                         executeTask.isPending ? 'Starting suggested task…' : 'Start suggested task'
                     ),
@@ -1001,7 +1015,7 @@ export default function Component() {
                         ),
                         createElement(
                             'p',
-                            { className: 'mt-1 text-sm text-text-secondary' },
+                            { className: 'mt-1 text-sm text-text-secondary', 'data-testid': 'decision-review-threshold' },
                             `Review status: ${reviewStatus.label}. ${reviewStatus.detail}`
                         )
                     )

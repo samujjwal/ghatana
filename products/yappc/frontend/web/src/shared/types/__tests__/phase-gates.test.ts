@@ -79,7 +79,7 @@ function buildEmptyContext(
 // ---------------------------------------------------------------------------
 
 describe('PHASE_GATES', () => {
-  const EXPECTED_GATE_COUNT = 6;
+  const EXPECTED_GATE_COUNT = 7;
 
   it('defines exactly 6 consecutive gates', () => {
     expect(PHASE_GATES).toHaveLength(EXPECTED_GATE_COUNT);

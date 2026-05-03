@@ -2,7 +2,7 @@ package com.ghatana.yappc.platform.ai.analyzers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ghatana.yappc.ai.service.YAPPCAIService;
+import com.ghatana.yappc.ai.service.YAPPCAIInterface;
 import com.ghatana.yappc.platform.ai.model.AIInsight;
 import com.ghatana.yappc.platform.ai.model.AnalysisEvent.CodeChangedEvent;
 import io.activej.promise.Promise;
@@ -22,15 +22,15 @@ import java.util.Objects;
  */
 public final class PerformanceAdvisor {
 
-  private final YAPPCAIService aiService;
+  private final YAPPCAIInterface aiService;
   private final ObjectMapper objectMapper;
   private final Clock clock;
 
-  public PerformanceAdvisor(YAPPCAIService aiService) {
+  public PerformanceAdvisor(YAPPCAIInterface aiService) {
     this(aiService, new ObjectMapper(), Clock.systemUTC());
   }
 
-  PerformanceAdvisor(YAPPCAIService aiService, ObjectMapper objectMapper, Clock clock) {
+  PerformanceAdvisor(YAPPCAIInterface aiService, ObjectMapper objectMapper, Clock clock) {
     this.aiService = Objects.requireNonNull(aiService, "aiService");
     this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper");
     this.clock = Objects.requireNonNull(clock, "clock");

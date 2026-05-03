@@ -17,7 +17,8 @@
 
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Button, IconButton } from '@ghatana/design-system';
+import { Button, IconButton, Input } from '@ghatana/design-system';
+import { useCapabilityGate } from '../hooks/useCapabilityGate';
 import { useOperationHistory } from '../hooks/useOperationHistory';
 import { OperationHistory, OperationHistoryAlert } from '../components/common/OperationHistory';
 import { useOperations } from '../contexts/OperationsContext';
@@ -597,6 +598,11 @@ export function TrustCenter() {
   const [actionSummary, setActionSummary] = useState<GovernanceActionSummary | null>(null);
   const [purgePreview, setPurgePreview] = useState<RetentionPurgePreview | null>(null);
 
+  const canWriteGovernance = useCapabilityGate(
+    ['governance.write', 'governance.policy.write', 'policy.write'],
+    'active',
+  );
+
   const { records: opHistory, addRecord: trackOp, updateOutcome: resolveOp, clearRecords: clearOpHistory } = useOperationHistory();
   const { startJob, completeJob } = useOperations();
 
@@ -888,6 +894,8 @@ export function TrustCenter() {
               leadingIcon={<Shield className="h-4 w-4" />}
               onClick={() => triggerOperationalAction('classify-retention')}
               data-testid="trust-header-open-live-action"
+              disabled={!canWriteGovernance}
+              title={canWriteGovernance ? undefined : 'Governance write capability is not available in this deployment'}
             >
               Open Live Action
             </Button>
@@ -897,22 +905,14 @@ export function TrustCenter() {
         {/* Search */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
+            <Input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search live safeguards or derived policy coverage'
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+              placeholder="Search live safeguards or derived policy coverage"
               aria-label="Search live safeguards or derived policy coverage"
               data-testid="trust-search-input"
-              className={cn(
-                'w-full pl-9 pr-4 py-2 rounded-lg',
-                'bg-gray-100 dark:bg-gray-800',
-                'border border-transparent focus:border-primary-500',
-                'text-sm text-gray-900 dark:text-gray-100',
-                'placeholder-gray-400',
-                'outline-none transition-colors'
-              )}
+              leadingIcon={<Search className="h-4 w-4 text-gray-400" />}
+              className="w-full"
             />
           </div>
           <IconButton

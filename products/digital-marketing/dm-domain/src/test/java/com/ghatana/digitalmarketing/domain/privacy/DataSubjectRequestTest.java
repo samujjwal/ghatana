@@ -21,8 +21,8 @@ class DataSubjectRequestTest {
     @Test
     @DisplayName("build creates valid request")
     void build_createsValidRequest() {
-        DmTenantId tenantId = new DmTenantId("tenant-123");
-        DmWorkspaceId workspaceId = new DmWorkspaceId("workspace-456");
+        DmTenantId tenantId = DmTenantId.of("tenant-123");
+        DmWorkspaceId workspaceId = DmWorkspaceId.of("workspace-456");
         String contactPointHash = "abc123def456";
 
         DataSubjectRequest request = DataSubjectRequest.builder()
@@ -48,8 +48,8 @@ class DataSubjectRequestTest {
     void complete_marksRequestAsCompletedWithEvidence() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_EXPORT)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -69,8 +69,8 @@ class DataSubjectRequestTest {
     void complete_throwsWhenRequestIsNotPending() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_EXPORT)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -88,8 +88,8 @@ class DataSubjectRequestTest {
     void reject_marksRequestAsRejectedWithReason() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_DELETION)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -109,8 +109,8 @@ class DataSubjectRequestTest {
     void reject_throwsWhenRequestIsNotPending() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_DELETION)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -128,8 +128,8 @@ class DataSubjectRequestTest {
     void markInProgress_marksRequestAsInProgress() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_CORRECTION)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -146,8 +146,8 @@ class DataSubjectRequestTest {
     void markInProgress_throwsWhenRequestIsNotPending() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_CORRECTION)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())
@@ -165,8 +165,8 @@ class DataSubjectRequestTest {
     void toString_redactsContactPointHashFromLogs() {
         DataSubjectRequest request = DataSubjectRequest.builder()
             .id("request-789")
-            .tenantId(new DmTenantId("tenant-123"))
-            .workspaceId(new DmWorkspaceId("workspace-456"))
+            .tenantId(DmTenantId.of("tenant-123"))
+            .workspaceId(DmWorkspaceId.of("workspace-456"))
             .requestType(DataSubjectRequest.RequestType.DATA_EXPORT)
             .contactPointHash("abc123def456")
             .submittedAt(java.time.Instant.now())

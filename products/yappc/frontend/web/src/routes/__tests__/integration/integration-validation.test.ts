@@ -13,11 +13,14 @@ import { describe, it, expect } from 'vitest';
 
 describe('Feature 6.4: Integration Test Infrastructure', () => {
   const rootDir = process.cwd();
-  // Support running tests from repository root or from the package root (apps/web).
-  // If cwd already points to apps/web, use it directly; otherwise prefix with apps/web.
-  const packageRoot = rootDir.endsWith(path.join('apps', 'web'))
+  // Support running tests from repository root or from the package root.
+  // The package lives at products/yappc/frontend/web; cwd will be that directory.
+  const possibleSuffix = path.join('products', 'yappc', 'frontend', 'web');
+  const packageRoot = rootDir.endsWith(possibleSuffix)
     ? rootDir
-    : path.join(rootDir, 'apps', 'web');
+    : rootDir.endsWith('web')
+      ? rootDir
+      : path.join(rootDir, 'products', 'yappc', 'frontend', 'web');
   const integrationTestDir = path.join(
     packageRoot,
     'src',
@@ -53,7 +56,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
   describe('CanvasScene Integration Test Content', () => {
     const canvasSceneSpec = path.join(
       integrationTestDir,
-      'CanvasScene.integration.spec.tsx'
+      'CanvasScene.integration.test.tsx'
     );
 
     it('imports required testing libraries', () => {
@@ -102,7 +105,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
   describe('PaletteDragDrop Integration Test Content', () => {
     const paletteDragDropSpec = path.join(
       integrationTestDir,
-      'PaletteDragDrop.integration.spec.tsx'
+      'PaletteDragDrop.integration.test.tsx'
     );
 
     it('imports DnD libraries', () => {
@@ -159,7 +162,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('CanvasScene integration spec validates mount and update flow', () => {
       const canvasSceneSpec = path.join(
         integrationTestDir,
-        'CanvasScene.integration.spec.tsx'
+        'CanvasScene.integration.test.tsx'
       );
       const content = fs.readFileSync(canvasSceneSpec, 'utf-8');
 
@@ -178,7 +181,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('Palette drag integration test covers DnD metadata', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
 
@@ -200,7 +203,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('uses Jotai Provider for state management', () => {
       const canvasSceneSpec = path.join(
         integrationTestDir,
-        'CanvasScene.integration.spec.tsx'
+        'CanvasScene.integration.test.tsx'
       );
       const content = fs.readFileSync(canvasSceneSpec, 'utf-8');
       expect(content).toContain('Provider');
@@ -210,7 +213,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('uses DndContext for drag-and-drop', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
       expect(content).toContain('DndContext');
@@ -220,7 +223,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('mocks React Flow dependencies', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
       expect(content).toContain("vi.mock('@xyflow/react'");
@@ -232,7 +235,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('CanvasScene spec has multiple test suites', () => {
       const canvasSceneSpec = path.join(
         integrationTestDir,
-        'CanvasScene.integration.spec.tsx'
+        'CanvasScene.integration.test.tsx'
       );
       const content = fs.readFileSync(canvasSceneSpec, 'utf-8');
       const describeBlocks = content.match(/describe\(/g) || [];
@@ -242,7 +245,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('PaletteDragDrop spec has multiple test suites', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
       const describeBlocks = content.match(/describe\(/g) || [];
@@ -252,7 +255,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('tests cover critical user flows', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
 
@@ -269,7 +272,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('CanvasScene spec has descriptive header comment', () => {
       const canvasSceneSpec = path.join(
         integrationTestDir,
-        'CanvasScene.integration.spec.tsx'
+        'CanvasScene.integration.test.tsx'
       );
       const content = fs.readFileSync(canvasSceneSpec, 'utf-8');
       expect(content).toContain('Feature 6.4');
@@ -279,7 +282,7 @@ describe('Feature 6.4: Integration Test Infrastructure', () => {
     it('PaletteDragDrop spec has descriptive header comment', () => {
       const paletteDragDropSpec = path.join(
         integrationTestDir,
-        'PaletteDragDrop.integration.spec.tsx'
+        'PaletteDragDrop.integration.test.tsx'
       );
       const content = fs.readFileSync(paletteDragDropSpec, 'utf-8');
       expect(content).toContain('Feature 6.4');

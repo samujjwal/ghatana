@@ -114,6 +114,9 @@ export function PriorityTasksList({
         setProcessingTasks(prev => new Set(prev).add(taskId));
         try {
             await onApprove(taskId);
+        } catch (error) {
+            // Keep UI stable when task actions fail; caller can surface errors externally.
+            console.error('[PriorityTasksList] approve failed', error);
         } finally {
             setProcessingTasks(prev => {
                 const next = new Set(prev);
@@ -130,6 +133,9 @@ export function PriorityTasksList({
         setProcessingTasks(prev => new Set(prev).add(taskId));
         try {
             await onReject(taskId);
+        } catch (error) {
+            // Keep UI stable when task actions fail; caller can surface errors externally.
+            console.error('[PriorityTasksList] reject failed', error);
         } finally {
             setProcessingTasks(prev => {
                 const next = new Set(prev);

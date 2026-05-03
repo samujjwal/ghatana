@@ -102,6 +102,7 @@ describe('CanvasAPIClient', () => {
                 ok: false,
                 status: 401,
                 statusText: 'Unauthorized',
+                text: async () => '',
             });
 
             await expect(client.saveSnapshot(mockSnapshot)).rejects.toMatchObject({
@@ -115,6 +116,7 @@ describe('CanvasAPIClient', () => {
                 ok: false,
                 status: 429,
                 statusText: 'Too Many Requests',
+                text: async () => '',
             });
 
             // 429 is 4xx — no retry, throws immediately
@@ -262,7 +264,7 @@ describe('CanvasAPIClient', () => {
     });
 
     describe('auth headers', () => {
-        it('should include auth token in requests', async () => {
+        it('should use cookie-based auth on requests', async () => {
             const authClient = new CanvasAPIClient({
                 baseURL: 'http://localhost:3000',
                 getAuthToken: () => 'test-token-123',
@@ -279,8 +281,9 @@ describe('CanvasAPIClient', () => {
             expect(fetchMock).toHaveBeenCalledWith(
                 expect.any(String),
                 expect.objectContaining({
+                    credentials: 'include',
                     headers: expect.objectContaining({
-                        Authorization: 'Bearer test-token-123',
+                        'Content-Type': 'application/json',
                     }),
                 })
             );

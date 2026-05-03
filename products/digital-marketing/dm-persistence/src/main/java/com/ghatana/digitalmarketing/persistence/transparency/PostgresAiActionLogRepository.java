@@ -117,7 +117,8 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                 int rowsAffected = stmt.executeUpdate();
                 if (rowsAffected == 0) {
                     throw new DmPersistenceException(
-                        "Optimistic lock failure: AI action log version mismatch for actionId=" + entry.actionId());
+                        "Optimistic lock failure: AI action log version mismatch for actionId=" + entry.actionId(),
+                        new IllegalStateException("Version mismatch"));
                 }
                 LOG.info("[DMOS-PERSIST] ai action log saved: actionId={} workspace={} type={} version={}",
                     entry.actionId(), entry.workspaceId(), entry.actionType(), entry.version());

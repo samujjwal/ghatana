@@ -30,10 +30,12 @@ public final class DeterministicAgentOrchestrationAdapter implements DmAgentOrch
         Map<String, Object> parameters,
         Duration timeout
     ) {
-        return Promise.ofBlocking(() -> {
+        try {
             logger.info("Using deterministic fallback for agent {}", agentType);
-            return generateDeterministicResponse(agentType, prompt, model);
-        });
+            return Promise.of(generateDeterministicResponse(agentType, prompt, model));
+        } catch (Exception e) {
+            return Promise.ofException(e);
+        }
     }
 
     @Override

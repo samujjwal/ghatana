@@ -18,6 +18,7 @@ import java.util.UUID;
  * @doc.type class
  * @doc.purpose Service implementation for attribution model operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public final class AttributionModelServiceImpl implements AttributionModelService {
 
@@ -55,13 +56,13 @@ public final class AttributionModelServiceImpl implements AttributionModelServic
     @Override
     public Promise<AttributionModel> getModel(String modelId) {
         return repository.findById(modelId)
-            .then(modelOpt -> modelOpt.orElseThrow(() -> new IllegalArgumentException("Attribution model not found: " + modelId)));
+            .then(modelOpt -> Promise.of(modelOpt.orElseThrow(() -> new IllegalArgumentException("Attribution model not found: " + modelId))));
     }
 
     @Override
     public Promise<AttributionModel> getActiveModel(DmWorkspaceId workspaceId) {
         return repository.findActiveByWorkspace(workspaceId)
-            .then(modelOpt -> modelOpt.orElseThrow(() -> new IllegalArgumentException("No active attribution model for workspace: " + workspaceId.getValue())));
+            .then(modelOpt -> Promise.of(modelOpt.orElseThrow(() -> new IllegalArgumentException("No active attribution model for workspace: " + workspaceId.getValue()))));
     }
 
     @Override

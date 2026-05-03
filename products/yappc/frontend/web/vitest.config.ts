@@ -154,6 +154,10 @@ export default defineConfig({
         find: 'react-dom/client',
         replacement: resolve(__dirname, 'node_modules/react-dom/client'),
       },
+      {
+        find: '@sentry/react',
+        replacement: resolve(__dirname, 'src/__mocks__/@sentry/react.ts'),
+      },
     ],
   },
   optimizeDeps: {

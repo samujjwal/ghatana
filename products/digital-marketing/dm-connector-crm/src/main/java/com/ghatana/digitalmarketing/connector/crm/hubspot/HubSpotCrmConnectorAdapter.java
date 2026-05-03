@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.concurrent.Executor;
 
 /**
  * HubSpot CRM connector adapter (DMOS-P3-002).
@@ -26,17 +27,19 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     private final HttpClient httpClient;
     private final String apiKey;
+    private final Executor executor;
 
-    public HubSpotCrmConnectorAdapter(String apiKey) {
+    public HubSpotCrmConnectorAdapter(String apiKey, Executor executor) {
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
         this.apiKey = apiKey;
+        this.executor = executor;
     }
 
     @Override
     public Promise<String> syncLead(String crmAccountId, String leadData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/crm/v3/objects/contacts";
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -61,7 +64,7 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     @Override
     public Promise<String> syncOpportunity(String crmAccountId, String opportunityData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/crm/v3/objects/deals";
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -86,7 +89,7 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     @Override
     public Promise<Void> linkAttribution(String crmObjectId, String attributionData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/crm/v3/objects/contacts/" + crmObjectId + "/associations/deals";
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -111,7 +114,7 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     @Override
     public Promise<String> resolveConflict(String crmObjectId, String conflictData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/crm/v3/objects/contacts/" + crmObjectId;
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -136,7 +139,7 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     @Override
     public Promise<Void> propagateConsent(String crmObjectId, String consentData) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/communication/v3/preferences/" + crmObjectId;
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -161,7 +164,7 @@ public final class HubSpotCrmConnectorAdapter implements CrmConnectorPort {
 
     @Override
     public Promise<CrmConnectorHealth> checkHealth() {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             String url = HUBSPOT_API_BASE + "/crm/v3/objects/contacts?limit=1";
 
             HttpRequest request = HttpRequest.newBuilder()

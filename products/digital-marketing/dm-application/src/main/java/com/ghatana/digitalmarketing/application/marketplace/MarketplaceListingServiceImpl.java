@@ -15,6 +15,7 @@ import java.util.UUID;
  * @doc.type class
  * @doc.purpose Service implementation for marketplace listing operations
  * @doc.layer application
+ * @doc.pattern Service
  */
 public final class MarketplaceListingServiceImpl implements MarketplaceListingService {
 
@@ -51,7 +52,7 @@ public final class MarketplaceListingServiceImpl implements MarketplaceListingSe
     @Override
     public Promise<MarketplaceListing> getListing(String listingId) {
         return repository.findById(listingId)
-            .then(listingOpt -> listingOpt.orElseThrow(() -> new IllegalArgumentException("Marketplace listing not found: " + listingId)));
+            .then(listingOpt -> Promise.of(listingOpt.orElseThrow(() -> new IllegalArgumentException("Marketplace listing not found: " + listingId))));
     }
 
     @Override

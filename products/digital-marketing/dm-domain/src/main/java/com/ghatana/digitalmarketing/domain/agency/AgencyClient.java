@@ -11,6 +11,7 @@ import java.time.Instant;
  * @doc.type class
  * @doc.purpose Represents an agency client in agency mode
  * @doc.layer domain
+ * @doc.pattern Entity
  */
 public final class AgencyClient {
 

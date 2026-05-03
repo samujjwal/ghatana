@@ -14,7 +14,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { IncidentManagementPanel } from '../IncidentManagementPanel';
-import type { ArtifactSummary, LifecycleArtifact } from '../../../services/canvas/lifecycle';
+import type { ArtifactSummary, LifecycleArtifact } from '../../../services/canvas/lifecycle/LifecycleArtifactService';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -30,7 +30,7 @@ const mockService = {
     getArtifactByKind: mockGetArtifactByKind,
 };
 
-vi.mock('../../../services/canvas/lifecycle', () => ({
+vi.mock('../../../services/canvas/lifecycle/LifecycleArtifactService', () => ({
     useLifecycleArtifacts: vi.fn(),
 }));
 
@@ -38,7 +38,7 @@ vi.mock('../../../providers/AuthProvider', () => ({
     useCurrentUser: vi.fn(),
 }));
 
-import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle';
+import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle/LifecycleArtifactService';
 import { useCurrentUser } from '../../../providers/AuthProvider';
 
 const mockUseLifecycleArtifacts = useLifecycleArtifacts as ReturnType<typeof vi.fn>;

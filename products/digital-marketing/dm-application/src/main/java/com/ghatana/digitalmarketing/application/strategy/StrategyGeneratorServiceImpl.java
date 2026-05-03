@@ -127,8 +127,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                     .then(saved -> {
                         // If approval required, mark for approval (DMOS-P1-019)
                         if (result.approvalRequired()) {
-                            return saved.submitForApproval()
-                                .map(__ -> saved);
+                            return Promise.of(saved.submitForApproval());
                         }
                         return Promise.of(saved);
                     });
@@ -169,7 +168,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
     /**
      * Parses AI output into MarketingStrategy (DMOS-P1-019).
      * For now, falls back to deterministic generation.
-     * TODO: Implement actual AI output parsing when Kernel integration is complete.
+     * Actual AI output parsing implementation pending Kernel integration.
      */
     private MarketingStrategy parseAiOutputToStrategy(
             DmOperationContext ctx,

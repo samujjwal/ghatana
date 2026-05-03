@@ -378,7 +378,8 @@ class DmosAiActionLogServletTest extends EventloopTestBase {
                 "Generated recommendation",
                 "Used approved context",
                 "strategy-1",
-                Instant.now()
+                Instant.now(),
+                0L
             );
         }
 

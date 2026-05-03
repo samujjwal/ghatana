@@ -3,7 +3,7 @@ package com.ghatana.platform.security.encryption.impl;
 import com.ghatana.platform.security.encryption.EncryptionService;
 import com.ghatana.platform.security.encryption.EncryptionProvider;
 import com.ghatana.platform.security.port.EncryptionPort;
-import io.activej.eventloop.Eventloop;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,9 +21,7 @@ import static org.mockito.Mockito.when;
  * @doc.layer core
  */
 @DisplayName("DefaultEncryptionProvider Tests")
-class DefaultEncryptionProviderTest {
-
-    private final Eventloop eventloop = Eventloop.create().withCurrentThread();
+class DefaultEncryptionProviderTest extends EventloopTestBase {
 
     @Test
     @DisplayName("Should encrypt and decrypt string correctly")
@@ -97,11 +95,4 @@ class DefaultEncryptionProviderTest {
         assertThat(provider.getKeyId()).isEqualTo("key-1");
     }
 
-    private <T> T runPromise(io.activej.promise.Promise<T> promise) {
-        try {
-            return promise.block();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

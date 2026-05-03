@@ -26,32 +26,34 @@ export interface CollaborationCursorsProps {
 // Cursor SVG Component
 // =============================================================================
 
-const CursorIcon: React.FC<{ color: string }> = ({ color }) => (
-  <svg
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M5.65376 12.4563L8.00376 21.0063L11.0038 14.0063L18.0038 11.0063L5.65376 4.00629L5.65376 12.4563Z"
-      fill={color}
-      stroke={color}
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M5.65376 12.4563L11.0038 14.0063"
-      stroke="white"
-      strokeWidth="1"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      opacity="0.5"
-    />
-  </svg>
-);
+const CursorIcon: React.FC<{ color: string }> = ({ color }) => {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M5.65376 12.4563L8.00376 21.0063L11.0038 14.0063L18.0038 11.0063L5.65376 4.00629L5.65376 12.4563Z"
+        fill={color}
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.65376 12.4563L11.0038 14.0063"
+        stroke="white"
+        strokeWidth="1"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.5"
+      />
+    </svg>
+  );
+};
 
 // =============================================================================
 // Single Cursor Component

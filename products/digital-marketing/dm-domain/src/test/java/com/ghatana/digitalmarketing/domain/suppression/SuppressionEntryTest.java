@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.domain.suppression;
 
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.privacy.ContactPoint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,10 +16,11 @@ class SuppressionEntryTest {
 
     private SuppressionEntry activeEntry() {
         Instant now = Instant.now();
+        String contactHash = ContactPoint.fromEmail("a@example.com").contactPointHash();
         return SuppressionEntry.builder()
             .id("sup-1")
             .workspaceId(DmWorkspaceId.of("ws-1"))
-            .email("a@example.com")
+            .contactPointHash(contactHash)
             .reason("unsubscribe")
             .active(true)
             .createdAt(now)
@@ -30,11 +32,12 @@ class SuppressionEntryTest {
     @Test
     @DisplayName("builder rejects blank id and email")
     void shouldRejectBlankFields() {
+        String contactHash = ContactPoint.fromEmail("a@example.com").contactPointHash();
         assertThatIllegalArgumentException()
             .isThrownBy(() -> SuppressionEntry.builder()
                 .id(" ")
                 .workspaceId(DmWorkspaceId.of("ws-1"))
-                .email("a@example.com")
+                .contactPointHash(contactHash)
                 .active(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -45,7 +48,7 @@ class SuppressionEntryTest {
             .isThrownBy(() -> SuppressionEntry.builder()
                 .id("sup-1")
                 .workspaceId(DmWorkspaceId.of("ws-1"))
-                .email(" ")
+                .contactPointHash(" ")
                 .active(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
@@ -97,10 +100,11 @@ class SuppressionEntryTest {
     @Test
     @DisplayName("reason defaults to empty string when null")
     void reasonDefaultsEmpty() {
+        String contactHash = ContactPoint.fromEmail("b@example.com").contactPointHash();
         SuppressionEntry e = SuppressionEntry.builder()
             .id("sup-2")
             .workspaceId(DmWorkspaceId.of("ws-1"))
-            .email("b@example.com")
+            .contactPointHash(contactHash)
             .active(false)
             .createdAt(Instant.now())
             .updatedAt(Instant.now())
@@ -112,11 +116,12 @@ class SuppressionEntryTest {
     @Test
     @DisplayName("null id throws NullPointerException")
     void nullIdThrows() {
+        String contactHash = ContactPoint.fromEmail("a@example.com").contactPointHash();
         assertThatExceptionOfType(NullPointerException.class)
             .isThrownBy(() -> SuppressionEntry.builder()
                 .id(null)
                 .workspaceId(DmWorkspaceId.of("ws-1"))
-                .email("a@example.com")
+                .contactPointHash(contactHash)
                 .active(true)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())

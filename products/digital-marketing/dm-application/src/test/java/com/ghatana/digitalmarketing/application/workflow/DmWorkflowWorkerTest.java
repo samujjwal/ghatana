@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.workflow;
 
+import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.command.DmCommandDispatcher;
 import com.ghatana.digitalmarketing.application.command.DmCommandHandler;
 import com.ghatana.digitalmarketing.application.command.DmCommandRepository;
@@ -10,8 +11,12 @@ import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowExecution;
 import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowStatus;
 import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowStep;
 import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowStepStatus;
+import com.ghatana.platform.observability.Metrics;
+import com.ghatana.platform.observability.TracingManager;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,16 +45,21 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
     private InMemoryWorkflowRepository workflowRepo;
     private InMemoryCommandRepository commandRepo;
     private DmWorkflowWorker worker;
+    private DmosObservability observability;
 
     @BeforeEach
     void setUp() {
         workflowRepo = new InMemoryWorkflowRepository();
         commandRepo  = new InMemoryCommandRepository();
+        MeterRegistry meterRegistry = new SimpleMeterRegistry();
+        Metrics metrics = new Metrics(meterRegistry);
+        TracingManager tracingManager = TracingManager.createNoOp();
+        observability = new DmosObservability(metrics, tracingManager);
         DmCommandDispatcher dispatcher = new DmCommandDispatcher(Map.of(
             DmCommandType.CAMPAIGN_CREATE, cmd -> Promise.of(null),
             DmCommandType.BUDGET_ADJUST,   cmd -> Promise.of(null)
         ));
-        worker = new DmWorkflowWorker(workflowRepo, commandRepo, dispatcher);
+        worker = new DmWorkflowWorker(workflowRepo, commandRepo, dispatcher, observability);
     }
 
     private DmWorkflowExecution pendingWorkflow(String correlationId, List<DmWorkflowStep> steps) {
@@ -134,13 +144,15 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
         DmCommandDispatcher failingDispatcher = new DmCommandDispatcher(Map.of(
             DmCommandType.CAMPAIGN_CREATE, cmd -> Promise.ofException(new RuntimeException("downstream fail"))
         ));
-        DmWorkflowWorker failWorker = new DmWorkflowWorker(workflowRepo, commandRepo, failingDispatcher);
+        DmWorkflowWorker failWorker = new DmWorkflowWorker(workflowRepo, commandRepo, failingDispatcher, observability);
 
         String corr = "corr-fail";
         DmWorkflowExecution wf = pendingWorkflow(corr, List.of(pendingStep("create-campaign-fail")));
         pendingCommand(corr, DmCommandType.CAMPAIGN_CREATE);
 
-        runPromise(() -> failWorker.tick("tenant-1"));
+        assertThatExceptionOfType(RuntimeException.class)
+            .isThrownBy(() -> runPromise(() -> failWorker.tick("tenant-1")))
+            .withMessageContaining("downstream fail");
 
         DmWorkflowExecution result = workflowRepo.store.get(wf.getId());
         assertThat(result.getStatus()).isEqualTo(DmWorkflowStatus.FAILED);
@@ -164,7 +176,9 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
             .build();
         workflowRepo.store.put(wf.getId(), wf);
 
-        runPromise(() -> worker.tick("tenant-1"));
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(() -> runPromise(() -> worker.tick("tenant-1")))
+            .withMessageContaining("No PENDING command");
 
         DmWorkflowExecution result = workflowRepo.store.get(wf.getId());
         assertThat(result.getStatus()).isEqualTo(DmWorkflowStatus.FAILED);
@@ -175,7 +189,7 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
     void constructor_rejectsNullWorkflowRepo() {
         assertThatExceptionOfType(NullPointerException.class)
             .isThrownBy(() -> new DmWorkflowWorker(null, commandRepo,
-                new DmCommandDispatcher(Map.of(DmCommandType.CAMPAIGN_CREATE, c -> Promise.of(null)))));
+                new DmCommandDispatcher(Map.of(DmCommandType.CAMPAIGN_CREATE, c -> Promise.of(null))), observability));
     }
 
     @Test
@@ -184,7 +198,7 @@ class DmWorkflowWorkerTest extends EventloopTestBase {
         DmCommandDispatcher dispatcher = new DmCommandDispatcher(
             Map.of(DmCommandType.CAMPAIGN_CREATE, c -> Promise.of(null)));
         assertThatExceptionOfType(IllegalArgumentException.class)
-            .isThrownBy(() -> new DmWorkflowWorker(workflowRepo, commandRepo, dispatcher, 0));
+            .isThrownBy(() -> new DmWorkflowWorker(workflowRepo, commandRepo, dispatcher, observability, 0));
     }
 
     // ── Test Doubles ──────────────────────────────────────────────────────────

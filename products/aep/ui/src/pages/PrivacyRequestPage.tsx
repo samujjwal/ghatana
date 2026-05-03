@@ -5,10 +5,10 @@
  * @doc.purpose Privacy request submission form
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
+import { Button, Input, TextArea } from '@ghatana/design-system';
 import {
   type ComplianceReport,
   type PrivacyPortabilityExport,
@@ -241,32 +241,28 @@ export function PrivacyRequestPage() {
             </span>
           </div>
 
-          <label className="mt-5 block">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Request summary</span>
-            <textarea
+          <div className="mt-5">
+            <TextArea
+              label="Request summary"
               value={requestSummary}
               onChange={(event) => setRequestSummary(event.target.value)}
               placeholder="Paste or summarise the privacy request here."
-              className="mt-2 min-h-32 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none ring-0 transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              resize="vertical"
             />
-          </label>
+          </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {PRIVACY_OPERATIONS.map((operation) => (
-              <button
+              <Button
                 key={operation.id}
                 type="button"
+                variant={selectedOperation === operation.id ? 'primary' : 'ghost'}
                 onClick={() => setSelectedOperation(operation.id)}
-                className={[
-                  'rounded-xl border px-4 py-3 text-left transition',
-                  selectedOperation === operation.id
-                    ? 'border-indigo-300 bg-indigo-50 dark:border-indigo-700 dark:bg-indigo-950/40'
-                    : 'border-gray-200 bg-gray-50 hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950',
-                ].join(' ')}
+                className="h-auto flex-col items-start px-4 py-3 text-left"
               >
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{operation.shortLabel}</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{operation.slaLabel}</p>
-              </button>
+                <p className="text-sm font-semibold">{operation.shortLabel}</p>
+                <p className="mt-1 text-xs opacity-70">{operation.slaLabel}</p>
+              </Button>
             ))}
           </div>
 
@@ -279,13 +275,14 @@ export function PrivacyRequestPage() {
                   </p>
                   <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{triage.rationale}</p>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedOperation(triage.suggestedOperation)}
-                  className="rounded-lg border border-indigo-300 px-3 py-2 text-xs font-medium text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-950"
                 >
                   Use recommendation
-                </button>
+                </Button>
               </div>
               <ConfidenceExplanation
                 className="mt-3"
@@ -309,19 +306,16 @@ export function PrivacyRequestPage() {
           )}
 
           <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <label className="block">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{activeOperation.identifierLabel}</span>
-              <input
-                value={identifierValue}
-                onChange={(event) =>
-                  selectedOperation === 'ccpa_opt_out'
-                    ? setConsumerId(event.target.value)
-                    : setSubjectId(event.target.value)
-                }
-                placeholder={selectedOperation === 'ccpa_opt_out' ? 'consumer-123' : 'subject-123'}
-                className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-              />
-            </label>
+            <Input
+              label={activeOperation.identifierLabel}
+              value={identifierValue}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                selectedOperation === 'ccpa_opt_out'
+                  ? setConsumerId(event.target.value)
+                  : setSubjectId(event.target.value)
+              }
+              placeholder={selectedOperation === 'ccpa_opt_out' ? 'consumer-123' : 'subject-123'}
+            />
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{activeOperation.label}</p>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{activeOperation.description}</p>
@@ -338,14 +332,14 @@ export function PrivacyRequestPage() {
           )}
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
-              onClick={() => requestMutation.mutate(selectedOperation)}
+              variant="primary"
               disabled={requestMutation.isPending || identifierValue.trim().length === 0}
-              className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => requestMutation.mutate(selectedOperation)}
             >
               {requestMutation.isPending ? 'Submitting…' : `Submit ${activeOperation.shortLabel} request`}
-            </button>
+            </Button>
             <a
               href={getGovernanceUrl()}
               className="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"

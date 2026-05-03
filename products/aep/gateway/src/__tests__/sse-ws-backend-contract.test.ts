@@ -269,4 +269,50 @@ describe('WebSocket /tail/events — backend proxy contract', () => {
 
     expect(JSON.parse(received)).toEqual({ client: 'ping' });
   });
+
+  it('forwards x-tenant-id from JWT claim to backend WS connection headers', { timeout: 10_000 }, async () => {
+    const capturedHeaders = await new Promise<Record<string, string | string[] | undefined>>((resolve, reject) => {
+      backendWss.once('connection', (_serverSide, req) => {
+        resolve(req.headers as Record<string, string | string[] | undefined>);
+      });
+      setTimeout(() => reject(new Error('Timeout: backend WS connection not received')), 8_000);
+    });
+
+    const token = validToken({ tenantId: 'tenant-xyz' });
+    const client = new WebSocket(`${gatewayBaseUrl}/tail/events?token=${token}`);
+    await new Promise<void>((resolve, reject) => {
+      client.once('open', resolve);
+      client.once('error', reject);
+      setTimeout(() => reject(new Error('Timeout: client did not connect')), 8_000);
+    });
+    client.close();
+
+    await capturedHeaders;
+    expect(capturedHeaders['x-tenant-id']).toBe('tenant-xyz');
+    expect(capturedHeaders['x-gateway-trusted']).toBe('true');
+  });
+
+  it('forwards x-correlation-id from client request to backend WS connection headers', { timeout: 10_000 }, async () => {
+    const capturedHeaders = await new Promise<Record<string, string | string[] | undefined>>((resolve, reject) => {
+      backendWss.once('connection', (_serverSide, req) => {
+        resolve(req.headers as Record<string, string | string[] | undefined>);
+      });
+      setTimeout(() => reject(new Error('Timeout: backend WS connection not received')), 8_000);
+    });
+
+    const correlationId = 'corr-abc-123';
+    const client = new WebSocket(
+      `${gatewayBaseUrl}/tail/events?token=${validToken()}&correlationId=${correlationId}`,
+    );
+    await new Promise<void>((resolve, reject) => {
+      client.once('open', resolve);
+      client.once('error', reject);
+      setTimeout(() => reject(new Error('Timeout: client did not connect')), 8_000);
+    });
+    client.close();
+
+    await capturedHeaders;
+    expect(capturedHeaders['x-correlation-id']).toBe(correlationId);
+    expect(capturedHeaders['x-gateway-source']).toBe('aep-gateway');
+  });
 });
