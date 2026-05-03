@@ -9,6 +9,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("WebsiteAuditReport")
 class WebsiteAuditReportTest {
@@ -97,5 +98,36 @@ class WebsiteAuditReportTest {
                 .generatedAt(Instant.now())
                 .generatedBy(" ")
                 .build());
+    }
+
+    @Test
+    @DisplayName("finding rejects null severity and null/blank string fields")
+    void shouldRejectNullAndBlankFindingFields() {
+        assertThatNullPointerException()
+            .isThrownBy(() -> new WebsiteAuditFinding(null, "SEO", "ev", "rat", "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, null, "ev", "rat", "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", null, "rat", "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", " ", "rat", "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", "ev", null, "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", "ev", " ", "action", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", "ev", "rat", null, "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", "ev", "rat", " ", "https://url"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new WebsiteAuditFinding(AuditSeverity.INFO, "SEO", "ev", "rat", "action", null));
     }
 }

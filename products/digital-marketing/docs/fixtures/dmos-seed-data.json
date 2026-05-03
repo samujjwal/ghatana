@@ -1,0 +1,130 @@
+{
+  "_comment": "DMOS seed data fixtures for local development, integration tests, and demo environments.",
+  "_version": "1.0.0",
+
+  "tenants": [
+    {
+      "tenantId": "tenant-demo-001",
+      "displayName": "Acme HVAC Services",
+      "plan": "PROFESSIONAL",
+      "createdAt": "2026-01-15T10:00:00Z"
+    },
+    {
+      "tenantId": "tenant-demo-002",
+      "displayName": "Riverside Dental Group",
+      "plan": "STARTER",
+      "createdAt": "2026-02-01T08:30:00Z"
+    }
+  ],
+
+  "workspaces": [
+    {
+      "workspaceId": "ws-demo-001",
+      "tenantId": "tenant-demo-001",
+      "name": "Acme HVAC - Main",
+      "status": "ACTIVE"
+    },
+    {
+      "workspaceId": "ws-demo-002",
+      "tenantId": "tenant-demo-002",
+      "name": "Riverside Dental - Primary",
+      "status": "ACTIVE"
+    }
+  ],
+
+  "brandProfiles": [
+    {
+      "brandId": "brand-demo-001",
+      "workspaceId": "ws-demo-001",
+      "businessName": "Acme HVAC Services",
+      "primaryServiceArea": "Phoenix, AZ",
+      "primaryOffer": "Residential HVAC installation and repair",
+      "targetAudience": "Homeowners in Phoenix metro aged 30-65",
+      "monthlyBudget": 3000,
+      "websiteUrl": "https://acmehvac.example.com"
+    },
+    {
+      "brandId": "brand-demo-002",
+      "workspaceId": "ws-demo-002",
+      "businessName": "Riverside Dental Group",
+      "primaryServiceArea": "Austin, TX",
+      "primaryOffer": "Cosmetic and family dentistry",
+      "targetAudience": "Families in Austin metro",
+      "monthlyBudget": 2000,
+      "websiteUrl": "https://riversidedental.example.com"
+    }
+  ],
+
+  "intakeProfiles": [
+    {
+      "profileId": "intake-demo-001",
+      "workspaceId": "ws-demo-001",
+      "businessName": "Acme HVAC Services",
+      "serviceArea": "Phoenix, AZ",
+      "primaryOffer": "Residential HVAC",
+      "monthlyBudget": 3000,
+      "currentChannels": ["GOOGLE_SEARCH", "FACEBOOK"],
+      "goals": ["INCREASE_LEADS", "REDUCE_COST_PER_LEAD"],
+      "intakeCompletionPct": 90,
+      "completedAt": "2026-03-10T14:22:00Z"
+    }
+  ],
+
+  "websiteAuditReports": [
+    {
+      "reportId": "audit-demo-001",
+      "workspaceId": "ws-demo-001",
+      "websiteUrl": "https://acmehvac.example.com",
+      "findings": [
+        {
+          "severity": "HIGH",
+          "category": "SEO",
+          "evidence": "Missing meta description on homepage",
+          "rationale": "Meta descriptions improve organic CTR by up to 5%",
+          "recommendedAction": "Add a 150-160 character meta description to the homepage",
+          "sourceUrl": "https://acmehvac.example.com"
+        },
+        {
+          "severity": "MEDIUM",
+          "category": "TRACKING",
+          "evidence": "Google Analytics 4 tag not detected",
+          "rationale": "Without conversion tracking, ad campaign optimization is impossible",
+          "recommendedAction": "Install GA4 and configure conversion events for form submissions",
+          "sourceUrl": "https://acmehvac.example.com"
+        }
+      ],
+      "generatedAt": "2026-03-10T14:30:00Z",
+      "generatedBy": "system"
+    }
+  ],
+
+  "budgetRecommendations": [
+    {
+      "recommendationId": "budget-demo-001",
+      "workspaceId": "ws-demo-001",
+      "monthlyBudget": 3000,
+      "channelAllocations": [
+        {"channelType": "GOOGLE_SEARCH", "allocatedBudget": 2100, "rationale": "Primary lead-gen channel"},
+        {"channelType": "FACEBOOK", "allocatedBudget": 600, "rationale": "Retargeting and brand awareness"},
+        {"channelType": "CONTENT_MARKETING", "allocatedBudget": 300, "rationale": "Long-term SEO investment"}
+      ],
+      "status": "APPROVED",
+      "generatedAt": "2026-03-11T09:00:00Z"
+    }
+  ],
+
+  "principals": [
+    {
+      "principalId": "user-demo-admin",
+      "tenantId": "tenant-demo-001",
+      "email": "admin@acmehvac.example.com",
+      "roles": ["ADMIN", "CAMPAIGN_MANAGER"]
+    },
+    {
+      "principalId": "user-demo-viewer",
+      "tenantId": "tenant-demo-001",
+      "email": "viewer@acmehvac.example.com",
+      "roles": ["VIEWER"]
+    }
+  ]
+}

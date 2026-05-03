@@ -10,6 +10,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 
 @DisplayName("BusinessIntakeProfile")
 class BusinessIntakeProfileTest {
@@ -151,5 +152,35 @@ class BusinessIntakeProfileTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> validBudget.submit("  ", 0.6, List.of(), now.plusSeconds(1)))
             .withMessageContaining("aiSummary");
+    }
+
+    @Test
+    @DisplayName("rejects null intakeId, blank intakeId, blank createdBy")
+    void shouldRejectNullAndBlankBuilderRequirements() {
+        Instant now = Instant.now();
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> BusinessIntakeProfile.builder()
+                .intakeId(null)
+                .workspaceId(DmWorkspaceId.of("ws-1"))
+                .createdAt(now).updatedAt(now).createdBy("user-1").build());
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> BusinessIntakeProfile.builder()
+                .intakeId("  ")
+                .workspaceId(DmWorkspaceId.of("ws-1"))
+                .createdAt(now).updatedAt(now).createdBy("user-1").build());
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> BusinessIntakeProfile.builder()
+                .intakeId("intake-x")
+                .workspaceId(DmWorkspaceId.of("ws-1"))
+                .createdAt(now).updatedAt(now).createdBy("  ").build());
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> BusinessIntakeProfile.builder()
+                .intakeId("intake-x")
+                .workspaceId(null)
+                .createdAt(now).updatedAt(now).createdBy("user-1").build());
     }
 }

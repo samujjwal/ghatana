@@ -122,6 +122,43 @@ tasks.register<ValidatePatternsTask>("validateNoMockingFrameworkUsage") {
     failurePrefix.set("Test realism gate failed")
 }
 
+tasks.register<ValidatePatternsTask>("validateNoSecurityAntiPatterns") {
+    group = "verification"
+    description = "Fails if production source contains DMOS security anti-patterns (hardcoded secrets, insecure defaults)."
+
+    sourceFiles.from(
+        sourceExtensions.map { ext ->
+            project.layout.projectDirectory.asFileTree.matching {
+                include("src/main/**/*.$ext")
+            }
+        }
+    )
+
+    forbiddenPatterns.set(
+        listOf(
+            // Hardcoded secret or key patterns
+            "password\\s*=\\s*\"[^\"]{4,}\"",
+            "secret\\s*=\\s*\"[^\"]{4,}\"",
+            "apiKey\\s*=\\s*\"[^\"]{4,}\"",
+            // Disabling SSL/TLS verification
+            "setHostnameVerifier\\s*\\(\\s*\\(\\s*.*?\\)\\s*->\\s*true",
+            "ALLOW_ALL_HOSTNAME_VERIFIER",
+            "TrustAllX509TrustManager",
+            "trustAll",
+            // Using MD5 or SHA1 for security-sensitive operations
+            "MessageDigest\\.getInstance\\s*\\(\\s*\"MD5\"",
+            "MessageDigest\\.getInstance\\s*\\(\\s*\"SHA-1\""
+        )
+    )
+    violationPrefix.set("forbidden security anti-pattern")
+    failurePrefix.set("Security review gate failed")
+}
+
 tasks.named("check") {
-    dependsOn("validateNoProductionStubs", "validateNoTestTheatre", "validateNoMockingFrameworkUsage")
+    dependsOn(
+        "validateNoProductionStubs",
+        "validateNoTestTheatre",
+        "validateNoMockingFrameworkUsage",
+        "validateNoSecurityAntiPatterns"
+    )
 }

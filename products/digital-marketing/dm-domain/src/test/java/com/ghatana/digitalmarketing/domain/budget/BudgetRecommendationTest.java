@@ -131,4 +131,48 @@ class BudgetRecommendationTest {
         assertThatThrownBy(() -> draft().toBuilder().changeThresholdPct(101.0).build())
             .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test @DisplayName("changeThresholdPct negative throws")
+    void changeThresholdNegativeThrows() {
+        assertThatThrownBy(() -> draft().toBuilder().changeThresholdPct(-1.0).build())
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test @DisplayName("blank rationale throws")
+    void blankRationaleThrows() {
+        assertThatThrownBy(() -> draft().toBuilder().rationale("").build())
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test @DisplayName("blank modelVersion throws")
+    void blankModelVersionThrows() {
+        assertThatThrownBy(() -> draft().toBuilder().modelVersion("").build())
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test @DisplayName("equals returns false for null")
+    void shouldNotEqualNull() { assertThat(draft()).isNotEqualTo(null); }
+
+    @Test @DisplayName("equals returns false for different type")
+    void shouldNotEqualDifferentType() { assertThat(draft()).isNotEqualTo("x"); }
+
+    @Test @DisplayName("equals and hashCode are id-based")
+    void shouldEqualById() {
+        assertThat(draft()).isEqualTo(draft());
+        assertThat(draft().hashCode()).isEqualTo(draft().hashCode());
+    }
+
+    @Test @DisplayName("all getters return expected values")
+    void shouldExposeAllGetters() {
+        BudgetRecommendation r = draft();
+        assertThat(r.getStrategyId()).isEqualTo("strat-1");
+        assertThat(r.getChangeThresholdPct()).isEqualTo(10.0);
+        assertThat(r.getAssumptions()).isEqualTo("30-day period, local service market");
+        assertThat(r.getModelVersion()).isEqualTo("v1.0");
+        assertThat(r.getGeneratedAt()).isNotNull();
+        assertThat(r.getGeneratedBy()).isEqualTo("system");
+        assertThat(r.getApprovedAt()).isNull();
+        assertThat(r.getApprovedBy()).isNull();
+        assertThat(r.toString()).contains("rec-1");
+    }
 }

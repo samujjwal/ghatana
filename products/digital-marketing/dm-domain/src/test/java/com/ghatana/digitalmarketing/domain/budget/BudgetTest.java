@@ -203,4 +203,22 @@ class BudgetTest {
         assertThat(copy).isEqualTo(original);
         assertThat(copy.getAllocatedAmount()).isEqualTo(original.getAllocatedAmount());
     }
+
+    @Test @DisplayName("blank currency throws")
+    void shouldRejectBlankCurrency() {
+        assertThatIllegalArgumentException().isThrownBy(() -> validDraft().toBuilder().currency("").build());
+    }
+
+    @Test @DisplayName("negative spentAmount throws")
+    void shouldRejectNegativeSpentAmount() {
+        assertThatIllegalArgumentException().isThrownBy(() -> validDraft().toBuilder().spentAmount(-1.0).build());
+    }
+
+    @Test @DisplayName("all getters return expected values")
+    void shouldExposeAllGetters() {
+        Budget b = validDraft();
+        assertThat(b.getCampaignId()).isNotNull();
+        assertThat(b.getCreatedBy()).isNotNull();
+        assertThat(b.toString()).isNotNull();
+    }
 }

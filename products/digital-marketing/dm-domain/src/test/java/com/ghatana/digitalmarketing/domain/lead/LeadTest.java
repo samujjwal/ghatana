@@ -127,4 +127,12 @@ class LeadTest {
         assertThat(a).isNotEqualTo(null);
         assertThat(a).isNotEqualTo("string");
     }
+
+    @Test @DisplayName("all getters return expected values")
+    void shouldExposeAllGetters() {
+        Lead lead = newLead();
+        assertThat(lead.getEmail()).isNotNull();
+        assertThat(lead.getPhone()).isNotNull();
+        assertThat(lead.toString()).contains("lead-1");
+    }
 }

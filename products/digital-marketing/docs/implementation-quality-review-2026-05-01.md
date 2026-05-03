@@ -147,6 +147,38 @@ Latest JaCoCo snapshot after this update:
 - dm-api: line 89.82%, branch 89.53% (up from 82.67% / 86.05% in previous snapshot)
 - dm-integration-tests: counters not emitted for line/branch in current report structure
 
+## Update (2026-05-02): Execution and Analytics Checklist Reconciliation
+
+The implementation task checklist had drifted behind the codebase for the remaining execution and analytics tracks. A verification sweep confirmed that all tasks previously left unchecked in F2 and F3 are already implemented with dedicated application services and test coverage.
+
+Verification command:
+
+- ./gradlew --no-build-cache :products:digital-marketing:dm-application:check :products:digital-marketing:dm-api:check
+
+Result:
+
+- BUILD SUCCESSFUL
+
+Reconciled tasks now verified as COMPLETE:
+
+- DMOS-F2-012 Email follow-up execution or safe export (`DmEmailFollowUpServiceImpl`, `DmEmailFollowUpServiceImplTest`)
+- DMOS-F2-013 Preflight campaign safety checklist (`DmPreflightChecklistServiceImpl`, `DmPreflightChecklistServiceImplTest`)
+- DMOS-F2-014 Rollback and compensating actions (`DmRollbackActionServiceImpl`, `DmRollbackActionServiceImplTest`)
+- DMOS-F2-015 Kill switch (`DmKillSwitchServiceImpl`, `DmKillSwitchServiceImplTest`)
+- DMOS-F2-016 MVP analytics event collection (`DmAnalyticsEventServiceImpl`, `DmAnalyticsEventServiceImplTest`)
+- DMOS-F2-017 Last-click/source attribution MVP (`DmAttributionRecordService`, `DmAttributionRecordServiceImplTest`)
+- DMOS-F2-018 MVP analytics dashboard (`DmAnalyticsDashboardServiceImpl`, `DmAnalyticsDashboardServiceImplTest`)
+- DMOS-F2-019 Basic performance report generator (`DmPerformanceReportServiceImpl`, `DmPerformanceReportServiceImplTest`)
+- DMOS-F2-020 Self-marketing tenant isolation (`DmTenantProfileServiceImpl`, `DmTenantProfileServiceImplTest`)
+- DMOS-F3-001 Recommendation engine (`DmEngineRecommendationServiceImpl`, `DmEngineRecommendationServiceImplTest`)
+- DMOS-F3-002 Budget pacing and alerting (`DmBudgetAlertServiceImpl`, `DmBudgetAlertServiceImplTest`)
+- DMOS-F3-003 Experiment model and A/B test framework (`DmExperimentServiceImpl`, `DmExperimentServiceImplTest`)
+- DMOS-F3-004 Playbook versioning and promotion workflow (`DmPlaybookVersionServiceImpl`, `DmPlaybookVersionServiceImplTest`)
+- DMOS-F3-005 Agent evaluation suite (`DmAgentEvaluationServiceImpl`, `DmAgentEvaluationServiceImplTest`)
+- DMOS-F3-006 Weekly/monthly narrative performance reviews (`DmNarrativeReviewServiceImpl`, `DmNarrativeReviewServiceImplTest`)
+
+The checklist in `products/digital-marketing/docs/implementation-task-checklist.md` has been updated to reflect this verified state.
+
 ## Production-Grade Gaps Blocking Plan Completion
 
 1. Coverage gap to 100% remains significant, especially dm-api and branch coverage in multiple modules.

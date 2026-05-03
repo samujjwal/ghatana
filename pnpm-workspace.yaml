@@ -13,6 +13,7 @@ packages:
   - "products/aep/ui"
   - "products/aep/gateway"
   - "products/phr/apps/*"
+  - "products/digital-marketing/ui"
 
   # YAPPC frontend (existing)
   - "products/yappc/frontend"

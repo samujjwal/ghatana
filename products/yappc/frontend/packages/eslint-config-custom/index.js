@@ -30,7 +30,7 @@ const config = {
                 paths: [
                     {
                         name: '@ghatana/yappc-ui',
-                        message: 'Deprecated: use @yappc/ui instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
+                        message: 'Deprecated: use yappc-ui instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
                     },
                     {
                         name: '@ghatana/yappc-canvas',
@@ -38,7 +38,7 @@ const config = {
                     },
                     {
                         name: '@ghatana/yappc-ai',
-                        message: 'Deprecated: use @yappc/ai instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
+                        message: 'Deprecated: use yappc-ai instead. See LIBRARY_CONSOLIDATION_PLAN.md.',
                     },
                     {
                         name: '@ghatana/yappc-ide',
@@ -48,7 +48,7 @@ const config = {
                 patterns: [
                     {
                         group: ['@ghatana/yappc-ui/*'],
-                        message: 'Deprecated: use @yappc/ui/* instead.',
+                        message: 'Deprecated: use yappc-ui/* instead.',
                     },
                     {
                         group: ['@ghatana/yappc-canvas/*'],
@@ -56,7 +56,7 @@ const config = {
                     },
                     {
                         group: ['@ghatana/yappc-ai/*'],
-                        message: 'Deprecated: use @yappc/ai/* instead.',
+                        message: 'Deprecated: use yappc-ai/* instead.',
                     },
                     {
                         group: ['@ghatana/yappc-*'],
