@@ -14,6 +14,7 @@ dependencies {
     api(project(":products:digital-marketing:dm-kernel-bridge"))
     api(project(":platform-kernel:kernel-core"))
     api(project(":platform:java:core"))
+    api(project(":platform:java:observability"))
     api(project(":platform-plugins:plugin-compliance"))
 
     compileOnly(libs.spotbugs.annotations)
@@ -42,15 +43,18 @@ tasks.jacocoTestReport {
 tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
+            // DMOS-P2-001: Raise coverage thresholds gradually
+            // Critical application logic requires high coverage
+            // In CI, enforce 100% coverage on changed files via diff-based coverage tools
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.95".toBigDecimal()
+                minimum = "0.97".toBigDecimal() // Raised from 0.95
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.82".toBigDecimal()
+                minimum = "0.92".toBigDecimal() // Raised from 0.82
             }
         }
     }

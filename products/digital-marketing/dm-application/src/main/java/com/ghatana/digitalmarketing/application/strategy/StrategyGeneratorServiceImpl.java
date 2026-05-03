@@ -1,6 +1,8 @@
 package com.ghatana.digitalmarketing.application.strategy;
 
 import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
+import com.ghatana.digitalmarketing.application.ai.DmAgentOrchestrationPort;
+import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -23,14 +25,17 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Deterministic 30-day marketing strategy generator.
+ * Deterministic 30-day marketing strategy generator with governed agent workflow support (DMOS-P1-019).
  *
  * <p>Generates an MVP-scoped strategy limited to Google Search, landing page, and email follow-up
  * channels. Uses intake, audit, research, and budget signals to derive goals, campaign plans,
  * budget cap, assumptions, and a measurement plan.</p>
  *
+ * <p>When AI is enabled, uses the governed agent workflow service for strategy generation with
+ * AI action logging, confidence tracking, and approval routing.</p>
+ *
  * @doc.type class
- * @doc.purpose Service implementation that generates and manages workspace-scoped 30-day marketing strategies
+ * @doc.purpose Service implementation that generates and manages workspace-scoped 30-day marketing strategies (DMOS-P1-019)
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -42,12 +47,21 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final MarketingStrategyRepository repository;
+    private final GovernedAgentWorkflowService governedWorkflowService;
+
+    public StrategyGeneratorServiceImpl(
+            DigitalMarketingKernelAdapter kernelAdapter,
+            MarketingStrategyRepository repository,
+            GovernedAgentWorkflowService governedWorkflowService) {
+        this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
+        this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this.governedWorkflowService = governedWorkflowService; // Optional for governed AI workflow
+    }
 
     public StrategyGeneratorServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             MarketingStrategyRepository repository) {
-        this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
-        this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this(kernelAdapter, repository, null);
     }
 
     @Override
@@ -69,12 +83,102 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                 if (!authorized) {
                     return Promise.ofException(new SecurityException("Actor not authorized to generate a strategy"));
                 }
+
+                // Use governed agent workflow if available (DMOS-P1-019)
+                if (governedWorkflowService != null) {
+                    return generateStrategyWithGovernedWorkflow(ctx, command);
+                }
+
+                // Fallback to deterministic generation
                 MarketingStrategy strategy = buildStrategy(ctx, command);
                 return repository.save(strategy)
                     .then(saved -> kernelAdapter.recordAudit(ctx, saved.getStrategyId(),
                             "strategy-generated", Map.of("modelVersion", MODEL_VERSION))
                         .map(__ -> saved));
             });
+    }
+
+    /**
+     * Generates strategy using governed agent workflow (DMOS-P1-019).
+     */
+    private Promise<MarketingStrategy> generateStrategyWithGovernedWorkflow(
+            DmOperationContext ctx,
+            GenerateStrategyCommand command) {
+        String prompt = buildPromptFromCommand(command);
+        return governedWorkflowService.executeGovernedWorkflow(
+                DmAgentOrchestrationPort.AgentType.STRATEGY_GENERATOR,
+                prompt,
+                "gpt-4",
+                Map.of(),
+                ctx.getTenantId(),
+                ctx.getWorkspaceId(),
+                ctx.getActor().getPrincipalId()
+            )
+            .then(result -> {
+                if (!result.success()) {
+                    LOG.error("Governed workflow failed: {}", result.errorMessage());
+                    // Fallback to deterministic generation on failure
+                    return generateDeterministicStrategy(ctx, command);
+                }
+
+                // Parse AI output into MarketingStrategy
+                MarketingStrategy strategy = parseAiOutputToStrategy(ctx, command, result);
+                return repository.save(strategy)
+                    .then(saved -> {
+                        // If approval required, mark for approval (DMOS-P1-019)
+                        if (result.approvalRequired()) {
+                            return saved.submitForApproval()
+                                .map(__ -> saved);
+                        }
+                        return Promise.of(saved);
+                    });
+            });
+    }
+
+    /**
+     * Generates strategy deterministically (fallback).
+     */
+    private Promise<MarketingStrategy> generateDeterministicStrategy(
+            DmOperationContext ctx,
+            GenerateStrategyCommand command) {
+        MarketingStrategy strategy = buildStrategy(ctx, command);
+        return repository.save(strategy)
+            .then(saved -> kernelAdapter.recordAudit(ctx, saved.getStrategyId(),
+                    "strategy-generated", Map.of("modelVersion", MODEL_VERSION))
+                .map(__ -> saved));
+    }
+
+    /**
+     * Builds prompt from command for AI generation (DMOS-P1-019).
+     */
+    private String buildPromptFromCommand(GenerateStrategyCommand command) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Generate a 30-day marketing strategy for a local business. ");
+        prompt.append("Service area: ").append(command.serviceArea()).append(". ");
+        prompt.append("Primary offer: ").append(command.primaryOffer()).append(". ");
+        prompt.append("Monthly budget: ").append(command.monthlyBudget()).append(". ");
+        if (command.auditFindingCount() > 0) {
+            prompt.append("Audit findings: ").append(command.auditFindingCount()).append(". ");
+        }
+        if (command.topCompetitorCount() > 0) {
+            prompt.append("Top competitors: ").append(command.topCompetitorCount()).append(". ");
+        }
+        return prompt.toString();
+    }
+
+    /**
+     * Parses AI output into MarketingStrategy (DMOS-P1-019).
+     * For now, falls back to deterministic generation.
+     * TODO: Implement actual AI output parsing when Kernel integration is complete.
+     */
+    private MarketingStrategy parseAiOutputToStrategy(
+            DmOperationContext ctx,
+            GenerateStrategyCommand command,
+            GovernedAgentWorkflowService.GovernedWorkflowResult result) {
+        // For now, use deterministic generation as placeholder
+        // In production, this would parse result.output() into MarketingStrategy
+        LOG.info("AI output received, using deterministic parsing as placeholder");
+        return buildStrategy(ctx, command);
     }
 
     @Override

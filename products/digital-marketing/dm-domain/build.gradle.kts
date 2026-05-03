@@ -37,15 +37,18 @@ tasks.jacocoTestReport {
 tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
+            // DMOS-P2-001: Raise coverage thresholds gradually
+            // Critical domain logic requires high coverage
+            // In CI, enforce 100% coverage on changed files via diff-based coverage tools
             limit {
                 counter = "LINE"
                 value = "COVEREDRATIO"
-                minimum = "0.93".toBigDecimal()
+                minimum = "0.95".toBigDecimal() // Raised from 0.93
             }
             limit {
                 counter = "BRANCH"
                 value = "COVEREDRATIO"
-                minimum = "0.85".toBigDecimal()
+                minimum = "0.90".toBigDecimal() // Raised from 0.85
             }
         }
     }

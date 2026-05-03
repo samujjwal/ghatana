@@ -10,6 +10,8 @@ import java.util.Objects;
  * and approver identity so the audit trail is self-contained even if the underlying
  * entity evolves after approval.</p>
  *
+ * <p>The {@code version} field enables optimistic locking for concurrent updates.</p>
+ *
  * @param requestId          stable approval request ID
  * @param targetType         the type of entity being approved
  * @param targetId           the entity identifier (content version ID, strategy ID, etc.)
@@ -19,6 +21,7 @@ import java.util.Objects;
  * @param riskLevel          numeric risk level 1-5 as documented by the routing rule
  * @param requiredApproverRole the role required to approve (e.g. "brand-manager", "exec-sponsor")
  * @param snapshotAt         timestamp when this snapshot was captured
+ * @param version            optimistic locking version, incremented on each update
  *
  * @doc.type class
  * @doc.purpose Immutable approval snapshot for DMOS approval workflow
@@ -34,7 +37,8 @@ public record ApprovalSnapshot(
         String validationResultId,
         int riskLevel,
         String requiredApproverRole,
-        Instant snapshotAt
+        Instant snapshotAt,
+        long version
 ) {
     /** Compact constructor — validates required fields and risk range. */
     public ApprovalSnapshot {
@@ -51,5 +55,6 @@ public record ApprovalSnapshot(
         if (snapshotSummary.isBlank())     throw new IllegalArgumentException("snapshotSummary must not be blank");
         if (requiredApproverRole.isBlank())throw new IllegalArgumentException("requiredApproverRole must not be blank");
         if (riskLevel < 1 || riskLevel > 5)throw new IllegalArgumentException("riskLevel must be 1-5, got: " + riskLevel);
+        if (version < 0)                    throw new IllegalArgumentException("version must be >= 0, got: " + version);
     }
 }

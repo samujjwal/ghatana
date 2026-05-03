@@ -81,7 +81,8 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
             "system", true, confidence,
             evidenceLinks, List.of(),
             "Summary for " + actionId, "Details for " + actionId,
-            relatedEntityId, Instant.parse("2026-01-10T10:00:00Z")
+            relatedEntityId, Instant.parse("2026-01-10T10:00:00Z"),
+            0L
         );
     }
 
@@ -158,7 +159,8 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
             "other-actor", false, null,
             List.of(), List.of(),
             "DIFFERENT SUMMARY", "DIFFERENT DETAILS", null,
-            Instant.parse("2026-02-01T00:00:00Z")
+            Instant.parse("2026-02-01T00:00:00Z"),
+            0L
         );
         runPromise(() -> repository.save(duplicate));
 
@@ -167,6 +169,61 @@ class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
         assertThat(found).isPresent();
         assertThat(found.get().summary()).isEqualTo("Summary for act-4");
         assertThat(found.get().actionType()).isEqualTo(AiActionType.VALIDATION_RESULT);
+    }
+
+    @Test
+    @DisplayName("save — increments version on each update")
+    void save_incrementsVersion() {
+        AiActionLogEntry entry = buildEntry(
+            "act-8", "ws-f", "corr-8",
+            AiActionType.DRAFT_GENERATED, AiActionStatus.EXECUTED,
+            null, null, List.of());
+        AiActionLogEntry saved = runPromise(() -> repository.save(entry));
+        assertThat(saved.version()).isEqualTo(1L);
+
+        AiActionLogEntry updated = new AiActionLogEntry(
+            "act-8", "ws-f", "corr-8",
+            AiActionType.DRAFT_GENERATED, AiActionStatus.COMPLETED,
+            "system", true, null,
+            List.of(), List.of(),
+            "Updated summary", "Updated details", null,
+            Instant.parse("2026-01-10T10:00:00Z"),
+            1L
+        );
+        AiActionLogEntry saved2 = runPromise(() -> repository.save(updated));
+        assertThat(saved2.version()).isEqualTo(2L);
+
+        Optional<AiActionLogEntry> found =
+            runPromise(() -> repository.findById("ws-f", "act-8"));
+        assertThat(found).isPresent();
+        assertThat(found.get().version()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("save — throws optimistic lock exception when version mismatch")
+    void save_throwsOptimisticLockException_onVersionMismatch() {
+        AiActionLogEntry entry = buildEntry(
+            "act-9", "ws-g", "corr-9",
+            AiActionType.ACTION_EXECUTED, AiActionStatus.EXECUTED,
+            null, null, List.of());
+        AiActionLogEntry saved = runPromise(() -> repository.save(entry));
+        assertThat(saved.version()).isEqualTo(1L);
+
+        // Try to update with wrong version
+        AiActionLogEntry stale = new AiActionLogEntry(
+            "act-9", "ws-g", "corr-9",
+            AiActionType.ACTION_EXECUTED, AiActionStatus.COMPLETED,
+            "system", true, null,
+            List.of(), List.of(),
+            "Stale update", "Stale details", null,
+            Instant.parse("2026-01-10T10:00:00Z"),
+            0L
+        );
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException.class,
+            () -> runPromise(() -> repository.save(stale))
+        );
     }
 
     @Test

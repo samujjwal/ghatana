@@ -34,6 +34,8 @@ public enum DmCommandType {
     CONNECTOR_OAUTH_CONNECT,
     CONNECTOR_OAUTH_REFRESH,
     CONNECTOR_SYNC_PERFORMANCE,
+    GOOGLE_ADS_CAMPAIGN_CREATE,
+    GOOGLE_ADS_CAMPAIGN_ROLLBACK,
 
     // ── Lead and CRM commands ────────────────────────────────────────────────
     LEAD_CAPTURE_REGISTER,

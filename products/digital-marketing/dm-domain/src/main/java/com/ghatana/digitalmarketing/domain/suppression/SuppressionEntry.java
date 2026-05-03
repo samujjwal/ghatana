@@ -8,8 +8,11 @@ import java.util.Objects;
 /**
  * Domain entity representing a do-not-contact suppression entry.
  *
+ * <p>PII-safe implementation (DMOS-P1-014): Stores contact point hash instead of raw email/phone
+ * to protect PII. The raw contact information is never stored in the database.</p>
+ *
  * @doc.type class
- * @doc.purpose DMOS suppression and DNC record for contact channels
+ * @doc.purpose DMOS suppression and DNC record for contact channels (DMOS-P1-014)
  * @doc.layer product
  * @doc.pattern Entity
  */
@@ -17,7 +20,7 @@ public final class SuppressionEntry {
 
     private final String id;
     private final DmWorkspaceId workspaceId;
-    private final String email;
+    private final String contactPointHash;
     private final String reason;
     private final boolean active;
     private final Instant createdAt;
@@ -27,7 +30,7 @@ public final class SuppressionEntry {
     private SuppressionEntry(Builder builder) {
         this.id = Objects.requireNonNull(builder.id, "id must not be null");
         this.workspaceId = Objects.requireNonNull(builder.workspaceId, "workspaceId must not be null");
-        this.email = Objects.requireNonNull(builder.email, "email must not be null");
+        this.contactPointHash = Objects.requireNonNull(builder.contactPointHash, "contactPointHash must not be null");
         this.reason = builder.reason != null ? builder.reason : "";
         this.active = builder.active;
         this.createdAt = Objects.requireNonNull(builder.createdAt, "createdAt must not be null");
@@ -37,8 +40,8 @@ public final class SuppressionEntry {
         if (this.id.isBlank()) {
             throw new IllegalArgumentException("id must not be blank");
         }
-        if (this.email.isBlank()) {
-            throw new IllegalArgumentException("email must not be blank");
+        if (this.contactPointHash.isBlank()) {
+            throw new IllegalArgumentException("contactPointHash must not be blank");
         }
     }
 
@@ -52,9 +55,9 @@ public final class SuppressionEntry {
         return workspaceId;
     }
 
-    /** Returns the suppressed email address. */
-    public String getEmail() {
-        return email;
+    /** Returns the contact point hash (HMAC-SHA256) for suppression matching (DMOS-P1-014). */
+    public String getContactPointHash() {
+        return contactPointHash;
     }
 
     /** Returns the suppression reason. */
@@ -99,7 +102,7 @@ public final class SuppressionEntry {
         return new Builder()
             .id(id)
             .workspaceId(workspaceId)
-            .email(email)
+            .contactPointHash(contactPointHash)
             .reason(reason)
             .active(active)
             .createdAt(createdAt)
@@ -127,7 +130,7 @@ public final class SuppressionEntry {
     public static final class Builder {
         private String id;
         private DmWorkspaceId workspaceId;
-        private String email;
+        private String contactPointHash;
         private String reason;
         private boolean active;
         private Instant createdAt;
@@ -147,8 +150,8 @@ public final class SuppressionEntry {
             return this;
         }
 
-        public Builder email(String email) {
-            this.email = email;
+        public Builder contactPointHash(String contactPointHash) {
+            this.contactPointHash = contactPointHash;
             return this;
         }
 

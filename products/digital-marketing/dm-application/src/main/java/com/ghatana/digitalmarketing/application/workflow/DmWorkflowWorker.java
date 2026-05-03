@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.workflow;
 
+import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.command.DmCommandDispatcher;
 import com.ghatana.digitalmarketing.application.command.DmCommandRepository;
 import com.ghatana.digitalmarketing.domain.command.DmCommand;
@@ -11,9 +12,14 @@ import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowStep;
 import com.ghatana.digitalmarketing.domain.workflow.DmWorkflowStepStatus;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -37,6 +43,8 @@ import java.util.Objects;
  * governed by the command store. A step whose command is permanently failed causes the workflow
  * to fail.</p>
  *
+ * <p>Emits structured logs and metrics for observability (DMOS-P1-011).</p>
+ *
  * @doc.type class
  * @doc.purpose Drives step-by-step execution of active DMOS workflow executions (DMOS-P1-007)
  * @doc.layer product
@@ -51,23 +59,27 @@ public final class DmWorkflowWorker {
     private final DmWorkflowRepository workflowRepository;
     private final DmCommandRepository commandRepository;
     private final DmCommandDispatcher dispatcher;
+    private final DmosObservability observability;
     private final int batchSize;
 
     public DmWorkflowWorker(
             DmWorkflowRepository workflowRepository,
             DmCommandRepository commandRepository,
-            DmCommandDispatcher dispatcher) {
-        this(workflowRepository, commandRepository, dispatcher, DEFAULT_BATCH_SIZE);
+            DmCommandDispatcher dispatcher,
+            DmosObservability observability) {
+        this(workflowRepository, commandRepository, dispatcher, observability, DEFAULT_BATCH_SIZE);
     }
 
     public DmWorkflowWorker(
             DmWorkflowRepository workflowRepository,
             DmCommandRepository commandRepository,
             DmCommandDispatcher dispatcher,
+            DmosObservability observability,
             int batchSize) {
         this.workflowRepository = Objects.requireNonNull(workflowRepository, "workflowRepository must not be null");
         this.commandRepository  = Objects.requireNonNull(commandRepository, "commandRepository must not be null");
         this.dispatcher         = Objects.requireNonNull(dispatcher, "dispatcher must not be null");
+        this.observability     = Objects.requireNonNull(observability, "observability must not be null");
         if (batchSize <= 0) throw new IllegalArgumentException("batchSize must be > 0");
         this.batchSize = batchSize;
     }
@@ -87,36 +99,80 @@ public final class DmWorkflowWorker {
         if (tenantId.isBlank()) return Promise.ofException(
             new IllegalArgumentException("tenantId must not be blank"));
 
-        return Promises.toList(
-                workflowRepository.findByStatus(tenantId, DmWorkflowStatus.PENDING, batchSize),
-                workflowRepository.findActive(tenantId, batchSize))
-            .then(lists -> {
-                java.util.LinkedHashSet<DmWorkflowExecution> seen = new java.util.LinkedHashSet<>();
-                lists.forEach(seen::addAll);
-                List<DmWorkflowExecution> workflows = List.copyOf(seen);
+        MDC.put("tenantId", tenantId);
 
-                if (workflows.isEmpty()) {
-                    return Promise.of(null);
-                }
-                LOG.debug("[DMOS-WORKER] tick tenant={} workflows-to-process={}", tenantId, workflows.size());
-                List<Promise<Void>> tasks = workflows.stream()
-                    .map(wf -> processWorkflow(wf)
-                        .whenException(e -> LOG.error(
-                            "[DMOS-WORKER] error processing workflow id={} tenant={}: {}",
-                            wf.getId(), tenantId, e.getMessage(), e)))
-                    .toList();
-                return Promises.all(tasks).toVoid();
-            });
+        // Create span for workflow worker tick (DMOS-P1-011)
+        Span span = observability.createSpan("WORKFLOW_WORKER_TICK", "tenant.id", tenantId);
+        Instant tickStartTime = Instant.now();
+
+        try (Scope scope = span.makeCurrent()) {
+            return Promises.toList(
+                    workflowRepository.findByStatus(tenantId, DmWorkflowStatus.PENDING, batchSize),
+                    workflowRepository.findActive(tenantId, batchSize))
+                .then(lists -> {
+                    java.util.LinkedHashSet<DmWorkflowExecution> seen = new java.util.LinkedHashSet<>();
+                    lists.forEach(seen::addAll);
+                    List<DmWorkflowExecution> workflows = List.copyOf(seen);
+
+                    span.setAttribute("workflow.count", workflows.size());
+
+                    if (workflows.isEmpty()) {
+                        return Promise.of(null);
+                    }
+                    LOG.debug("[DMOS-WORKER] tick tenant={} workflows-to-process={}", tenantId, workflows.size());
+                    List<Promise<Void>> tasks = workflows.stream()
+                        .map(wf -> processWorkflow(wf)
+                            .whenException(e -> LOG.error(
+                                "[DMOS-WORKER] error processing workflow id={} tenant={}: {}",
+                                wf.getId(), tenantId, e.getMessage(), e)))
+                        .toList();
+                    return Promises.all(tasks).toVoid();
+                })
+                .whenComplete(result -> {
+                    long duration = ChronoUnit.MILLIS.between(tickStartTime, Instant.now());
+                    span.setAttribute("duration.ms", duration);
+                    LOG.debug("[DMOS-WORKER] tick completed in {}ms", duration);
+                    span.end();
+                    MDC.clear();
+                })
+                .whenException(e -> {
+                    long duration = ChronoUnit.MILLIS.between(tickStartTime, Instant.now());
+                    span.recordException(e);
+                    span.setAttribute("duration.ms", duration);
+                    LOG.error("[DMOS-WORKER] tick failed in {}ms: {}", duration, e.getMessage(), e);
+                    span.end();
+                    MDC.clear();
+                });
+        } catch (Exception e) {
+            span.recordException(e);
+            span.end();
+            MDC.clear();
+            return Promise.ofException(e);
+        }
     }
 
     // ── Private step execution logic ──────────────────────────────────────────
 
     private Promise<Void> processWorkflow(DmWorkflowExecution workflow) {
+        MDC.put("workflowId", workflow.getId());
+        MDC.put("workflowName", workflow.getName());
+
+        Instant workflowStartTime = Instant.now();
+
         if (workflow.getStatus() == DmWorkflowStatus.PENDING) {
-            return startWorkflow(workflow);
+            return startWorkflow(workflow)
+                .then(wf -> {
+                    long duration = ChronoUnit.MILLIS.between(workflowStartTime, Instant.now());
+                    observability.recordWorkflowDuration(workflow.getName(), duration);
+                    return executeCurrentStep(wf);
+                });
         }
         if (workflow.getStatus() == DmWorkflowStatus.RUNNING) {
-            return executeCurrentStep(workflow);
+            return executeCurrentStep(workflow)
+                .whenComplete(result -> {
+                    long duration = ChronoUnit.MILLIS.between(workflowStartTime, Instant.now());
+                    observability.recordWorkflowDuration(workflow.getName(), duration);
+                });
         }
         return Promise.of(null);
     }

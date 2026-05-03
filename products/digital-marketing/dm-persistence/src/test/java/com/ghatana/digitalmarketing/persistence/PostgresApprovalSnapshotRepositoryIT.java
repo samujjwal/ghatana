@@ -75,7 +75,8 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
             null,
             riskLevel,
             "brand-manager",
-            Instant.parse("2026-01-10T10:00:00Z")
+            Instant.parse("2026-01-10T10:00:00Z"),
+            0L
         );
     }
 
@@ -137,7 +138,8 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
 
         ApprovalSnapshot second = new ApprovalSnapshot(
             "req-4", ApprovalTargetType.OVERRIDE, "different-target", "ws-c",
-            "SHOULD NOT OVERWRITE", null, 5, "ceo", Instant.parse("2026-02-01T00:00:00Z")
+            "SHOULD NOT OVERWRITE", null, 5, "ceo", Instant.parse("2026-02-01T00:00:00Z"),
+            0L
         );
         runPromise(() -> repository.save("ws-c", second));
 
@@ -155,7 +157,8 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
         ApprovalSnapshot snapshot = new ApprovalSnapshot(
             "req-5", ApprovalTargetType.CONTENT_VERSION, "content-abc", "ws-d",
             "Content snapshot", "val-result-99", 2, "content-lead",
-            Instant.parse("2026-03-01T09:00:00Z")
+            Instant.parse("2026-03-01T09:00:00Z"),
+            0L
         );
         runPromise(() -> repository.save("ws-d", snapshot));
 
@@ -164,6 +167,49 @@ class PostgresApprovalSnapshotRepositoryIT extends EventloopTestBase {
 
         assertThat(found).isPresent();
         assertThat(found.get().validationResultId()).isEqualTo("val-result-99");
+    }
+
+    @Test
+    @DisplayName("save — increments version on each update")
+    void save_incrementsVersion() {
+        ApprovalSnapshot snapshot = buildSnapshot("req-8", "ws-f", ApprovalTargetType.STRATEGY, 3);
+        ApprovalSnapshot saved = runPromise(() -> repository.save("ws-f", snapshot));
+        assertThat(saved.version()).isEqualTo(1L);
+
+        ApprovalSnapshot updated = new ApprovalSnapshot(
+            "req-8", ApprovalTargetType.STRATEGY, "target-req-8", "ws-f",
+            "Updated summary", null, 3, "brand-manager",
+            Instant.parse("2026-01-10T10:00:00Z"),
+            1L
+        );
+        ApprovalSnapshot saved2 = runPromise(() -> repository.save("ws-f", updated));
+        assertThat(saved2.version()).isEqualTo(2L);
+
+        Optional<ApprovalSnapshot> found =
+            runPromise(() -> repository.findByRequestId("ws-f", "req-8"));
+        assertThat(found).isPresent();
+        assertThat(found.get().version()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("save — throws optimistic lock exception when version mismatch")
+    void save_throwsOptimisticLockException_onVersionMismatch() {
+        ApprovalSnapshot snapshot = buildSnapshot("req-9", "ws-g", ApprovalTargetType.BUDGET, 2);
+        ApprovalSnapshot saved = runPromise(() -> repository.save("ws-g", snapshot));
+        assertThat(saved.version()).isEqualTo(1L);
+
+        // Try to update with wrong version
+        ApprovalSnapshot stale = new ApprovalSnapshot(
+            "req-9", ApprovalTargetType.BUDGET, "target-req-9", "ws-g",
+            "Stale update", null, 2, "brand-manager",
+            Instant.parse("2026-01-10T10:00:00Z"),
+            0L
+        );
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            com.ghatana.digitalmarketing.persistence.campaign.DmPersistenceException.class,
+            () -> runPromise(() -> repository.save("ws-g", stale))
+        );
     }
 
     @Test

@@ -1,0 +1,56 @@
+{
+  "dashboard": {
+    "title": "DMOS Privacy & Security",
+    "uid": "dmos-privacy-security",
+    "tags": ["dmos", "privacy", "security"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "Authorization Failures",
+        "targets": [
+          {
+            "expr": "rate(dmos_authz_failure_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "PII Access Attempts",
+        "targets": [
+          {
+            "expr": "rate(dmos_pii_access_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Kill Switch Status",
+        "targets": [
+          {
+            "expr": "dmos_kill_switch_enabled"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "Credential Access Attempts",
+        "targets": [
+          {
+            "expr": "rate(dmos_credential_access_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Suppression List Size",
+        "targets": [
+          {
+            "expr": "dmos_suppression_list_size"
+          }
+        ],
+        "type": "stat"
+      }
+    ]
+  }
+}

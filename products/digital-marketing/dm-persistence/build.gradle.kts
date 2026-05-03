@@ -61,4 +61,5 @@ tasks.jacocoTestCoverageVerification {
 
 tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
+    // Migration validation is enforced via MigrationValidationIT
 }

@@ -37,13 +37,23 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
     private static final String UPSERT_SQL =
         "INSERT INTO dmos_approval_snapshots " +
         "  (request_id, workspace_id, target_type, target_id, target_workspace_id, " +
-        "   snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-        "ON CONFLICT (request_id, workspace_id) DO NOTHING";
+        "   snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at, version) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+        "ON CONFLICT (request_id, workspace_id) DO UPDATE SET " +
+        "  target_type = EXCLUDED.target_type, " +
+        "  target_id = EXCLUDED.target_id, " +
+        "  target_workspace_id = EXCLUDED.target_workspace_id, " +
+        "  snapshot_summary = EXCLUDED.snapshot_summary, " +
+        "  validation_result_id = EXCLUDED.validation_result_id, " +
+        "  risk_level = EXCLUDED.risk_level, " +
+        "  required_approver_role = EXCLUDED.required_approver_role, " +
+        "  snapshot_at = EXCLUDED.snapshot_at, " +
+        "  version = dmos_approval_snapshots.version + 1 " +
+        "WHERE dmos_approval_snapshots.version = ?";
 
     private static final String SELECT_SQL =
         "SELECT request_id, workspace_id, target_type, target_id, target_workspace_id, " +
-        "       snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at " +
+        "       snapshot_summary, validation_result_id, risk_level, required_approver_role, snapshot_at, version " +
         "FROM dmos_approval_snapshots " +
         "WHERE request_id = ? AND workspace_id = ?";
 
@@ -70,10 +80,27 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
                 stmt.setShort(8, (short) snapshot.riskLevel());
                 stmt.setString(9, snapshot.requiredApproverRole());
                 stmt.setTimestamp(10, Timestamp.from(snapshot.snapshotAt()));
-                stmt.executeUpdate();
-                LOG.info("[DMOS-PERSIST] approval snapshot saved: requestId={} workspace={} riskLevel={}",
-                    snapshot.requestId(), workspaceId, snapshot.riskLevel());
-                return snapshot;
+                stmt.setLong(11, snapshot.version());
+                stmt.setLong(12, snapshot.version());
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new DmPersistenceException(
+                        "Optimistic lock failure: approval snapshot version mismatch for requestId=" + snapshot.requestId());
+                }
+                LOG.info("[DMOS-PERSIST] approval snapshot saved: requestId={} workspace={} riskLevel={} version={}",
+                    snapshot.requestId(), workspaceId, snapshot.riskLevel(), snapshot.version());
+                return new ApprovalSnapshot(
+                    snapshot.requestId(),
+                    snapshot.targetType(),
+                    snapshot.targetId(),
+                    snapshot.targetWorkspaceId(),
+                    snapshot.snapshotSummary(),
+                    snapshot.validationResultId(),
+                    snapshot.riskLevel(),
+                    snapshot.requiredApproverRole(),
+                    snapshot.snapshotAt(),
+                    snapshot.version() + 1
+                );
             } catch (SQLException e) {
                 LOG.error("[DMOS-PERSIST] failed to save snapshot requestId={}: {}",
                     snapshot.requestId(), e.getMessage(), e);
@@ -117,7 +144,8 @@ public final class PostgresApprovalSnapshotRepository implements ApprovalSnapsho
             rs.getString("validation_result_id"),
             rs.getShort("risk_level"),
             rs.getString("required_approver_role"),
-            rs.getTimestamp("snapshot_at").toInstant()
+            rs.getTimestamp("snapshot_at").toInstant(),
+            rs.getLong("version")
         );
     }
 }

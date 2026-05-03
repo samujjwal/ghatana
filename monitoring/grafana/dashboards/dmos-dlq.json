@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "title": "DMOS Dead-Letter Queue",
+    "uid": "dmos-dlq",
+    "tags": ["dmos", "dlq"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "DLQ Entry Rate",
+        "targets": [
+          {
+            "expr": "rate(dmos_dlq_count_total[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "DLQ Size",
+        "targets": [
+          {
+            "expr": "dmos_dlq_size"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "DLQ Entries by Type",
+        "targets": [
+          {
+            "expr": "sum by (entity_type) (rate(dmos_dlq_count_total[5m]))"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "DLQ Entries by Reason",
+        "targets": [
+          {
+            "expr": "sum by (reason) (rate(dmos_dlq_count_total[5m]))"
+          }
+        ],
+        "type": "graph"
+      }
+    ]
+  }
+}

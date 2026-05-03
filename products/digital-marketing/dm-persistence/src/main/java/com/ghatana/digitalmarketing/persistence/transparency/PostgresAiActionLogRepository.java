@@ -44,21 +44,34 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
         "INSERT INTO dmos_ai_action_log " +
         "  (action_id, workspace_id, correlation_id, action_type, status, actor, " +
         "   initiated_by_ai, confidence, evidence_links, policy_checks, " +
-        "   summary, details, related_entity_id, occurred_at) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
-        "ON CONFLICT (action_id, workspace_id) DO NOTHING";
+        "   summary, details, related_entity_id, occurred_at, version) " +
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) " +
+        "ON CONFLICT (action_id, workspace_id) DO UPDATE SET " +
+        "  action_type = EXCLUDED.action_type, " +
+        "  status = EXCLUDED.status, " +
+        "  actor = EXCLUDED.actor, " +
+        "  initiated_by_ai = EXCLUDED.initiated_by_ai, " +
+        "  confidence = EXCLUDED.confidence, " +
+        "  evidence_links = EXCLUDED.evidence_links, " +
+        "  policy_checks = EXCLUDED.policy_checks, " +
+        "  summary = EXCLUDED.summary, " +
+        "  details = EXCLUDED.details, " +
+        "  related_entity_id = EXCLUDED.related_entity_id, " +
+        "  occurred_at = EXCLUDED.occurred_at, " +
+        "  version = dmos_ai_action_log.version + 1 " +
+        "WHERE dmos_ai_action_log.version = ?";
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT action_id, workspace_id, correlation_id, action_type, status, actor, " +
         "       initiated_by_ai, confidence, evidence_links, policy_checks, " +
-        "       summary, details, related_entity_id, occurred_at " +
+        "       summary, details, related_entity_id, occurred_at, version " +
         "FROM dmos_ai_action_log " +
         "WHERE action_id = ? AND workspace_id = ?";
 
     private static final String SELECT_BY_WORKSPACE_SQL =
         "SELECT action_id, workspace_id, correlation_id, action_type, status, actor, " +
         "       initiated_by_ai, confidence, evidence_links, policy_checks, " +
-        "       summary, details, related_entity_id, occurred_at " +
+        "       summary, details, related_entity_id, occurred_at, version " +
         "FROM dmos_ai_action_log " +
         "WHERE workspace_id = ? " +
         "  AND (? IS NULL OR correlation_id = ?) " +
@@ -96,10 +109,32 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
                 stmt.setString(12, entry.details());
                 stmt.setString(13, entry.relatedEntityId());
                 stmt.setTimestamp(14, Timestamp.from(entry.occurredAt()));
-                stmt.executeUpdate();
-                LOG.info("[DMOS-PERSIST] ai action log saved: actionId={} workspace={} type={}",
-                    entry.actionId(), entry.workspaceId(), entry.actionType());
-                return entry;
+                stmt.setLong(15, entry.version());
+                stmt.setLong(16, entry.version());
+                int rowsAffected = stmt.executeUpdate();
+                if (rowsAffected == 0) {
+                    throw new DmPersistenceException(
+                        "Optimistic lock failure: AI action log version mismatch for actionId=" + entry.actionId());
+                }
+                LOG.info("[DMOS-PERSIST] ai action log saved: actionId={} workspace={} type={} version={}",
+                    entry.actionId(), entry.workspaceId(), entry.actionType(), entry.version());
+                return new AiActionLogEntry(
+                    entry.actionId(),
+                    entry.workspaceId(),
+                    entry.correlationId(),
+                    entry.actionType(),
+                    entry.status(),
+                    entry.actor(),
+                    entry.initiatedByAi(),
+                    entry.confidence(),
+                    entry.evidenceLinks(),
+                    entry.policyChecks(),
+                    entry.summary(),
+                    entry.details(),
+                    entry.relatedEntityId(),
+                    entry.occurredAt(),
+                    entry.version() + 1
+                );
             } catch (SQLException e) {
                 LOG.error("[DMOS-PERSIST] failed to save action log entry actionId={}: {}",
                     entry.actionId(), e.getMessage(), e);
@@ -198,7 +233,8 @@ public final class PostgresAiActionLogRepository implements AiActionLogRepositor
             rs.getString("summary"),
             rs.getString("details"),
             rs.getString("related_entity_id"),
-            rs.getTimestamp("occurred_at").toInstant()
+            rs.getTimestamp("occurred_at").toInstant(),
+            rs.getLong("version")
         );
     }
 

@@ -1,0 +1,239 @@
+openapi: 3.0.3
+info:
+  title: DMOS API
+  version: 1.0.0
+  description: Digital Marketing Operations System API
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+paths:
+  /api/v1/approvals/pending:
+    get:
+      summary: List pending approvals
+      operationId: listPendingApprovals
+      tags:
+        - Approvals
+      responses:
+        '200':
+          description: List of pending approvals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingApprovalsResponse'
+
+  /api/v1/approvals/{requestId}:
+    get:
+      summary: Get approval by request ID
+      operationId: getApproval
+      tags:
+        - Approvals
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Approval record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRecordResponse'
+
+  /api/v1/approvals:
+    post:
+      summary: Submit for approval
+      operationId: submitApproval
+      tags:
+        - Approvals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitApprovalRequest'
+      responses:
+        '201':
+          description: Approval submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRecordResponse'
+
+  /api/v1/approvals/{requestId}/decide:
+    post:
+      summary: Decide on approval
+      operationId: decideApproval
+      tags:
+        - Approvals
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DecideApprovalRequest'
+      responses:
+        '200':
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalRecordResponse'
+
+components:
+  schemas:
+    ApprovalStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, CANCELLED]
+
+    ApprovalTargetType:
+      type: string
+      enum: [STRATEGY, PROPOSAL, SOW, CONTENT_VERSION, BUDGET, CAMPAIGN_LAUNCH, CONNECTOR_WRITE, OVERRIDE]
+
+    ApprovalDecision:
+      type: string
+      enum: [APPROVE, REJECT]
+
+    ApprovalRecordResponse:
+      type: object
+      required:
+        - requestId
+        - tenantId
+        - workspaceId
+        - targetType
+        - targetId
+        - description
+        - riskLevel
+        - requiredApproverRole
+        - status
+        - submittedAt
+        - submittedBy
+      properties:
+        requestId:
+          type: string
+        tenantId:
+          type: string
+        workspaceId:
+          type: string
+        targetType:
+          $ref: '#/components/schemas/ApprovalTargetType'
+          nullable: true
+        targetId:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        riskLevel:
+          type: number
+        requiredApproverRole:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApprovalStatus'
+        submittedAt:
+          type: string
+          format: date-time
+        submittedBy:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+          nullable: true
+        decidedBy:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        snapshotSummary:
+          type: string
+          nullable: true
+        validationResultId:
+          type: string
+          nullable: true
+        snapshotAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    PendingApprovalsResponse:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApprovalRecordResponse'
+
+    ApprovalSnapshot:
+      type: object
+      required:
+        - requestId
+        - targetType
+        - targetId
+        - targetWorkspaceId
+        - snapshotSummary
+        - validationResultId
+        - riskLevel
+        - requiredApproverRole
+        - snapshotAt
+      properties:
+        requestId:
+          type: string
+        targetType:
+          $ref: '#/components/schemas/ApprovalTargetType'
+        targetId:
+          type: string
+        targetWorkspaceId:
+          type: string
+        snapshotSummary:
+          type: string
+        validationResultId:
+          type: string
+          nullable: true
+        riskLevel:
+          type: number
+        requiredApproverRole:
+          type: string
+        snapshotAt:
+          type: string
+          format: date-time
+
+    SubmitApprovalRequest:
+      type: object
+      required:
+        - targetType
+        - targetId
+        - description
+      properties:
+        targetType:
+          $ref: '#/components/schemas/ApprovalTargetType'
+        targetId:
+          type: string
+        description:
+          type: string
+        riskLevel:
+          type: number
+        requiredApproverRole:
+          type: string
+        validationResultId:
+          type: string
+
+    DecideApprovalRequest:
+      type: object
+      required:
+        - decision
+      properties:
+        decision:
+          $ref: '#/components/schemas/ApprovalDecision'
+        notes:
+          type: string

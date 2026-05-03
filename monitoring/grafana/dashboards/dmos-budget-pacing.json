@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "title": "DMOS Budget Pacing",
+    "uid": "dmos-budget-pacing",
+    "tags": ["dmos", "budget"],
+    "timezone": "browser",
+    "refresh": "5m",
+    "panels": [
+      {
+        "title": "Budget Utilization",
+        "targets": [
+          {
+            "expr": "dmos_budget_utilization_percent"
+          }
+        ],
+        "type": "gauge"
+      },
+      {
+        "title": "Daily Spend Rate",
+        "targets": [
+          {
+            "expr": "rate(dmos_budget_spend_total[1d])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Remaining Budget",
+        "targets": [
+          {
+            "expr": "dmos_budget_remaining"
+          }
+        ],
+        "type": "stat"
+      },
+      {
+        "title": "Budget Runway (Days)",
+        "targets": [
+          {
+            "expr": "dmos_budget_remaining / rate(dmos_budget_spend_total[1d])"
+          }
+        ],
+        "type": "stat"
+      }
+    ]
+  }
+}

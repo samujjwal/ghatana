@@ -7,6 +7,8 @@ import java.util.Objects;
 /**
  * Immutable transparency log entry for AI/system actions.
  *
+ * <p>The {@code version} field enables optimistic locking for concurrent updates.</p>
+ *
  * @doc.type class
  * @doc.purpose DMOS transparency timeline entry
  * @doc.layer product
@@ -26,7 +28,8 @@ public record AiActionLogEntry(
         String summary,
         String details,
         String relatedEntityId,
-        Instant occurredAt) {
+        Instant occurredAt,
+        long version) {
 
     public AiActionLogEntry {
         Objects.requireNonNull(actionId, "actionId must not be null");
@@ -50,6 +53,8 @@ public record AiActionLogEntry(
             throw new IllegalArgumentException("confidence must be between 0 and 1 when provided");
         }
 
+        if (version < 0) throw new IllegalArgumentException("version must be >= 0, got: " + version);
+
         evidenceLinks = evidenceLinks == null ? List.of() : List.copyOf(evidenceLinks);
         policyChecks = policyChecks == null ? List.of() : List.copyOf(policyChecks);
     }
@@ -72,7 +77,8 @@ public record AiActionLogEntry(
             summary,
             "REDACTED",
             relatedEntityId,
-            occurredAt
+            occurredAt,
+            version
         );
     }
 }

@@ -1,0 +1,47 @@
+{
+  "dashboard": {
+    "title": "DMOS API Health",
+    "uid": "dmos-api-health",
+    "tags": ["dmos", "api", "health"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "API Request Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{service=\"dmos-api\"}[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "API Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{service=\"dmos-api\",status=~\"5..\"}[5m]) / rate(http_requests_total{service=\"dmos-api\"}[5m])"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "API Latency (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{service=\"dmos-api\"}[5m]))"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "API Latency (p99)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{service=\"dmos-api\"}[5m]))"
+          }
+        ],
+        "type": "graph"
+      }
+    ]
+  }
+}
