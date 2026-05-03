@@ -138,6 +138,9 @@ public class TierMigrationHandler {
 
     private Promise<HttpResponse> handleWarmMigration(String tenantId, String collectionId) {
         if (tierMigrationScheduler == null) {
+            // P2-4: Explicit degradation logging for optional Tier Migration Scheduler
+            log.warn("[P2-4] Tier Migration Scheduler degradation: scheduler is null, returning 503 for WARM tier migration tenant={} collection={}", 
+                    tenantId, collectionId);
             return Promise.of(http.errorResponse(503,
                     "WARM tier migration is not configured. Supply Iceberg catalog credentials via ICEBERG_CATALOG_URI."));
         }
@@ -161,6 +164,9 @@ public class TierMigrationHandler {
 
     private Promise<HttpResponse> handleColdMigration(String tenantId, String collectionId) {
         if (archiveMigrationScheduler == null) {
+            // P2-4: Explicit degradation logging for optional Archive Migration Scheduler
+            log.warn("[P2-4] Archive Migration Scheduler degradation: scheduler is null, returning 503 for COLD tier migration tenant={} collection={}", 
+                    tenantId, collectionId);
             return Promise.of(http.errorResponse(503,
                     "COLD tier migration is not configured. Supply S3 archive credentials via S3_ARCHIVE_BUCKET."));
         }

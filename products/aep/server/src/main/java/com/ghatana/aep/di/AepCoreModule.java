@@ -148,6 +148,7 @@ public class AepCoreModule extends AbstractModule {
             .dataSource(dataSource)
             .locations("classpath:db/migration")
             .baselineOnMigrate(true)
+            .baselineVersion("0")
             .load()
             .migrate();
         log.info("AEP database migrations completed successfully");

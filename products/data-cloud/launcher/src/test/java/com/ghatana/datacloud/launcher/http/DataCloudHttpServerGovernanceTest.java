@@ -16,6 +16,7 @@ import com.ghatana.governance.PolicyEngine;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,19 +49,15 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 /**
- * Integration tests for data lifecycle and governance API endpoints (DC-E5). 
- *
- * <p>Starts a real {@link DataCloudHttpServer} on a random port and exercises
- * all six governance routes: retention classify, retention policy, retention purge,
- * PII redaction, PII field listing, and compliance summary.
+ * Integration tests for governance HTTP endpoints.
  *
  * @doc.type class
- * @doc.purpose Integration tests for /api/v1/governance/** HTTP endpoints (DC-E5) 
+ * @doc.purpose Integration tests for /api/v1/governance/** HTTP endpoints
  * @doc.layer product
  * @doc.pattern Test
  */
-@DisplayName("DataCloudHttpServer – Governance & Data Lifecycle Endpoints (DC-E5)")
-class DataCloudHttpServerGovernanceTest {
+@DisplayName("DataCloudHttpServer – Governance Endpoints")
+class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
     private EntityStore mockEntityStore;
@@ -1089,7 +1086,15 @@ class DataCloudHttpServerGovernanceTest {
     // Helper methods
     // ─────────────────────────────────────────────────────────────────────────
 
-    private HttpResponse<String> get(String path) throws Exception { 
+    @Override
+    protected void startServer() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port)
+            .withAuditService(mockAuditService);
+        server.start();
+        waitForServerReady(port);
+    }
+
+    protected HttpResponse<String> get(String path) throws Exception { 
         HttpRequest req = HttpRequest.newBuilder() 
             .GET() 
             .uri(URI.create("http://127.0.0.1:" + port + path)) 
@@ -1108,7 +1113,7 @@ class DataCloudHttpServerGovernanceTest {
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
-    private static int findFreePort() throws IOException { 
+    protected static int findFreePort() throws IOException { 
         try (ServerSocket ss = new ServerSocket(0)) { 
             return ss.getLocalPort(); 
         }
@@ -1231,6 +1236,163 @@ class DataCloudHttpServerGovernanceTest {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
+        }
+    }
+
+    // TEST-4: Policy CRUD tests
+    @Nested
+    @DisplayName("Policy CRUD Operations (P1-1)")
+    @Disabled("Policy CRUD routes not implemented in current server - requires route implementation")
+    class PolicyCrudTests {
+        private static final String TENANT_A = "tenant-a";
+
+        @Test
+        @DisplayName("POST /api/v1/governance/policies creates a policy")
+        void createPolicy_returns201() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String policyBody = """
+                {
+                    "name": "Test Policy",
+                    "description": "A test policy",
+                    "type": "retention",
+                    "scope": "all",
+                    "rules": {"maxAgeDays": 30}
+                }
+                """;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString(policyBody))
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies"))
+                .header("X-Tenant-Id", TENANT_A)
+                .header("Content-Type", "application/json")
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(201);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.containsKey("id")).isTrue();
+            assertThat(body.get("name")).isEqualTo("Test Policy");
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies lists policies")
+        void listPolicies_returns200() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies"))
+                .header("X-Tenant-Id", TENANT_A)
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.containsKey("policies")).isTrue();
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies/:id gets a policy")
+        void getPolicy_returns200() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .GET()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies/policy-1"))
+                .header("X-Tenant-Id", TENANT_A)
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.containsKey("id")).isTrue();
+        }
+
+        @Test
+        @DisplayName("PUT /api/v1/governance/policies/:id updates a policy")
+        void updatePolicy_returns200() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String policyBody = """
+                {
+                    "name": "Updated Policy",
+                    "description": "An updated test policy",
+                    "type": "retention",
+                    "scope": "all",
+                    "rules": {"maxAgeDays": 60}
+                }
+                """;
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .PUT(HttpRequest.BodyPublishers.ofString(policyBody))
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies/policy-1"))
+                .header("X-Tenant-Id", TENANT_A)
+                .header("Content-Type", "application/json")
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("name")).isEqualTo("Updated Policy");
+        }
+
+        @Test
+        @DisplayName("DELETE /api/v1/governance/policies/:id deletes a policy")
+        void deletePolicy_returns200() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .DELETE()
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies/policy-1"))
+                .header("X-Tenant-Id", TENANT_A)
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("deleted")).isEqualTo(true);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/governance/policies/:id/toggle toggles a policy")
+        void togglePolicy_returns200() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port)
+                .withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpRequest req = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies/policy-1/toggle"))
+                .header("X-Tenant-Id", TENANT_A)
+                .build();
+
+            HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.containsKey("enabled")).isTrue();
         }
     }
 }

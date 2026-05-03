@@ -495,7 +495,7 @@ function AIQueryAssist({
           type="text"
           value={naturalQuery}
           onChange={(e) => setNaturalQuery(e.target.value)}
-          placeholder="Describe what you want to query... e.g., 'Show me top users by event count this week'"
+          placeholder="Describe your query with specific details: 'Show me users who signed up in the last 7 days, ordered by registration date descending, limit 100'"
           aria-label="Natural language query description"
           className={cn(
             'flex-1 px-3 py-2 rounded-lg text-sm',
@@ -534,6 +534,12 @@ function AIQueryAssist({
             </>
           )}
         </button>
+      </div>
+
+      {/* P2-1: NLQ clarification guidance */}
+      <div className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+        <span className="font-medium">Tip:</span> Be specific about columns, filters, sorting, and limits. 
+        Example: "Select name, email from users where created_at &gt; '2024-01-01' order by created_at desc limit 50"
       </div>
 
       {generationMessage && (
@@ -1039,11 +1045,37 @@ export function SqlWorkspacePage(): React.ReactElement {
           <div className={cn(cardStyles.base, cardStyles.padded, 'mb-6 border-amber-300 bg-amber-50 text-amber-900')} data-testid="sql-optional-dependencies-warning">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5" />
-              <div>
+              <div className="flex-1">
                 <h2 className={textStyles.h3}>{SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_TITLE}</h2>
-                <p className={textStyles.muted}>
-                  {analyticsCapability?.detail ?? federatedCapability?.detail ?? SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_DETAIL}
-                </p>
+                <div className="space-y-2">
+                  {/* P0-3: Explicit degradation indicator for Analytics */}
+                  {(analyticsCapability?.status === 'degraded' || analyticsCapability?.status === 'unavailable') && (
+                    <div className="text-sm">
+                      <span className="font-semibold">Analytics Engine:</span>{' '}
+                      <span className={cn(analyticsCapability?.status === 'degraded' ? 'text-amber-700' : 'text-red-700')}>
+                        {analyticsCapability?.status === 'degraded' ? 'DEGRADED' : 'UNAVAILABLE'}
+                      </span>
+                      {analyticsCapability?.detail && (
+                        <span className="block text-xs text-amber-800 mt-1">{analyticsCapability.detail}</span>
+                      )}
+                    </div>
+                  )}
+                  {/* P0-3: Explicit degradation indicator for Federated Query */}
+                  {(federatedCapability?.status === 'degraded' || federatedCapability?.status === 'unavailable') && (
+                    <div className="text-sm">
+                      <span className="font-semibold">Federated Query:</span>{' '}
+                      <span className={cn(federatedCapability?.status === 'degraded' ? 'text-amber-700' : 'text-red-700')}>
+                        {federatedCapability?.status === 'degraded' ? 'DEGRADED' : 'UNAVAILABLE'}
+                      </span>
+                      {federatedCapability?.detail && (
+                        <span className="block text-xs text-amber-800 mt-1">{federatedCapability.detail}</span>
+                      )}
+                    </div>
+                  )}
+                  {!analyticsCapability?.detail && !federatedCapability?.detail && (
+                    <p className={textStyles.muted}>{SQL_OPTIONAL_DEPENDENCIES_UNAVAILABLE_DETAIL}</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

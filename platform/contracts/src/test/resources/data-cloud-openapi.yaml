@@ -2628,26 +2628,6 @@ paths:
                 $ref: "#/components/schemas/WorkflowExecutionSummary"
         "404": { $ref: "#/components/responses/NotFound" }
 
-  /api/v1/executions/{executionId}/retry:
-    post:
-      summary: Retry a failed pipeline execution
-      operationId: apiV1ExecutionsExecutionIdRetryPost
-      tags: [executions]
-      parameters:
-        - $ref: "#/components/parameters/tenantIdQuery"
-        - name: executionId
-          in: path
-          required: true
-          schema: { type: string }
-      responses:
-        "200":
-          description: Retried execution summary.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/WorkflowExecutionSummary"
-        "404": { $ref: "#/components/responses/NotFound" }
-
   # ── Alerts ─────────────────────────────────────────────────────────────────
 
   /api/v1/alerts:
@@ -3965,28 +3945,6 @@ paths:
       responses:
         "200": { description: Policy rejected. }
 
-  /api/v1/learning/review/completed:
-    delete:
-      summary: Purge all APPROVED and REJECTED items from the review queue
-      operationId: apiV1LearningReviewCompletedDelete
-      tags: [learning]
-      parameters:
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200":
-          description: Completed reviews purged.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  purged:
-                    type: integer
-                    description: Number of items removed.
-                  timestamp:
-                    type: string
-                    format: date-time
-
   /api/v1/learning/stream:
     get:
       summary: SSE stream of learning status updates
@@ -4026,63 +3984,10 @@ paths:
                 $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
         "503": { description: Analytics engine not wired. }
 
-  /api/v1/analytics/query/{queryId}:
-    get:
-      summary: Poll for query result
-      operationId: apiV1AnalyticsQueryQueryIdGet
-      tags: [analytics]
-      parameters:
-        - name: queryId
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200":
-          description: Query result.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
-        "404": { $ref: "#/components/responses/NotFound" }
-
-  /api/v1/analytics/query/{queryId}/plan:
-    get:
-      summary: Get execution plan for a submitted query
-      operationId: apiV1AnalyticsQueryQueryIdPlanGet
-      tags: [analytics]
-      parameters:
-        - name: queryId
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200": { description: Query execution plan. }
-
-  /api/v1/analytics/query/{queryId}/cancel:
-    post:
-      summary: Cancel a running analytics query
-      operationId: apiV1AnalyticsQueryQueryIdCancelPost
-      tags: [analytics]
-      parameters:
-        - name: queryId
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: "#/components/parameters/tenantIdQuery"
-      responses:
-        "200": { description: Cancellation accepted or query not running. }
-        "501": { description: Cancellation not supported by analytics engine. }
-        "404": { $ref: "#/components/responses/NotFound" }
-
-  /api/v1/analytics/aggregate:
+  /api/v1/analytics/aggregation:
     post:
       summary: Run an aggregation query
-      operationId: apiV1AnalyticsAggregatePost
+      operationId: apiV1AnalyticsAggregationPost
       tags: [analytics]
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -6746,6 +6651,22 @@ paths:
           schema: { type: string }
       responses:
         "200": { description: Sync status. }
+
+  /data-fabric/metrics:
+    get:
+      summary: Get data fabric metrics (frontend alias)
+      operationId: dataFabricMetricsGet
+      tags: [connectors]
+      parameters:
+        - $ref: '#/components/parameters/tenantIdQuery'
+      responses:
+        "200":
+          description: Data fabric metrics including connector health and sync statistics.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreeformObject'
+        "503": { description: Connector registry not available. }
 
   # ── User activity tracking ───────────────────────────────────────────────────
 

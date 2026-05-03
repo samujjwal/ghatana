@@ -39,6 +39,7 @@ import { useLifecycleArtifacts } from '../../../services/canvas/lifecycle/Lifecy
 import { useLastOpenedProject } from '../../../hooks/useLastOpenedProject';
 import { useWorkspaceContext } from '../../../hooks/useWorkspaceData';
 import { UnifiedContextHeader } from '../../../components/navigation';
+import { usePhaseFeatureGate } from '../../../hooks/usePhaseFeatureGate';
 
 /**
  * 8-phase IA navigation — the only top-level project navigation.
@@ -105,6 +106,7 @@ export function Layout() {
   const basePath = `/p/${projectId}`;
   const isHeaderVisible = useAtomValue(headerVisibleAtom);
   const aiAssistEnabled = import.meta.env.VITE_FEATURE_AI_ASSIST === 'true';
+  const { isPhaseEnabled } = usePhaseFeatureGate();
 
   const { setLastOpenedProject } = useLastOpenedProject();
   const { currentWorkspace, workspaces, ownedProjects, includedProjects } = useWorkspaceContext();
@@ -284,7 +286,7 @@ export function Layout() {
   }, [project, setHeaderActionContext, setHeaderContextActions, setHeaderPhaseInfo]);
 
   const projectName = project?.name || 'Loading...';
-  const projectTabs = [...BASE_PROJECT_TABS] as (typeof BASE_PROJECT_TABS[number])[];
+  const projectTabs = [...BASE_PROJECT_TABS].filter(tab => isPhaseEnabled(tab.key as any)) as (typeof BASE_PROJECT_TABS[number])[];
 
   // Initialize lifecycle services
   const { createArtifact, updateArtifact, artifacts } = useLifecycleArtifacts(

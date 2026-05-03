@@ -247,7 +247,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/overview',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/overview');
+      request.log.info({ event: 'devsecops.overview.request' }, 'GET /devsecops/overview');
 
       // Get all phases with item counts
       const phases = await prisma.phase.findMany({
@@ -440,7 +440,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/phases',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/phases');
+      request.log.info({ event: 'devsecops.phases.request' }, 'GET /devsecops/phases');
 
       const phases = await prisma.phase.findMany({
         orderBy: { order: 'asc' },
@@ -477,7 +477,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/items',
     { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
-      console.log('[DEVSECOPS] GET /devsecops/items');
+      request.log.info({ event: 'devsecops.items.list.request' }, 'GET /devsecops/items');
 
       const { phaseId, status, priority, tags, search } = request.query;
 
@@ -557,7 +557,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
       const { id } = request.params;
-      console.log('[DEVSECOPS] GET /devsecops/items/', id);
+      request.log.info({ event: 'devsecops.item.get.request', itemId: id }, 'GET /devsecops/items/:id');
 
       const item = await prisma.item.findUnique({
         where: { id },
@@ -608,7 +608,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       reply: FastifyReply
     ) => {
       const body = request.body;
-      console.log('[DEVSECOPS] POST /devsecops/items', body);
+      request.log.info({ event: 'devsecops.item.create.request' }, 'POST /devsecops/items');
 
       // Find phase by key
       const phase = await prisma.phase.findUnique({
@@ -682,7 +682,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     ) => {
       const { id } = request.params;
       const body = request.body;
-      console.log('[DEVSECOPS] PATCH /devsecops/items/', id, body);
+      request.log.info({ event: 'devsecops.item.update.request', itemId: id }, 'PATCH /devsecops/items/:id');
 
       const updateData: Record<string, unknown> = {};
 
@@ -758,7 +758,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       reply: FastifyReply
     ) => {
       const { id } = request.params;
-      console.log('[DEVSECOPS] DELETE /devsecops/items/', id);
+      request.log.info({ event: 'devsecops.item.delete.request', itemId: id }, 'DELETE /devsecops/items/:id');
 
       await prisma.item.delete({ where: { id } });
 
@@ -784,10 +784,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
       reply: FastifyReply
     ) => {
       const { itemIds, updates } = request.body;
-      console.log('[DEVSECOPS] POST /devsecops/items/bulk-update', {
-        itemIds,
-        updates,
-      });
+      request.log.info({ event: 'devsecops.item.bulk_update.request', itemCount: itemIds.length }, 'POST /devsecops/items/bulk-update');
 
       const updateData: Record<string, unknown> = {};
 
@@ -837,7 +834,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/workflows',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/workflows');
+      request.log.info({ event: 'devsecops.workflows.request' }, 'GET /devsecops/workflows');
 
       const workflows = await prisma.workflow.findMany({
         include: {
@@ -888,7 +885,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/workflow-templates',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/workflow-templates');
+      request.log.info({ event: 'devsecops.workflow_templates.request' }, 'GET /devsecops/workflow-templates');
 
       const templates = await prisma.workflowTemplate.findMany({
         where: { isActive: true },
@@ -922,7 +919,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/ai-insights',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/ai-insights');
+      request.log.info({ event: 'devsecops.ai_insights.request' }, 'GET /devsecops/ai-insights');
 
       const insights = await prisma.aIInsight.findMany({
         where: { status: 'ACTIVE' },
@@ -960,7 +957,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/predictions',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/predictions');
+      request.log.info({ event: 'devsecops.predictions.request' }, 'GET /devsecops/predictions');
 
       const predictions = await prisma.prediction.findMany({
         orderBy: { createdAt: 'desc' },
@@ -995,7 +992,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/anomaly-alerts',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/anomaly-alerts');
+      request.log.info({ event: 'devsecops.anomaly_alerts.request' }, 'GET /devsecops/anomaly-alerts');
 
       const alerts = await prisma.anomalyAlert.findMany({
         orderBy: { detectedAt: 'desc' },
@@ -1037,7 +1034,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
       const { phaseId } = request.params;
-      console.log(`[DEVSECOPS] GET /devsecops/phases/${phaseId}`);
+      request.log.info({ event: 'devsecops.phase.get.request', phaseId }, 'GET /devsecops/phases/:phaseId');
 
       // Find phase by key or id
       const phase = await prisma.phase.findFirst({
@@ -1145,7 +1142,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     '/devsecops/reports',
     { preHandler: requirePermission('workflow', 'read') },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      console.log('[DEVSECOPS] GET /devsecops/reports');
+      request.log.info({ event: 'devsecops.reports.request' }, 'GET /devsecops/reports');
 
       // Return static report definitions (report generation is dynamic based on current data)
       return reply.send({
@@ -1193,7 +1190,7 @@ export default async function devsecopsRoutes(fastify: FastifyInstance) {
     { preHandler: requirePermission('workflow', 'read') },
     async (request, reply) => {
       const { reportId } = request.params;
-      console.log(`[DEVSECOPS] GET /devsecops/reports/${reportId}`);
+      request.log.info({ event: 'devsecops.report.get.request', reportId }, 'GET /devsecops/reports/:reportId');
 
       // Generate report data from current metrics
       const phases = await prisma.phase.findMany({

@@ -74,7 +74,14 @@ export type WebSocketEventType =
     | 'alert.created'
     | 'alert.resolved'
     | 'data.quality.changed'
-    | 'system.notification';
+    | 'system.notification'
+    | 'execution-start'
+    | 'execution-update'
+    | 'execution-complete'
+    | 'execution-error'
+    | 'node-start'
+    | 'node-complete'
+    | 'node-error';
 
 /**
  * WebSocket event payload
@@ -170,7 +177,6 @@ export class WebSocketClient {
                 this.setState('connected');
                 this.reconnectAttempts = 0;
                 this.startHeartbeat();
-                console.log('[WebSocket] Connected');
             };
 
             this.ws.onmessage = (event) => {
@@ -178,25 +184,25 @@ export class WebSocketClient {
                     const data = JSON.parse(event.data) as WebSocketEvent;
                     this.handleEvent(data);
                 } catch (error) {
-                    console.error('[WebSocket] Failed to parse message:', error);
+                    if (import.meta.env.DEV) {
+                        console.error('[WebSocket] Failed to parse message:', error);
+                    }
                 }
             };
 
             this.ws.onclose = (event) => {
                 this.setState('disconnected');
                 this.stopHeartbeat();
-                console.log('[WebSocket] Disconnected:', event.code, event.reason);
 
                 if (this.config.reconnect && !event.wasClean) {
                     this.scheduleReconnect();
                 }
             };
 
-            this.ws.onerror = (error) => {
-                console.error('[WebSocket] Error:', error);
+            this.ws.onerror = (_error) => {
+                // Errors are logged at the application layer when connection state changes
             };
         } catch (error) {
-            console.error('[WebSocket] Connection failed:', error);
             this.scheduleReconnect();
         }
     }
@@ -241,8 +247,6 @@ export class WebSocketClient {
     send(message: Record<string, unknown>): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
-        } else {
-            console.warn('[WebSocket] Cannot send message: not connected');
         }
     }
 
@@ -284,7 +288,6 @@ export class WebSocketClient {
      */
     private scheduleReconnect(): void {
         if (this.reconnectAttempts >= this.config.maxReconnectAttempts) {
-            console.error('[WebSocket] Max reconnect attempts reached');
             return;
         }
 
@@ -292,7 +295,6 @@ export class WebSocketClient {
         this.reconnectAttempts++;
 
         const delay = this.config.reconnectInterval * Math.pow(1.5, this.reconnectAttempts - 1);
-        console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 
         this.reconnectTimer = setTimeout(() => {
             this.connect();

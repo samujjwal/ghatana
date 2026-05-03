@@ -2,9 +2,8 @@
  * Tests for navigation/ components:
  * ActionsToolbar, canonical BASE_PROJECT_TABS (project/_shell.tsx)
  *
- * NOTE: UnifiedPhaseRail and EightPhaseNavigation are deprecated orphans
- * and are no longer the canonical navigation. The single navigation tree
- * is the NavLink tab bar defined by BASE_PROJECT_TABS in _shell.tsx.
+ * The single navigation tree is the NavLink tab bar defined by
+ * BASE_PROJECT_TABS in _shell.tsx.
  */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';

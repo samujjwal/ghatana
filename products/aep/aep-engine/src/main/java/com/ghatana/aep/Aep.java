@@ -18,6 +18,7 @@ import com.ghatana.aep.error.AepTenantException;
 import com.ghatana.aep.event.EventCloud;
 import com.ghatana.aep.event.InMemoryEventCloud;
 import com.ghatana.aep.forecasting.ForecastingEngine;
+import com.ghatana.aep.forecasting.LinearTrendForecastingEngine;
 import com.ghatana.aep.forecasting.NaiveForecastingEngine;
 import com.ghatana.aep.health.AepHealthIndicator;
 import com.ghatana.aep.lifecycle.GracefulShutdownCoordinator;
@@ -89,7 +90,7 @@ public final class Aep {
         ConsentService consentService = ConsentServiceFactory.create(config);
 
         return new DefaultAepEngine(eventCloud, config,
-            new NaiveForecastingEngine(),
+            new LinearTrendForecastingEngine(),
             consentService,
             EventDeliveryService.noOp());
     }
@@ -110,7 +111,7 @@ public final class Aep {
         ConsentService consentService = ConsentServiceFactory.create(config);
 
         return new DefaultAepEngine(eventCloud, config,
-            new NaiveForecastingEngine(),
+            new LinearTrendForecastingEngine(),
             consentService,
             deliveryService);
     }

@@ -1149,6 +1149,124 @@ Currently authoritative:
 - Java utility naming: [platform/UTILITY_NAMING_CONVENTIONS.md](platform/UTILITY_NAMING_CONVENTIONS.md).
 - Agent taxonomy: this file, Section 18.
 
+## 35. Production-Grade Enforcement Rules
+
+### 35.1 Codebase Scanning Before Creating New Abstractions
+
+Before creating any new class, service, component, utility, or abstraction, you MUST scan the existing codebase to ensure you are not duplicating existing functionality.
+
+**Required Scan Pattern:**
+1. Search `platform/java/*` for similar functionality (use `platform:java:*` modules first)
+2. Search `platform/typescript/*` for similar functionality (use canonical packages first)
+3. Search the relevant `products/<product>/` area for existing patterns
+4. Search existing contracts in `platform/contracts/`
+
+**Forbidden Actions:**
+- Creating a new utility class without checking `platform/java/*/util/` or `platform/typescript/*/src/utils/`
+- Creating a new service without checking existing services in the same domain
+- Creating a new component pattern without checking `@ghatana/design-system` or `@ghatana/domain-components`
+- Creating a new API client without checking `@ghatana/api` or existing client patterns
+- Creating a new state management pattern without checking existing Jotai atoms in `@ghatana/state`
+
+**Required Evidence:**
+When adding a new abstraction, your PR description MUST include:
+- "Scanned existing codebase and found no existing implementation for [X]"
+- Links to similar patterns you reviewed (even if not a perfect match)
+- Justification for why the new abstraction is needed despite existing patterns
+
+### 35.2 Canonical Location Registry (What to Look Where)
+
+Before creating anything, check these canonical locations first:
+
+| What You Need | Where to Look First | Canonical Location | Keywords to Search |
+|---------------|---------------------|-------------------|-------------------|
+| **Java Utilities** | `platform/java/*/util/` | `platform/java/core/util/` | `*Utils.java` |
+| **Java HTTP** | `platform/java/http/` | `platform/java/http/` | `HttpClient`, `HttpServer` |
+| **Java Database** | `platform/java/database/` | `platform/java/database/` | `Repository`, `EntityManager` |
+| **Java Observability** | `platform/java/observability/` | `platform/java/observability/` | `MetricsCollector`, `Tracer` |
+| **Java Security** | `platform/java/security/` | `platform/java/security/` | `AuthFilter`, `RBAC` |
+| **Java Testing** | `platform/java/testing/` | `platform/java/testing/` | `TestUtils`, `TestBase` |
+| **Java AI Integration** | `platform/java/ai-integration/` | `platform/java/ai-integration/` | `CompletionService`, `LLMClient` |
+| **TypeScript Utilities** | `platform/typescript/platform-utils/` | `@ghatana/platform-utils` | `cn()`, formatters |
+| **TypeScript Design System** | `platform/typescript/design-system/` | `@ghatana/design-system` | `Button`, `Input`, `Card` |
+| **TypeScript Canvas** | `platform/typescript/canvas/` | `@ghatana/canvas` | `Canvas`, `Node`, `Edge` |
+| **TypeScript State** | `platform/typescript/state/` | `@ghatana/state` | `atom()`, `useAtom` |
+| **TypeScript Forms** | `platform/typescript/forms/` | `@ghatana/forms` | `useForm`, `zod` |
+| **TypeScript API Client** | `platform/typescript/api/` | `@ghatana/api` | `fetch`, `apiClient` |
+| **TypeScript Config** | `platform/typescript/config/` | `@ghatana/config` | `env`, `featureFlag` |
+| **React Components** | Product's `components/` or `@ghatana/design-system` | `@ghatana/design-system` | Component name |
+| **Services** | Product's `services/` | Product's `services/` | `*Service.ts`, `*Service.java` |
+| **Hooks** | Product's `hooks/` or platform hooks | Product's `hooks/` | `use*` |
+| **Types** | Product's `types/` or shared types | Product's `types/` | Interface name |
+| **Validators** | Product's `services/*/validate/` or platform | Product's `services/*/validate/` | `*Validator`, `*Validation` |
+| **Agents** | Product's `agents/` or `platform/java/agent-core/` | Product's `agents/` | `*Agent.java` |
+
+### 35.3 Strengthened Anti-Theater Rules
+
+In addition to Section 29, the following are **FORBIDDEN** in production code:
+
+1. **No TODO/FIXME comments in production code**
+   - All TODO/FIXME must be in test files only
+   - Use feature flags for incomplete production features
+   - Use `NOT_READY` status with clear error messages for unimplemented adapters
+
+2. **No stub implementations in production-critical paths**
+   - Adapters for external systems must be fully implemented or feature-flagged
+   - Stub adapters must return `NOT_READY` status, not fake success
+   - No "placeholder" or "demo" code in production paths
+
+3. **No test-only mocks in production code**
+   - `__mocks__/` directories must only contain test mocks
+   - Production code must never import from `__mocks__/`
+   - Only `setupTests.ts` may import from `__mocks__/` for test setup
+
+4. **No object-literal assertions**
+   - Tests must invoke real production code
+   - No `expect({ result: true }).toBe({ result: true })` patterns
+   - No assertions that are independent of production code behavior
+
+5. **No disabled tests on main branch**
+   - `.skip`, `.only`, `@Disabled` without ticket reference is forbidden
+   - Disabled tests must reference an open GitHub issue
+   - If no issue exists, delete the test
+
+### 35.4 Production Readiness Checklist
+
+Before merging any code to main branch, verify:
+
+- [ ] Scanned canonical locations (Section 35.2) for existing patterns
+- [ ] No TODO/FIXME in production code (only in tests)
+- [ ] No stub implementations in production-critical paths
+- [ ] All tests invoke real production code (no theater)
+- [ ] All new abstractions justified in PR description
+- [ ] Links to similar patterns reviewed included in PR
+- [ ] Feature flags used for incomplete features
+- [ ] Error handling is explicit and observable
+- [ ] Input validation at boundaries
+- [ ] Observability (logs/metrics/traces) for critical flows
+- [ ] Type safety enforced (no `any` in TypeScript, proper typing in Java)
+- [ ] Documentation tags present (`@doc.*` for Java, JSDoc for TypeScript)
+
+### 35.5 Violation Detection and Remediation
+
+**Automatic Detection (CI/CD):**
+- Grep for `TODO|FIXME` in production code paths (exclude `test/`, `__tests__/`, `*.test.*`)
+- Grep for stub patterns (`stub`, `placeholder`, `demo`, `temp`, `hack`, `unsafe`) in production code
+- Grep for imports from `__mocks__/` in non-test files
+- Grep for disabled tests without issue references
+
+**Manual Detection (Code Review):**
+- Review all new abstractions for existing pattern matches
+- Verify test authenticity (no object-literal assertions)
+- Check adapter implementations for real external system integration
+- Verify feature flags are used for incomplete features
+
+**Remediation:**
+- TODO/FIXME in production: Replace with feature flag or complete implementation
+- Stub in critical path: Complete implementation or clearly mark as experimental with feature flag
+- Test theater: Rewrite test to invoke real code or delete
+- Duplicate abstraction: Delete new code and use existing pattern
+
 ---
 
-**Last Updated:** 2026-04-20
+**Last Updated:** 2026-05-02

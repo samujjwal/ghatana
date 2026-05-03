@@ -13,6 +13,7 @@ plugins {
 dependencies {
     // Depends on core
     implementation(project(":products:aep:aep-engine"))
+    implementation(project(":products:aep:aep-analytics"))  // Pattern compiler and API
     implementation(project(":platform:java:core"))
     implementation(project(":platform:java:domain"))
     implementation(project(":platform:java:observability"))

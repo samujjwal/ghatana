@@ -1,0 +1,80 @@
+id: enrichment-operator
+namespace: aep.operators.transformation
+name: Enrichment Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Enriches events with additional data from external sources
+description: |
+  Enriches event data by fetching additional context from external data
+  sources such as databases, APIs, or caches. Supports caching strategies
+  for frequently accessed enrichment data.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [transformation, enrichment, external-data, caching, lookup]
+
+identity:
+  agentType: deterministic
+  subtype: transformation
+  determinismGuarantee: config-scoped
+  stateMutability: local-state
+  failureMode: drop
+  criticality: medium
+  autonomyLevel: semi-autonomous
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["*"]
+  outputEventTypes: ["enriched"]
+  backpressure:
+    bufferSize: 2000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 2
+    deadLetterQueue: "enrichment-dlq"
+
+capabilities:
+  - data-enrichment
+  - external-lookup
+  - caching
+
+tools:
+  - name: enrichmentService
+    type: EXTERNAL_API
+    endpoint: /aep/enrich/lookup
+  - name: cacheClient
+    type: SERVICE
+    endpoint: /aep/cache
+
+interfaces:
+  inputs:
+    - name: baseEvent
+      schema: "*"
+      required: true
+  outputs:
+    - name: enrichedEvent
+      schema: enriched
+
+memory:
+  type: WORKING
+  scope: enrichment_cache
+  retention: medium
+  ttl: "4h"
+  stateKeys:
+    - "enrichmentCache"
+    - "lookupStats"
+
+resources:
+  memory: "2GB"
+  cpu: "2"
+  timeout: "5s"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 6
+    metric: "enrichment_queue_depth"
+    threshold: 1000

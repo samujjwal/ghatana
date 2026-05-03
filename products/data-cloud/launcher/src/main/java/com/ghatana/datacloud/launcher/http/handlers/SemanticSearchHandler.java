@@ -9,6 +9,8 @@ import com.ghatana.datacloud.plugins.vector.VectorMemoryPlugin;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,6 +30,7 @@ import java.util.UUID;
  */
 public final class SemanticSearchHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(SemanticSearchHandler.class);
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() { };
     
     public enum EmbeddingMode {
@@ -69,6 +72,8 @@ public final class SemanticSearchHandler {
     }
 
     public Promise<Void> indexEntity(String tenantId, String collection, DataCloudClient.Entity entity) {
+        // P3-1: Performance monitoring for vector index
+        long startTime = System.currentTimeMillis();
         try {
             UUID entityUuid = parseUuid(entity.id());
             EntityRecord record = EntityRecord.builder()
@@ -87,14 +92,40 @@ public final class SemanticSearchHandler {
                 .version((int) entity.version())
                 .active(true)
                 .build();
-            return vectorPlugin.store(record, tenantId);
+            return vectorPlugin.store(record, tenantId)
+                .whenComplete((result, error) -> {
+                    long durationMs = System.currentTimeMillis() - startTime;
+                    if (error == null) {
+                        log.debug("[P3-1] Vector index operation completed: tenant={} collection={} entityId={} durationMs={}", 
+                                tenantId, collection, entity.id(), durationMs);
+                    } else {
+                        log.warn("[P3-1] Vector index operation failed: tenant={} collection={} entityId={} durationMs={} error={}", 
+                                tenantId, collection, entity.id(), durationMs, error.getMessage());
+                    }
+                });
         } catch (RuntimeException exception) {
+            long durationMs = System.currentTimeMillis() - startTime;
+            log.error("[P3-1] Vector index operation error: tenant={} collection={} entityId={} durationMs={}", 
+                    tenantId, collection, entity.id(), durationMs, exception);
             return Promise.ofException(exception);
         }
     }
 
     public Promise<Void> deleteEntity(String tenantId, String entityId) {
-        return vectorPlugin.delete(parseUuid(entityId).toString(), tenantId).map(ignored -> null);
+        // P3-1: Performance monitoring for vector index
+        long startTime = System.currentTimeMillis();
+        return vectorPlugin.delete(parseUuid(entityId).toString(), tenantId)
+            .whenComplete((result, error) -> {
+                long durationMs = System.currentTimeMillis() - startTime;
+                if (error == null) {
+                    log.debug("[P3-1] Vector delete operation completed: tenant={} entityId={} durationMs={}", 
+                            tenantId, entityId, durationMs);
+                } else {
+                    log.warn("[P3-1] Vector delete operation failed: tenant={} entityId={} durationMs={} error={}", 
+                            tenantId, entityId, durationMs, error.getMessage());
+                }
+            })
+            .map(ignored -> null);
     }
 
     public Promise<HttpResponse> handleSimilarEntities(HttpRequest request) {

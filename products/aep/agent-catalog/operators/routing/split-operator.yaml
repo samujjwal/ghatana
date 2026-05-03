@@ -1,0 +1,81 @@
+id: split-operator
+namespace: aep.operators.routing
+name: Split Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Splits event streams into multiple branches based on routing rules
+description: |
+  Splits a single event stream into multiple output branches based on configurable
+  routing rules. Each event is evaluated against rules and routed to matching
+  branches. Supports default branch for unmatched events.
+
+metadata:
+  level: 3
+  domain: event-processing
+  tags: [routing, split, multi-branch, conditional]
+
+identity:
+  agentType: deterministic
+  subtype: routing
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: ROUTING
+  inputEventTypes: ["*"]
+  outputEventTypes: ["split.branch.*"]
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: "30s"
+    maxRetries: 2
+    deadLetterQueue: "split-dlq"
+
+capabilities:
+  - stream-splitting
+  - rule-based-routing
+  - branch-management
+
+tools:
+  - name: splitEvaluator
+    type: SERVICE
+    endpoint: /aep/routing/evaluate-split
+
+interfaces:
+  inputs:
+    - name: inputEvent
+      schema: "*"
+      required: true
+  outputs:
+    - name: branch1
+      schema: split.branch.1
+    - name: branch2
+      schema: split.branch.2
+    - name: default
+      schema: split.default
+
+memory:
+  type: WORKING
+  scope: split_config
+  retention: short
+  ttl: "1h"
+  stateKeys:
+    - "routingRules"
+    - "branchConfig"
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "10s"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 6
+    metric: "split_queue_depth"
+    threshold: 2000

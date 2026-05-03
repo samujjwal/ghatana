@@ -1,0 +1,83 @@
+id: count-operator
+namespace: aep.operators.aggregation
+name: Count Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Counts events within time windows with configurable grouping
+description: |
+  Counts events within tumbling or sliding time windows. Supports grouping by
+  event fields for multi-dimensional counting. Emits periodic count results
+  with window metadata.
+
+metadata:
+  level: 2
+  domain: event-processing
+  tags: [aggregation, counting, windowing, time-series]
+
+identity:
+  agentType: stream_processor
+  subtype: aggregation
+  determinismGuarantee: full
+  stateMutability: local-state
+  failureMode: drop
+  criticality: medium
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: AGGREGATION
+  inputEventTypes: ["*"]
+  outputEventTypes: ["count.result"]
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 2
+    deadLetterQueue: "count-dlq"
+  windows:
+    tumbling:
+      size: "1m"
+    sliding:
+      size: "5m"
+      step: "1m"
+
+capabilities:
+  - event-counting
+  - time-windowing
+  - grouping
+
+tools:
+  - name: counter
+    type: SERVICE
+    endpoint: /aep/aggregation/count
+
+interfaces:
+  inputs:
+    - name: eventStream
+      schema: "*"
+      required: true
+  outputs:
+    - name: countResult
+      schema: count.result
+
+memory:
+  type: WORKING
+  scope: window_state
+  retention: medium
+  ttl: "1h"
+  stateKeys:
+    - "windowCounts"
+    - "groupKeys"
+
+resources:
+  memory: "2GB"
+  cpu: "2"
+  timeout: "0"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 6
+    metric: "counting_queue_depth"
+    threshold: 5000

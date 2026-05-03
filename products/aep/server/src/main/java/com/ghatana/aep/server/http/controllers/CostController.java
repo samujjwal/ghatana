@@ -57,6 +57,7 @@ public final class CostController {
         return summarizeCost(tenantId, from, to, dailyBudgetUsd, monthlyBudgetUsd)
                 .map(summary -> HttpHelper.jsonResponse(Map.of(
                         "summary", summary,
+                        "estimated", "estimated".equals(summary.dataSource()),
                         "timestamp", Instant.now().toString())));
     }
 

@@ -83,7 +83,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
           lastSaved: canvasDoc.updatedAt.toISOString(),
         });
       } catch (error) {
-        console.error('Failed to load canvas:', error);
+        request.log.error({ event: 'canvas.load.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to load canvas');
         return reply.status(500).send({ error: 'Failed to load canvas' });
       }
     }
@@ -92,9 +92,13 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/canvas/:projectId/:canvasId?
    * Load canvas data from database (legacy endpoint)
+   *
+   * Resource-auth guard ensures only members of the owning workspace can
+   * read canvas data. This mirrors the protection on the canonical endpoint.
    */
   fastify.get<{ Params: GetCanvasParams }>(
     '/canvas/:projectId/:canvasId?',
+    { preHandler: requireCanvasReadable() },
     async (request, reply) => {
       const { projectId, canvasId = 'main' } = request.params;
 
@@ -122,7 +126,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
           },
         });
       } catch (error) {
-        console.error('Failed to load canvas:', error);
+        request.log.error({ event: 'canvas.load_legacy.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to load canvas (legacy)');
         return reply.status(500).send({ error: 'Failed to load canvas' });
       }
     }
@@ -215,7 +219,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
           version: newVersion,
         });
       } catch (error) {
-        console.error('Failed to save canvas:', error);
+        request.log.error({ event: 'canvas.save.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to save canvas');
         return reply.status(500).send({ error: 'Failed to save canvas' });
       }
     }
@@ -310,7 +314,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
           },
         });
       } catch (error) {
-        console.error('Failed to save canvas:', error);
+        request.log.error({ event: 'canvas.save_legacy.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to save canvas (legacy)');
         return reply.status(500).send({ error: 'Failed to save canvas' });
       }
     }
@@ -322,6 +326,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { projectId: string } }>(
     '/projects/:projectId/canvas/versions',
+    { preHandler: requireCanvasReadable() },
     async (request, reply) => {
       const { projectId } = request.params;
       const canvasId = 'unified-canvas';
@@ -356,7 +361,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
 
         return reply.send({ versions });
       } catch (error) {
-        console.error('Failed to get version history:', error);
+        request.log.error({ event: 'canvas.version_history.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to get version history');
         return reply
           .status(500)
           .send({ error: 'Failed to get version history' });
@@ -431,7 +436,7 @@ export default async function canvasRoutes(fastify: FastifyInstance) {
           restoredFrom: versionToRestore.version,
         });
       } catch (error) {
-        console.error('Failed to restore version:', error);
+        request.log.error({ event: 'canvas.restore_version.error', error: error instanceof Error ? error.message : String(error) }, 'Failed to restore version');
         return reply.status(500).send({ error: 'Failed to restore version' });
       }
     }

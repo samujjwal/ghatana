@@ -24,14 +24,15 @@ import org.slf4j.LoggerFactory;
  * RoutingServlet router = new DataCloudRouterBuilder(eventloop)
  *     .withHealthRoutes(healthHandler)
  *     .withEntityRoutes(entityHandler, sseHandler, semanticSearchHandler, exportHandler, anomalyHandler, validationHandler)
- *     .withEventRoutes(eventHandler)
  *     .withPipelineRoutes(pipelineCheckpointHandler, workflowExecutionHandler)
+ *     .withCheckpointRoutes(pipelineCheckpointHandler)
  *     .withAlertRoutes(alertingHandler, sseHandler)
  *     .withMemoryRoutes(memoryHandler)
  *     .withBrainRoutes(brainHandler, sseHandler)
  *     .withLearningRoutes(learningHandler)
  *     .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
  *     .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
+ *     .withExecutionRoutes(workflowExecutionHandler)
  *     .withModelRoutes(aiModelHandler)
  *     .withFeatureRoutes(aiModelHandler)
  *     .withSseRoutes(sseHandler)
@@ -140,16 +141,18 @@ public class DataCloudRouterBuilder {
             PipelineCheckpointHandler pipelineCheckpointHandler,
             WorkflowExecutionHandler workflowExecutionHandler) {
         builder
+            // Pipeline CRUD
             .with(HttpMethod.GET, "/api/v1/pipelines", pipelineCheckpointHandler::handleListPipelines)
             .with(HttpMethod.POST, "/api/v1/pipelines", pipelineCheckpointHandler::handleSavePipeline)
             .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleGetPipeline)
             .with(HttpMethod.PUT, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleUpdatePipeline)
             .with(HttpMethod.DELETE, "/api/v1/pipelines/:pipelineId", pipelineCheckpointHandler::handleDeletePipeline)
+            // Pipeline execution
             .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/execute", workflowExecutionHandler::handleExecutePipeline)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListExecutions)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetWorkflowExecution)
-            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
-            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution);
+            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions", workflowExecutionHandler::handleListPipelineExecutions)
+            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId", workflowExecutionHandler::handleGetPipelineExecution)
+            .with(HttpMethod.GET, "/api/v1/pipelines/:pipelineId/executions/:executionId/logs", workflowExecutionHandler::handleGetPipelineExecutionLogs)
+            .with(HttpMethod.POST, "/api/v1/pipelines/:pipelineId/executions/:executionId/cancel", workflowExecutionHandler::handleCancelPipelineExecution);
         return this;
     }
 
@@ -233,42 +236,49 @@ public class DataCloudRouterBuilder {
             .with(HttpMethod.GET, "/api/v1/learning/status", learningHandler::handleLearningStatus)
             .with(HttpMethod.GET, "/api/v1/learning/review", learningHandler::handleLearningReviewQueue)
             .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/approve", learningHandler::handleLearningReviewApprove)
-            .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject)
-            .with(HttpMethod.DELETE, "/api/v1/learning/review/completed", learningHandler::handlePurgeCompletedReviews);
+            .with(HttpMethod.POST, "/api/v1/learning/review/:reviewId/reject", learningHandler::handleLearningReviewReject);
         return this;
     }
 
     /**
-     * Adds analytics query endpoints.
+     * Adds analytics routes including query explain.
      */
-    public DataCloudRouterBuilder withAnalyticsRoutes(AnalyticsHandler analyticsHandler) {
+    public DataCloudRouterBuilder withAnalyticsRoutes(
+            AnalyticsHandler analyticsHandler,
+            WorkflowExecutionHandler workflowExecutionHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsHandler::handleAnalyticsQuery)
-            .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId", analyticsHandler::handleAnalyticsGetResult)
-            .with(HttpMethod.GET, "/api/v1/analytics/query/:queryId/plan", analyticsHandler::handleAnalyticsGetPlan)
-            .with(HttpMethod.POST, "/api/v1/analytics/query/:queryId/cancel", analyticsHandler::handleAnalyticsCancelQuery)
-            .with(HttpMethod.POST, "/api/v1/analytics/aggregate", analyticsHandler::handleAnalyticsAggregate)
-            .with(HttpMethod.POST, "/api/v1/analytics/explain", analyticsHandler::handleAnalyticsExplain);
+            .with(HttpMethod.POST, "/api/v1/analytics/aggregation", analyticsHandler::handleAnalyticsAggregate)
+            .with(HttpMethod.POST, "/api/v1/analytics/explain", workflowExecutionHandler::handleExplainQuery);
         return this;
     }
 
     /**
-     * Adds reporting endpoints.
+     * Adds reporting routes.
      */
-    public DataCloudRouterBuilder withReportingRoutes(AnalyticsHandler analyticsHandler, WorkflowExecutionHandler workflowExecutionHandler) {
+    public DataCloudRouterBuilder withReportingRoutes(
+            AnalyticsHandler analyticsHandler,
+            WorkflowExecutionHandler workflowExecutionHandler) {
         builder
-            .with(HttpMethod.POST, "/api/v1/reports", analyticsHandler::handleCreateReport)
             .with(HttpMethod.GET, "/api/v1/reports", analyticsHandler::handleListReports)
-            .with(HttpMethod.GET, "/api/v1/reports/:reportId", analyticsHandler::handleGetReport)
+            .with(HttpMethod.POST, "/api/v1/reports", analyticsHandler::handleCreateReport)
+            .with(HttpMethod.GET, "/api/v1/reports/:reportId", analyticsHandler::handleGetReport);
+        return this;
+    }
+
+    /**
+     * Adds execution routes.
+     */
+    public DataCloudRouterBuilder withExecutionRoutes(WorkflowExecutionHandler workflowExecutionHandler) {
+        builder
             .with(HttpMethod.GET, "/api/v1/executions/:executionId", workflowExecutionHandler::handleGetExecution)
-            .with(HttpMethod.GET, "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleExecutionLogs)
+            .with(HttpMethod.GET, "/api/v1/executions/:executionId/logs", workflowExecutionHandler::handleGetExecutionLogs)
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/cancel", workflowExecutionHandler::handleCancelExecution)
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/retry", workflowExecutionHandler::handleRetryExecution)
             .with(HttpMethod.POST, "/api/v1/executions/:executionId/rollback", workflowExecutionHandler::handleRollbackExecution)
-            // P2.2: Event-backed checkpoints for durable workflow execution
-            .with(HttpMethod.POST, "/api/v1/executions/:executionId/checkpoint", workflowExecutionHandler::handleCreateCheckpoint)
-            .with(HttpMethod.GET, "/api/v1/executions/:executionId/checkpoints", workflowExecutionHandler::handleListCheckpoints)
-            .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreCheckpoint);
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/checkpoint", workflowExecutionHandler::handleCheckpointExecution)
+            .with(HttpMethod.GET, "/api/v1/executions/:executionId/checkpoints", workflowExecutionHandler::handleListExecutionCheckpoints)
+            .with(HttpMethod.POST, "/api/v1/executions/:executionId/restore", workflowExecutionHandler::handleRestoreExecution);
         return this;
     }
 
@@ -369,7 +379,7 @@ public class DataCloudRouterBuilder {
     }
 
     /**
-     * Adds governance and data lifecycle endpoints.
+     * Adds data lifecycle and governance endpoints (DC-E5).
      */
     public DataCloudRouterBuilder withGovernanceRoutes(DataLifecycleHandler dataLifecycleHandler) {
         builder
@@ -385,8 +395,29 @@ public class DataCloudRouterBuilder {
     }
 
     /**
-     * Adds capability registry endpoints.
+     * Adds federated Trino query endpoint.
      */
+    public DataCloudRouterBuilder withFederatedQueryRoutes(FederatedQueryHandler federatedQueryHandler, HttpHandlerSupport httpSupport) {
+        if (federatedQueryHandler != null) {
+            builder.with(HttpMethod.POST, "/api/v1/queries/federated", federatedQueryHandler::handleFederatedQuery);
+        } else {
+            builder.with(HttpMethod.POST, "/api/v1/queries/federated", req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")));
+        }
+        return this;
+    }
+
+    /**
+     * Adds manual tier migration endpoint.
+     */
+    public DataCloudRouterBuilder withTierMigrationRoutes(TierMigrationHandler tierMigrationHandler, HttpHandlerSupport httpSupport) {
+        if (tierMigrationHandler != null) {
+            builder.with(HttpMethod.POST, "/api/v1/collections/:id/migrate", tierMigrationHandler::handleMigrateCollection);
+        } else {
+            builder.with(HttpMethod.POST, "/api/v1/collections/:id/migrate", req -> Promise.of(httpSupport.errorResponse(503, "Tier migration schedulers are not configured")));
+        }
+        return this;
+    }
+
     public DataCloudRouterBuilder withCapabilityRoutes(CapabilityRegistryHandler capabilityRegistryHandler) {
         builder.with(HttpMethod.GET, "/api/v1/capabilities", capabilityRegistryHandler::handleCapabilities);
         return this;
@@ -508,30 +539,6 @@ public class DataCloudRouterBuilder {
     }
 
     /**
-     * Adds federated Trino query endpoint.
-     */
-    public DataCloudRouterBuilder withFederatedQueryRoutes(FederatedQueryHandler federatedQueryHandler, HttpHandlerSupport httpSupport) {
-        if (federatedQueryHandler != null) {
-            builder.with(HttpMethod.POST, "/api/v1/queries/federated", federatedQueryHandler::handleFederatedQuery);
-        } else {
-            builder.with(HttpMethod.POST, "/api/v1/queries/federated", req -> Promise.of(httpSupport.errorResponse(503, "Analytics engine not available")));
-        }
-        return this;
-    }
-
-    /**
-     * Adds manual tier migration endpoint.
-     */
-    public DataCloudRouterBuilder withTierMigrationRoutes(TierMigrationHandler tierMigrationHandler, HttpHandlerSupport httpSupport) {
-        if (tierMigrationHandler != null) {
-            builder.with(HttpMethod.POST, "/api/v1/collections/:id/migrate", tierMigrationHandler::handleMigrateCollection);
-        } else {
-            builder.with(HttpMethod.POST, "/api/v1/collections/:id/migrate", req -> Promise.of(httpSupport.errorResponse(503, "Tier migration schedulers are not configured")));
-        }
-        return this;
-    }
-
-    /**
      * Adds connector registry endpoints for external data sources (P1.1).
      * Includes both /api/v1/connectors and /data-fabric/connectors routes for frontend compatibility.
      */
@@ -560,7 +567,8 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
                 .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId/statistics", dataSourceRegistryHandler::handleGetSyncStatus)
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)
-                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection);
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", dataSourceRegistryHandler::handleDisableConnection)
+                .with(HttpMethod.GET,  "/data-fabric/metrics", dataSourceRegistryHandler::handleGetFabricMetrics);
         } else {
             // /api/v1/connectors routes - 503 when handler not available
             builder
@@ -585,7 +593,8 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
                 .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId/statistics", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
-                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
+                .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/disable", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")))
+                .with(HttpMethod.GET,  "/data-fabric/metrics", req -> Promise.of(httpSupport.errorResponse(503, "Connector registry not available")));
         }
         return this;
     }

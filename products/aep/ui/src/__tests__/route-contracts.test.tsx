@@ -37,6 +37,8 @@ describe('Route contracts', () => {
     const { LoginPage } = await import('@/pages/LoginPage');
     renderRoute('/login', <Routes><Route path="/login" element={<LoginPage />} /></Routes>);
     await waitFor(() => expect(screen.queryByTestId('suspense')).not.toBeInTheDocument());
+    // LoginPage renders the AEP product heading and a sign-in affordance
+    expect(screen.getByRole('heading', { name: /aep control plane/i })).toBeInTheDocument();
     expect(document.title).not.toBe('Page not found');
   });
 
@@ -57,6 +59,17 @@ describe('Route contracts', () => {
       </Routes>,
     );
     await waitFor(() => expect(screen.queryByTestId('suspense')).not.toBeInTheDocument());
+  });
+
+  it('renders monitoring dashboard at /operate', async () => {
+    const { MonitoringDashboardPage } = await import('@/pages/MonitoringDashboardPage');
+    renderRoute(
+      '/operate',
+      <Routes><Route path="/operate" element={<MonitoringDashboardPage />} /></Routes>,
+    );
+    await waitFor(() => expect(screen.queryByTestId('suspense')).not.toBeInTheDocument());
+    // MonitoringDashboardPage renders the Monitoring heading
+    expect(screen.getByRole('heading', { name: /monitoring/i })).toBeInTheDocument();
   });
 
   it('redirects /agents to /catalog/agents', () => {

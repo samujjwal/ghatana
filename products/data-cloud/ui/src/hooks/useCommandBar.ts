@@ -274,8 +274,8 @@ export function useCommandBar(): UseCommandBarReturn {
         else if (intent.type === 'QUERY' || intent.type === 'ANALYZE') {
           try {
             const memories = await brainService.recallMemory(queryToExecute);
-            // If we got results, show them (in future, display in workspace)
-            if (memories.length > 0) {
+            // If we got results, display them in workspace (future: wire to workspace panel)
+            if (memories.length > 0 && import.meta.env.DEV) {
               console.log('Brain recall results:', memories);
             }
           } catch {

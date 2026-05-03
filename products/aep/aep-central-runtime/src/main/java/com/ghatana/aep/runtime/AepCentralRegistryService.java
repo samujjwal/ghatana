@@ -9,7 +9,7 @@ import com.ghatana.agent.TypedAgent;
 import com.ghatana.agent.catalog.CatalogAgentEntry;
 import com.ghatana.aep.catalog.AepCentralCatalogService;
 import com.ghatana.aep.registry.AgentRegistryContracts;
-import com.ghatana.datacloud.agent.registry.DataCloudAgentRegistry;
+import com.ghatana.agent.spi.AgentRegistry;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link AgentMaterializer}. Maintains in-process live agent instances.
  *
  * <h2>Persistence Integration (v2.5+)</h2>
- * <p>Optional integration with {@link DataCloudAgentRegistry} for durable agent metadata
+ * <p>Optional integration with {@link AgentRegistry} for durable agent metadata
  * and audit trail. When present, this service:
  * <ul>
  *   <li>Persists agent definitions to DataCloud on registration</li>
@@ -48,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @doc.purpose Unified centralized AEP registry and runtime operations
  * @doc.layer product
  * @doc.pattern Service, Registry, Facade
- * @see DataCloudAgentRegistry for persistence backend
+ * @see AgentRegistry for persistence backend
  * @see AepCentralCatalogService for catalog loading
  * @see AgentMaterializer for agent instantiation
  */
@@ -60,7 +60,7 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
     private final AepCentralCatalogService catalogService;
     private final AgentMaterializer materializer;
     private final Map<String, TypedAgent<?, ?>> liveAgents = new ConcurrentHashMap<>();
-    private final DataCloudAgentRegistry persistenceRegistry;  // Optional; nullable
+    private final AgentRegistry persistenceRegistry;  // Optional; nullable
 
     /**
      * Creates the central registry service with optional DataCloud persistence.
@@ -72,7 +72,7 @@ public class AepCentralRegistryService implements AgentRegistryContracts {
     public AepCentralRegistryService(
             @NotNull AepCentralCatalogService catalogService,
             @NotNull AgentMaterializer materializer,
-            @Nullable DataCloudAgentRegistry persistenceRegistry) {
+            @Nullable AgentRegistry persistenceRegistry) {
         this.catalogService = Objects.requireNonNull(catalogService, "catalogService");
         this.materializer = Objects.requireNonNull(materializer, "materializer");
         this.persistenceRegistry = persistenceRegistry;  // May be null; optional feature

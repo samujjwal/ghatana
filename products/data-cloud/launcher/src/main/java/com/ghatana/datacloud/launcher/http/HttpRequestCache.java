@@ -192,13 +192,16 @@ public final class HttpRequestCache {
      * Evicts expired entries from the cache.
      */
     private void evictExpired() {
+        // P3-2: Performance monitoring for TTL cleanup
+        long startTime = System.currentTimeMillis();
         Instant now = Instant.now();
         int beforeSize = cache.size();
         cache.entrySet().removeIf(entry -> entry.getValue().isExpired(now));
         int evicted = beforeSize - cache.size();
+        long durationMs = System.currentTimeMillis() - startTime;
         if (evicted > 0) {
             evictionCount.addAndGet(evicted);
-            log.debug("Evicted {} expired entries", evicted);
+            log.debug("[P3-2] TTL cleanup: evicted {} expired entries durationMs={}", evicted, durationMs);
         }
     }
 
@@ -206,6 +209,8 @@ public final class HttpRequestCache {
      * Evicts the oldest entry from the cache.
      */
     private void evictOldest() {
+        // P3-2: Performance monitoring for TTL cleanup
+        long startTime = System.currentTimeMillis();
         String oldestKey = cache.entrySet().stream()
                 .min(Map.Entry.comparingByValue(Comparator.comparing(CacheEntry::createdAt)))
                 .map(Map.Entry::getKey)
@@ -214,7 +219,8 @@ public final class HttpRequestCache {
         if (oldestKey != null) {
             cache.remove(oldestKey);
             evictionCount.incrementAndGet();
-            log.debug("Evicted oldest entry: {}", oldestKey);
+            long durationMs = System.currentTimeMillis() - startTime;
+            log.debug("[P3-2] TTL cleanup: evicted oldest entry key={} durationMs={}", oldestKey, durationMs);
         }
     }
 

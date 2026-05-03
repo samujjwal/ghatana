@@ -13,14 +13,15 @@
  * @doc.pattern Resolver
  */
 
+import type { CopilotInput, QueryParserInput, PredictionInput, AnomalyInput } from '../../stubs/ai/agents/api-client';
 import {
-  AIAgentClientFactory,
-  type AIAgentClientConfig,
-  type CopilotInput,
-  type QueryParserInput,
-  type PredictionInput,
-  type AnomalyInput,
-} from '../../stubs/ai/agents/api-client';
+  createCopilotClient,
+  createQueryParserClient,
+  createPredictionClient,
+  createAnomalyDetectorClient,
+  fetchAgentRegistry,
+  type JavaAIClientConfig,
+} from '../../services/ai/java-ai-agent-client';
 
 // Initialize Prisma client
 import { getPrismaClient, type PrismaClient } from '../../database/client';
@@ -33,25 +34,22 @@ interface GraphQLContext {
 
 const prisma: PrismaClient = new Proxy({} as PrismaClient, {
   get(_target, property) {
-    return (getPrismaClient() as unknown)[property];
+    return (getPrismaClient() as Record<string | symbol, unknown>)[property];
   },
 });
 
-// Agent API client factory
-const agentClientConfig: AIAgentClientConfig = {
-  baseUrl: process.env.JAVA_AI_BACKEND_URL || 'http://localhost:7003',
-  timeout: 30000,
+// Java AI backend configuration
+const javaAIClientConfig: JavaAIClientConfig = {
+  baseUrl: process.env.JAVA_AI_BACKEND_URL ?? 'http://localhost:7003',
+  timeoutMs: 30_000,
   apiKey: process.env.JAVA_AI_API_KEY,
-  debug: process.env.NODE_ENV === 'development',
 };
 
-const agentFactory = new AIAgentClientFactory(agentClientConfig);
-
-// Create agent clients
-const copilotClient = agentFactory.createCopilotClient();
-const queryParserClient = agentFactory.createQueryParserClient();
-const predictionClient = agentFactory.createPredictionClient();
-const anomalyClient = agentFactory.createAnomalyDetectorClient();
+// Create production HTTP clients backed by the Java AI backend
+const copilotClient = createCopilotClient(javaAIClientConfig);
+const queryParserClient = createQueryParserClient(javaAIClientConfig);
+const predictionClient = createPredictionClient(javaAIClientConfig);
+const anomalyClient = createAnomalyDetectorClient(javaAIClientConfig);
 
 /**
  * Agent context from GraphQL input
@@ -110,8 +108,11 @@ async function logAgentExecution(
         completedAt: new Date(),
       },
     });
-  } catch (error) {
-    console.error('Failed to log agent execution:', error);
+  } catch (err) {
+    // Logging failure must not surface to callers — emit to stderr only
+    process.stderr.write(
+      `[AIAgentsResolver] Failed to log agent execution: ${err instanceof Error ? err.message : String(err)}\n`
+    );
   }
 }
 
@@ -121,49 +122,12 @@ async function logAgentExecution(
 export const AIAgentsResolver = {
   Query: {
     /**
-     * Get all registered AI agents
+     * Get all registered AI agents from the AEP Java registry.
+     * Throws if the registry is unreachable so callers receive a meaningful error
+     * rather than stale hardcoded data.
      */
     async aiAgents() {
-      // In production, this would call the Java backend's registry
-      return [
-        {
-          name: 'COPILOT_AGENT',
-          version: '1.0.0',
-          description:
-            'Conversational AI assistant for natural language interactions',
-          state: 'READY',
-          registeredAt: new Date(),
-          capabilities: ['conversation', 'action-execution', 'context-aware'],
-        },
-        {
-          name: 'QUERY_PARSER_AGENT',
-          version: '1.0.0',
-          description: 'Natural language query parser with intent detection',
-          state: 'READY',
-          registeredAt: new Date(),
-          capabilities: ['nlu', 'intent-detection', 'filter-extraction'],
-        },
-        {
-          name: 'PREDICTION_AGENT',
-          version: '1.0.0',
-          description: 'Timeline and risk prediction using ensemble ML',
-          state: 'READY',
-          registeredAt: new Date(),
-          capabilities: ['forecasting', 'risk-analysis', 'recommendations'],
-        },
-        {
-          name: 'ANOMALY_DETECTOR_AGENT',
-          version: '1.0.0',
-          description: 'Real-time anomaly detection and alerting',
-          state: 'READY',
-          registeredAt: new Date(),
-          capabilities: [
-            'monitoring',
-            'anomaly-detection',
-            'root-cause-analysis',
-          ],
-        },
-      ];
+      return fetchAgentRegistry(javaAIClientConfig);
     },
 
     /**
@@ -278,9 +242,15 @@ export const AIAgentsResolver = {
 
       // Verify session belongs to user
       if (session && session.userId !== context.userId) {
-        // Log security event
-        console.error(
-          `SECURITY: Unauthorized copilot session access attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        // Emit structured security event via stderr to preserve correlation context
+        process.stderr.write(
+          JSON.stringify({
+            level: 'warn',
+            event: 'security.unauthorized_session_access',
+            requestingUserId: context.userId,
+            sessionId: id,
+            sessionOwner: session.userId,
+          }) + '\n'
         );
         throw new Error('Forbidden: Session does not belong to you');
       }
@@ -579,9 +549,14 @@ export const AIAgentsResolver = {
 
       // Verify session belongs to user
       if (session && session.userId !== context.userId) {
-        // Log security event
-        console.error(
-          `SECURITY: Unauthorized copilot session end attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        process.stderr.write(
+          JSON.stringify({
+            level: 'warn',
+            event: 'security.unauthorized_session_end_attempt',
+            requestingUserId: context.userId,
+            sessionId: id,
+            sessionOwner: session.userId,
+          }) + '\n'
         );
         throw new Error('Forbidden: Session does not belong to you');
       }
@@ -613,9 +588,14 @@ export const AIAgentsResolver = {
 
       // Verify session belongs to user
       if (session && session.userId !== context.userId) {
-        // Log security event
-        console.error(
-          `SECURITY: Unauthorized copilot session feedback attempt - User: ${context.userId}, Session: ${id}, Owner: ${session.userId}`
+        process.stderr.write(
+          JSON.stringify({
+            level: 'warn',
+            event: 'security.unauthorized_session_feedback_attempt',
+            requestingUserId: context.userId,
+            sessionId: id,
+            sessionOwner: session.userId,
+          }) + '\n'
         );
         throw new Error('Forbidden: Session does not belong to you');
       }

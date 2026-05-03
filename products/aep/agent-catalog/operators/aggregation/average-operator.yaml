@@ -1,0 +1,84 @@
+id: average-operator
+namespace: aep.operators.aggregation
+name: Average Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Calculates average of numeric field values within time windows
+description: |
+  Computes average (mean) of numeric field values from events within time
+  windows. Supports multiple fields, grouping, and handles null/missing values
+  gracefully.
+
+metadata:
+  level: 2
+  domain: event-processing
+  tags: [aggregation, average, mean, numeric, windowing]
+
+identity:
+  agentType: stream_processor
+  subtype: aggregation
+  determinismGuarantee: full
+  stateMutability: local-state
+  failureMode: drop
+  criticality: medium
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: AGGREGATION
+  inputEventTypes: ["*"]
+  outputEventTypes: ["average.result"]
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 2
+    deadLetterQueue: "average-dlq"
+  windows:
+    tumbling:
+      size: "1m"
+    sliding:
+      size: "5m"
+      step: "1m"
+
+capabilities:
+  - numeric-aggregation
+  - average-calculation
+  - multi-field
+
+tools:
+  - name: averager
+    type: SERVICE
+    endpoint: /aep/aggregation/average
+
+interfaces:
+  inputs:
+    - name: eventStream
+      schema: "*"
+      required: true
+  outputs:
+    - name: averageResult
+      schema: average.result
+
+memory:
+  type: WORKING
+  scope: window_state
+  retention: medium
+  ttl: "1h"
+  stateKeys:
+    - "windowSums"
+    - "windowCounts"
+    - "groupKeys"
+
+resources:
+  memory: "2GB"
+  cpu: "2"
+  timeout: "0"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 6
+    metric: "aggregation_queue_depth"
+    threshold: 5000

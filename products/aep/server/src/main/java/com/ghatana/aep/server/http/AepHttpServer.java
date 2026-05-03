@@ -129,6 +129,10 @@ import org.slf4j.MDC;
  * Provides REST API endpoints for event processing, pattern management,
  * anomaly detection, and forecasting.
  *
+ * @doc.type class
+ * @doc.purpose Wires all AEP HTTP controllers and starts the ActiveJ HTTP server for standalone deployment
+ * @doc.layer product
+ * @doc.pattern Server
  * @since 1.0.0
  */
 public class AepHttpServer {
@@ -735,8 +739,9 @@ public class AepHttpServer {
         this.consentController = new ConsentController(consentDecisionStore);
         
         // F-018: Step-up authentication gate for kill-switch operations (MFA verification)
+        // MfaService integration currently disabled pending auth-gateway availability
         com.ghatana.aep.server.governance.StepUpAuthenticationGate stepUpGate =
-            new com.ghatana.aep.server.governance.MfaStepUpGate(null);  // TODO: wire MfaService from auth-gateway
+            new com.ghatana.aep.server.governance.MfaStepUpGate();
         com.ghatana.aep.server.governance.KillSwitchAuditChain auditChain =
             new com.ghatana.aep.server.governance.KillSwitchAuditChain(this.auditController);
         this.governanceController = new GovernanceController(

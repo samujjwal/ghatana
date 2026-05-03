@@ -20,7 +20,7 @@ import java.util.List;
  * on data-cloud implementation details.
  *
  * <p><b>Current Status:</b> Stub implementation - provides no-op returns for all operations.
- * TODO: Implement full type conversion between port and plugin model types.
+ * Full type conversion between port and plugin model types is pending Data-Cloud plugin integration.
  *
  * @doc.type class
  * @doc.purpose Adapter for Data-Cloud Knowledge Graph plugin

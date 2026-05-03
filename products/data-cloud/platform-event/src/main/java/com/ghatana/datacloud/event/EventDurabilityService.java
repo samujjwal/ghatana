@@ -29,18 +29,39 @@ public interface EventDurabilityService {
 
     /**
      * Durability levels for event writes.
+     *
+     * <p>Each level carries an explicit {@link #strength()} value that is
+     * independent of enum declaration order, making {@code meetsLevel()} and
+     * any future comparisons immune to accidental enum reordering.
      */
     enum DurabilityLevel {
         /** Fire-and-forget, no durability guarantee */
-        NONE,
+        NONE(0),
         /** Acknowledged when written to leader */
-        LEADER_ACK,
+        LEADER_ACK(1),
         /** Acknowledged when replicated to majority */
-        MAJORITY_ACK,
+        MAJORITY_ACK(2),
         /** Acknowledged when replicated to all nodes */
-        ALL_ACK,
+        ALL_ACK(3),
         /** Acknowledged when fsynced to disk */
-        FSYNC_ACK
+        FSYNC_ACK(4);
+
+        private final int strength;
+
+        DurabilityLevel(int strength) {
+            this.strength = strength;
+        }
+
+        /**
+         * Explicit numeric strength of this level.
+         * Higher values require stronger guarantees.
+         * This value is stable across enum reordering.
+         *
+         * @return non-negative strength value
+         */
+        public int strength() {
+            return strength;
+        }
     }
 
     /**
@@ -116,9 +137,12 @@ public interface EventDurabilityService {
 
         /**
          * Check if achieved level meets required level.
+         *
+         * <p>Uses explicit {@link DurabilityLevel#strength()} comparison rather than
+         * enum ordinal, making this method immune to enum declaration order changes.
          */
         public boolean meetsLevel(DurabilityLevel required) {
-            return achievedLevel.ordinal() >= required.ordinal();
+            return achievedLevel.strength() >= required.strength();
         }
     }
 

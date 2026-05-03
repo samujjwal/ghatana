@@ -25,6 +25,7 @@ interface ResolverContext {
   userId?: string;
   email?: string;
   role?: string;
+  workspaceId?: string;
 }
 
 /**

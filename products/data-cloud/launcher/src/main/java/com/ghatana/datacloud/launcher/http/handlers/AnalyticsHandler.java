@@ -61,6 +61,9 @@ public class AnalyticsHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnalyticsQuery(HttpRequest request) {
         if (analyticsEngine == null) {
+            // P0-4: Explicit degradation logging for Analytics
+            log.warn("[DC-9] ANALYTICS DEGRADED: Analytics engine not available in this deployment. " +
+                "Query execution will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true and ensure database connectivity to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String tenantId = http.requireTenantIdOrFail(request);
@@ -114,6 +117,9 @@ public class AnalyticsHandler {
 
     public Promise<HttpResponse> handleAnalyticsGetResult(HttpRequest request) {
         if (analyticsEngine == null) {
+            // P0-4: Explicit degradation logging for Analytics
+            log.warn("[DC-9] ANALYTICS DEGRADED: Analytics engine not available in this deployment. " +
+                "Result retrieval will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String queryId = request.getPathParameter("queryId");
@@ -146,6 +152,9 @@ public class AnalyticsHandler {
 
     public Promise<HttpResponse> handleAnalyticsGetPlan(HttpRequest request) {
         if (analyticsEngine == null) {
+            // P0-4: Explicit degradation logging for Analytics
+            log.warn("[DC-9] ANALYTICS DEGRADED: Analytics engine not available in this deployment. " +
+                "Query plan retrieval will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String queryId = request.getPathParameter("queryId");
@@ -176,6 +185,9 @@ public class AnalyticsHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnalyticsAggregate(HttpRequest request) {
         if (analyticsEngine == null) {
+            // P0-4: Explicit degradation logging for Analytics
+            log.warn("[DC-9] ANALYTICS DEGRADED: Analytics engine not available in this deployment. " +
+                "Aggregate query execution will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String tenantId = http.requireTenantIdOrFail(request);
@@ -254,6 +266,9 @@ public class AnalyticsHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleAnalyticsExplain(HttpRequest request) {
         if (analyticsEngine == null) {
+            // P0-4: Explicit degradation logging for Analytics
+            log.warn("[DC-9] ANALYTICS DEGRADED: Analytics engine not available in this deployment. " +
+                "Query explain will fail with 503. Configure DATACLOUD_ANALYTICS_ENABLED=true to restore analytics capability.");
             return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment"));
         }
         String tenantId = http.requireTenantIdOrFail(request);

@@ -1,0 +1,89 @@
+id: dag-executor-operator
+namespace: aep.operators.orchestration
+name: DAG Executor Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Executes directed acyclic graph (DAG) workflows with dependency management
+description: |
+  Executes complex event processing workflows defined as DAGs. Manages
+  dependencies between operators, handles failures with retry logic, and
+  supports checkpoint-based recovery for long-running workflows.
+
+metadata:
+  level: 4
+  domain: event-processing
+  tags: [orchestration, dag, workflow, dependency-management, checkpoint]
+
+identity:
+  agentType: planning
+  subtype: orchestration
+  determinismGuarantee: config-scoped
+  stateMutability: HYBRID_STATE
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: semi-autonomous
+
+aep:
+  operatorType: ORCHESTRATION
+  inputEventTypes: ["workflow.trigger"]
+  outputEventTypes:
+    - "workflow.completed"
+    - "workflow.failed"
+    - "workflow.step.completed"
+  backpressure:
+    bufferSize: 100
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: "60s"
+    maxRetries: 3
+    deadLetterQueue: "dag-executor-dlq"
+
+capabilities:
+  - dag-execution
+  - dependency-resolution
+  - checkpoint-recovery
+  - failure-handling
+
+tools:
+  - name: dagScheduler
+    type: SERVICE
+    endpoint: /aep/orchestration/schedule
+  - name: checkpointManager
+    type: SERVICE
+    endpoint: /aep/orchestration/checkpoint
+
+interfaces:
+  inputs:
+    - name: workflowTrigger
+      schema: workflow.trigger
+      required: true
+  outputs:
+    - name: workflowCompletion
+      schema: workflow.completed
+    - name: workflowFailure
+      schema: workflow.failed
+    - name: stepCompletion
+      schema: workflow.step.completed
+
+memory:
+  type: LONG_TERM
+  scope: workflow_state
+  retention: long
+  ttl: "7d"
+  stateKeys:
+    - "dagState"
+    - "executionHistory"
+    - "checkpointData"
+
+resources:
+  memory: "4GB"
+  cpu: "4"
+  timeout: "0"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 3
+    metric: "active_workflows"
+    threshold: 10

@@ -1,79 +1,173 @@
 /**
  * @doc.type class
- * @doc.purpose Test feature ingestion pipeline, processing, and validation
+ * @doc.purpose Test OptimizedFeatureIngestionPipeline ingestion, validation, metrics, and lifecycle
  * @doc.layer products
  * @doc.pattern Test
  */
 package com.ghatana.datacloud.featurestore;
 
+import com.ghatana.services.featurestore.ingest.OptimizedFeatureIngestionPipeline;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Feature Ingestion Pipeline Tests
+ * Tests for {@link OptimizedFeatureIngestionPipeline}.
  *
- * Test feature ingestion pipeline, processing, and validation.
+ * <p>Covers synchronous ingestion, error counter increment on validation failure,
+ * closed-pipeline guard, async API on closed pipeline, metrics snapshot completeness,
+ * and batch flush lifecycle.
  */
-@DisplayName("Feature Ingestion Pipeline Tests")
+@DisplayName("OptimizedFeatureIngestionPipeline")
 class FeatureIngestionPipelineTest {
 
-    @Test
-    @DisplayName("Should handle feature ingestion")
-    void shouldHandleFeatureIngestion() { 
-        Map<String, Object> payload = Map.of("age", 25, "income", 50000.0); 
+    private static final int BATCH_SIZE = 10;
+    private static final long BATCH_TIMEOUT_MS = 5_000L;
 
-        assertThat(payload).isNotEmpty(); 
-        assertThat(payload.size()).isGreaterThan(1); 
+    /** Valid feature always accepted by the default no-op validator / transformer below. */
+    private static Map<String, Object> validFeature(String name) {
+        Map<String, Object> f = new HashMap<>();
+        f.put("feature_name", name);
+        f.put("value", 42.0);
+        return f;
     }
 
-    @Test
-    @DisplayName("Should handle feature processing")
-    void shouldHandleFeatureProcessing() { 
-        Map<String, Object> payload = Map.of("name", "test", "value", 123); 
+    private List<List<Map<String, Object>>> stored;
+    private OptimizedFeatureIngestionPipeline pipeline;
 
-        assertThat(payload).isNotEmpty(); 
-        assertThat(payload).containsKey("value");
+    @BeforeEach
+    void setUp() {
+        stored = new ArrayList<>();
+        pipeline = new OptimizedFeatureIngestionPipeline(
+                BATCH_SIZE,
+                BATCH_TIMEOUT_MS,
+                /* validator    */ feature -> { /* accept all */ },
+                /* transformer  */ feature -> feature.put("enriched", true),
+                /* storageCallback */ batch -> stored.add(new ArrayList<>(batch)));
     }
 
-    @Test
-    @DisplayName("Should handle feature validation")
-    void shouldHandleFeatureValidation() { 
-        Map<String, Object> payload = Map.of("age", 25, "name", "John Doe"); 
-
-        assertThat(payload).isNotEmpty(); 
-        assertThat(payload.keySet()).allMatch(key -> key.matches("[a-z0-9_]+"));
+    @AfterEach
+    void tearDown() {
+        if (!pipeline.isClosed()) {
+            pipeline.close();
+        }
     }
 
-    @Test
-    @DisplayName("Should handle feature transformation")
-    void shouldHandleFeatureTransformation() { 
-        Map<String, Object> payload = Map.of("status", "active"); 
+    // ─── Ingestion and metrics ────────────────────────────────────────────────
 
-        assertThat(payload).isNotEmpty(); 
-        assertThat(payload).containsKey("status");
+    @Nested
+    @DisplayName("Ingestion metrics")
+    class IngestionMetrics {
+
+        @Test
+        @DisplayName("ingestFeature increments ingested_count and validated_count")
+        void ingestFeatureIncrementsCounters() {
+            pipeline.ingestFeature(validFeature("score"));
+
+            Map<String, Long> metrics = pipeline.getMetrics();
+            assertThat(metrics.get("ingested_count")).isEqualTo(1L);
+            assertThat(metrics.get("validated_count")).isEqualTo(1L);
+            assertThat(metrics.get("transformed_count")).isEqualTo(1L);
+            assertThat(metrics.get("error_count")).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("ingestFeatures increments ingested_count by feature list size")
+        void ingestFeaturesIncrementsCountersByListSize() {
+            List<Map<String, Object>> batch = List.of(
+                    validFeature("age"),
+                    validFeature("income"),
+                    validFeature("tenure"));
+
+            pipeline.ingestFeatures(batch);
+
+            Map<String, Long> metrics = pipeline.getMetrics();
+            assertThat(metrics.get("ingested_count")).isEqualTo(3L);
+            assertThat(metrics.get("error_count")).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("validator throwing RuntimeException increments error_count")
+        void validatorExceptionIncrementsErrorCount() {
+            OptimizedFeatureIngestionPipeline strictPipeline = new OptimizedFeatureIngestionPipeline(
+                    BATCH_SIZE,
+                    BATCH_TIMEOUT_MS,
+                    feature -> { throw new IllegalArgumentException("invalid feature"); },
+                    null,
+                    batch -> {});
+
+            try {
+                assertThatThrownBy(() -> strictPipeline.ingestFeature(validFeature("bad")))
+                        .isInstanceOf(RuntimeException.class);
+
+                assertThat(strictPipeline.getMetrics().get("error_count")).isEqualTo(1L);
+            } finally {
+                strictPipeline.close();
+            }
+        }
+
+        @Test
+        @DisplayName("getMetrics returns snapshot with all expected keys")
+        void getMetricsReturnsAllExpectedKeys() {
+            Map<String, Long> metrics = pipeline.getMetrics();
+            assertThat(metrics).containsKeys(
+                    "ingested_count",
+                    "validated_count",
+                    "transformed_count",
+                    "stored_count",
+                    "error_count",
+                    "processing_time_ms");
+        }
     }
 
-    @Test
-    @DisplayName("Should handle ingestion failures")
-    void shouldHandleIngestionFailures() { 
-        Map<String, Object> nullPayload = new HashMap<>(); 
-        nullPayload.put("null_field", null); 
+    // ─── Closed-pipeline guards ───────────────────────────────────────────────
 
-        assertThat(nullPayload).containsKey("null_field");
-    }
+    @Nested
+    @DisplayName("Closed pipeline guards")
+    class ClosedPipelineGuards {
 
-    @Test
-    @DisplayName("Should handle batch ingestion")
-    void shouldHandleBatchIngestion() { 
-        int batchSize = 100;
-        Map<String, Object> payload = Map.of("batch_id", 1); 
+        @Test
+        @DisplayName("ingestFeature after close throws IllegalStateException")
+        void ingestFeatureAfterCloseThrows() {
+            pipeline.close();
 
-        assertThat(batchSize).isPositive(); 
-        assertThat(payload).isNotEmpty(); 
+            assertThatThrownBy(() -> pipeline.ingestFeature(validFeature("x")))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("closed");
+        }
+
+        @Test
+        @DisplayName("ingestFeaturesAsync after close returns failed CompletableFuture")
+        void ingestFeaturesAsyncAfterCloseReturnsFailedFuture() throws InterruptedException {
+            pipeline.close();
+
+            CompletableFuture<Void> future = pipeline.ingestFeaturesAsync(List.of(validFeature("y")));
+
+            assertThat(future).isCompletedExceptionally();
+            assertThatThrownBy(future::get)
+                    .isInstanceOf(ExecutionException.class)
+                    .cause()
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("isClosed returns true after close()")
+        void isClosedReturnsTrueAfterClose() {
+            assertThat(pipeline.isClosed()).isFalse();
+            pipeline.close();
+            assertThat(pipeline.isClosed()).isTrue();
+        }
     }
 }

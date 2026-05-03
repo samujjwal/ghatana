@@ -1,0 +1,76 @@
+id: field-mapper-operator
+namespace: aep.operators.transformation
+name: Field Mapper Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Maps and renames event fields based on a configuration schema
+description: |
+  Transforms event data by mapping source fields to destination fields
+  with optional type conversion and default value support. Enables flexible
+  event schema evolution without breaking downstream consumers.
+
+metadata:
+  level: 2
+  domain: event-processing
+  tags: [transformation, mapping, field-renaming, schema-evolution]
+
+identity:
+  agentType: deterministic
+  subtype: transformation
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: drop
+  criticality: medium
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["*"]
+  outputEventTypes: ["mapped"]
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "30s"
+    maxRetries: 1
+    deadLetterQueue: "field-mapper-dlq"
+
+capabilities:
+  - field-mapping
+  - type-conversion
+  - default-values
+
+tools:
+  - name: fieldMapper
+    type: SERVICE
+    endpoint: /aep/transform/field-map
+
+interfaces:
+  inputs:
+    - name: sourceEvent
+      schema: "*"
+      required: true
+  outputs:
+    - name: mappedEvent
+      schema: mapped
+
+memory:
+  type: WORKING
+  scope: mapping_config
+  retention: medium
+  ttl: "24h"
+  stateKeys:
+    - "mappingRules"
+
+resources:
+  memory: "1GB"
+  cpu: "2"
+  timeout: "30s"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 8
+    metric: "mapping_queue_depth"
+    threshold: 5000

@@ -1,13 +1,19 @@
 /*
- * Copyright (c) 2026 Ghatana Inc. 
- * Data Cloud API contract tests for collection and entity service boundaries.
+ * Copyright (c) 2026 Ghatana Inc.
+ * Data Cloud API contract tests for collection service boundaries.
  *
- * Validates contracts for Data Cloud REST API operations.
+ * Validates contracts for Data Cloud collection management operations using
+ * the real CollectionService with stubbed repository dependencies.
  */
 package com.ghatana.datacloud.platform.api.contract;
 
+import com.ghatana.datacloud.application.CollectionService;
+import com.ghatana.datacloud.entity.CollectionRepository;
+import com.ghatana.datacloud.entity.MetaCollection;
+import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,11 +24,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 /**
  * Contract tests for Data Cloud collection management API.

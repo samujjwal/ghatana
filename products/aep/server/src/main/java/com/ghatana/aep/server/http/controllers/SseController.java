@@ -31,6 +31,8 @@ import java.util.Map;
 public class SseController {
 
     private static final Logger log = LoggerFactory.getLogger(SseController.class);
+    private static final int MAX_SUBSCRIBERS_PER_TENANT = 500;
+    private static final long EVICTION_SCAN_INTERVAL_MS = 60_000L;
 
     private final Map<String, List<ChannelBuffer<ByteBuf>>> sseSubscribers = new java.util.HashMap<>();
     @Nullable
@@ -44,6 +46,7 @@ public class SseController {
     public void init(Eventloop eventloop) {
         this.eventloop = eventloop;
         scheduleHeartbeat();
+        scheduleStaleConnectionEviction();
     }
 
     /**
@@ -156,10 +159,12 @@ public class SseController {
             sseSubscribers.forEach((tenant, queues) -> {
                 for (int i = queues.size() - 1; i >= 0; i--) {
                     ChannelBuffer<ByteBuf> q = queues.get(i);
-                    if (q.isSaturated()) {
+                    if (q.isSaturated() || q.isExhausted()) {
                         queues.remove(i);
-                        q.closeEx(new java.io.IOException(
-                            "SSE heartbeat: subscriber removed (backpressure)"));
+                        if (!q.isExhausted()) {
+                            q.closeEx(new java.io.IOException(
+                                "SSE heartbeat: subscriber removed (backpressure/closed)"));
+                        }
                     } else {
                         q.put(ByteBuf.wrapForReading(heartbeat))
                             .whenException(e -> {
@@ -170,7 +175,43 @@ public class SseController {
                     }
                 }
             });
+            // Remove tenants with no active subscribers
+            sseSubscribers.entrySet().removeIf(e -> e.getValue().isEmpty());
             scheduleHeartbeat();
+        });
+    }
+
+    private void scheduleStaleConnectionEviction() {
+        if (eventloop == null || shutdown) return;
+        eventloop.delay(EVICTION_SCAN_INTERVAL_MS, () -> {
+            if (shutdown) return;
+            int removed = 0;
+            for (Map.Entry<String, List<ChannelBuffer<ByteBuf>>> entry : sseSubscribers.entrySet()) {
+                List<ChannelBuffer<ByteBuf>> queues = entry.getValue();
+                for (int i = queues.size() - 1; i >= 0; i--) {
+                    ChannelBuffer<ByteBuf> q = queues.get(i);
+                    if (q.isExhausted() || q.isSaturated()) {
+                        queues.remove(i);
+                        if (!q.isExhausted()) {
+                            q.closeEx(new java.io.IOException(
+                                "SSE eviction: stale/saturated subscriber removed"));
+                        }
+                        removed++;
+                    }
+                }
+                // Cap subscribers per tenant to prevent unbounded growth
+                while (queues.size() > MAX_SUBSCRIBERS_PER_TENANT) {
+                    ChannelBuffer<ByteBuf> oldest = queues.remove(0);
+                    oldest.closeEx(new java.io.IOException(
+                        "SSE eviction: max subscribers per tenant exceeded"));
+                    removed++;
+                }
+            }
+            sseSubscribers.entrySet().removeIf(e -> e.getValue().isEmpty());
+            if (removed > 0) {
+                log.info("SSE eviction scan removed {} stale subscriber(s)", removed);
+            }
+            scheduleStaleConnectionEviction();
         });
     }
 

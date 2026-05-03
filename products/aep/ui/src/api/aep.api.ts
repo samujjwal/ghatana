@@ -734,6 +734,8 @@ export interface CostSummary {
   alerts: CostAlert[];
   dataSource: string;
   allocationModel: string;
+  /** True when cost figures are synthesised from formula rather than real billing telemetry. */
+  estimated: boolean;
 }
 
 export type PrivacyRequestType =
@@ -948,6 +950,8 @@ interface MarketplaceReviewsResponse {
 
 interface CostSummaryResponse {
   summary: CostSummary;
+  estimated: boolean;
+  timestamp: string;
 }
 
 interface WorkflowTemplatesResponse {
@@ -1392,7 +1396,7 @@ export async function getCostSummary(
   const { data } = await client.get<CostSummaryResponse>("/api/v1/costs/summary", {
     params: { tenantId, ...options },
   });
-  return data.summary;
+  return { ...data.summary, estimated: data.estimated ?? false };
 }
 
 export async function requestGdprAccess(
@@ -1611,6 +1615,63 @@ export async function instantiateTemplate(
 ): Promise<{ pipelineId: string }> {
   const { data } = await client.post<InstantiateTemplateResponse>(
     `/api/v1/workflows/templates/${templateId}/instantiate`,
+    null,
+    { params: { tenantId } },
+  );
+  return data;
+}
+
+// ─── Operations ───────────────────────────────────────────────────────────
+
+export type OperationStatus = "pending" | "running" | "completed" | "failed" | "cancelled";
+
+export interface OperationRecord {
+  id: string;
+  type: string;
+  status: OperationStatus;
+  startedAt: string;
+  finishedAt?: string;
+  attempts: number;
+  maxAttempts: number;
+  resourceType?: "pipeline" | "run" | "agent" | "policy";
+  resourceId?: string;
+  errorMessage?: string;
+  auditEntryId?: string;
+  initiatedBy?: string;
+}
+
+interface OperationsResponse {
+  operations?: OperationRecord[];
+}
+
+export async function listOperations(
+  tenantId = "default",
+  limit = 50,
+): Promise<OperationRecord[]> {
+  const { data } = await client.get<OperationsResponse>("/api/v1/operations", {
+    params: { tenantId, limit },
+  });
+  return data.operations ?? [];
+}
+
+export async function retryOperation(
+  operationId: string,
+  tenantId = "default",
+): Promise<{ retried: boolean; operationId: string }> {
+  const { data } = await client.post<{ retried: boolean; operationId: string }>(
+    `/api/v1/operations/${operationId}/retry`,
+    null,
+    { params: { tenantId } },
+  );
+  return data;
+}
+
+export async function cancelOperation(
+  operationId: string,
+  tenantId = "default",
+): Promise<{ cancelled: boolean; operationId: string }> {
+  const { data } = await client.post<{ cancelled: boolean; operationId: string }>(
+    `/api/v1/operations/${operationId}/cancel`,
     null,
     { params: { tenantId } },
   );

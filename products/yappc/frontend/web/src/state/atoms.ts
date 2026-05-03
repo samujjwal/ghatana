@@ -106,7 +106,7 @@ export const getWorkspaceService = createWorkspaceService;
 // Stub Atoms for Missing Exports
 // ============================================================================
 // These atoms don't exist in @ghatana/yappc-canvas but are imported by app code.
-// Creating stubs here to unblock migration. TODO: Implement properly.
+// Aliases to existing atoms to maintain compatibility during migration.
 
 /** Stub: Current user atom (alias for userAtom) */
 export const currentUserAtom = userAtom;

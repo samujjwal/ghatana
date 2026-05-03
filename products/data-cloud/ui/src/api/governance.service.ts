@@ -228,7 +228,8 @@ export interface GovernanceRecommendation {
 
 export type GovernanceOperationalAction =
   | GovernanceRecommendationAction
-  | 'purge-retention';
+  | 'purge-retention'
+  | 'create-policy'; // P1-1: Policy CRUD lifecycle
 
 export interface GovernanceLifecycleSurface {
   id: string;
@@ -676,14 +677,18 @@ function buildLifecycleSurfaces(
     {
       id: 'policy-lifecycle',
       title: 'Policy Lifecycle',
-      status: 'unavailable',
-      summary: 'General policy create, update, toggle, and delete flows are still outside the current launcher-backed governance contract.',
+      status: 'live-action',
+      summary: 'Policy create, update, toggle, and delete flows are now available through the launcher-backed governance contract.',
       evidence: [
-        GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE,
-        GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE,
-        GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE,
-        GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE,
+        'POST /api/v1/governance/policies - create policy',
+        'GET /api/v1/governance/policies - list policies',
+        'GET /api/v1/governance/policies/:id - get policy',
+        'PUT /api/v1/governance/policies/:id - update policy',
+        'DELETE /api/v1/governance/policies/:id - delete policy',
+        'POST /api/v1/governance/policies/:id/toggle - toggle policy',
       ],
+      action: 'create-policy',
+      actionLabel: 'Create policy',
     },
   ];
 }
@@ -740,8 +745,27 @@ export class GovernanceService {
   }
 
   async createPolicy(policy: Partial<Policy>): Promise<Policy> {
-    void policy;
-    throw new Error(GOVERNANCE_POLICY_CREATE_BOUNDARY_MESSAGE);
+    // P1-1: Policy CRUD lifecycle - call real backend endpoint
+    const rawResponse = await apiClient.post('/governance/policies', policy);
+    const response = governanceEnvelopeSchema(z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
+      description: z.string().optional(),
+      enabled: z.boolean(),
+      scope: z.record(z.string(), z.unknown()).optional(),
+      rules: z.array(z.object({
+        condition: z.string(),
+        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
+        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      })).optional(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      tenantId: z.string().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    })).parse(rawResponse);
+    return unwrapEnvelope(response) as Policy;
   }
 
   async classifyRetention(input: RetentionClassificationRequest): Promise<RetentionClassificationResult> {
@@ -765,20 +789,56 @@ export class GovernanceService {
   }
 
   async updatePolicy(policyId: string, policy: Partial<Policy>): Promise<Policy> {
-    void policyId;
-    void policy;
-    throw new Error(GOVERNANCE_POLICY_UPDATE_BOUNDARY_MESSAGE);
+    // P1-1: Policy CRUD lifecycle - call real backend endpoint
+    const rawResponse = await apiClient.put(`/governance/policies/${policyId}`, policy);
+    const response = governanceEnvelopeSchema(z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
+      description: z.string().optional(),
+      enabled: z.boolean(),
+      scope: z.record(z.string(), z.unknown()).optional(),
+      rules: z.array(z.object({
+        condition: z.string(),
+        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
+        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      })).optional(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      tenantId: z.string().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    })).parse(rawResponse);
+    return unwrapEnvelope(response) as Policy;
   }
 
   async deletePolicy(policyId: string): Promise<void> {
-    void policyId;
-    throw new Error(GOVERNANCE_POLICY_DELETE_BOUNDARY_MESSAGE);
+    // P1-1: Policy CRUD lifecycle - call real backend endpoint
+    await apiClient.delete(`/governance/policies/${policyId}`);
   }
 
   async togglePolicy(policyId: string, enabled: boolean): Promise<Policy> {
-    void policyId;
-    void enabled;
-    throw new Error(GOVERNANCE_POLICY_TOGGLE_BOUNDARY_MESSAGE);
+    // P1-1: Policy CRUD lifecycle - call real backend endpoint
+    const rawResponse = await apiClient.post(`/governance/policies/${policyId}/toggle`, { enabled });
+    const response = governanceEnvelopeSchema(z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.enum(['SECURITY', 'PRIVACY', 'RETENTION', 'ACCESS', 'QUALITY', 'CUSTOM']),
+      description: z.string().optional(),
+      enabled: z.boolean(),
+      scope: z.record(z.string(), z.unknown()).optional(),
+      rules: z.array(z.object({
+        condition: z.string(),
+        action: z.enum(['ALLOW', 'DENY', 'MASK', 'AUDIT', 'REQUIRE_APPROVAL']),
+        severity: z.enum(['INFO', 'WARNING', 'ERROR']),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      })).optional(),
+      createdAt: z.string(),
+      updatedAt: z.string(),
+      tenantId: z.string().optional(),
+      metadata: z.record(z.string(), z.unknown()).optional(),
+    })).parse(rawResponse);
+    return unwrapEnvelope(response) as Policy;
   }
 
   async getViolations(policyId?: string, limit: number = 50): Promise<PolicyViolation[]> {

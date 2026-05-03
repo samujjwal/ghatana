@@ -103,6 +103,20 @@ export function CostDashboardPage() {
         </div>
       </div>
 
+      {data.estimated && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+        >
+          <span aria-hidden="true" className="mt-0.5 shrink-0 text-base">⚠️</span>
+          <span>
+            <strong>Estimated costs</strong> — Billing telemetry is not yet available for this tenant.
+            Figures are approximated using a synthetic pricing formula and may differ from actual charges.
+          </span>
+        </div>
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Observed Spend"

@@ -1,0 +1,81 @@
+id: json-parser-operator
+namespace: aep.operators.transformation
+name: JSON Parser Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Parses JSON payloads and validates against schema definitions
+description: |
+  Parses JSON string payloads from events and validates them against
+  configurable JSON schemas. Extracts nested fields and produces
+  structured event data for downstream processing.
+
+metadata:
+  level: 2
+  domain: event-processing
+  tags: [transformation, json, parsing, validation, schema]
+
+identity:
+  agentType: deterministic
+  subtype: transformation
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: dead-letter
+  criticality: high
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: TRANSFORMATION
+  inputEventTypes: ["raw.http", "raw.kafka"]
+  outputEventTypes: ["parsed.json"]
+  backpressure:
+    bufferSize: 5000
+    overflowStrategy: BLOCK
+  reliability:
+    checkpointInterval: "15s"
+    maxRetries: 2
+    deadLetterQueue: "json-parser-dlq"
+
+capabilities:
+  - json-parsing
+  - schema-validation
+  - field-extraction
+
+tools:
+  - name: jsonParser
+    type: SERVICE
+    endpoint: /aep/transform/parse-json
+  - name: schemaValidator
+    type: SERVICE
+    endpoint: /aep/transform/validate-schema
+
+interfaces:
+  inputs:
+    - name: rawPayload
+      schema: raw.http
+      required: true
+  outputs:
+    - name: parsedEvent
+      schema: parsed.json
+    - name: validationError
+      schema: validation.error
+
+memory:
+  type: WORKING
+  scope: schema_cache
+  retention: medium
+  ttl: "1h"
+  stateKeys:
+    - "schemaCache"
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "10s"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 4
+    metric: "parsing_queue_depth"
+    threshold: 2000

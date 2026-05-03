@@ -72,9 +72,9 @@ public final class AepSecurityFilter implements AsyncServlet {
     public static final String FORWARDED_HEADER_REJECTED = "aep.security.proxy.forwarded.rejected";
 
     // ── Security header values (constants to avoid allocation per request) ──────
-    private static final String HSTS_VALUE =
+    static final String HSTS_VALUE =
             "max-age=31536000; includeSubDomains; preload";
-    private static final String CSP_VALUE =
+    static final String CSP_VALUE =
             "default-src 'none'; frame-ancestors 'none'; form-action 'none'";
     private static final String PERMISSIONS_VALUE =
             "camera=(), microphone=(), geolocation=(), payment=()";

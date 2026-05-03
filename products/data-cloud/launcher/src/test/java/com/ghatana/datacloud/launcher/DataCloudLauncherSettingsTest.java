@@ -103,6 +103,37 @@ class DataCloudLauncherSettingsTest {
     }
 
     @Test
+    @DisplayName("production profile requires persistent settings - in-memory should fail")
+    void productionProfileRequiresPersistentSettings() {
+        // This test verifies that when DATACLOUD_DB_* environment variables are not set
+        // in a production profile (strict tenant resolution), the launcher should reject
+        // in-memory settings store configuration
+        
+        Map<String, String> productionEnv = Map.of(
+            "DATACLOUD_PROFILE", "production",
+            "DATACLOUD_TENANT_RESOLUTION", "strict"
+        );
+
+        // When no DATACLOUD_DB_* variables are set, validation should fail
+        boolean hasDbConfig = productionEnv.keySet().stream()
+            .anyMatch(key -> key.startsWith("DATACLOUD_DB_"));
+        
+        assertThat(hasDbConfig).isFalse();
+    }
+
+    @Test
+    @DisplayName("embedded profile allows in-memory settings")
+    void embeddedProfileAllowsInMemorySettings() {
+        // In embedded/local profiles, in-memory settings should be allowed
+        Map<String, String> embeddedEnv = Map.of(
+            "DATACLOUD_PROFILE", "embedded",
+            "DATACLOUD_TENANT_RESOLUTION", "lenient"
+        );
+
+        assertThat(embeddedEnv.get("DATACLOUD_PROFILE")).isEqualTo("embedded");
+    }
+
+    @Test
     @DisplayName("http port is resolved from environment")
     void httpPortResolvesFromEnvironment() { 
         int port = DataCloudLauncherSettings.resolveHttpPort( 

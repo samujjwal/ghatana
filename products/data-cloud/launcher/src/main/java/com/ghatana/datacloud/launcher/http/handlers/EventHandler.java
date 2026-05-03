@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -141,10 +142,22 @@ public class EventHandler {
         Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
         if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
 
-        // Handle 'from' parameter for offset-based querying
+        // P1-3: Support both offset-based and timestamp-based pagination
         String fromParam = request.getQueryParameter("from");
+        String fromTimestampParam = request.getQueryParameter("fromTimestamp");
         int fromOffset = 0;
-        if (fromParam != null && !fromParam.isBlank()) {
+        Instant fromTimestamp = null;
+
+        if (fromTimestampParam != null && !fromTimestampParam.isBlank()) {
+            // P1-3: Use timestamp-based pagination if provided
+            try {
+                fromTimestamp = Instant.parse(fromTimestampParam.trim());
+                log.debug("[P1-3] Using timestamp-based pagination fromTimestamp={}", fromTimestamp);
+            } catch (Exception e) {
+                return Promise.of(http.errorResponse(400, "Invalid 'fromTimestamp' parameter: must be ISO-8601 format (e.g., 2024-01-01T00:00:00Z)"));
+            }
+        } else if (fromParam != null && !fromParam.isBlank()) {
+            // Fallback to offset-based pagination
             try {
                 fromOffset = Integer.parseInt(fromParam.trim());
             } catch (NumberFormatException e) {
@@ -164,6 +177,7 @@ public class EventHandler {
 
         String eventType = request.getQueryParameter("type");
         final int finalFromOffset = fromOffset;
+        final Instant finalFromTimestamp = fromTimestamp;
         DataCloudClient.EventQuery query = eventType != null
             ? DataCloudClient.EventQuery.byType(eventType)
             : DataCloudClient.EventQuery.all();
@@ -173,10 +187,13 @@ public class EventHandler {
             tenantId,
             "datacloud.event.store.query",
             handlerSpan.spanId(),
-            eventType == null ? Map.of("fromOffset", finalFromOffset) : Map.of("fromOffset", finalFromOffset, "event.type", eventType),
+            eventType == null 
+                ? (fromTimestamp != null ? Map.of("fromTimestamp", finalFromTimestamp.toString()) : Map.of("fromOffset", finalFromOffset))
+                : (fromTimestamp != null ? Map.of("fromTimestamp", finalFromTimestamp.toString(), "event.type", eventType) : Map.of("fromOffset", finalFromOffset, "event.type", eventType)),
             () -> client.queryEvents(tenantId, query))
             .map(events -> {
                 var filtered = events.stream()
+                    .filter(e -> finalFromTimestamp == null || e.timestamp().isAfter(finalFromTimestamp))
                     .skip(finalFromOffset)
                     .toList();
 
@@ -191,14 +208,26 @@ public class EventHandler {
                     ));
                 }
 
-                return http.jsonResponse(Map.of(
-                    "events", eventResponses,
-                    "nextOffset", (long)(finalFromOffset + filtered.size()),
-                    "count", filtered.size(),
-                    "fromOffset", finalFromOffset,
-                    "tenantId", tenantId,
-                    "timestamp", Instant.now().toString()
-                ));
+                // P1-3: Include pagination metadata for both offset and timestamp modes
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("events", eventResponses);
+                response.put("count", filtered.size());
+                response.put("tenantId", tenantId);
+                response.put("timestamp", Instant.now().toString());
+                
+                if (finalFromTimestamp != null) {
+                    // Timestamp-based pagination metadata
+                    response.put("fromTimestamp", finalFromTimestamp.toString());
+                    if (!filtered.isEmpty()) {
+                        response.put("nextTimestamp", filtered.get(filtered.size() - 1).timestamp().toString());
+                    }
+                } else {
+                    // Offset-based pagination metadata
+                    response.put("fromOffset", finalFromOffset);
+                    response.put("nextOffset", (long)(finalFromOffset + filtered.size()));
+                }
+
+                return http.jsonResponse(response);
             }).whenComplete((response, error) -> traceSupport.finish(handlerSpan, response, error));
     }
 

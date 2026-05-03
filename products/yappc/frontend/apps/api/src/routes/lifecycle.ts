@@ -140,7 +140,13 @@ async function logStageTransitionAuditEvent(params: {
       },
     });
   } catch (error) {
-    console.error('Failed to log stage transition audit event:', error);
+    process.stderr.write(
+      JSON.stringify({
+        level: 'error',
+        event: 'lifecycle.audit_log_error',
+        error: error instanceof Error ? error.message : String(error),
+      }) + '\n'
+    );
   }
 }
 
@@ -1552,7 +1558,10 @@ const lifecycleRoutes: FastifyPluginAsync = async (fastify) => {
           metadata: result.metadata,
         });
       } catch (error) {
-        console.error(`Error executing task ${taskId}:`, error);
+        request.log.error(
+          { event: 'lifecycle.task_execution.error', taskId, error: error instanceof Error ? error.message : String(error) },
+          `Error executing task ${taskId}`
+        );
         return reply.status(500).send({
           error: 'Task execution failed',
           taskId,
@@ -1841,7 +1850,10 @@ Respond with JSON format:
         }
       } catch (error) {
         // Fallback to phase definition if AI fails
-        console.error('AI persona recommendation failed, falling back to phase definition:', error);
+        request.log.warn(
+          { event: 'lifecycle.ai_persona.fallback', error: error instanceof Error ? error.message : String(error) },
+          'AI persona recommendation failed, falling back to phase definition'
+        );
       }
     }
 

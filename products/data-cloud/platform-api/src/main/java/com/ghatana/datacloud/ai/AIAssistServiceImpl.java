@@ -59,11 +59,11 @@ public class AIAssistServiceImpl implements AIAssistService {
                     new Explanation("Query processed", List.of(), List.of(), null),
                     processingTime,
                     false,
-                    0.95
+                    1.0 // Default confidence score
                 );
 
                 metrics.incrementCounter("ai.query.success", "tenant", context.tenantId());
-                log.info("Query processed: tenant={}, query={}", context.tenantId(), query);
+                log.info("Query processed: tenant={}, queryLength={}", context.tenantId(), query.length());
 
                 return Promise.of(result);
             })
