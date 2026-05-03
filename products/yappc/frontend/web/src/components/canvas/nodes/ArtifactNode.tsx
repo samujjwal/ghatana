@@ -16,12 +16,12 @@ import { Box, Card, CardContent, Typography, Chip, IconButton, Tooltip, Badge, B
 import { MoreVertical as MoreVert, Link as LinkIcon, Check as CheckIcon, X as CloseIcon, Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, ArrowLeftRight as SwapIcon } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { PersonaBadge, StatusBadge } from '../workspace/PersonaBadge';
-import { ArtifactType } from '@/types/fow-stages';
 import { LifecyclePhase } from '@/types/lifecycle';
 import { codeAssociationsAtom, canvasInteractionModeAtom, cameraZoomAtom } from '../workspace';
 import { CodePreviewPopover } from './CodePreviewPopover';
 import { TypeSelectorModal } from '../TypeSelectorModal';
 import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
+import type { ArtifactType } from '../workspace/artifact-templates';
 
 // Artifact type icons
 const ARTIFACT_ICONS: Record<string, string> = {

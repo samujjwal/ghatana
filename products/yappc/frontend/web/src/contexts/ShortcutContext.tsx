@@ -5,14 +5,9 @@
  * for the entire application. Manages context-aware shortcuts and power user features.
  */
 
-import {
-    CommandPalette,
-    ShortcutHelper,
-    useKeyboardShortcuts,
-    type Command,
-} from '../components/ui';
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { KeyboardShortcutsPanel } from '../components/help/KeyboardShortcutsPanel';
 
 /**
  *
@@ -25,6 +20,17 @@ export interface ShortcutContextValue {
     registerCommand: (command: Command) => () => void;
     isCommandPaletteOpen: boolean;
     isShortcutHelperOpen: boolean;
+}
+
+interface Command {
+    id: string;
+    title: string;
+    description?: string;
+    category: string;
+    icon?: string;
+    shortcut?: string;
+    keywords?: string[];
+    action: () => void;
 }
 
 const ShortcutContext = createContext<ShortcutContextValue | null>(null);
@@ -58,9 +64,15 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const { registerShortcut } = useKeyboardShortcuts({
-        context: 'global'
-    });
+    const registerShortcut = useCallback((_config: {
+        key: string;
+        modifiers?: string[];
+        description: string;
+        category: string;
+        handler: () => void;
+    }) => {
+        return () => {};
+    }, []);
 
     // Determine current context from route
     const getCurrentContext = useCallback(() => {
@@ -270,18 +282,45 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
         >
             {children}
 
-            <CommandPalette
-                isOpen={isCommandPaletteOpen}
-                onClose={hideCommandPalette}
-                commands={allCommands}
-                placeholder="Type a command or search..."
-            />
+            {isCommandPaletteOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-2xl rounded-xl bg-white p-4 shadow-xl">
+                        <div className="mb-4 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold">Command Palette</h2>
+                            <button type="button" onClick={hideCommandPalette} aria-label="Close command palette">
+                                ×
+                            </button>
+                        </div>
+                        <div className="max-h-[60vh] overflow-auto">
+                            {allCommands.map((command) => (
+                                <button
+                                    key={command.id}
+                                    type="button"
+                                    onClick={() => {
+                                        command.action();
+                                        hideCommandPalette();
+                                    }}
+                                    className="flex w-full items-start justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-100"
+                                >
+                                    <span>
+                                        <span className="block font-medium">{command.title}</span>
+                                        {command.description ? (
+                                            <span className="block text-sm text-slate-500">{command.description}</span>
+                                        ) : null}
+                                    </span>
+                                    {command.shortcut ? (
+                                        <span className="text-xs text-slate-400">{command.shortcut}</span>
+                                    ) : null}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            <ShortcutHelper
-                isVisible={isShortcutHelperOpen}
+            <KeyboardShortcutsPanel
+                open={isShortcutHelperOpen}
                 onClose={hideShortcutHelper}
-                context={getCurrentContext()}
-                showCategories={true}
             />
         </ShortcutContext.Provider>
     );

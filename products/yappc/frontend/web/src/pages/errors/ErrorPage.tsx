@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-function ErrorPage(): JSX.Element {
+function ErrorPage(): React.ReactElement {
   const rawError = useRouteError();
   const error = rawError instanceof Error ? rawError : null;
   const [showDetails, setShowDetails] = useState(false);

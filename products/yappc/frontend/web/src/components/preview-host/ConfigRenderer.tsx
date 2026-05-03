@@ -27,7 +27,7 @@ interface ConfigRendererProps {
 
 export const ConfigRenderer: React.FC<ConfigRendererProps> = ({ config, mockData = {} }) => {
   const renderedComponents = useMemo(() => {
-    return config.components.map((comp) => renderComponent(comp, mockData));
+    return (config.components ?? []).map((comp) => renderComponent(comp, mockData));
   }, [config.components, mockData]);
 
   return (
@@ -47,14 +47,9 @@ export const ConfigRenderer: React.FC<ConfigRendererProps> = ({ config, mockData
 };
 
 function renderComponent(component: PageConfig['components'][number], mockData: Record<string, unknown>): React.ReactNode {
-  const { type, props, children, position } = component;
+  const { type, props, children } = component;
 
   const style = {
-    position: 'absolute' as const,
-    left: position.x,
-    top: position.y,
-    width: position.width,
-    height: position.height,
     border: '1px solid #e0e0e0',
     backgroundColor: '#f5f5f5',
     padding: '8px',
@@ -62,21 +57,28 @@ function renderComponent(component: PageConfig['components'][number], mockData: 
   };
 
   const childElements = children
-    ? children.map((child) => {
+    ? (Array.isArray(children) ? children : [children]).map((child, index) => {
+        if (typeof child === 'string') {
+          return (
+            <Typography key={`${component.id}-text-${index}`} variant="body2">
+              {child}
+            </Typography>
+          );
+        }
         return renderComponent(child as unknown as PageConfig['components'][number], mockData);
       })
     : null;
 
   return (
     <Box key={component.id} style={style} data-testid={`component-${component.id}`}>
-      <Typography variant="caption" fontWeight="bold" display="block" gutterBottom>
+      <Typography variant="caption" fontWeight="bold" gutterBottom>
         {type}
       </Typography>
-      <Typography variant="caption" color="textSecondary" display="block">
+      <Typography variant="caption" color="text.secondary">
         ID: {component.id}
       </Typography>
       {props && (
-        <Typography variant="caption" color="textSecondary" display="block">
+        <Typography variant="caption" color="text.secondary">
           Props: {JSON.stringify(props, null, 2)}
         </Typography>
       )}

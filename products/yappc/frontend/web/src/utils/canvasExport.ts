@@ -122,11 +122,22 @@ export async function exportAsPDF(
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
     try {
-        // Dynamic imports
-        // @ts-ignore - jspdf and html2canvas may not be installed
+        const loadJsPdf = new Function('return import("jspdf")') as () => Promise<{
+            default: new (options: unknown) => {
+                addImage: (...args: unknown[]) => void;
+                setProperties: (props: Record<string, unknown>) => void;
+                save: (fileName: string) => void;
+            };
+        }>;
+        const loadHtml2Canvas = new Function('return import("html2canvas")') as () => Promise<{
+            default: (
+                element: HTMLElement,
+                options: Record<string, unknown>
+            ) => Promise<HTMLCanvasElement>;
+        }>;
         const [{ default: jsPDF }, html2canvas] = await Promise.all([
-            import('jspdf'),
-            import('html2canvas'),
+            loadJsPdf(),
+            loadHtml2Canvas(),
         ]);
 
         // Capture canvas as image

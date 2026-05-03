@@ -187,7 +187,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             </Typography>
             <Button
               variant="ghost"
-              size="icon"
+              size="small"
               aria-label="Close export dialog"
               onClick={onClose}
             >
@@ -333,7 +333,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                       {exp.status === 'READY' && exp.downloadUrl && (
                         <Button
                           variant="ghost"
-                          size="icon"
+                          size="small"
                           aria-label="Download export"
                           onClick={() => handleDownload(exp.downloadUrl!)}
                         >

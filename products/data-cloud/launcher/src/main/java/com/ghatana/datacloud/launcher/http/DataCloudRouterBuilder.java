@@ -248,6 +248,7 @@ public class DataCloudRouterBuilder {
             WorkflowExecutionHandler workflowExecutionHandler) {
         builder
             .with(HttpMethod.POST, "/api/v1/analytics/query", analyticsHandler::handleAnalyticsQuery)
+            .with(HttpMethod.DELETE, "/api/v1/analytics/queries/:queryId", analyticsHandler::handleAnalyticsCancelQuery)
             .with(HttpMethod.POST, "/api/v1/analytics/aggregation", analyticsHandler::handleAnalyticsAggregate)
             .with(HttpMethod.POST, "/api/v1/analytics/explain", workflowExecutionHandler::handleExplainQuery);
         return this;
@@ -563,7 +564,7 @@ public class DataCloudRouterBuilder {
                 .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleGetConnection)
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/test", dataSourceRegistryHandler::handleTestConnection)
                 .with(HttpMethod.PUT,  "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleRegisterConnection)
-                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", req -> Promise.of(httpSupport.errorResponse(501, "Delete connector not implemented")))
+                .with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId", dataSourceRegistryHandler::handleDeleteConnection)
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/sync", dataSourceRegistryHandler::handleTriggerSync)
                 .with(HttpMethod.GET,  "/data-fabric/connectors/:connectionId/statistics", dataSourceRegistryHandler::handleGetSyncStatus)
                 .with(HttpMethod.POST, "/data-fabric/connectors/:connectionId/enable", dataSourceRegistryHandler::handleEnableConnection)

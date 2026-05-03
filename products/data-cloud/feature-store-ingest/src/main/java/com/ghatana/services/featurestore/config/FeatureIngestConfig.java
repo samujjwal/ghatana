@@ -73,7 +73,7 @@ public final class FeatureIngestConfig {
      */
     public static FeatureIngestConfig fromEnv() {
         return new Builder()
-            .mode(env(ENV_MODE, "inmemory"))
+            .mode(env(ENV_MODE, "inmemory"))  // explicit default; validate() rejects this in production profiles
             .dbUrl(env(ENV_DB_URL, null))
             .dbUser(env(ENV_DB_USER, "featureingest"))
             .dbPassword(env(ENV_DB_PASSWORD, null))
@@ -95,6 +95,23 @@ public final class FeatureIngestConfig {
      * @throws IllegalStateException if required fields are missing in postgres mode
      */
     public void validate() {
+        // Reject in-memory mode when running in any non-local deployment profile.
+        // DATACLOUD_PROFILE is set to "staging", "production", etc. in deployed environments.
+        String dcProfile = System.getenv("DATACLOUD_PROFILE");
+        boolean isProductionProfile = dcProfile != null
+            && !dcProfile.isBlank()
+            && !dcProfile.equalsIgnoreCase("local")
+            && !dcProfile.equalsIgnoreCase("embedded");
+        if ("inmemory".equalsIgnoreCase(mode) && isProductionProfile) {
+            throw new IllegalStateException(
+                "FEATURE_INGEST_MODE=inmemory is not allowed when DATACLOUD_PROFILE=" + dcProfile
+                + ". Set FEATURE_INGEST_MODE=postgres and provide FEATURE_INGEST_DB_URL.");
+        }
+        // Reject unknown modes early.
+        if (!"inmemory".equalsIgnoreCase(mode) && !"postgres".equalsIgnoreCase(mode)) {
+            throw new IllegalStateException(
+                "Unknown FEATURE_INGEST_MODE='" + mode + "'. Valid values: inmemory, postgres.");
+        }
         if ("postgres".equalsIgnoreCase(mode) && (dbUrl == null || dbUrl.isBlank())) {
             throw new IllegalStateException(
                 "FEATURE_INGEST_MODE=postgres requires FEATURE_INGEST_DB_URL to be set.");

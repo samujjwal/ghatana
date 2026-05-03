@@ -104,9 +104,12 @@ export function useCollaboration({
     const manager = new ProviderManager(config);
     managerRef.current = manager;
 
-    const unsubscribe = manager.onEvent((_event: ProviderEvent) => {
-      setConnectionState(manager.getState());
-    });
+    const unsubscribe =
+      (manager as unknown as {
+        onEvent?: (listener: (_event: ProviderEvent) => void) => () => void;
+      }).onEvent?.((_event: ProviderEvent) => {
+        setConnectionState(manager.getState());
+      }) ?? (() => {});
 
     return () => {
       unsubscribe();

@@ -22,4 +22,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // ArchUnit builds a full reverse-dependency graph over all ghatana product classes,
+    // which requires more heap than the convention's 768m default.
+    maxHeapSize = "1536m"
 }

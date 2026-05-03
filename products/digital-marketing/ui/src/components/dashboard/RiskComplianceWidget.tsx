@@ -6,12 +6,12 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
-const HIGH_RISK_THRESHOLD = 7;
+const MAX_PENDING_THRESHOLD = 5;
 
 interface RiskComplianceWidgetProps {
-  approvals?: ApprovalRequest[];
+  approvals?: ApprovalRecordResponse[];
   isLoading?: boolean;
   isError?: boolean;
 }
@@ -21,9 +21,8 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
   isLoading = false,
   isError = false,
 }) => {
-  const highRiskItems = approvals.filter(
-    (a) => a.status === 'PENDING' && a.riskLevel >= HIGH_RISK_THRESHOLD,
-  );
+  const pendingItems = approvals.filter((a) => a.status === 'PENDING');
+  const hasComplianceAlert = pendingItems.length >= MAX_PENDING_THRESHOLD;
 
   return (
     <article
@@ -56,7 +55,7 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
         </p>
       )}
 
-      {!isLoading && !isError && highRiskItems.length === 0 && (
+      {!isLoading && !isError && !hasComplianceAlert && (
         <p
           data-testid="risk-compliance-ok"
           className="text-xs text-green-600 mt-2"
@@ -65,38 +64,33 @@ export const RiskComplianceWidget: React.FC<RiskComplianceWidgetProps> = ({
         </p>
       )}
 
-      {!isLoading && !isError && highRiskItems.length > 0 && (
+      {!isLoading && !isError && hasComplianceAlert && (
         <>
           <p
             data-testid="risk-compliance-alert"
             className="text-xs text-red-600 font-medium mt-2"
           >
-            {highRiskItems.length} high-risk item
-            {highRiskItems.length !== 1 ? 's' : ''} pending review
+            {pendingItems.length} approval{pendingItems.length !== 1 ? 's' : ''} pending review
           </p>
           <ul
             data-testid="risk-compliance-list"
             className="mt-1 space-y-1"
-            aria-label="High-risk compliance items"
+            aria-label="Pending compliance items"
           >
-            {highRiskItems.slice(0, 3).map((item) => (
+            {pendingItems.slice(0, 3).map((item) => (
               <li
                 key={item.requestId}
                 className="text-xs border border-red-200 rounded px-2 py-1 bg-red-50 text-red-700"
               >
-                <span className="font-medium">Risk {item.riskLevel}/10</span>
-                {' — '}
-                <span>{item.targetType}</span>
-                {item.description && (
-                  <span className="ml-1 text-gray-600 truncate block max-w-xs">
-                    {item.description}
-                  </span>
-                )}
+                <span className="font-mono">{item.action}</span>
+                <span className="ml-1 text-gray-600 truncate block max-w-xs">
+                  {item.subjectId}
+                </span>
               </li>
             ))}
-            {highRiskItems.length > 3 && (
+            {pendingItems.length > 3 && (
               <li className="text-xs text-gray-400">
-                +{highRiskItems.length - 3} more
+                +{pendingItems.length - 3} more
               </li>
             )}
           </ul>

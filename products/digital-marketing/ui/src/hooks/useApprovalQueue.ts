@@ -8,20 +8,20 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { listPendingApprovals } from '@/api/approvals';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
 export function useApprovalQueue(
   workspaceId: string | null,
   subjectId: string | null,
 ): {
-  approvals: ApprovalRequest[];
+  approvals: ApprovalRecordResponse[];
   isLoading: boolean;
   isError: boolean;
   error: Error | null;
   refetch: () => void;
 } {
   const { data, isLoading, isError, error, refetch } = useQuery<
-    ApprovalRequest[],
+    ApprovalRecordResponse[],
     Error
   >({
     queryKey: ['approvals', 'pending', workspaceId, subjectId],

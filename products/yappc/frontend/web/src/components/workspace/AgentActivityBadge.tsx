@@ -15,7 +15,6 @@ import {
   Box,
   Tooltip,
   Typography,
-  Badge,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
 
@@ -103,13 +102,12 @@ export const AgentActivityBadge: React.FC<AgentActivityBadgeProps> = ({
       <Typography variant="caption" fontWeight={600}>
         Active AI Agents ({activeAgentCount})
       </Typography>
-      <Box component="ul" className="m-0 pl-4 mt-1">
+      <Box className="m-0 mt-1 pl-4">
         {virtualPersonas.map(personaId => {
           const definition = getPersonaDefinition(personaId);
           return (
             <Typography 
               key={personaId} 
-              component="li" 
               variant="caption"
               className="text-inherit"
             >
@@ -126,22 +124,15 @@ export const AgentActivityBadge: React.FC<AgentActivityBadgeProps> = ({
       onClick={handleClick}
       className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[rgba(99,_102,_241,_0.1)] border border-solid border-[rgba(99,_102,_241,_0.2)] transition-all duration-200 hover:bg-[rgba(99,_102,_241,_0.15)] hover:border-[rgba(99,_102,_241,_0.3)]" style={{ cursor: expandable || onClick ? 'pointer' : 'default' }}
     >
-      <Badge
-        badgeContent={
-          <StatusIcon 
-            className="text-[#22c55e]" style={{ fontSize: sizeConfig.badgeSize }} 
-          />
-        }
-        overlap="circular"
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-      >
+      <Box className="relative">
         <AgentIcon 
           className="text-[#6366f1]" style={{ fontSize: sizeConfig.iconSize }} 
         />
-      </Badge>
+        <StatusIcon
+          className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4 text-[#22c55e]"
+          style={{ fontSize: sizeConfig.badgeSize }}
+        />
+      </Box>
       
       <Typography 
         variant="caption" 

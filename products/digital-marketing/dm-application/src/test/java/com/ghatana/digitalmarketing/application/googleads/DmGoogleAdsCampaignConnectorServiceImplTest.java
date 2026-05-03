@@ -9,6 +9,7 @@ import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
@@ -279,6 +280,30 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("createSearchCampaign throws DmosConnectorDisabledException when connector is disabled")
+    void createSearchCampaignConnectorDisabled() {
+        service = new DmGoogleAdsCampaignConnectorServiceImpl(
+            connectorRepository,
+            credentialRepository,
+            linkRepository,
+            campaignRepository,
+            apiClient,
+            new AllowingKernelAdapter(true, false));
+
+        assertThatExceptionOfType(DmosConnectorDisabledException.class)
+            .isThrownBy(() -> runPromise(() -> service.createSearchCampaign(
+                ctx,
+                new DmGoogleAdsCampaignConnectorService.CreateSearchCampaignRequest(
+                    connector.getId(),
+                    launchedCampaign.getId(),
+                    new BigDecimal("50"),
+                    "Mumbai",
+                    "keyword"
+                ))))
+            .withMessageContaining("dmos.google_ads_connector.enabled");
+    }
+
+    @Test
     @DisplayName("createSearchCampaign rejects non-PAID_SEARCH campaign type")
     void requiresPaidSearchType() {
         Campaign contentCampaign = Campaign.builder()
@@ -416,9 +441,15 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
 
     static final class AllowingKernelAdapter implements DigitalMarketingKernelAdapter {
         private final boolean allowed;
+        private final boolean connectorEnabled;
 
         AllowingKernelAdapter(boolean allowed) {
+            this(allowed, true);
+        }
+
+        AllowingKernelAdapter(boolean allowed, boolean connectorEnabled) {
             this.allowed = allowed;
+            this.connectorEnabled = connectorEnabled;
         }
 
         @Override
@@ -432,6 +463,11 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         @Override
         public Promise<Boolean> isAuthorized(DmOperationContext context, String resource, String action) {
             return Promise.of(allowed);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(connectorEnabled);
         }
 
         @Override

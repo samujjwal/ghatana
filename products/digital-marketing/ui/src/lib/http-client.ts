@@ -8,6 +8,22 @@
 
 let runtimeAuthToken: string | null = null;
 
+interface RequestContext {
+  tenantId: string | null;
+  principalId: string | null;
+  sessionId: string | null;
+  roles: string[];
+  permissions: string[];
+}
+
+let runtimeContext: RequestContext = {
+  tenantId: null,
+  principalId: null,
+  sessionId: null,
+  roles: [],
+  permissions: [],
+};
+
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
 
@@ -23,6 +39,20 @@ export function clearAuthToken(): void {
   runtimeAuthToken = null;
 }
 
+export function setRequestContext(
+  tenantId: string | null,
+  principalId: string | null,
+  sessionId: string | null,
+  roles: string[],
+  permissions: string[],
+): void {
+  runtimeContext = { tenantId, principalId, sessionId, roles, permissions };
+}
+
+export function clearRequestContext(): void {
+  runtimeContext = { tenantId: null, principalId: null, sessionId: null, roles: [], permissions: [] };
+}
+
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
 }
@@ -36,10 +66,26 @@ export async function apiRequest<T>(
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Correlation-ID': crypto.randomUUID(),
     ...(extraHeaders as Record<string, string>),
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+  if (runtimeContext.tenantId) {
+    headers['X-Tenant-ID'] = runtimeContext.tenantId;
+  }
+  if (runtimeContext.principalId) {
+    headers['X-Principal-ID'] = runtimeContext.principalId;
+  }
+  if (runtimeContext.sessionId) {
+    headers['X-Session-ID'] = runtimeContext.sessionId;
+  }
+  if (runtimeContext.roles.length > 0) {
+    headers['X-Roles'] = runtimeContext.roles.join(',');
+  }
+  if (runtimeContext.permissions.length > 0) {
+    headers['X-Permissions'] = runtimeContext.permissions.join(',');
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

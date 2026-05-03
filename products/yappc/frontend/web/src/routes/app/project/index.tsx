@@ -144,7 +144,10 @@ export default function ProjectIndexRoute() {
         );
       }
 
-      return phaseTransitionAPI.getNextPhase(currentPhase, projectId ?? '');
+      return phaseTransitionAPI.getNextPhase(
+        currentPhase as unknown as import('../../../types/lifecycle').LifecyclePhase,
+        projectId ?? ''
+      );
     },
     enabled: Boolean(projectId && currentPhase && isLifecyclePhase(currentPhase)),
     retry: false,

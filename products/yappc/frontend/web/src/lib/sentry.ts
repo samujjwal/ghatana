@@ -72,6 +72,7 @@ export function initSentry(): void {
   }
 
   // Dynamic import avoids bundling Sentry in environments where it isn't used.
+  // @ts-expect-error optional dependency in local dev
   void import('@sentry/react').then((Sentry) => {
     Sentry.init({
       dsn: SENTRY_DSN,
@@ -103,8 +104,9 @@ export function captureHandledException(
 ): void {
   if (!SENTRY_DSN) return;
 
+  // @ts-expect-error optional dependency in local dev
   void import('@sentry/react').then((Sentry) => {
-    Sentry.withScope((scope) => {
+    Sentry.withScope((scope: { setExtras: (extras: Record<string, unknown>) => void }) => {
       if (context) {
         scope.setExtras(context);
       }

@@ -66,8 +66,8 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             open={open}
             onClose={onClose}
             title={title}
-            size="sm"
-            closeOnOverlayClick={!loading}
+            size="small"
+            closeOnBackdropClick={!loading}
             closeOnEscape={!loading}
         >
             <div className="text-center">
@@ -150,7 +150,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
             open={open}
             onClose={onClose}
             title={title}
-            size="sm"
+            size="small"
         >
             <div className="text-center">
                 {icon && (
@@ -166,7 +166,7 @@ export const AlertDialog: React.FC<AlertDialogProps> = ({
                 </p>
 
                 <Button
-                    variant="primary"
+                    variant="solid"
                     onClick={onClose}
                     className="w-full"
                 >
@@ -228,8 +228,8 @@ export const FormDialog: React.FC<FormDialogProps> = ({
             open={open}
             onClose={onClose}
             title={title}
-            size="md"
-            closeOnOverlayClick={!loading}
+            size="medium"
+            closeOnBackdropClick={!loading}
             closeOnEscape={!loading}
         >
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -30,10 +30,19 @@ class CrossProductBoundaryArchTest {
 
     private static JavaClasses ALL_PRODUCT_CLASSES;
 
+    /**
+     * Excludes third-party library classes from JAR entries while keeping all ghatana product
+     * classes. This prevents ArchUnit from loading the entire transitive dependency graph
+     * (which causes OOM), while still scanning all product source classes.
+     */
+    private static final ImportOption ONLY_GHATANA_FROM_JARS =
+            location -> !location.isJar() || location.asURI().toString().contains("/com/ghatana/");
+
     @BeforeAll
     static void importClasses() {
         ALL_PRODUCT_CLASSES = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .withImportOption(ONLY_GHATANA_FROM_JARS)
                 .importPackages(
                         "com.ghatana.datacloud",
                         "com.ghatana.aep",

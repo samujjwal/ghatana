@@ -12,6 +12,8 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.domain.validation.ContentValidationFinding;
 import com.ghatana.digitalmarketing.domain.validation.ContentValidationResult;
 import com.ghatana.kernel.security.TenantSecurityContext;
@@ -208,7 +210,14 @@ public final class DmosContentValidationServlet {
         if (e instanceof NoSuchElementException) {
             return Promise.of(notFound(e.getMessage()));
         }
+        if (e instanceof DmosFeatureDisabledException || e instanceof DmosConnectorDisabledException) {
+            return Promise.of(locked(e.getMessage()));
+        }
         return Promise.of(internalError("Unexpected error during " + operation));
+    }
+
+    private static HttpResponse locked(String message) {
+        return errorResponse(423, message);
     }
 
     private static HttpResponse badRequest(String message) {

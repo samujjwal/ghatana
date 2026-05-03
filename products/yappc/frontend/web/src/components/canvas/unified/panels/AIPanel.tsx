@@ -114,7 +114,7 @@ export function AIPanel({ context, selectedNodeIds = [] }: RailPanelProps) {
             No suggestions yet. Run analysis to get AI insights.
           </Typography>
         ) : (
-          <List dense>
+          <List>
             {suggestions.map((suggestion) => (
               <ListItem
                 key={suggestion.id}
@@ -142,11 +142,9 @@ export function AIPanel({ context, selectedNodeIds = [] }: RailPanelProps) {
                     <ListItemIcon className="min-w-[28px]">
                       {getSuggestionIcon(suggestion.type)}
                     </ListItemIcon>
-                    <ListItemText
-                      primary={suggestion.title}
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      className="flex-1"
-                    />
+                    <Box className="flex-1">
+                      <Typography variant="body2">{suggestion.title}</Typography>
+                    </Box>
                     <Chip
                       label={`${Math.round(suggestion.confidence * 100)}%`}
                       size="small"

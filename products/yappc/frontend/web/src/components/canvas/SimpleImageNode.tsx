@@ -5,17 +5,20 @@
 
 import React from 'react';
 import { Box, Typography } from '@ghatana/design-system';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface SimpleImageData {
+    [key: string]: unknown;
     url?: string;
     alt?: string;
     width?: number;
     height?: number;
 }
 
-export const SimpleImageNode = React.memo(({ data, selected }: NodeProps<SimpleImageData>) => {
-    const { url = '', alt = 'Image', width = 200, height = 150 } = data as SimpleImageData;
+type SimpleImageCanvasNode = Node<SimpleImageData, 'simple-image'>;
+
+export const SimpleImageNode = React.memo(({ data, selected }: NodeProps<SimpleImageCanvasNode>) => {
+    const { url = '', alt = 'Image', width = 200, height = 150 } = data;
 
     return (
         <Box
@@ -28,8 +31,7 @@ export const SimpleImageNode = React.memo(({ data, selected }: NodeProps<SimpleI
         >
             <Handle type="target" position={Position.Top} />
             {url ? (
-                <Box
-                    component="img"
+                <img
                     src={url}
                     alt={alt}
                     style={{ width, height, objectFit: 'cover', borderRadius: '0.5rem' }}

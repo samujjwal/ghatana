@@ -6,15 +6,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface SimpleStickyData {
+    [key: string]: unknown;
     text: string;
     color?: string;
 }
 
-export const SimpleStickyNode = React.memo(({ data, selected, id }: NodeProps<SimpleStickyData>) => {
-    const { text = 'Sticky Note', color = '#fff9c4' } = data as SimpleStickyData;
+type SimpleStickyCanvasNode = Node<SimpleStickyData, 'simple-sticky'>;
+
+export const SimpleStickyNode = React.memo(({ data, selected, id }: NodeProps<SimpleStickyCanvasNode>) => {
+    const { text = 'Sticky Note', color = '#fff9c4' } = data;
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(text);
     const inputRef = useRef<HTMLInputElement>(null);

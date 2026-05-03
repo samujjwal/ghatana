@@ -72,12 +72,16 @@ export function RealtimeStageNavigation({
   useEffect(() => {
     if (lastUpdate) {
       console.log('Real-time update received:', lastUpdate);
+      const updateData =
+        typeof lastUpdate.data === 'object' && lastUpdate.data !== null
+          ? (lastUpdate.data as { currentStage?: LifecycleStageId })
+          : {};
       
       // Trigger callbacks for specific update types
       switch (lastUpdate.type) {
         case 'phase_transition':
-          if (lastUpdate.data.currentStage && onStageChange) {
-            onStageChange(lastUpdate.data.currentStage);
+          if (updateData.currentStage && onStageChange) {
+            onStageChange(updateData.currentStage);
           }
           break;
       }

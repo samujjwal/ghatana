@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -34,7 +35,8 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
         adapter = new HttpDmGoogleAdsCampaignApiClientAdapter(
             new OkHttpClient(), objectMapper,
             "dev-token", "cust-123",
-            server.url("/").toString()
+            server.url("/").toString(),
+            Executors.newSingleThreadExecutor()
         );
     }
 
@@ -79,6 +81,65 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
 
         assertThatExceptionOfType(GoogleAdsConnectorException.class).isThrownBy(() ->
             runPromise(() -> adapter.createSearchCampaign("bad-token", validRequest())));
+    }
+
+    @Test
+    @DisplayName("createSearchCampaign sends dailyBudgetMicros converted from USD — 50 USD = 50000000 micros")
+    void shouldSendBudgetAsMicros() throws InterruptedException {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/999\"}"));
+
+        runPromise(() -> adapter.createSearchCampaign("token",
+            new CreateGoogleSearchCampaignRequest(
+                "Budget Test", new BigDecimal("50.00"), "Austin TX", "hvac repair")));
+
+        RecordedRequest request = server.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertThat(body).contains("\"dailyBudgetMicros\":\"50000000\"");
+    }
+
+    @Test
+    @DisplayName("toMicrosString — converts fractional USD correctly (1.50 USD = 1500000 micros)")
+    void toMicrosString_fractionConvertsCorrectly() {
+        assertThat(HttpDmGoogleAdsCampaignApiClientAdapter.toMicrosString(new BigDecimal("1.50")))
+            .isEqualTo("1500000");
+    }
+
+    @Test
+    @DisplayName("toMicrosString — converts whole USD correctly (100 USD = 100000000 micros)")
+    void toMicrosString_wholeNumberConvertsCorrectly() {
+        assertThat(HttpDmGoogleAdsCampaignApiClientAdapter.toMicrosString(new BigDecimal("100")))
+            .isEqualTo("100000000");
+    }
+
+    @Test
+    @DisplayName("createSearchCampaign sends campaigns:mutate path")
+    void shouldSendCampaignsMutatePath() throws InterruptedException {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/1\"}"));
+
+        runPromise(() -> adapter.createSearchCampaign("token", validRequest()));
+
+        RecordedRequest request = server.takeRequest();
+        assertThat(request.getPath()).contains("campaigns:mutate");
+    }
+
+    @Test
+    @DisplayName("createSearchCampaign sends name in request payload")
+    void shouldSendCampaignNameInPayload() throws InterruptedException {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/1\"}"));
+
+        runPromise(() -> adapter.createSearchCampaign("token", validRequest()));
+
+        RecordedRequest request = server.takeRequest();
+        assertThat(request.getBody().readUtf8()).contains("My Campaign");
     }
 
     @Test

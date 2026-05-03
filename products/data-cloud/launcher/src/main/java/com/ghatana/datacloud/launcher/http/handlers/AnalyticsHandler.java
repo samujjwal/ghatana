@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -394,30 +393,24 @@ public class AnalyticsHandler {
     }
 
     /**
-     * {@code POST /api/v1/analytics/queries/:queryId/cancel}
+    * {@code DELETE /api/v1/analytics/queries/:queryId}
      *
-     * <p>Cancellation stub.  The underlying analytics engine does not yet
-     * support in-flight cancellation, so this returns 501.
+     * <p>Cancellation is deployment-optional. The current analytics engine
+     * does not support in-flight cancellation, so this surface returns 503
+     * with retry semantics.
      */
     public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
         String queryId = request.getPathParameter("queryId");
         log.info("[DC-9] cancel query requested queryId={}", queryId);
-        return Promise.of(http.errorResponse(501,
-            "Query cancellation is not yet supported by the analytics engine."));
+        return Promise.of(http.serviceUnavailableResponse(
+            "Query cancellation is not available in this deployment.",
+            60));
     }
 
-    /**
-     * Enriches a query response with the standard query-broker contract fields:
-     * traceId, sourceCapabilities, freshness, partialWarnings, costEstimate,
-     * cancellation, and explainPlan availability.
-     */
     private void enrichWithBrokerContract(Map<String, Object> response,
                                           String traceId,
                                           long executionTimeMs) {
         response.put("traceId", traceId);
-        response.put("sourceCapabilities", List.of("sql", "aggregate", "federated"));
-        response.put("freshness", Instant.now().toString());
-        response.put("partialWarnings", List.of());
         Map<String, Object> cost = new LinkedHashMap<>();
         cost.put("unit", "milliseconds");
         cost.put("value", executionTimeMs);

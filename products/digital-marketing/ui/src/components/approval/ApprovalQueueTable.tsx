@@ -9,17 +9,18 @@
  */
 import React from 'react';
 import { Link } from 'react-router';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
 interface ApprovalQueueTableProps {
   workspaceId: string;
-  approvals: ApprovalRequest[];
+  approvals: ApprovalRecordResponse[];
 }
 
-function riskLabel(level: number): { text: string; className: string } {
-  if (level >= 4) return { text: 'High', className: 'text-red-700 bg-red-100' };
-  if (level >= 2) return { text: 'Medium', className: 'text-yellow-700 bg-yellow-100' };
-  return { text: 'Low', className: 'text-green-700 bg-green-100' };
+function statusBadgeClass(status: string): string {
+  if (status === 'APPROVED') return 'text-green-700 bg-green-100';
+  if (status === 'REJECTED') return 'text-red-700 bg-red-100';
+  if (status === 'CANCELLED') return 'text-gray-600 bg-gray-100';
+  return 'text-yellow-700 bg-yellow-100';
 }
 
 export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
@@ -45,34 +46,43 @@ export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
       <thead>
         <tr className="border-b text-left text-gray-600">
           <th className="py-2 pr-4">Type</th>
-          <th className="py-2 pr-4">Description</th>
+          <th className="py-2 pr-4">Target</th>
           <th className="py-2 pr-4">Risk</th>
-          <th className="py-2 pr-4">Required Role</th>
-          <th className="py-2 pr-4">Submitted</th>
+          <th className="py-2 pr-4">Status</th>
+          <th className="py-2 pr-4">Submitted By</th>
+          <th className="py-2 pr-4">Submitted At</th>
           <th className="py-2" />
         </tr>
       </thead>
       <tbody>
-        {approvals.map((a) => {
-          const risk = riskLabel(a.riskLevel);
-          return (
+        {approvals.map((a) => (
             <tr
               key={a.requestId}
               data-testid={`approval-row-${a.requestId}`}
               className="border-b hover:bg-gray-50"
             >
-              <td className="py-2 pr-4 font-mono text-xs">{a.targetType}</td>
-              <td className="py-2 pr-4 max-w-xs truncate">{a.description}</td>
+              <td className="py-2 pr-4 font-mono text-xs">{a.targetType ?? 'Unknown'}</td>
+              <td className="py-2 pr-4 max-w-xs truncate text-xs text-gray-700">{a.targetId ?? 'N/A'}</td>
+              <td className="py-2 pr-4">
+                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                  a.riskLevel >= 4 ? 'text-red-700 bg-red-100' :
+                  a.riskLevel >= 3 ? 'text-orange-700 bg-orange-100' :
+                  a.riskLevel >= 2 ? 'text-yellow-700 bg-yellow-100' :
+                  'text-green-700 bg-green-100'
+                }`}>
+                  {a.riskLevel}
+                </span>
+              </td>
               <td className="py-2 pr-4">
                 <span
-                  data-testid={`risk-badge-${a.requestId}`}
-                  className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${risk.className}`}
+                  data-testid={`status-badge-${a.requestId}`}
+                  className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${statusBadgeClass(a.status)}`}
                 >
-                  {risk.text}
+                  {a.status}
                 </span>
               </td>
               <td className="py-2 pr-4 text-xs text-gray-600">
-                {a.requiredApproverRole}
+                {a.submittedBy}
               </td>
               <td className="py-2 pr-4 text-xs text-gray-500">
                 {new Date(a.submittedAt).toLocaleDateString()}
@@ -87,8 +97,7 @@ export const ApprovalQueueTable: React.FC<ApprovalQueueTableProps> = ({
                 </Link>
               </td>
             </tr>
-          );
-        })}
+          ))}
       </tbody>
     </table>
   );

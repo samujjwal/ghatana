@@ -12,6 +12,8 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.domain.content.ClaimReference;
 import com.ghatana.digitalmarketing.domain.content.ContentBlock;
 import com.ghatana.digitalmarketing.domain.content.ContentItem;
@@ -231,6 +233,9 @@ public final class DmosContentVersionServlet {
         }
         if (error instanceof IllegalStateException) {
             return Promise.of(errorResponse(409, error.getMessage()));
+        }
+        if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
+            return Promise.of(errorResponse(423, error.getMessage()));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
         return Promise.of(errorResponse(500, "Internal error"));

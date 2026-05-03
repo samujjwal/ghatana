@@ -102,11 +102,14 @@ export class VoiceInputService {
    * Initialize speech recognition
    */
   private initRecognition(): void {
+    if (!SpeechRecognition) {
+      throw new Error('Speech recognition is not supported in this environment.');
+    }
     this.recognition = new SpeechRecognition();
-    this.recognition.lang = this.options.language;
-    this.recognition.continuous = this.options.continuous;
-    this.recognition.interimResults = this.options.interimResults;
-    this.recognition.maxAlternatives = this.options.maxAlternatives;
+    this.recognition.lang = this.options.language ?? 'en-US';
+    this.recognition.continuous = this.options.continuous ?? false;
+    this.recognition.interimResults = this.options.interimResults ?? true;
+    this.recognition.maxAlternatives = this.options.maxAlternatives ?? 1;
 
     this.recognition.onstart = () => {
       this.setStatus('listening');

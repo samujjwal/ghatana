@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Production OkHttp adapter for Google Ads OAuth 2.0 flows.
@@ -38,6 +40,29 @@ public final class HttpDmGoogleAdsOAuthClientAdapter implements DmGoogleAdsOAuth
     private final String clientId;
     private final String clientSecret;
     private final String accountsBaseUrl;
+    private final Executor blockingExecutor;
+
+    private static final int DEFAULT_POOL_SIZE = 4;
+
+    /**
+     * Creates an adapter with a custom OkHttpClient, configurable base URL, and executor.
+     */
+    public HttpDmGoogleAdsOAuthClientAdapter(
+            OkHttpClient httpClient,
+            ObjectMapper objectMapper,
+            String clientId,
+            String clientSecret,
+            String accountsBaseUrl,
+            Executor blockingExecutor) {
+        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.clientId = Objects.requireNonNull(clientId, "clientId must not be null");
+        this.clientSecret = Objects.requireNonNull(clientSecret, "clientSecret must not be null");
+        this.accountsBaseUrl = Objects.requireNonNull(accountsBaseUrl, "accountsBaseUrl must not be null");
+        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
+        if (clientId.isBlank()) throw new IllegalArgumentException("clientId must not be blank");
+        if (clientSecret.isBlank()) throw new IllegalArgumentException("clientSecret must not be blank");
+    }
 
     /**
      * Creates an adapter with a custom OkHttpClient and configurable base URL (e.g., for testing).
@@ -48,13 +73,8 @@ public final class HttpDmGoogleAdsOAuthClientAdapter implements DmGoogleAdsOAuth
             String clientId,
             String clientSecret,
             String accountsBaseUrl) {
-        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
-        this.clientId = Objects.requireNonNull(clientId, "clientId must not be null");
-        this.clientSecret = Objects.requireNonNull(clientSecret, "clientSecret must not be null");
-        this.accountsBaseUrl = Objects.requireNonNull(accountsBaseUrl, "accountsBaseUrl must not be null");
-        if (clientId.isBlank()) throw new IllegalArgumentException("clientId must not be blank");
-        if (clientSecret.isBlank()) throw new IllegalArgumentException("clientSecret must not be blank");
+        this(httpClient, objectMapper, clientId, clientSecret, accountsBaseUrl,
+            Executors.newFixedThreadPool(DEFAULT_POOL_SIZE));
     }
 
     /**
@@ -115,7 +135,7 @@ public final class HttpDmGoogleAdsOAuthClientAdapter implements DmGoogleAdsOAuth
             .post(body)
             .build();
 
-        return Promise.ofBlocking(Runnable::run, () -> executeTokenRequest(request));
+        return Promise.ofBlocking(blockingExecutor, () -> executeTokenRequest(request));
     }
 
     @Override
@@ -134,7 +154,7 @@ public final class HttpDmGoogleAdsOAuthClientAdapter implements DmGoogleAdsOAuth
             .post(body)
             .build();
 
-        return Promise.ofBlocking(Runnable::run, () -> executeTokenRequest(request));
+        return Promise.ofBlocking(blockingExecutor, () -> executeTokenRequest(request));
     }
 
     @Override
@@ -150,7 +170,7 @@ public final class HttpDmGoogleAdsOAuthClientAdapter implements DmGoogleAdsOAuth
             .post(new FormBody.Builder().build())
             .build();
 
-        return Promise.ofBlocking(Runnable::run, () -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
                     throw new GoogleAdsConnectorException(

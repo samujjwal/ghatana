@@ -21,8 +21,8 @@
 
 import React from 'react';
 import { Loader2, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
-import { useTemplateRecommendation } from '../hooks/useTemplateRecommendation';
-import type { TemplateRecommendationContext, TemplateRecommendation } from '../hooks/useTemplateRecommendation';
+import { useTemplateRecommendation } from '../../hooks/useTemplateRecommendation';
+import type { TemplateRecommendationContext, TemplateRecommendation } from '../../hooks/useTemplateRecommendation';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

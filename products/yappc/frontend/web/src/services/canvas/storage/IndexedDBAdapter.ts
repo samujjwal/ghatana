@@ -241,19 +241,25 @@ export class IndexedDBAdapter implements StorageAdapter {
      * Decompress snapshot data using CompressionService
      */
     private async decompressSnapshot(compressed: unknown): Promise<CanvasSnapshot> {
+        const compressedRecord = compressed as {
+            metadata?: { compressed?: boolean };
+            _compressed?: boolean;
+        };
         // Check if snapshot is compressed
-        if (!compressed.metadata?.compressed && !compressed._compressed) {
+        if (!compressedRecord.metadata?.compressed && !compressedRecord._compressed) {
             return compressed as CanvasSnapshot; // Not compressed, return as-is
         }
 
         // Use compression service if available
-        if (compressed.metadata?.compressed) {
-            return await this.compressionService.decompressSnapshot(compressed);
+        if (compressedRecord.metadata?.compressed) {
+            return await this.compressionService.decompressSnapshot(
+                compressed as Parameters<CompressionService['decompressSnapshot']>[0]
+            );
         }
 
         // Legacy compressed format - return as-is (minus metadata)
         const { _compressed, ...snapshot } = compressed as Record<string, unknown>;
-        return snapshot as CanvasSnapshot;
+        return snapshot as unknown as CanvasSnapshot;
     }
 
     /**

@@ -135,6 +135,7 @@ export function ImportProjectDialog({
                 aiSummary: selectedProject.description,
                 aiNextActions: [selectedProject.aiUsageHint || 'Explore project components'],
                 aiHealthScore: selectedProject.aiCompatibilityScore,
+                lifecyclePhase: 'INTENT',
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
             };

@@ -7,11 +7,11 @@
  */
 import React from 'react';
 import { Link } from 'react-router';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
 interface ApprovalWidgetProps {
   workspaceId: string;
-  approvals: ApprovalRequest[];
+  approvals: ApprovalRecordResponse[];
   isLoading: boolean;
   isError: boolean;
 }
@@ -22,7 +22,7 @@ export const ApprovalWidget: React.FC<ApprovalWidgetProps> = ({
   isLoading,
   isError,
 }) => {
-  const highRisk = approvals.filter((a) => a.riskLevel >= 4);
+  const pendingCount = approvals.filter((a) => a.status === 'PENDING').length;
 
   return (
     <article
@@ -53,16 +53,8 @@ export const ApprovalWidget: React.FC<ApprovalWidgetProps> = ({
       {!isLoading && !isError && (
         <>
           <p className="text-3xl font-bold text-gray-900">
-            {approvals.length}
+            {pendingCount}
           </p>
-          {highRisk.length > 0 && (
-            <p
-              data-testid="approval-widget-high-risk"
-              className="text-xs text-red-600"
-            >
-              {highRisk.length} high-risk item{highRisk.length !== 1 ? 's' : ''}
-            </p>
-          )}
           {approvals.length === 0 && (
             <p
               data-testid="approval-widget-empty"

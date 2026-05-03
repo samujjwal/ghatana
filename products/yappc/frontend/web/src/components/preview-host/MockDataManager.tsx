@@ -84,7 +84,7 @@ export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onData
 
   return (
     <Box data-testid="mock-data-manager" className="p-4">
-      <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
         <DatabaseIcon size={16} />
         <Typography variant="h6">Mock Data Manager</Typography>
       </Stack>
@@ -123,7 +123,7 @@ export const MockDataManager: React.FC<MockDataManagerProps> = ({ config, onData
       </Typography>
 
       {Object.keys(mockData).length === 0 ? (
-        <Typography color="textSecondary">No mock data configured</Typography>
+        <Typography color="text.secondary">No mock data configured</Typography>
       ) : (
         <Stack spacing={2}>
           {Object.entries(mockData).map(([key, value]) => (

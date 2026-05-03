@@ -15,15 +15,17 @@ export function LoginPage(): React.ReactElement {
   const [token, setToken] = useState('');
   const [workspaceId, setWorkspaceId] = useState('');
   const [tenantId, setTenantId] = useState('');
+  const [principalId, setPrincipalId] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault();
-    if (!token.trim() || !workspaceId.trim() || !tenantId.trim()) {
+    if (!token.trim() || !workspaceId.trim() || !tenantId.trim() || !principalId.trim()) {
       setError('All fields are required.');
       return;
     }
-    login(token.trim(), workspaceId.trim(), tenantId.trim());
+    const sessionId = crypto.randomUUID();
+    login(token.trim(), workspaceId.trim(), tenantId.trim(), principalId.trim(), sessionId);
     void navigate(`/workspaces/${workspaceId.trim()}/dashboard`);
   }
 
@@ -80,6 +82,23 @@ export function LoginPage(): React.ReactElement {
               data-testid="login-tenant-id"
               value={tenantId}
               onChange={(e) => setTenantId(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="principalId"
+              className="block text-sm font-medium mb-1"
+            >
+              User / Principal ID
+            </label>
+            <input
+              id="principalId"
+              type="text"
+              data-testid="login-principal-id"
+              value={principalId}
+              onChange={(e) => setPrincipalId(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>

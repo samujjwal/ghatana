@@ -14,12 +14,13 @@ import { useAuth } from '@/context/AuthContext';
 import { useApprovalDetail } from '@/hooks/useApprovalDetail';
 import { ApprovalSnapshotPanel } from '@/components/approval/ApprovalSnapshotPanel';
 import { DecideDialog } from '@/components/approval/DecideDialog';
+import { canApprove } from '@/lib/role-utils';
 
 const STATUS_CLASSES: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   APPROVED: 'bg-green-100 text-green-800',
   REJECTED: 'bg-red-100 text-red-800',
-  WITHDRAWN: 'bg-gray-100 text-gray-700',
+  CANCELLED: 'bg-gray-100 text-gray-700',
 };
 
 export function ApprovalDetailPage(): React.ReactElement {
@@ -39,12 +40,11 @@ export function ApprovalDetailPage(): React.ReactElement {
     return <Navigate to="/login" replace />;
   }
 
-  const canDecide =
-    roles.length === 0 ||
-    roles.some((r) => r.includes('approver') || r.includes('admin'));
+  const canDecide = canApprove(roles, request);
 
   const isPending = request?.status === 'PENDING';
-  const requireComment = (request?.riskLevel ?? 0) >= 4;
+  const riskLevel = request?.riskLevel ?? snapshot?.riskLevel ?? 0;
+  const requireComment = riskLevel >= 4;
 
   return (
     <main
@@ -94,7 +94,7 @@ export function ApprovalDetailPage(): React.ReactElement {
                 id="request-heading"
                 className="text-xl font-bold text-gray-900"
               >
-                {request.targetType} Approval
+                {request.targetType ?? 'Unknown'} Approval
               </h1>
               <p className="text-sm text-gray-500 mt-1">ID: {request.requestId}</p>
             </div>
@@ -106,30 +106,42 @@ export function ApprovalDetailPage(): React.ReactElement {
             </span>
           </div>
 
-          <p className="text-sm text-gray-700">{request.description}</p>
-
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div>
-              <dt className="font-medium text-gray-600">Target ID</dt>
-              <dd>{request.targetId}</dd>
+              <dt className="font-medium text-gray-600">Target Type</dt>
+              <dd>{request.targetType ?? 'Unknown'}</dd>
             </div>
             <div>
+              <dt className="font-medium text-gray-600">Target ID</dt>
+              <dd>{request.targetId ?? 'N/A'}</dd>
+            </div>
+            {request.description && (
+              <div className="col-span-2">
+                <dt className="font-medium text-gray-600">Description</dt>
+                <dd>{request.description}</dd>
+              </div>
+            )}
+            <div>
               <dt className="font-medium text-gray-600">Risk Level</dt>
-              <dd data-testid="approval-risk-level">{request.riskLevel}</dd>
+              <dd data-testid="approval-risk-level">{riskLevel}</dd>
             </div>
             <div>
               <dt className="font-medium text-gray-600">Required Role</dt>
-              <dd>{request.requiredApproverRole}</dd>
+              <dd>{request.requiredApproverRole ?? 'brand-manager'}</dd>
             </div>
             <div>
-              <dt className="font-medium text-gray-600">Submitted</dt>
+              <dt className="font-medium text-gray-600">Submitted By</dt>
+              <dd>{request.submittedBy}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-gray-600">Submitted At</dt>
               <dd>{new Date(request.submittedAt).toLocaleString()}</dd>
             </div>
-            {request.decidedAt && (
+            {(request.decidedAt || request.decidedBy) && (
               <>
                 <div>
                   <dt className="font-medium text-gray-600">Decided At</dt>
-                  <dd>{new Date(request.decidedAt).toLocaleString()}</dd>
+                  <dd>{request.decidedAt ? new Date(request.decidedAt).toLocaleString() : '—'}</dd>
                 </div>
                 <div>
                   <dt className="font-medium text-gray-600">Decided By</dt>

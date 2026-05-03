@@ -14,8 +14,7 @@
  * @doc.pattern Custom Hook
  */
 
-import { useContext } from 'react';
-import { WebSocketContext } from '@/contexts/WebSocketContext';
+import { useWebSocketContext } from '@/contexts/WebSocketContext';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -44,14 +43,28 @@ export interface WebSocketHealthState {
  * ```
  */
 export function useWebSocketHealth(): WebSocketHealthState {
-  const ctx = useContext(WebSocketContext);
+  let ctx: Partial<{
+    status: string;
+    reconnectAttempt: number;
+    lastError?: Error;
+  }> | undefined;
+
+  try {
+    ctx = useWebSocketContext() as Partial<{
+      status: string;
+      reconnectAttempt: number;
+      lastError?: Error;
+    }>;
+  } catch {
+    ctx = undefined;
+  }
 
   // If no provider (e.g. in tests), return safe defaults.
   if (!ctx) {
     return { health: 'idle', statusDetail: 'no-provider', reconnectAttempt: 0 };
   }
 
-  const { status, reconnectAttempt, lastError } = ctx;
+  const { status = 'connecting', reconnectAttempt = 0, lastError } = ctx;
 
   const health: WebSocketHealth = (() => {
     switch (status) {

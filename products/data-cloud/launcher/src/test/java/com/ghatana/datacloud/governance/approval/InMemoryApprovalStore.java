@@ -1,6 +1,5 @@
 package com.ghatana.datacloud.governance.approval;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -8,12 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * In-memory implementation of {@link ApprovalStore} for local / test use.
- *
- * @doc.type class
- * @doc.purpose In-memory approval store (P0.4)
- * @doc.layer product
- * @doc.pattern Repository
+ * In-memory implementation of {@link ApprovalStore} for local test scenarios.
  */
 public class InMemoryApprovalStore implements ApprovalStore {
 

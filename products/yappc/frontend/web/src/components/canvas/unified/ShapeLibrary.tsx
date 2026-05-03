@@ -33,7 +33,7 @@ export type ShapeLibraryAction =
     | { type: 'setTool'; tool: Tool; template: ShapeTemplate }  // Set active tool (single-click)
     | { type: 'drag'; template: ShapeTemplate; startPosition: { x: number; y: number } };  // Drag start
 
-const SHAPE_TEMPLATES: ShapeTemplate[] = [
+export const SHAPE_TEMPLATES: ShapeTemplate[] = [
     // Basic Shapes
     {
         id: 'rect-default',

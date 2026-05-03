@@ -9,8 +9,8 @@
  * @doc.pattern Presentation Component
  */
 
-import React, { useState } from 'react';
-import { Popper as Popover, Box, ListItem, ListItemText, ListItemButton, Divider, Button, Typography, Chip, IconButton, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
+import React, { useEffect, useState } from 'react';
+import { Box, ListItemText, ListItemButton, Button, Typography, Chip, IconButton, Surface as Paper, Spinner as CircularProgress, Alert } from '@ghatana/design-system';
 import { Code as CodeIcon, Bug as TestIcon, FileText as DocIcon, Drama as MockIcon, X as CloseIcon, ExternalLink as OpenIcon, Trash2 as DeleteIcon } from 'lucide-react';
 import type { CodeAssociation, CodeRelationshipType } from '../../../hooks/useCodeAssociations';
 import { getAssociationColor } from '../../../hooks/useCodeAssociations';
@@ -86,30 +86,31 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
         associations[0] || null
     );
 
+    useEffect(() => {
+        setSelectedAssociation(associations[0] || null);
+    }, [associations]);
+
     if (associations.length === 0 && !isLoading && !error) {
         return null;
     }
 
+    if (!anchorEl) {
+        return null;
+    }
+
+    const anchorRect = anchorEl.getBoundingClientRect();
+    const popoverStyle: React.CSSProperties = {
+        position: 'fixed',
+        top: Math.min(anchorRect.bottom + 8, window.innerHeight - 520),
+        left: Math.min(anchorRect.left, window.innerWidth - 620),
+        width: 600,
+        maxHeight: 500,
+        zIndex: 1400,
+    };
+
     return (
-        <Popover
-            open={Boolean(anchorEl)}
-            anchorEl={anchorEl}
-            onClose={onClose}
-            anchorOrigin={{
-                vertical: 'bottom',
-                horizontal: 'left',
-            }}
-            transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
-            }}
-            slotProps={{
-                paper: {
-                    sx: { width: 600, maxHeight: 500 },
-                },
-            }}
-        >
-            <Box className="flex flex-col h-full">
+        <Box style={popoverStyle}>
+            <Paper className="flex h-full max-h-[500px] flex-col overflow-hidden shadow-xl">
                 {/* Header */}
                 <Box
                     className="p-4 flex items-center justify-between border-gray-200 dark:border-gray-700 border-b" >
@@ -163,7 +164,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                                             <Chip
                                                 label={assoc.relationship}
                                                 size="sm"
-                                                color={getAssociationColor(assoc.relationship) as unknown}
+                                                color={getAssociationColor(assoc.relationship) as never}
                                                 className="mt-1"
                                             />
                                         }
@@ -256,7 +257,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                         </Box>
                     </Box>
                 )}
-            </Box>
-        </Popover>
+            </Paper>
+        </Box>
     );
 };

@@ -410,7 +410,10 @@ export class HierarchyManager {
       const pathNode = this.getNode(id);
       return {
         id,
-        label: pathNode?.data.label || 'Untitled',
+        label:
+          typeof pathNode?.data.label === 'string' && pathNode.data.label.length > 0
+            ? pathNode.data.label
+            : 'Untitled',
         onClick: () => {
           // Callback would zoom to this node
         },

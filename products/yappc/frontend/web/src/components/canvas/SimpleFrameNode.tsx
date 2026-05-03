@@ -5,15 +5,18 @@
 
 import React from 'react';
 import { Box, Typography } from '@ghatana/design-system';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface SimpleFrameData {
+    [key: string]: unknown;
     title: string;
     color?: string;
 }
 
-export const SimpleFrameNode = React.memo(({ data, selected }: NodeProps<SimpleFrameData>) => {
-    const { title = 'Frame', color = '#e3f2fd' } = data as SimpleFrameData;
+type SimpleFrameCanvasNode = Node<SimpleFrameData, 'simple-frame'>;
+
+export const SimpleFrameNode = React.memo(({ data, selected }: NodeProps<SimpleFrameCanvasNode>) => {
+    const { title = 'Frame', color = '#e3f2fd' } = data;
 
     return (
         <Box

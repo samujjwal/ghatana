@@ -161,7 +161,9 @@ const phaseSubNavItems: Record<string, { label: string; path: (id: string) => st
 // =============================================================================
 
 const ProjectHeader: React.FC = () => {
-  const activeProject = useAtomValue(activeProjectAtom);
+  const activeProject = useAtomValue(activeProjectAtom) as
+    | { name: string; status: string }
+    | null;
   const [menuOpen, setMenuOpen] = useState(false);
   const breadcrumbs = useBreadcrumbs();
 

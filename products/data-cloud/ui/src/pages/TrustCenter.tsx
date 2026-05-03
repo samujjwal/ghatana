@@ -669,7 +669,7 @@ export function TrustCenter() {
     toast.info('Access review remains derived from audit and compliance summary data in this deployment.');
     setActionSummary({
       title: 'Access review remains read-only',
-      detail: 'The launcher exposes audit posture, but access request review mutations are not yet available.',
+      detail: 'The launcher currently exposes audit posture only. Access request review mutations are planned for the Data Cloud governance backlog in Q3 2026.',
       tone: 'warning',
     });
   };

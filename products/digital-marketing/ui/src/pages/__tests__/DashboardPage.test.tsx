@@ -12,7 +12,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { DashboardPage } from '@/pages/DashboardPage';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
 vi.mock('@/hooks/useAiActionLog', () => ({
   useAiActionLog: () => ({
@@ -38,20 +38,17 @@ vi.mock('@/api/approvals', () => ({
   submitApproval: vi.fn(),
 }));
 
-const PENDING: ApprovalRequest = {
+const PENDING: ApprovalRecordResponse = {
   requestId: 'req-5',
-  workspaceId: 'ws-1',
-  tenantId: 'tenant-1',
-  targetType: 'CAMPAIGN',
-  targetId: 'c-1',
-  description: 'Q4 campaign',
-  riskLevel: 3,
+  subjectId: 'c-1',
+  requestedBy: 'user-1',
+  action: 'campaign-launch',
   status: 'PENDING',
-  requiredApproverRole: 'admin',
-  submittedAt: '2026-01-10T10:00:00Z',
+  requestedAt: '2026-01-10T10:00:00Z',
+  expiresAt: null,
   decidedAt: null,
-  decidedBy: null,
-  comment: null,
+  reviewerId: null,
+  reviewerNotes: null,
 };
 
 function buildQueryClient(): QueryClient {

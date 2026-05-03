@@ -198,6 +198,8 @@ public class YappcAepPipelineBootstrapper {
             return Promise.complete();
         }
         log.info("Shutting down YAPPC lifecycle pipeline '{}'", PIPELINE_ID);
-        return lifecycle.shutdown();
+        Pipeline toStop = this.lifecycle;
+        this.lifecycle = null;
+        return toStop.shutdown();
     }
 }

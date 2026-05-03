@@ -9,25 +9,22 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { WorkflowStatusWidget } from '../WorkflowStatusWidget';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
-const PENDING_CAMPAIGN: ApprovalRequest = {
+const PENDING_CAMPAIGN: ApprovalRecordResponse = {
   requestId: 'req-1',
-  workspaceId: 'ws-1',
-  tenantId: 'tenant-1',
-  targetType: 'CAMPAIGN',
-  targetId: 'c-1',
-  description: 'Q4 Email Campaign',
-  riskLevel: 5,
+  subjectId: 'c-1',
+  requestedBy: 'user-1',
+  action: 'campaign-launch',
   status: 'PENDING',
-  requiredApproverRole: 'admin',
-  submittedAt: '2026-05-01T10:00:00Z',
+  requestedAt: '2026-05-01T10:00:00Z',
+  expiresAt: null,
   decidedAt: null,
-  decidedBy: null,
-  comment: null,
+  reviewerId: null,
+  reviewerNotes: null,
 };
 
-const APPROVED_CAMPAIGN: ApprovalRequest = {
+const APPROVED_CAMPAIGN: ApprovalRecordResponse = {
   ...PENDING_CAMPAIGN,
   requestId: 'req-2',
   status: 'APPROVED',
@@ -59,7 +56,7 @@ describe('WorkflowStatusWidget', () => {
     render(<WorkflowStatusWidget approvals={[PENDING_CAMPAIGN]} />);
     const list = screen.getByTestId('workflow-status-list');
     expect(list).toBeInTheDocument();
-    expect(list).toHaveTextContent('CAMPAIGN');
+    expect(list).toHaveTextContent('campaign-launch');
     expect(list).toHaveTextContent('Pending');
   });
 
@@ -72,7 +69,7 @@ describe('WorkflowStatusWidget', () => {
   });
 
   it('shows overflow indicator when more than 5 pending approvals exist', () => {
-    const manyApprovals: ApprovalRequest[] = Array.from(
+    const manyApprovals: ApprovalRecordResponse[] = Array.from(
       { length: 7 },
       (_, i) => ({ ...PENDING_CAMPAIGN, requestId: `req-${i}` }),
     );

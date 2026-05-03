@@ -12,8 +12,11 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Production OkHttp adapter for Google Ads Campaign API — creates search campaigns.
@@ -40,8 +43,29 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
     private final String developerToken;
     private final String customerId;
     private final String apiBaseUrl;
+    private final Executor blockingExecutor;
 
     private static final String PRODUCTION_API_BASE = "https://googleads.googleapis.com";
+
+    /** Default number of threads for blocking HTTP I/O. Bounded to avoid unbounded concurrency. */
+    private static final int DEFAULT_POOL_SIZE = 4;
+
+    public HttpDmGoogleAdsCampaignApiClientAdapter(
+            OkHttpClient httpClient,
+            ObjectMapper objectMapper,
+            String developerToken,
+            String customerId,
+            String apiBaseUrl,
+            Executor blockingExecutor) {
+        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.developerToken = Objects.requireNonNull(developerToken, "developerToken must not be null");
+        this.customerId = Objects.requireNonNull(customerId, "customerId must not be null");
+        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl must not be null");
+        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
+        if (developerToken.isBlank()) throw new IllegalArgumentException("developerToken must not be blank");
+        if (customerId.isBlank()) throw new IllegalArgumentException("customerId must not be blank");
+    }
 
     public HttpDmGoogleAdsCampaignApiClientAdapter(
             OkHttpClient httpClient,
@@ -49,13 +73,8 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
             String developerToken,
             String customerId,
             String apiBaseUrl) {
-        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
-        this.developerToken = Objects.requireNonNull(developerToken, "developerToken must not be null");
-        this.customerId = Objects.requireNonNull(customerId, "customerId must not be null");
-        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl must not be null");
-        if (developerToken.isBlank()) throw new IllegalArgumentException("developerToken must not be blank");
-        if (customerId.isBlank()) throw new IllegalArgumentException("customerId must not be blank");
+        this(httpClient, objectMapper, developerToken, customerId, apiBaseUrl,
+            Executors.newFixedThreadPool(DEFAULT_POOL_SIZE));
     }
 
     public HttpDmGoogleAdsCampaignApiClientAdapter(
@@ -82,14 +101,14 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
         Objects.requireNonNull(accessToken, "accessToken must not be null");
         Objects.requireNonNull(request, "request must not be null");
 
-        return Promise.ofBlocking(Runnable::run, () -> doCreateSearchCampaign(accessToken, request));
+        return Promise.ofBlocking(blockingExecutor, () -> doCreateSearchCampaign(accessToken, request));
     }
 
     private String doCreateSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request)
             throws Exception {
         GoogleAdsCampaignRequestJson payload = new GoogleAdsCampaignRequestJson(
             request.campaignName(),
-            request.dailyBudget().toString(),
+            toMicrosString(request.dailyBudget()),
             request.serviceArea(),
             request.keywordTheme()
         );
@@ -123,6 +142,17 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
         } catch (IOException e) {
             throw new GoogleAdsConnectorException("Campaign creation IO error", e);
         }
+    }
+
+    /**
+     * Converts a dollar amount to micros string for the Google Ads API.
+     * Google Ads API requires budget in micros: 1 USD = 1,000,000 micros.
+     */
+    static String toMicrosString(BigDecimal dollarAmount) {
+        return dollarAmount
+            .multiply(BigDecimal.valueOf(1_000_000L))
+            .toBigInteger()
+            .toString();
     }
 
     private record GoogleAdsCampaignRequestJson(

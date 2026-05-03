@@ -33,7 +33,7 @@ export const DecideDialog: React.FC<DecideDialogProps> = ({
     mutationFn: () =>
       decideApproval(workspaceId, requestId, {
         decision,
-        comment: comment.trim() || undefined,
+        notes: comment.trim() || undefined,
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({

@@ -9,7 +9,7 @@
  * @doc.layer components
  */
 
-import { IconButton, Tooltip, Badge } from '@ghatana/design-system';
+import { Box, IconButton, Tooltip } from '@ghatana/design-system';
 import { cn } from '../../lib/utils';
 import type { MouseEvent, ReactNode } from 'react';
 
@@ -113,14 +113,12 @@ export function HeaderButton({
     );
 
     const wrappedButton = badgeCount && badgeCount > 0 ? (
-        <Badge
-            badgeContent={badgeCount}
-            tone="danger"
-            max={99}
-            overlap="circular"
-        >
+        <Box className="relative inline-flex">
             {buttonContent}
-        </Badge>
+            <span className="absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
+                {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+        </Box>
     ) : (
         buttonContent
     );

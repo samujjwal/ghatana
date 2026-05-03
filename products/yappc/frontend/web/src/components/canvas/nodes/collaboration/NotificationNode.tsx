@@ -12,7 +12,7 @@
 
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
+import type { Node, NodeProps } from '@xyflow/react';
 import {
   Bell,
   AtSign,
@@ -33,14 +33,57 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import type { Notification, NotificationType, NotificationPriority, NotificationStatus } from 'yappc-api';
+
+type NotificationType =
+  | 'MENTION'
+  | 'REPLY'
+  | 'DIRECT_MESSAGE'
+  | 'CHANNEL_ACTIVITY'
+  | 'TEAM_INVITE'
+  | 'ASSIGNMENT'
+  | 'COMMENT'
+  | 'REVIEW_REQUEST'
+  | 'SYSTEM';
+
+type NotificationPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+type NotificationStatus = 'UNREAD' | 'READ' | 'ARCHIVED';
+
+interface NotificationActor {
+  [key: string]: unknown;
+  name: string;
+  email?: string;
+  avatarUrl?: string;
+}
+
+interface NotificationActionLink {
+  label: string;
+  url?: string;
+}
+
+interface Notification {
+  [key: string]: unknown;
+  type: NotificationType;
+  priority: NotificationPriority;
+  status: NotificationStatus;
+  title: string;
+  body: string;
+  actor?: NotificationActor;
+  actionLink?: NotificationActionLink;
+  actionUrl?: string;
+  sourceType?: string;
+  createdAt: string;
+  readAt?: string;
+}
 
 export interface NotificationNodeData {
+  [key: string]: unknown;
   notification: Notification;
   onMarkRead?: () => void;
   onArchive?: () => void;
   onNavigate?: () => void;
 }
+
+type NotificationCanvasNode = Node<NotificationNodeData, 'notification'>;
 
 const notificationTypeConfig: Record<
   NotificationType,
@@ -118,7 +161,7 @@ const statusConfig: Record<NotificationStatus, { color: string; bgColor: string 
   ARCHIVED: { color: 'text-slate-500', bgColor: 'bg-slate-600/20' },
 };
 
-function NotificationNode({ data }: NodeProps<NotificationNodeData>) {
+function NotificationNode({ data }: NodeProps<NotificationCanvasNode>) {
   const { notification, onMarkRead, onArchive, onNavigate } = data;
 
   const typeConfig = notificationTypeConfig[notification.type];

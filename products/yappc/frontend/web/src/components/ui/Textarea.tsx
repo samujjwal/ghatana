@@ -16,7 +16,7 @@ import type { TextareaHTMLAttributes, ReactNode } from 'react';
 type TextareaSize = 'sm' | 'md' | 'lg';
 type TextareaState = 'default' | 'error' | 'success' | 'warning';
 
-interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
+interface TextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size' | 'children'> {
     /** Textarea label */
     label?: string;
     /** Helper text below textarea */
@@ -161,8 +161,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(({
                                     : showCharCount ? `${props.id}-charcount`
                                         : undefined
                 }
-                value={value}
-                {...props}
+                value={typeof value === 'string' || typeof value === 'number' ? String(value) : undefined}
+                {...(props as any)}
             />
 
             {/* Helper text and validation messages */}

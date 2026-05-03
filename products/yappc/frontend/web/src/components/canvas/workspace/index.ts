@@ -110,7 +110,7 @@ export { PhaseProgressPill, type PhaseProgressPillProps, type GateCriterion } fr
 export { NextBestTaskCard, type NextBestTaskProps } from './NextBestTaskCard';
 export { PersonaBadge, StatusBadge, PERSONA_ICONS, type PersonaBadgeProps, type StatusBadgeProps } from './PersonaBadge';
 export { SpatialZones, useZoneBoundaries, getZonePlacementPosition, type SpatialZonesProps, type PhaseZone } from './SpatialZones';
-export { PersonaFilterToolbar, type PersonaFilterProps, type PersonaFilterData } from './PersonaFilterToolbar';
+export { PersonaFilterToolbar, type PersonaFilterToolbarProps, type PersonaFilterData } from './PersonaFilterToolbar';
 export { AIAssistantModal, type AIAssistantModalProps, type AISuggestion } from './AIAssistantModal';
 export { ArtifactPalette, type ArtifactPaletteProps, type ArtifactTemplate, type ArtifactType } from './ArtifactPalette';
 export { QuickCreateMenu, type QuickCreateMenuProps } from './QuickCreateMenu';

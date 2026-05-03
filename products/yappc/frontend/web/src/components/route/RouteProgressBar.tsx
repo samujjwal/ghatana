@@ -10,7 +10,16 @@
  */
 
 import { useEffect, useState, useRef } from 'react';
-import { palette, zIndex } from '@ghatana/tokens';
+
+const palette = {
+    primary: { '500': '#3b82f6' },
+    neutral: { 300: '#d4d4d8' },
+    gray: { 600: '#52525b' },
+} as const;
+
+const zIndex = {
+    modal: 1300,
+} as const;
 
 interface RouteProgressBarProps {
     /** Whether the route is currently loading */

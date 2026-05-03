@@ -60,6 +60,7 @@ export interface ThreatTimelineEvent {
 }
 
 export interface ThreatNodeData {
+  [key: string]: unknown;
   id: string;
   title: string;
   description: string;

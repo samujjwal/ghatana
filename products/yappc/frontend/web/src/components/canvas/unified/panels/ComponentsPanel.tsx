@@ -150,7 +150,7 @@ export function ComponentsPanel({ context, onInsertNode }: RailPanelProps) {
               >
                 {category}
               </Typography>
-              <List dense>
+              <List>
                 {items.map((component) => (
                   <ListItem
                     key={component.id}
@@ -167,12 +167,12 @@ export function ComponentsPanel({ context, onInsertNode }: RailPanelProps) {
                     <ListItemButton
                       onClick={() => handleInsertComponent(component)}
                     >
-                      <ListItemText
-                        primary={component.name}
-                        secondary={component.description}
-                        primaryTypographyProps={{ variant: 'body2' }}
-                        secondaryTypographyProps={{ variant: 'caption' }}
-                      />
+                      <Box>
+                        <Typography variant="body2">{component.name}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {component.description}
+                        </Typography>
+                      </Box>
                     </ListItemButton>
                   </ListItem>
                 ))}

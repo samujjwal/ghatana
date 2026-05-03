@@ -9,10 +9,6 @@
  * @doc.pattern Barrel Export
  */
 
-// Hooks — imported directly from @ghatana/ui (no longer via deprecated local re-export)
-export { useDialog, useConfirmDialog } from '@ghatana/design-system';
-export type { UseDialogOptions, UseDialogReturn } from '@ghatana/design-system';
-
 // Modal Components
 export { StandardModal, ConfirmDialog } from './StandardModal';
 export type {

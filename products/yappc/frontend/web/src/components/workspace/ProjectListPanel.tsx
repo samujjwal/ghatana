@@ -17,6 +17,15 @@ import { useNavigate, useParams } from 'react-router';
 import { workspaceAtom, type ProjectWithOwnership } from '../../state/atoms/workspaceAtom';
 import { LifecyclePhaseBadge } from '../lifecycle/LifecyclePhaseBadge';
 
+function toLegacyLifecyclePhase(
+    phase: ProjectWithOwnership['lifecyclePhase']
+): import('../../types/lifecycle').LifecyclePhase {
+    if (phase === 'EVOLVE') {
+        return 'IMPROVE' as import('../../types/lifecycle').LifecyclePhase;
+    }
+    return phase as unknown as import('../../types/lifecycle').LifecyclePhase;
+}
+
 interface ProjectListPanelProps {
     onCreateProject?: () => void;
     onImportProject?: () => void;
@@ -203,7 +212,7 @@ export function ProjectListPanel({
                                                 {/* Lifecycle Phase Badge */}
                                                 <div className="mt-1.5">
                                                     <LifecyclePhaseBadge
-                                                        phase={project.lifecyclePhase}
+                                                        phase={toLegacyLifecyclePhase(project.lifecyclePhase)}
                                                         size="sm"
                                                     />
                                                 </div>

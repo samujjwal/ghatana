@@ -11,7 +11,7 @@ import { ShieldOff, Home, ArrowLeft, Lock, Mail } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-function UnauthorizedPage(): JSX.Element {
+function UnauthorizedPage(): React.ReactElement {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
       <motion.div

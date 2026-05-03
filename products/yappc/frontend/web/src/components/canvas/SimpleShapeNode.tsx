@@ -5,16 +5,19 @@
 
 import React from 'react';
 import { Box } from '@ghatana/design-system';
-import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 
 export interface SimpleShapeData {
+    [key: string]: unknown;
     shape: 'rectangle' | 'circle' | 'diamond';
     color?: string;
     label?: string;
 }
 
-export const SimpleShapeNode = React.memo(({ data, selected }: NodeProps<SimpleShapeData>) => {
-    const { shape = 'rectangle', color = '#e3f2fd', label = '' } = data as SimpleShapeData;
+type SimpleShapeCanvasNode = Node<SimpleShapeData, 'simple-shape'>;
+
+export const SimpleShapeNode = React.memo(({ data, selected }: NodeProps<SimpleShapeCanvasNode>) => {
+    const { shape = 'rectangle', color = '#e3f2fd', label = '' } = data;
 
     const renderShape = () => {
         const baseStyles = {

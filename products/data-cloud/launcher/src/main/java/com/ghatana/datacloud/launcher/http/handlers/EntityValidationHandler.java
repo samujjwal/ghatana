@@ -65,7 +65,9 @@ public class EntityValidationHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleValidateEntity(HttpRequest request) {
         if (schemaValidator == null) {
-            return Promise.of(http.errorResponse(501, "Schema validation is not configured on this server"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Schema validation capability is not configured on this server",
+                60));
         }
 
         String collection = request.getPathParameter("collection");
@@ -121,7 +123,9 @@ public class EntityValidationHandler {
     @SuppressWarnings("unchecked")
     public Promise<HttpResponse> handleBatchValidateEntities(HttpRequest request) {
         if (schemaValidator == null) {
-            return Promise.of(http.errorResponse(501, "Schema validation is not configured on this server"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Schema validation capability is not configured on this server",
+                60));
         }
 
         String collection = request.getPathParameter("collection");

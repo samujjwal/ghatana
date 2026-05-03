@@ -8,13 +8,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getApprovalSnapshot, getApprovalStatus } from '@/api/approvals';
-import type { ApprovalRequest, ApprovalSnapshot } from '@/types/approval';
+import type { ApprovalRecordResponse, ApprovalSnapshot } from '@/types/approval';
 
 export function useApprovalDetail(
   workspaceId: string | null,
   requestId: string | null,
 ): {
-  request: ApprovalRequest | null;
+  request: ApprovalRecordResponse | null;
   snapshot: ApprovalSnapshot | null;
   isLoading: boolean;
   isError: boolean;
@@ -22,7 +22,7 @@ export function useApprovalDetail(
 } {
   const enabled = workspaceId !== null && requestId !== null;
 
-  const statusQuery = useQuery<ApprovalRequest, Error>({
+  const statusQuery = useQuery<ApprovalRecordResponse, Error>({
     queryKey: ['approvals', 'status', workspaceId, requestId],
     queryFn: () => getApprovalStatus(workspaceId!, requestId!),
     enabled,

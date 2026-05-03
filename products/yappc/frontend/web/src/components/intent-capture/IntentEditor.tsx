@@ -100,7 +100,7 @@ export const IntentEditor: React.FC<IntentEditorProps> = ({
         data-testid="intent-input"
       />
 
-      <Stack direction="row" spacing={2} mt={2}>
+      <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
         <Button
           variant="contained"
           onClick={handleParseIntent}

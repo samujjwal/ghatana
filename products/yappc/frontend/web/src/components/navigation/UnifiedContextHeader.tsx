@@ -32,7 +32,7 @@
 
 import React from 'react';
 import { Link } from 'react-router';
-import { Avatar, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, Button, Chip } from '@ghatana/design-system';
+import { Avatar, Box, IconButton, MenuItem, ListItemIcon, ListItemText, Divider, Tooltip, Button, Chip } from '@ghatana/design-system';
 import { LogOut as Logout, UserCircle as AccountCircle, Moon as DarkMode, Sun as LightMode, HelpCircle as HelpOutline, Command as KeyboardCommandKey, Sparkles as AutoAwesome, Zap as Bolt } from 'lucide-react';
 import {
   NavigationBreadcrumb,
@@ -350,17 +350,11 @@ export function UnifiedContextHeader({
               </IconButton>
             </Tooltip>
 
-            <Menu
-              id="user-menu"
-              anchorEl={userMenuAnchor}
-              open={Boolean(userMenuAnchor)}
-              onClose={handleUserMenuClose}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-              PaperProps={{
-                sx: { minWidth: 240, mt: 1 },
-              }}
-            >
+            {userMenuAnchor ? (
+              <Box
+                id="user-menu"
+                className="absolute right-4 top-full z-50 mt-2 min-w-[240px] rounded-md border border-divider bg-white shadow-lg dark:bg-gray-900"
+              >
               {/* User Info */}
               <div className="px-4 py-3 border-b border-border-subtle">
                 <div className="text-sm font-medium text-text-primary">
@@ -428,7 +422,8 @@ export function UnifiedContextHeader({
                   <ListItemText>Logout</ListItemText>
                 </MenuItem>
               )}
-            </Menu>
+              </Box>
+            ) : null}
           </>
         )}
       </div>

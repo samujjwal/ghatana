@@ -82,7 +82,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
         type="monotone"
         dataKey={key}
         stroke={colors[idx] ?? DEFAULT_COLORS[idx % DEFAULT_COLORS.length]}
-        dot={{ 'data-testid': `chart-data-point-${idx}` } as React.SVGProps<SVGCircleElement>}
+        dot
       />
     ));
   }

@@ -11,7 +11,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, IconButton } from '@ghatana/design-system';
 import { getCapabilitySignal, useCapabilityRegistry } from '../api/capabilities.service';
 import {
@@ -21,7 +21,6 @@ import {
     Clock,
     XCircle,
     Plus,
-    MoreVertical,
     Workflow as WorkflowIcon,
     Loader2,
     Filter,
@@ -37,6 +36,9 @@ import {
     ChevronRight,
     CheckCircle2,
     ArrowRight,
+    MoreVertical,
+    Pencil,
+    Trash2,
 } from 'lucide-react';
 import { SearchFilterBar } from '../components/common/SearchFilterBar';
 import { LoadingState, EmptyState, NotFoundState } from '../components/common/AsyncStates';
@@ -79,67 +81,6 @@ const getStatusColor = (status: Workflow['status']) => {
         default: return 'bg-gray-100 text-gray-700';
     }
 };
-
-/**
- * Workflow Actions Component
- *
- * DC-UX-015: Action menu items (Run Now, Edit, View Logs, Delete) are not yet
- * wired to the pipeline execution API. They are rendered as disabled to prevent
- * false affordance. Enable each when the corresponding API endpoint is available.
- */
-function WorkflowActions({ workflow }: { workflow: Workflow }) {
-    const [showActions, setShowActions] = useState(false);
-
-    return (
-        <div className="relative">
-            <IconButton
-                variant="ghost"
-                tone="neutral"
-                size="sm"
-                icon={<MoreVertical className="h-4 w-4" />}
-                label="Workflow actions"
-                onClick={() => setShowActions(!showActions)}
-            />
-
-            {showActions && (
-                <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 min-w-[200px]">
-                    <button
-                        disabled
-                        title="Pipeline execution API not yet available"
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                        Run Now
-                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
-                    </button>
-                    <button
-                        disabled
-                        title="Pipeline edit API not yet available"
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                        Edit
-                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
-                    </button>
-                    <button
-                        disabled
-                        title="Pipeline log API not yet available"
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                        View Logs
-                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
-                    </button>
-                    <button
-                        disabled
-                        title="Pipeline delete API not yet available"
-                        className="w-full text-left px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed"
-                    >
-                        Delete
-                        <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}
 
 function formatRunTime(timestamp?: string): string {
     if (!timestamp) {
@@ -378,6 +319,97 @@ function PipelineAiHintsPanel({ pipelineId }: { pipelineId: string }) {
                 ))}
             </div>
             {advisoriesSection}
+        </div>
+    );
+}
+
+/**
+ * Per-workflow action menu — Run Now, Edit, View Logs, Delete.
+ *
+ * All actions are wired to real pipeline API calls.
+ */
+function WorkflowActions({ workflow }: { workflow: Workflow }) {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [menuOpen, setMenuOpen] = useState(false);
+
+    const runMutation = useMutation({
+        mutationFn: () => workflowsApi.execute(workflow.id),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['workflows'] });
+            setMenuOpen(false);
+        },
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => workflowsApi.delete(workflow.id),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ['workflows'] });
+            setMenuOpen(false);
+        },
+    });
+
+    const handleDelete = () => {
+        setMenuOpen(false);
+        if (window.confirm(`Delete workflow "${workflow.name}"? This action cannot be undone.`)) {
+            deleteMutation.mutate();
+        }
+    };
+
+    return (
+        <div className="relative" data-testid={`workflow-actions-${workflow.id}`}>
+            <IconButton
+                variant="ghost"
+                tone="neutral"
+                icon={<MoreVertical className="h-4 w-4" />}
+                label="Workflow actions"
+                onClick={() => setMenuOpen((prev) => !prev)}
+            />
+            {menuOpen && (
+                <div
+                    role="menu"
+                    className="absolute right-0 z-10 mt-1 w-44 rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                >
+                    <button
+                        type="button"
+                        role="menuitem"
+                        disabled={runMutation.isPending}
+                        onClick={() => { runMutation.mutate(); }}
+                        className="flex w-full items-center gap-2 rounded-t-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                        <Play className="h-3.5 w-3.5 text-green-500" />
+                        Run Now
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setMenuOpen(false); navigate(`/pipelines/${workflow.id}`); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => { setMenuOpen(false); navigate(`/pipelines/${workflow.id}/executions`); }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                    >
+                        <BarChart2 className="h-3.5 w-3.5" />
+                        View Logs
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        disabled={deleteMutation.isPending}
+                        onClick={handleDelete}
+                        className="flex w-full items-center gap-2 rounded-b-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -857,24 +889,7 @@ export function WorkflowsPage() {
                                 </div>
                             )}
 
-                            {/* DC-UX-016: Run Now / Pause are inert until pipeline execution API is wired */}
                             <div className="flex gap-2 pt-4">
-                                <Button
-                                    variant="solid"
-                                    disabled
-                                    title="Pipeline execution API not yet available"
-                                    leadingIcon={<Play className="h-4 w-4" />}
-                                >
-                                    Run Now
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    disabled
-                                    title="Pipeline execution API not yet available"
-                                    leadingIcon={<Pause className="h-4 w-4" />}
-                                >
-                                    Pause
-                                </Button>
                                 <Button
                                     variant="outline"
                                     onClick={() => navigate(`/pipelines/${selectedWorkflow.id}`)}
@@ -882,9 +897,6 @@ export function WorkflowsPage() {
                                     Advanced editor
                                 </Button>
                             </div>
-                            <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                                Run and pause controls require the pipeline execution API. Contact your operator to trigger a run.
-                            </p>
                         </div>
                     </div>
                 </div>

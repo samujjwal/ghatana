@@ -88,12 +88,12 @@ export const VisualRegression: React.FC<VisualRegressionProps> = ({ config }) =>
 
   return (
     <Box data-testid="visual-regression" className="p-4">
-      <Stack direction="row" alignItems="center" spacing={1} mb={3}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
         <CameraIcon size={16} />
         <Typography variant="h6">Visual Regression Testing</Typography>
       </Stack>
 
-      <Stack direction="row" spacing={2} mb={4}>
+      <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
         <Button
           variant="contained"
           onClick={handleRunTest}
@@ -126,7 +126,7 @@ export const VisualRegression: React.FC<VisualRegressionProps> = ({ config }) =>
       </Typography>
 
       {tests.length === 0 ? (
-        <Typography color="textSecondary">No tests run yet</Typography>
+        <Typography color="text.secondary">No tests run yet</Typography>
       ) : (
         <List>
           {tests.map((test) => (
@@ -148,7 +148,7 @@ export const VisualRegression: React.FC<VisualRegressionProps> = ({ config }) =>
                     <Typography variant="subtitle2">
                       {test.status === 'passed' ? 'Passed' : test.status === 'failed' ? 'Failed' : 'Pending'}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
+                    <Typography variant="caption" color="text.secondary">
                       {test.timestamp.toLocaleString()}
                     </Typography>
                     {test.diffPercentage !== undefined && test.diffPercentage > 0 && (

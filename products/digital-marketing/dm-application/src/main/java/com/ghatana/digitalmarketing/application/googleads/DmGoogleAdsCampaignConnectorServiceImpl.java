@@ -11,6 +11,7 @@ import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorConfig;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorStatus;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorType;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCampaignLink;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCredential;
 import io.activej.promise.Promise;
@@ -64,7 +65,7 @@ public final class DmGoogleAdsCampaignConnectorServiceImpl implements DmGoogleAd
             .then(connectorEnabled -> {
                 if (!connectorEnabled) {
                     return Promise.ofException(
-                        new UnsupportedOperationException("Google Ads connector is currently disabled (dmos.google_ads_connector.enabled=false)"));
+                        new DmosConnectorDisabledException("Google Ads", DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED));
                 }
                 return kernelAdapter.isAuthorized(ctx, "connectors/*", "execute");
             })

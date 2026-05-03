@@ -65,7 +65,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
                         <input
                             type="text"
-                            value={value || ''}
+                            value={typeof value === 'string' || typeof value === 'number' ? value : ''}
                             onChange={(e) => onChange(filter.id, e.target.value)}
                             placeholder={filter.placeholder || 'Search...'}
                             className="w-full pl-10 pr-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
@@ -76,7 +76,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             case 'select':
                 return (
                     <select
-                        value={value || ''}
+                        value={typeof value === 'string' || typeof value === 'number' ? value : ''}
                         onChange={(e) => onChange(filter.id, e.target.value)}
                         className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
                     >
@@ -117,7 +117,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     <label className="flex items-center gap-2 cursor-pointer">
                         <input
                             type="checkbox"
-                            checked={value || false}
+                            checked={typeof value === 'boolean' ? value : false}
                             onChange={(e) => onChange(filter.id, e.target.checked)}
                             className="w-4 h-4 text-primary-600 rounded"
                         />

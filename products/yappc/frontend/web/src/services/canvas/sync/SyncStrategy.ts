@@ -13,6 +13,7 @@
 import { IndexedDBAdapter } from '../storage/IndexedDBAdapter';
 import { CanvasAPIClient } from '../api/CanvasAPIClient';
 import type { CanvasSnapshot } from '../CanvasPersistence';
+import type { CanvasSnapshot as APICanvasSnapshot } from '../api/CanvasAPIClient';
 
 export interface SyncOptions {
     immediate?: boolean;
@@ -214,7 +215,7 @@ export class SyncStrategy {
             const existsRemotely = await this.apiClient.exists(snapshot.id);
 
             if (!existsRemotely) {
-                await this.apiClient.saveSnapshot(snapshot);
+                await this.apiClient.saveSnapshot(snapshot as unknown as APICanvasSnapshot);
                 result.pushed++;
             }
         }
@@ -222,7 +223,7 @@ export class SyncStrategy {
         // Also push any queued snapshots
         while (this.syncQueue.length > 0) {
             const snapshot = this.syncQueue.shift()!;
-            await this.apiClient.saveSnapshot(snapshot);
+            await this.apiClient.saveSnapshot(snapshot as unknown as APICanvasSnapshot);
             result.pushed++;
         }
 

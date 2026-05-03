@@ -16,7 +16,7 @@ import { useLifecycleArtifacts } from '../../services/canvas/lifecycle/Lifecycle
 import { usePhaseGates } from '../../services/canvas/lifecycle/PhaseGateService';
 import { useSearchParams } from 'react-router';
 import { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
-import type { LifecyclePhase } from '@/shared/types/lifecycle';
+import type { LifecyclePhase as SharedLifecyclePhase } from '@/shared/types/lifecycle';
 import type { GateStatus } from '@/shared/types/phase-gates';
 import { PHASE_GATES_BY_ID } from '@/shared/types/phase-gates';
 import { ArtifactDetailPanel } from '../shared/ArtifactDetailPanel';
@@ -33,9 +33,12 @@ import { useToast } from '@/components/common';
 
 interface LifecycleExplorerProps {
     projectId: string;
-    onPhaseSelect?: (phase: LifecyclePhase) => void;
+    onPhaseSelect?: (phase: ExplorerPhase) => void;
     onArtifactSelect?: (kind: LifecycleArtifactKind) => void;
 }
+
+type ExplorerPhase = SharedLifecyclePhase;
+type LegacyLifecyclePhase = import('@/types/lifecycle').LifecyclePhase;
 
 /** Flattened gate view combining static definition and runtime status. */
 interface PhaseGateView {
@@ -46,7 +49,7 @@ interface PhaseGateView {
 }
 
 interface PhaseGroup {
-    phase: LifecyclePhase;
+    phase: ExplorerPhase;
     title: string;
     description: string;
     artifacts: LifecycleArtifactKind[];
@@ -57,7 +60,7 @@ interface PhaseGroup {
 
 const PHASE_GROUPS: PhaseGroup[] = [
     {
-        phase: 'INTENT' as LifecyclePhase,
+        phase: 'INTENT',
         title: `1. ${PHASE_LABELS.INTENT}`,
         description: PHASE_DESCRIPTIONS.INTENT,
         artifacts: [LifecycleArtifactKind.IDEA_BRIEF, LifecycleArtifactKind.RESEARCH_PACK, LifecycleArtifactKind.PROBLEM_STATEMENT],
@@ -66,7 +69,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.INTENT.icon,
     },
     {
-        phase: 'SHAPE' as LifecyclePhase,
+        phase: 'SHAPE',
         title: `2. ${PHASE_LABELS.SHAPE}`,
         description: PHASE_DESCRIPTIONS.SHAPE,
         artifacts: [LifecycleArtifactKind.REQUIREMENTS, LifecycleArtifactKind.ADR, LifecycleArtifactKind.UX_SPEC, LifecycleArtifactKind.THREAT_MODEL],
@@ -75,7 +78,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.SHAPE.icon,
     },
     {
-        phase: 'VALIDATE' as LifecyclePhase,
+        phase: 'VALIDATE',
         title: `3. ${PHASE_LABELS.VALIDATE}`,
         description: PHASE_DESCRIPTIONS.VALIDATE,
         artifacts: [LifecycleArtifactKind.VALIDATION_REPORT, LifecycleArtifactKind.SIMULATION_RESULTS],
@@ -84,7 +87,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.VALIDATE.icon,
     },
     {
-        phase: 'GENERATE' as LifecyclePhase,
+        phase: 'GENERATE',
         title: `4. ${PHASE_LABELS.GENERATE}`,
         description: PHASE_DESCRIPTIONS.GENERATE,
         artifacts: [LifecycleArtifactKind.DELIVERY_PLAN, LifecycleArtifactKind.RELEASE_STRATEGY],
@@ -93,7 +96,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.GENERATE.icon,
     },
     {
-        phase: 'RUN' as LifecyclePhase,
+        phase: 'RUN',
         title: `5. ${PHASE_LABELS.RUN}`,
         description: PHASE_DESCRIPTIONS.RUN,
         artifacts: [LifecycleArtifactKind.EVIDENCE_PACK, LifecycleArtifactKind.RELEASE_PACKET],
@@ -102,7 +105,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.RUN.icon,
     },
     {
-        phase: 'OBSERVE' as LifecyclePhase,
+        phase: 'OBSERVE',
         title: `6. ${PHASE_LABELS.OBSERVE}`,
         description: PHASE_DESCRIPTIONS.OBSERVE,
         artifacts: [LifecycleArtifactKind.OPS_BASELINE, LifecycleArtifactKind.INCIDENT_REPORT],
@@ -111,7 +114,7 @@ const PHASE_GROUPS: PhaseGroup[] = [
         icon: PHASE_COLORS.OBSERVE.icon,
     },
     {
-        phase: 'IMPROVE' as LifecyclePhase,
+        phase: 'EVOLVE',
         title: `7. ${PHASE_LABELS.IMPROVE}`,
         description: PHASE_DESCRIPTIONS.IMPROVE,
         artifacts: [LifecycleArtifactKind.ENHANCEMENT_REQUESTS, LifecycleArtifactKind.LEARNING_RECORD],
@@ -128,7 +131,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 }) => {
     const { addToast } = useToast();
     const [searchParams] = useSearchParams();
-    const [expandedPhase, setExpandedPhase] = useState<LifecyclePhase | null>(null);
+    const [expandedPhase, setExpandedPhase] = useState<ExplorerPhase | null>(null);
     const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
     const [filterValues, setFilterValues] = useState<Record<string, unknown>>({
         search: '',
@@ -160,7 +163,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
         if (selectedArtifactId) {
             const artifact = artifacts.find(a => a.id === selectedArtifactId);
             if (artifact) {
-                updateLifecycleURL({ phase: artifact.phase, artifactId: artifact.id, artifactKind: artifact.kind });
+                updateLifecycleURL({ phase: artifact.phase as ExplorerPhase, artifactId: artifact.id, artifactKind: artifact.kind });
             }
         } else if (expandedPhase) {
             updateLifecycleURL({ phase: expandedPhase });
@@ -168,9 +171,10 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
     }, [selectedArtifactId, expandedPhase, artifacts]);
 
     // AI suggestion context
+    const normalizedCurrentPhase = (currentPhase as ExplorerPhase | undefined) ?? 'INTENT';
     const suggestionContext: SuggestionContext = {
         projectId,
-        currentPhase: currentPhase || 'INTENT',
+        currentPhase: normalizedCurrentPhase as unknown as LegacyLifecyclePhase,
         existingArtifacts: artifacts.map(a => ({ kind: a.kind, payload: {} })),
     };
 
@@ -236,12 +240,13 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 
     // Group artifacts by phase (using filtered artifacts)
     const artifactsByPhase = useMemo(() => {
-        const grouped = new Map<LifecyclePhase, typeof filteredArtifacts>();
+        const grouped = new Map<ExplorerPhase, typeof filteredArtifacts>();
         filteredArtifacts.forEach((artifact) => {
-            if (!grouped.has(artifact.phase)) {
-                grouped.set(artifact.phase, []);
+            const phase = artifact.phase as ExplorerPhase;
+            if (!grouped.has(phase)) {
+                grouped.set(phase, []);
             }
-            grouped.get(artifact.phase)!.push(artifact);
+            grouped.get(phase)!.push(artifact);
         });
         return grouped;
     }, [filteredArtifacts]);
@@ -279,7 +284,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
             projectId,
             exportDate: new Date().toISOString(),
             phases: PHASE_GROUPS.map(group => ({
-                phase: group.phase,
+                phase: group.phase as unknown as LegacyLifecyclePhase,
                 artifacts: artifacts
                     .filter(a => a.phase === group.phase)
                     .map(a => ({
@@ -302,16 +307,16 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
         }
     };
 
-    const isPhaseActive = (phase: LifecyclePhase) => currentPhase === phase;
-    const isPhaseCompleted = (phase: LifecyclePhase) => {
-        const phaseOrder = ['INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'IMPROVE'];
-        return phaseOrder.indexOf(phase) < phaseOrder.indexOf(currentPhase || 'INTENT');
+    const isPhaseActive = (phase: ExplorerPhase) => normalizedCurrentPhase === phase;
+    const isPhaseCompleted = (phase: ExplorerPhase) => {
+        const phaseOrder: ExplorerPhase[] = ['INTENT', 'SHAPE', 'VALIDATE', 'GENERATE', 'RUN', 'OBSERVE', 'EVOLVE'];
+        return phaseOrder.indexOf(phase) < phaseOrder.indexOf(normalizedCurrentPhase);
     };
 
     const handleCopyLink = async (artifactId: string, kind: LifecycleArtifactKind) => {
         const artifact = artifacts.find(a => a.id === artifactId);
         const success = await copyLifecycleLink(projectId, {
-            phase: artifact?.phase,
+            phase: artifact?.phase as ExplorerPhase | undefined,
             artifactId,
             artifactKind: kind,
         });
@@ -321,7 +326,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
         }
     };
 
-    const handlePhaseClick = (phase: LifecyclePhase) => {
+    const handlePhaseClick = (phase: ExplorerPhase) => {
         if (expandedPhase === phase) {
             setExpandedPhase(null);
             updateLifecycleURL({});

@@ -7,6 +7,7 @@ import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.domain.strategy.MarketingStrategy;
 import com.ghatana.digitalmarketing.domain.strategy.StrategyStatus;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
@@ -62,6 +63,16 @@ class StrategyGeneratorServiceImplTest extends EventloopTestBase {
         assertThat(strategy.getChannelPlans()).hasSize(3);
         assertThat(strategy.getModelVersion()).isEqualTo(StrategyGeneratorServiceImpl.MODEL_VERSION);
         assertThat(kernelAdapter.lastAuditAction).isEqualTo("strategy-generated");
+    }
+
+    @Test
+    @DisplayName("generateStrategy throws DmosFeatureDisabledException when AI is disabled")
+    void shouldThrowFeatureDisabledWhenAiDisabled() {
+        kernelAdapter.aiFeatureEnabled = false;
+
+        assertThatExceptionOfType(DmosFeatureDisabledException.class)
+            .isThrownBy(() -> runPromise(() -> service.generateStrategy(ctx, validCommand())))
+            .withMessageContaining("dmos.ai.enabled");
     }
 
     @Test
@@ -243,6 +254,7 @@ class StrategyGeneratorServiceImplTest extends EventloopTestBase {
 
     private static final class RecordingKernelAdapter implements DigitalMarketingKernelAdapter {
         boolean authorized = true;
+        boolean aiFeatureEnabled = true;
         String lastAuditAction;
 
         @Override
@@ -256,6 +268,11 @@ class StrategyGeneratorServiceImplTest extends EventloopTestBase {
         @Override
         public Promise<Boolean> isAuthorized(DmOperationContext context, String resource, String action) {
             return Promise.of(authorized);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(aiFeatureEnabled);
         }
 
         @Override

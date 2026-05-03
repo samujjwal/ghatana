@@ -13,7 +13,7 @@
 
 import React, { useCallback } from 'react';
 import { Box, IconButton, Tooltip, ToggleButtonGroup as ButtonGroup, Typography } from '@ghatana/design-system';
-import { Paintbrush as Brush, GitBranch as AccountTree, Code, FileText as Description, Plus as Add, ZoomIn, ZoomOut, Focus as CenterFocusStrong } from 'lucide-react';
+import { Paintbrush as Brush, GitBranch as AccountTree, Code, FileText as Description, ZoomIn, ZoomOut, Focus as CenterFocusStrong } from 'lucide-react';
 import { useSetAtom } from 'jotai';
 import { nodesAtom } from './workspace/canvasAtoms';
 import type { Node } from '@xyflow/react';
@@ -66,7 +66,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
             } as SimpleNodeData,
         };
 
-        setNodes(prev => [...prev, newNode as unknown]);
+        setNodes((prev) => [...prev, newNode as unknown as typeof prev[number]]);
     }, [setNodes]);
 
     const handleAddSketch = useCallback(() => {
@@ -117,12 +117,11 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
 
     return (
         <Box
-            className={className}
-            className="fixed flex flex-col gap-4 top-[80px] left-[16px] z-[1000]"
+            className={`fixed top-[80px] left-[16px] z-[1000] flex flex-col gap-4 ${className}`}
         >
             {/* Content Creation Buttons */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="text-xs text-gray-500" className="font-bold mb-2 text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="mb-2 text-xs font-bold text-gray-500 dark:text-gray-400">
                     ADD CONTENT
                 </Typography>
 
@@ -166,7 +165,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
 
             {/* Zoom Controls */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="text-xs text-gray-500" className="font-bold mb-2 text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="mb-2 text-xs font-bold text-gray-500 dark:text-gray-400">
                     VIEW
                 </Typography>
 

@@ -9,31 +9,28 @@ import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { RiskComplianceWidget } from '../RiskComplianceWidget';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
-const LOW_RISK: ApprovalRequest = {
+const BASE_PENDING: ApprovalRecordResponse = {
   requestId: 'req-1',
-  workspaceId: 'ws-1',
-  tenantId: 'tenant-1',
-  targetType: 'CAMPAIGN',
-  targetId: 'c-1',
-  description: 'Low risk campaign',
-  riskLevel: 3,
+  subjectId: 'c-1',
+  requestedBy: 'user-1',
+  action: 'campaign-launch',
   status: 'PENDING',
-  requiredApproverRole: 'editor',
-  submittedAt: '2026-05-01T10:00:00Z',
+  requestedAt: '2026-05-01T10:00:00Z',
+  expiresAt: null,
   decidedAt: null,
-  decidedBy: null,
-  comment: null,
+  reviewerId: null,
+  reviewerNotes: null,
 };
 
-const HIGH_RISK: ApprovalRequest = {
-  ...LOW_RISK,
-  requestId: 'req-2',
-  riskLevel: 8,
-  description: 'High risk budget plan',
-  targetType: 'BUDGET_PLAN',
-};
+function makePending(id: string, action = 'campaign-launch'): ApprovalRecordResponse {
+  return { ...BASE_PENDING, requestId: id, action };
+}
+
+function fiveOrMorePending(): ApprovalRecordResponse[] {
+  return Array.from({ length: 5 }, (_, i) => makePending(`req-${i}`));
+}
 
 describe('RiskComplianceWidget', () => {
   it('shows no-violation state when no approvals', () => {
@@ -44,8 +41,8 @@ describe('RiskComplianceWidget', () => {
     );
   });
 
-  it('shows no-violation state when all approvals are low risk', () => {
-    render(<RiskComplianceWidget approvals={[LOW_RISK]} />);
+  it('shows no-violation state when fewer than 5 pending approvals', () => {
+    render(<RiskComplianceWidget approvals={[makePending('req-1')]} />);
     expect(screen.getByTestId('risk-compliance-ok')).toBeInTheDocument();
     expect(
       screen.queryByTestId('risk-compliance-alert'),
@@ -65,52 +62,48 @@ describe('RiskComplianceWidget', () => {
     expect(screen.getByTestId('risk-compliance-error')).toBeInTheDocument();
   });
 
-  it('shows alert when high-risk pending approvals exist', () => {
-    render(<RiskComplianceWidget approvals={[HIGH_RISK]} />);
+  it('shows alert when 5 or more pending approvals exist', () => {
+    render(<RiskComplianceWidget approvals={fiveOrMorePending()} />);
     expect(screen.getByTestId('risk-compliance-alert')).toBeInTheDocument();
     expect(screen.getByTestId('risk-compliance-alert')).toHaveTextContent(
-      '1 high-risk item pending review',
+      '5 approvals pending review',
     );
   });
 
-  it('lists high-risk items with risk score and type', () => {
-    render(<RiskComplianceWidget approvals={[HIGH_RISK]} />);
+  it('lists pending items with action and subjectId', () => {
+    render(<RiskComplianceWidget approvals={fiveOrMorePending()} />);
     expect(screen.getByTestId('risk-compliance-list')).toBeInTheDocument();
-    expect(screen.getByText(/Risk 8\/10/)).toBeInTheDocument();
-    expect(screen.getByText(/BUDGET_PLAN/)).toBeInTheDocument();
+    expect(screen.getAllByText('campaign-launch').length).toBeGreaterThan(0);
   });
 
-  it('excludes approved high-risk items from violations', () => {
-    const approvedHighRisk: ApprovalRequest = { ...HIGH_RISK, status: 'APPROVED' };
-    render(<RiskComplianceWidget approvals={[approvedHighRisk]} />);
+  it('excludes non-PENDING items from compliance count', () => {
+    const approved: ApprovalRecordResponse = { ...BASE_PENDING, requestId: 'a-1', status: 'APPROVED' };
+    render(<RiskComplianceWidget approvals={[approved]} />);
     expect(screen.getByTestId('risk-compliance-ok')).toBeInTheDocument();
   });
 
-  it('uses threshold of 7 — riskLevel 7 is flagged, 6 is not', () => {
-    const borderAbove: ApprovalRequest = { ...LOW_RISK, requestId: 'r-a', riskLevel: 7 };
-    const borderBelow: ApprovalRequest = { ...LOW_RISK, requestId: 'r-b', riskLevel: 6 };
-    const { rerender } = render(<RiskComplianceWidget approvals={[borderAbove]} />);
+  it('threshold boundary — 4 pending is ok, 5 triggers alert', () => {
+    const fourItems = Array.from({ length: 4 }, (_, i) => makePending(`r-${i}`));
+    const fiveItems = Array.from({ length: 5 }, (_, i) => makePending(`r-${i}`));
+    const { rerender } = render(<RiskComplianceWidget approvals={fourItems} />);
+    expect(screen.getByTestId('risk-compliance-ok')).toBeInTheDocument();
+
+    rerender(<RiskComplianceWidget approvals={fiveItems} />);
     expect(screen.getByTestId('risk-compliance-alert')).toBeInTheDocument();
-
-    rerender(<RiskComplianceWidget approvals={[borderBelow]} />);
-    expect(screen.getByTestId('risk-compliance-ok')).toBeInTheDocument();
   });
 
-  it('shows plural text for multiple high-risk items', () => {
-    const items: ApprovalRequest[] = [
-      { ...HIGH_RISK, requestId: 'r1' },
-      { ...HIGH_RISK, requestId: 'r2' },
-    ];
+  it('shows plural text for multiple pending approvals', () => {
+    const items = Array.from({ length: 6 }, (_, i) => makePending(`r${i}`));
     render(<RiskComplianceWidget approvals={items} />);
     expect(screen.getByTestId('risk-compliance-alert')).toHaveTextContent(
-      '2 high-risk items pending review',
+      '6 approvals pending review',
     );
   });
 
-  it('renders the article with correct aria label', () => {
+  it('renders the article element with data-testid', () => {
     render(<RiskComplianceWidget />);
-    expect(
-      screen.getByRole('article', { name: /risk & compliance/i }),
-    ).toBeInTheDocument();
+    const article = screen.getByTestId('risk-compliance-widget');
+    expect(article.tagName.toLowerCase()).toBe('article');
+    expect(article).toHaveAttribute('aria-labelledby', 'risk-compliance-title');
   });
 });

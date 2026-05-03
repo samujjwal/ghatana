@@ -4,6 +4,7 @@
  */
 package com.ghatana.datacloud.launcher.http.handlers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.launcher.http.plugins.WorkflowExecutionCapability;
 import io.activej.http.*;
@@ -34,7 +35,6 @@ public class WorkflowExecutionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowExecutionHandler.class);
     private static final String MISSING_TENANT_MESSAGE = "X-Tenant-Id header or tenantId query parameter is required";
-    private static final String DC_EXECUTIONS_COLLECTION = "dc_executions";
 
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
@@ -48,7 +48,7 @@ public class WorkflowExecutionHandler {
     /**
      * Wires a {@link WorkflowExecutionCapability} to delegate execution operations.
      * When set, all execution operations are delegated to the capability.
-     * Without it, execution endpoints return 501 Not Implemented.
+      * Without it, execution endpoints return 503 Service Unavailable.
      *
      * @param capability the capability; may be {@code null} to clear
      * @return this handler (fluent)
@@ -72,14 +72,16 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return request.loadBody().then(buf -> {
             Map<String, Object> input;
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
-                input = body.isBlank() ? Map.of() : http.objectMapper().readValue(body, Map.class);
+                input = parseJsonMap(body);
             } catch (Exception e) {
                 log.warn("Invalid execute pipeline request body for pipeline {} tenant {}: {}", pipelineId, tenantId, e.getMessage());
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
@@ -139,12 +141,14 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return executionCapability.getExecution(tenantId, executionId)
             .map(opt -> opt.isPresent()
-                ? http.jsonResponse(opt.get())
+                ? http.jsonResponse(executionSnapshotToMap(opt.get()))
                 : http.errorResponse(404, "Execution not found: " + executionId))
             .whenException(e -> log.error("Failed to get execution {} for pipeline {} tenant {}: {}", executionId, pipelineId, tenantId, e.getMessage()));
     }
@@ -183,7 +187,9 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return executionCapability.cancelExecution(tenantId, executionId)
@@ -210,12 +216,14 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return executionCapability.getExecution(tenantId, executionId)
             .map(opt -> opt.isPresent()
-                ? http.jsonResponse(opt.get())
+                ? http.jsonResponse(executionSnapshotToMap(opt.get()))
                 : http.errorResponse(404, "Execution not found: " + executionId))
             .whenException(e -> log.error("Failed to get execution {} for tenant {}: {}", executionId, tenantId, e.getMessage()));
     }
@@ -252,7 +260,9 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return executionCapability.cancelExecution(tenantId, executionId)
@@ -276,7 +286,9 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return executionCapability.retryExecution(tenantId, executionId)
@@ -301,13 +313,15 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> rollbackData = body.isBlank() ? Map.of() : http.objectMapper().readValue(body, Map.class);
+                Map<String, Object> rollbackData = parseJsonMap(body);
                 // Rollback delegates to the capability which handles state transition
                 return executionCapability.cancelExecution(tenantId, executionId)
                     .map(snapshot -> http.jsonResponse(Map.of(
@@ -338,7 +352,7 @@ public class WorkflowExecutionHandler {
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> checkpointData = body.isBlank() ? Map.of() : http.objectMapper().readValue(body, Map.class);
+                Map<String, Object> checkpointData = parseJsonMap(body);
                 String checkpointId = UUID.randomUUID().toString();
                 String savedAt = Instant.now().toString();
                 Map<String, Object> checkpointRecord = new java.util.HashMap<>();
@@ -399,7 +413,9 @@ public class WorkflowExecutionHandler {
         }
 
         if (executionCapability == null) {
-            return Promise.of(http.errorResponse(501, "Workflow execution capability not available"));
+            return Promise.of(http.serviceUnavailableResponse(
+                "Workflow execution capability is not available in this deployment.",
+                60));
         }
 
         // Restore: retry the execution from its last saved state (capability handles state recovery)
@@ -424,13 +440,11 @@ public class WorkflowExecutionHandler {
         return request.loadBody().then(buf -> {
             try {
                 String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> queryData = http.objectMapper().readValue(body, Map.class);
+                Map<String, Object> queryData = parseJsonMap(body);
                 String queryId = UUID.randomUUID().toString();
                 String queryType = queryData.containsKey("type") ? String.valueOf(queryData.get("type")) : "sql";
                 // Explain: analyse the query structure and estimate cost/plan without executing
-                List<String> dataSources = queryData.containsKey("collections")
-                    ? (List<String>) queryData.get("collections")
-                    : List.of();
+                List<String> dataSources = readStringList(queryData.get("collections"));
                 return Promise.of(http.jsonResponse(Map.of(
                     "queryId", queryId,
                     "queryType", queryType,
@@ -459,5 +473,39 @@ public class WorkflowExecutionHandler {
 
     private HttpResponse missingTenantResponse() {
         return http.errorResponse(400, MISSING_TENANT_MESSAGE);
+    }
+
+    private Map<String, Object> parseJsonMap(String body) throws Exception {
+        if (body == null || body.isBlank()) {
+            return Map.of();
+        }
+        return http.objectMapper().readValue(body, new TypeReference<>() {});
+    }
+
+    private static List<String> readStringList(Object value) {
+        if (!(value instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream()
+            .filter(String.class::isInstance)
+            .map(String.class::cast)
+            .toList();
+    }
+
+    private static Map<String, Object> executionSnapshotToMap(WorkflowExecutionCapability.ExecutionSnapshot snapshot) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("id", snapshot.id());
+        data.put("tenantId", snapshot.tenantId());
+        data.put("workflowId", snapshot.workflowId());
+        data.put("workflowName", snapshot.workflowName());
+        data.put("status", snapshot.status());
+        data.put("progress", snapshot.progress());
+        data.put("startedAt", snapshot.startedAt());
+        data.put("completedAt", snapshot.completedAt());
+        data.put("duration", snapshot.duration());
+        data.put("nodeStatuses", snapshot.nodeStatuses() != null ? snapshot.nodeStatuses() : List.of());
+        data.put("output", snapshot.output());
+        data.put("error", snapshot.error());
+        return data;
     }
 }

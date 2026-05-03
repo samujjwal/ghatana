@@ -92,16 +92,19 @@ export function useDurableMutation<
 
   const wrappedFn: MutationFunction<TData, TVariables> = useCallback(
     (variables: TVariables) => {
-      return mutationFn({ ...variables, idempotencyKey: idempotencyKey.current });
+      return mutationFn(
+        { ...variables, idempotencyKey: idempotencyKey.current },
+        {} as never,
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mutationFn],
   );
 
-  return useMutation<TData, TError, TVariables, TContext>({
+  return (useMutation as any)({
     ...options,
     mutationFn: wrappedFn as MutationFunction<TData, TVariables>,
-    onSuccess: async (data, variables, context) => {
+    onSuccess: async (data: TData, variables: TVariables, context: TContext | undefined) => {
       // Rotate the key so a subsequent call on the same mount gets a new key.
       idempotencyKey.current = crypto.randomUUID();
 
@@ -118,15 +121,27 @@ export function useDurableMutation<
         );
       }
 
-      await options?.onSuccess?.(data, variables as TVariables & { idempotencyKey: string }, context);
+      await (options?.onSuccess as
+        | ((data: TData, variables: TVariables & { idempotencyKey: string }, context: TContext) => Promise<unknown> | unknown)
+        | undefined)?.(
+          data,
+          variables as TVariables & { idempotencyKey: string },
+          context as TContext,
+        );
     },
-    onError: (error, variables, context) => {
+    onError: (error: TError, variables: TVariables, context: TContext | undefined) => {
       onToast({
         type: 'error',
         message: `${actionLabel} failed: ${error.message}`,
       });
 
-      options?.onError?.(error, variables as TVariables & { idempotencyKey: string }, context);
+      (options?.onError as
+        | ((error: TError, variables: TVariables & { idempotencyKey: string }, context: TContext) => unknown)
+        | undefined)?.(
+          error,
+          variables as TVariables & { idempotencyKey: string },
+          context as TContext,
+        );
     },
-  });
+  }) as UseMutationResult<TData, TError, TVariables, TContext>;
 }

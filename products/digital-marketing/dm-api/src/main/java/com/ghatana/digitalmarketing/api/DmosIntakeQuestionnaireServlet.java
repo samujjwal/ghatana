@@ -12,6 +12,8 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.domain.intake.BusinessIntakeProfile;
 import com.ghatana.kernel.security.TenantSecurityContext;
 import io.activej.eventloop.Eventloop;
@@ -158,6 +160,9 @@ public final class DmosIntakeQuestionnaireServlet {
         }
         if (error instanceof IllegalArgumentException) {
             return Promise.of(errorResponse(400, error.getMessage()));
+        }
+        if (error instanceof DmosFeatureDisabledException || error instanceof DmosConnectorDisabledException) {
+            return Promise.of(errorResponse(423, error.getMessage()));
         }
         LOG.error("[DMOS] Failed to {}", operation, error);
         return Promise.of(errorResponse(500, "Internal error"));

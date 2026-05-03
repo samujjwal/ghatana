@@ -3,7 +3,6 @@
  *
  * Renders the HOT→WARM→COOL→COLD event-cloud topology using
  * `@ghatana/canvas/flow` with throughput metrics from DC API.
- * This surface is in preview — live topology metrics are not yet connected.
  *
  * This is the first production consumer of the `@ghatana/canvas/flow` library.
  *
@@ -281,7 +280,7 @@ function TierLegend(): React.ReactElement {
  * DataFabricPage — four-tier topology visualizer using `@ghatana/canvas/flow`.
  *
  * @doc.type component
- * @doc.purpose Data fabric topology view (preview — metrics not yet live)
+ * @doc.purpose Data fabric topology view
  * @doc.layer product
  * @doc.pattern Page
  */
@@ -302,7 +301,7 @@ export function DataFabricPage(): React.ReactElement {
   ]);
   const isAiFabricAdvisoryAvailable = aiFabricAdvisoryCapability?.status !== 'unavailable';
 
-  // Fabric metrics from DC API (preview — live data not yet connected)
+  // Fabric metrics from DC API.
   const { data: fabricMetrics } = useQuery<FabricMetricsResponse>({
     queryKey: ['data-fabric', 'metrics'],
     queryFn: fetchFabricMetrics,
@@ -380,6 +379,26 @@ export function DataFabricPage(): React.ReactElement {
     (connection) => setEdges((eds) => addEdge(connection, eds)),
     [setEdges],
   );
+
+  if (!isFabricMetricsAvailable) {
+    return (
+      <div className="flex flex-col h-full bg-white" data-testid="data-fabric-page-unavailable">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h1 className="text-xl font-semibold text-gray-900">Data Fabric</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Four-tier event cloud topology — HOT → WARM → COOL → COLD
+          </p>
+        </div>
+        <UnsupportedSurfaceBoundary
+          className="mx-6 mt-6"
+          title={dataFabricMetricsBoundary.title}
+          summary={dataFabricMetricsBoundary.summary}
+          details={dataFabricMetricsBoundary.details}
+          state={dataFabricMetricsBoundary.state}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-white" data-testid="data-fabric-page">
@@ -494,14 +513,6 @@ export function DataFabricPage(): React.ReactElement {
           </Button>
         </div>
       )}
-
-      <UnsupportedSurfaceBoundary
-        className="mx-6 mt-4"
-        title={dataFabricMetricsBoundary.title}
-        summary={dataFabricMetricsBoundary.summary}
-        details={dataFabricMetricsBoundary.details}
-        state={dataFabricMetricsBoundary.state}
-      />
 
       <StatBar metrics={fabricMetrics} />
 

@@ -6,10 +6,10 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import type { ApprovalRequest, ApprovalStatus } from '@/types/approval';
+import type { ApprovalRecordResponse, ApprovalStatus } from '@/types/approval';
 
 interface WorkflowStatusWidgetProps {
-  approvals: ApprovalRequest[];
+  approvals: ApprovalRecordResponse[];
   isLoading?: boolean;
   isError?: boolean;
 }
@@ -18,14 +18,14 @@ const STATUS_LABEL: Record<ApprovalStatus, string> = {
   PENDING: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
-  WITHDRAWN: 'Withdrawn',
+  CANCELLED: 'Cancelled',
 };
 
 const STATUS_CLASS: Record<ApprovalStatus, string> = {
   PENDING: 'text-yellow-700 bg-yellow-50 border-yellow-200',
   APPROVED: 'text-green-700 bg-green-50 border-green-200',
   REJECTED: 'text-red-700 bg-red-50 border-red-200',
-  WITHDRAWN: 'text-gray-500 bg-gray-50 border-gray-200',
+  CANCELLED: 'text-gray-500 bg-gray-50 border-gray-200',
 };
 
 export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
@@ -90,12 +90,10 @@ export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
             >
               <span className="font-medium">{STATUS_LABEL[approval.status]}</span>
               {' — '}
-              <span>{approval.targetType}</span>
-              {approval.description && (
-                <span className="ml-1 text-gray-500 truncate block max-w-xs">
-                  {approval.description}
-                </span>
-              )}
+              <span className="font-mono">{approval.action}</span>
+              <span className="ml-1 text-gray-500 truncate block max-w-xs">
+                {approval.subjectId}
+              </span>
             </li>
           ))}
           {activeApprovals.length > 5 && (

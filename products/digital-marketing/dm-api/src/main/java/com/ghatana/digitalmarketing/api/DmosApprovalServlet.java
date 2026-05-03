@@ -14,6 +14,8 @@ import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.approval.ApprovalTargetType;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.kernel.security.TenantSecurityContext;
 import com.ghatana.plugin.approval.ApprovalDecision;
 import com.ghatana.plugin.approval.ApprovalRecord;
@@ -25,6 +27,7 @@ import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.http.RoutingServlet;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -207,9 +210,20 @@ public final class DmosApprovalServlet {
 
         try {
             DmOperationContext ctx = buildContext(request, workspaceId);
-            return approvalService.getApprovalStatus(ctx, requestId)
-                .map(opt -> opt.map(this::toRecordResponse).orElse(null))
-                .map(r -> r != null ? jsonResponse(200, r) : notFound("Approval not found: " + requestId))
+            return Promises.toList(
+                    approvalService.getApprovalStatus(ctx, requestId),
+                    approvalService.getSnapshot(ctx, requestId))
+                .then(tuple -> {
+                    var recordOpt = tuple.get(0);
+                    var snapshotOpt = tuple.get(1);
+                    if (recordOpt.isEmpty()) {
+                        return Promise.of(notFound("Approval not found: " + requestId));
+                    }
+                    ApprovalRecord record = recordOpt.get();
+                    ApprovalSnapshot snapshot = snapshotOpt.orElse(null);
+                    DmosApprovalDto dto = toDmosApprovalDto(ctx, record, snapshot);
+                    return Promise.of(jsonResponse(200, dto));
+                })
                 .then(r -> Promise.of(r), e -> mapServiceError("get-status", e));
         } catch (IllegalArgumentException e) {
             return Promise.of(badRequest("Invalid request: " + e.getMessage()));
@@ -254,7 +268,7 @@ public final class DmosApprovalServlet {
         try {
             DmOperationContext ctx = buildContext(request, workspaceId);
             return approvalService.listPendingApprovals(ctx, subjectId)
-                .map(list -> list.stream().map(this::toRecordResponse).toList())
+                .map(list -> list.stream().map(record -> toDmosApprovalDto(ctx, record, null)).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
                 .then(r -> Promise.of(r), e -> mapServiceError("list-pending", e));
         } catch (IllegalArgumentException e) {
@@ -312,6 +326,28 @@ public final class DmosApprovalServlet {
         );
     }
 
+    private DmosApprovalDto toDmosApprovalDto(DmOperationContext ctx, ApprovalRecord record, ApprovalSnapshot snapshot) {
+        return new DmosApprovalDto(
+            record.requestId(),
+            ctx.getTenantId().getValue(),
+            ctx.getWorkspaceId().getValue(),
+            snapshot != null ? snapshot.targetType().name() : null,
+            snapshot != null ? snapshot.targetId() : null,
+            snapshot != null ? snapshot.snapshotSummary() : null,
+            snapshot != null ? snapshot.riskLevel() : 1,
+            snapshot != null ? snapshot.requiredApproverRole() : "brand-manager",
+            record.status().name(),
+            record.requestedAt(),
+            record.requestedBy(),
+            record.decidedAt(),
+            record.reviewerId(),
+            record.reviewerNotes(),
+            snapshot != null ? snapshot.snapshotSummary() : null,
+            snapshot != null ? snapshot.validationResultId() : null,
+            snapshot != null ? snapshot.snapshotAt() : null
+        );
+    }
+
     private Promise<HttpResponse> mapServiceError(String operation, Throwable e) {
         LOG.warn("Approval service error [{}]: {}", operation, e.getMessage());
         if (e instanceof SecurityException) {
@@ -323,12 +359,19 @@ public final class DmosApprovalServlet {
         if (e instanceof NoSuchElementException) {
             return Promise.of(notFound(e.getMessage()));
         }
+        if (e instanceof DmosFeatureDisabledException || e instanceof DmosConnectorDisabledException) {
+            return Promise.of(locked(e.getMessage()));
+        }
         return Promise.of(internalError("Unexpected error during " + operation));
     }
 
     // -------------------------------------------------------------------------
     // HTTP response helpers
     // -------------------------------------------------------------------------
+
+    private static HttpResponse locked(String message) {
+        return errorResponse(423, message);
+    }
 
     private static HttpResponse badRequest(String message) {
         return errorResponse(400, message);
@@ -433,6 +476,27 @@ public final class DmosApprovalServlet {
             Instant decidedAt,
             String reviewerId,
             String reviewerNotes
+    ) {}
+
+    /** Combined DMOS approval DTO with record and snapshot fields. */
+    record DmosApprovalDto(
+            String requestId,
+            String tenantId,
+            String workspaceId,
+            String targetType,
+            String targetId,
+            String description,
+            int riskLevel,
+            String requiredApproverRole,
+            String status,
+            Instant submittedAt,
+            String submittedBy,
+            Instant decidedAt,
+            String decidedBy,
+            String comment,
+            String snapshotSummary,
+            String validationResultId,
+            Instant snapshotAt
     ) {}
 
     /** Response body for an approval snapshot. */

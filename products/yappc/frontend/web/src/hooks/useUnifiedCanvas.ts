@@ -22,7 +22,7 @@ import {
   type Tool,
 } from '../state/atoms/unifiedCanvasAtom';
 import { type ZoomManager } from '../lib/canvas/ZoomManager';
-import { type HierarchicalNode } from '../lib/canvas/HierarchyManager';
+import { type HierarchicalNode, type HierarchyManager } from '../lib/canvas/HierarchyManager';
 import {
   type NodeResizeManager,
   type LayerManager,
@@ -355,7 +355,7 @@ export function useUnifiedCanvas(projectId?: string): UseUnifiedCanvasReturn {
           return;
         }
         const layoutedNodes = mindMapEngine.layoutNodes(
-          mindMapNodes as unknown
+          mindMapNodes as unknown as Parameters<typeof mindMapEngine.layoutNodes>[0]
         );
         layoutedNodes.forEach((layouted) => {
           updateNodeCallback(layouted.id, { position: layouted.position });

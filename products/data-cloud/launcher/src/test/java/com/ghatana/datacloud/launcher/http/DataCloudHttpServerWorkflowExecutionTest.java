@@ -163,7 +163,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     Map.of("param1", "value1"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("executionId", "pipelineId", "tenantId", "status");
             assertThat(body.get("executionId")).isEqualTo(EXECUTION_ID);
             assertThat(body.get("status")).isEqualTo("RUNNING");
@@ -230,7 +230,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("executions", "count");
             assertThat(((List<?>) body.get("executions"))).hasSize(2);
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(2);
@@ -244,7 +244,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/pipelines/" + PIPELINE_ID + "/executions");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(((List<?>) body.get("executions"))).isEmpty();
             assertThat(((Number) body.get("count")).intValue()).isEqualTo(0);
         }
@@ -303,7 +303,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     "/api/v1/pipelines/" + PIPELINE_ID + "/executions/" + EXECUTION_ID + "/cancel");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("status")).isEqualTo("CANCELLED");
             verify(mockCapability).cancelExecution(TENANT_ID, EXECUTION_ID);
         }
@@ -337,7 +337,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/cancel");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("status")).isEqualTo("CANCELLED");
         }
     }
@@ -359,7 +359,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/retry");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("executionId", "status", "startedAt");
             assertThat(body.get("executionId")).isEqualTo(EXECUTION_ID);
         }
@@ -392,7 +392,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = postEmpty("/api/v1/executions/" + EXECUTION_ID + "/rollback");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("executionId")).isEqualTo(EXECUTION_ID);
             assertThat(body.get("status")).isEqualTo("rolled_back");
         }
@@ -410,7 +410,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     Map.of("reason", "data-corruption", "targetVersion", "v1.2"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("status")).isEqualTo("rolled_back");
         }
     }
@@ -435,7 +435,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     Map.of("state", "after-step-3"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("checkpointId")).isNotNull();
             assertThat(body.get("executionId")).isEqualTo(EXECUTION_ID);
             assertThat(body.get("status")).isEqualTo("checkpointed");
@@ -495,7 +495,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("checkpoints", "count");
             assertThat(((List<?>) body.get("checkpoints"))).hasSize(2);
         }
@@ -512,7 +512,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/checkpoints");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(((List<?>) body.get("checkpoints"))).isEmpty();
         }
     }
@@ -536,7 +536,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     Map.of("checkpointId", "cp-99"));
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body.get("executionId")).isEqualTo(EXECUTION_ID);
         }
 
@@ -573,7 +573,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/logs");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("logs", "executionId");
             assertThat(((List<?>) body.get("logs"))).hasSize(2);
         }
@@ -586,7 +586,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = get("/api/v1/executions/" + EXECUTION_ID + "/logs");
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(((List<?>) body.get("logs"))).isEmpty();
         }
     }
@@ -606,7 +606,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     Map.of("type", "SELECT", "collections", List.of("orders", "customers")));
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKeys("queryId", "queryType", "dataSources",
                     "estimatedCost", "optimized", "explain", "timestamp");
             assertThat(body.get("queryType")).isEqualTo("SELECT");
@@ -620,7 +620,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
             HttpResponse<String> resp = post("/api/v1/queries/explain", Map.of());
 
             assertThat(resp.statusCode()).isEqualTo(200);
-            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            Map<String, Object> body = mapper.readValue(resp.body(), Map.class);
             assertThat(body).containsKey("queryId");
         }
     }

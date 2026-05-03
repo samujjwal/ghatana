@@ -130,7 +130,7 @@ export type {
 } from './canvasSharedState';
 
 // Local fallback constant when canonical library export is missing
-const MAX_HISTORY_SIZE = 50;
+export const MAX_HISTORY_SIZE = 50;
 
 /**
  * Backward-compat alias for `hybridCanvasStateAtom`.
@@ -362,8 +362,8 @@ export interface CanvasConnection {
 }
 
 export interface CanvasState {
-  elements: CanvasElement[];
-  connections: CanvasConnection[];
+  elements?: CanvasElement[];
+  connections?: CanvasConnection[];
   metadata?: Record<string, unknown>;
   selectedElements?: string[];
   viewport?: { x: number; y: number; zoom: number };

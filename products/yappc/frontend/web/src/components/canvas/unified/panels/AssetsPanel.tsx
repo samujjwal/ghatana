@@ -23,6 +23,7 @@ import {
 } from '@ghatana/design-system';
 import { TextField } from '@ghatana/design-system';
 import { Search, List as ViewList, LayoutGrid as ViewModule } from 'lucide-react';
+import type { ShapeTemplate } from '../ShapeLibrary';
 import type {
   RailPanelProps,
   AssetTemplate,
@@ -34,6 +35,14 @@ import {
   getPrioritizedCategories,
 } from '../rail-config';
 import { SHAPE_TEMPLATES } from '../ShapeLibrary';
+
+const CATEGORY_MAP: Record<ShapeTemplate['category'], AssetCategory> = {
+  basic: 'basic',
+  flowchart: 'flowchart',
+  uml: 'uml',
+  annotation: 'stickers',
+  advanced: 'icons',
+};
 
 /**
  * Enhanced Assets Panel Component
@@ -61,9 +70,14 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
   // Convert legacy SHAPE_TEMPLATES to new format
   const allAssets = useMemo<AssetTemplate[]>(() => {
     return SHAPE_TEMPLATES.map((template) => ({
-      ...template,
+      id: template.id,
+      name: template.name,
+      icon: template.icon,
+      type: template.type,
+      category: CATEGORY_MAP[template.category],
+      defaultSize: template.defaultSize,
+      defaultData: template.defaultData,
       tags: [template.type, template.category, template.name.toLowerCase()],
-      visibility: undefined, // Use category visibility
     }));
   }, []);
 
@@ -186,19 +200,16 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
           const isPriority = prioritizedCategories.includes(categoryId);
 
           return (
-            <Accordion
+            <Box
               key={categoryId}
-              expanded={expandedCategories.has(categoryId)}
-              onChange={() => handleAccordionChange(categoryId)}
-              disableGutters
-              className={`shadow-none ${isPriority ? 'bg-gray-100 dark:bg-gray-800' : 'bg-transparent'}`}
+              className={`mb-2 rounded border border-gray-200 dark:border-gray-700 ${isPriority ? 'bg-gray-100 dark:bg-gray-800' : 'bg-transparent'}`}
             >
-              <AccordionSummary
-                className="min-h-[40px] [&_.MuiAccordionSummary-content]:my-2"
+              <button
+                type="button"
+                onClick={() => handleAccordionChange(categoryId)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left"
               >
-                <Box
-                  className="flex items-center gap-2 w-full"
-                >
+                <Box className="flex items-center gap-2 w-full">
                   <Box className="text-[1.2rem]">{categoryMeta.icon}</Box>
                   <Typography variant="body2" fontWeight={600}>
                     {categoryMeta.label}
@@ -213,9 +224,13 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                       <span style={{ fontSize: '0.9rem' }}>⭐</span>
                     </Tooltip>
                   )}
+                  <Typography as="span" className="text-xs text-gray-500">
+                    {expandedCategories.has(categoryId) ? '▲' : '▼'}
+                  </Typography>
                 </Box>
-              </AccordionSummary>
-              <AccordionDetails className="pt-0">
+              </button>
+              {expandedCategories.has(categoryId) && (
+                <Box className="px-3 pb-3 pt-0">
                 {/* Grid View */}
                 {viewMode === 'grid' && (
                   <Box
@@ -227,9 +242,9 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                         title={asset.name}
                         placement="top"
                       >
-                        <Box
-                          onClick={() => handleAssetClick(asset)}
-                          className="flex flex-col items-center justify-center cursor-pointer rounded border border-solid border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 transition-all duration-200 hover:bg-gray-100 hover:dark:bg-gray-800 hover:border-blue-600" >
+                          <Box
+                            onClick={() => handleAssetClick(asset)}
+                            className="flex min-h-[88px] flex-col items-center justify-center cursor-pointer rounded border border-solid border-gray-200 bg-white transition-all duration-200 hover:border-blue-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800" >
                           <Box className="text-2xl mb-1">
                             {asset.icon}
                           </Box>
@@ -262,8 +277,9 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                     ))}
                   </Box>
                 )}
-              </AccordionDetails>
-            </Accordion>
+                </Box>
+              )}
+            </Box>
           );
         })}
       </Box>

@@ -54,7 +54,7 @@ async function fetchGeneratedCodeQuality(
     `${API_BASE_URL}/generated-code/${encodeURIComponent(artifactId)}/quality`,
     { credentials: 'include' }
   );
-  return parseJsonResponse<GeneratedCodeQuality>(response);
+  return parseJsonResponse<GeneratedCodeQuality>(response, 'fetch generated code quality');
 }
 
 // ── Hook ──────────────────────────────────────────────────────────────────────

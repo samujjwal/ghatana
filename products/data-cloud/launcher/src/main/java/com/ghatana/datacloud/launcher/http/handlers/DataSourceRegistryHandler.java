@@ -2,6 +2,7 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.fabric.DataFabricConnector;
+import com.ghatana.datacloud.launcher.http.ApiInputValidator;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -42,6 +43,7 @@ import java.util.Set;
  *   <li>{@code GET  /api/v1/connectors/:connectionId/schema}    — inferred schema</li>
  *   <li>{@code POST /api/v1/connectors/:connectionId/sync}      — trigger sync</li>
  *   <li>{@code GET  /api/v1/connectors/:connectionId/sync/status} — sync status</li>
+ *   <li>{@code DELETE /api/v1/connectors/:connectionId}          — delete connection</li>
  * </ul>
  *
  * @doc.type class
@@ -728,5 +730,47 @@ public final class DataSourceRegistryHandler {
         }
 
         return metrics;
+    }
+    // ─── DELETE /api/v1/connectors/:connectionId ─────────────────────────────
+
+    /**
+     * Deletes a registered data source connection and removes it from the {@code dc_connections}
+     * entity store.
+     *
+     * <p>Returns HTTP 204 on success, HTTP 404 when the connection does not exist for the tenant.
+     *
+     * @param request the incoming HTTP request
+     * @return a Promise resolving to the HTTP response
+     */
+    public Promise<HttpResponse> handleDeleteConnection(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+        Optional<String> tenantErr = ApiInputValidator.validateTenantId(tenantId);
+        if (tenantErr.isPresent()) return Promise.of(http.errorResponse(400, tenantErr.get()));
+
+        final String finalTenantId = tenantId;
+        final String finalConnectionId = connectionId;
+
+        return client.findById(finalTenantId, DC_CONNECTIONS, finalConnectionId)
+            .then(opt -> {
+                if (opt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Connection not found: " + finalConnectionId));
+                }
+                return client.delete(finalTenantId, DC_CONNECTIONS, finalConnectionId)
+                    .map(ignored -> {
+                        log.info("[deleteConnection] tenant={} connectionId={} deleted", finalTenantId, finalConnectionId);
+                        return http.noContentResponse();
+                    });
+            })
+            .then(Promise::of, e -> {
+                log.error("[deleteConnection] tenant={} connectionId={} failed: {}", finalTenantId, finalConnectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Failed to delete connection: " + e.getMessage()));
+            });
     }
 }

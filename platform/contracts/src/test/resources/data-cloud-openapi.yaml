@@ -3984,6 +3984,27 @@ paths:
                 $ref: "#/components/schemas/AnalyticsSqlQueryResponse"
         "503": { description: Analytics engine not wired. }
 
+  /api/v1/analytics/queries/{queryId}:
+    delete:
+      summary: Cancel a running analytics query
+      operationId: apiV1AnalyticsQueriesQueryIdDelete
+      tags: [analytics]
+      x-capability-required: analytics-query-cancellation
+      parameters:
+        - name: queryId
+          in: path
+          required: true
+          schema: { type: string }
+        - $ref: "#/components/parameters/tenantIdQuery"
+      responses:
+        "202": { description: Cancellation accepted. }
+        "503":
+          description: Query cancellation capability is not enabled in this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
+
   /api/v1/analytics/aggregation:
     post:
       summary: Run an aggregation query
@@ -4143,6 +4164,7 @@ paths:
       summary: Bulk export entities as CSV or NDJSON
       operationId: apiV1EntitiesCollectionExportGet
       tags: [entities]
+      x-capability-required: entity-export
       parameters:
         - $ref: "#/components/parameters/collectionPath"
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -4151,13 +4173,19 @@ paths:
           schema: { type: string, enum: [csv, ndjson], default: ndjson }
       responses:
         "200": { description: Exported entity file }
-        "501": { description: Export service not configured }
+        "503":
+          description: Export service not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/anomalies:
     post:
       summary: Detect statistical anomalies in a collection
       operationId: apiV1EntitiesCollectionAnomaliesPost
       tags: [entities, analytics]
+      x-capability-required: anomaly-detector
       parameters:
         - $ref: "#/components/parameters/collectionPath"
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -4169,13 +4197,19 @@ paths:
               $ref: "#/components/schemas/FreeformObject"
       responses:
         "200": { description: Anomaly detection results }
-        "501": { description: Anomaly detector not configured }
+        "503":
+          description: Anomaly detector is not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/anomalies:
     get:
       summary: Query persisted anomaly detection events
       operationId: apiV1AnomaliesGet
       tags: [analytics]
+      x-capability-required: anomaly-event-store
       parameters:
         - $ref: "#/components/parameters/tenantIdQuery"
         - name: collection
@@ -4205,7 +4239,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnomalyQueryResponse"
         "400": { $ref: "#/components/responses/BadRequest" }
-        "501": { description: Anomaly event store not configured }
+        "503":
+          description: Anomaly event store is not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/similar:
     get:
@@ -4240,6 +4279,7 @@ paths:
     post:
       summary: Validate a single entity payload against the collection schema
       operationId: apiV1EntitiesCollectionValidatePost
+      x-capability-required: schema-validation
       description: |
         Checks the supplied payload against registered validation rules for the collection.
         Returns a list of violations when the payload is invalid. Does not persist the entity.
@@ -4272,11 +4312,18 @@ paths:
                         message: { type: string }
                         code: { type: string }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "503":
+          description: Schema validation capability is not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/validate/batch:
     post:
       summary: Validate multiple entity payloads in a single request
       operationId: apiV1EntitiesCollectionValidateBatchPost
+      x-capability-required: schema-validation
       description: |
         Validates each payload in the `entities` array against the collection schema.
         Returns per-entity results and a top-level `allValid` flag. Does not persist entities.
@@ -4325,6 +4372,12 @@ paths:
                               message: { type: string }
                               code: { type: string }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "503":
+          description: Schema validation capability is not configured for this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/batch:
     post:
@@ -4378,6 +4431,7 @@ paths:
       summary: SSE streaming query snapshot + tail
       operationId: apiV1EntitiesCollectionQueryStreamGet
       tags: [entities, sse]
+      x-capability-required: opensearch-connector
       parameters:
         - $ref: "#/components/parameters/collectionPath"
         - $ref: "#/components/parameters/tenantIdQuery"
@@ -4393,6 +4447,12 @@ paths:
           content:
             text/event-stream:
               schema: { type: string }
+        "503":
+          description: Streaming query is disabled because OpenSearch connector is not configured.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /api/v1/entities/{collection}/suggest:
     post:
@@ -6579,8 +6639,14 @@ paths:
           required: true
           schema: { type: string }
       responses:
-        "200": { description: Connector deleted. }
-        "501": { description: Delete connector not implemented. }
+        "204": { description: Connector deleted. }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "503":
+          description: Connector deletion is temporarily unavailable.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   /data-fabric/connectors/{connectionId}/test:
     post:
@@ -6790,6 +6856,7 @@ paths:
       summary: Hot-swap a runtime feature plugin or reload a storage plugin
       operationId: apiV1PluginsIdUpgradePost
       tags: [plugins]
+      x-capability-required: plugin-hot-swap-upgrade
       parameters:
         - name: id
           in: path
@@ -6805,6 +6872,12 @@ paths:
       responses:
         "200": { description: Plugin hot-swapped or reloaded. }
         "404": { $ref: "#/components/responses/NotFound" }
+        "503":
+          description: Plugin upgrade capability is disabled on this deployment.
+          headers:
+            Retry-After:
+              description: Seconds before retrying after capability enablement.
+              schema: { type: integer, minimum: 1 }
 
   # ── Entity and event point lookups ──────────────────────────────────────
 
@@ -6968,17 +7041,17 @@ paths:
         - $ref: "#/components/parameters/tenantIdQuery"
       requestBody:
         required: true
+        description: |
+          Collection metadata payload. Allowed fields include `lifecycleStatus`, `qualityScore`,
+          `qualityMetrics`, `retentionPolicy`, `lineage`, `operationalStatus`, `label`,
+          `description`, `active`, `validationSchema`, `storageProfile`, `physicalMapping`,
+          `schemaVersion`. `lifecycleStatus` must be one of DRAFT, PUBLISHED, DEPRECATED, ARCHIVED.
+          `operationalStatus` must be one of healthy, degraded, unavailable, maintenance.
+          `qualityScore` must be a number between 0.0 and 1.0.
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/FreeformObject"
-            description: |
-              Collection metadata payload. Allowed fields include `lifecycleStatus`, `qualityScore`,
-              `qualityMetrics`, `retentionPolicy`, `lineage`, `operationalStatus`, `label`,
-              `description`, `active`, `validationSchema`, `storageProfile`, `physicalMapping`,
-              `schemaVersion`. `lifecycleStatus` must be one of DRAFT, PUBLISHED, DEPRECATED, ARCHIVED.
-              `operationalStatus` must be one of healthy, degraded, unavailable, maintenance.
-              `qualityScore` must be a number between 0.0 and 1.0.
       responses:
         "200":
           description: Metadata upserted.

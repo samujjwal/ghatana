@@ -18,36 +18,41 @@ export const ApprovalSnapshotPanel: React.FC<ApprovalSnapshotPanelProps> = ({
   <section
     aria-labelledby="snapshot-heading"
     data-testid="approval-snapshot-panel"
-    className="border rounded p-4"
+    className="border rounded p-4 space-y-2"
   >
     <h3
       id="snapshot-heading"
-      className="text-sm font-semibold text-gray-700 mb-3"
+      className="text-sm font-semibold text-gray-700"
     >
-      Content Snapshot
+      Approval Snapshot
       <span className="ml-2 text-xs font-normal text-gray-400">
-        captured {new Date(snapshot.capturedAt).toLocaleString()}
+        captured {new Date(snapshot.snapshotAt).toLocaleString()}
       </span>
     </h3>
 
-    {snapshot.fields.length === 0 ? (
-      <p className="text-sm text-gray-400">No snapshot fields recorded.</p>
-    ) : (
-      <dl className="divide-y text-sm">
-        {snapshot.fields.map((f) => (
-          <div key={f.key} className="flex py-2 gap-4">
-            <dt className="w-1/3 font-medium text-gray-600 truncate">{f.key}</dt>
-            <dd
-              data-testid={`snapshot-field-${f.key}`}
-              className="w-2/3 text-gray-800 break-all"
-            >
-              {typeof f.value === 'object'
-                ? JSON.stringify(f.value, null, 2)
-                : String(f.value)}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    )}
+    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+      <div>
+        <dt className="font-medium text-gray-600">Target Type</dt>
+        <dd data-testid="snapshot-field-targetType" className="font-mono text-xs">{snapshot.targetType}</dd>
+      </div>
+      <div>
+        <dt className="font-medium text-gray-600">Target ID</dt>
+        <dd data-testid="snapshot-field-targetId">{snapshot.targetId}</dd>
+      </div>
+      <div>
+        <dt className="font-medium text-gray-600">Risk Level</dt>
+        <dd data-testid="snapshot-field-riskLevel">{snapshot.riskLevel}</dd>
+      </div>
+      <div>
+        <dt className="font-medium text-gray-600">Required Role</dt>
+        <dd data-testid="snapshot-field-requiredApproverRole">{snapshot.requiredApproverRole}</dd>
+      </div>
+      {snapshot.snapshotSummary && (
+        <div className="col-span-2">
+          <dt className="font-medium text-gray-600">Summary</dt>
+          <dd data-testid="snapshot-field-summary" className="text-gray-700 text-xs">{snapshot.snapshotSummary}</dd>
+        </div>
+      )}
+    </dl>
   </section>
 );

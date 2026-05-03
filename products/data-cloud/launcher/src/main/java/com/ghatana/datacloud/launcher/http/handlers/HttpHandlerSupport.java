@@ -11,7 +11,6 @@ import com.ghatana.platform.http.security.filter.TenantExtractor;
 import io.activej.http.*;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -323,6 +322,43 @@ public class HttpHandlerSupport {
         } catch (JsonProcessingException e) {
             return RequestTraceSupport.applyTo(HttpResponse.ofCode(code))
                 .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
+                .build();
+        }
+    }
+
+    /**
+     * Builds a 503 Service Unavailable response with a Retry-After header.
+     *
+     * @param message error message exposed to callers
+     * @param retryAfterSeconds retry delay in seconds for RFC 7231 compliant backoff
+     * @return HTTP 503 response with Retry-After and standard error envelope
+     */
+    public HttpResponse serviceUnavailableResponse(String message, int retryAfterSeconds) {
+        String traceId = UUID.randomUUID().toString();
+        try {
+            ErrorResponse errorResponse = ErrorResponse.builder()
+                .status(503)
+                .error("SERVICE_UNAVAILABLE")
+                .message(message)
+                .timestamp(System.currentTimeMillis())
+                .traceId(traceId)
+                .build();
+            String json = objectMapper.writeValueAsString(errorResponse);
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(503))
+                .withHeader(HttpHeaders.CONTENT_TYPE, HttpHeaderValue.ofContentType(ContentType.of(MediaTypes.JSON)))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Origin"),  HttpHeaderValue.of(corsAllowOrigin))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Methods"), HttpHeaderValue.of(corsAllowMethods))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Headers"), HttpHeaderValue.of(corsAllowHeaders))
+                .withHeader(HttpHeaders.of("Access-Control-Allow-Credentials"), HttpHeaderValue.of("true"))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("Retry-After"), HttpHeaderValue.of(Integer.toString(Math.max(1, retryAfterSeconds))))
+                .withBody(json.getBytes(StandardCharsets.UTF_8))
+                .build();
+        } catch (JsonProcessingException e) {
+            return RequestTraceSupport.applyTo(HttpResponse.ofCode(503))
+                .withHeader(HttpHeaders.of("X-Request-Id"), HttpHeaderValue.of(traceId))
+                .withHeader(HttpHeaders.of("Retry-After"), HttpHeaderValue.of(Integer.toString(Math.max(1, retryAfterSeconds))))
                 .withBody(("{\"error\":\"" + message + "\", \"traceId\":\"" + traceId + "\"}").getBytes(StandardCharsets.UTF_8))
                 .build();
         }

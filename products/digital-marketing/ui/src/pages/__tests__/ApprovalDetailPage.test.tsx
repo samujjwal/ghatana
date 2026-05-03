@@ -13,7 +13,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { ApprovalDetailPage } from '@/pages/ApprovalDetailPage';
-import type { ApprovalRequest, ApprovalSnapshot } from '@/types/approval';
+import type { ApprovalRecordResponse, ApprovalSnapshot } from '@/types/approval';
 
 vi.mock('@/lib/feature-flags', () => ({
   isFeatureEnabled: () => false,
@@ -32,35 +32,40 @@ vi.mock('@/api/approvals', () => ({
   submitApproval: vi.fn(),
 }));
 
-const APPROVAL: ApprovalRequest = {
+const APPROVAL: ApprovalRecordResponse = {
   requestId: 'req-42',
-  workspaceId: 'ws-1',
-  tenantId: 'tenant-1',
-  targetType: 'CONTENT',
-  targetId: 'content-99',
-  description: 'Blog post for product launch',
-  riskLevel: 2,
+  subjectId: 'content-99',
+  requestedBy: 'user-1',
+  action: 'content-version-review',
   status: 'PENDING',
-  requiredApproverRole: 'content-approver',
-  submittedAt: '2026-01-05T08:00:00Z',
+  requestedAt: '2026-01-05T08:00:00Z',
+  expiresAt: null,
   decidedAt: null,
-  decidedBy: null,
-  comment: null,
+  reviewerId: null,
+  reviewerNotes: null,
 };
 
-const HIGH_RISK_APPROVAL: ApprovalRequest = {
+const HIGH_RISK_APPROVAL: ApprovalRecordResponse = {
   ...APPROVAL,
   requestId: 'req-99',
-  riskLevel: 5,
 };
 
 const SNAPSHOT: ApprovalSnapshot = {
   requestId: 'req-42',
-  capturedAt: '2026-01-05T08:00:01Z',
-  fields: [
-    { key: 'title', value: 'Product Launch Blog' },
-    { key: 'wordCount', value: 800 },
-  ],
+  targetType: 'CONTENT_VERSION',
+  targetId: 'content-99',
+  targetWorkspaceId: 'ws-1',
+  snapshotSummary: 'Blog post for product launch',
+  validationResultId: null,
+  riskLevel: 2,
+  requiredApproverRole: 'content-approver',
+  snapshotAt: '2026-01-05T08:00:01Z',
+};
+
+const HIGH_RISK_SNAPSHOT: ApprovalSnapshot = {
+  ...SNAPSHOT,
+  requestId: 'req-99',
+  riskLevel: 5,
 };
 
 function buildQueryClient(): QueryClient {
@@ -101,7 +106,7 @@ describe('ApprovalDetailPage', () => {
     vi.clearAllMocks();
     mockGetStatus.mockResolvedValue(APPROVAL);
     mockGetSnapshot.mockResolvedValue(SNAPSHOT);
-    mockDecide.mockResolvedValue({ ...APPROVAL, status: 'APPROVED' });
+    mockDecide.mockResolvedValue({ ...APPROVAL, status: 'APPROVED', reviewerId: 'user-1' });
   });
 
   it('redirects unauthenticated user to /login', () => {
@@ -116,15 +121,10 @@ describe('ApprovalDetailPage', () => {
     ).toHaveTextContent('PENDING');
   });
 
-  it('renders snapshot fields', async () => {
+  it('renders snapshot summary', async () => {
     renderPage('req-42');
     await screen.findByTestId('approval-snapshot-panel');
-    expect(screen.getByTestId('snapshot-field-title')).toHaveTextContent(
-      'Product Launch Blog',
-    );
-    expect(screen.getByTestId('snapshot-field-wordCount')).toHaveTextContent(
-      '800',
-    );
+    expect(screen.getByTestId('approval-risk-level')).toHaveTextContent('2');
   });
 
   it('shows loading state initially', () => {
@@ -146,8 +146,8 @@ describe('ApprovalDetailPage', () => {
     expect(await screen.findByTestId('open-decide-dialog')).toBeInTheDocument();
   });
 
-  it('hides decide button for unauthorised viewer', async () => {
-    renderPage('req-42', ['viewer']);
+  it('hides decide button for user with no approver role', async () => {
+    renderPage('req-42', []);
     await screen.findByTestId('approval-status-badge');
     expect(screen.queryByTestId('open-decide-dialog')).not.toBeInTheDocument();
     expect(screen.getByTestId('approval-permission-denied')).toBeInTheDocument();
@@ -170,13 +170,14 @@ describe('ApprovalDetailPage', () => {
     await waitFor(() =>
       expect(mockDecide).toHaveBeenCalledWith('ws-1', 'req-42', {
         decision: 'APPROVE',
-        comment: undefined,
+        notes: undefined,
       }),
     );
   });
 
   it('requires comment for high-risk approval rejection', async () => {
     mockGetStatus.mockResolvedValue(HIGH_RISK_APPROVAL);
+    mockGetSnapshot.mockResolvedValue(HIGH_RISK_SNAPSHOT);
     renderPage('req-99');
     const user = userEvent.setup();
     await user.click(await screen.findByTestId('open-decide-dialog'));

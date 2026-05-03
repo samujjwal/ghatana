@@ -14,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -33,7 +34,8 @@ class HttpDmGoogleAdsOAuthClientAdapterTest extends EventloopTestBase {
         adapter = new HttpDmGoogleAdsOAuthClientAdapter(
             new OkHttpClient(), objectMapper,
             "test-client-id", "test-client-secret",
-            server.url("/").toString()
+            server.url("/").toString(),
+            Executors.newSingleThreadExecutor()
         );
     }
 

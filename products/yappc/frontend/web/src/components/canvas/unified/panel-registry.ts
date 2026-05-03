@@ -17,6 +17,7 @@ import type {
   RailContext,
   RailPlugin,
 } from './UnifiedLeftRail.types';
+import type { CanvasMode } from '../../../types/canvasMode';
 import { matchesVisibilityRule, PANEL_VISIBILITY_RULES } from './rail-config';
 import {
   AssetsPanel,
@@ -208,12 +209,12 @@ class PanelRegistryImpl implements RailPanelRegistry {
   /**
    * Get panels specifically for a mode
    */
-  getPanelsForMode(mode: string): RailPanelDefinition[] {
+  getPanelsForMode(mode: CanvasMode): RailPanelDefinition[] {
     return Array.from(this.panels.values())
       .filter((panel) => {
         const visibility = panel.visibility || PANEL_VISIBILITY_RULES[panel.id];
         if (!visibility) return true;
-        if (visibility.modes && !visibility.modes.includes(mode as unknown)) {
+        if (visibility.modes && !visibility.modes.includes(mode)) {
           return false;
         }
         return true;

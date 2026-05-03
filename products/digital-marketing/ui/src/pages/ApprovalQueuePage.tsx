@@ -13,31 +13,27 @@ import { useParams, Navigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { ApprovalQueueTable } from '@/components/approval/ApprovalQueueTable';
+import { hasApproverRole } from '@/lib/role-utils';
 import type { ApprovalTargetType } from '@/types/approval';
 
 const TARGET_TYPES: Array<ApprovalTargetType | 'ALL'> = [
   'ALL',
   'STRATEGY',
-  'CAMPAIGN',
-  'CONTENT',
-  'AUDIENCE_SEGMENT',
-  'BUDGET_PLAN',
-  'ANALYTICS_REPORT',
-  'INTEGRATION_CONFIG',
+  'PROPOSAL',
+  'SOW',
+  'CONTENT_VERSION',
+  'BUDGET',
+  'CAMPAIGN_LAUNCH',
+  'CONNECTOR_WRITE',
+  'OVERRIDE',
 ];
 
-const RISK_FILTERS = [
-  { label: 'All risks', value: 0 },
-  { label: 'Medium+', value: 2 },
-  { label: 'High only', value: 4 },
-];
 
 export function ApprovalQueuePage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated, tenantId, roles } = useAuth();
 
-  const [typeFilter, setTypeFilter] = useState<ApprovalTargetType | 'ALL'>('ALL');
-  const [minRisk, setMinRisk] = useState(0);
+  const [actionFilter, setActionFilter] = useState<ApprovalTargetType | 'ALL'>('ALL');
 
   const subjectId = tenantId ?? 'unknown';
   const { approvals, isLoading, isError, error } = useApprovalQueue(
@@ -49,18 +45,17 @@ export function ApprovalQueuePage(): React.ReactElement {
     () =>
       approvals.filter(
         (a) =>
-          (typeFilter === 'ALL' || a.targetType === typeFilter) &&
-          a.riskLevel >= minRisk,
+          actionFilter === 'ALL' ||
+          (a.targetType && a.targetType.toUpperCase().includes(actionFilter)),
       ),
-    [approvals, typeFilter, minRisk],
+    [approvals, actionFilter],
   );
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if user has an approver role
-  const hasApproverRole = roles.length === 0 || roles.some((r) => r.includes('approver') || r.includes('admin'));
+  const userHasApproverRole = hasApproverRole(roles);
 
   return (
     <main
@@ -74,7 +69,7 @@ export function ApprovalQueuePage(): React.ReactElement {
         </span>
       </div>
 
-      {!hasApproverRole && (
+      {!userHasApproverRole && (
         <div
           data-testid="permission-denied-banner"
           role="alert"
@@ -93,9 +88,9 @@ export function ApprovalQueuePage(): React.ReactElement {
           Type:
           <select
             data-testid="filter-type"
-            value={typeFilter}
+            value={actionFilter}
             onChange={(e) =>
-              setTypeFilter(e.target.value as ApprovalTargetType | 'ALL')
+              setActionFilter(e.target.value as ApprovalTargetType | 'ALL')
             }
             className="border rounded px-2 py-1 text-sm"
           >
@@ -107,21 +102,6 @@ export function ApprovalQueuePage(): React.ReactElement {
           </select>
         </label>
 
-        <label className="flex items-center gap-1 text-sm">
-          Risk:
-          <select
-            data-testid="filter-risk"
-            value={minRisk}
-            onChange={(e) => setMinRisk(Number(e.target.value))}
-            className="border rounded px-2 py-1 text-sm"
-          >
-            {RISK_FILTERS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </label>
       </div>
 
       {isLoading && (

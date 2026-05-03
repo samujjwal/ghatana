@@ -558,6 +558,9 @@ public class FeatureStoreIngestLauncher {
             LOG.warn("[feature-ingest] using InMemoryEventLogStore — set FEATURE_INGEST_MODE=postgres for production");
             eventLogStore = new InMemoryEventLogStore();
         }
+        // Emit store-type metric so dashboards and alerting can detect non-durable deployments.
+        meterRegistry.counter("feature_ingest_store_type", "type", cfg.mode).increment();
+        LOG.info("[feature-ingest] store mode={}", cfg.mode);
 
         // ── FeatureStoreService ──────────────────────────────────────────
         FeatureStoreService featureStore;

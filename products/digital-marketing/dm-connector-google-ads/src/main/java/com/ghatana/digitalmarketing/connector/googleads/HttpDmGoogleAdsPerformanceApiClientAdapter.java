@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Production OkHttp adapter for Google Ads Performance API — fetches campaign metrics.
@@ -35,8 +37,27 @@ public final class HttpDmGoogleAdsPerformanceApiClientAdapter implements DmGoogl
     private final String developerToken;
     private final String customerId;
     private final String apiBaseUrl;
+    private final Executor blockingExecutor;
 
     private static final String PRODUCTION_API_BASE = "https://googleads.googleapis.com";
+    private static final int DEFAULT_POOL_SIZE = 4;
+
+    public HttpDmGoogleAdsPerformanceApiClientAdapter(
+            OkHttpClient httpClient,
+            ObjectMapper objectMapper,
+            String developerToken,
+            String customerId,
+            String apiBaseUrl,
+            Executor blockingExecutor) {
+        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
+        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.developerToken = Objects.requireNonNull(developerToken, "developerToken must not be null");
+        this.customerId = Objects.requireNonNull(customerId, "customerId must not be null");
+        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl must not be null");
+        this.blockingExecutor = Objects.requireNonNull(blockingExecutor, "blockingExecutor must not be null");
+        if (developerToken.isBlank()) throw new IllegalArgumentException("developerToken must not be blank");
+        if (customerId.isBlank()) throw new IllegalArgumentException("customerId must not be blank");
+    }
 
     public HttpDmGoogleAdsPerformanceApiClientAdapter(
             OkHttpClient httpClient,
@@ -44,13 +65,8 @@ public final class HttpDmGoogleAdsPerformanceApiClientAdapter implements DmGoogl
             String developerToken,
             String customerId,
             String apiBaseUrl) {
-        this.httpClient = Objects.requireNonNull(httpClient, "httpClient must not be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
-        this.developerToken = Objects.requireNonNull(developerToken, "developerToken must not be null");
-        this.customerId = Objects.requireNonNull(customerId, "customerId must not be null");
-        this.apiBaseUrl = Objects.requireNonNull(apiBaseUrl, "apiBaseUrl must not be null");
-        if (developerToken.isBlank()) throw new IllegalArgumentException("developerToken must not be blank");
-        if (customerId.isBlank()) throw new IllegalArgumentException("customerId must not be blank");
+        this(httpClient, objectMapper, developerToken, customerId, apiBaseUrl,
+            Executors.newFixedThreadPool(DEFAULT_POOL_SIZE));
     }
 
     public HttpDmGoogleAdsPerformanceApiClientAdapter(
@@ -79,7 +95,7 @@ public final class HttpDmGoogleAdsPerformanceApiClientAdapter implements DmGoogl
         Objects.requireNonNull(accessToken, "accessToken must not be null");
         Objects.requireNonNull(request, "request must not be null");
 
-        return Promise.ofBlocking(Runnable::run, () -> doFetchPerformance(accessToken, request));
+        return Promise.ofBlocking(blockingExecutor, () -> doFetchPerformance(accessToken, request));
     }
 
     private CampaignPerformanceResponse doFetchPerformance(

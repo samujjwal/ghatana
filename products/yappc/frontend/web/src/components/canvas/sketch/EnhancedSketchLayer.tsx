@@ -95,11 +95,12 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
         (navigator as Navigator & { webdriver?: boolean }).webdriver === true));
 
   const mergedConfig = useMemo(() => ({ ...DEFAULT_CONFIG, ...config }), [config]);
+  const elements = canvasState.elements ?? [];
 
   // Get sketch elements from canvas state
   const sketchElements = useMemo(
-    () => canvasState.elements.filter((el: CanvasElement) => el.kind === 'shape'),
-    [canvasState.elements],
+    () => elements.filter((el: CanvasElement) => el.kind === 'shape'),
+    [elements],
   );
 
   // Convert a Konva stage pointer position (container-space) to ReactFlow
@@ -130,11 +131,12 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
       };
 
       setCanvasState((prev) => {
+        const prevElements = prev.elements ?? [];
         if (isE2E) {
           return {
             ...prev,
             elements: [
-              ...prev.elements.filter((el) => !(el.kind === 'shape' && el.type === 'stroke')),
+              ...prevElements.filter((el) => !(el.kind === 'shape' && el.type === 'stroke')),
               newElement,
             ],
           };
@@ -142,7 +144,7 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
 
         return {
           ...prev,
-          elements: [...prev.elements, newElement],
+          elements: [...prevElements, newElement],
         };
       });
     },
@@ -160,11 +162,12 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
       };
 
       setCanvasState((prev) => {
+        const prevElements = prev.elements ?? [];
         if (isE2E) {
           return {
             ...prev,
             elements: [
-              ...prev.elements.filter((el) => !(el.kind === 'shape' && el.type === shape.type)),
+              ...prevElements.filter((el) => !(el.kind === 'shape' && el.type === shape.type)),
               newElement,
             ],
           };
@@ -172,7 +175,7 @@ export const EnhancedSketchLayer: React.FC<EnhancedSketchLayerProps> = ({
 
         return {
           ...prev,
-          elements: [...prev.elements, newElement],
+          elements: [...prevElements, newElement],
         };
       });
     },

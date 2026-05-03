@@ -14,18 +14,16 @@ export {
 } from 'yappc-ui';
 export { usePersonas } from 'yappc-state/config-hooks';
 export {
-  CommandPalette,
-  ShortcutHelper,
-  useKeyboardShortcuts,
-  type Command,
-} from 'yappc-shortcuts';
-export {
   Breadcrumb,
   TabNavigation,
   StageNavigation,
   type TabNavigationItem,
   type StageNavigationProps,
 } from 'yappc-ui/navigation-ui';
+export { KeyboardShortcutsPanel as ShortcutHelper } from '../help/KeyboardShortcutsPanel';
+export { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+export type { ShortcutDefinition as Command } from '../../hooks/useKeyboardShortcuts';
+export { CommandPalette } from '../command/CommandPalette';
 
 /**
  * UI Components Index

@@ -13,7 +13,7 @@ import { MemoryRouter, Routes, Route } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
 import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
-import type { ApprovalRequest } from '@/types/approval';
+import type { ApprovalRecordResponse } from '@/types/approval';
 
 vi.mock('@/lib/feature-flags', () => ({
   isFeatureEnabled: () => false,
@@ -29,36 +29,30 @@ vi.mock('@/api/approvals', () => ({
   submitApproval: vi.fn(),
 }));
 
-const PENDING_APPROVALS: ApprovalRequest[] = [
+const PENDING_APPROVALS: ApprovalRecordResponse[] = [
   {
     requestId: 'req-1',
-    workspaceId: 'ws-1',
-    tenantId: 'tenant-1',
-    targetType: 'CAMPAIGN',
-    targetId: 'campaign-abc',
-    description: 'Launch Q3 campaign',
-    riskLevel: 1,
+    subjectId: 'campaign-abc',
+    requestedBy: 'user-1',
+    action: 'campaign-launch',
     status: 'PENDING',
-    requiredApproverRole: 'marketing-approver',
-    submittedAt: '2026-01-01T10:00:00Z',
+    requestedAt: '2026-01-01T10:00:00Z',
+    expiresAt: null,
     decidedAt: null,
-    decidedBy: null,
-    comment: null,
+    reviewerId: null,
+    reviewerNotes: null,
   },
   {
     requestId: 'req-2',
-    workspaceId: 'ws-1',
-    tenantId: 'tenant-1',
-    targetType: 'STRATEGY',
-    targetId: 'strategy-xyz',
-    description: 'Annual strategy update',
-    riskLevel: 4,
+    subjectId: 'strategy-xyz',
+    requestedBy: 'user-2',
+    action: 'budget-approved',
     status: 'PENDING',
-    requiredApproverRole: 'exec-approver',
-    submittedAt: '2026-01-02T09:00:00Z',
+    requestedAt: '2026-01-02T09:00:00Z',
+    expiresAt: null,
     decidedAt: null,
-    decidedBy: null,
-    comment: null,
+    reviewerId: null,
+    reviewerNotes: null,
   },
 ];
 
@@ -130,38 +124,52 @@ describe('ApprovalQueuePage', () => {
     expect(screen.getByText(/Network error/i)).toBeInTheDocument();
   });
 
-  it('renders high-risk badge for high-risk approval', async () => {
+  it('renders PENDING status badge for pending approval', async () => {
     renderPage();
-    const badge = await screen.findByTestId('risk-badge-req-2');
-    expect(badge).toHaveTextContent('High');
+    const badge = await screen.findByTestId('status-badge-req-1');
+    expect(badge).toHaveTextContent('PENDING');
   });
 
-  it('renders low-risk badge for low-risk approval', async () => {
-    renderPage();
-    const badge = await screen.findByTestId('risk-badge-req-1');
-    expect(badge).toHaveTextContent('Low');
-  });
-
-  it('filters by target type', async () => {
+  it('filters by action type — BUDGET matches budget-approved only', async () => {
     renderPage();
     await screen.findByTestId('approval-queue-table');
 
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByTestId('filter-type'), 'STRATEGY');
+    await user.selectOptions(screen.getByTestId('filter-type'), 'BUDGET');
 
     expect(screen.queryByTestId('approval-row-req-1')).not.toBeInTheDocument();
     expect(screen.getByTestId('approval-row-req-2')).toBeInTheDocument();
   });
 
-  it('filters by minimum risk level', async () => {
+  it('shows permission-denied banner when user has no approver role', () => {
+    render(
+      <QueryClientProvider client={buildQueryClient()}>
+        <AuthProvider
+          initialToken="test-token"
+          initialWorkspaceId="ws-1"
+          initialTenantId="tenant-1"
+          initialRoles={[]}
+        >
+          <MemoryRouter initialEntries={['/workspaces/ws-1/approvals']}>
+            <Routes>
+              <Route
+                path="/workspaces/:workspaceId/approvals"
+                element={<ApprovalQueuePage />}
+              />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId('permission-denied-banner')).toBeInTheDocument();
+  });
+
+  it('does NOT show permission-denied banner when user has approver role', async () => {
     renderPage();
-    await screen.findByTestId('approval-queue-table');
-
-    const user = userEvent.setup();
-    await user.selectOptions(screen.getByTestId('filter-risk'), '4');
-
-    expect(screen.queryByTestId('approval-row-req-1')).not.toBeInTheDocument();
-    expect(screen.getByTestId('approval-row-req-2')).toBeInTheDocument();
+    await screen.findByTestId('approval-queue-page');
+    expect(
+      screen.queryByTestId('permission-denied-banner'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders review links pointing to detail page', async () => {

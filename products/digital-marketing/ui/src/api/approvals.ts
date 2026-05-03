@@ -8,9 +8,10 @@
 
 import { apiRequest } from '@/lib/http-client';
 import type {
-  ApprovalRequest,
+  ApprovalRecordResponse,
   ApprovalSnapshot,
   DecideApprovalRequest,
+  PendingApprovalsResponse,
   SubmitApprovalRequest,
 } from '@/types/approval';
 
@@ -21,8 +22,8 @@ function base(workspaceId: string): string {
 export async function submitApproval(
   workspaceId: string,
   body: SubmitApprovalRequest,
-): Promise<ApprovalRequest> {
-  return apiRequest<ApprovalRequest>(base(workspaceId), {
+): Promise<ApprovalRecordResponse> {
+  return apiRequest<ApprovalRecordResponse>(base(workspaceId), {
     method: 'POST',
     body,
   });
@@ -31,8 +32,8 @@ export async function submitApproval(
 export async function getApprovalStatus(
   workspaceId: string,
   requestId: string,
-): Promise<ApprovalRequest> {
-  return apiRequest<ApprovalRequest>(
+): Promise<ApprovalRecordResponse> {
+  return apiRequest<ApprovalRecordResponse>(
     `${base(workspaceId)}/${encodeURIComponent(requestId)}`,
   );
 }
@@ -49,18 +50,19 @@ export async function getApprovalSnapshot(
 export async function listPendingApprovals(
   workspaceId: string,
   subjectId: string,
-): Promise<ApprovalRequest[]> {
-  return apiRequest<ApprovalRequest[]>(
+): Promise<ApprovalRecordResponse[]> {
+  const response = await apiRequest<PendingApprovalsResponse>(
     `${base(workspaceId)}/pending/${encodeURIComponent(subjectId)}`,
   );
+  return response.items;
 }
 
 export async function decideApproval(
   workspaceId: string,
   requestId: string,
   body: DecideApprovalRequest,
-): Promise<ApprovalRequest> {
-  return apiRequest<ApprovalRequest>(
+): Promise<ApprovalRecordResponse> {
+  return apiRequest<ApprovalRecordResponse>(
     `${base(workspaceId)}/${encodeURIComponent(requestId)}/decide`,
     { method: 'POST', body },
   );

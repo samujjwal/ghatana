@@ -15,7 +15,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { LayoutDashboard as Dashboard, Folder, ChevronDown as KeyboardArrowDown, Palette, Building2 as Architecture, Code, Rocket, ChevronRight } from 'lucide-react';
-import { Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@ghatana/design-system';
+import { Box, MenuItem, ListItemIcon, ListItemText, Divider, Typography } from '@ghatana/design-system';
 import { Button } from '../design-system';
 import { cn } from '../../lib/utils';
 
@@ -135,13 +135,8 @@ export function NavigationBreadcrumb({
                     </Button>
 
                     {/* Workspace Menu */}
-                    <Menu
-                        anchorEl={workspaceMenuAnchor}
-                        open={Boolean(workspaceMenuAnchor)}
-                        onClose={() => setWorkspaceMenuAnchor(null)}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                    >
+                    {workspaceMenuAnchor ? (
+                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-gray-900">
                         {workspaces.map((ws) => (
                             <MenuItem
                                 key={ws.id}
@@ -154,7 +149,8 @@ export function NavigationBreadcrumb({
                                 <ListItemText>{ws.name}</ListItemText>
                             </MenuItem>
                         ))}
-                    </Menu>
+                      </Box>
+                    ) : null}
 
                     <ChevronRight className="w-4 h-4 text-text-disabled flex-shrink-0" />
                 </>
@@ -175,14 +171,8 @@ export function NavigationBreadcrumb({
                     </Button>
 
                     {/* Project Menu */}
-                    <Menu
-                        anchorEl={projectMenuAnchor}
-                        open={Boolean(projectMenuAnchor)}
-                        onClose={() => setProjectMenuAnchor(null)}
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                        PaperProps={{ sx: { maxHeight: 400, width: 280 } }}
-                    >
+                    {projectMenuAnchor ? (
+                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[280px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-gray-900">
                         {projects.length > 0 ? (
                             projects.map((proj) => (
                                 <MenuItem
@@ -193,11 +183,14 @@ export function NavigationBreadcrumb({
                                     <ListItemIcon>
                                         <Folder size={16} />
                                     </ListItemIcon>
-                                    <ListItemText
-                                        primary={proj.name}
-                                        secondary={proj.type}
-                                        primaryTypographyProps={{ noWrap: true }}
-                                    />
+                                    <Box>
+                                        <Typography variant="body2" className="truncate">
+                                            {proj.name}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {proj.type}
+                                        </Typography>
+                                    </Box>
                                 </MenuItem>
                             ))
                         ) : (
@@ -205,9 +198,10 @@ export function NavigationBreadcrumb({
                         )}
                         <Divider />
                         <MenuItem onClick={() => navigate('/projects')}>
-                            <ListItemText>View all projects</ListItemText>
+                            <Typography variant="body2">View all projects</Typography>
                         </MenuItem>
-                    </Menu>
+                      </Box>
+                    ) : null}
 
                     {(section || showCanvasMode) && (
                         <ChevronRight className="w-4 h-4 text-text-disabled flex-shrink-0" />

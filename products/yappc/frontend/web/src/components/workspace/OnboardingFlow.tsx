@@ -539,7 +539,7 @@ export function OnboardingFlow({ onComplete, redirectTo = '/' }: OnboardingFlowP
                 setIsLoadingProjectSuggestion(true);
 
                 try {
-                    const name = await suggestProject('temp-workspace', projectType);
+                    const name = await suggestProject('temp-workspace', projectType as 'FULL_STACK' | 'BACKEND' | 'MOBILE' | 'UI' | 'DESKTOP');
                     setSuggestedProjectName(name);
                     // Auto-fill if empty
                     if (!projectName) {

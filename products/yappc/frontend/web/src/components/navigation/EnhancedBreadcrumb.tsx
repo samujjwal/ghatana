@@ -507,7 +507,7 @@ export function EnhancedBreadcrumb({
         if (section) {
             // Check if section matches a phase key (case-insensitive)
             const phaseKey = section.toUpperCase() as keyof typeof LifecyclePhase;
-            const officialLabel = PHASE_LABELS[phaseKey];
+            const officialLabel = PHASE_LABELS[phaseKey as keyof typeof PHASE_LABELS];
 
             result.push({
                 type: 'section',

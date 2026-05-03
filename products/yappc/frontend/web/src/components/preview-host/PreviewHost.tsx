@@ -6,14 +6,13 @@
  * @packageDocumentation
  */
 
-import { Play as PlayIcon, Refresh as RefreshIcon, Settings as SettingsIcon } from 'lucide-react';
+import { Play as PlayIcon, RefreshCw as RefreshIcon, Settings as SettingsIcon } from 'lucide-react';
 import {
   Box,
   Stack,
   Typography,
   Button,
   Paper,
-  Toolbar,
   Divider,
 } from '@ghatana/design-system';
 import React, { useState, useCallback } from 'react';
@@ -73,7 +72,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
   return (
     <Box data-testid="preview-host" className="h-full flex flex-col">
       <Paper variant="outlined" className="mb-4">
-        <Toolbar variant="dense">
+        <Box className="flex items-center gap-2 p-3">
           <Stack direction="row" spacing={1} alignItems="center" className="flex-1">
             <Typography variant="h6">{config.title}</Typography>
             <Typography variant="caption" color="text.secondary">
@@ -117,7 +116,7 @@ export const PreviewHost: React.FC<PreviewHostProps> = ({
               Refresh
             </Button>
           </Stack>
-        </Toolbar>
+        </Box>
       </Paper>
 
       <Box className="flex-1 overflow-auto">

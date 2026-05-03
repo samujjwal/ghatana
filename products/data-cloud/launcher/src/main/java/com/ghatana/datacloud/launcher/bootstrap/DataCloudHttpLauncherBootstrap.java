@@ -146,6 +146,11 @@ public final class DataCloudHttpLauncherBootstrap {
         // Nullable — server still generates but discards spans when absent.
         TraceExportService traceExportService = buildTraceExportService(env, log);
         double traceSamplingRate = resolveTraceSamplingRate(env);
+        io.micrometer.prometheusmetrics.PrometheusMeterRegistry httpPrometheusRegistry =
+            new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
+                io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
+        MetricsCollector httpMetricsCollector = MetricsCollectorFactory.create(httpPrometheusRegistry);
+        recordAiProviderStateMetric(httpMetricsCollector, aiEnabled, completionService, env, log);
 
         try {
             // B13: optional Trino coordinator URL for federated queries
@@ -168,9 +173,7 @@ public final class DataCloudHttpLauncherBootstrap {
                     .withTraceExportService(traceExportService)
                     .withTraceSamplingRate(traceSamplingRate)
                     .withTrinoUrl(trinoUrl)
-                    .withMetricsCollector(MetricsCollectorFactory.create(
-                        new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
-                            io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT)))
+                    .withMetricsCollector(httpMetricsCollector)
                     .withStrictTenantResolution(!embeddedProfile)
                     .withStorageCompactionConfig(
                         DataCloudLauncherSettings.resolveStorageCompactionIntervalSeconds(env),
@@ -437,6 +440,31 @@ public final class DataCloudHttpLauncherBootstrap {
 
         log.warn("No LLM backend configured (AI_PROVIDER / OPENAI_API_KEY not set). AI assist routes will return stubs.");
         return null;
+    }
+
+    private static void recordAiProviderStateMetric(MetricsCollector metrics,
+                                                    boolean aiEnabled,
+                                                    CompletionService completionService,
+                                                    Map<String, String> env,
+                                                    Logger log) {
+        try {
+            String provider = env.getOrDefault("AI_PROVIDER", "").trim().toLowerCase();
+            if (provider.isBlank()) {
+                provider = env.get("OPENAI_API_KEY") != null ? "openai" : "none";
+            }
+            String result;
+            if (!aiEnabled) {
+                result = "disabled";
+            } else if (completionService == null) {
+                result = "unavailable";
+            } else {
+                result = "configured";
+            }
+            metrics.incrementCounter("data_cloud_ai_provider_configured", "result", result, "provider", provider);
+            log.info("AI provider state metric emitted result={} provider={}", result, provider);
+        } catch (Exception e) {
+            log.debug("Failed to emit AI provider state metric: {}", e.getMessage());
+        }
     }
 
     /**

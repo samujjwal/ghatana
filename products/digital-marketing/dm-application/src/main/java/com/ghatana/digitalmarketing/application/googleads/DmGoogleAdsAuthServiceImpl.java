@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.application.googleads;
 import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
+import com.ghatana.digitalmarketing.domain.DmosConnectorDisabledException;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorConfig;
 import com.ghatana.digitalmarketing.domain.connector.DmConnectorType;
@@ -56,7 +57,7 @@ public final class DmGoogleAdsAuthServiceImpl implements DmGoogleAdsAuthService 
                 .then(enabled -> {
                     if (!enabled) {
                         return Promise.<String>ofException(
-                            new UnsupportedOperationException("Google Ads connector is currently disabled (dmos.google_ads_connector.enabled=false)"));
+                            new DmosConnectorDisabledException("Google Ads", DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED));
                     }
                     return Promise.of(
                         oAuthClient.buildAuthorizationUrl(redirectUri, buildState(ctx, connector.getId())));

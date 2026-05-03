@@ -72,7 +72,9 @@ export function useCreateCodeAssociation() {
 
     return useMutation({
         mutationFn: (input: CreateCodeAssociationInput) =>
-            codeAssociationsApi.create(input) as Promise<CodeAssociation>,
+            codeAssociationsApi.create(
+                input as unknown as Parameters<typeof codeAssociationsApi.create>[0]
+            ) as unknown as Promise<CodeAssociation>,
         onSuccess: (data) => {
             // Invalidate queries for both artifacts
             queryClient.invalidateQueries({ queryKey: ['codeAssociations', data.artifactId] });

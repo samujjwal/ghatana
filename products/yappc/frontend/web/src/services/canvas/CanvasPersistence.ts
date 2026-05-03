@@ -520,14 +520,18 @@ export class CanvasPersistence {
         };
 
         // Compare nodes
-        const state1NodeIds = new Set(state1.elements.map((element) => element.id));
-        const state2NodeIds = new Set(state2.elements.map((element) => element.id));
+        const state1Elements = state1.elements ?? [];
+        const state2Elements = state2.elements ?? [];
+        const state1Connections = state1.connections ?? [];
+        const state2Connections = state2.connections ?? [];
+        const state1NodeIds = new Set(state1Elements.map((element) => element.id));
+        const state2NodeIds = new Set(state2Elements.map((element) => element.id));
 
-        state2.elements.forEach((node) => {
+        state2Elements.forEach((node) => {
             if (!state1NodeIds.has(node.id)) {
                 diff.added.nodes++;
             } else {
-                const oldNode = state1.elements.find((element) => element.id === node.id);
+                const oldNode = state1Elements.find((element) => element.id === node.id);
                 if (JSON.stringify(oldNode) !== JSON.stringify(node)) {
                     diff.modified.nodes++;
                 } else {
@@ -536,21 +540,21 @@ export class CanvasPersistence {
             }
         });
 
-        state1.elements.forEach((node) => {
+        state1Elements.forEach((node) => {
             if (!state2NodeIds.has(node.id)) {
                 diff.removed.nodes++;
             }
         });
 
         // Similar for edges
-        const state1EdgeIds = new Set(state1.connections.map((connection) => connection.id));
-        const state2EdgeIds = new Set(state2.connections.map((connection) => connection.id));
+        const state1EdgeIds = new Set(state1Connections.map((connection) => connection.id));
+        const state2EdgeIds = new Set(state2Connections.map((connection) => connection.id));
 
-        state2.connections.forEach((edge) => {
+        state2Connections.forEach((edge) => {
             if (!state1EdgeIds.has(edge.id)) {
                 diff.added.edges++;
             } else {
-                const oldEdge = state1.connections.find((connection) => connection.id === edge.id);
+                const oldEdge = state1Connections.find((connection) => connection.id === edge.id);
                 if (JSON.stringify(oldEdge) !== JSON.stringify(edge)) {
                     diff.modified.edges++;
                 } else {
@@ -559,7 +563,7 @@ export class CanvasPersistence {
             }
         });
 
-        state1.connections.forEach((edge) => {
+        state1Connections.forEach((edge) => {
             if (!state2EdgeIds.has(edge.id)) {
                 diff.removed.edges++;
             }
@@ -804,7 +808,7 @@ export class CanvasPersistence {
                 tx.onerror = () => { db.close(); reject(tx.error); };
             });
         } catch (err) {
-            logger.warn('IndexedDB history save failed', err);
+            logger.warn('IndexedDB history save failed', String(err));
         }
     }
 
@@ -824,7 +828,7 @@ export class CanvasPersistence {
             db.close();
             return record?.history ?? [];
         } catch (err) {
-            logger.warn('IndexedDB history load failed, falling back to localStorage', err);
+            logger.warn('IndexedDB history load failed, falling back to localStorage', String(err));
             return [];
         }
     }
@@ -861,7 +865,7 @@ export class CanvasPersistence {
                 tx.onerror = () => { db.close(); reject(tx.error); };
             });
         } catch (err) {
-            logger.warn('IndexedDB save failed, falling back to localStorage', err);
+            logger.warn('IndexedDB save failed, falling back to localStorage', String(err));
         }
     }
 
@@ -881,7 +885,7 @@ export class CanvasPersistence {
             db.close();
             return record?.snapshot ?? null;
         } catch (err) {
-            logger.warn('IndexedDB load failed, falling back to localStorage', err);
+            logger.warn('IndexedDB load failed, falling back to localStorage', String(err));
             return null;
         }
     }

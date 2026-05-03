@@ -110,7 +110,7 @@ export function FavoritesPanel({ onInsertNode }: RailPanelProps) {
               : `No ${selectedType}s in favorites yet.`}
           </Alert>
         ) : (
-          <List dense>
+          <List>
             {filteredFavorites
               .sort((a, b) => b.usageCount - a.usageCount)
               .map((favorite) => (
@@ -136,31 +136,19 @@ export function FavoritesPanel({ onInsertNode }: RailPanelProps) {
                     <ListItemIcon className="min-w-[28px]">
                       <Star className="text-amber-600 text-lg" />
                     </ListItemIcon>
-                    <ListItemText
-                      primary={favorite.name}
-                      secondary={
-                        <>
-                          <Typography
-                            component="span"
-                            variant="caption"
-                            color="text.secondary"
-                          >
-                            {favorite.type}
+                    <Box className="flex-1">
+                      <Typography variant="body2">{favorite.name}</Typography>
+                      <Box className="flex gap-2">
+                        <Typography variant="caption" color="text.secondary">
+                          {favorite.type}
+                        </Typography>
+                        {favorite.usageCount > 0 ? (
+                          <Typography variant="caption" color="text.disabled">
+                            Used {favorite.usageCount}x
                           </Typography>
-                          {favorite.usageCount > 0 && (
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              color="text.disabled"
-                              className="ml-2"
-                            >
-                              Used {favorite.usageCount}x
-                            </Typography>
-                          )}
-                        </>
-                      }
-                      primaryTypographyProps={{ variant: 'body2' }}
-                    />
+                        ) : null}
+                      </Box>
+                    </Box>
                   </ListItemButton>
                 </ListItem>
               ))}

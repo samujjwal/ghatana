@@ -144,7 +144,7 @@ export function DataPanel({ context }: RailPanelProps) {
               >
                 {type}
               </Typography>
-              <List dense>
+              <List>
                 {sources.map((source) => (
                   <ListItem
                     key={source.id}
@@ -159,41 +159,24 @@ export function DataPanel({ context }: RailPanelProps) {
                       <ListItemIcon className="min-w-[28px]">
                         {getSourceIcon(source.type)}
                       </ListItemIcon>
-                      <ListItemText
-                        primary={source.name}
-                        secondary={
-                          <>
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {source.provider}
+                      <Box className="flex-1">
+                        <Typography variant="body2">{source.name}</Typography>
+                        <Box className="flex flex-wrap gap-2">
+                          <Typography variant="caption" color="text.secondary">
+                            {source.provider}
+                          </Typography>
+                          {source.tables ? (
+                            <Typography variant="caption" color="text.disabled">
+                              {source.tables} tables
                             </Typography>
-                            {source.tables && (
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                color="text.disabled"
-                                className="ml-2"
-                              >
-                                {source.tables} tables
-                              </Typography>
-                            )}
-                            {source.endpoints && (
-                              <Typography
-                                component="span"
-                                variant="caption"
-                                color="text.disabled"
-                                className="ml-2"
-                              >
-                                {source.endpoints} endpoints
-                              </Typography>
-                            )}
-                          </>
-                        }
-                        primaryTypographyProps={{ variant: 'body2' }}
-                      />
+                          ) : null}
+                          {source.endpoints ? (
+                            <Typography variant="caption" color="text.disabled">
+                              {source.endpoints} endpoints
+                            </Typography>
+                          ) : null}
+                        </Box>
+                      </Box>
                       {getStatusChip(source.status)}
                     </ListItemButton>
                   </ListItem>

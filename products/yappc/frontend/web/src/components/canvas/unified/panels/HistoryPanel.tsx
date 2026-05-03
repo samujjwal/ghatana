@@ -111,39 +111,24 @@ export function HistoryPanel({ context }: RailPanelProps) {
           No history yet
         </Typography>
       ) : (
-        <List dense className="flex-1 overflow-auto">
+        <List className="flex-1 overflow-auto">
           {history.map((entry, idx) => (
             <Box key={entry.id}>
               <ListItem
                 disablePadding
-                selected={idx === currentIndex}
                 className={idx === currentIndex ? 'bg-gray-100 dark:bg-gray-800' : 'bg-transparent'}
                 style={{ opacity: idx > currentIndex ? 0.5 : 1 }}
               >
-                <ListItemButton onClick={() => handleGoToState(idx)} dense>
-                  <ListItemText
-                    primary={entry.action}
-                    secondary={
-                      <>
-                        <Typography
-                          component="span"
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          {entry.details}
-                        </Typography>
-                        <Typography
-                          component="div"
-                          variant="caption"
-                          color="text.disabled"
-                          className="mt-1"
-                        >
-                          {formatTime(entry.timestamp)}
-                        </Typography>
-                      </>
-                    }
-                    primaryTypographyProps={{ variant: 'body2' }}
-                  />
+                <ListItemButton onClick={() => handleGoToState(idx)}>
+                  <Box>
+                    <Typography variant="body2">{entry.action}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {entry.details}
+                    </Typography>
+                    <Typography variant="caption" color="text.disabled" className="mt-1 block">
+                      {formatTime(entry.timestamp)}
+                    </Typography>
+                  </Box>
                 </ListItemButton>
               </ListItem>
               {idx < history.length - 1 && <Divider className="my-1" />}

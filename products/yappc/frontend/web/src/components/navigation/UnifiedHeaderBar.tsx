@@ -121,7 +121,7 @@ export function UnifiedHeaderBar({
             name: p.name,
             workspaceId: currentWorkspace?.id || '',
             type: p.type,
-            lastOpened,
+            lastOpened: lastOpened ? new Date(lastOpened).toISOString() : undefined,
         };
     });
 
@@ -218,7 +218,7 @@ export function UnifiedHeaderBar({
                 </button>
 
                 {/* Theme Toggle */}
-                <ThemeToggleButton variant="icon" />
+                <ThemeToggleButton />
 
                 {/* User Avatar */}
                 <button

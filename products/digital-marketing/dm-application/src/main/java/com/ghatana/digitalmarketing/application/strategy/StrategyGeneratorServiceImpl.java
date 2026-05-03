@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.application.strategy;
 
 import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
+import com.ghatana.digitalmarketing.domain.DmosFeatureDisabledException;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.strategy.CampaignPlan;
@@ -60,7 +61,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
             .then(aiEnabled -> {
                 if (!aiEnabled) {
                     return Promise.ofException(
-                        new UnsupportedOperationException("AI features are currently disabled (dmos.ai.enabled=false)"));
+                        new DmosFeatureDisabledException(DmosFeatureFlags.AI_ENABLED));
                 }
                 return kernelAdapter.isAuthorized(ctx, "strategy", "write");
             })

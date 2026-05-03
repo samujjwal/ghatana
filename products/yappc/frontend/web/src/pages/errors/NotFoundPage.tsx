@@ -11,7 +11,7 @@ import { Home, ArrowLeft, Search, HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { ROUTES } from '../../router/paths';
 
-function NotFoundPage(): JSX.Element {
+function NotFoundPage(): React.ReactElement {
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
       <motion.div

@@ -11,7 +11,6 @@
  */
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useFeatureFlag } from 'yappc-core/config/features/feature-flags';
 import type { ReactNode } from 'react';
 import { readStorage, writeStorage } from '../../services/storage';
 

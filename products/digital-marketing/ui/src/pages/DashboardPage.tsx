@@ -23,18 +23,18 @@ export function DashboardPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated, tenantId } = useAuth();
 
-  const { approvals, isLoading, isError } = useApprovalQueue(
-    workspaceId ?? null,
-    tenantId ?? 'unknown',
-  );
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
+  const { approvals, isLoading, isError } = useApprovalQueue(
+    workspaceId ?? null,
+    tenantId ?? 'unknown',
+  );
+  const aiActions = useAiActionLog(workspaceId ?? null);
+
   const pendingCount = approvals.filter((a) => a.status === 'PENDING').length;
   const setupComplete = approvals.length > 0 || !isLoading;
-  const aiActions = useAiActionLog(workspaceId ?? null);
 
   return (
     <main

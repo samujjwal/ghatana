@@ -6,55 +6,81 @@
  * @doc.layer frontend
  */
 
-export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'WITHDRAWN';
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
 export type ApprovalTargetType =
   | 'STRATEGY'
-  | 'CAMPAIGN'
-  | 'CONTENT'
-  | 'AUDIENCE_SEGMENT'
-  | 'BUDGET_PLAN'
-  | 'ANALYTICS_REPORT'
-  | 'INTEGRATION_CONFIG';
+  | 'PROPOSAL'
+  | 'SOW'
+  | 'CONTENT_VERSION'
+  | 'BUDGET'
+  | 'CAMPAIGN_LAUNCH'
+  | 'CONNECTOR_WRITE'
+  | 'OVERRIDE';
 
 export type ApprovalDecision = 'APPROVE' | 'REJECT';
 
-export interface ApprovalRequest {
+/**
+ * Wire shape returned by the backend for a single approval record.
+ * Maps to {@code DmosApprovalDto} in DmosApprovalServlet.
+ * Combines plugin ApprovalRecord with DMOS ApprovalSnapshot.
+ */
+export interface ApprovalRecordResponse {
   requestId: string;
-  workspaceId: string;
   tenantId: string;
-  targetType: ApprovalTargetType;
-  targetId: string;
-  description: string;
+  workspaceId: string;
+  targetType: ApprovalTargetType | null;
+  targetId: string | null;
+  description: string | null;
   riskLevel: number;
-  status: ApprovalStatus;
   requiredApproverRole: string;
+  status: ApprovalStatus;
   submittedAt: string;
+  submittedBy: string;
   decidedAt: string | null;
   decidedBy: string | null;
   comment: string | null;
+  snapshotSummary: string | null;
+  validationResultId: string | null;
+  snapshotAt: string | null;
 }
 
-export interface ApprovalSnapshotField {
-  key: string;
-  value: unknown;
+/**
+ * Wrapper for the list-pending response: {@code { items: ApprovalRecordResponse[] }}.
+ */
+export interface PendingApprovalsResponse {
+  items: ApprovalRecordResponse[];
 }
 
+/**
+ * Wire shape returned by the backend for an approval snapshot.
+ * Maps to {@code SnapshotResponse} in DmosApprovalServlet.
+ */
 export interface ApprovalSnapshot {
   requestId: string;
-  capturedAt: string;
-  fields: ApprovalSnapshotField[];
+  targetType: ApprovalTargetType;
+  targetId: string;
+  targetWorkspaceId: string;
+  snapshotSummary: string;
+  validationResultId: string | null;
+  riskLevel: number;
+  requiredApproverRole: string;
+  snapshotAt: string;
 }
 
+/**
+ * Request body for submitting an entity for approval.
+ */
 export interface SubmitApprovalRequest {
   targetType: ApprovalTargetType;
   targetId: string;
   description: string;
   riskLevel?: number;
   requiredApproverRole?: string;
+  validationResultId?: string;
 }
 
 export interface DecideApprovalRequest {
   decision: ApprovalDecision;
-  comment?: string;
+  notes?: string;
 }

@@ -37,7 +37,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -113,9 +112,6 @@ public class DataLifecycleHandler {
 
     private static final String REDACTED_VALUE = "[REDACTED]";
     private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
-
-    // P1-1: In-memory policy storage for policy CRUD lifecycle
-    private final Map<String, List<Map<String, Object>>> policiesByTenant = new ConcurrentHashMap<>();
 
     /**
      * Ephemeral per-process fallback secret used only in local/embedded-style profiles.
@@ -1591,6 +1587,8 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        String requestId = resolveRequestId(request);
+        TenantContext tenantContext = buildTenantContext(tenantId, requestId);
 
         return request.loadBody().then(buf -> {
             try {
@@ -1610,11 +1608,11 @@ public class DataLifecycleHandler {
                 policy.put("updatedAt", Instant.now().toString());
                 policy.put("tenantId", tenantId);
                 policy.put("metadata", payload.getOrDefault("metadata", Map.of()));
-
-                policiesByTenant.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(policy);
-
-                log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, policy.get("name"));
-                return Promise.of(http.jsonResponse(policy));
+                return saveGovernancePolicy(tenantContext, policyId, policy)
+                    .map(savedPolicy -> {
+                        log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, savedPolicy.get("name"));
+                        return http.jsonResponse(201, savedPolicy);
+                    });
             } catch (Exception e) {
                 log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
@@ -1630,13 +1628,14 @@ public class DataLifecycleHandler {
         if (tenantId == null) {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
-        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, List.of());
-        return Promise.of(http.jsonResponse(Map.of(
-            "policies", policies,
-            "count", policies.size(),
-            "tenantId", tenantId
-        )));
+        return loadGovernancePolicies(tenantContext)
+            .map(policies -> http.jsonResponse(Map.of(
+                "policies", policies,
+                "count", policies.size(),
+                "tenantId", tenantId
+            )));
     }
 
     /**
@@ -1649,15 +1648,12 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, List.of());
-        
-        for (Map<String, Object> policy : policies) {
-            if (policyId.equals(policy.get("id"))) {
-                return Promise.of(http.jsonResponse(policy));
-            }
-        }
+        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
-        return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+        return loadGovernancePolicyById(tenantContext, policyId)
+            .map(policy -> policy
+                .map(http::jsonResponse)
+                .orElseGet(() -> http.errorResponse(404, "Policy not found: " + policyId)));
     }
 
     /**
@@ -1671,28 +1667,34 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
         return request.loadBody().then(buf -> {
             try {
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
-
-                for (Map<String, Object> policy : policies) {
-                    if (policyId.equals(policy.get("id"))) {
+                return loadGovernancePolicyById(tenantContext, policyId)
+                    .then(existingOpt -> {
+                        if (existingOpt.isEmpty()) {
+                            return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                        }
+                        Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
                         if (payload.containsKey("name")) policy.put("name", payload.get("name"));
                         if (payload.containsKey("description")) policy.put("description", payload.get("description"));
                         if (payload.containsKey("scope")) policy.put("scope", payload.get("scope"));
                         if (payload.containsKey("rules")) policy.put("rules", payload.get("rules"));
                         if (payload.containsKey("metadata")) policy.put("metadata", payload.get("metadata"));
+                        if (payload.containsKey("enabled")) {
+                            policy.put("enabled", Boolean.parseBoolean(String.valueOf(payload.get("enabled"))));
+                        }
                         policy.put("updatedAt", Instant.now().toString());
 
-                        log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
-                        return Promise.of(http.jsonResponse(policy));
-                    }
-                }
-
-                return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                        return saveGovernancePolicy(tenantContext, policyId, policy)
+                            .map(savedPolicy -> {
+                                log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
+                                return http.jsonResponse(savedPolicy);
+                            });
+                    });
             } catch (Exception e) {
                 log.error("[P1-1] Failed to update policy tenant={} policyId={}", tenantId, policyId, e);
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
@@ -1710,21 +1712,30 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
-        for (int i = 0; i < policies.size(); i++) {
-            if (policyId.equals(policies.get(i).get("id"))) {
-                policies.remove(i);
-                log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
-                return Promise.of(http.jsonResponse(Map.of(
-                    "id", policyId,
-                    "status", "deleted",
-                    "deletedAt", Instant.now().toString()
-                )));
-            }
-        }
-
-        return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+        return loadGovernancePolicyById(tenantContext, policyId)
+            .then(existingOpt -> {
+                if (existingOpt.isEmpty()) {
+                    return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                }
+                Promise<Void> deletePromise = requireEntityStore().delete(tenantContext, EntityStore.EntityId.of(governancePolicyEntityId(policyId)));
+                if (deletePromise == null) {
+                    return Promise.of(http.jsonResponse(Map.of(
+                        "id", policyId,
+                        "status", "deleted",
+                        "deletedAt", Instant.now().toString()
+                    )));
+                }
+                return deletePromise.map(ignored -> {
+                    log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
+                    return http.jsonResponse(Map.of(
+                        "id", policyId,
+                        "status", "deleted",
+                        "deletedAt", Instant.now().toString()
+                    ));
+                });
+            });
     }
 
     /**
@@ -1737,29 +1748,86 @@ public class DataLifecycleHandler {
         }
 
         String policyId = request.getPathParameter("id");
-        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+        TenantContext tenantContext = buildTenantContext(tenantId, resolveRequestId(request));
 
         return request.loadBody().then(buf -> {
             try {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> payload = objectMapper.readValue(
                     buf.getString(StandardCharsets.UTF_8), Map.class);
                 boolean enabled = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("enabled", "true")));
 
-                for (Map<String, Object> policy : policies) {
-                    if (policyId.equals(policy.get("id"))) {
+                return loadGovernancePolicyById(tenantContext, policyId)
+                    .then(existingOpt -> {
+                        if (existingOpt.isEmpty()) {
+                            return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                        }
+
+                        Map<String, Object> policy = new LinkedHashMap<>(existingOpt.get());
                         policy.put("enabled", enabled);
                         policy.put("updatedAt", Instant.now().toString());
 
-                        log.info("[P1-1] Policy toggled tenant={} policyId={} enabled={}", tenantId, policyId, enabled);
-                        return Promise.of(http.jsonResponse(policy));
-                    }
-                }
-
-                return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+                        return saveGovernancePolicy(tenantContext, policyId, policy)
+                            .map(savedPolicy -> {
+                                log.info("[P1-1] Policy toggled tenant={} policyId={} enabled={}", tenantId, policyId, enabled);
+                                return http.jsonResponse(savedPolicy);
+                            });
+                    });
             } catch (Exception e) {
                 log.error("[P1-1] Failed to toggle policy tenant={} policyId={}", tenantId, policyId, e);
                 return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
             }
         });
+    }
+
+    private String governancePolicyEntityId(String policyId) {
+        return "governance-policy:" + policyId;
+    }
+
+    private Promise<Map<String, Object>> saveGovernancePolicy(TenantContext tenantContext,
+                                                              String policyId,
+                                                              Map<String, Object> policyData) {
+        Map<String, Object> dataToPersist = new LinkedHashMap<>(policyData);
+        dataToPersist.put("id", policyId);
+        EntityStore.Entity entity = EntityStore.Entity.builder()
+            .id(governancePolicyEntityId(policyId))
+            .collection(GOVERNANCE_POLICIES_COLLECTION)
+            .data(dataToPersist)
+            .build();
+        Promise<EntityStore.Entity> savePromise = requireEntityStore().save(tenantContext, entity);
+        if (savePromise == null) {
+            return Promise.of(dataToPersist);
+        }
+        return savePromise.map(this::normalizeGovernancePolicy);
+    }
+
+    private Promise<List<Map<String, Object>>> loadGovernancePolicies(TenantContext tenantContext) {
+        return requireEntityStore().query(tenantContext, EntityStore.QuerySpec.builder()
+                .collection(GOVERNANCE_POLICIES_COLLECTION)
+                .limit(PURGE_QUERY_LIMIT)
+                .build())
+            .map(result -> result.entities().stream()
+                .map(this::normalizeGovernancePolicy)
+                .collect(Collectors.toList()));
+    }
+
+    private Promise<Optional<Map<String, Object>>> loadGovernancePolicyById(TenantContext tenantContext,
+                                                                             String policyId) {
+        return requireEntityStore().findById(tenantContext, EntityStore.EntityId.of(governancePolicyEntityId(policyId)))
+            .map(found -> found
+                .filter(entity -> GOVERNANCE_POLICIES_COLLECTION.equals(entity.collection()))
+                .map(this::normalizeGovernancePolicy));
+    }
+
+    private Map<String, Object> normalizeGovernancePolicy(EntityStore.Entity entity) {
+        Map<String, Object> normalized = new LinkedHashMap<>(entity.data());
+        Object policyId = normalized.get("id");
+        if (policyId == null || String.valueOf(policyId).isBlank()) {
+            String entityId = entity.id().value();
+            normalized.put("id", entityId.startsWith("governance-policy:")
+                ? entityId.substring("governance-policy:".length())
+                : entityId);
+        }
+        return normalized;
     }
 }
