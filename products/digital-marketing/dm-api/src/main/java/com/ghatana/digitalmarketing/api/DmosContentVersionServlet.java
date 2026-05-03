@@ -82,7 +82,8 @@ public final class DmosContentVersionServlet {
      * @return configured async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/content-items",
                 this::handleCreateItem)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/content-items/:itemId/versions",
@@ -93,7 +94,8 @@ public final class DmosContentVersionServlet {
                 this::handleApproveVersion)
             .with(HttpMethod.GET,  "/v1/workspaces/:workspaceId/content-items/:itemId/versions",
                 this::handleGetVersionHistory)
-            .build();
+            .build()
+        );
     }
 
     // ---- handlers ----

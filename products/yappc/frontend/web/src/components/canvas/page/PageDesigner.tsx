@@ -1,10 +1,9 @@
-import { Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, X as CloseIcon } from 'lucide-react';
+import { Plus as AddIcon, Trash2 as DeleteIcon, Pencil as EditIcon, AlertTriangle } from 'lucide-react';
 import {
   Box,
   Stack,
   Typography,
   IconButton,
-  Divider,
   Button,
   Surface as Paper,
 } from '@ghatana/design-system';
@@ -17,191 +16,287 @@ import { getDefaultComponentData } from './schemas';
 import {
   componentDataToBuilderDocument,
   componentDataToInsertableInstance,
-  componentDataToBuilderProps,
   builderDocumentToComponentData,
   isBuilderDocument,
 } from './builder-document-adapter';
+import {
+  getBuilderPalette,
+  getContractMap,
+  getDefaultSlotName,
+  isContainerContract,
+  toLegacyComponentType,
+  normalizeContractName,
+  type LegacyComponentType,
+} from './registry';
 
 import type { ComponentData } from './schemas';
 import {
   deleteNode,
   insertNode,
+  moveNode,
   updateNodeProps,
+  validateDocument,
 } from '@ghatana/ui-builder';
-import type { BuilderDocument, NodeId } from '@ghatana/ui-builder';
+import type { BuilderDocument, NodeId, ValidationResult } from '@ghatana/ui-builder';
 
 /**
  * @doc.type component
- * @doc.purpose YAPPC page designer using shared BuilderDocument contract from @ghatana/ui-builder
+ * @doc.purpose Registry-driven YAPPC page designer using shared BuilderDocument contract from @ghatana/ui-builder
  * @doc.layer product
  * @doc.pattern Widget
  */
 interface PageDesignerProps {
-  initialComponents?: ComponentData[] | BuilderDocument;
-  onComponentsChange?: (components: ComponentData[]) => void;
-  onDocumentChange?: (document: BuilderDocument) => void;
+  readonly initialComponents?: ComponentData[] | BuilderDocument;
+  readonly onComponentsChange?: (components: ComponentData[]) => void;
+  readonly onDocumentChange?: (document: BuilderDocument, validation: ValidationResult) => void;
 }
-
-const AVAILABLE_COMPONENTS = [
-  { type: 'button', label: 'Button', icon: '🔘' },
-  { type: 'card', label: 'Card', icon: '🃏' },
-  { type: 'textfield', label: 'Text Field', icon: '📝' },
-  { type: 'typography', label: 'Typography', icon: '📄' },
-  { type: 'box', label: 'Container', icon: '📦' },
-];
 
 export const PageDesigner: React.FC<PageDesignerProps> = ({
   initialComponents = [],
   onComponentsChange,
   onDocumentChange,
 }) => {
+  const contracts = useMemo(() => getContractMap(), []);
+  const palette = useMemo(() => getBuilderPalette(), []);
   const [document, setDocument] = useState<BuilderDocument>(() => {
     if (isBuilderDocument(initialComponents)) {
       return initialComponents;
     }
     return componentDataToBuilderDocument(initialComponents as ComponentData[]);
   });
-
-  const components = useMemo<ComponentData[]>(() => {
-    return builderDocumentToComponentData(document);
-  }, [document]);
-  
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    onDocumentChange?.(document);
-  }, [document, onDocumentChange]);
+  const validation = useMemo(() => validateDocument(document, contracts), [contracts, document]);
 
-  const selectedComponent = components.find((c) => c.id === selectedId);
-  const editingComponent = components.find((c) => c.id === editingId);
+  useEffect(() => {
+    onDocumentChange?.(document, validation);
+  }, [document, onDocumentChange, validation]);
+
+  const selectedInstance = selectedId ? document.nodes.get(selectedId as NodeId) : undefined;
+
+  const publishDocument = useCallback(
+    (nextDocument: BuilderDocument) => {
+      setDocument(nextDocument);
+      onComponentsChange?.(builderDocumentToComponentData(nextDocument));
+    },
+    [onComponentsChange],
+  );
+
+  const resolveInsertionTarget = useCallback((): {
+    readonly parentId?: NodeId;
+    readonly slotName?: string;
+  } => {
+    if (!selectedInstance || !isContainerContract(selectedInstance.contractName)) {
+      return {};
+    }
+
+    const slotName = getDefaultSlotName(selectedInstance.contractName);
+    if (!slotName) {
+      return {};
+    }
+
+    return {
+      parentId: selectedInstance.id,
+      slotName,
+    };
+  }, [selectedInstance]);
 
   const handleAddComponent = useCallback(
-    (type: string) => {
-      const newComponent = getDefaultComponentData(type) as ComponentData;
+    (contractOrType: string) => {
+      const contractName = normalizeContractName(contractOrType);
+      const legacyType = toLegacyComponentType(contractName) as LegacyComponentType;
+      const newComponent = getDefaultComponentData(legacyType) as ComponentData;
       let insertedNodeId: string | null = null;
+      const target = resolveInsertionTarget();
+
       const nextDocument = insertNode(
         document,
         componentDataToInsertableInstance(newComponent),
-        undefined,
-        undefined,
+        target.parentId,
+        target.slotName,
         {
           onNodeInserted: ({ nodeId }) => {
             insertedNodeId = nodeId;
           },
         },
       );
-      const updated = builderDocumentToComponentData(nextDocument);
-      setDocument(nextDocument);
-      onComponentsChange?.(updated);
-      setSelectedId(insertedNodeId ?? updated.at(-1)?.id ?? null);
+
+      publishDocument(nextDocument);
+      setSelectedId(insertedNodeId);
     },
-    [document, onComponentsChange],
+    [document, publishDocument, resolveInsertionTarget],
   );
 
-  const handlePaletteDragStart = useCallback((event: React.DragEvent<HTMLButtonElement>, componentType: string) => {
-    event.dataTransfer.setData('application/x-page-component', componentType);
-    event.dataTransfer.effectAllowed = 'copy';
-  }, []);
+  const handlePaletteDragStart = useCallback(
+    (event: React.DragEvent<HTMLButtonElement>, contractName: string) => {
+      event.dataTransfer.setData('application/x-page-component', contractName);
+      event.dataTransfer.effectAllowed = 'copy';
+    },
+    [],
+  );
 
   const handleDesignAreaDrop = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
-      const type = event.dataTransfer.getData('application/x-page-component');
-      if (type) {
-        handleAddComponent(type);
+      const contractName = event.dataTransfer.getData('application/x-page-component');
+      if (contractName) {
+        handleAddComponent(contractName);
       }
     },
     [handleAddComponent],
   );
 
-  const handleSelectComponent = useCallback((id: string) => {
-    setSelectedId(id);
-  }, []);
-
   const handleDeleteComponent = useCallback(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      return;
+    }
 
     const nextDocument = deleteNode(document, selectedId as NodeId);
-    const updated = builderDocumentToComponentData(nextDocument);
-    setDocument(nextDocument);
-    onComponentsChange?.(updated);
+    publishDocument(nextDocument);
     setSelectedId(null);
-  }, [document, onComponentsChange, selectedId]);
-
-  const handleEditComponent = useCallback(() => {
-    if (!selectedId) return;
-    setEditingId(selectedId);
-    setDrawerOpen(true);
-  }, [selectedId]);
+  }, [document, publishDocument, selectedId]);
 
   const handleUpdateComponent = useCallback(
-    (updatedData: ComponentData) => {
-      const nextDocument = updateNodeProps(
+    (payload: { readonly props: Record<string, unknown>; readonly name?: string }) => {
+      if (!selectedInstance) {
+        return;
+      }
+
+      let nextDocument = updateNodeProps(
         document,
-        updatedData.id as NodeId,
-        componentDataToBuilderProps(updatedData),
+        selectedInstance.id,
+        payload.props,
       );
-      const updated = builderDocumentToComponentData(nextDocument);
-      setDocument(nextDocument);
-      onComponentsChange?.(updated);
+
+      const currentNode = nextDocument.nodes.get(selectedInstance.id);
+      if (currentNode && payload.name !== currentNode.metadata.name) {
+        const updatedNode = {
+          ...currentNode,
+          metadata: {
+            ...currentNode.metadata,
+            name: payload.name,
+          },
+        };
+        const nextNodes = new Map(nextDocument.nodes);
+        nextNodes.set(selectedInstance.id, updatedNode);
+        nextDocument = {
+          ...nextDocument,
+          nodes: nextNodes,
+        };
+      }
+
+      publishDocument(nextDocument);
       setDrawerOpen(false);
       setEditingId(null);
     },
-    [document, onComponentsChange],
+    [document, publishDocument, selectedInstance],
   );
 
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false);
-    setEditingId(null);
-  }, []);
+  const handleNestSelectedIntoParent = useCallback(() => {
+    if (!selectedId || !selectedInstance) {
+      return;
+    }
+
+    const rootTargetId = document.rootNodes.find((nodeId) => {
+      if (nodeId === selectedInstance.id) {
+        return false;
+      }
+
+      const candidate = document.nodes.get(nodeId);
+      return candidate ? isContainerContract(candidate.contractName) : false;
+    });
+
+    if (!rootTargetId) {
+      return;
+    }
+
+    const parent = document.nodes.get(rootTargetId);
+    const slotName = parent ? getDefaultSlotName(parent.contractName) : undefined;
+    if (!slotName) {
+      return;
+    }
+
+    const nextDocument = moveNode(
+      document,
+      selectedId as NodeId,
+      rootTargetId,
+      slotName,
+    );
+    publishDocument(nextDocument);
+  }, [document, publishDocument, selectedId, selectedInstance]);
+
+  const topLevelNodes = useMemo(
+    () =>
+      document.rootNodes.filter((nodeId) => document.nodes.has(nodeId)),
+    [document],
+  );
+
+  const editingInstance = editingId
+    ? document.nodes.get(editingId as NodeId)
+    : undefined;
 
   return (
     <Box className="flex h-full relative" data-testid="page-designer">
-      {/* Component Palette */}
-      <Paper
-        elevation={2}
-        className="p-4 overflow-y-auto w-[200px] rounded-none"
-      >
+      <Paper elevation={2} className="w-[240px] overflow-y-auto rounded-none border-r p-4">
         <Typography variant="h6" gutterBottom>
-          Components
+          Registry Components
         </Typography>
         <Stack spacing={1}>
-          {AVAILABLE_COMPONENTS.map((comp) => (
+          {palette.map((entry) => (
             <Button
-              key={comp.type}
-              variant="outlined"
-              startIcon={<span>{comp.icon}</span>}
-              onClick={() => handleAddComponent(comp.type)}
+              key={entry.id}
+              variant="outline"
+              onClick={() => handleAddComponent(entry.name)}
               fullWidth
               className="justify-start"
-              data-testid={`page-component-${comp.type}`}
+              title={entry.tooltip}
+              data-testid={`page-component-${entry.name.toLowerCase()}`}
               draggable
-              onDragStart={(event) => handlePaletteDragStart(event, comp.type)}
+              onDragStart={(event) => handlePaletteDragStart(event, entry.name)}
             >
-              {comp.label}
+              {entry.displayName}
             </Button>
           ))}
         </Stack>
       </Paper>
 
-      {/* Canvas Area */}
       <Box
-        className="flex-1 p-6 overflow-y-auto relative" style={{ backgroundColor: 'var(--bg-surface)' }} data-testid="page-design-area"
+        className="flex-1 overflow-y-auto p-6"
+        style={{ backgroundColor: 'var(--bg-surface)' }}
+        data-testid="page-design-area"
         onDragOver={(event) => event.preventDefault()}
         onDrop={handleDesignAreaDrop}
       >
-        {/* Toolbar */}
-        {selectedComponent && (
+        {validation.errors.length > 0 || validation.warnings.length > 0 ? (
           <Paper
-            elevation={3}
-            className="absolute p-2 flex gap-2 top-[16px] right-[16px] z-10"
+            elevation={1}
+            className="mb-4 flex items-start gap-3 border border-amber-300 bg-amber-50 p-3"
           >
+            <AlertTriangle size={16} />
+            <Box>
+              <Typography variant="body2">
+                {validation.errors.length} error(s), {validation.warnings.length} warning(s)
+              </Typography>
+              {validation.errors[0] ? (
+                <Typography variant="caption" color="danger">
+                  {validation.errors[0].message}
+                </Typography>
+              ) : null}
+            </Box>
+          </Paper>
+        ) : null}
+
+        {selectedInstance ? (
+          <Paper elevation={3} className="absolute right-4 top-4 z-10 flex gap-2 p-2">
             <IconButton
               size="small"
               color="primary"
-              onClick={handleEditComponent}
+              onClick={() => {
+                setEditingId(selectedInstance.id);
+                setDrawerOpen(true);
+              }}
               title="Edit Properties"
             >
               <EditIcon size={16} />
@@ -214,32 +309,36 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             >
               <DeleteIcon size={16} />
             </IconButton>
+            {document.rootNodes.includes(selectedInstance.id) ? (
+              <Button variant="outline" size="small" onClick={handleNestSelectedIntoParent}>
+                Nest
+              </Button>
+            ) : null}
           </Paper>
-        )}
+        ) : null}
 
-        {/* Page Frame */}
-        <Paper
-          elevation={1}
-          className="p-8 max-w-[800px] mx-auto min-h-[600px] bg-white"
-        >
-          {components.length === 0 ? (
+        <Paper elevation={1} className="mx-auto min-h-[600px] max-w-[900px] bg-white p-8">
+          {topLevelNodes.length === 0 ? (
             <Box
-              className="flex items-center justify-center rounded-lg h-[400px]" style={{ border: '2px dashed #ccc' }} >
+              className="flex h-[400px] items-center justify-center rounded-lg"
+              style={{ border: '2px dashed #ccc' }}
+            >
               <Stack alignItems="center" spacing={2}>
-                <AddIcon className="text-gray-500 dark:text-gray-400 text-5xl" />
+                <AddIcon className="text-5xl text-gray-500 dark:text-gray-400" />
                 <Typography variant="h6" color="text.secondary">
-                  Add components to get started
+                  Drag components from the registry to start designing
                 </Typography>
               </Stack>
             </Box>
           ) : (
             <Stack spacing={2}>
-              {components.map((component) => (
+              {topLevelNodes.map((nodeId) => (
                 <ComponentRenderer
-                  key={component.id}
-                  data={component}
-                  isSelected={component.id === selectedId}
-                  onClick={() => handleSelectComponent(component.id)}
+                  key={nodeId}
+                  document={document}
+                  nodeId={nodeId}
+                  selectedNodeId={selectedId}
+                  onSelect={setSelectedId}
                 />
               ))}
             </Stack>
@@ -247,29 +346,32 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         </Paper>
       </Box>
 
-      {/* Property Editor Drawer */}
       <Drawer
         anchor="right"
         open={drawerOpen}
-        onClose={handleCloseDrawer}
+        onClose={() => {
+          setDrawerOpen(false);
+          setEditingId(null);
+        }}
         PaperProps={{
-          style: { width: 350 },
+          style: { width: 360 },
         }}
       >
-        <Box className="p-4 flex justify-between items-center">
-          <Typography variant="h6">Properties</Typography>
-          <IconButton onClick={handleCloseDrawer} size="small">
-            <CloseIcon />
-          </IconButton>
+        <Box className="flex items-center justify-between p-4">
+          <Typography variant="h6">Registry Properties</Typography>
         </Box>
-        <Divider />
-        {editingComponent && (
+        {editingInstance ? (
           <PropertyForm
-            componentData={editingComponent}
+            contractName={editingInstance.contractName}
+            instanceName={editingInstance.metadata.name}
+            initialProps={editingInstance.props}
             onUpdate={handleUpdateComponent}
-            onCancel={handleCloseDrawer}
+            onCancel={() => {
+              setDrawerOpen(false);
+              setEditingId(null);
+            }}
           />
-        )}
+        ) : null}
       </Drawer>
     </Box>
   );

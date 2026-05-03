@@ -69,12 +69,14 @@ public final class DmosStrategyServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy", this::handleGenerateStrategy)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/submit", this::handleSubmitForApproval)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/strategy/:strategyId/approve", this::handleApproveStrategy)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/strategy", this::handleGetLatestStrategy)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleGenerateStrategy(HttpRequest request) {

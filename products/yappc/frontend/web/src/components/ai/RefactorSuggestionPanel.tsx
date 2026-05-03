@@ -161,7 +161,7 @@ function SuggestionRow({ suggestion, designId, onSimulateSuccess }: SuggestionRo
             <span className="truncate text-sm font-medium text-text-primary">
               {suggestion.title}
             </span>
-            <ConfidenceBadge confidence={suggestion.confidence} />
+            <ConfidenceBadge score={suggestion.confidence * 100} />
             {isApplied && (
               <span className="rounded-full bg-success-color/10 px-2 py-0.5 text-xs text-success-color">
                 Applied

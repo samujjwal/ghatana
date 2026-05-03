@@ -57,7 +57,12 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({
 
   return (
     <Box data-testid="config-editor">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
         <Typography variant="h6">Config Editor</Typography>
 
         <ToggleButtonGroup

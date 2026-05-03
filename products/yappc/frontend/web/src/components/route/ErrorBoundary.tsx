@@ -9,6 +9,16 @@ import { useEffect } from "react";
 import { useRouteError, Link } from "react-router";
 import { removeStorage, writeFlag } from '../../services/storage';
 
+type RouteErrorLike = Error & { status?: number; statusText?: string };
+
+interface AnalyticsWindow extends Window {
+    gtag?: (
+        command: 'event',
+        eventName: string,
+        params: Record<string, unknown>
+    ) => void;
+}
+
 /**
  *
  */
@@ -29,15 +39,16 @@ export function RouteErrorBoundary({
     message,
     showNavigation = true
 }: RouteErrorBoundaryProps) {
-    const error = useRouteError() as Error & { status?: number; statusText?: string };
+    const error = useRouteError() as RouteErrorLike;
 
     // Log error for monitoring (production-ready)
     useEffect(() => {
         console.error("Route Error:", error);
 
         // In production, send to monitoring service
-        if (import.meta.env.PROD && typeof (window as unknown).gtag === "function") {
-            (window as unknown).gtag("event", "exception", {
+        const analyticsWindow = window as AnalyticsWindow;
+        if (import.meta.env.PROD && typeof analyticsWindow.gtag === "function") {
+            analyticsWindow.gtag("event", "exception", {
                 description: error.message || "Route error",
                 fatal: false,
                 custom_map: {

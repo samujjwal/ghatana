@@ -76,7 +76,8 @@ public final class DmosApprovalServlet {
      * Returns the routing servlet for approval endpoints.
      */
     public AsyncServlet routes() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST,
                 "/v1/workspaces/:workspaceId/approvals",
                 this::handleSubmit)
@@ -92,7 +93,8 @@ public final class DmosApprovalServlet {
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/approvals/pending/:subjectId",
                 this::handleListPending)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

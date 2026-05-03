@@ -64,9 +64,11 @@ public final class DmosPublicIntakeServlet {
     }
 
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/public/v1/workspaces/:workspaceId/intake/leads", this::handleCaptureLead)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleCaptureLead(HttpRequest request) {

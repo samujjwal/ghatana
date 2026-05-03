@@ -4,28 +4,33 @@ import {
   readErrorResponse as sharedReadErrorResponse,
 } from '@/lib/http';
 import { getAccessToken } from './session/SessionManager';
-import {
-  BaseAgent,
-  AgentOrchestrator,
-  DesignAgent,
-  ReviewAgent,
-  CodeAgent,
-  type IAgent,
-  type AgentTask,
-  type TaskResult
-} from 'yappc-ai/agents';
+
+type TaskCapability = 'design-review' | 'code-review' | 'code-generation';
+
+interface AgentExecutionMetadata {
+  agent?: { id: string };
+  metrics?: Record<string, unknown>;
+  steps?: unknown[];
+  artifacts?: unknown[];
+  executionTime?: number;
+}
+
+interface AgentExecutionResult {
+  success: boolean;
+  output?: string;
+  confidence: number;
+  errors?: string[];
+  metadata?: AgentExecutionMetadata;
+}
 
 /**
  * Service for managing agents and their interactions
  */
 class AgentService {
   private baseUrl = '/api/agents';
-  private orchestrator: AgentOrchestrator;
-  private agents: Map<string, IAgent> = new Map();
   private initialized = false;
 
   constructor() {
-    this.orchestrator = new AgentOrchestrator();
     this.initializeAgents();
   }
 
@@ -34,95 +39,12 @@ class AgentService {
    */
   private async initializeAgents(): Promise<void> {
     try {
-      // AI service should be injected via configuration or environment
-      const aiService = this.getAIService();
-
-      // Create Design Agent
-      const designAgent = new DesignAgent({
-        id: 'design-1',
-        name: 'Design Reviewer',
-        description: 'Reviews UI designs for accessibility and consistency',
-        aiService,
-      });
-
-      // Create Review Agent
-      const reviewAgent = new ReviewAgent({
-        id: 'review-1',
-        name: 'Code Reviewer',
-        description: 'Reviews code for quality and security',
-        aiService,
-      });
-
-      // Create Code Agent
-      const codeAgent = new CodeAgent({
-        id: 'code-1',
-        name: 'Code Generator',
-        description: 'Generates and refactors code',
-        aiService,
-      });
-
-      // Initialize agents
-      await designAgent.initialize();
-      await reviewAgent.initialize();
-      await codeAgent.initialize();
-
-      // Register with orchestrator
-      this.orchestrator.registerAgent(designAgent);
-      this.orchestrator.registerAgent(reviewAgent);
-      this.orchestrator.registerAgent(codeAgent);
-
-      // Store in local map
-      this.agents.set('design-1', designAgent);
-      this.agents.set('review-1', reviewAgent);
-      this.agents.set('code-1', codeAgent);
-
       this.initialized = true;
-      console.log('[AgentService] YAPPC agents initialized successfully');
+      console.log('[AgentService] Agent service initialized');
     } catch (error) {
       console.error('[AgentService] Failed to initialize agents:', error);
       throw error;
     }
-  }
-
-  /**
-   * Get AI service from platform configuration
-   * Uses the real AI service configured in the environment
-   */
-  private getAIService(): { generateText: (prompt: string) => Promise<string>; generateCode: (prompt: string) => Promise<string> } {
-    // In production, this should use the configured AI service from platform/ai-integration
-    // For now, delegate to the backend API which handles AI provider selection
-    return {
-      generateText: async (prompt: string) => {
-        const response = await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.getAuthToken()}`,
-          },
-          body: JSON.stringify({ prompt, type: 'text' }),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to generate text via AI service');
-        }
-        const data = await response.json();
-        return data.text || data.result || '';
-      },
-      generateCode: async (prompt: string) => {
-        const response = await fetch('/api/ai/generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.getAuthToken()}`,
-          },
-          body: JSON.stringify({ prompt, type: 'code' }),
-        });
-        if (!response.ok) {
-          throw new Error('Failed to generate code via AI service');
-        }
-        const data = await response.json();
-        return data.code || data.result || '';
-      }
-    };
   }
 
   /**
@@ -250,29 +172,29 @@ class AgentService {
       }
 
       // Determine task type based on description and available agents
-      const taskType = this.determineTaskType(taskDescription, agentIds);
+      const taskType = this.determineTaskType(taskDescription);
 
       // Prepare task input based on task type
       const taskInput = this.prepareTaskInput(taskDescription, taskType);
 
-      // Execute task through orchestrator
-      const result = await this.orchestrator.executeTask(taskType, taskInput);
+      // Execute task through backend orchestration
+      const result = await this.runTask(taskType, taskInput);
 
       // Format result for compatibility
       return {
         taskId: this.generateTaskId(),
-        status: result.status || 'completed',
-        result: result.output || result.result || `Task completed: ${taskDescription}`,
+        status: result.success ? 'completed' : 'failed',
+        result: result.output || `Task completed: ${taskDescription}`,
         timestamp: new Date().toISOString(),
         involvedAgents: agentIds,
-        executionTime: result.executionTime || 0,
-        steps: result.steps || [],
-        artifacts: result.artifacts || [],
+        executionTime: result.metadata?.executionTime || 0,
+        steps: result.metadata?.steps || [],
+        artifacts: result.metadata?.artifacts || [],
         metadata: {
           taskType,
-          agent: result.agent?.id || 'unknown',
+          agent: result.metadata?.agent?.id || 'backend-orchestrator',
           confidence: result.confidence || 0.8,
-          metrics: result.metrics || {},
+          metrics: result.metadata?.metrics || {},
         }
       };
     } catch (error) {
@@ -291,7 +213,7 @@ class AgentService {
   /**
    * Determine task type based on description and agents
    */
-  private determineTaskType(taskDescription: string, agentIds: string[]): string {
+  private determineTaskType(taskDescription: string): TaskCapability {
     const description = taskDescription.toLowerCase();
 
     // Design-related tasks
@@ -316,7 +238,10 @@ class AgentService {
   /**
    * Prepare task input based on task type
    */
-  private prepareTaskInput(taskDescription: string, taskType: string): Record<string, string> {
+  private prepareTaskInput(
+    taskDescription: string,
+    taskType: TaskCapability
+  ): Record<string, string> {
     switch (taskType) {
       case 'design-review':
         return {
@@ -345,6 +270,31 @@ class AgentService {
           context: 'general-task',
         };
     }
+  }
+
+  private async runTask(
+    capability: TaskCapability,
+    input: Record<string, string>
+  ): Promise<AgentExecutionResult> {
+    const response = await fetch(`${this.baseUrl}/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${this.getAuthToken()}`,
+      },
+      body: JSON.stringify({
+        capability,
+        input,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        await this.readErrorResponse(response, 'Failed to execute agent task')
+      );
+    }
+
+    return this.parseJsonResponse<AgentExecutionResult>(response, 'execute task');
   }
 
   /**

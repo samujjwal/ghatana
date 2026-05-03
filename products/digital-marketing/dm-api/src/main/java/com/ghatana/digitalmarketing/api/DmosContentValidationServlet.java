@@ -71,14 +71,16 @@ public final class DmosContentValidationServlet {
      * Returns the routing servlet for content validation endpoints.
      */
     public AsyncServlet routes() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST,
                 "/v1/workspaces/:workspaceId/content-versions/:versionId/validate",
                 this::handleValidate)
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-versions/:versionId/validation-results",
                 this::handleListResults)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

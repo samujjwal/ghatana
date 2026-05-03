@@ -5,7 +5,7 @@
  */
 
 // Router and Provider
-export { router, AppRouter, default } from './routes';
+export { router, AppRouter, default } from './_ARCHIVED_routes';
 
 // Route Paths
 export { ROUTES, generateBreadcrumbs, matchRoute, extractRouteParams, getPhaseFromPath, buildUrl, parseQueryParams } from './paths';

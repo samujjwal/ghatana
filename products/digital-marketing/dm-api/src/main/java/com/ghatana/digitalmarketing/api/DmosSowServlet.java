@@ -79,7 +79,8 @@ public final class DmosSowServlet {
      * @return configured async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/sow",
                 this::handleGenerateDraft)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/sow/:sowId/submit",
@@ -90,7 +91,8 @@ public final class DmosSowServlet {
                 this::handleExportDraft)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/sow/:sowId",
                 this::handleGetDraft)
-            .build();
+            .build()
+        );
     }
 
     // ---- handlers ----

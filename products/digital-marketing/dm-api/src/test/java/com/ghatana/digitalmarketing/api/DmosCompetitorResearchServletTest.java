@@ -182,6 +182,69 @@ class DmosCompetitorResearchServletTest extends EventloopTestBase {
         assertThat(response.getCode()).isEqualTo(500);
     }
 
+    @Test
+    @DisplayName("POST returns 400 when service throws IllegalArgumentException")
+    void shouldMapRunIllegalArgumentTo400() {
+        researchService.throwOnRun = new IllegalArgumentException("invalid domain list");
+
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/research/competitor")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(("{\"competitorDomains\":[],\"serviceArea\":\"NY\",\"primaryOffer\":\"plumbing\"}")
+                .getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("POST returns 400 when X-Tenant-ID header is blank")
+    void shouldRejectBlankTenantId() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/research/competitor")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "   ")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withBody(("{\"competitorDomains\":[],\"serviceArea\":\"NY\",\"primaryOffer\":\"plumbing\"}")
+                .getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(400);
+    }
+
+    @Test
+    @DisplayName("POST with X-Roles header exercises parseCsvHeader non-null path")
+    void shouldAcceptRolesAndPermissionsHeaders() {
+        HttpRequest request = HttpRequest.post("http://localhost/v1/workspaces/ws-1/research/competitor")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "owner-1")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-1")
+            .withHeader(HttpHeaders.of("X-Roles"), "admin, ,user")
+            .withHeader(HttpHeaders.of("X-Permissions"), "research:run")
+            .withBody(("{\"competitorDomains\":[\"rival.com\"],\"serviceArea\":\"NY\",\"primaryOffer\":\"seo\"}")
+                .getBytes(StandardCharsets.UTF_8))
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("GET with blank X-Idempotency-Key header exercises getHeader blank-value path")
+    void shouldHandleBlankIdempotencyKeyOnGet() {
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/research/competitor")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "   ")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+
+        assertThat(response.getCode()).isEqualTo(200);
+    }
+
     // ---- test double ----
 
     private static final class FakeResearchService implements CompetitorResearchService {

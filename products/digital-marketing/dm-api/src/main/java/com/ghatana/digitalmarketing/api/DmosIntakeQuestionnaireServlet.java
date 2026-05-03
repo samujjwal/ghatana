@@ -60,11 +60,13 @@ public final class DmosIntakeQuestionnaireServlet {
     }
 
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.PUT, "/v1/workspaces/:workspaceId/intake/questionnaire/draft", this::handleSaveDraft)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/intake/questionnaire/draft", this::handleGetDraft)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/intake/questionnaire/submit", this::handleSubmit)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleSaveDraft(HttpRequest request) {

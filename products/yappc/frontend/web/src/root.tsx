@@ -8,7 +8,7 @@ import {
   useRouteError,
 } from "react-router";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { GraphQLProvider } from 'yappc-api';
+import { GraphQLProvider } from 'yappc-core/api';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import { ToastProvider } from './components/common';
 import { AuthProvider } from './providers/AuthProvider';

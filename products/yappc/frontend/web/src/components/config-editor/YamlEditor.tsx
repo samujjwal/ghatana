@@ -11,7 +11,6 @@ import {
   Box,
   Stack,
   Typography,
-  TextField,
   Button,
   Paper,
   Alert,
@@ -144,7 +143,12 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
 
   return (
     <Box data-testid="yaml-editor">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
         <Stack direction="row" alignItems="center" spacing={1}>
           <FileCodeIcon size={16} />
           <Typography variant="h6">YAML Editor</Typography>
@@ -179,28 +183,17 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
       </Alert>
 
       <Paper variant="outlined" className="relative">
-        <TextField
-          multiline
+        <textarea
           value={yamlText}
-          onChange={(e) => handleYamlChange(e.target.value)}
+          onChange={(event) => handleYamlChange(event.target.value)}
           disabled={readOnly}
-          fullWidth
           rows={20}
-          sx={{
-            fontFamily: 'monospace',
-            fontSize: '0.875rem',
-            '& .MuiInputBase-input': {
-              fontFamily: 'monospace',
-            },
-          }}
-          InputProps={{
-            readOnly,
-          }}
           data-testid="yaml-textarea"
+          className="min-h-[28rem] w-full resize-y border-0 bg-transparent p-3 font-mono text-sm outline-none"
         />
       </Paper>
 
-      <Stack direction="row" justifyContent="space-between" mt={1}>
+      <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
         <Typography variant="caption" color="text.secondary">
           {yamlText.length} characters
         </Typography>

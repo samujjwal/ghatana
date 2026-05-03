@@ -111,7 +111,7 @@ export async function listExperiments(
   if (!response.ok) {
     await handleErrorResponse(response);
   }
-  return parseJsonResponse<ExperimentListResponse>(response);
+  return parseJsonResponse<ExperimentListResponse>(response, 'list experiments');
 }
 
 export async function createExperiment(
@@ -128,7 +128,7 @@ export async function createExperiment(
   if (!response.ok) {
     await handleErrorResponse(response);
   }
-  return parseJsonResponse<Experiment>(response);
+  return parseJsonResponse<Experiment>(response, 'create experiment');
 }
 
 export async function promoteWinner(

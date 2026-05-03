@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.googleads;
 
+import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -56,7 +57,14 @@ public final class DmGoogleAdsPerformanceSyncServiceImpl implements DmGoogleAdsP
         Objects.requireNonNull(ctx, "ctx must not be null");
         Objects.requireNonNull(request, "request must not be null");
 
-        return kernelAdapter.isAuthorized(ctx, "connectors/*", "execute")
+        return kernelAdapter.isFeatureEnabled(ctx, DmosFeatureFlags.GOOGLE_ADS_CONNECTOR_ENABLED)
+            .then(connectorEnabled -> {
+                if (!connectorEnabled) {
+                    return Promise.ofException(
+                        new UnsupportedOperationException("Google Ads connector is currently disabled (dmos.google_ads_connector.enabled=false)"));
+                }
+                return kernelAdapter.isAuthorized(ctx, "connectors/*", "execute");
+            })
             .then(authorized -> {
                 if (!authorized) {
                     return Promise.ofException(new SecurityException("Not authorized to sync connector performance"));

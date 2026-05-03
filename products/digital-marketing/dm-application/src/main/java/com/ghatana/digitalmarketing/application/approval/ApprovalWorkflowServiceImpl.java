@@ -2,16 +2,14 @@ package com.ghatana.digitalmarketing.application.approval;
 
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.domain.approval.ApprovalSnapshot;
 import com.ghatana.digitalmarketing.domain.approval.ApprovalTargetType;
 import com.ghatana.plugin.approval.ApprovalDecision;
 import com.ghatana.plugin.approval.ApprovalRecord;
 import com.ghatana.plugin.approval.ApprovalRequest;
-import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import io.activej.promise.Promise;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,8 +34,6 @@ import java.util.UUID;
  */
 public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ApprovalWorkflowServiceImpl.class);
-
     static final String ROLE_BRAND_MANAGER       = "brand-manager";
     static final String ROLE_MARKETING_DIRECTOR  = "marketing-director";
     static final String ROLE_EXEC_SPONSOR        = "exec-sponsor";
@@ -45,14 +41,17 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final HumanApprovalPlugin           approvalPlugin;
     private final ApprovalSnapshotRepository    snapshotRepository;
+    private final DmosMetricsCollector          metrics;
 
     public ApprovalWorkflowServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             HumanApprovalPlugin approvalPlugin,
-            ApprovalSnapshotRepository snapshotRepository) {
+            ApprovalSnapshotRepository snapshotRepository,
+            DmosMetricsCollector metrics) {
         this.kernelAdapter      = Objects.requireNonNull(kernelAdapter,      "kernelAdapter must not be null");
         this.approvalPlugin     = Objects.requireNonNull(approvalPlugin,     "approvalPlugin must not be null");
         this.snapshotRepository = Objects.requireNonNull(snapshotRepository, "snapshotRepository must not be null");
+        this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
     }
 
     @Override
@@ -113,7 +112,13 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
                                         command.targetId(),
                                         "approval-submitted",
                                         details)
-                                    .map(ignored -> record);
+                                    .map(ignored -> {
+                                        metrics.increment(DmosMetricsCollector.APPROVAL_REQUESTED, Map.of(
+                                            "tenantId",     ctx.getTenantId().getValue(),
+                                            "operationType", command.targetType().name()
+                                        ));
+                                        return record;
+                                    });
                             });
                     });
             });
@@ -153,7 +158,16 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
                                 command.requestId(),
                                 "approval-decision",
                                 details)
-                            .map(ignored -> record);
+                            .map(ignored -> {
+                                if (command.decision() == ApprovalDecision.REJECTED) {
+                                    metrics.increment(DmosMetricsCollector.COMPLIANCE_VIOLATION, Map.of(
+                                        "tenantId", ctx.getTenantId().getValue(),
+                                        "workspaceId", ctx.getWorkspaceId().getValue(),
+                                        "ruleSet",  "dmos-approval-rejection"
+                                    ));
+                                }
+                                return record;
+                            });
                     });
             });
     }
@@ -190,7 +204,15 @@ public final class ApprovalWorkflowServiceImpl implements ApprovalWorkflowServic
                     return Promise.ofException(
                         new SecurityException("Actor is not authorised to list pending approvals"));
                 }
-                return approvalPlugin.listPendingForSubject(subjectId);
+                return approvalPlugin.listPendingForSubject(subjectId)
+                    .map(records -> {
+                        metrics.increment(DmosMetricsCollector.APPROVAL_PENDING_GAUGE, Map.of(
+                            "tenantId",    ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue(),
+                            "count",       String.valueOf(records.size())
+                        ));
+                        return records;
+                    });
             });
     }
 

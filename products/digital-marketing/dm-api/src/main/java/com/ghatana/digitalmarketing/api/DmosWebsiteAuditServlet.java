@@ -68,10 +68,12 @@ public final class DmosWebsiteAuditServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/audit/run", this::handleRunAudit)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/audit/latest", this::handleGetLatestAudit)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleRunAudit(HttpRequest request) {

@@ -82,14 +82,16 @@ public final class DmosAdCopyServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/generate",
                 this::handleGenerateAdCopyDraft)
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/latest-approved",
                 this::handleGetLatestApproved)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -304,8 +306,8 @@ public final class DmosAdCopyServlet {
                 v.getContentBlocks().stream().map(ContentBlockDto::from).collect(Collectors.toList()),
                 v.getClaimReferences().stream().map(ClaimReferenceDto::from).collect(Collectors.toList()),
                 v.getDisclosureReferences().stream().map(DisclosureReferenceDto::from).collect(Collectors.toList()),
-                v.getGeneratorMetadata() != null ? v.getGeneratorMetadata().modelVersion() : null,
-                v.getGeneratorMetadata() != null ? v.getGeneratorMetadata().promptVersion() : null,
+                v.getGeneratorMetadata().modelVersion(),
+                v.getGeneratorMetadata().promptVersion(),
                 v.getCreatedAt()
             );
         }

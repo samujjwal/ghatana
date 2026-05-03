@@ -98,7 +98,7 @@ export const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
                 }
             } catch (err: unknown) {
                 console.error('Mermaid rendering error:', err);
-                setError(err.message || 'Failed to render diagram');
+                setError(err instanceof Error ? err.message : 'Failed to render diagram');
             } finally {
                 setIsRendering(false);
             }

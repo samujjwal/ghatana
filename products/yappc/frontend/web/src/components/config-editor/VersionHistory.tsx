@@ -24,7 +24,7 @@ import {
   DialogContent,
   DialogActions,
 } from '@ghatana/design-system';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 
 import type { PageConfig } from 'yappc-config-schema';
 
@@ -96,7 +96,12 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
 
   return (
     <Box data-testid="version-history">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
         <Stack direction="row" alignItems="center" spacing={1}>
           <HistoryIcon size={16} />
           <Typography variant="h6">Version History</Typography>
@@ -105,7 +110,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
       </Stack>
 
       <List>
-        {sortedVersions.map((version, index) => {
+        {sortedVersions.map((version: ConfigVersion, index: number) => {
           const isCurrent = version.id === currentVersionId;
           return (
             <React.Fragment key={version.id}>

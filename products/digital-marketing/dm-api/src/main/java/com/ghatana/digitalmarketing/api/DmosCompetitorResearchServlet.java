@@ -63,10 +63,12 @@ public final class DmosCompetitorResearchServlet {
     }
 
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/research/competitor", this::handleRunResearch)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/research/competitor", this::handleGetLatestResearch)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleRunResearch(HttpRequest request) {

@@ -16,18 +16,9 @@ import {
   Divider,
 } from '@ghatana/design-system';
 import React, { useState, useMemo, useCallback } from 'react';
+import type { PageConfig } from 'yappc-config-schema';
 
-interface PageComponentConfig {
-  id: string;
-  [key: string]: unknown;
-}
-
-interface PageConfig {
-  id: string;
-  title: string;
-  route: string;
-  components?: PageComponentConfig[];
-}
+type PageComponentConfig = NonNullable<PageConfig['components']>[number];
 
 /**
  * @doc.type component
@@ -46,6 +37,10 @@ interface DiffChange {
   type: 'added' | 'removed' | 'modified';
   oldValue: unknown;
   newValue: unknown;
+}
+
+function getComponentId(component: PageComponentConfig): string {
+  return component.id ?? `${component.type}-unnamed`;
 }
 
 export const ConfigDiff: React.FC<ConfigDiffProps> = ({
@@ -91,11 +86,14 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     const targetComponents = targetConfig.components || [];
 
     // Check for added components
-    targetComponents.forEach((targetComp: PageComponentConfig) => {
-      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp) => {
+      const targetId = getComponentId(targetComp);
+      const baseComp = baseComponents.find(
+        (component) => getComponentId(component) === targetId
+      );
       if (!baseComp) {
         diff.push({
-          path: `components.${targetComp.id}`,
+          path: `components.${targetId}`,
           type: 'added',
           oldValue: null,
           newValue: targetComp,
@@ -104,11 +102,14 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     });
 
     // Check for removed components
-    baseComponents.forEach((baseComp: PageComponentConfig) => {
-      const targetComp = targetComponents.find((c: PageComponentConfig) => c.id === baseComp.id);
+    baseComponents.forEach((baseComp) => {
+      const baseId = getComponentId(baseComp);
+      const targetComp = targetComponents.find(
+        (component) => getComponentId(component) === baseId
+      );
       if (!targetComp) {
         diff.push({
-          path: `components.${baseComp.id}`,
+          path: `components.${baseId}`,
           type: 'removed',
           oldValue: baseComp,
           newValue: null,
@@ -117,14 +118,17 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
     });
 
     // Check for modified components
-    targetComponents.forEach((targetComp: PageComponentConfig) => {
-      const baseComp = baseComponents.find((c: PageComponentConfig) => c.id === targetComp.id);
+    targetComponents.forEach((targetComp) => {
+      const targetId = getComponentId(targetComp);
+      const baseComp = baseComponents.find(
+        (component) => getComponentId(component) === targetId
+      );
       if (baseComp) {
         const baseStr = JSON.stringify(baseComp);
         const targetStr = JSON.stringify(targetComp);
         if (baseStr !== targetStr) {
           diff.push({
-            path: `components.${targetComp.id}`,
+            path: `components.${targetId}`,
             type: 'modified',
             oldValue: baseComp,
             newValue: targetComp,

@@ -6,6 +6,7 @@
  */
 
 import type { BuilderDocument } from '../core/types.js';
+import { createSafeMessageHandler } from './trust.js';
 
 // ============================================================================
 // Sandbox Profiles
@@ -199,42 +200,10 @@ export class PreviewHostService {
     (message: PreviewToHostMessage) => void
   >();
 
-  private readonly handleMessage = (event: MessageEvent): void => {
+  private handleMessage = (event: MessageEvent): void => {
     if (event.source !== this.iframe.contentWindow) {
       return;
     }
-
-    if (!event.data || typeof event.data !== 'object') {
-      return;
-    }
-
-    const maybeMessage = event.data as Record<string, unknown>;
-    if (typeof maybeMessage.type !== 'string') {
-      return;
-    }
-
-    const message = maybeMessage as unknown as PreviewToHostMessage;
-
-    switch (message.type) {
-      case 'READY':
-        this.callbacks.onReady?.(message);
-        break;
-      case 'MOUNTED':
-        this.callbacks.onMounted?.(message);
-        break;
-      case 'UPDATED':
-        this.callbacks.onUpdated?.(message);
-        break;
-      case 'ERROR':
-        this.callbacks.onError?.(message);
-        break;
-      default:
-        break;
-    }
-
-    this.messageHandlers.forEach((handler) => {
-      handler(message);
-    });
   };
 
   public constructor(
@@ -242,11 +211,36 @@ export class PreviewHostService {
     private sandbox: SandboxProfile,
     private readonly callbacks: PreviewHostServiceCallbacks = {},
   ) {
+    this.handleMessage = createSafeMessageHandler(this.sandbox, (message) => {
+      switch (message.type) {
+        case 'READY':
+          this.callbacks.onReady?.(message);
+          break;
+        case 'MOUNTED':
+          this.callbacks.onMounted?.(message);
+          break;
+        case 'UPDATED':
+          this.callbacks.onUpdated?.(message);
+          break;
+        case 'ERROR':
+          this.callbacks.onError?.(message);
+          break;
+        default:
+          break;
+      }
+
+      this.messageHandlers.forEach((handler) => {
+        handler(message);
+      });
+    });
     window.addEventListener('message', this.handleMessage);
   }
 
   public send(message: HostToPreviewMessage): void {
-    const targetOrigin = this.sandbox.trustedOrigins[0] ?? '*';
+    const targetOrigin = this.sandbox.trustedOrigins[0];
+    if (!targetOrigin) {
+      return;
+    }
     this.iframe.contentWindow?.postMessage(message, targetOrigin);
   }
 
@@ -264,6 +258,30 @@ export class PreviewHostService {
     sandbox: SandboxProfile,
   ): Promise<void> {
     this.sandbox = sandbox;
+    window.removeEventListener('message', this.handleMessage);
+    this.handleMessage = createSafeMessageHandler(this.sandbox, (message) => {
+      switch (message.type) {
+        case 'READY':
+          this.callbacks.onReady?.(message);
+          break;
+        case 'MOUNTED':
+          this.callbacks.onMounted?.(message);
+          break;
+        case 'UPDATED':
+          this.callbacks.onUpdated?.(message);
+          break;
+        case 'ERROR':
+          this.callbacks.onError?.(message);
+          break;
+        default:
+          break;
+      }
+
+      this.messageHandlers.forEach((handler) => {
+        handler(message);
+      });
+    });
+    window.addEventListener('message', this.handleMessage);
     this.send({
       type: 'MOUNT_DOCUMENT',
       document,

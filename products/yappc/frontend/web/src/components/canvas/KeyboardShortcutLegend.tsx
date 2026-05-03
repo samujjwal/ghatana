@@ -141,7 +141,7 @@ export const KeyboardShortcutLegend: React.FC<KeyboardShortcutLegendProps> = ({
                 </Box>
                 <Grid container spacing={3}>
                     {SHORTCUT_GROUPS.map((group) => (
-                        <Grid size={{ xs: 12, sm: 6 }} key={group.category}>
+                        <Grid key={group.category} sx={{ gridColumn: { xs: 'span 12', sm: 'span 6' } }}>
                             <Typography variant="subtitle2" className="font-semibold mb-3">
                                 {group.category}
                             </Typography>

@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { getWebSocketClient } from '@ghatana/realtime';
 

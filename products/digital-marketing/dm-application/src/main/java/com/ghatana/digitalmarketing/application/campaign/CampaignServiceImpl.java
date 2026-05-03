@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.campaign;
 
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -39,25 +40,30 @@ import static com.ghatana.digitalmarketing.pack.DmComplianceRuleSetIds.DM_CAMPAI
 public final class CampaignServiceImpl implements CampaignService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CampaignServiceImpl.class);
+    private static final double MAX_LAUNCH_RISK_SCORE = 0.80d;
+    private static final String CAMPAIGN_LAUNCH_RISK_MODEL = "DM_CAMPAIGN_LAUNCH";
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final CampaignRepository repository;
     private final CompliancePlugin compliancePlugin;
     private final CampaignPreflightDataProvider preflightDataProvider;
+    private final DmosMetricsCollector metrics;
 
     /**
      * Constructs the campaign service.
      *
-     * @param kernelAdapter          DMOS kernel adapter for auth, consent, approval, audit
+     * @param kernelAdapter          DMOS kernel adapter for auth, consent, approval, audit, notifications
      * @param repository             campaign persistence
      * @param compliancePlugin       compliance evaluation for preflight checks
      * @param preflightDataProvider  provider for campaign preflight evidence
+     * @param metrics                business KPI metrics collector (KE-03)
      */
     public CampaignServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             CampaignRepository repository,
             CompliancePlugin compliancePlugin,
-            CampaignPreflightDataProvider preflightDataProvider) {
+            CampaignPreflightDataProvider preflightDataProvider,
+            DmosMetricsCollector metrics) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.compliancePlugin = Objects.requireNonNull(compliancePlugin, "compliancePlugin must not be null");
@@ -65,6 +71,7 @@ public final class CampaignServiceImpl implements CampaignService {
             preflightDataProvider,
             "preflightDataProvider must not be null"
         );
+        this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
     }
 
     // -----------------------------------------------------------------------
@@ -102,6 +109,11 @@ public final class CampaignServiceImpl implements CampaignService {
                         "create",
                         Map.of("campaignName", saved.getName(), "type", saved.getType().name())
                     ).map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_CREATED, Map.of(
+                            "tenantId",    ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue(),
+                            "campaignType", saved.getType().name()
+                        ));
                         LOG.info("[DMOS] Campaign created: id={}, name={}, tenant={}",
                             saved.getId(), saved.getName(), ctx.getTenantId().getValue());
                         return saved;
@@ -131,6 +143,7 @@ public final class CampaignServiceImpl implements CampaignService {
                 () -> new NoSuchElementException("Campaign not found: " + campaignId)
             )))
             .then(campaign -> runCompliancePreflight(ctx, campaign))
+            .then(campaign -> runLaunchRiskEvaluation(ctx, campaign))
             .then(campaign -> {
                 Campaign launched = campaign.launch();
                 return repository.save(launched)
@@ -138,12 +151,24 @@ public final class CampaignServiceImpl implements CampaignService {
                         ctx,
                         saved.getId(),
                         "launch",
-                        Map.of("previousStatus", campaign.getStatus().name())
-                    ).map(auditId -> {
+                        Map.of(
+                            "previousStatus", campaign.getStatus().name(),
+                            "riskModel", CAMPAIGN_LAUNCH_RISK_MODEL
+                        )
+                    ).then(auditId -> kernelAdapter.notifyUser(
+                        ctx,
+                        ctx.getActor().getPrincipalId(),
+                        "dmos.campaign.launched",
+                        Map.of("campaignId", saved.getId(), "campaignName", saved.getName())
+                    ).map(ignored -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_LAUNCHED, Map.of(
+                            "tenantId",    ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue()
+                        ));
                         LOG.info("[DMOS] Campaign launched: id={}, tenant={}",
                             saved.getId(), ctx.getTenantId().getValue());
                         return saved;
-                    }));
+                    })));
             });
     }
 
@@ -177,6 +202,10 @@ public final class CampaignServiceImpl implements CampaignService {
                         "pause",
                         Map.of("previousStatus", campaign.getStatus().name())
                     ).map(auditId -> {
+                        metrics.increment(DmosMetricsCollector.CAMPAIGN_PAUSED, Map.of(
+                            "tenantId",    ctx.getTenantId().getValue(),
+                            "workspaceId", ctx.getWorkspaceId().getValue()
+                        ));
                         LOG.info("[DMOS] Campaign paused: id={}, tenant={}",
                             saved.getId(), ctx.getTenantId().getValue());
                         return saved;
@@ -235,9 +264,41 @@ public final class CampaignServiceImpl implements CampaignService {
             })
             .then(result -> {
                 if (!result.compliant()) {
+                    metrics.increment(DmosMetricsCollector.COMPLIANCE_VIOLATION, Map.of(
+                        "tenantId",    ctx.getTenantId().getValue(),
+                        "workspaceId", ctx.getWorkspaceId().getValue(),
+                        "ruleSet",     DM_CAMPAIGN_PREFLIGHT
+                    ));
                     return Promise.ofException(new CampaignComplianceViolationException(
                         "Campaign " + campaign.getId() + " failed preflight compliance: "
                         + result.violations()
+                    ));
+                }
+                return Promise.of(campaign);
+            });
+    }
+
+    private Promise<Campaign> runLaunchRiskEvaluation(DmOperationContext ctx, Campaign campaign) {
+        return kernelAdapter.evaluateRisk(
+                ctx,
+                campaign.getId(),
+                CAMPAIGN_LAUNCH_RISK_MODEL,
+                Map.of(
+                    "campaignType", campaign.getType().name(),
+                    "workspaceId", campaign.getWorkspaceId().getValue(),
+                    "status", campaign.getStatus().name()
+                )
+            )
+            .then(score -> {
+                if (score > MAX_LAUNCH_RISK_SCORE) {
+                    metrics.increment(DmosMetricsCollector.COMPLIANCE_VIOLATION, Map.of(
+                        "tenantId",    ctx.getTenantId().getValue(),
+                        "workspaceId", ctx.getWorkspaceId().getValue(),
+                        "ruleSet",     CAMPAIGN_LAUNCH_RISK_MODEL
+                    ));
+                    return Promise.ofException(new CampaignComplianceViolationException(
+                        "Campaign " + campaign.getId() + " risk score " + score
+                            + " exceeds max launch threshold " + MAX_LAUNCH_RISK_SCORE
                     ));
                 }
                 return Promise.of(campaign);

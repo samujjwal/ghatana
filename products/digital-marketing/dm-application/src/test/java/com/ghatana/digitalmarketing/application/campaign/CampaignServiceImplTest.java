@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.campaign;
 
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -56,7 +57,8 @@ class CampaignServiceImplTest extends EventloopTestBase {
                 1,
                 0.0,
                 1000.0
-            ))
+            )),
+            DmosMetricsCollector.noop()
         );
 
         ctx = DmOperationContext.builder()
@@ -79,13 +81,16 @@ class CampaignServiceImplTest extends EventloopTestBase {
         );
 
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider));
+            .isThrownBy(() -> new CampaignServiceImpl(null, repository, compliancePlugin, preflightProvider, DmosMetricsCollector.noop()));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, null, compliancePlugin, preflightProvider, DmosMetricsCollector.noop()));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, null, preflightProvider, DmosMetricsCollector.noop()));
         assertThatNullPointerException()
-            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null));
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, null, DmosMetricsCollector.noop()));
+        assertThatNullPointerException()
+            .isThrownBy(() -> new CampaignServiceImpl(kernelAdapter, repository, compliancePlugin, preflightProvider, null))
+            .withMessageContaining("metrics");
     }
 
     @Test

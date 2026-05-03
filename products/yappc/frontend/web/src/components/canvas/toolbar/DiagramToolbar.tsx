@@ -129,7 +129,11 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                 <ToggleButtonGroup
                     value={diagramType}
                     exclusive
-                    onChange={handleDiagramTypeChange}
+                    onChange={(value) => {
+                        if (typeof value === 'string') {
+                            handleDiagramTypeChange(value);
+                        }
+                    }}
                     size="sm"
                     aria-label="diagram type"
                 >

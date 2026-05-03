@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.application.sow;
 
+import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.sow.SowClause;
@@ -56,7 +57,14 @@ public final class SowServiceImpl implements SowService {
         Objects.requireNonNull(ctx, "ctx must not be null");
         Objects.requireNonNull(command, "command must not be null");
 
-        return kernelAdapter.isAuthorized(ctx, "sow", "write")
+        return kernelAdapter.isFeatureEnabled(ctx, DmosFeatureFlags.AI_ENABLED)
+            .then(aiEnabled -> {
+                if (!aiEnabled) {
+                    return Promise.ofException(
+                        new UnsupportedOperationException("AI features are currently disabled (dmos.ai.enabled=false)"));
+                }
+                return kernelAdapter.isAuthorized(ctx, "sow", "write");
+            })
             .then(authorized -> {
                 if (!authorized) {
                     return Promise.ofException(

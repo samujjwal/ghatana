@@ -14,7 +14,7 @@ import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useMutation } from '@tanstack/react-query';
 import { useCreateProject, useWorkspaceContext } from './useWorkspaceData';
-import { LifecyclePhase } from '../../../shared/types/lifecycle';
+import type { LifecyclePhase } from '@/shared/types/lifecycle';
 
 // ============================================================================
 // Types
@@ -520,7 +520,7 @@ export function useAICommand(): UseAICommandResult {
                 name: projectName,
                 projectType: parsed.projectType,
                 techStack: parsed.techStack,
-                lifecyclePhase: LifecyclePhase.SHAPE,
+                lifecyclePhase: 'SHAPE',
                 nextActions: generateNextActions(parsed),
                 features: parsed.features,
                 estimatedTime: '~30 seconds',
@@ -617,7 +617,13 @@ export function useAICommand(): UseAICommandResult {
           description: response.details.features
             ? response.details.features.join(', ')
             : '',
-          type: response.details.projectType || 'FULL_STACK',
+          type:
+            response.details.projectType === 'BACKEND' ||
+            response.details.projectType === 'MOBILE' ||
+            response.details.projectType === 'UI' ||
+            response.details.projectType === 'DESKTOP'
+              ? response.details.projectType
+              : 'FULL_STACK',
           ownerWorkspaceId: workspaceId,
         });
 
@@ -690,7 +696,7 @@ export function useAICommand(): UseAICommandResult {
           elements,
           connections: [],
           selectedElements: [],
-          lifecyclePhase: LifecyclePhase.SHAPE,
+          lifecyclePhase: 'SHAPE',
         };
 
         // Save via API to database

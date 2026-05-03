@@ -28,6 +28,11 @@ export interface LivePreviewPanelProps {
   className?: string;
   viewportKey?: keyof typeof PRESET_VIEWPORTS;
   onDocumentChange?: (document: BuilderDocument) => void;
+  validation?: {
+    readonly valid: boolean;
+    readonly errorCount: number;
+    readonly warningCount: number;
+  };
 }
 
 export function LivePreviewPanel({
@@ -38,13 +43,18 @@ export function LivePreviewPanel({
   className,
   viewportKey = 'desktop',
   onDocumentChange,
+  validation,
 }: LivePreviewPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [currentViewport, setCurrentViewport] = useState<keyof typeof PRESET_VIEWPORTS>(viewportKey);
+  const [currentTheme, setCurrentTheme] = useState('default');
+  const [currentLocale, setCurrentLocale] = useState('en-US');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const previewServiceRef = useRef<PreviewHostService | null>(null);
+  const mountedDocumentIdRef = useRef<string | null>(null);
+  const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const previewPolicy = useMemo(() => {
     const trustedOrigins = (() => {
@@ -63,11 +73,13 @@ export function LivePreviewPanel({
       id: 'yappc-preview',
       name: 'YAPPC Preview',
       viewport: PRESET_VIEWPORTS[currentViewport],
+      theme: currentTheme,
+      locale: currentLocale,
       trustedOrigins,
     });
 
     return resolvePreviewExecutionPolicy(document, sandboxProfile);
-  }, [currentViewport, document, previewUrl]);
+  }, [currentLocale, currentTheme, currentViewport, document, previewUrl]);
 
   // Initialize preview host service
   useEffect(() => {
@@ -92,12 +104,19 @@ export function LivePreviewPanel({
     };
   }, [previewPolicy.profile]);
 
+  useEffect(() => {
+    if (!iframeRef.current) {
+      return;
+    }
+
+    iframeRef.current.setAttribute('csp', previewPolicy.contentSecurityPolicy);
+  }, [previewPolicy.contentSecurityPolicy]);
+
   // Mount/update document when it changes
   useEffect(() => {
     if (!document || !previewServiceRef.current) return;
 
     setLastUpdate(new Date());
-    setIsLoading(true);
     setError(previewPolicy.fallbackState?.message ?? null);
 
     if (previewPolicy.fallbackState) {
@@ -105,8 +124,30 @@ export function LivePreviewPanel({
       return;
     }
 
-    previewServiceRef.current.mountDocument(document);
+    if (mountedDocumentIdRef.current !== document.id) {
+      setIsLoading(true);
+      mountedDocumentIdRef.current = document.id;
+      void previewServiceRef.current.mountDocument(document);
+      return;
+    }
+
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    updateTimeoutRef.current = setTimeout(() => {
+      setIsLoading(true);
+      void previewServiceRef.current?.updateDocument(document);
+    }, 250);
   }, [document, previewPolicy]);
+
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRefresh = () => {
     if (previewPolicy.fallbackState) {
@@ -119,7 +160,8 @@ export function LivePreviewPanel({
     setIsLoading(true);
     setError(null);
     if (previewServiceRef.current && document) {
-      previewServiceRef.current.mountDocument(document);
+      mountedDocumentIdRef.current = document.id;
+      void previewServiceRef.current.mountDocument(document);
     }
     onRefresh?.();
   };
@@ -160,6 +202,22 @@ export function LivePreviewPanel({
             <option value="desktop">Desktop (1440px)</option>
             <option value="desktop-xl">Desktop XL (1920px)</option>
           </select>
+          <select
+            value={currentTheme}
+            onChange={(e) => setCurrentTheme(e.target.value)}
+            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="default">Default theme</option>
+            <option value="contrast">High contrast</option>
+          </select>
+          <select
+            value={currentLocale}
+            onChange={(e) => setCurrentLocale(e.target.value)}
+            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          >
+            <option value="en-US">en-US</option>
+            <option value="en-GB">en-GB</option>
+          </select>
           <span className="text-xs text-gray-500">
             {lastUpdate.toLocaleTimeString()}
           </span>
@@ -179,13 +237,21 @@ export function LivePreviewPanel({
         </div>
       )}
 
+      {validation && !validation.valid ? (
+        <div className="border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+          Preview blocked by validation: {validation.errorCount} error(s), {validation.warningCount} warning(s).
+        </div>
+      ) : null}
+
       {/* Preview Content */}
       <div className="flex-1 overflow-auto p-4">
-        {error ? (
+        {error || (validation && !validation.valid) ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <span className="text-4xl mb-2">⚠️</span>
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {error ?? 'Preview is paused until validation errors are resolved.'}
+              </p>
               <button
                 onClick={handleRefresh}
                 className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -209,7 +275,6 @@ export function LivePreviewPanel({
               title="Live Preview"
               className="w-full h-full border-0"
               sandbox={previewPolicy.sandbox.join(' ')}
-              csp={previewPolicy.contentSecurityPolicy}
             />
           </div>
         )}

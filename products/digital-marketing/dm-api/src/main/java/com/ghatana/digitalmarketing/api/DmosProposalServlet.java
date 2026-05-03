@@ -78,7 +78,8 @@ public final class DmosProposalServlet {
      * @return configured async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/proposal",
                 this::handleGenerateProposal)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/proposal/:proposalId/submit",
@@ -87,7 +88,8 @@ public final class DmosProposalServlet {
                 this::handleApproveProposal)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/proposal/:proposalId",
                 this::handleGetProposal)
-            .build();
+            .build()
+        );
     }
 
     // ---- handlers ----

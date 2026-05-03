@@ -83,7 +83,8 @@ public final class DmosWorkspaceServlet {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces",
                 this::handleCreateWorkspace)
             .with(HttpMethod.GET, "/v1/workspaces",
@@ -94,7 +95,8 @@ public final class DmosWorkspaceServlet {
                 this::handleSuspendWorkspace)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/reactivate",
                 this::handleReactivateWorkspace)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

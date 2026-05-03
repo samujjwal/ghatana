@@ -83,7 +83,8 @@ public final class DmosCampaignServlet {
      * @return routing servlet; never null
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns",
                 this::handleCreateCampaign)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/campaigns/:id",
@@ -92,7 +93,8 @@ public final class DmosCampaignServlet {
                 this::handleLaunchCampaign)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/campaigns/:id/pause",
                 this::handlePauseCampaign)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

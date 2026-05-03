@@ -38,6 +38,7 @@ import { type ArtifactTemplate, type InspectorArtifact } from '../workspace';
 import { migrateData } from '@/lib/canvas/migrationRules';
 import { getZonePlacementPosition } from '../workspace/SpatialZones';
 import type { GhostNodeTemplate } from '../workspace';
+import { createPageArtifactDocument } from '../page/pageArtifactDocument';
 
 export interface UseCanvasHandlersConfig {
     projectId: string;
@@ -91,6 +92,11 @@ export function useCanvasHandlers(config: UseCanvasHandlersConfig) {
                 ? {
                     label: title,
                     expanded: true,
+                    pageDocument: createPageArtifactDocument({
+                        artifactId: newId,
+                        name: title,
+                        createdBy: personaName || 'developer',
+                    }),
                 }
                 : {
                     id: newId,

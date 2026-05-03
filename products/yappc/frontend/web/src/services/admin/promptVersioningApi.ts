@@ -96,7 +96,7 @@ export async function listPromptVersions(
   if (!response.ok) {
     await handleErrorResponse(response);
   }
-  return parseJsonResponse<PromptVersionListResponse>(response);
+  return parseJsonResponse<PromptVersionListResponse>(response, 'list prompt versions');
 }
 
 export async function rollbackPromptVersion(
@@ -117,7 +117,7 @@ export async function rollbackPromptVersion(
   if (!response.ok) {
     await handleErrorResponse(response);
   }
-  return parseJsonResponse<PromptVersion>(response);
+  return parseJsonResponse<PromptVersion>(response, 'rollback prompt version');
 }
 
 export async function updatePromptWeights(

@@ -11,7 +11,94 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { PresetCard, type InitializationPreset, type PresetCategory } from 'yappc-ui/initialization-ui';
+
+type PresetCategory =
+  | 'frontend'
+  | 'backend'
+  | 'fullstack'
+  | 'mobile'
+  | 'ai'
+  | 'data';
+
+interface PresetTech {
+  name: string;
+  version: string;
+  icon: string;
+}
+
+interface InitializationPreset {
+  id: string;
+  name: string;
+  description: string;
+  category: PresetCategory;
+  techStack: PresetTech[];
+  features: string[];
+  estimatedCost: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  estimatedTime: number;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  popularity: number;
+  recommended?: boolean;
+}
+
+interface PresetCardProps {
+  preset: InitializationPreset;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  showDetails?: boolean;
+}
+
+function PresetCard({
+  preset,
+  isSelected = false,
+  onSelect,
+  showDetails = false,
+}: PresetCardProps): React.ReactElement {
+  return (
+    <button
+      type="button"
+      className={`preset-card ${isSelected ? 'preset-card--selected' : ''}`}
+      onClick={onSelect}
+    >
+      <div className="preset-card__header">
+        <div>
+          <h3>{preset.name}</h3>
+          <p>{preset.description}</p>
+        </div>
+        {preset.recommended ? (
+          <span className="preset-card__badge">Recommended</span>
+        ) : null}
+      </div>
+
+      <div className="preset-card__meta">
+        <span>{preset.difficulty}</span>
+        <span>{preset.estimatedTime}h</span>
+        <span>
+          {preset.estimatedCost.currency} {preset.estimatedCost.min}-{preset.estimatedCost.max}
+        </span>
+      </div>
+
+      <div className="preset-card__tech">
+        {preset.techStack.map((tech) => (
+          <span key={`${preset.id}-${tech.name}`}>
+            {tech.icon} {tech.name} {tech.version}
+          </span>
+        ))}
+      </div>
+
+      {showDetails ? (
+        <ul className="preset-card__features">
+          {preset.features.map((feature) => (
+            <li key={`${preset.id}-${feature}`}>{feature}</li>
+          ))}
+        </ul>
+      ) : null}
+    </button>
+  );
+}
 
 // ============================================================================
 // Types
@@ -294,7 +381,7 @@ export const InitializationPresetsPage: React.FC = () => {
         return (
           preset.name.toLowerCase().includes(query) ||
           preset.description.toLowerCase().includes(query) ||
-          preset.techStack.some((tech) =>
+          preset.techStack.some((tech: PresetTech) =>
             tech.name.toLowerCase().includes(query)
           )
         );

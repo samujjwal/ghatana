@@ -84,14 +84,16 @@ public final class DmosEmailFollowUpServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/email-followup/generate",
                 this::handleGenerateEmailDraft)
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/email-followup/latest-approved",
                 this::handleGetLatestApproved)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

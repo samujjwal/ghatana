@@ -193,6 +193,23 @@ class DmosCampaignServletTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("GET campaign accepts optional idempotency header and defaults blank principal")
+    void shouldHandleOptionalIdempotencyAndBlankPrincipalOnGet() {
+        campaignService.getResult = Promise.of(buildCampaign(CampaignStatus.DRAFT));
+
+        HttpRequest request = HttpRequest.get("http://localhost/v1/workspaces/ws-1/campaigns/campaign-1")
+            .withHeader(HttpHeaders.of("X-Tenant-ID"), "tenant-1")
+            .withHeader(HttpHeaders.of("X-Principal-ID"), "   ")
+            .withHeader(HttpHeaders.of("X-Idempotency-Key"), "idk-read-1")
+            .build();
+
+        HttpResponse response = runPromise(() -> servlet.serve(request));
+        assertThat(response.getCode()).isEqualTo(200);
+        assertThat(campaignService.lastContext.getActor().getPrincipalId()).isEqualTo("anonymous");
+        assertThat(campaignService.lastContext.getIdempotencyKey()).isNotNull();
+    }
+
+    @Test
     @DisplayName("GET campaign returns 404 when missing")
     void shouldReturn404OnMissingCampaign() {
         campaignService.getResult = Promise.ofException(new NoSuchElementException("Campaign not found"));

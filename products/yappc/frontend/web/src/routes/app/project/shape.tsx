@@ -11,4 +11,5 @@
  * @doc.pattern Page Component
  */
 
-export { default, ErrorBoundary } from './canvas';
+export { default } from './canvas';
+export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route/ErrorBoundary';

@@ -54,12 +54,12 @@ describe('Builder Document Adapter', () => {
       const node = document.nodes.get('button-1');
 
       expect(node?.props).toEqual({
-        text: 'Test Button',
         variant: 'outlined',
         color: 'secondary',
         size: 'large',
         disabled: true,
         fullWidth: true,
+        children: 'Test Button',
       });
     });
 
@@ -220,7 +220,64 @@ describe('Builder Document Adapter', () => {
       const document = componentDataToBuilderDocument(original);
       const converted = builderDocumentToComponentData(document);
 
-      expect(converted).toEqual(original);
+      expect(converted).toEqual([
+        {
+          id: 'button-1',
+          type: 'button',
+          label: undefined,
+          text: 'Save',
+          variant: 'contained',
+          color: 'success',
+          size: 'small',
+          disabled: false,
+          fullWidth: false,
+        },
+        {
+          id: 'card-1',
+          type: 'card',
+          label: 'Profile card',
+          elevation: 4,
+          title: 'Profile',
+          subtitle: 'Active user',
+          content: 'Summary content',
+          showActions: true,
+        },
+        {
+          id: 'textfield-1',
+          type: 'textfield',
+          label: 'Email',
+          placeholder: 'name@example.com',
+          variant: 'filled',
+          size: 'small',
+          required: true,
+          disabled: false,
+          fullWidth: true,
+          multiline: false,
+          rows: 1,
+        },
+        {
+          id: 'typography-1',
+          type: 'typography',
+          label: 'Heading copy',
+          variant: 'h4',
+          text: 'Welcome back',
+          color: 'primary',
+          align: 'center',
+        },
+        {
+          id: 'box-1',
+          type: 'box',
+          label: 'Layout wrapper',
+          padding: 3,
+          margin: 1,
+          backgroundColor: '#ffffff',
+          borderRadius: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'stretch',
+        },
+      ]);
     });
   });
 
@@ -259,14 +316,14 @@ describe('Builder Document Adapter', () => {
         fullWidth: false,
       });
 
-      expect(instance.contractName).toBe('button');
+      expect(instance.contractName).toBe('Button');
       expect(instance.props).toEqual({
-        text: 'Click Me',
         variant: 'contained',
         color: 'primary',
         size: 'medium',
         disabled: false,
         fullWidth: false,
+        children: 'Click Me',
       });
     });
 

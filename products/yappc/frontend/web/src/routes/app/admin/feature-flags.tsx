@@ -40,12 +40,12 @@ function AdminGate({ children }: { children: React.ReactNode }) {
 
 export function Component() {
   return (
-    <RouteErrorBoundary>
-      <AdminGate>
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          <FeatureFlagsPage className="min-h-screen bg-zinc-950" />
-        </Suspense>
-      </AdminGate>
-    </RouteErrorBoundary>
+    <AdminGate>
+      <Suspense fallback={<RouteLoadingSpinner />}>
+        <FeatureFlagsPage className="min-h-screen bg-zinc-950" />
+      </Suspense>
+    </AdminGate>
   );
 }
+
+export const ErrorBoundary = RouteErrorBoundary;

@@ -1,6 +1,7 @@
 import { ApolloProvider as BaseApolloProvider } from '@apollo/client/react';
-import { graphqlClient } from '../lib/api-client';
 import React from 'react';
+
+import { getGraphQLClient } from 'yappc-core/api';
 
 /**
  *
@@ -14,7 +15,7 @@ interface ApolloProviderProps {
  */
 export function ApolloProvider({ children }: ApolloProviderProps) {
   return (
-    <BaseApolloProvider client={graphqlClient}>
+    <BaseApolloProvider client={getGraphQLClient()}>
       {children}
     </BaseApolloProvider>
   );

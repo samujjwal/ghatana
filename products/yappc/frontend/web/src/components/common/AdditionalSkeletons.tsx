@@ -374,7 +374,6 @@ export function ChartSkeleton({
                         <Skeleton
                             key={i}
                             className="w-full rounded-t"
-                            style={{ height: `${Math.random() * 60 + 40}%` }}
                         />
                     ))}
                 </div>

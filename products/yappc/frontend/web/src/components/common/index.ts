@@ -20,7 +20,12 @@ export {
   TaskBoardSkeleton,
 } from './SkeletonLoaders';
 
-export { ToastProvider, useToast, type ToastData as Toast, type ToastSeverity as ToastType } from '@ghatana/design-system';
+export {
+  ToastProvider,
+  useToast,
+  type ToastData as Toast,
+  type ToastSeverity as ToastType,
+} from 'yappc-ui/components/components/Toast';
 
 export {
   EmptyState,

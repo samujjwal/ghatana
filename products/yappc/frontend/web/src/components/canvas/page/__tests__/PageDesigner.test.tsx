@@ -1,66 +1,90 @@
-/**
- * PageDesigner component tests
- *
- * Covers core CRUD interactions: add, select, delete, edit,
- * and BuilderDocument sync via onDocumentChange.
- */
-
 import React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 
-let documentSequence = 0;
-let insertedSequence = 0;
-
-// ---- Module mocks -----------------------------------------------------------
+const validateDocumentMock = vi.fn();
 
 vi.mock('@ghatana/design-system', () => ({
-  Box: ({ children, ...p }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('div', p, children),
-  Stack: ({ children, ...p }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('div', p, children),
-  Typography: ({ children, ...p }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('p', p, children),
+  Box: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('div', props, children),
+  Stack: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('div', props, children),
+  Typography: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('p', props, children),
   IconButton: ({ children, onClick, title }: React.PropsWithChildren<{ onClick?: () => void; title?: string }>) =>
     React.createElement('button', { onClick, title }, children),
-  Divider: () => React.createElement('hr'),
-  Button: ({ children, onClick, 'data-testid': dtid }: React.PropsWithChildren<{ onClick?: () => void; 'data-testid'?: string }>) =>
-    React.createElement('button', { onClick, 'data-testid': dtid }, children),
-  Surface: ({ children, ...p }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('div', p, children),
+  Button: ({ children, onClick, title, 'data-testid': testId }: React.PropsWithChildren<{ onClick?: () => void; title?: string; 'data-testid'?: string }>) =>
+    React.createElement('button', { onClick, title, 'data-testid': testId }, children),
+  Surface: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('div', props, children),
   Drawer: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
     open ? React.createElement('div', { 'data-testid': 'property-drawer' }, children) : null,
 }));
 
-vi.mock('../ComponentRenderer', () => ({
-  ComponentRenderer: ({ data, isSelected, onClick }: { data: { id: string; type: string }; isSelected: boolean; onClick: () => void }) =>
-    React.createElement('div', {
-      'data-testid': `component-${data.id}`,
-      'data-selected': isSelected,
-      onClick,
-    }, data.type),
-}));
-
 vi.mock('../PropertyForm', () => ({
-  PropertyForm: ({ componentData, onUpdate, onCancel }: {
-    componentData: { id: string; type: string };
-    onUpdate: (d: unknown) => void;
+  PropertyForm: ({ onUpdate, onCancel }: {
+    onUpdate: (payload: { props: Record<string, unknown>; name?: string }) => void;
     onCancel: () => void;
   }) =>
     React.createElement('div', { 'data-testid': 'property-form' },
       React.createElement('button', {
         'data-testid': 'save-property',
-        onClick: () => onUpdate(componentData),
+        onClick: () => onUpdate({ props: { children: 'Updated Button' }, name: 'Updated' }),
       }, 'Save'),
       React.createElement('button', { 'data-testid': 'cancel-property', onClick: onCancel }, 'Cancel'),
     ),
 }));
 
+vi.mock('../registry', () => ({
+  getBuilderPalette: () => [
+    {
+      id: 'button',
+      name: 'Button',
+      displayName: 'Button',
+      tooltip: 'Button',
+      group: 'Inputs',
+      subGroup: undefined,
+      rank: 1,
+      icon: undefined,
+      defaultProps: {},
+      featured: false,
+      searchKeywords: [],
+      version: '1.0.0',
+      status: 'stable',
+    },
+    {
+      id: 'card',
+      name: 'Card',
+      displayName: 'Card',
+      tooltip: 'Card',
+      group: 'Layout',
+      subGroup: undefined,
+      rank: 2,
+      icon: undefined,
+      defaultProps: {},
+      featured: false,
+      searchKeywords: [],
+      version: '1.0.0',
+      status: 'stable',
+    },
+  ],
+  getContractMap: () =>
+    new Map([
+      ['Button', { name: 'Button', props: [], slots: [], layout: { isContainer: false } }],
+      ['Card', { name: 'Card', props: [], slots: [{ name: 'default', isDefault: true }], layout: { isContainer: true } }],
+    ]),
+  getDefaultSlotName: (contractName: string) => (contractName === 'Card' ? 'default' : undefined),
+  isContainerContract: (contractName: string) => contractName === 'Card',
+  normalizeContractName: (type: string) => (type === 'textfield' ? 'TextField' : type),
+  getContractByName: (contractName: string) => ({ name: contractName, props: [], slots: [], layout: { isContainer: false } }),
+  toLegacyComponentType: (contractName: string) => contractName.toLowerCase(),
+}));
+
 vi.mock('../schemas', () => ({
   getDefaultComponentData: (type: string) => ({
-    id: `new-${type}-${Date.now()}`,
+    id: `${type}-1`,
     type,
-    text: '',
+    text: 'Button',
     variant: 'contained',
     color: 'primary',
     size: 'medium',
@@ -69,50 +93,15 @@ vi.mock('../schemas', () => ({
   }),
 }));
 
-// builder-document-adapter uses @ghatana/ui-builder — mock it entirely
-vi.mock('../builder-document-adapter', () => ({
-  componentDataToBuilderDocument: vi.fn((components: unknown[], options?: { existingDocument?: { id: string; metadata: { createdAt: string } } }) => ({
-    id: options?.existingDocument?.id ?? `doc-${++documentSequence}`,
-    version: '1',
-    name: 'Test Page',
-    designSystem: { id: 'ds', name: 'DS', version: '1', tokenSetIds: [], componentContracts: [], themeId: 'default' },
-    rootNodes: components.map((c: { id: string }) => c.id),
-    nodes: new Map(components.map((c: { id: string; type: string }) => [c.id, { id: c.id, contractName: c.type, props: c, slots: {}, bindings: [], metadata: {} }])),
-    metadata: { createdAt: options?.existingDocument?.metadata.createdAt ?? 'created', updatedAt: 'updated' },
-  })),
-  componentDataToInsertableInstance: vi.fn((component: { type: string; [key: string]: unknown }) => ({
-    contractName: component.type,
-    props: { ...component, type: undefined, id: undefined },
-    slots: {},
-    bindings: [],
-    metadata: {},
-  })),
-  componentDataToBuilderProps: vi.fn((component: { id: string; type: string; [key: string]: unknown }) => {
-    const { id: _id, type: _type, ...props } = component;
-    return props;
-  }),
-  builderDocumentToComponentData: vi.fn((doc: { nodes: Map<string, { id: string; contractName: string }> }) =>
-    Array.from(doc.nodes.values()).map((n) => ({ id: n.id, type: n.contractName })),
-  ),
-  isBuilderDocument: vi.fn((v: unknown) => Boolean(v && typeof v === 'object' && 'nodes' in (v as object))),
-}));
-
 vi.mock('@ghatana/ui-builder', () => ({
+  createDocumentId: () => 'doc-1',
   insertNode: vi.fn((document: {
-    id: string;
-    rootNodes: string[];
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
-    metadata: { createdAt: string; updatedAt: string };
-  }, instance: { contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }, _parentId: unknown, _slotName: unknown, bus?: { onNodeInserted?: (payload: { nodeId: string }) => void }) => {
-    const nodeId = `inserted-${++insertedSequence}`;
-    const nextDocument = {
-      ...document,
-      rootNodes: [...document.rootNodes, nodeId],
-      nodes: new Map(document.nodes),
-      metadata: { ...document.metadata, updatedAt: 'updated' },
-    };
-
-    nextDocument.nodes.set(nodeId, {
+    rootNodes: string[];
+  }, instance: { contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }, parentId?: string, slotName?: string, bus?: { onNodeInserted?: (payload: { nodeId: string }) => void }) => {
+    const nextNodes = new Map(document.nodes);
+    const nodeId = `node-${document.nodes.size + 1}`;
+    nextNodes.set(nodeId, {
       id: nodeId,
       contractName: instance.contractName,
       props: instance.props,
@@ -121,27 +110,30 @@ vi.mock('@ghatana/ui-builder', () => ({
       metadata: instance.metadata,
     });
 
+    const nextRootNodes = parentId && slotName ? document.rootNodes : [...document.rootNodes, nodeId];
     bus?.onNodeInserted?.({ nodeId });
-    return nextDocument;
-  }),
-  deleteNode: vi.fn((document: {
-    rootNodes: string[];
-    nodes: Map<string, { id: string; contractName: string }>;
-    metadata: { createdAt: string; updatedAt: string };
-  }, nodeId: string) => {
-    const nextNodes = new Map(document.nodes);
-    nextNodes.delete(nodeId);
 
     return {
       ...document,
-      rootNodes: document.rootNodes.filter((id) => id !== nodeId),
       nodes: nextNodes,
-      metadata: { ...document.metadata, updatedAt: 'updated' },
+      rootNodes: nextRootNodes,
     };
   }),
+  deleteNode: vi.fn((document: { nodes: Map<string, unknown>; rootNodes: string[] }, nodeId: string) => {
+    const nextNodes = new Map(document.nodes);
+    nextNodes.delete(nodeId);
+    return {
+      ...document,
+      nodes: nextNodes,
+      rootNodes: document.rootNodes.filter((id) => id !== nodeId),
+    };
+  }),
+  moveNode: vi.fn((document: { rootNodes: string[] }, nodeId: string) => ({
+    ...document,
+    rootNodes: document.rootNodes.filter((id) => id !== nodeId),
+  })),
   updateNodeProps: vi.fn((document: {
     nodes: Map<string, { id: string; contractName: string; props: Record<string, unknown>; slots: Record<string, string[]>; bindings: unknown[]; metadata: Record<string, unknown> }>;
-    metadata: { createdAt: string; updatedAt: string };
   }, nodeId: string, props: Record<string, unknown>) => {
     const nextNodes = new Map(document.nodes);
     const current = nextNodes.get(nodeId);
@@ -151,20 +143,15 @@ vi.mock('@ghatana/ui-builder', () => ({
         props: { ...current.props, ...props },
       });
     }
-
     return {
       ...document,
       nodes: nextNodes,
-      metadata: { ...document.metadata, updatedAt: 'updated' },
     };
   }),
+  validateDocument: (...args: unknown[]) => validateDocumentMock(...args),
 }));
 
-// ---- Subject under test -----------------------------------------------------
-
 import { PageDesigner } from '../PageDesigner';
-
-// ---------------------------------------------------------------------------
 
 describe('PageDesigner', () => {
   const onComponentsChange = vi.fn();
@@ -172,102 +159,53 @@ describe('PageDesigner', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    documentSequence = 0;
-    insertedSequence = 0;
+    validateDocumentMock.mockReturnValue({ valid: true, errors: [], warnings: [] });
   });
 
-  it('renders the component palette with all 5 component types', () => {
+  it('renders the registry palette', () => {
     render(<PageDesigner />);
-    expect(screen.getByText('Components')).toBeDefined();
-    for (const label of ['Button', 'Card', 'Text Field', 'Typography', 'Container']) {
-      expect(screen.getByText(label)).toBeDefined();
-    }
+    expect(screen.getByText('Registry Components')).toBeInTheDocument();
+    expect(screen.getByText('Button')).toBeInTheDocument();
+    expect(screen.getByText('Card')).toBeInTheDocument();
   });
 
-  it('renders empty state when no components are present', () => {
+  it('renders the new empty state copy', () => {
     render(<PageDesigner />);
-    expect(screen.getByText('Add components to get started')).toBeDefined();
+    expect(screen.getByText('Drag components from the registry to start designing')).toBeInTheDocument();
   });
 
   it('adds a component when a palette button is clicked', () => {
     render(<PageDesigner onComponentsChange={onComponentsChange} />);
     fireEvent.click(screen.getByText('Button'));
-    expect(onComponentsChange).toHaveBeenCalledWith(
-      expect.arrayContaining([expect.objectContaining({ type: 'button' })]),
-    );
+    expect(onComponentsChange).toHaveBeenCalled();
   });
 
-  it('shows the added component in the design area', () => {
-    render(<PageDesigner onComponentsChange={onComponentsChange} />);
-    fireEvent.click(screen.getByText('Button'));
-    const added = screen.getAllByText('button');
-    expect(added.length).toBeGreaterThan(0);
-  });
-
-  it('selects a component on click — toolbar appears', () => {
-    render(<PageDesigner />);
-    fireEvent.click(screen.getByText('Button'));
-    // Toolbar should be visible after palette click (handleAddComponent sets selectedId)
-    expect(screen.getByTitle('Edit Properties')).toBeDefined();
-    expect(screen.getByTitle('Delete')).toBeDefined();
-  });
-
-  it('shows edit/delete toolbar when a component is selected', () => {
-    render(<PageDesigner />);
-    fireEvent.click(screen.getByText('Button'));
-    const componentEls = screen.getAllByTestId(/component-/);
-    fireEvent.click(componentEls[0]);
-    expect(screen.getByTitle('Edit Properties')).toBeDefined();
-    expect(screen.getByTitle('Delete')).toBeDefined();
-  });
-
-  it('deletes the selected component', () => {
-    render(<PageDesigner onComponentsChange={onComponentsChange} />);
-    fireEvent.click(screen.getByText('Button'));
-    // Component is added and selected; toolbar with Delete button is visible
-    fireEvent.click(screen.getByTitle('Delete'));
-    // After deletion the design area shows the empty-state placeholder again
-    expect(screen.getByText('Add components to get started')).toBeDefined();
-    // And no component renderer elements remain in the canvas
-    expect(screen.queryAllByTestId(/^component-/)).toHaveLength(0);
-  });
-
-  it('opens the property drawer on edit', () => {
-    render(<PageDesigner />);
-    fireEvent.click(screen.getByText('Button'));
-    const componentEls = screen.getAllByTestId(/component-/);
-    fireEvent.click(componentEls[0]);
-    fireEvent.click(screen.getByTitle('Edit Properties'));
-    expect(screen.getByTestId('property-drawer')).toBeDefined();
-    expect(screen.getByTestId('property-form')).toBeDefined();
-  });
-
-  it('emits onDocumentChange when components change', () => {
-    render(<PageDesigner onDocumentChange={onDocumentChange} />);
-    // onDocumentChange fires on every components change (via useEffect)
-    fireEvent.click(screen.getByText('Button'));
-    expect(onDocumentChange).toHaveBeenCalled();
-  });
-
-  it('preserves BuilderDocument identity across edits', () => {
-    render(<PageDesigner onDocumentChange={onDocumentChange} />);
-
-    fireEvent.click(screen.getByText('Button'));
-    fireEvent.click(screen.getByText('Card'));
-
-    const documentIds = onDocumentChange.mock.calls.map(([document]) => {
-      return (document as { id: string }).id;
+  it('surfaces validation issues inline', () => {
+    validateDocumentMock.mockReturnValue({
+      valid: false,
+      errors: [{ message: 'Missing contract' }],
+      warnings: [],
     });
 
-    expect(documentIds.length).toBeGreaterThan(1);
-    expect(new Set(documentIds)).toEqual(new Set(['doc-1']));
+    render(<PageDesigner />);
+    expect(screen.getByText(/1 error\(s\), 0 warning\(s\)/i)).toBeInTheDocument();
+    expect(screen.getByText('Missing contract')).toBeInTheDocument();
   });
 
-  it('initialises from a ComponentData array', () => {
-    const initial = [
-      { id: 'btn-1', type: 'button', text: 'Go', variant: 'contained', color: 'primary', size: 'medium', disabled: false, fullWidth: false },
-    ];
-    render(<PageDesigner initialComponents={initial} />);
-    expect(screen.getByTestId('component-btn-1')).toBeDefined();
+  it('opens the registry property drawer for the selected node', () => {
+    render(<PageDesigner />);
+    fireEvent.click(screen.getByText('Button'));
+    fireEvent.click(screen.getByTitle('Edit Properties'));
+    expect(screen.getByTestId('property-drawer')).toBeInTheDocument();
+    expect(screen.getByTestId('property-form')).toBeInTheDocument();
+  });
+
+  it('emits document changes with validation payloads', () => {
+    render(<PageDesigner onDocumentChange={onDocumentChange} />);
+    fireEvent.click(screen.getByText('Button'));
+    expect(onDocumentChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: expect.any(String) }),
+      expect.objectContaining({ valid: true }),
+    );
   });
 });

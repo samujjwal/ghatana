@@ -21,6 +21,7 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,6 +47,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     private InMemoryConsentPlugin consentPlugin;
     private InMemoryApprovalPlugin approvalPlugin;
     private InMemoryAuditTrailPlugin auditTrailPlugin;
+    private InMemoryRiskManagementPlugin riskManagementPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private static final DmTenantId TENANT = DmTenantId.of("acme-corp");
@@ -63,6 +65,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         consentPlugin = new InMemoryConsentPlugin();
         approvalPlugin = new InMemoryApprovalPlugin();
         auditTrailPlugin = new InMemoryAuditTrailPlugin();
+        riskManagementPlugin = new InMemoryRiskManagementPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -70,7 +73,8 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
             healthIndicator,
             consentPlugin,
             approvalPlugin,
-            auditTrailPlugin
+            auditTrailPlugin,
+            riskManagementPlugin
         );
 
         ctx = DmOperationContext.builder()
@@ -157,30 +161,57 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     }
 
     @Test
+    @DisplayName("evaluateRisk delegates to risk plugin")
+    void shouldEvaluateRisk() {
+        adapter.start();
+        riskManagementPlugin.setScore(0.42d);
+
+        double score = runPromise(() -> adapter.evaluateRisk(
+            ctx,
+            "campaign-1",
+            "DM_CAMPAIGN_LAUNCH",
+            Map.of("budget", 1000)
+        ));
+
+        assertThat(score).isEqualTo(0.42d);
+    }
+
+    @Test
     @DisplayName("constructor rejects null required dependencies")
     void shouldRejectNullDependencies() {
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
-                null, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin
+                null, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
+                riskManagementPlugin
             ));
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
-                authService, auditEmitter, healthIndicator, null, approvalPlugin, auditTrailPlugin
+                authService, auditEmitter, healthIndicator, null, approvalPlugin, auditTrailPlugin,
+                riskManagementPlugin
             ))
             .withMessageContaining("consentPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
-                authService, auditEmitter, healthIndicator, consentPlugin, null, auditTrailPlugin
+                authService, auditEmitter, healthIndicator, consentPlugin, null, auditTrailPlugin,
+                riskManagementPlugin
             ))
             .withMessageContaining("approvalPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
-                authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, null
+                authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, null,
+                riskManagementPlugin
             ))
             .withMessageContaining("auditTrailPlugin");
+
+        assertThatNullPointerException()
+            .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
+                authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
+                null
+            ))
+            .withMessageContaining("riskManagementPlugin");
     }
 
     private static final class RecordingBridgeAuthorizationService implements BridgeAuthorizationService {
@@ -373,6 +404,70 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
             return PluginMetadata.builder()
                 .id("dm-approval-test-plugin")
                 .name("DM Approval Test Plugin")
+                .type(PluginType.CUSTOM)
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.of(null);
+        }
+    }
+
+    private static final class InMemoryRiskManagementPlugin implements RiskManagementPlugin {
+        private double score = 0.1d;
+
+        void setScore(double score) {
+            this.score = score;
+        }
+
+        @Override
+        public Promise<RiskScore> calculateRisk(String entityId, RiskModelId modelId, Map<String, Object> factors) {
+            return Promise.of(new RiskScore(
+                entityId,
+                modelId,
+                score,
+                RiskScore.RiskLevel.LOW,
+                Map.of("composite", score),
+                Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> setRiskLimits(String entityId, Map<String, java.math.BigDecimal> limits) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<List<RiskAlert>> getActiveAlerts(String entityId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<RiskReport> generateReport(String entityId, TimeRange range) {
+            return Promise.of(new RiskReport(entityId, range, List.of(), List.of(), Map.of(), Instant.now()));
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("dm-risk-test")
+                .name("DM Risk Test Plugin")
                 .type(PluginType.CUSTOM)
                 .build();
         }

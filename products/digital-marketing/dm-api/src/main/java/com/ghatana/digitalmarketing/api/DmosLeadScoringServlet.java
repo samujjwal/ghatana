@@ -68,10 +68,12 @@ public final class DmosLeadScoringServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/lead-score", this::handleGenerateScore)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/lead-score", this::handleGetLatestScore)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleGenerateScore(HttpRequest request) {

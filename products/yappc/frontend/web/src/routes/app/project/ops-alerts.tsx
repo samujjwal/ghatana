@@ -73,14 +73,14 @@ function AlertsPage() {
 
 export function Component() {
   return (
-    <RouteErrorBoundary>
-      <OpsAlertsGate>
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          <AlertsPage />
-        </Suspense>
-      </OpsAlertsGate>
-    </RouteErrorBoundary>
+    <OpsAlertsGate>
+      <Suspense fallback={<RouteLoadingSpinner />}>
+        <AlertsPage />
+      </Suspense>
+    </OpsAlertsGate>
   );
 }
+
+export const ErrorBoundary = RouteErrorBoundary;
 
 export default Component;

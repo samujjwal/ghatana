@@ -66,14 +66,14 @@ function TeamsPage() {
 
 export function Component() {
   return (
-    <RouteErrorBoundary>
-      <TeamsGate>
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          <TeamsPage />
-        </Suspense>
-      </TeamsGate>
-    </RouteErrorBoundary>
+    <TeamsGate>
+      <Suspense fallback={<RouteLoadingSpinner />}>
+        <TeamsPage />
+      </Suspense>
+    </TeamsGate>
   );
 }
+
+export const ErrorBoundary = RouteErrorBoundary;
 
 export default Component;

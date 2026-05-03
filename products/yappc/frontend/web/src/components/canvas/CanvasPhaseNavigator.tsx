@@ -33,34 +33,37 @@ export interface CanvasPhaseNavigatorProps {
 
 const ALL_PHASES: LifecyclePhase[] = [
     LifecyclePhase.INTENT,
-    LifecyclePhase.SHAPE,
-    LifecyclePhase.VALIDATE,
-    LifecyclePhase.GENERATE,
-    LifecyclePhase.RUN,
+    LifecyclePhase.CONTEXT,
+    LifecyclePhase.PLAN,
+    LifecyclePhase.EXECUTE,
+    LifecyclePhase.VERIFY,
     LifecyclePhase.OBSERVE,
-    LifecyclePhase.IMPROVE,
+    LifecyclePhase.LEARN,
+    LifecyclePhase.INSTITUTIONALIZE,
 ];
 
 // Phase icons
 const PHASE_ICONS: Record<LifecyclePhase, React.ReactNode> = {
     [LifecyclePhase.INTENT]: <LightbulbOutlined size={16} />,
-    [LifecyclePhase.SHAPE]: <Palette size={16} />,
-    [LifecyclePhase.VALIDATE]: <CheckCircleOutline size={16} />,
-    [LifecyclePhase.GENERATE]: <Build size={16} />,
-    [LifecyclePhase.RUN]: <RocketLaunch size={16} />,
+    [LifecyclePhase.CONTEXT]: <Palette size={16} />,
+    [LifecyclePhase.PLAN]: <CheckCircleOutline size={16} />,
+    [LifecyclePhase.EXECUTE]: <Build size={16} />,
+    [LifecyclePhase.VERIFY]: <RocketLaunch size={16} />,
     [LifecyclePhase.OBSERVE]: <Visibility size={16} />,
-    [LifecyclePhase.IMPROVE]: <TrendingUp size={16} />,
+    [LifecyclePhase.LEARN]: <TrendingUp size={16} />,
+    [LifecyclePhase.INSTITUTIONALIZE]: <CheckCircleOutline size={16} />,
 };
 
 // Phase colors
 const PHASE_COLORS: Record<LifecyclePhase, string> = {
     [LifecyclePhase.INTENT]: 'from-blue-500 to-blue-600',
-    [LifecyclePhase.SHAPE]: 'from-purple-500 to-purple-600',
-    [LifecyclePhase.VALIDATE]: 'from-green-500 to-green-600',
-    [LifecyclePhase.GENERATE]: 'from-orange-500 to-orange-600',
-    [LifecyclePhase.RUN]: 'from-red-500 to-red-600',
+    [LifecyclePhase.CONTEXT]: 'from-purple-500 to-purple-600',
+    [LifecyclePhase.PLAN]: 'from-green-500 to-green-600',
+    [LifecyclePhase.EXECUTE]: 'from-orange-500 to-orange-600',
+    [LifecyclePhase.VERIFY]: 'from-red-500 to-red-600',
     [LifecyclePhase.OBSERVE]: 'from-teal-500 to-teal-600',
-    [LifecyclePhase.IMPROVE]: 'from-pink-500 to-pink-600',
+    [LifecyclePhase.LEARN]: 'from-pink-500 to-pink-600',
+    [LifecyclePhase.INSTITUTIONALIZE]: 'from-indigo-500 to-indigo-600',
 };
 
 /**

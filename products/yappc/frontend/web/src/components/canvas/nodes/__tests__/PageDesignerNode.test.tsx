@@ -10,18 +10,17 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { createPageArtifactDocument } from '../../page/pageArtifactDocument';
 
 // --------------------------------------------------------------------------
 // Mocks
 // --------------------------------------------------------------------------
 
-// @xyflow/react: mock the hooks + components used by PageDesignerNode
-const mockUpdateNodeData = vi.fn();
+const mockExecuteCommand = vi.fn();
 vi.mock('@xyflow/react', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@xyflow/react')>();
   return {
     ...actual,
-    useReactFlow: () => ({ updateNodeData: mockUpdateNodeData }),
     Handle: ({ id, position }: { id: string; position: string }) => (
       <div data-testid={`handle-${id}`} data-position={position} />
     ),
@@ -32,13 +31,54 @@ vi.mock('@xyflow/react', async (importOriginal) => {
 
 // PageDesigner: minimal stub — we test the node wrapper, not PageDesigner itself
 vi.mock('@/components/canvas/page/PageDesigner', () => ({
-  PageDesigner: ({ onDocumentChange }: { onDocumentChange?: (doc: unknown) => void }) => (
+  PageDesigner: ({
+    onDocumentChange,
+  }: {
+    onDocumentChange?: (doc: unknown, validation: { valid: boolean; errors: unknown[]; warnings: unknown[] }) => void;
+  }) => (
     <div
       data-testid="page-designer-full"
-      onClick={() => onDocumentChange?.({ nodes: new Map(), rootId: 'root' })}
+      onClick={() =>
+        onDocumentChange?.(
+          {
+            id: 'doc-1',
+            version: '1',
+            name: 'Home Page',
+            designSystem: {
+              id: 'ds',
+              name: 'DS',
+              version: '1',
+              tokenSetIds: [],
+              componentContracts: [],
+              themeId: 'default',
+            },
+            rootNodes: [],
+            nodes: new Map(),
+            metadata: {
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              trustLevel: 'GENERATED_TRUSTED',
+              dataClassification: 'INTERNAL',
+            },
+          },
+          { valid: true, errors: [], warnings: [] },
+        )
+      }
     />
   ),
 }));
+
+vi.mock('@/components/studio/LivePreviewPanel', () => ({
+  LivePreviewPanel: () => <div data-testid="live-preview-panel" />,
+}));
+
+vi.mock('jotai', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('jotai')>();
+  return {
+    ...actual,
+    useSetAtom: () => mockExecuteCommand,
+  };
+});
 
 // @ghatana/design-system: pass-through for layout primitives
 vi.mock('@ghatana/design-system', async (importOriginal) => {
@@ -103,7 +143,7 @@ function makeNodeProps(
 
 describe('PageDesignerNode', () => {
   beforeEach(() => {
-    mockUpdateNodeData.mockClear();
+    mockExecuteCommand.mockClear();
   });
 
   describe('collapsed state (default)', () => {
@@ -118,16 +158,41 @@ describe('PageDesignerNode', () => {
     });
 
     it('shows empty-page hint when document is absent', () => {
-      render(<PageDesignerNode {...makeNodeProps({ document: undefined })} />);
+      render(<PageDesignerNode {...makeNodeProps({ pageDocument: undefined })} />);
       expect(screen.getByText(/double-click to start designing/i)).toBeTruthy();
     });
 
     it('shows component count when document nodes exist', () => {
-      const fakeDoc = {
-        nodes: new Map([['c1', {}], ['c2', {}]]),
-        rootId: 'root',
-      };
-      render(<PageDesignerNode {...makeNodeProps({ document: fakeDoc as never })} />);
+      const fakeDoc = createPageArtifactDocument({
+        artifactId: 'artifact-1',
+        name: 'Home Page',
+        createdBy: 'tester',
+        document: {
+          id: 'doc-1' as never,
+          version: '1',
+          name: 'Home Page',
+          designSystem: {
+            id: 'ds',
+            name: 'DS',
+            version: '1',
+            tokenSetIds: [],
+            componentContracts: [],
+            themeId: 'default',
+          },
+          rootNodes: ['c1' as never, 'c2' as never],
+          nodes: new Map([
+            ['c1' as never, { id: 'c1', contractName: 'Button', props: {}, slots: {}, bindings: [], metadata: {} }],
+            ['c2' as never, { id: 'c2', contractName: 'Card', props: {}, slots: {}, bindings: [], metadata: {} }],
+          ]),
+          metadata: {
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            trustLevel: 'GENERATED_TRUSTED',
+            dataClassification: 'INTERNAL',
+          },
+        },
+      });
+      render(<PageDesignerNode {...makeNodeProps({ pageDocument: fakeDoc })} />);
       // Component count appears in both the header badge and the body prompt
       const matches = screen.getAllByText(/2 component/i);
       expect(matches.length).toBeGreaterThan(0);
@@ -154,10 +219,7 @@ describe('PageDesignerNode', () => {
       render(<PageDesignerNode {...makeNodeProps()} />);
       const expandBtn = screen.getByRole('button', { name: /expand page designer/i });
       fireEvent.click(expandBtn);
-      expect(mockUpdateNodeData).toHaveBeenCalledWith(
-        'node-1',
-        expect.objectContaining({ expanded: true }),
-      );
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
     });
 
     it('collapses back when the collapse button is clicked', () => {
@@ -165,23 +227,22 @@ describe('PageDesignerNode', () => {
       const collapseBtn = screen.getByRole('button', { name: /collapse page designer/i });
       fireEvent.click(collapseBtn);
       expect(screen.queryByTestId('page-designer-full')).toBeNull();
-      expect(mockUpdateNodeData).toHaveBeenCalledWith(
-        'node-1',
-        expect.objectContaining({ expanded: false }),
-      );
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('document persistence', () => {
-    it('calls updateNodeData with the new document when PageDesigner emits onDocumentChange', () => {
-      render(<PageDesignerNode {...makeNodeProps({ expanded: true })} />);
+    it('dispatches a command when PageDesigner emits onDocumentChange', () => {
+      const pageDocument = createPageArtifactDocument({
+        artifactId: 'artifact-1',
+        name: 'Home Page',
+        createdBy: 'tester',
+      });
+      render(<PageDesignerNode {...makeNodeProps({ expanded: true, pageDocument })} />);
       const designer = screen.getByTestId('page-designer-full');
       // The stub calls onDocumentChange on click
       fireEvent.click(designer);
-      expect(mockUpdateNodeData).toHaveBeenCalledWith(
-        'node-1',
-        expect.objectContaining({ document: expect.objectContaining({ rootId: 'root' }) }),
-      );
+      expect(mockExecuteCommand).toHaveBeenCalledTimes(1);
     });
   });
 

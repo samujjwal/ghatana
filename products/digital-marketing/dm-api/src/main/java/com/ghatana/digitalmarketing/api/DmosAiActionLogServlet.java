@@ -63,11 +63,13 @@ public final class DmosAiActionLogServlet {
     }
 
     public AsyncServlet routes() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/ai-actions", this::handleRecord)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions", this::handleList)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions/:actionId", this::handleGet)
-            .build();
+            .build()
+        );
     }
 
     private Promise<HttpResponse> handleRecord(HttpRequest request) {

@@ -35,13 +35,13 @@ export interface LifecycleBreadcrumbProps {
 
 const PHASE_LABELS: Record<LifecyclePhase, string> = {
     INTENT: 'Intent',
-    CONTEXT: 'Context',
-    PLAN: 'Plan',
-    EXECUTE: 'Execute',
-    VERIFY: 'Verify',
+    SHAPE: 'Shape',
+    VALIDATE: 'Validate',
+    GENERATE: 'Generate',
+    RUN: 'Run',
     OBSERVE: 'Observe',
     LEARN: 'Learn',
-    INSTITUTIONALIZE: 'Institutionalize',
+    EVOLVE: 'Evolve',
 };
 
 /**

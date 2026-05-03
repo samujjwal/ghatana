@@ -12,6 +12,7 @@ import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin.AuditEntry;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ public final class DigitalMarketingKernelAdapterImpl
     private final ConsentPlugin consentPlugin;
     private final HumanApprovalPlugin approvalPlugin;
     private final AuditTrailPlugin auditTrailPlugin;
+    private final RiskManagementPlugin riskManagementPlugin;
 
     /**
      * Constructs the adapter with all required kernel ports and platform plugins.
@@ -60,6 +62,7 @@ public final class DigitalMarketingKernelAdapterImpl
      * @param consentPlugin    consent verification plugin; must not be {@code null}
      * @param approvalPlugin   human approval plugin; must not be {@code null}
      * @param auditTrailPlugin audit trail plugin for DMOS domain audit entries; must not be {@code null}
+     * @param riskManagementPlugin risk plugin for model-driven risk scoring; must not be {@code null}
      */
     public DigitalMarketingKernelAdapterImpl(
             BridgeAuthorizationService authService,
@@ -67,11 +70,16 @@ public final class DigitalMarketingKernelAdapterImpl
             BridgeHealthIndicator healthIndicator,
             ConsentPlugin consentPlugin,
             HumanApprovalPlugin approvalPlugin,
-            AuditTrailPlugin auditTrailPlugin) {
+            AuditTrailPlugin auditTrailPlugin,
+            RiskManagementPlugin riskManagementPlugin) {
         super(BRIDGE_ID, authService, auditEmitter, healthIndicator);
         this.consentPlugin    = Objects.requireNonNull(consentPlugin,    "consentPlugin must not be null");
         this.approvalPlugin   = Objects.requireNonNull(approvalPlugin,   "approvalPlugin must not be null");
         this.auditTrailPlugin = Objects.requireNonNull(auditTrailPlugin, "auditTrailPlugin must not be null");
+        this.riskManagementPlugin = Objects.requireNonNull(
+            riskManagementPlugin,
+            "riskManagementPlugin must not be null"
+        );
     }
 
     // -----------------------------------------------------------------------
@@ -223,6 +231,67 @@ public final class DigitalMarketingKernelAdapterImpl
                 "[{}] Audit recorded: entryId={}, entityId={}, action={}, tenant={}",
                 BRIDGE_ID, id, entityId, action, context.getTenantId().getValue()
             ));
+    }
+
+    @Override
+    public Promise<Double> evaluateRisk(
+            DmOperationContext context,
+            String entityId,
+            String riskModelId,
+            Map<String, Object> factors) {
+        requireStarted();
+        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(entityId, "entityId must not be null");
+        Objects.requireNonNull(riskModelId, "riskModelId must not be null");
+        Objects.requireNonNull(factors, "factors must not be null");
+
+        return riskManagementPlugin.calculateRisk(
+                entityId,
+                new RiskManagementPlugin.RiskModelId(riskModelId),
+                factors
+            )
+            .map(RiskManagementPlugin.RiskScore::score)
+            .whenResult(score -> LOG.debug(
+                "[{}] Risk evaluated: entityId={}, model={}, score={}, tenant={}",
+                BRIDGE_ID,
+                entityId,
+                riskModelId,
+                score,
+                context.getTenantId().getValue()
+            ));
+    }
+
+    // -----------------------------------------------------------------------
+    // Notification (KE-02)
+    // -----------------------------------------------------------------------
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>KE-02 placeholder: emits a structured INFO log entry so every notification
+     * dispatch is observable via log-based alerting. When the platform
+     * {@code NotificationPlugin} lands the implementation here will delegate to it
+     * via the {@code KernelEventBus}.</p>
+     */
+    @Override
+    public Promise<Void> notifyUser(
+            DmOperationContext context,
+            String recipientId,
+            String template,
+            java.util.Map<String, String> attributes) {
+        requireStarted();
+        Objects.requireNonNull(context,     "context must not be null");
+        Objects.requireNonNull(recipientId, "recipientId must not be null");
+        Objects.requireNonNull(template,    "template must not be null");
+        Objects.requireNonNull(attributes,  "attributes must not be null");
+
+        LOG.info(
+            "[{}] Notification dispatched: recipientId={}, template={}, tenant={}, correlation={}",
+            BRIDGE_ID, recipientId, template,
+            context.getTenantId().getValue(),
+            context.getCorrelationId().getValue()
+        );
+        return Promise.of(null);
     }
 
     // -----------------------------------------------------------------------

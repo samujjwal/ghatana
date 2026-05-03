@@ -75,6 +75,9 @@ val dmosModules = listOf(
 	"dm-kernel-bridge",
 	"dm-domain",
 	"dm-application",
+	"dm-infra",
+	"dm-persistence",
+	"dm-connector-google-ads",
 	"dm-api",
 	"dm-integration-tests"
 )

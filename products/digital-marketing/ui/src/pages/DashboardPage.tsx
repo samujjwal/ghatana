@@ -83,9 +83,17 @@ export function DashboardPage(): React.ReactElement {
           isLoading={isLoading}
           isError={isError}
         />
-        <WorkflowStatusWidget />
+        <WorkflowStatusWidget
+          approvals={approvals}
+          isLoading={isLoading}
+          isError={isError}
+        />
         <GrowthGoalWidget />
-        <RiskComplianceWidget />
+        <RiskComplianceWidget
+          approvals={approvals}
+          isLoading={isLoading}
+          isError={isError}
+        />
         <AiActionLogWidget
           workspaceId={workspaceId ?? ''}
           entries={aiActions.entries}

@@ -6,21 +6,21 @@
  * @doc.layer frontend
  */
 
-const AUTH_TOKEN_KEY = 'dmos_auth_token';
+let runtimeAuthToken: string | null = null;
 
 export const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '';
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return runtimeAuthToken;
 }
 
 export function setAuthToken(token: string): void {
-  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  runtimeAuthToken = token;
 }
 
 export function clearAuthToken(): void {
-  localStorage.removeItem(AUTH_TOKEN_KEY);
+  runtimeAuthToken = null;
 }
 
 export interface FetchOptions extends Omit<RequestInit, 'body'> {

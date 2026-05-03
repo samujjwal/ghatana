@@ -77,7 +77,8 @@ public final class DmosBudgetRecommendationServlet {
      * @return configured async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation",
                 this::handleRecommendBudget)
             .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation/:recId/submit",
@@ -86,7 +87,8 @@ public final class DmosBudgetRecommendationServlet {
                 this::handleApproveRecommendation)
             .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/budget-recommendation",
                 this::handleGetLatestRecommendation)
-            .build();
+            .build()
+        );
     }
 
     // ---- handlers ----

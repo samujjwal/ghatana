@@ -22,13 +22,27 @@
  * @doc.pattern ReactFlow Custom Node
  */
 
-import React, { memo, useCallback, useState } from 'react';
-import { Handle, Position, NodeResizer, type Node, type NodeProps, useReactFlow } from '@xyflow/react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflow/react';
 import { Box, Button, IconButton, Typography } from '@ghatana/design-system';
 import { Maximize2 as ExpandIcon, Minimize2 as CollapseIcon, Layout as PageIcon } from 'lucide-react';
+import { useSetAtom } from 'jotai';
 
 import { PageDesigner } from '@/components/canvas/page/PageDesigner';
-import type { BuilderDocument } from '@ghatana/ui-builder';
+import { LivePreviewPanel } from '@/components/studio/LivePreviewPanel';
+import { executeCommandAtom, UpdateNodeDataCommand } from '../workspace/canvasCommands';
+import {
+  getBuilderDocument,
+  getSerializedNodeCount,
+  updatePageArtifactDocument,
+  type PageArtifactDocument,
+} from '../page/pageArtifactDocument';
+import {
+  AutosaveOrchestrator,
+  LocalStoragePersistenceAdapter,
+  type BuilderDocument,
+  type ValidationResult,
+} from '@ghatana/ui-builder';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,9 +56,11 @@ export interface PageDesignerNodeData extends Record<string, unknown> {
    * Stored in node data so the canvas persistence layer can round-trip it.
    * When undefined the PageDesigner starts with an empty document.
    */
-  document?: BuilderDocument;
+  pageDocument?: PageArtifactDocument;
   /** Whether the node is in expanded editing mode (persisted in node data) */
   expanded?: boolean;
+  /** Latest validation summary for inline governance badges */
+  validationSummary?: PageArtifactDocument['validationSummary'];
 }
 
 export type PageDesignerCanvasNode = Node<PageDesignerNodeData, 'page-designer'>;
@@ -67,36 +83,100 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
   data,
   selected,
 }) => {
-  const { updateNodeData } = useReactFlow();
+  const executeCommand = useSetAtom(executeCommandAtom);
   const [isExpanded, setIsExpanded] = useState<boolean>(data.expanded ?? false);
+  const builderDocument = useMemo(() => getBuilderDocument(data.pageDocument), [data.pageDocument]);
+  const autosaveRef = useRef<AutosaveOrchestrator | null>(null);
+  const latestPageDocumentRef = useRef<PageArtifactDocument | undefined>(data.pageDocument);
 
-  const nodeCount = data.document
-    ? [...((data.document as BuilderDocument).nodes?.values() ?? [])].length
-    : 0;
+  const nodeCount = getSerializedNodeCount(data.pageDocument);
+
+  useEffect(() => {
+    latestPageDocumentRef.current = data.pageDocument;
+  }, [data.pageDocument]);
+
+  useEffect(() => {
+    autosaveRef.current = new AutosaveOrchestrator(
+      new LocalStoragePersistenceAdapter('@ghatana/yappc:page-builder:'),
+      {
+        debounceMs: 500,
+        labelFn: (document) => `Page builder autosave (${document.name})`,
+        onSaved: () => {
+          const latestPageDocument = latestPageDocumentRef.current;
+          if (!latestPageDocument || latestPageDocument.syncStatus === 'synced') {
+            return;
+          }
+
+          executeCommand(
+            new UpdateNodeDataCommand(
+              id,
+              { pageDocument: latestPageDocument } as Record<string, unknown>,
+              {
+                pageDocument: {
+                  ...latestPageDocument,
+                  syncStatus: 'synced',
+                },
+              } as Record<string, unknown>,
+              'Mark page document synced',
+            ),
+          );
+        },
+      },
+    );
+
+    return () => {
+      autosaveRef.current?.dispose();
+      autosaveRef.current = null;
+    };
+  }, [executeCommand, id]);
+
+  useEffect(() => {
+    if (!builderDocument || !data.pageDocument || data.pageDocument.syncStatus !== 'dirty') {
+      return;
+    }
+
+    autosaveRef.current?.schedule(builderDocument);
+  }, [builderDocument, data.pageDocument]);
 
   const handleToggleExpand = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       const next = !isExpanded;
       setIsExpanded(next);
-      updateNodeData(id, {
-        ...data,
-        expanded: next,
-        // Resize the node to match the expanded/collapsed dimensions
-        style: {
-          width: next ? EXPANDED_WIDTH : COLLAPSED_WIDTH,
-          height: next ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT,
-        },
-      });
+      executeCommand(
+        new UpdateNodeDataCommand(
+          id,
+          { expanded: data.expanded } as Record<string, unknown>,
+          { expanded: next } as Record<string, unknown>,
+          next ? 'Expand page designer' : 'Collapse page designer',
+        ),
+      );
     },
-    [id, data, isExpanded, updateNodeData],
+    [data.expanded, executeCommand, id, isExpanded],
   );
 
   const handleDocumentChange = useCallback(
-    (doc: BuilderDocument) => {
-      updateNodeData(id, { ...data, document: doc });
+    (pageDocument: PageArtifactDocument, _document: BuilderDocument, validation: ValidationResult) => {
+      executeCommand(
+        new UpdateNodeDataCommand(
+          id,
+          {
+            pageDocument: data.pageDocument,
+            validationSummary: data.validationSummary,
+          } as Record<string, unknown>,
+          {
+            pageDocument,
+            validationSummary: {
+              valid: validation.valid,
+              errorCount: validation.errors.length,
+              warningCount: validation.warnings.length,
+            },
+          } as Record<string, unknown>,
+          'Update page document',
+        ),
+      );
     },
-    [id, data, updateNodeData],
+    [data.pageDocument, data.validationSummary, executeCommand, id],
   );
 
   const borderColor = selected ? 'var(--color-primary-500, #6366f1)' : 'var(--color-border, #d1d5db)';
@@ -148,14 +228,14 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
             {data.label ?? 'Page'}
           </Typography>
 
-          {!isExpanded && nodeCount > 0 && (
+          {!isExpanded && nodeCount > 0 ? (
             <Typography
               variant="caption"
               style={{ color: 'var(--color-text-secondary, #6b7280)', flexShrink: 0 }}
             >
               {nodeCount} component{nodeCount !== 1 ? 's' : ''}
             </Typography>
-          )}
+          ) : null}
 
           <IconButton
             size="small"
@@ -170,11 +250,36 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
         {/* Body */}
         {isExpanded ? (
           /* Full PageDesigner embedded directly in the canvas node */
-          <Box className="flex-1 overflow-hidden" style={{ contain: 'strict' }}>
-            <PageDesigner
-              initialComponents={data.document}
-              onDocumentChange={handleDocumentChange}
-            />
+          <Box className="flex h-full flex-1 overflow-hidden" style={{ contain: 'strict' }}>
+            <Box className="min-w-0 flex-1 overflow-hidden">
+              <PageDesigner
+                initialComponents={builderDocument}
+                onDocumentChange={(document, validation) => {
+                  if (!data.pageDocument) {
+                    return;
+                  }
+
+                  const pageDocument: PageArtifactDocument = updatePageArtifactDocument(
+                    data.pageDocument,
+                    document,
+                    'page-designer',
+                    'dirty',
+                    {
+                      valid: validation.valid,
+                      errorCount: validation.errors.length,
+                      warningCount: validation.warnings.length,
+                    },
+                  );
+                  handleDocumentChange(pageDocument, document, validation);
+                }}
+              />
+            </Box>
+            <Box className="w-[360px] border-l border-slate-200">
+              <LivePreviewPanel
+                document={builderDocument}
+                validation={data.validationSummary}
+              />
+            </Box>
           </Box>
         ) : (
           /* Collapsed placeholder */
@@ -243,7 +348,8 @@ export const PageDesignerNode = memo(PageDesignerNodeInner, (prev, next) => {
     prev.selected === next.selected &&
     prev.data.label === next.data.label &&
     prev.data.expanded === next.data.expanded &&
-    prev.data.document === next.data.document
+    prev.data.pageDocument === next.data.pageDocument &&
+    prev.data.validationSummary === next.data.validationSummary
   );
 });
 

@@ -12,6 +12,7 @@ import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -55,7 +56,8 @@ class CampaignLoadPerfIT extends EventloopTestBase {
                 1,
                 0.0,
                 1000.0
-            ))
+            )),
+            DmosMetricsCollector.noop()
         );
 
         ctx = DmOperationContext.builder()

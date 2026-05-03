@@ -11,7 +11,6 @@ import {
   Box,
   Stack,
   Typography,
-  TextField,
   Button,
   Paper,
   Alert,
@@ -97,7 +96,12 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
 
   return (
     <Box data-testid="json-editor">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ mb: 2 }}
+      >
         <Stack direction="row" alignItems="center" spacing={1}>
           <CodeIcon size={16} />
           <Typography variant="h6">JSON Editor</Typography>
@@ -136,28 +140,17 @@ export const JsonEditor: React.FC<JsonEditorProps> = ({
       )}
 
       <Paper variant="outlined" className="relative">
-        <TextField
-          multiline
+        <textarea
           value={jsonText}
-          onChange={(e) => handleJsonChange(e.target.value)}
+          onChange={(event) => handleJsonChange(event.target.value)}
           disabled={readOnly}
-          fullWidth
           rows={20}
-          sx={{
-            fontFamily: 'monospace',
-            fontSize: '0.875rem',
-            '& .MuiInputBase-input': {
-              fontFamily: 'monospace',
-            },
-          }}
-          InputProps={{
-            readOnly,
-          }}
           data-testid="json-textarea"
+          className="min-h-[28rem] w-full resize-y border-0 bg-transparent p-3 font-mono text-sm outline-none"
         />
       </Paper>
 
-      <Stack direction="row" justifyContent="space-between" mt={1}>
+      <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
         <Typography variant="caption" color="text.secondary">
           {jsonText.length} characters
         </Typography>

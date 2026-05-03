@@ -1,199 +1,205 @@
-// Core UI components from @ghatana/yappc-ui
 import {
+  Box,
   Button,
   Card,
   CardContent,
   CardHeader,
   TextField,
   Typography,
-  Box,
 } from '@ghatana/design-system';
-
 import React from 'react';
 
-import type {
-  ComponentData,
-  ButtonData,
-  CardData,
-  TextFieldData,
-  TypographyData,
-  BoxData,
-} from './schemas';
+import { getContractByName } from './registry';
 
-const mapButtonVariant = (variant: ButtonData['variant']) => {
-  switch (variant) {
-    case 'contained':
-      return 'solid';
-    case 'outlined':
-      return 'outline';
-    case 'text':
-      return 'ghost';
-    default:
-      return 'solid';
+import type { BuilderDocument, ComponentInstance, NodeId } from '@ghatana/ui-builder';
+type TypographyAlign = React.ComponentProps<typeof Typography>['align'];
+
+export interface ComponentRendererProps {
+  readonly document: BuilderDocument;
+  readonly nodeId: NodeId;
+  readonly selectedNodeId?: string | null;
+  readonly onSelect?: (nodeId: string) => void;
+}
+
+function renderSlot(
+  document: BuilderDocument,
+  slotIds: readonly NodeId[] | undefined,
+  selectedNodeId: string | null | undefined,
+  onSelect: ((nodeId: string) => void) | undefined,
+): React.ReactNode {
+  if (!slotIds?.length) {
+    return null;
   }
-};
 
-const mapButtonTone = (color: ButtonData['color']) => {
-  switch (color) {
-    case 'error':
-      return 'danger';
+  return slotIds.map((childId) => (
+    <ComponentRenderer
+      key={childId}
+      document={document}
+      nodeId={childId}
+      selectedNodeId={selectedNodeId}
+      onSelect={onSelect}
+    />
+  ));
+}
+
+function getSelectionStyle(isSelected: boolean): React.CSSProperties {
+  return {
+    outline: isSelected ? '2px solid #1976d2' : '1px solid transparent',
+    outlineOffset: '2px',
+    cursor: 'pointer',
+    borderRadius: 8,
+  };
+}
+
+function renderInstance(
+  instance: ComponentInstance,
+  document: BuilderDocument,
+  selectedNodeId: string | null | undefined,
+  onSelect: ((nodeId: string) => void) | undefined,
+): React.ReactNode {
+  const slotDefault = renderSlot(
+    document,
+    instance.slots.default,
+    selectedNodeId,
+    onSelect,
+  );
+  const slotActions = renderSlot(
+    document,
+    instance.slots.actions,
+    selectedNodeId,
+    onSelect,
+  );
+
+  switch (instance.contractName) {
+    case 'Button':
+      return (
+        <Button
+          variant={instance.props.variant as 'solid' | 'outline' | 'ghost' | undefined}
+          tone={instance.props.color as
+            | 'primary'
+            | 'secondary'
+            | 'success'
+            | 'warning'
+            | 'danger'
+            | 'info'
+            | undefined}
+          size={instance.props.size === 'small' ? 'sm' : instance.props.size === 'large' ? 'lg' : 'md'}
+          disabled={Boolean(instance.props.disabled)}
+          fullWidth={Boolean(instance.props.fullWidth)}
+        >
+          {(instance.props.children as React.ReactNode) ?? instance.metadata.name ?? 'Button'}
+        </Button>
+      );
+    case 'Card':
+      return (
+        <Card elevation={typeof instance.props.elevation === 'number' ? instance.props.elevation : 2}>
+          {instance.props.title || instance.props.subtitle ? (
+            <CardHeader
+              title={instance.props.title as string | undefined}
+              subheader={instance.props.subtitle as string | undefined}
+            />
+          ) : null}
+          <CardContent>
+            {instance.props.content ? (
+              <Typography>{instance.props.content as string}</Typography>
+            ) : null}
+            {slotDefault}
+          </CardContent>
+          {slotActions ? <Box className="flex gap-2 px-4 pb-4">{slotActions}</Box> : null}
+        </Card>
+      );
+    case 'TextField':
+      return (
+        <TextField
+          label={instance.props.label as string | undefined}
+          placeholder={instance.props.placeholder as string | undefined}
+          size={instance.props.size === 'small' ? 'sm' : 'md'}
+          required={Boolean(instance.props.required)}
+          disabled={Boolean(instance.props.disabled)}
+          style={Boolean(instance.props.fullWidth) ? { width: '100%' } : undefined}
+        />
+      );
+    case 'Typography':
+      return (
+        <Typography
+          variant={instance.props.variant as never}
+          color={instance.props.color as never}
+          align={mapTextAlign(instance.props.align as string | undefined)}
+        >
+          {(instance.props.children as React.ReactNode) ?? instance.metadata.name}
+        </Typography>
+      );
+    case 'Box':
+      return (
+        <Box
+          p={typeof instance.props.padding === 'number' ? instance.props.padding : 2}
+          m={typeof instance.props.margin === 'number' ? instance.props.margin : 0}
+          backgroundColor={instance.props.backgroundColor as string | undefined}
+          borderRadius={typeof instance.props.borderRadius === 'number' ? instance.props.borderRadius : 0}
+          style={{
+            display: (instance.props.display as string | undefined) ?? 'block',
+            flexDirection: instance.props.flexDirection as React.CSSProperties['flexDirection'],
+            justifyContent: instance.props.justifyContent as React.CSSProperties['justifyContent'],
+            alignItems: instance.props.alignItems as React.CSSProperties['alignItems'],
+            minHeight: 64,
+            border: '1px dashed #d1d5db',
+          }}
+        >
+          {slotDefault}
+        </Box>
+      );
     default:
-      return color;
+      return (
+        <Typography color="danger">
+          Unknown component contract: {instance.contractName}
+        </Typography>
+      );
   }
-};
-
-const mapButtonSize = (size: ButtonData['size']) => {
-  switch (size) {
-    case 'small':
-      return 'sm';
-    case 'large':
-      return 'lg';
-    case 'medium':
-    default:
-      return 'md';
-  }
-};
-
-const mapTypographyColor = (color: TypographyData['color'] | undefined) => {
-  switch (color) {
-    case 'primary':
-    case 'secondary':
-      return color;
-    case 'error':
-      return 'danger';
-    case 'textPrimary':
-      return 'default';
-    case 'textSecondary':
-      return 'subtle';
-    default:
-      return undefined;
-  }
-};
-
-/**
- *
- */
-interface ComponentRendererProps {
-  data: ComponentData;
-  isSelected?: boolean;
-  onClick?: () => void;
 }
 
 export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
-  data,
-  isSelected = false,
-  onClick,
+  document,
+  nodeId,
+  selectedNodeId,
+  onSelect,
 }) => {
-  const wrapperStyle = {
-    outline: isSelected ? '2px solid #1976d2' : 'none',
-    outlineOffset: '2px',
-    cursor: 'pointer',
-    position: 'relative' as const,
-  };
-
-  switch (data.type) {
-    case 'button': {
-      const buttonData = data as ButtonData;
-      return (
-        <div style={wrapperStyle} onClick={onClick} data-testid="page-button">
-          <Button
-            variant={mapButtonVariant(buttonData.variant)}
-            tone={mapButtonTone(buttonData.color)}
-            size={mapButtonSize(buttonData.size)}
-            disabled={buttonData.disabled}
-            fullWidth={buttonData.fullWidth}
-          >
-            {buttonData.text}
-          </Button>
-        </div>
-      );
-    }
-
-    case 'card': {
-      const cardData = data as CardData;
-      return (
-        <div style={wrapperStyle} onClick={onClick} data-testid="page-card">
-          <Card elevation={cardData.elevation}>
-            {cardData.title && (
-              <CardHeader
-                title={cardData.title}
-                subheader={cardData.subtitle}
-              />
-            )}
-            {cardData.content && (
-              <CardContent>
-                <Typography>{cardData.content}</Typography>
-              </CardContent>
-            )}
-          </Card>
-        </div>
-      );
-    }
-
-    case 'textfield': {
-      const textFieldData = data as TextFieldData;
-      return (
-        <div style={wrapperStyle} onClick={onClick} data-testid="page-textfield">
-          <TextField
-            label={textFieldData.label}
-            placeholder={textFieldData.placeholder}
-            size={textFieldData.size === 'small' ? 'sm' : 'md'}
-            required={textFieldData.required}
-            disabled={textFieldData.disabled}
-            style={textFieldData.fullWidth ? { width: '100%' } : undefined}
-          />
-        </div>
-      );
-    }
-
-    case 'typography': {
-      const typographyData = data as TypographyData;
-      return (
-        <div style={wrapperStyle} onClick={onClick} data-testid="page-typography">
-          <Typography
-            variant={typographyData.variant}
-            color={mapTypographyColor(typographyData.color)}
-            align={typographyData.align}
-          >
-            {typographyData.text}
-          </Typography>
-        </div>
-      );
-    }
-
-    case 'box': {
-      const boxData = data as BoxData;
-      return (
-        <div style={wrapperStyle} onClick={onClick} data-testid="page-box">
-          <Box
-            p={boxData.padding}
-            m={boxData.margin}
-            backgroundColor={boxData.backgroundColor}
-            borderRadius={boxData.borderRadius}
-            style={{
-              display: boxData.display,
-              flexDirection: boxData.flexDirection,
-              justifyContent: boxData.justifyContent,
-              alignItems: boxData.alignItems,
-              minHeight: 50,
-              border: '1px dashed #ccc',
-            }}
-          >
-            <Typography variant="caption" color="subtle">
-              Container
-            </Typography>
-          </Box>
-        </div>
-      );
-    }
-
-    default:
-      return (
-        <div style={wrapperStyle} onClick={onClick}>
-          <Typography color="danger">
-            Unknown component type: {data.type}
-          </Typography>
-        </div>
-      );
+  const instance = document.nodes.get(nodeId);
+  if (!instance) {
+    return null;
   }
+
+  const isSelected = selectedNodeId === nodeId;
+  const contract = getContractByName(instance.contractName);
+  const testId = contract?.name
+    ? `page-${contract.name.toLowerCase()}`
+    : `page-${instance.contractName.toLowerCase()}`;
+
+  return (
+    <div
+      style={getSelectionStyle(isSelected)}
+      data-testid={testId}
+      data-builder-node-id={nodeId}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect?.(nodeId);
+      }}
+    >
+      {renderInstance(instance, document, selectedNodeId, onSelect)}
+    </div>
+  );
 };
+function mapTextAlign(
+  align: string | undefined,
+): TypographyAlign {
+  switch (align) {
+    case 'left':
+      return 'start';
+    case 'right':
+      return 'end';
+    case 'center':
+    case 'justify':
+      return align;
+    default:
+      return undefined;
+  }
+}

@@ -33,6 +33,8 @@ public final class BudgetRecommendationServiceImpl implements BudgetRecommendati
     private static final Logger LOG = LoggerFactory.getLogger(BudgetRecommendationServiceImpl.class);
 
     static final String MODEL_VERSION = "v1.0";
+    private static final double MAX_BUDGET_RECOMMENDATION_RISK_SCORE = 0.85d;
+    private static final String BUDGET_RECOMMENDATION_RISK_MODEL = "DM_BUDGET_RECOMMENDATION";
 
     /** MVP channel split percentages. */
     private static final double SEARCH_PCT = 0.70;
@@ -66,12 +68,34 @@ public final class BudgetRecommendationServiceImpl implements BudgetRecommendati
                         new SecurityException("Actor not authorized to generate a budget recommendation"));
                 }
                 BudgetRecommendation rec = buildRecommendation(ctx, command);
-                return repository.save(rec)
-                    .then(saved -> kernelAdapter.recordAudit(ctx, saved.getRecommendationId(),
-                            "budget-recommendation-generated",
-                            Map.of("totalMonthlyCap", Double.toString(saved.getTotalMonthlyCap()),
-                                   "modelVersion", MODEL_VERSION))
-                        .map(__ -> saved));
+                return kernelAdapter.evaluateRisk(
+                        ctx,
+                        rec.getRecommendationId(),
+                        BUDGET_RECOMMENDATION_RISK_MODEL,
+                        Map.of(
+                            "totalMonthlyCap", rec.getTotalMonthlyCap(),
+                            "changeThresholdPct", rec.getChangeThresholdPct()
+                        )
+                    )
+                    .then(score -> {
+                        if (score > MAX_BUDGET_RECOMMENDATION_RISK_SCORE) {
+                            return Promise.ofException(new SecurityException(
+                                "Budget recommendation risk score " + score
+                                    + " exceeds threshold " + MAX_BUDGET_RECOMMENDATION_RISK_SCORE
+                            ));
+                        }
+
+                        return repository.save(rec)
+                            .then(saved -> kernelAdapter.recordAudit(ctx, saved.getRecommendationId(),
+                                    "budget-recommendation-generated",
+                                    Map.of(
+                                        "totalMonthlyCap", Double.toString(saved.getTotalMonthlyCap()),
+                                        "modelVersion", MODEL_VERSION,
+                                        "riskModel", BUDGET_RECOMMENDATION_RISK_MODEL,
+                                        "riskScore", Double.toString(score)
+                                    ))
+                                .map(__ -> saved));
+                    });
             });
     }
 

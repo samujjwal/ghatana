@@ -50,5 +50,5 @@ export async function fetchProjectAiCost(
     `${API_BASE_URL}/projects/${encodeURIComponent(projectId)}/ai-cost`,
     { credentials: 'include' }
   );
-  return parseJsonResponse<ProjectAiCostResponse>(response);
+  return parseJsonResponse<ProjectAiCostResponse>(response, 'fetch project AI cost');
 }

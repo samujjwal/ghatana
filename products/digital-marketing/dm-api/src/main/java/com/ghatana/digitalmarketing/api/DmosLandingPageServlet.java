@@ -82,14 +82,16 @@ public final class DmosLandingPageServlet {
      * @return async servlet
      */
     public AsyncServlet getServlet() {
-        return RoutingServlet.builder(eventloop)
+        return DmosApiRateLimiter.wrap(
+        RoutingServlet.builder(eventloop)
             .with(HttpMethod.POST,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/landing-page/generate",
                 this::handleGenerateDraft)
             .with(HttpMethod.GET,
                 "/v1/workspaces/:workspaceId/content-items/:itemId/landing-page/latest-approved",
                 this::handleGetLatestApproved)
-            .build();
+            .build()
+        );
     }
 
     // -------------------------------------------------------------------------

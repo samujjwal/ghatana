@@ -37,6 +37,51 @@ type Pages = {
       "projectId": string;
     };
   };
+  "/p/:projectId/intent": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/shape": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/validate": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/generate": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/run": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/observe": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/learn": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/evolve": {
+    params: {
+      "projectId": string;
+    };
+  };
+  "/p/:projectId/settings": {
+    params: {
+      "projectId": string;
+    };
+  };
   "/p/:projectId/canvas": {
     params: {
       "projectId": string;
@@ -52,15 +97,19 @@ type Pages = {
       "projectId": string;
     };
   };
-  "/p/:projectId/settings": {
-    params: {
-      "projectId": string;
-    };
-  };
   "/p/:projectId/lifecycle": {
     params: {
       "projectId": string;
     };
+  };
+  "/admin/prompt-versions": {
+    params: {};
+  };
+  "/admin/ab-testing": {
+    params: {};
+  };
+  "/admin/feature-flags": {
+    params: {};
   };
   "/*": {
     params: {
@@ -72,11 +121,11 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle" | "/admin/prompt-versions" | "/admin/ab-testing" | "/admin/feature-flags" | "/*";
   };
   "routes/_root.tsx": {
     id: "routes/_root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle" | "/*";
+    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle" | "/admin/prompt-versions" | "/admin/ab-testing" | "/admin/feature-flags" | "/*";
   };
   "routes/dashboard.tsx": {
     id: "routes/dashboard";
@@ -92,7 +141,7 @@ type RouteFiles = {
   };
   "routes/_shell.tsx": {
     id: "routes/_shell";
-    page: "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle" | "/admin/prompt-versions" | "/admin/ab-testing" | "/admin/feature-flags";
   };
   "routes/app/workspaces.tsx": {
     id: "routes/app/workspaces";
@@ -112,11 +161,47 @@ type RouteFiles = {
   };
   "routes/app/project/_shell.tsx": {
     id: "routes/app/project/_shell";
-    page: "/p/:projectId" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/settings" | "/p/:projectId/lifecycle";
+    page: "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle";
   };
   "routes/app/project/index.tsx": {
     id: "routes/app/project/index";
     page: "/p/:projectId";
+  };
+  "routes/app/project/intent.tsx": {
+    id: "routes/app/project/intent";
+    page: "/p/:projectId/intent";
+  };
+  "routes/app/project/shape.tsx": {
+    id: "routes/app/project/shape";
+    page: "/p/:projectId/shape";
+  };
+  "routes/app/project/validate.tsx": {
+    id: "routes/app/project/validate";
+    page: "/p/:projectId/validate";
+  };
+  "routes/app/project/generate.tsx": {
+    id: "routes/app/project/generate";
+    page: "/p/:projectId/generate";
+  };
+  "routes/app/project/run.tsx": {
+    id: "routes/app/project/run";
+    page: "/p/:projectId/run";
+  };
+  "routes/app/project/observe.tsx": {
+    id: "routes/app/project/observe";
+    page: "/p/:projectId/observe";
+  };
+  "routes/app/project/learn.tsx": {
+    id: "routes/app/project/learn";
+    page: "/p/:projectId/learn";
+  };
+  "routes/app/project/evolve.tsx": {
+    id: "routes/app/project/evolve";
+    page: "/p/:projectId/evolve";
+  };
+  "routes/app/project/settings.tsx": {
+    id: "routes/app/project/settings";
+    page: "/p/:projectId/settings";
   };
   "routes/app/project/canvas.tsx": {
     id: "routes/app/project/canvas";
@@ -130,13 +215,21 @@ type RouteFiles = {
     id: "routes/app/project/deploy";
     page: "/p/:projectId/deploy";
   };
-  "routes/app/project/settings.tsx": {
-    id: "routes/app/project/settings";
-    page: "/p/:projectId/settings";
-  };
   "routes/app/project/lifecycle.tsx": {
     id: "routes/app/project/lifecycle";
     page: "/p/:projectId/lifecycle";
+  };
+  "routes/app/admin/prompt-versions.tsx": {
+    id: "routes/app/admin/prompt-versions";
+    page: "/admin/prompt-versions";
+  };
+  "routes/app/admin/ab-testing.tsx": {
+    id: "routes/app/admin/ab-testing";
+    page: "/admin/ab-testing";
+  };
+  "routes/app/admin/feature-flags.tsx": {
+    id: "routes/app/admin/feature-flags";
+    page: "/admin/feature-flags";
   };
   "routes/not-found.tsx": {
     id: "routes/not-found";
@@ -157,10 +250,21 @@ type RouteModules = {
   "routes/settings": typeof import("./src/routes/settings.tsx");
   "routes/app/project/_shell": typeof import("./src/routes/app/project/_shell.tsx");
   "routes/app/project/index": typeof import("./src/routes/app/project/index.tsx");
+  "routes/app/project/intent": typeof import("./src/routes/app/project/intent.tsx");
+  "routes/app/project/shape": typeof import("./src/routes/app/project/shape.tsx");
+  "routes/app/project/validate": typeof import("./src/routes/app/project/validate.tsx");
+  "routes/app/project/generate": typeof import("./src/routes/app/project/generate.tsx");
+  "routes/app/project/run": typeof import("./src/routes/app/project/run.tsx");
+  "routes/app/project/observe": typeof import("./src/routes/app/project/observe.tsx");
+  "routes/app/project/learn": typeof import("./src/routes/app/project/learn.tsx");
+  "routes/app/project/evolve": typeof import("./src/routes/app/project/evolve.tsx");
+  "routes/app/project/settings": typeof import("./src/routes/app/project/settings.tsx");
   "routes/app/project/canvas": typeof import("./src/routes/app/project/canvas.tsx");
   "routes/app/project/preview": typeof import("./src/routes/app/project/preview.tsx");
   "routes/app/project/deploy": typeof import("./src/routes/app/project/deploy.tsx");
-  "routes/app/project/settings": typeof import("./src/routes/app/project/settings.tsx");
   "routes/app/project/lifecycle": typeof import("./src/routes/app/project/lifecycle.tsx");
+  "routes/app/admin/prompt-versions": typeof import("./src/routes/app/admin/prompt-versions.tsx");
+  "routes/app/admin/ab-testing": typeof import("./src/routes/app/admin/ab-testing.tsx");
+  "routes/app/admin/feature-flags": typeof import("./src/routes/app/admin/feature-flags.tsx");
   "routes/not-found": typeof import("./src/routes/not-found.tsx");
 };

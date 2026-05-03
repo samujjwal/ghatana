@@ -67,14 +67,14 @@ function BillingPage() {
 
 export function Component() {
   return (
-    <RouteErrorBoundary>
-      <BillingGate>
-        <Suspense fallback={<RouteLoadingSpinner />}>
-          <BillingPage />
-        </Suspense>
-      </BillingGate>
-    </RouteErrorBoundary>
+    <BillingGate>
+      <Suspense fallback={<RouteLoadingSpinner />}>
+        <BillingPage />
+      </Suspense>
+    </BillingGate>
   );
 }
+
+export const ErrorBoundary = RouteErrorBoundary;
 
 export default Component;

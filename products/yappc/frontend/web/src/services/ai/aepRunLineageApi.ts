@@ -77,7 +77,7 @@ export async function fetchAepRunLineageRaw(
     `${API_BASE_URL}/v1/agents/runs/${encodeURIComponent(runId)}/lineage`,
     { credentials: 'include' }
   );
-  return parseJsonResponse<AepRunLineageResponse>(response);
+  return parseJsonResponse<AepRunLineageResponse>(response, 'fetch AEP run lineage');
 }
 
 /**

@@ -161,6 +161,8 @@ include(":products:digital-marketing:dm-domain-packs")
 include(":products:digital-marketing:dm-kernel-bridge")
 include(":products:digital-marketing:dm-domain")
 include(":products:digital-marketing:dm-application")
+include(":products:digital-marketing:dm-infra")
+include(":products:digital-marketing:dm-connector-google-ads")
 include(":products:digital-marketing:dm-api")
 include(":products:digital-marketing:dm-integration-tests")
 

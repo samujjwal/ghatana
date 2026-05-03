@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.application.adcopy;
 
 import com.ghatana.digitalmarketing.application.content.ContentItemService;
+import com.ghatana.digitalmarketing.application.DmosFeatureFlags;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.content.ClaimReference;
@@ -74,7 +75,14 @@ public final class AdCopyGeneratorServiceImpl implements AdCopyGeneratorService 
         Objects.requireNonNull(ctx,     "ctx must not be null");
         Objects.requireNonNull(command, "command must not be null");
 
-        return kernelAdapter.isAuthorized(ctx, "content", "write")
+        return kernelAdapter.isFeatureEnabled(ctx, DmosFeatureFlags.AI_ENABLED)
+            .then(aiEnabled -> {
+                if (!aiEnabled) {
+                    return Promise.ofException(
+                        new UnsupportedOperationException("AI features are currently disabled (dmos.ai.enabled=false)"));
+                }
+                return kernelAdapter.isAuthorized(ctx, "content", "write");
+            })
             .then(authorized -> {
                 if (!authorized) {
                     return Promise.ofException(

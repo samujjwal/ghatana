@@ -11,6 +11,8 @@
  */
 
 import { useCallback, useState } from 'react';
+import type { LifecyclePhase } from '@/types/lifecycle';
+import type { LifecycleAutomationPlanRequest } from '@/services/lifecycle/api';
 
 type ApprovalDecisionStatus =
     | 'PENDING'
@@ -40,14 +42,14 @@ interface UseLifecycleTransitionParams {
         approvalId: string;
     }) => void;
     applyAutomationPlan: {
-        mutateAsync: (params: unknown) => Promise<unknown>;
+        mutateAsync: (params: { projectId: string; request: LifecycleAutomationPlanRequest }) => Promise<unknown>;
         isPending: boolean;
     };
     executeTask: {
-        mutateAsync: (params: unknown) => Promise<unknown>;
+        mutateAsync: (params: { taskId: string; input: Record<string, unknown> }) => Promise<unknown>;
         isPending: boolean;
     };
-    currentPhase: string;
+    currentPhase: LifecyclePhase;
 }
 
 interface LifecycleTransitionState {

@@ -13,6 +13,7 @@ dependencies {
     testImplementation(project(":products:digital-marketing:dm-domain-packs"))
     testImplementation(project(":products:digital-marketing:dm-kernel-bridge"))
     testImplementation(project(":products:digital-marketing:dm-application"))
+    testImplementation(project(":products:digital-marketing:dm-infra"))
     testImplementation(project(":products:digital-marketing:dm-api"))
 
     testImplementation(project(":platform-kernel:kernel-core"))
@@ -23,8 +24,11 @@ dependencies {
     testImplementation(project(":platform-plugins:plugin-consent"))
     testImplementation(project(":platform-plugins:plugin-human-approval"))
     testImplementation(project(":platform-plugins:plugin-audit-trail"))
+    testImplementation(project(":platform-plugins:plugin-risk-management"))
 
     testImplementation(libs.bundles.testing.core)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

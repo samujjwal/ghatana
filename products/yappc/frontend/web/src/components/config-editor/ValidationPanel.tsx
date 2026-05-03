@@ -110,7 +110,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ config }) => {
         </Alert>
       )}
 
-      <Stack direction="row" spacing={2} mt={2}>
+      <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
         <Chip
           label={`Components: ${config.components?.length || 0}`}
           variant="outlined"

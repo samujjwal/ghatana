@@ -90,7 +90,7 @@ export async function listRefactorSuggestions(
     `${API_BASE_URL}/refactoring-suggestions/${encodeURIComponent(designId)}`,
     { credentials: 'include' }
   );
-  return parseJsonResponse<RefactorSuggestionsResponse>(response);
+  return parseJsonResponse<RefactorSuggestionsResponse>(response, 'list refactor suggestions');
 }
 
 export async function simulateRefactorSuggestion(
@@ -101,7 +101,7 @@ export async function simulateRefactorSuggestion(
     `${API_BASE_URL}/refactoring-suggestions/${encodeURIComponent(designId)}/simulate/${encodeURIComponent(suggestionId)}`,
     { method: 'POST', credentials: 'include' }
   );
-  return parseJsonResponse<SimulateResult>(response);
+  return parseJsonResponse<SimulateResult>(response, 'simulate refactor suggestion');
 }
 
 export async function applyRefactorSuggestion(
@@ -112,7 +112,7 @@ export async function applyRefactorSuggestion(
     `${API_BASE_URL}/refactoring-suggestions/${encodeURIComponent(designId)}/apply/${encodeURIComponent(suggestionId)}`,
     { method: 'POST', credentials: 'include' }
   );
-  return parseJsonResponse<ApplyResult>(response);
+  return parseJsonResponse<ApplyResult>(response, 'apply refactor suggestion');
 }
 
 export async function undoRefactorSuggestion(
@@ -123,5 +123,5 @@ export async function undoRefactorSuggestion(
     `${API_BASE_URL}/refactoring-suggestions/${encodeURIComponent(designId)}/undo/${encodeURIComponent(suggestionId)}`,
     { method: 'POST', credentials: 'include' }
   );
-  return parseJsonResponse<UndoResult>(response);
+  return parseJsonResponse<UndoResult>(response, 'undo refactor suggestion');
 }

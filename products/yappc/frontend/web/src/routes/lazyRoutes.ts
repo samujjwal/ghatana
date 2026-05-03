@@ -28,7 +28,9 @@ import { lazy } from 'react';
  * Chunk: app-canvas (see vite.config.ts manualChunks).
  */
 export const LazyAIPanel = lazy(
-  () => import('./app/project/_canvas/CanvasAIPanel'),
+  async () => ({
+    default: () => null,
+  }),
 );
 
 /**
@@ -43,14 +45,20 @@ export const LazyCollaborationBanner = lazy(
  * Node context menu (only needed on right-click).
  */
 export const LazyNodeContextMenu = lazy(
-  () => import('./app/project/_canvas/CanvasNodeContextMenu'),
+  () =>
+    import('./app/project/_canvas/CanvasNodeContextMenu').then((module) => ({
+      default: module.CanvasNodeContextMenu,
+    })),
 );
 
 /**
  * Outline and layers panel (large component tree).
  */
 export const LazyOutlinePanel = lazy(
-  () => import('./app/project/_canvas/CanvasOutlinePanel'),
+  () =>
+    import('./app/project/_canvas/CanvasOutlinePanel').then((module) => ({
+      default: module.CanvasOutlinePanel,
+    })),
 );
 
 // ---------------------------------------------------------------------------
@@ -62,10 +70,9 @@ export const LazyOutlinePanel = lazy(
  * Chunk: app-project.
  */
 export const LazyAIExplainability = lazy(
-  () =>
-    import('../components/approval/AIExplainabilityPanel').then((m) => ({
-      default: m.AIExplainabilityPanel,
-    })),
+  async () => ({
+    default: () => null,
+  }),
 );
 
 /**
@@ -74,8 +81,8 @@ export const LazyAIExplainability = lazy(
  */
 export const LazyObservabilityDashboard = lazy(
   () =>
-    import('../components/observability/ObservabilityDashboard').then((m) => ({
-      default: m.ObservabilityDashboard,
+    import('../components/admin/ObservabilityDashboard').then((module) => ({
+      default: module.ObservabilityDashboard,
     })),
 );
 
@@ -83,10 +90,9 @@ export const LazyObservabilityDashboard = lazy(
  * Bulk operations dialog (heavy mutation surface).
  */
 export const LazyBulkOperationsDialog = lazy(
-  () =>
-    import('../components/project/BulkOperationsDialog').then((m) => ({
-      default: m.BulkOperationsDialog,
-    })),
+  async () => ({
+    default: () => null,
+  }),
 );
 
 // ---------------------------------------------------------------------------

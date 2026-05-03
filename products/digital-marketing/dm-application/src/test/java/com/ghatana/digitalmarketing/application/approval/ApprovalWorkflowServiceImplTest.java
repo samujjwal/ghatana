@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.application.approval;
 
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -48,7 +49,8 @@ class ApprovalWorkflowServiceImplTest extends EventloopTestBase {
         kernelAdapter      = new RecordingKernelAdapter();
         approvalPlugin     = new InMemoryApprovalPlugin();
         snapshotRepository = new InMemorySnapshotRepository();
-        service = new ApprovalWorkflowServiceImpl(kernelAdapter, approvalPlugin, snapshotRepository);
+        service = new ApprovalWorkflowServiceImpl(
+            kernelAdapter, approvalPlugin, snapshotRepository, DmosMetricsCollector.noop());
 
         ctx = DmOperationContext.builder()
             .tenantId(DmTenantId.of("tenant-1"))
