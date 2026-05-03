@@ -99,7 +99,7 @@ public final class RecommendationToCommandGateway {
                     GatewayStatus.REQUIRES_APPROVAL,
                     "Recommendation requires approval due to " + riskLevel,
                     null,
-                    logEntry.getId()
+                    logEntry.actionId()
                 );
             }
         });
@@ -193,7 +193,7 @@ public final class RecommendationToCommandGateway {
                 null, // TODO: Return actual command
                 GatewayStatus.CREATED,
                 "Command created from recommendation",
-                logEntry.getId(),
+                logEntry.actionId(),
                 null
             );
         });
@@ -210,22 +210,23 @@ public final class RecommendationToCommandGateway {
         DmWorkspaceId workspaceId,
         String principalId
     ) {
-        return AiActionLogEntry.builder()
-            .id(java.util.UUID.randomUUID().toString())
-            .tenantId(tenantId)
-            .workspaceId(workspaceId)
-            .agentType(recommendation.agentType())
-            .prompt(recommendation.prompt())
-            .model(recommendation.model())
-            .output(recommendation.output())
-            .confidence(recommendation.confidence())
-            .evidenceLocation(recommendation.evidenceLocation())
-            .durationMs(recommendation.durationMs())
-            .success(true)
-            .errorMessage(null)
-            .createdAt(Instant.now())
-            .createdBy(principalId)
-            .build();
+        return new AiActionLogEntry(
+            java.util.UUID.randomUUID().toString(),
+            workspaceId.getValue(),
+            "corr-" + java.util.UUID.randomUUID().toString(),
+            com.ghatana.digitalmarketing.domain.transparency.AiActionType.RECOMMENDATION,
+            com.ghatana.digitalmarketing.domain.transparency.AiActionStatus.fromStatus(status),
+            principalId,
+            true,
+            recommendation.confidence(),
+            List.of(),
+            List.of(),
+            "AI recommendation: " + recommendation.targetType(),
+            recommendation.output(),
+            recommendation.targetId(),
+            Instant.now(),
+            0L
+        );
     }
 
     /**

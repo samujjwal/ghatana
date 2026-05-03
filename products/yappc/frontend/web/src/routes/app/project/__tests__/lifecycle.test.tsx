@@ -36,6 +36,36 @@ vi.mock('../../../../services/canvas/lifecycle', () => ({
   }),
 }));
 
+  vi.mock('../../../../hooks/useAgentRunStream', () => ({
+    useAgentRunStream: () => ({
+      runs: [],
+      setRuns: vi.fn(),
+      isConnected: false,
+    }),
+  }));
+
+  vi.mock('../../../../hooks/useLifecycleTransition', () => ({
+    useLifecycleTransition: () => ({
+      initiateTransition: vi.fn(),
+      isTransitioning: false,
+      transitionError: null,
+      lastTransitionResult: null,
+    }),
+  }));
+
+  vi.mock('../../../../hooks/useAuth', () => ({
+    useAuth: () => ({
+      isAuthenticated: true,
+      currentUser: { id: 'user-1', email: 'user@example.com' },
+      currentSession: null,
+      getToken: () => null,
+      getAuthHeader: () => null,
+      hasPermission: () => false,
+      hasRole: () => false,
+      logout: vi.fn().mockResolvedValue(undefined),
+    }),
+  }));
+
 vi.mock('../../../../hooks/useLifecycleData', () => ({
   useAIRecommendations: () => ({
     data: [
