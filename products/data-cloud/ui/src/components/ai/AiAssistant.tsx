@@ -104,7 +104,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
                     return {
                         id,
                         role: 'assistant',
-                        content: `${explanation}\n\nQuery executed — **${execResp.rowCount} row(s)** returned in ${execResp.executionTimeMs}ms.${isFallback ? '\n\n_AI service unavailable — using heuristic SQL._' : ''}`,
+                        content: `${explanation}\n\nQuery executed — **${execResp.rowCount} row(s)** returned in ${execResp.executionTimeMs}ms.${isFallback ? '\n\n_Service unavailable — using heuristic SQL._' : ''}`,
                         type: 'sql',
                         timestamp: new Date(),
                         metadata: { sql, confidence },
@@ -122,7 +122,7 @@ async function generateResponse(userMessage: string): Promise<ChatMessage> {
         return {
             id,
             role: 'assistant',
-            content: `Query executed — ${result.rowCount} row(s) returned in ${result.executionTimeMs}ms.\n\n_AI service unavailable — used heuristic SQL generation._`,
+            content: `Query executed — ${result.rowCount} row(s) returned in ${result.executionTimeMs}ms.\n\n_Service unavailable — used heuristic SQL generation._`,
             type: 'sql',
             timestamp: new Date(),
             metadata: { sql: fallbackSql, confidence: 0.2 },
@@ -282,7 +282,7 @@ export function AiAssistant({ isOpen, onClose }: AiAssistantProps): React.ReactE
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-600 to-purple-600">
                 <div className="flex items-center gap-2 text-white">
                     <Sparkles className="h-5 w-5" />
-                    <span className="font-semibold">AI Assistant</span>
+                    <span className="font-semibold">Assistant</span>
                 </div>
                 <button
                     onClick={onClose}

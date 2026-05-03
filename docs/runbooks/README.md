@@ -1,10 +1,16 @@
-# Regulated Incident Runbooks
+# Incident and Operational Runbooks
 
 ## Scope
 
-This directory contains operational runbooks for incident response in regulated domains: PHR (Personal Health Records), Finance, and cross-product systems. Runbooks are executable procedures that ensure compliance with Nepal privacy/healthcare regulations (Directive 2081, Privacy Act 2075), HIPAA, SOX (Sarbanes-Oxley), and PCI-DSS standards where applicable.
+This directory contains operational runbooks for both platform operations and incident response in regulated domains: PHR (Personal Health Records), Finance, and cross-product systems. Runbooks are executable procedures that ensure compliance with Nepal privacy/healthcare regulations (Directive 2081, Privacy Act 2075), HIPAA, SOX (Sarbanes-Oxley), and PCI-DSS standards where applicable.
 
 ## Runbook Index
+
+### Platform Operations
+
+- **[dr-failover-runbook.md](dr-failover-runbook.md)** — Disaster recovery failover procedure when the primary region becomes unavailable (AEP, Data Cloud, YAPPC).
+- **[rollback-runbook.md](rollback-runbook.md)** — Deployment rollback procedure for failed releases across all products.
+- **[aep-degraded-mode-runbook.md](aep-degraded-mode-runbook.md)** — AEP pipeline degraded mode: event backlog, agent failures, governance slowdown, HITL backup, LLM outage, Data Cloud connectivity loss.
 
 ### PHR (Healthcare) Incidents
 

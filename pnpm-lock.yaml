@@ -93,6 +93,22 @@ importers:
         specifier: ^4.1.4
         version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-istanbul@4.1.4)(@vitest/coverage-v8@4.1.4)(@vitest/ui@4.1.4)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  platform/typescript/audit:
+    dependencies:
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(@microsoft/api-extractor@7.58.1(@types/node@25.6.0))(jiti@2.6.1)(postcss@8.5.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.4
+        version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(@vitest/coverage-istanbul@4.1.4)(@vitest/coverage-v8@4.1.4)(@vitest/ui@4.1.4)(jsdom@29.0.2(@noble/hashes@2.0.1))(msw@2.13.2(@types/node@25.6.0)(typescript@6.0.2))(vite@8.0.3(@emnapi/core@1.9.1)(@emnapi/runtime@1.9.1)(@types/node@25.6.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+
   platform/typescript/browser-events:
     dependencies:
       '@ghatana/events':
@@ -1003,9 +1019,15 @@ importers:
 
   products/aep/ui:
     dependencies:
+      '@ghatana/audit':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/audit
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
+      '@ghatana/design-system':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/design-system
       '@ghatana/domain-components':
         specifier: workspace:*
         version: link:../../../platform/typescript/domain-components
@@ -1386,6 +1408,9 @@ importers:
       '@data-cloud/ui-components':
         specifier: workspace:*
         version: link:../libs/ui-components
+      '@ghatana/audit':
+        specifier: workspace:*
+        version: link:../../../platform/typescript/audit
       '@ghatana/canvas':
         specifier: workspace:*
         version: link:../../../platform/typescript/canvas
@@ -42776,10 +42801,6 @@ snapshots:
     dependencies:
       pend: 1.2.0
 
-  fdir@6.5.0(picomatch@4.0.3):
-    optionalDependencies:
-      picomatch: 4.0.3
-
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
       picomatch: 4.0.4
@@ -51519,8 +51540,8 @@ snapshots:
 
   tinyglobby@0.2.15:
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   tinypool@1.1.1: {}
 

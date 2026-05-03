@@ -3,7 +3,6 @@ package com.ghatana.yappc.agents.testing;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchRule;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -22,7 +21,6 @@ class TestingSpecialistsBoundaryTest {
         .importPackages("com.ghatana.yappc.agents.testing");
 
     @Test
-    @Disabled("Testing-specialists module contains test files for agents from architecture and code specialists modules")
     void testingSpecialistsShouldNotDependOnArchitectureSpecialists() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..agents.testing..")
@@ -34,7 +32,6 @@ class TestingSpecialistsBoundaryTest {
     }
 
     @Test
-    @Disabled("Testing-specialists module contains test files for agents from architecture and code specialists modules")
     void testingSpecialistsShouldNotDependOnCodeSpecialists() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..agents.testing..")

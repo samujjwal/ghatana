@@ -8,7 +8,6 @@ import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -283,62 +282,6 @@ class DataCloudHttpServerPipelineTest extends DataCloudHttpServerTestBase {
                         Map<String, Object> body = parseJsonResponse(resp); 
                         // assertThat(body.get("tenantId")).isEqualTo("default");
                 }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // POST /api/v1/pipelines/{pipelineId}/execute  — execute pipeline
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("POST /api/v1/pipelines/{pipelineId}/execute – workflow execution")
-    @Disabled("Workflow execution routes not implemented in current server - requires route implementation")
-    class ExecutePipelineTests {
-
-        // ... (rest of the code remains the same)
-        @Test
-        @DisplayName("returns 200 with updated pipeline when changes are valid")
-        void updatePipeline_validChanges_returns200() throws Exception { 
-            var updatedPipeline = DataCloudClient.Entity.of( 
-                    TestConstants.PIPELINE_ID_1, "dc_pipelines",
-                    Map.of("name", "Updated Pipeline", "status", "draft")); 
-            when(mockClient.save(anyString(), eq("dc_pipelines"), any()))
-                    .thenReturn(Promise.of(updatedPipeline)); 
-
-            startServer(); 
-
-            HttpResponse<String> resp = putJson( 
-                    "/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT,
-                    Map.of("name", "Updated Pipeline", "status", "draft")); 
-
-            assertStatusCode(resp, TestConstants.HTTP_OK); 
-            Map<String, Object> body = parseJsonResponse(resp); 
-            assertThat(body).containsKeys("id", "name"); 
-            assertThat(body.get("name")).isEqualTo("Updated Pipeline");
-        }
-
-        /**
-         * Requirement C010: Prevent Editing Active Pipelines
-         * Route: PUT /api/v1/pipelines/{pipelineId}
-         * Failure: Returns 409 when trying to modify active pipeline
-         */
-        @Test
-        @DisplayName("returns 200 when pipeline is updated (active status validation not yet enforced)")
-        void updatePipeline_activePipeline_returns200() throws Exception { 
-            var activePipeline = DataCloudClient.Entity.of( 
-                    TestConstants.PIPELINE_ID_1, "dc_pipelines",
-                    Map.of("name", "Pipeline", "status", "active")); 
-            when(mockClient.save(anyString(), eq("dc_pipelines"), any()))
-                    .thenReturn(Promise.of(activePipeline)); 
-
-            startServer(); 
-
-            HttpResponse<String> resp = putJson( 
-                    "/api/v1/pipelines/" + TestConstants.PIPELINE_ID_1 + "?tenantId=" + TestConstants.TENANT_DEFAULT,
-                    Map.of("name", "Renamed", "status", "active")); 
-
-            // Note: Active pipeline status validation not yet enforced by handler
-            assertStatusCode(resp, TestConstants.HTTP_OK); 
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

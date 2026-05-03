@@ -6,6 +6,8 @@ import io.opentelemetry.api.metrics.Meter;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import com.ghatana.kernel.core.observability.CorrelationIdContext;
@@ -104,7 +106,7 @@ public abstract class PluginObservability {
      */
     protected void recordMetric(String metricName, Map<String, String> labels, long value) {
         String fullName = String.format("ghatana.plugin.%s.%s", pluginId, metricName);
-        io.opentelemetry.api.common.Attributes.Builder attrsBuilder = io.opentelemetry.api.common.Attributes.builder();
+        AttributesBuilder attrsBuilder = Attributes.builder();
         labels.forEach((k, v) -> attrsBuilder.put(k, v));
         meter.counterBuilder(fullName)
             .setDescription("Plugin metric: " + metricName)

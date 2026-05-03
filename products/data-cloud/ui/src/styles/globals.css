@@ -102,8 +102,8 @@
 /* Component layer - reusable patterns */
 @layer components {
 
-  /* AI indicator badge */
-  .ai-badge {
+  /* Suggestion indicator badge */
+  .suggestion-badge {
     @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full;
     @apply bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300;
   }
@@ -118,8 +118,8 @@
     @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
   }
 
-  /* Gradient text for AI branding */
-  .gradient-text-ai {
+  /* Gradient text for insight/suggestion branding */
+  .gradient-text-suggestion {
     @apply bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent;
   }
 

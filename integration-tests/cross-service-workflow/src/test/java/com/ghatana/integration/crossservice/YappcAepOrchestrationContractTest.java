@@ -177,7 +177,7 @@ class YappcAepOrchestrationContractTest extends EventloopTestBase {
             Pipeline pipeline = runPromise(bootstrapper::start);
 
             List<String> nodeIds = pipeline.getNodesTopological().stream()
-                    .map(node -> node.getId())
+                    .map(node -> node.nodeId())
                     .toList();
 
             assertThat(nodeIds).containsExactly(

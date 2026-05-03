@@ -7,7 +7,6 @@ import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.virtualorg.framework.workflow.WorkflowDefinition;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -164,49 +163,6 @@ class WorkflowPipelineAdapterPerformanceTest extends EventloopTestBase {
             .isGreaterThan(200);
 
         System.out.printf("Throughput: %d conversions/second%n", conversions);
-    }
-
-    /**
-     * Benchmark p99 latency.
-     *
-     * GIVEN: simple workflow
-     * WHEN: converting 1000 times
-     * THEN: p99 latency <1ms
-     */
-    @Test
-    @Disabled("Flaky performance test — p99 latency threshold depends on system load")
-    @DisplayName("Should have p99 latency <1ms")
-    void shouldHaveLowP99Latency() {
-        // GIVEN: Simple workflow
-        WorkflowDefinition workflow = createSimpleWorkflow(5);
-        warmup(workflow);
-
-        // WHEN: Measure individual conversion times
-        List<Long> durations = new ArrayList<>();
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            long start = System.nanoTime();
-            runPromise(() -> adapter.toPipeline(workflow, TENANT_ID));
-            durations.add(System.nanoTime() - start);
-        }
-
-        // THEN: Calculate p99
-        durations.sort(Long::compareTo);
-        int p99Index = (int) (BENCHMARK_ITERATIONS * 0.99);
-        long p99Ns = durations.get(p99Index);
-        double p99Ms = p99Ns / 1_000_000.0;
-
-        assertThat(p99Ms)
-            .as("p99 latency should be <10ms (allowing for GC/scheduling jitter)")
-            .isLessThan(10.0);
-
-        // Also check p50 and p95
-        long p50Ns = durations.get(BENCHMARK_ITERATIONS / 2);
-        long p95Ns = durations.get((int) (BENCHMARK_ITERATIONS * 0.95));
-
-        System.out.printf("Latency: p50=%.3fms, p95=%.3fms, p99=%.3fms%n",
-            p50Ns / 1_000_000.0,
-            p95Ns / 1_000_000.0,
-            p99Ms);
     }
 
     /**

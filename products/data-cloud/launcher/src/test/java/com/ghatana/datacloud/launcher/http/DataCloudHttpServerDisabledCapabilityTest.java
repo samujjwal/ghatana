@@ -4,7 +4,6 @@ import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.platform.observability.MetricsCollector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -111,9 +110,8 @@ class DataCloudHttpServerDisabledCapabilityTest {
     class WorkflowExecutionDisabledTests {
 
         @Test
-        @Disabled("Pipeline execute route not implemented in current server")
-        @DisplayName("POST /api/v1/pipelines/:id/execute returns 404 when workflow plugin is absent (route not implemented)")
-        void executePipeline_withoutWorkflowPlugin_returns503() throws Exception {
+        @DisplayName("POST /api/v1/pipelines/:id/execute returns 501 when workflow execution capability is absent")
+        void executePipeline_withoutWorkflowPlugin_returns501() throws Exception {
             server = new DataCloudHttpServer(mockClient, port)
                     .withMetricsCollector(mockMetrics);
             server.start();
@@ -121,7 +119,7 @@ class DataCloudHttpServerDisabledCapabilityTest {
 
             HttpResponse<String> response = post("/api/v1/pipelines/my-pipeline/execute");
 
-            assertThat(response.statusCode()).isEqualTo(404);
+            assertThat(response.statusCode()).isEqualTo(501);
         }
     }
 
@@ -173,17 +171,6 @@ class DataCloudHttpServerDisabledCapabilityTest {
             HttpResponse<String> response = post("/api/v1/analytics/query");
 
             assertThat(response.statusCode()).isEqualTo(503);
-        }
-
-        @Test
-        @Disabled("Analytics explain route not implemented in current server")
-        @DisplayName("POST /api/v1/analytics/explain returns 404 when analytics engine absent (route not implemented)")
-        void analyticsExplain_withoutEngine_returns503() throws Exception {
-            startServer();
-
-            HttpResponse<String> response = post("/api/v1/analytics/explain");
-
-            assertThat(response.statusCode()).isEqualTo(404);
         }
 
         @Test

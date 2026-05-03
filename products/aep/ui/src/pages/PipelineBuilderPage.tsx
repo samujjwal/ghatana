@@ -126,9 +126,9 @@ export function PipelineBuilderPage() {
   const [running, setRunning] = useState(false);
 
   // ── Guided Assistance ───────────────────────────────────────────────
-  // Open by default for new pipelines to enable intent-first authoring (TASK-L2)
+  // Suggestions panel is opt-in; guided default mode keeps the canvas clean (TASK-L2)
   const isNewPipeline = !pipelineId;
-  const [suggestionsOpen, setSuggestionsOpen] = useState(isNewPipeline);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [suggestionDescription, setSuggestionDescription] = useState('');
   const [suggestionGoal, setSuggestionGoal] = useState('');
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
