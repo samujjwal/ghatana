@@ -1,0 +1,432 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "aep-slos",
+    "title": "AEP Service Level Objectives",
+    "tags": ["aep", "slo", "observability", "release-critical"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "SLO Health Overview",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Pipeline Availability (≥99.5% SLO)",
+        "type": "stat",
+        "description": "Percentage of pipeline runs that complete successfully. SLO target: 99.5%.",
+        "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_runs_completed_total[5m])) / (sum(rate(aep_slo_runs_completed_total[5m])) + sum(rate(aep_slo_runs_failed_total[5m]))) * 100",
+            "legendFormat": "Pipeline Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 99.0 },
+                { "color": "green", "value": 99.5 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Agent Execution Success Rate (≥99.0% SLO)",
+        "type": "stat",
+        "description": "Percentage of agent executions that succeed. SLO target: 99.0%.",
+        "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_agent_execution_succeeded_total[5m])) / sum(rate(aep_slo_agent_execution_attempts_total[5m])) * 100",
+            "legendFormat": "Agent Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 98.0 },
+                { "color": "green", "value": 99.0 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Event Intake p99 Latency (<100ms SLO)",
+        "type": "stat",
+        "description": "99th percentile event intake latency (received → processing started). SLO target: <100ms.",
+        "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aep_slo_intake_latency_ms_bucket[5m])) by (le))",
+            "legendFormat": "p99 Intake Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 80 },
+                { "color": "red", "value": 100 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Review Queue p99 Latency (<5min SLO)",
+        "type": "stat",
+        "description": "99th percentile review-item-enqueued to first-decision latency. SLO target: <5 minutes.",
+        "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aep_slo_review_queue_latency_ms_bucket[5m])) by (le)) / 60000",
+            "legendFormat": "p99 Review Queue Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "m",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 3 },
+                { "color": "red", "value": 5 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Pipeline Throughput & Error Rate",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 7,
+        "title": "Pipeline Run Rate",
+        "type": "timeseries",
+        "description": "Rate of pipeline runs completed and failed per second.",
+        "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_runs_completed_total[1m]))",
+            "legendFormat": "Completed",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(aep_slo_runs_failed_total[1m]))",
+            "legendFormat": "Failed",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "Failed" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+          ]
+        },
+        "options": { "legend": { "calcs": ["last", "mean"], "displayMode": "table" } }
+      },
+      {
+        "id": 8,
+        "title": "Run Failure Rate",
+        "type": "timeseries",
+        "description": "Rolling run failure rate. Alert threshold: >0.5%.",
+        "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_runs_failed_total[5m])) / (sum(rate(aep_slo_runs_completed_total[5m])) + sum(rate(aep_slo_runs_failed_total[5m]))) * 100",
+            "legendFormat": "Failure Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 20 },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 0.3 },
+                { "color": "red", "value": 0.5 }
+              ]
+            }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 9,
+        "title": "Latency Distributions",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 10,
+        "title": "Event Intake Latency Percentiles",
+        "type": "timeseries",
+        "description": "p50, p95, p99 event intake latency (event received → pipeline processing started).",
+        "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(aep_slo_intake_latency_ms_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(aep_slo_intake_latency_ms_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aep_slo_intake_latency_ms_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 11,
+        "title": "Agent Execution Latency Percentiles",
+        "type": "timeseries",
+        "description": "p50, p95, p99 agent execution duration.",
+        "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(aep_slo_agent_execution_duration_ms_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(aep_slo_agent_execution_duration_ms_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aep_slo_agent_execution_duration_ms_bucket[5m])) by (le))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 12,
+        "title": "Policy & Replay SLOs",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 13,
+        "title": "Policy Promotion p99 Latency (<30s SLO)",
+        "type": "stat",
+        "description": "99th percentile policy-approval-to-ACTIVE latency. SLO target: <30 seconds.",
+        "gridPos": { "x": 0, "y": 24, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(aep_slo_policy_promotion_latency_ms_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p99 Policy Promotion",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 20 },
+                { "color": "red", "value": 30 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 14,
+        "title": "Replay Success Rate (≥95% SLO)",
+        "type": "stat",
+        "description": "Percentage of event replay attempts that complete without error. SLO target: ≥95%.",
+        "gridPos": { "x": 6, "y": 24, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_replay_succeeded_total[5m])) / sum(rate(aep_slo_replay_attempts_total[5m])) * 100",
+            "legendFormat": "Replay Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 90.0 },
+                { "color": "green", "value": 95.0 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 15,
+        "title": "Replay Attempts Over Time",
+        "type": "timeseries",
+        "description": "Replay attempts, successes, and failures over time.",
+        "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(aep_slo_replay_attempts_total[1m]))",
+            "legendFormat": "Attempts",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(aep_slo_replay_succeeded_total[1m]))",
+            "legendFormat": "Succeeded",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(aep_slo_replay_failed_total[1m]))",
+            "legendFormat": "Failed",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10 }
+          },
+          "overrides": [
+            { "matcher": { "id": "byName", "options": "Failed" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+            { "matcher": { "id": "byName", "options": "Succeeded" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+          ]
+        },
+        "options": { "legend": { "calcs": ["last", "mean"], "displayMode": "table" } }
+      },
+      {
+        "id": 16,
+        "title": "Per-Tenant Breakdown",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 32, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 17,
+        "title": "Intake Latency by Tenant (p99)",
+        "type": "timeseries",
+        "description": "Per-tenant p99 event intake latency to surface noisy-neighbour issues.",
+        "gridPos": { "x": 0, "y": 33, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum by (tenant, le) (rate(aep_slo_intake_latency_ms_bucket[5m])))",
+            "legendFormat": "Tenant {{tenant}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      }
+    ]
+  },
+  "folderId": null,
+  "overwrite": true
+}

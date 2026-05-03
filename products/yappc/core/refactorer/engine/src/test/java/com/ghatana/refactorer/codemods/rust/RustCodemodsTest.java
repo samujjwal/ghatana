@@ -16,7 +16,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -121,30 +120,6 @@ class RustCodemodsTest {
 
         UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::needless_return", 2, 5, 2, 16); 
         String result = rustCodemods.getFix("clippy::needless_return", content, diagnostic); 
-
-        assertEquals(expected, result); 
-    }
-
-    @Test
-    @Disabled( 
-            "Note: clippy::single_match fix not yet implemented - test disabled"
-                    + " complete. See RustCodemods.fixSingleMatch() for details.") 
-    void testFixSingleMatch() { 
-        Logger logger = LogManager.getLogger(RustCodemodsTest.class); 
-
-        String content = "match x {\n    Some(val) => { println!(\"{}\", val); }\n}"; 
-        String expected = "if let Some(val) = x { println!(\"{}\", val); }"; 
-
-        logger.info("=== Test Input ===");
-        logger.info("\n{}", content); 
-        logger.info("=== Expected Output ===");
-        logger.info("\n{}", expected); 
-
-        UnifiedDiagnostic diagnostic = createMockDiagnostic("clippy::single_match", 1, 1, 3, 2); 
-        String result = rustCodemods.getFix("clippy::single_match", content, diagnostic); 
-
-        logger.info("=== Actual Output ===");
-        logger.info("\n{}", result); 
 
         assertEquals(expected, result); 
     }

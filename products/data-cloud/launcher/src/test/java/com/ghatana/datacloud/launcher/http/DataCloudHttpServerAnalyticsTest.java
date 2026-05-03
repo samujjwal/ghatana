@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,7 +42,6 @@ import static org.mockito.Mockito.when;
  * @doc.pattern Test
  */
 @DisplayName("DataCloudHttpServer – Analytics Endpoints")
-@Disabled("Analytics routes not implemented in current server - requires AnalyticsQueryEngine integration and route implementation")
 class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
 
     private DataCloudClient mockClient;
@@ -75,7 +73,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("POST /query → 503 when engine is null")
         void query_noEngine_returns503() throws Exception { 
-            startServer(); 
+            startServerNoEngine(); 
             HttpResponse<String> resp = post("/api/v1/analytics/query", 
                 "{\"query\":\"SELECT * FROM foo\"}");
             assertThat(resp.statusCode()).isEqualTo(503); 
@@ -86,7 +84,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("GET /query/:id → 503 when engine is null")
         void getResult_noEngine_returns503() throws Exception { 
-            startServer(); 
+            startServerNoEngine(); 
             HttpResponse<String> resp = get("/api/v1/analytics/query/qid-1");
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
@@ -94,7 +92,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("GET /query/:id/plan → 503 when engine is null")
         void getPlan_noEngine_returns503() throws Exception { 
-            startServer(); 
+            startServerNoEngine(); 
             HttpResponse<String> resp = get("/api/v1/analytics/query/qid-1/plan");
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
@@ -102,7 +100,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @Test
         @DisplayName("POST /aggregate → 503 when engine is null")
         void aggregate_noEngine_returns503() throws Exception { 
-            startServer(); 
+            startServerNoEngine(); 
             HttpResponse<String> resp = post("/api/v1/analytics/aggregate", 
                 "{\"query\":\"SELECT COUNT(*) FROM foo GROUP BY bar\"}"); 
             assertThat(resp.statusCode()).isEqualTo(503); 
@@ -407,6 +405,12 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
 
     @Override
     protected void startServer() throws Exception {
+        server = new DataCloudHttpServer(mockClient, port, null, null, mockEngine);
+        server.start();
+        waitForServerReady(port);
+    }
+
+    private void startServerNoEngine() throws Exception {
         server = new DataCloudHttpServer(mockClient, port);
         server.start();
         waitForServerReady(port);

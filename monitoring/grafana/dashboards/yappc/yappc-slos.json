@@ -1,0 +1,369 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "yappc-slos",
+    "title": "YAPPC Service Level Objectives",
+    "tags": ["yappc", "slo", "observability", "release-critical", "lifecycle"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": { "from": "now-6h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Lifecycle Phase SLO Overview",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 2,
+        "title": "Phase Execution Success Rate (≥99% SLO)",
+        "type": "stat",
+        "description": "Percentage of lifecycle phase executions that succeed across all 8 phases. SLO target: 99%.",
+        "gridPos": { "x": 0, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(yappc_phase_executions_succeeded_total[5m])) / sum(rate(yappc_phase_executions_total[5m])) * 100",
+            "legendFormat": "Phase Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 98.0 },
+                { "color": "green", "value": 99.0 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 3,
+        "title": "AI Generation p99 Latency (<10s SLO)",
+        "type": "stat",
+        "description": "99th percentile latency for AI artifact generation (Phase 3). SLO target: <10 seconds.",
+        "gridPos": { "x": 6, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_generate_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p99 Generation Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 7 },
+                { "color": "red", "value": 10 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Run Execution p99 Latency (<30s SLO)",
+        "type": "stat",
+        "description": "99th percentile for CI/CD pipeline execution (Phase 4). SLO target: <30 seconds.",
+        "gridPos": { "x": 12, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_run_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p99 Run Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 20 },
+                { "color": "red", "value": 30 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 5,
+        "title": "Validation p99 Latency (<5s SLO)",
+        "type": "stat",
+        "description": "99th percentile spec validation latency (Phase 2). SLO target: <5 seconds.",
+        "gridPos": { "x": 18, "y": 1, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_validate_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p99 Validation Latency",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 3 },
+                { "color": "red", "value": 5 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "none",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 6,
+        "title": "Phase Execution Rates by Phase",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 7,
+        "title": "Phase Execution Rate (per phase)",
+        "type": "timeseries",
+        "description": "Rate of phase executions per second broken down by lifecycle phase.",
+        "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (phase) (rate(yappc_phase_executions_total[1m]))",
+            "legendFormat": "{{phase}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10, "stacking": { "mode": "none" } }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "mean"], "displayMode": "table" } }
+      },
+      {
+        "id": 8,
+        "title": "Phase Failure Rate (per phase)",
+        "type": "timeseries",
+        "description": "Failure rate per lifecycle phase. Alert on sustained >1% failure rate.",
+        "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (phase) (rate(yappc_phase_executions_failed_total[5m])) / sum by (phase) (rate(yappc_phase_executions_total[5m])) * 100",
+            "legendFormat": "{{phase}} failure %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 0.5 },
+                { "color": "red", "value": 1.0 }
+              ]
+            }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 9,
+        "title": "AI Phase Latency Details",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 10,
+        "title": "Generation Latency Percentiles (Phase 3)",
+        "type": "timeseries",
+        "description": "AI artifact generation latency — critical for developer experience. Includes LLM call time.",
+        "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(yappc_generate_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(yappc_generate_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_generate_execute_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 11,
+        "title": "Learn & Evolve Latency Percentiles (Phases 6-7)",
+        "type": "timeseries",
+        "description": "AI-powered learning synthesis (Phase 6) and evolution planning (Phase 7) latency.",
+        "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_learn_synthesize_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "Learn p99",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(yappc_evolve_propose_bucket[5m])) by (le)) / 1000",
+            "legendFormat": "Evolve p99",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "max"], "displayMode": "table" } }
+      },
+      {
+        "id": 12,
+        "title": "Throughput & Tenant Breakdown",
+        "type": "row",
+        "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 },
+        "collapsed": false
+      },
+      {
+        "id": 13,
+        "title": "Active Projects (Gauge)",
+        "type": "stat",
+        "description": "Current number of YAPPC projects in the lifecycle system.",
+        "gridPos": { "x": 0, "y": 24, "w": 4, "h": 4 },
+        "targets": [
+          {
+            "expr": "yappc_active_projects_total",
+            "legendFormat": "Active Projects",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": { "mode": "palette-classic" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "value",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 14,
+        "title": "CiCd Adapter Success Rate (≥95% SLO)",
+        "type": "stat",
+        "description": "GitHub Actions CI/CD adapter success rate. SLO target: ≥95%.",
+        "gridPos": { "x": 4, "y": 24, "w": 5, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(rate(yappc_cicd_runs_succeeded_total[5m])) / sum(rate(yappc_cicd_runs_total[5m])) * 100",
+            "legendFormat": "CI/CD Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 90.0 },
+                { "color": "green", "value": 95.0 }
+              ]
+            },
+            "color": { "mode": "thresholds" }
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["lastNotNull"] },
+          "colorMode": "background",
+          "graphMode": "area",
+          "textMode": "auto"
+        }
+      },
+      {
+        "id": 15,
+        "title": "Phase Execution Throughput by Tenant",
+        "type": "timeseries",
+        "description": "Per-tenant lifecycle phase execution rate to identify noisy neighbours.",
+        "gridPos": { "x": 9, "y": 24, "w": 15, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum by (tenant) (rate(yappc_phase_executions_total[1m]))",
+            "legendFormat": "{{tenant}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "custom": { "drawStyle": "line", "lineInterpolation": "smooth" }
+          }
+        },
+        "options": { "legend": { "calcs": ["last", "mean"], "displayMode": "table" } }
+      }
+    ]
+  },
+  "folderId": null,
+  "overwrite": true
+}
