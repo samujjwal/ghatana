@@ -4,6 +4,7 @@ import com.ghatana.platform.observability.MetricsCollector;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -92,5 +93,85 @@ class DataCloudHttpMetricsTest {
         metrics.recordRequest("H", "op", "tenant", 500); 
         metrics.recordLatency("H", "op", 123L); 
         metrics.recordError("H", "op", "RuntimeException"); 
+    }
+
+    @Test
+    void noopReturnsSingletonInstance() {
+        DataCloudHttpMetrics noop1 = DataCloudHttpMetrics.noop();
+        DataCloudHttpMetrics noop2 = DataCloudHttpMetrics.noop();
+        assertThat(noop1).isSameAs(noop2);
+    }
+
+    @Test
+    void noopDoesNotThrowOnRecordOperations() {
+        DataCloudHttpMetrics noop = DataCloudHttpMetrics.noop();
+        
+        // Should not throw even though metrics collector is null
+        noop.recordRequest("Handler", "operation", "tenant", 200);
+        noop.recordLatency("Handler", "operation", 100L);
+        noop.recordError("Handler", "operation", "error");
+        noop.recordError("Handler", "operation", new RuntimeException("test"));
+    }
+
+    @Test
+    void recordErrorWithThrowableExtractsSimpleName() {
+        MetricsCollector collector = mock(MetricsCollector.class);
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+
+        metrics.recordError("Handler", "operation", new IllegalStateException("test"));
+
+        verify(collector).incrementCounter(
+                DataCloudHttpMetrics.METRIC_ERRORS,
+                DataCloudHttpMetrics.TAG_HANDLER, "Handler",
+                DataCloudHttpMetrics.TAG_OPERATION, "operation",
+                DataCloudHttpMetrics.TAG_ERROR_TYPE, "IllegalStateException"
+        );
+    }
+
+    @Test
+    void recordErrorWithNullThrowableUsesUnknown() {
+        MetricsCollector collector = mock(MetricsCollector.class);
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+
+        metrics.recordError("Handler", "operation", (Throwable) null);
+
+        verify(collector).incrementCounter(
+                DataCloudHttpMetrics.METRIC_ERRORS,
+                DataCloudHttpMetrics.TAG_HANDLER, "Handler",
+                DataCloudHttpMetrics.TAG_OPERATION, "operation",
+                DataCloudHttpMetrics.TAG_ERROR_TYPE, "Unknown"
+        );
+    }
+
+    @Test
+    void recordRequestWithNullValuesUsesUnknown() {
+        MetricsCollector collector = mock(MetricsCollector.class);
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+
+        metrics.recordRequest(null, null, null, 200);
+
+        verify(collector).incrementCounter(
+                DataCloudHttpMetrics.METRIC_REQUESTS,
+                DataCloudHttpMetrics.TAG_HANDLER, "unknown",
+                DataCloudHttpMetrics.TAG_OPERATION, "unknown",
+                DataCloudHttpMetrics.TAG_TENANT, "unknown",
+                DataCloudHttpMetrics.TAG_STATUS, "200"
+        );
+    }
+
+    @Test
+    void recordRequestWithBlankValuesUsesUnknown() {
+        MetricsCollector collector = mock(MetricsCollector.class);
+        DataCloudHttpMetrics metrics = new DataCloudHttpMetrics(collector);
+
+        metrics.recordRequest("  ", "  ", "  ", 200);
+
+        verify(collector).incrementCounter(
+                DataCloudHttpMetrics.METRIC_REQUESTS,
+                DataCloudHttpMetrics.TAG_HANDLER, "unknown",
+                DataCloudHttpMetrics.TAG_OPERATION, "unknown",
+                DataCloudHttpMetrics.TAG_TENANT, "unknown",
+                DataCloudHttpMetrics.TAG_STATUS, "200"
+        );
     }
 }

@@ -6,8 +6,6 @@
  * @doc.pattern Background Job
  */
 
-import { createProviderFactory, ILLMProvider } from '../stubs/ai/providers';
-
 import { getPrismaClient, type PrismaClient } from '../database/client';
 import { getArray, getString, isRecord } from '../utils/type-guards';
 
@@ -39,21 +37,38 @@ async function parseJsonResponse<T>(
 }
 
 /**
+ * Interface for embedding providers.
+ * Matches the shape expected by the pipeline without importing from stubs.
+ */
+interface ILLMProvider {
+  name: string;
+  embed(text: string): Promise<number[]>;
+  generateEmbedding(text: string): Promise<number[]>;
+}
+
+/**
+ * Sentinel value: when no LLM provider is configured the pipeline
+ * must not insert zero-vector rows. Returning null here causes the
+ * pipeline to skip the DB write and emit a structured warning instead.
+ */
+const NO_PROVIDER: null = null;
+
+/**
  * Create embedding provider based on environment configuration.
  *
  * - If OPENAI_API_KEY is set → uses OpenAI text-embedding-3-small via API
  * - If OLLAMA_BASE_URL is set → uses local Ollama embedding model
- * - Otherwise → falls back to stub provider (zero vectors)
+ * - Otherwise → returns null (pipeline will skip inserts)
  *
- * The stub provider is intentionally kept as a safe default so that
- * the pipeline can run in CI/dev without external dependencies.
+ * Zero-vector insertion is explicitly prohibited: it silently corrupts
+ * semantic search results and is harder to detect than a missing row.
  */
-function createConfiguredProvider(): ILLMProvider {
+function createConfiguredProvider(): ILLMProvider | null {
   const openaiKey = process.env.OPENAI_API_KEY;
   const ollamaUrl = process.env.OLLAMA_BASE_URL;
 
   if (openaiKey) {
-    console.log('[EmbeddingPipeline] Using OpenAI embedding provider');
+    process.stderr.write(JSON.stringify({ level: 'info', event: 'embedding_pipeline.provider_selected', provider: 'openai' }) + '\n');
     return {
       name: 'openai',
       async embed(text: string): Promise<number[]> {
@@ -88,9 +103,7 @@ function createConfiguredProvider(): ILLMProvider {
 
   if (ollamaUrl) {
     const model = process.env.OLLAMA_EMBEDDING_MODEL || 'nomic-embed-text';
-    console.log(
-      `[EmbeddingPipeline] Using Ollama embedding provider (${model})`
-    );
+    process.stderr.write(JSON.stringify({ level: 'info', event: 'embedding_pipeline.provider_selected', provider: 'ollama', model }) + '\n');
     return {
       name: 'ollama',
       async embed(text: string): Promise<number[]> {
@@ -117,15 +130,19 @@ function createConfiguredProvider(): ILLMProvider {
     } as ILLMProvider;
   }
 
-  // Fallback: stub provider (safe for dev/CI)
-  console.warn(
-    '[EmbeddingPipeline] No AI provider configured. Using stub (zero vectors).'
+  // No provider configured — skip inserts rather than pollute the DB with zero vectors
+  process.stderr.write(
+    JSON.stringify({
+      level: 'warn',
+      event: 'embedding_pipeline.no_provider',
+      action: 'embedding_skipped',
+      message:
+        'No embedding provider configured (OPENAI_API_KEY or OLLAMA_BASE_URL). ' +
+        'Embedding rows will NOT be inserted. ' +
+        'Configure a provider to enable semantic search.',
+    }) + '\n'
   );
-  console.warn(
-    '[EmbeddingPipeline] Set OPENAI_API_KEY or OLLAMA_BASE_URL for real embeddings.'
-  );
-  const factory = createProviderFactory();
-  return factory.getDefaultProvider();
+  return NO_PROVIDER;
 }
 
 const prisma: PrismaClient = getPrismaClient();
@@ -236,7 +253,7 @@ async function findItemsNeedingEmbeddings(
 
     // Check if embedding exists and is up-to-date
     const existingEmbedding = item.itemEmbeddings.find(
-      (embedding) => embedding.model === config.modelName
+      (embedding: { model: string; contentHash: string }) => embedding.model === config.modelName
     );
 
     if (!existingEmbedding || existingEmbedding.contentHash !== contentHash) {
@@ -261,9 +278,7 @@ async function generateEmbeddingsBatch(
   retryCount = 0
 ): Promise<void> {
   try {
-    console.log(
-      `[EmbeddingPipeline] Processing batch of ${batch.length} items`
-    );
+    process.stderr.write(JSON.stringify({ level: 'info', event: 'embedding_pipeline.batch_start', itemCount: batch.length }) + '\n');
 
     const startTime = Date.now();
 
@@ -308,9 +323,13 @@ async function generateEmbeddingsBatch(
 
         return { itemId: item.itemId, success: true };
       } catch (error) {
-        console.error(
-          `[EmbeddingPipeline] Error embedding item ${item.itemId}:`,
-          error
+        process.stderr.write(
+          JSON.stringify({
+            level: 'error',
+            event: 'embedding_pipeline.item_error',
+            itemId: item.itemId,
+            error: error instanceof Error ? error.message : String(error),
+          }) + '\n'
         );
 
         await trackEmbeddingMetric({
@@ -334,8 +353,13 @@ async function generateEmbeddingsBatch(
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.filter((r) => !r.success).length;
 
-    console.log(
-      `[EmbeddingPipeline] Batch complete: ${successCount} success, ${failureCount} failures`
+    process.stderr.write(
+      JSON.stringify({
+        level: 'info',
+        event: 'embedding_pipeline.batch_complete',
+        successCount,
+        failureCount,
+      }) + '\n'
     );
 
     // If we have failures and retries left, retry failed items
@@ -344,8 +368,13 @@ async function generateEmbeddingsBatch(
         (item) => !results.find((r) => r.itemId === item.itemId && r.success)
       );
 
-      console.log(
-        `[EmbeddingPipeline] Retrying ${failedBatch.length} failed items (attempt ${retryCount + 1})`
+      process.stderr.write(
+        JSON.stringify({
+          level: 'info',
+          event: 'embedding_pipeline.batch_retry',
+          failedCount: failedBatch.length,
+          attempt: retryCount + 1,
+        }) + '\n'
       );
       await new Promise((resolve) => setTimeout(resolve, config.retryDelayMs));
       await generateEmbeddingsBatch(
@@ -356,7 +385,13 @@ async function generateEmbeddingsBatch(
       );
     }
   } catch (error) {
-    console.error('[EmbeddingPipeline] Batch processing error:', error);
+    process.stderr.write(
+      JSON.stringify({
+        level: 'error',
+        event: 'embedding_pipeline.batch_error',
+        error: error instanceof Error ? error.message : String(error),
+      }) + '\n'
+    );
     throw error;
   }
 }
@@ -401,7 +436,13 @@ async function trackEmbeddingMetric(data: {
       },
     });
   } catch (error) {
-    console.error('[EmbeddingPipeline] Failed to track metric:', error);
+    process.stderr.write(
+      JSON.stringify({
+        level: 'error',
+        event: 'embedding_pipeline.metric_track_error',
+        error: error instanceof Error ? error.message : String(error),
+      }) + '\n'
+    );
   }
 }
 
@@ -413,15 +454,32 @@ export async function runEmbeddingPipeline(
 ): Promise<void> {
   const jobConfig: EmbeddingJobConfig = { ...DEFAULT_CONFIG, ...config };
 
-  console.log('[EmbeddingPipeline] Starting embedding pipeline job');
-  console.log('[EmbeddingPipeline] Config:', jobConfig);
+  process.stderr.write(
+    JSON.stringify({ level: 'info', event: 'embedding_pipeline.start', config: jobConfig }) + '\n'
+  );
 
   try {
-    // Create provider from environment configuration (OpenAI / Ollama / stub)
+    // Resolve provider; null means no provider is configured \u2014 skip the run entirely
+    // to avoid inserting zero-vector rows that would corrupt semantic search results.
     const provider = createConfiguredProvider();
 
-    console.log(
-      `[EmbeddingPipeline] Using provider: ${'name' in provider ? String(provider.name) : 'unknown'}`
+    if (provider === null) {
+      process.stderr.write(
+        JSON.stringify({
+          level: 'warn',
+          event: 'embedding_pipeline.skipped',
+          action: 'embedding_skipped',
+          message:
+            'Embedding pipeline skipped: no LLM provider configured. ' +
+            'Set OPENAI_API_KEY or OLLAMA_BASE_URL to enable semantic search.',
+        }) + '\n'
+      );
+      return;
+    }
+
+    process.stderr.write(
+      JSON.stringify({ level: 'info', event: 'embedding_pipeline.provider', provider: provider.name }) +
+        '\n'
     );
 
     // Find items needing embeddings
@@ -431,12 +489,18 @@ export async function runEmbeddingPipeline(
     );
 
     if (itemsNeedingEmbeddings.length === 0) {
-      console.log('[EmbeddingPipeline] No items need embedding updates');
+      process.stderr.write(
+        JSON.stringify({ level: 'info', event: 'embedding_pipeline.nothing_to_do' }) + '\n'
+      );
       return;
     }
 
-    console.log(
-      `[EmbeddingPipeline] Found ${itemsNeedingEmbeddings.length} items needing embeddings`
+    process.stderr.write(
+      JSON.stringify({
+        level: 'info',
+        event: 'embedding_pipeline.items_found',
+        count: itemsNeedingEmbeddings.length,
+      }) + '\n'
     );
 
     // Process in batches
@@ -447,8 +511,13 @@ export async function runEmbeddingPipeline(
     ) {
       const batch = itemsNeedingEmbeddings.slice(i, i + jobConfig.batchSize);
 
-      console.log(
-        `[EmbeddingPipeline] Processing batch ${Math.floor(i / jobConfig.batchSize) + 1}`
+      process.stderr.write(
+        JSON.stringify({
+          level: 'info',
+          event: 'embedding_pipeline.batch',
+          batchIndex: Math.floor(i / jobConfig.batchSize) + 1,
+          batchSize: batch.length,
+        }) + '\n'
       );
 
       await generateEmbeddingsBatch(provider, batch, jobConfig);
@@ -459,9 +528,15 @@ export async function runEmbeddingPipeline(
       }
     }
 
-    console.log('[EmbeddingPipeline] Embedding pipeline job complete');
+    process.stderr.write(JSON.stringify({ level: 'info', event: 'embedding_pipeline.complete' }) + '\n');
   } catch (error) {
-    console.error('[EmbeddingPipeline] Fatal error:', error);
+    process.stderr.write(
+      JSON.stringify({
+        level: 'error',
+        event: 'embedding_pipeline.fatal_error',
+        error: error instanceof Error ? error.message : String(error),
+      }) + '\n'
+    );
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -475,15 +550,19 @@ export async function scheduleEmbeddingPipeline(): Promise<void> {
   // Run every 15 minutes with default config
   const interval = 15 * 60 * 1000;
 
-  console.log(
-    `[EmbeddingPipeline] Scheduler started (interval: ${interval}ms)`
-  );
+  process.stderr.write(JSON.stringify({ level: 'info', event: 'embedding_pipeline.scheduler_started', intervalMs: interval }) + '\n');
 
   const runJob = async () => {
     try {
       await runEmbeddingPipeline();
     } catch (error) {
-      console.error('[EmbeddingPipeline] Job execution failed:', error);
+      process.stderr.write(
+        JSON.stringify({
+          level: 'error',
+          event: 'embedding_pipeline.job_error',
+          error: error instanceof Error ? error.message : String(error),
+        }) + '\n'
+      );
     }
   };
 
@@ -507,11 +586,12 @@ if (require.main === module) {
         await runEmbeddingPipeline();
       }
     } catch (error) {
-      console.error(
-        mode === 'schedule'
-          ? '[EmbeddingPipeline] Scheduler failed:'
-          : '[EmbeddingPipeline] Job failed:',
-        error
+      process.stderr.write(
+        JSON.stringify({
+          level: 'error',
+          event: mode === 'schedule' ? 'embedding_pipeline.scheduler_failed' : 'embedding_pipeline.job_failed',
+          error: error instanceof Error ? error.message : String(error),
+        }) + '\n'
       );
       process.exit(1);
     }

@@ -451,14 +451,59 @@ describe('SqlWorkspacePage', () => {
         title: 'Review required before execution',
         detail: 'Cross-source query needs review.',
         requiresReview: true,
-      },
+      }
     );
 
-    expect(guardrails.map((guardrail) => guardrail.title)).toEqual(expect.arrayContaining([
-      'Review-first path required',
-      'Multiple data sources in plan',
-      'Elevated estimated cost',
-      'Wide scan risk',
-    ]));
+    expect(guardrails).toMatchObject({
+      requiresReview: true,
+      estimatedCost: 5400,
+    });
+  });
+
+  // TEST-2: Degradation UI tests
+  describe('Degradation Indicators', () => {
+    it('displays Analytics degradation indicator when Analytics is degraded', async () => {
+      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+        capabilities: [
+          { key: 'analytics.query', status: 'degraded' as const, detail: 'Analytics engine overloaded' },
+        ],
+      });
+
+      render(<SqlWorkspacePage />, { wrapper: TestWrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Analytics Degraded/i)).toBeInTheDocument();
+      });
+    });
+
+    it('displays Federated Query degradation indicator when Federated Query is unavailable', async () => {
+      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+        capabilities: [
+          { key: 'analytics.federated', status: 'unavailable' as const, detail: 'Federated query not configured' },
+        ],
+      });
+
+      render(<SqlWorkspacePage />, { wrapper: TestWrapper });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Federated Query Unavailable/i)).toBeInTheDocument();
+      });
+    });
+
+    it('does not display degradation indicators when all services are healthy', async () => {
+      mockCapabilities.useCapabilityRegistry.mockReturnValue({
+        capabilities: [
+          { key: 'analytics.query', status: 'healthy' as const, detail: '' },
+          { key: 'analytics.federated', status: 'healthy' as const, detail: '' },
+        ],
+      });
+
+      render(<SqlWorkspacePage />, { wrapper: TestWrapper });
+
+      await waitFor(() => {
+        expect(screen.queryByText(/Degraded/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Unavailable/i)).not.toBeInTheDocument();
+      });
+    });
   });
 });

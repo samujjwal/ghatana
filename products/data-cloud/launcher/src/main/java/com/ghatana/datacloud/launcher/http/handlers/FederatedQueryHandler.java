@@ -126,8 +126,12 @@ public final class FederatedQueryHandler {
             if (trinoUrl != null) {
                 return executeViaTrino(sql, tenantId);
             } else {
-                log.debug("Trino not configured — executing federated query via local analytics engine for tenant {}",
-                        tenantId);
+                // P0-5: Explicit degradation logging for Federated Query
+                log.warn("[B13] FEDERATED QUERY DEGRADED: Trino not configured (TRINO_URL not set). " +
+                    "Federated queries will execute via local analytics engine fallback. " +
+                    "Cross-tier queries across HOT/WARM/COOL/COLD storage will not be available. " +
+                    "Set TRINO_URL environment variable to enable full federated query capability. Tenant: {}",
+                    tenantId);
                 return executeViaLocalEngine(sql, tenantId);
             }
         });
@@ -257,6 +261,8 @@ public final class FederatedQueryHandler {
                     response.put("executionTimeMs", result.getExecutionTimeMs());
                     response.put("optimized", result.isOptimized());
                     response.put("timestamp", java.time.Instant.now().toString());
+                    response.put("degraded", true);
+                    response.put("degradationReason", "Trino not configured — query executed via local analytics engine fallback");
                     response.put("warning", "Trino not configured — query executed via local analytics engine. "
                             + "Set TRINO_URL to enable cross-tier federated queries.");
                     return http.jsonResponse(200, response);

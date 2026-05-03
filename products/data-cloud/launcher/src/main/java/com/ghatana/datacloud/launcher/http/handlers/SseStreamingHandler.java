@@ -376,6 +376,8 @@ public class SseStreamingHandler {
      */
     public Promise<HttpResponse> handleBrainWorkspaceStream(HttpRequest request) {
         if (brain == null) {
+            // P2-4: Explicit degradation logging for optional Brain service
+            log.warn("[P2-4] Brain service degradation: brain is null, returning 503 for brain workspace stream");
             return Promise.of(http.errorResponse(503, "Brain not available in this deployment"));
         }
         String tenantId = http.requireTenantIdOrFail(request);
@@ -453,6 +455,8 @@ public class SseStreamingHandler {
      */
     public Promise<HttpResponse> handleLearningStream(HttpRequest request) {
         if (learningBridge == null) {
+            // P2-4: Explicit degradation logging for optional Learning Bridge service
+            log.warn("[P2-4] Learning Bridge service degradation: learningBridge is null, returning 503 for learning stream");
             return Promise.of(http.errorResponse(503, "Learning bridge not available in this deployment"));
         }
         String tenantId = http.requireTenantIdOrFail(request);

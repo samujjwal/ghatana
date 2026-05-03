@@ -149,6 +149,9 @@ include(":libs:java:yappc-domain")
 // --- Examples (plugin SDK reference implementations) ---
 include(":examples:sample-build-generator-plugin")
 
+// --- Integration Tests ---
+include(":integration")
+
 // --- Gradle build tooling & validation tests ---
 val validationTestsDir = File(rootDir, "tools/validation-tests")
 if (validationTestsDir.exists()) {

@@ -45,7 +45,6 @@ import java.util.function.Function;
  *   <li>Returns a machine result plus an optional speech-friendly summary.</li>
  * </ol>
  *
-import java.util.function.Function;
  * <h2>Routes</h2>
  * <pre>
  *   POST /api/v1/voice/intent                — resolve and execute a voice intent

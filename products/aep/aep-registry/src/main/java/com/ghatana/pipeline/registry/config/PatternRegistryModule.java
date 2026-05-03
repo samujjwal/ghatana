@@ -63,7 +63,8 @@ public class PatternRegistryModule extends AbstractModule {
             RegistryObservability registryObservability,
             RegistryEventPublisher eventPublisher) {
         MetricsCollector metricsCollector = MetricsCollectorFactory.create(meterRegistry);
-        return new PatternRegistryService(repository, metricsCollector, registryObservability, eventPublisher);
+        // PatternCompiler is optional - can be null for synthetic compilation
+        return new PatternRegistryService(repository, metricsCollector, registryObservability, eventPublisher, null);
     }
 
     /**

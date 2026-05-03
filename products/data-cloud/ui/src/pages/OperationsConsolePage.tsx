@@ -141,7 +141,7 @@ export const OperationsConsolePage: React.FC = () => {
 
           {/* Diagnostics Grid — scoped to real, backed surfaces only */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {/* System Health — placeholder until health API wired (ARCH-003) */}
+            {/* System Health */}
             <div className={cn(cardStyles.base, 'p-6')}>
               <div className="mb-4 flex items-center gap-2">
                 <Shield className="h-5 w-5 text-blue-500" />

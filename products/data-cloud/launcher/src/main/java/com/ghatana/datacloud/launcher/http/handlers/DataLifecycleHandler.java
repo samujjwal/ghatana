@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -104,6 +105,7 @@ public class DataLifecycleHandler {
     /** HMAC-SHA256 algorithm identifier. */
     private static final String GOVERNANCE_POLICY_COLLECTION = "_governance_retention_policies";
     private static final String GOVERNANCE_PURGE_TOMBSTONE_COLLECTION = "_governance_purge_tombstones";
+    private static final String GOVERNANCE_POLICIES_COLLECTION = "_governance_policies"; // P1-1: Policy CRUD storage
     private static final String POLICY_STATUS_CLASSIFIED = "CLASSIFIED";
     private static final String POLICY_STATUS_DEFAULT = "DEFAULT";
     private static final String MISSING_TENANT_ERROR = "MISSING_TENANT";
@@ -111,6 +113,9 @@ public class DataLifecycleHandler {
 
     private static final String REDACTED_VALUE = "[REDACTED]";
     private static final int PURGE_QUERY_LIMIT = EntityStore.QuerySpec.MAX_LIMIT;
+
+    // P1-1: In-memory policy storage for policy CRUD lifecycle
+    private final Map<String, List<Map<String, Object>>> policiesByTenant = new ConcurrentHashMap<>();
 
     /**
      * Ephemeral per-process fallback secret used only in local/embedded-style profiles.
@@ -320,7 +325,7 @@ public class DataLifecycleHandler {
                         400));
                 }
 
-                TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
+                DestructiveActionToken.TokenSecretRequirement tokenSecretRequirement = validatePurgeTokenSecretConfiguration(runtimeEnvironment());
                 if (!tokenSecretRequirement.available()) {
                     return Promise.of(http.errorEnvelopeResponse(
                         ApiResponse.error(
@@ -388,8 +393,8 @@ public class DataLifecycleHandler {
                         400));
                 }
 
-                TokenValidationResult tokenResult = validatePurgeToken(confirmationToken, tenantId, collection);
-                if (!tokenResult.valid()) {
+                DestructiveActionToken.TokenValidationResult tokenResult = validatePurgeToken(confirmationToken, tenantId, collection);
+                if (!tokenResult.isValid()) {
                     log.warn("[DC-E5] purge REJECTED invalid token: {} collection={} tenant={}",
                              tokenResult.reason(), collection, tenantId);
                     emitAudit(tenantId, requestId, "RETENTION_PURGE_REJECTED",
@@ -635,7 +640,7 @@ public class DataLifecycleHandler {
                                 400));
                         }
 
-                        TokenValidationResult tokenResult = validateRedactToken(confirmationToken, tenantId, collection, entityId);
+                        DestructiveActionToken.TokenValidationResult tokenResult = validateRedactToken(confirmationToken, tenantId, collection, entityId);
                         if (!tokenResult.valid()) {
                             log.warn("[DC-E5] redact REJECTED invalid token: {} collection={} entityId={} tenant={}",
                                      tokenResult.reason(), collection, entityId, tenantId);
@@ -1515,24 +1520,6 @@ public class DataLifecycleHandler {
     }
 
     /**
-     * Validates a purge confirmation token against tenant + collection and expiry window.
-     */
-    static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection) {
-        return validatePurgeToken(token, tenantId, collection, runtimeEnvironment());
-    }
-
-    static TokenValidationResult validatePurgeToken(String token, String tenantId, String collection, Map<String, String> env) {
-        var result = DestructiveActionToken.validateToken(token, "purge", tenantId, collection, null, env);
-        return result.isValid()
-            ? TokenValidationResult.success()
-            : TokenValidationResult.failure(result.reason());
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // HMAC redact token helpers (P0.4)
-    // ─────────────────────────────────────────────────────────────────────────
-
-    /**
      * Builds a time-limited HMAC-SHA256 redact confirmation token scoped to a specific entity.
      *
      * <p>Format: {@code Base64Url( epochMs + "." + HMAC-SHA256(secret, "redact:"+tenantId+":"+collection+":"+entityId+":"+epochMs) )}
@@ -1541,18 +1528,21 @@ public class DataLifecycleHandler {
         return DestructiveActionToken.buildToken("redact", tenantId, collection, entityId, issuedAtMs, runtimeEnvironment());
     }
 
-    static TokenValidationResult validateRedactToken(String token, String tenantId, String collection, String entityId) {
-        var result = DestructiveActionToken.validateToken(token, "redact", tenantId, collection, entityId, runtimeEnvironment());
-        return result.isValid()
-            ? TokenValidationResult.success()
-            : TokenValidationResult.failure(result.reason());
+    static DestructiveActionToken.TokenValidationResult validatePurgeToken(String token, String tenantId, String collection) {
+        return DestructiveActionToken.validateToken(token, "purge", tenantId, collection);
     }
 
-    static TokenSecretRequirement validatePurgeTokenSecretConfiguration(Map<String, String> env) {
-        var result = DestructiveActionToken.validateTokenSecretConfiguration(env);
-        return result.available()
-            ? TokenSecretRequirement.available(result.profile())
-            : TokenSecretRequirement.unavailable(result.profile(), result.message());
+    static DestructiveActionToken.TokenValidationResult validatePurgeToken(String token, String tenantId, String collection, Map<String, String> env) {
+        return DestructiveActionToken.validateToken(token, "purge", tenantId, collection, null, env);
+    }
+
+    static DestructiveActionToken.TokenValidationResult validateRedactToken(String token, String tenantId, String collection, String entityId) {
+        var result = DestructiveActionToken.validateToken(token, "redact", tenantId, collection, entityId, runtimeEnvironment());
+        return result;
+    }
+
+    static DestructiveActionToken.TokenSecretRequirement validatePurgeTokenSecretConfiguration(Map<String, String> env) {
+        return DestructiveActionToken.validateTokenSecretConfiguration(env);
     }
 
     private static String resolveProfileName(Map<String, String> env) {
@@ -1590,19 +1580,186 @@ public class DataLifecycleHandler {
         return diff == 0;
     }
 
-    /** Result of a purge token validation. */
-    record TokenValidationResult(boolean valid, String reason) {
-        static TokenValidationResult success()                { return new TokenValidationResult(true, null); }
-        static TokenValidationResult failure(String reason)   { return new TokenValidationResult(false, reason); }
+    // ─── Policy CRUD Handlers (P1-1) ───────────────────────────────────────────────
+
+    /**
+     * POST /api/v1/governance/policies - Create a new governance policy.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleCreatePolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = objectMapper.readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+                
+                String policyId = UUID.randomUUID().toString();
+                Map<String, Object> policy = new LinkedHashMap<>();
+                policy.put("id", policyId);
+                policy.put("name", payload.getOrDefault("name", "Untitled Policy"));
+                policy.put("type", payload.getOrDefault("type", "CUSTOM"));
+                policy.put("description", payload.getOrDefault("description", ""));
+                policy.put("enabled", true);
+                policy.put("scope", payload.getOrDefault("scope", Map.of()));
+                policy.put("rules", payload.getOrDefault("rules", List.of()));
+                policy.put("createdAt", Instant.now().toString());
+                policy.put("updatedAt", Instant.now().toString());
+                policy.put("tenantId", tenantId);
+                policy.put("metadata", payload.getOrDefault("metadata", Map.of()));
+
+                policiesByTenant.computeIfAbsent(tenantId, k -> new ArrayList<>()).add(policy);
+
+                log.info("[P1-1] Policy created tenant={} policyId={} name={}", tenantId, policyId, policy.get("name"));
+                return Promise.of(http.jsonResponse(policy));
+            } catch (Exception e) {
+                log.error("[P1-1] Failed to create policy tenant={}", tenantId, e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+            }
+        });
     }
 
-    record TokenSecretRequirement(boolean available, String profile, String message) {
-        static TokenSecretRequirement available(String profile) {
-            return new TokenSecretRequirement(true, profile, null);
+    /**
+     * GET /api/v1/governance/policies - List all policies for the tenant.
+     */
+    public Promise<HttpResponse> handleListPolicies(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
-        static TokenSecretRequirement unavailable(String profile, String message) {
-            return new TokenSecretRequirement(false, profile, message);
+        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, List.of());
+        return Promise.of(http.jsonResponse(Map.of(
+            "policies", policies,
+            "count", policies.size(),
+            "tenantId", tenantId
+        )));
+    }
+
+    /**
+     * GET /api/v1/governance/policies/:id - Get a specific policy by ID.
+     */
+    public Promise<HttpResponse> handleGetPolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
+
+        String policyId = request.getPathParameter("id");
+        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, List.of());
+        
+        for (Map<String, Object> policy : policies) {
+            if (policyId.equals(policy.get("id"))) {
+                return Promise.of(http.jsonResponse(policy));
+            }
+        }
+
+        return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+    }
+
+    /**
+     * PUT /api/v1/governance/policies/:id - Update an existing policy.
+     */
+    @SuppressWarnings("unchecked")
+    public Promise<HttpResponse> handleUpdatePolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        String policyId = request.getPathParameter("id");
+        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = objectMapper.readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                for (Map<String, Object> policy : policies) {
+                    if (policyId.equals(policy.get("id"))) {
+                        if (payload.containsKey("name")) policy.put("name", payload.get("name"));
+                        if (payload.containsKey("description")) policy.put("description", payload.get("description"));
+                        if (payload.containsKey("scope")) policy.put("scope", payload.get("scope"));
+                        if (payload.containsKey("rules")) policy.put("rules", payload.get("rules"));
+                        if (payload.containsKey("metadata")) policy.put("metadata", payload.get("metadata"));
+                        policy.put("updatedAt", Instant.now().toString());
+
+                        log.info("[P1-1] Policy updated tenant={} policyId={}", tenantId, policyId);
+                        return Promise.of(http.jsonResponse(policy));
+                    }
+                }
+
+                return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+            } catch (Exception e) {
+                log.error("[P1-1] Failed to update policy tenant={} policyId={}", tenantId, policyId, e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+            }
+        });
+    }
+
+    /**
+     * DELETE /api/v1/governance/policies/:id - Delete a policy.
+     */
+    public Promise<HttpResponse> handleDeletePolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        String policyId = request.getPathParameter("id");
+        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+
+        for (int i = 0; i < policies.size(); i++) {
+            if (policyId.equals(policies.get(i).get("id"))) {
+                policies.remove(i);
+                log.info("[P1-1] Policy deleted tenant={} policyId={}", tenantId, policyId);
+                return Promise.of(http.jsonResponse(Map.of(
+                    "id", policyId,
+                    "status", "deleted",
+                    "deletedAt", Instant.now().toString()
+                )));
+            }
+        }
+
+        return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+    }
+
+    /**
+     * POST /api/v1/governance/policies/:id/toggle - Toggle policy enabled/disabled status.
+     */
+    public Promise<HttpResponse> handleTogglePolicy(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+
+        String policyId = request.getPathParameter("id");
+        List<Map<String, Object>> policies = policiesByTenant.getOrDefault(tenantId, new ArrayList<>());
+
+        return request.loadBody().then(buf -> {
+            try {
+                Map<String, Object> payload = objectMapper.readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+                boolean enabled = Boolean.parseBoolean(String.valueOf(payload.getOrDefault("enabled", "true")));
+
+                for (Map<String, Object> policy : policies) {
+                    if (policyId.equals(policy.get("id"))) {
+                        policy.put("enabled", enabled);
+                        policy.put("updatedAt", Instant.now().toString());
+
+                        log.info("[P1-1] Policy toggled tenant={} policyId={} enabled={}", tenantId, policyId, enabled);
+                        return Promise.of(http.jsonResponse(policy));
+                    }
+                }
+
+                return Promise.of(http.errorResponse(404, "Policy not found: " + policyId));
+            } catch (Exception e) {
+                log.error("[P1-1] Failed to toggle policy tenant={} policyId={}", tenantId, policyId, e);
+                return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+            }
+        });
     }
 }

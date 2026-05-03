@@ -146,25 +146,23 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
     '/workspaces',
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
-        console.log('[WORKSPACE] GET /workspaces - Request received');
+        request.log.info({ event: 'workspace.list.request' }, 'GET /workspaces');
 
         if (!request.user?.userId) {
-          console.log('[WORKSPACE] No user in request, returning 401');
+          request.log.warn({ event: 'workspace.list.unauthorized' }, 'No user in request');
           return reply.status(401).send({ error: 'Unauthorized' });
         }
 
         const userId = request.user.userId;
-        console.log('[WORKSPACE] Using userId:', userId);
-
-        console.log('[WORKSPACE] Querying database...');
+        request.log.info({ event: 'workspace.list.query', userId }, 'Querying workspaces');
 
         // Check database connection before querying
         try {
           await prisma.$queryRaw`SELECT 1`;
         } catch (connectionError) {
-          console.error(
-            '[WORKSPACE] Database connection failed:',
-            connectionError
+          request.log.error(
+            { event: 'workspace.list.db_error', error: connectionError instanceof Error ? connectionError.message : String(connectionError) },
+            'Database connection failed'
           );
           return reply.status(503).send({
             error: 'Database service unavailable',
@@ -190,7 +188,7 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
           },
           orderBy: [{ isDefault: 'desc' }, { updatedAt: 'desc' }],
         });
-        console.log('[WORKSPACE] Found workspaces:', workspaces.length);
+        request.log.info({ event: 'workspace.list.result', count: workspaces.length }, 'Workspaces found');
 
         const response = {
           workspaces: workspaces.map(
@@ -200,10 +198,9 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
             })
           ),
         };
-        console.log('[WORKSPACE] Sending response');
         return reply.send(response);
       } catch (error) {
-        console.error('[WORKSPACE] Error in GET /workspaces:', error);
+        request.log.error({ event: 'workspace.list.error', error: error instanceof Error ? error.message : String(error) }, 'GET /workspaces failed');
         return reply.status(500).send({ error: String(error) });
       }
     }
@@ -224,9 +221,9 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
         try {
           await prisma.$queryRaw`SELECT 1`;
         } catch (connectionError) {
-          console.error(
-            '[WORKSPACE] Database connection failed:',
-            connectionError
+          request.log.error(
+            { event: 'workspace.get.db_error', workspaceId, error: connectionError instanceof Error ? connectionError.message : String(connectionError) },
+            'Database connection failed'
           );
           return reply.status(503).send({
             error: 'Database service unavailable',
@@ -270,9 +267,9 @@ export default async function workspaceRoutes(fastify: FastifyInstance) {
           },
         });
       } catch (error) {
-        console.error(
-          '[WORKSPACE] Error in GET /workspaces/:workspaceId:',
-          error
+        request.log.error(
+          { event: 'workspace.get.error', error: error instanceof Error ? error.message : String(error) },
+          'GET /workspaces/:workspaceId failed'
         );
         return reply.status(500).send({ error: String(error) });
       }

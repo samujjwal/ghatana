@@ -117,6 +117,31 @@ class ApiResponseTest {
             assertThat(resp.getAi().isFallback()).isTrue(); 
             assertThat(resp.getAi().getConfidence()).isEqualTo(0.20); 
         }
+
+        @Test
+        @DisplayName("withAiMeta with provenance map includes provenance in ai block")
+        void withAiMeta_withProvenance() {
+            Map<String, Object> provenance = Map.of("provider", "openai", "latencyMs", 150);
+            ApiResponse resp = ApiResponse.success(Map.of(), "t", "r")
+                .withAiMeta(0.85, "gpt-4o", java.util.List.of("stop"), false, provenance);
+
+            assertThat(resp.getAi().getProvenance()).isEqualTo(provenance);
+        }
+
+        @Test
+        @DisplayName("withAiMeta with confidence band and review policy includes both in ai block")
+        void withAiMeta_withConfidenceBandAndReviewPolicy() {
+            com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand confidenceBand =
+                new com.ghatana.datacloud.launcher.ai.AiOperation.ConfidenceBand(0.9, "HIGH", java.util.List.of("factor"));
+            com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy reviewPolicy =
+                new com.ghatana.datacloud.launcher.ai.AiOperation.ReviewPolicy(false, 0.8, java.util.List.of(), 1, java.util.List.of());
+
+            ApiResponse resp = ApiResponse.success(Map.of(), "t", "r")
+                .withAiMeta(confidenceBand, "gpt-4o", java.util.List.of("stop"), false, null, reviewPolicy);
+
+            assertThat(resp.getAi().getConfidenceBand()).isEqualTo(confidenceBand);
+            assertThat(resp.getAi().getReviewPolicy()).isEqualTo(reviewPolicy);
+        }
     }
 
     // ──────────────────── toJson / serialisation ────────────────────
@@ -152,6 +177,29 @@ class ApiResponseTest {
             assertThat(parsed).containsKey("error");
             assertThat(parsed).doesNotContainKey("data");
             assertThat(parsed).doesNotContainKey("ai");
+        }
+
+        @Test
+        @DisplayName("error with empty details map sets details to null")
+        void errorWithEmptyDetails_setsDetailsToNull() {
+            Map<String, Object> emptyDetails = Map.of();
+            ApiResponse resp = ApiResponse.error("VALIDATION", "Bad input", emptyDetails, "t", "r");
+
+            assertThat(resp.getError().getDetails()).isNull();
+        }
+
+        @Test
+        @DisplayName("isSuccess returns true for success response")
+        void isSuccess_returnsTrueForSuccess() {
+            ApiResponse resp = ApiResponse.success(Map.of(), "t", "r");
+            assertThat(resp.isSuccess()).isTrue();
+        }
+
+        @Test
+        @DisplayName("isSuccess returns false for error response")
+        void isSuccess_returnsFalseForError() {
+            ApiResponse resp = ApiResponse.error("ERR", "error", "t", "r");
+            assertThat(resp.isSuccess()).isFalse();
         }
     }
 

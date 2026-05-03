@@ -10,7 +10,6 @@
 
 // Collection hooks
 export * from "./useCollections";
-export * from "./useCollectionData";
 
 // Workflow hooks
 export * from "./useWorkflows";

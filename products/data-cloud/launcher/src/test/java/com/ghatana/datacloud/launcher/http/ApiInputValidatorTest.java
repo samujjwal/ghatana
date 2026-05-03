@@ -425,4 +425,94 @@ class ApiInputValidatorTest {
             assertThat(result.get()).contains(";");
         }
     }
+
+    // -----------------------------------------------------------------------
+    // validateBodySize
+    // -----------------------------------------------------------------------
+    @Nested
+    @DisplayName("validateBodySize")
+    class BodySizeTests {
+
+        @Test
+        void acceptsValidBodySize() {
+            byte[] smallBody = new byte[1024];
+            assertThat(ApiInputValidator.validateBodySize(smallBody)).isEmpty();
+        }
+
+        @Test
+        void acceptsMaxBodySize() {
+            byte[] maxBody = new byte[(int) ApiInputValidator.MAX_BODY_BYTES];
+            assertThat(ApiInputValidator.validateBodySize(maxBody)).isEmpty();
+        }
+
+        @Test
+        void rejectsNullBody() {
+            assertThat(ApiInputValidator.validateBodySize(null)).isPresent();
+        }
+
+        @Test
+        void rejectsExceedsMaxBodySize() {
+            byte[] tooLarge = new byte[(int) ApiInputValidator.MAX_BODY_BYTES + 1];
+            assertThat(ApiInputValidator.validateBodySize(tooLarge)).isPresent();
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // validateCollectionMetadata
+    // -----------------------------------------------------------------------
+    @Nested
+    @DisplayName("validateCollectionMetadata")
+    class CollectionMetadataTests {
+
+        @Test
+        void acceptsValidMetadata() {
+            Map<String, Object> metadata = Map.of(
+                "lifecycleStatus", "PUBLISHED",
+                "qualityScore", 0.95,
+                "active", true
+            );
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isEmpty();
+        }
+
+        @Test
+        void rejectsNullMetadata() {
+            assertThat(ApiInputValidator.validateCollectionMetadata(null)).isPresent();
+        }
+
+        @Test
+        void rejectsUnknownField() {
+            Map<String, Object> metadata = Map.of("unknownField", "value");
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+
+        @Test
+        void rejectsInvalidLifecycleStatus() {
+            Map<String, Object> metadata = Map.of("lifecycleStatus", "INVALID_STATUS");
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+
+        @Test
+        void rejectsInvalidOperationalStatus() {
+            Map<String, Object> metadata = Map.of("operationalStatus", "invalid");
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+
+        @Test
+        void rejectsQualityScoreOutOfRange() {
+            Map<String, Object> metadata = Map.of("qualityScore", 1.5);
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+
+        @Test
+        void rejectsQualityScoreNotNumber() {
+            Map<String, Object> metadata = Map.of("qualityScore", "not-a-number");
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+
+        @Test
+        void rejectsActiveNotBoolean() {
+            Map<String, Object> metadata = Map.of("active", "true");
+            assertThat(ApiInputValidator.validateCollectionMetadata(metadata)).isPresent();
+        }
+    }
 }

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import { createYoga, createSchema } from 'graphql-yoga';
+import { GraphQLError } from 'graphql';
 import fastify from 'fastify';
 import { randomUUID } from 'node:crypto';
 import cors from '@fastify/cors';
@@ -98,7 +99,7 @@ if (schemasDir) {
 // Merge Resolvers (Simple merge for now)
 const resolvers = createSimpleResolvers();
 
-const schema = createSchema({
+const schema = createSchema<{ userId: string | undefined; role: string | undefined; workspaceId: string | undefined }>({
   typeDefs,
   resolvers,
 });
@@ -195,13 +196,26 @@ export async function createApp(
     },
     graphiql: enableGraphiql,
     context: ({ request }) => {
-      // Require authentication for GraphQL in production
-      if (process.env.NODE_ENV === 'production' && !request.headers.authorization) {
-        throw new Error('Authentication required');
+      // Extract the user populated by authMiddleware (JWT or session validation).
+      // In production every GraphQL operation requires a valid authenticated user.
+      // We deliberately check request.user (set after token validation) rather than
+      // the raw Authorization header so that malformed/expired tokens are rejected.
+      const user = (
+        request as unknown as {
+          user?: { userId: string; role: string; workspaceId?: string };
+        }
+      ).user;
+
+      if (process.env.NODE_ENV === 'production' && !user) {
+        throw new GraphQLError('Authentication required', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
       }
+
       return {
-        userId: (request as unknown as { user?: { userId: string } }).user?.userId,
-        role: (request as unknown as { user?: { role: string } }).user?.role,
+        userId: user?.userId,
+        role: user?.role,
+        workspaceId: user?.workspaceId,
       };
     },
   });

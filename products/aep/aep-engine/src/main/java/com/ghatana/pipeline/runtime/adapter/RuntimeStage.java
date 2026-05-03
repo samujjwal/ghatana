@@ -39,17 +39,27 @@ public class RuntimeStage {
     private final String type;
     private final String tenantId;
     private final java.util.List<ConnectorOperator> connectors;
-    private RuntimeStage nextStage;
+    private final RuntimeStage nextStage;
 
     public RuntimeStage(
             String name,
             String type,
             String tenantId,
             java.util.List<ConnectorOperator> connectors) {
+        this(name, type, tenantId, connectors, null);
+    }
+
+    public RuntimeStage(
+            String name,
+            String type,
+            String tenantId,
+            java.util.List<ConnectorOperator> connectors,
+            RuntimeStage nextStage) {
         this.name = name;
         this.type = type;
         this.tenantId = tenantId;
         this.connectors = connectors != null ? connectors : java.util.Collections.emptyList();
+        this.nextStage = nextStage;
     }
 
     /**
@@ -88,13 +98,6 @@ public class RuntimeStage {
     }
 
     /**
-     * Sets next stage in execution order.
-     */
-    public void setNextStage(RuntimeStage next) {
-        this.nextStage = next;
-    }
-
-    /**
      * Builder for RuntimeStage.
      */
     public static RuntimeStageBuilder builder() {
@@ -110,6 +113,7 @@ public class RuntimeStage {
         private String type;
         private String tenantId;
         private java.util.List<ConnectorOperator> connectors;
+        private RuntimeStage nextStage;
 
         public RuntimeStageBuilder name(String name) {
             this.name = name;
@@ -131,8 +135,13 @@ public class RuntimeStage {
             return this;
         }
 
+        public RuntimeStageBuilder nextStage(RuntimeStage nextStage) {
+            this.nextStage = nextStage;
+            return this;
+        }
+
         public RuntimeStage build() {
-            return new RuntimeStage(name, type, tenantId, connectors);
+            return new RuntimeStage(name, type, tenantId, connectors, nextStage);
         }
     }
 

@@ -127,9 +127,22 @@ curl -X POST https://aep.ghatana.com/api/pipelines/test \
 
 ### 1.3 Database Migration
 
-**Pre-Migration:**
+**Fresh Install (new database — no prior AEP schema):**
+
+AEP uses Flyway with `baselineVersion="0"` and `baselineOnMigrate=true`. On a
+fresh database the AEP process will automatically run `V001__baseline_schema.sql`
+which creates all core tables using `CREATE TABLE IF NOT EXISTS`. No manual
+bootstrap step is required. Simply ensure the database exists and the
+`AEP_DB_URL` environment variable points to it before first startup.
+
 ```bash
-# Backup database
+# Verify the database is reachable before first startup
+psql "$AEP_DB_URL" -c "SELECT 1;"
+```
+
+**Pre-Migration (upgrade of an existing deployment):**
+```bash
+# Backup database before applying schema changes
 kubectl exec -n aep-production aep-postgres-0 -- \
   pg_dump -U aep aep_db > backup-$(date +%Y%m%d-%H%M%S).sql
 
@@ -139,7 +152,7 @@ ls -lh backup-*.sql
 
 **Run Migration:**
 ```bash
-# Apply Flyway migrations
+# Migrations apply automatically on startup. To check or apply manually:
 kubectl exec -n aep-production deployment/aep -- \
   java -jar /app/flyway.jar migrate
 
@@ -147,6 +160,15 @@ kubectl exec -n aep-production deployment/aep -- \
 kubectl exec -n aep-production deployment/aep -- \
   java -jar /app/flyway.jar info
 ```
+
+**Migration version gap (V002–V010 and V012–V019 absent):**
+
+These version numbers were reserved for pre-Flyway tables that were created
+before migration tracking was introduced. The Flyway schema history will show
+a gap from V001 to V011 and from V011 to V020. This is expected. The baseline
+tables are created by `V001__baseline_schema.sql` and the gap versions are
+intentionally unused. Flyway validates checksums for applied versions only, so
+the gap does not affect migration integrity.
 
 ### 1.4 Post-Deployment Verification
 

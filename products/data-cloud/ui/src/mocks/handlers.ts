@@ -703,6 +703,61 @@ const storageFabricHandlers = [
 // ---------------------------------------------------------------------------
 
 const connectorHandlers = [
+  // GET /api/v1/data-fabric/metrics
+  http.get(`${BASE}/data-fabric/metrics`, async () => {
+    await delay(SIMULATED_DELAY_MS);
+    return HttpResponse.json({
+      tiers: [
+        {
+          tier: 'HOT',
+          label: 'HOT Tier (Redis)',
+          throughputEps: 1523.4,
+          latencyP99Ms: 2.8,
+          errorRate: 0.002,
+          queueDepth: 18,
+          status: 'healthy',
+          instanceCount: 3,
+        },
+        {
+          tier: 'WARM',
+          label: 'WARM Tier (PostgreSQL)',
+          throughputEps: 845.2,
+          latencyP99Ms: 10.3,
+          errorRate: 0.003,
+          queueDepth: 24,
+          status: 'healthy',
+          instanceCount: 2,
+          storageGb: 62.4,
+        },
+        {
+          tier: 'COOL',
+          label: 'COOL Tier (Iceberg)',
+          throughputEps: 234.1,
+          latencyP99Ms: 58.7,
+          errorRate: 0.004,
+          queueDepth: 12,
+          status: 'warning',
+          instanceCount: 1,
+          storageGb: 245.8,
+        },
+        {
+          tier: 'COLD',
+          label: 'COLD Tier (S3/Archive)',
+          throughputEps: 78.3,
+          latencyP99Ms: 245.2,
+          errorRate: 0.001,
+          queueDepth: 5,
+          status: 'healthy',
+          instanceCount: 1,
+          storageGb: 612.3,
+        },
+      ],
+      totalEventsPerSec: 2681.0,
+      totalStorageGb: 920.5,
+      lastUpdated: new Date().toISOString(),
+    });
+  }),
+
   // GET /api/v1/data-fabric/connectors
   http.get(`${BASE}/data-fabric/connectors`, async ({ request }) => {
     await delay(SIMULATED_DELAY_MS);

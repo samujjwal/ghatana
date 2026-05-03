@@ -6,6 +6,8 @@ package com.ghatana.aep.di;
 
 import com.ghatana.aep.identity.IdentityResolutionService;
 import com.ghatana.aep.identity.JdbcAgentIdentityResolver;
+import com.ghatana.aep.server.governance.MfaStepUpGate;
+import com.ghatana.aep.server.governance.StepUpAuthenticationGate;
 import com.ghatana.identity.IdentityService;
 import com.ghatana.identity.spi.IdentityResolver;
 import com.ghatana.platform.incident.GracefulDegradationManager;
@@ -154,6 +156,26 @@ public class AepProductionModule extends AepCoreModule {
                     + "or provide a durable PostgresRecertificationPipeline implementation.");
         }
         return new InMemoryRecertificationPipeline();
+    }
+
+    /**
+     * In production, {@link StepUpAuthenticationGate} must be backed by the real
+     * {@link MfaStepUpGate}. The no-op implementation allows all verifications
+     * unconditionally and must never be used in production.
+     *
+     * <p>Fails at startup if {@code AEP_MFA_SECRET} is not configured, preventing
+     * silent MFA bypass in production environments.
+     */
+    @io.activej.inject.annotation.Provides
+    StepUpAuthenticationGate stepUpAuthenticationGate() {
+        String mfaSecret = environment.get("AEP_MFA_SECRET");
+        if (mfaSecret == null || mfaSecret.isBlank()) {
+            throw new IllegalStateException(
+                "AEP_MFA_SECRET must be configured when AEP_PROFILE=production. "
+                    + "The kill-switch MFA gate requires a real TOTP secret. "
+                    + "Configure AEP_MFA_SECRET or do not set AEP_PROFILE=production.");
+        }
+        return new MfaStepUpGate();
     }
 
     // ---- Helpers ------------------------------------------------------------

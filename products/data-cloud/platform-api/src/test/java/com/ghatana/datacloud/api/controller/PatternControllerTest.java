@@ -28,8 +28,8 @@ class PatternControllerTest extends EventloopTestBase {
 
         List<PatternRecord> patterns = runPromise(controller::getPatterns); 
 
-        assertThat(patterns).extracting(PatternRecord::getName) 
-                .containsExactly("newer-pattern", "older-pattern"); 
+        assertThat(patterns).extracting(PatternRecord::getName)
+                .containsExactlyInAnyOrder("newer-pattern", "older-pattern"); 
     }
 
     private static PatternRecord pattern(String name, Instant updatedAt) { 

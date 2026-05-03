@@ -10,29 +10,13 @@
  * @doc.pattern Operations UI
  */
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
 import { tenantIdAtom } from '@/stores/tenant.store';
 import { Clock, CheckCircle2, XCircle, RotateCcw, AlertTriangle, ChevronRight } from 'lucide-react';
 import { Button } from '@ghatana/design-system';
 import { PageState } from './PageState';
-
-export type OperationStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-
-export interface OperationRecord {
-  id: string;
-  type: string;
-  status: OperationStatus;
-  startedAt: string;
-  finishedAt?: string;
-  attempts: number;
-  maxAttempts: number;
-  resourceType?: 'pipeline' | 'run' | 'agent' | 'policy';
-  resourceId?: string;
-  errorMessage?: string;
-  auditEntryId?: string;
-  initiatedBy?: string;
-}
+import { listOperations, retryOperation, cancelOperation, type OperationRecord, type OperationStatus } from '@/api/aep.api';
 
 interface OperationCenterProps {
   /** Override tenant; falls back to global tenant atom. */
@@ -89,15 +73,33 @@ export function OperationCenter({
   const atomTenantId = useAtomValue(tenantIdAtom);
   const tenantId = propTenantId ?? atomTenantId;
   const [filter, setFilter] = useState<OperationStatus | 'all'>('all');
+  const queryClient = useQueryClient();
 
   const { data: operations = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['aep', 'operations', tenantId],
-    queryFn: async (): Promise<OperationRecord[]> => {
-      // Placeholder for actual API call; replace when endpoint is available
-      return [];
-    },
+    queryFn: () => listOperations(tenantId, 100),
     staleTime: 10_000,
     refetchInterval: 15_000,
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: (operationId: string) => retryOperation(operationId, tenantId),
+    onSuccess: (result, operationId) => {
+      if (result.retried) {
+        refetch();
+        onRetry?.(operationId);
+      }
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (operationId: string) => cancelOperation(operationId, tenantId),
+    onSuccess: (result, operationId) => {
+      if (result.cancelled) {
+        refetch();
+        onCancel?.(operationId);
+      }
+    },
   });
 
   const filtered = filter === 'all' ? operations : operations.filter((o) => o.status === filter);
@@ -172,22 +174,24 @@ export function OperationCenter({
               <div className="flex items-center gap-1 flex-shrink-0">
                 {op.status === 'failed' && onRetry && (
                   <Button
-                    onClick={() => onRetry(op.id)}
+                    onClick={() => retryMutation.mutate(op.id)}
                     variant="ghost"
                     className="p-1 text-gray-400 hover:text-indigo-600"
                     aria-label={`Retry operation ${op.id}`}
                     title="Retry"
+                    disabled={retryMutation.isPending}
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                   </Button>
                 )}
                 {(op.status === 'pending' || op.status === 'running') && onCancel && (
                   <Button
-                    onClick={() => onCancel(op.id)}
+                    onClick={() => cancelMutation.mutate(op.id)}
                     variant="ghost"
                     className="p-1 text-gray-400 hover:text-red-600"
                     aria-label={`Cancel operation ${op.id}`}
                     title="Cancel"
+                    disabled={cancelMutation.isPending}
                   >
                     <XCircle className="h-3.5 w-3.5" />
                   </Button>

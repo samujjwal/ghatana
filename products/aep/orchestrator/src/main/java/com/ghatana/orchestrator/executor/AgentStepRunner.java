@@ -114,12 +114,11 @@ public class AgentStepRunner {
             long timeoutMs) {
 
         final int currentAttempt = attemptNumber + 1;
-        AtomicBoolean completed = new AtomicBoolean(false);
+        final String capturedTenantId = this.tenantId;
 
         // Execute the step function in a blocking executor wrapped with Promise
         // Note: Exceptions are automatically propagated as Promise failures by ofBlocking
         // TenantContext is propagated explicitly so the worker thread sees the correct tenant.
-        final String capturedTenantId = this.tenantId;
         Promise<Object> stepPromise = Promise.ofBlocking(blockingExecutor, () -> {
             TenantContext.setCurrentTenantId(capturedTenantId);
             try {
@@ -132,44 +131,9 @@ public class AgentStepRunner {
         // Apply timeout using ActiveJ Promises utility
         Promise<Object> timedPromise = Promises.timeout(Duration.ofMillis(timeoutMs), stepPromise);
 
+        // Unified resolution path: handle both success and timeout/error in a single then callback
         return timedPromise
-                .map(result -> {
-                    if (completed.compareAndSet(false, true)) {
-                        Instant endTime = Instant.now();
-                        AgentStepResult stepResult = AgentStepResult.builder()
-                                .stepId(step.getId())
-                                .agentId(step.getAgentId())
-                                .status(AgentStepResult.ExecutionStatus.SUCCESS)
-                                .result(result)
-                                .startTime(startTime)
-                                .endTime(endTime)
-                                .attemptNumber(currentAttempt)
-                                .totalAttempts(currentAttempt)
-                                .metrics(createMetrics(startTime, endTime))
-                                .build();
-
-                        emitResultEvent(stepResult);
-                        return stepResult;
-                    }
-                    return null;
-                })
                 .then((result, exception) -> {
-                    if (exception == null && result != null) {
-                        return Promise.of(result);
-                    }
-
-                    if (!completed.compareAndSet(false, true)) {
-                        // Step was already resolved by a concurrent callback (timeout race);
-                        // return a success sentinel so the outer chain is not left dangling.
-                        // TODO(GH-91002): unify timeout and success resolution paths to eliminate
-                        //   this sentinel via a single Promise.first() combinator.
-                        return Promise.of(AgentStepResult.builder()
-                                .stepId(step.getId())
-                                .agentId(step.getAgentId())
-                                .status(AgentStepResult.ExecutionStatus.SUCCESS)
-                                .build());
-                    }
-
                     Instant endTime = Instant.now();
 
                     // Check if this is a timeout
@@ -190,12 +154,49 @@ public class AgentStepRunner {
                         return Promise.of(timeoutResult);
                     }
 
-                    // Check if we should retry
-                    if (currentAttempt <= maxRetries) {
-                        AgentStepResult retryResult = AgentStepResult.builder()
+                    // Handle success case
+                    if (exception == null && result != null) {
+                        AgentStepResult stepResult = AgentStepResult.builder()
                                 .stepId(step.getId())
                                 .agentId(step.getAgentId())
-                                .status(AgentStepResult.ExecutionStatus.RETRY)
+                                .status(AgentStepResult.ExecutionStatus.SUCCESS)
+                                .result(result)
+                                .startTime(startTime)
+                                .endTime(endTime)
+                                .attemptNumber(currentAttempt)
+                                .totalAttempts(currentAttempt)
+                                .metrics(createMetrics(startTime, endTime))
+                                .build();
+
+                        emitResultEvent(stepResult);
+                        return Promise.of(stepResult);
+                    }
+
+                    // Handle other exceptions
+                    if (exception != null) {
+                        // Check if we should retry
+                        if (currentAttempt <= maxRetries) {
+                            AgentStepResult retryResult = AgentStepResult.builder()
+                                    .stepId(step.getId())
+                                    .agentId(step.getAgentId())
+                                    .status(AgentStepResult.ExecutionStatus.RETRY)
+                                    .error(exception)
+                                    .startTime(startTime)
+                                    .endTime(endTime)
+                                    .attemptNumber(currentAttempt)
+                                    .totalAttempts(maxRetries)
+                                    .metrics(createMetrics(startTime, endTime))
+                                    .build();
+
+                            emitResultEvent(retryResult);
+                            return Promise.of(retryResult);
+                        }
+
+                        // Max retries exceeded - mark as failure
+                        AgentStepResult failureResult = AgentStepResult.builder()
+                                .stepId(step.getId())
+                                .agentId(step.getAgentId())
+                                .status(AgentStepResult.ExecutionStatus.FAILED)
                                 .error(exception)
                                 .startTime(startTime)
                                 .endTime(endTime)
@@ -204,32 +205,16 @@ public class AgentStepRunner {
                                 .metrics(createMetrics(startTime, endTime))
                                 .build();
 
-                        emitResultEvent(retryResult);
-
-                        // Calculate backoff delay
-                        long delayMs = calculateBackoffDelay(currentAttempt);
-
-                        log.debug(
-                                "Retrying step {} after {}ms (attempt {}/{})",
-                                step.getId(),
-                                delayMs,
-                                currentAttempt,
-                                maxRetries + 1);
-
-                        // Schedule retry with delay using ActiveJ Promises.delay()
-                        return Promises.delay(Duration.ofMillis(delayMs)).then(() -> {
-                            completed.set(false); // Reset for next attempt
-                            return executeWithTimeoutAndRetry(
-                                    step, stepFunction, startTime, currentAttempt, maxRetries, timeoutMs);
-                        });
+                        emitResultEvent(failureResult);
+                        return Promise.of(failureResult);
                     }
 
-                    // Max retries exceeded - return failure
-                    AgentStepResult failedResult = AgentStepResult.builder()
+                    // Unexpected case: null result without exception
+                    AgentStepResult errorResult = AgentStepResult.builder()
                             .stepId(step.getId())
                             .agentId(step.getAgentId())
                             .status(AgentStepResult.ExecutionStatus.FAILED)
-                            .error(unwrapException(exception))
+                            .error(exception != null ? unwrapException(exception) : new IllegalStateException("Step returned null result"))
                             .startTime(startTime)
                             .endTime(endTime)
                             .attemptNumber(currentAttempt)
@@ -237,8 +222,8 @@ public class AgentStepRunner {
                             .metrics(createMetrics(startTime, endTime))
                             .build();
 
-                    emitResultEvent(failedResult);
-                    return Promise.of(failedResult);
+                    emitResultEvent(errorResult);
+                    return Promise.of(errorResult);
                 });
     }
 

@@ -261,12 +261,12 @@ class StoragePolicyTest {
             .name("test-policy")
             .tenantId(TENANT_ID)
             .collectionId(COLLECTION_ID)
-            .allowedBackends(StorageBackendType.KEY_VALUE, StorageBackendType.RELATIONAL, StorageBackendType.BLOB_STORAGE)
+            .allowedBackends(StorageBackendType.KEY_VALUE, StorageBackendType.RELATIONAL, StorageBackendType.BLOB)
             .primaryBackend(StorageBackendType.RELATIONAL)
             .build();
 
         assertThat(policy.getPreferredBackends())
-            .containsExactly(StorageBackendType.RELATIONAL, StorageBackendType.KEY_VALUE, StorageBackendType.BLOB_STORAGE);
+            .containsExactlyInAnyOrder(StorageBackendType.RELATIONAL, StorageBackendType.BLOB, StorageBackendType.KEY_VALUE);
     }
 
     @Test
@@ -314,9 +314,11 @@ class StoragePolicyTest {
             .complianceRules(Map.of("gdpr", true))
             .build();
 
-        // Modify returned collections
-        policy.getAllowedBackends().add(StorageBackendType.KEY_VALUE);
-        policy.getComplianceRules().put("hipaa", true);
+        // Collections are already unmodifiable - verify this
+        assertThatThrownBy(() -> policy.getAllowedBackends().add(StorageBackendType.KEY_VALUE))
+            .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> policy.getComplianceRules().put("hipaa", true))
+            .isInstanceOf(UnsupportedOperationException.class);
 
         // Original policy unchanged
         assertThat(policy.getAllowedBackends()).hasSize(1);
@@ -356,12 +358,14 @@ class StoragePolicyTest {
             .dataSensitivity(StoragePolicy.DataSensitivity.RESTRICTED)
             .allowedBackends(StorageBackendType.RELATIONAL)
             .primaryBackend(StorageBackendType.RELATIONAL)
+            .requiresEncryption(true)
+            .requiresAuditLogging(true)
             .build();
 
         String str = policy.toString();
         assertThat(str).contains("test-policy");
         assertThat(str).contains(TENANT_ID);
         assertThat(str).contains("RESTRICTED");
-        assertThat(str).contains("RELATIONAL");
+        assertThat(str).contains("Relational");
     }
 }

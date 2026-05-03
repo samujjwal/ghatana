@@ -54,11 +54,44 @@ public class AgentController {
 
     // P1-9: Security scan patterns for detecting suspicious agent definitions
     private static final Pattern SUSPICIOUS_CODE_PATTERN = Pattern.compile(
-        "(eval|exec|system|Runtime\\.getRuntime|ProcessBuilder|Class\\.forName)", Pattern.CASE_INSENSITIVE);
+        "(eval|exec|system|Runtime\\.getRuntime|ProcessBuilder|Class\\.forName"
+            + "|Thread\\.sleep|AccessController|Method\\.invoke"
+            + "|Runtime\\.exec|ScriptEngine|Compilable|javax\\.script"
+            + "|sun\\.misc\\.Unsafe|java\\.lang\\.reflect|JVM|attach|instrument"
+            + "|setAccessible|getDeclaredMethod|getDeclaredField"
+            + "|ObjectInputStream|readObject|deserializ|pickle\\.loads"
+            + "|__import__|importlib|subprocess|os\\.system|os\\.popen"
+            + "|powershell|cmd\\.exe|bash|/bin/sh)",
+        Pattern.CASE_INSENSITIVE);
     private static final Pattern SUSPICIOUS_URL_PATTERN = Pattern.compile(
-        "(http://|https://|ftp://)[^\\s/$.?#].[^\\s]*", Pattern.CASE_INSENSITIVE);
+        "(http://(?!localhost|127\\.0\\.0\\.1|\\[::1\\])[^\\s/$.?#][^\\s]*"
+            + "|https://(?!localhost|127\\.0\\.0\\.1|\\[::1\\])[^\\s/$.?#][^\\s]*"
+            + "|ftp://[^\\s/$.?#][^\\s]*"
+            + "|file://[^\\s]*"
+            + "|data:[^,]*base64"
+            + "|blob:)",
+        Pattern.CASE_INSENSITIVE);
     private static final Pattern SUSPICIOUS_PATH_PATTERN = Pattern.compile(
-        "(\\.\\.[\\\\/]|/etc/passwd|/proc/|C:\\\\Windows)", Pattern.CASE_INSENSITIVE);
+        "(\\.\\.[\\\\/]"
+            + "|/etc/passwd|/etc/shadow|/etc/sudoers|/etc/hosts|/proc/"
+            + "|/sys/|/dev/|/root/|/home/\\w+/\\.ssh"
+            + "|C:\\\\Windows|C:\\\\System32|C:\\\\Users\\\\.*AppData"
+            + "|\\\\\\\\.\\\\pipe\\\\|%APPDATA%|%SYSTEMROOT%"
+            + "|/var/run/docker\\.sock|\\.pem$|\\.key$|\\.pfx$|\\.p12$)",
+        Pattern.CASE_INSENSITIVE);
+    private static final Pattern SUSPICIOUS_INJECTION_PATTERN = Pattern.compile(
+        "(\\$\\{[^}]+\\}"          // Expression language injection e.g. ${7*7}
+            + "|#\\{[^}]+\\}"      // EL injection #{user.password}
+            + "|\\{\\{[^}]+\\}\\}" // Template injection {{config}}
+            + "|<script[^>]*>"     // XSS / HTML injection
+            + "|javascript:"       // Inline JS
+            + "|vbscript:"
+            + "|on\\w+\\s*=\\s*[\"']?\\s*(alert|eval|exec)" // event handler injection
+            + "|\\bSELECT\\b.*\\bFROM\\b|\\bINSERT\\b.*\\bINTO\\b"  // SQL injection fragments
+            + "|\\bDROP\\s+TABLE\\b|\\bTRUNCATE\\s+TABLE\\b"
+            + "|;\\s*(sleep|waitfor)\\s*\\()" // SQL time-based blind injection
+            + "|UNION\\s+(ALL\\s+)?SELECT", // UNION-based SQL injection
+        Pattern.CASE_INSENSITIVE);
 
     private final AepEngine engine;
     /** Agent registry store backed by Data-Cloud EntityStore. Null when Data-Cloud is absent. */
@@ -119,6 +152,11 @@ public class AgentController {
         // Check for suspicious file paths
         if (SUSPICIOUS_PATH_PATTERN.matcher(serialized).find()) {
             securityIssues.add("Suspicious file path patterns detected");
+        }
+
+        // Check for injection patterns (EL, template, SQL, XSS)
+        if (SUSPICIOUS_INJECTION_PATTERN.matcher(serialized).find()) {
+            securityIssues.add("Injection attack patterns detected");
         }
 
         return securityIssues;

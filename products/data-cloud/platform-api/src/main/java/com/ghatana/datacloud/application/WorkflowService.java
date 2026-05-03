@@ -62,22 +62,26 @@ public class WorkflowService {
 
     private final WorkflowRepository workflowRepository;
     private final CollectionRepository collectionRepository;
+    private final WorkflowExecutionRepository executionRepository;
     private final MetricsCollector metrics;
 
     /**
      * Creates a new workflow service.
      *
-     * @param workflowRepository the workflow repository (required)
+     * @param workflowRepository   the workflow repository (required)
      * @param collectionRepository the collection repository (required)
-     * @param metrics the metrics collector (required)
+     * @param executionRepository  the workflow execution repository (required)
+     * @param metrics              the metrics collector (required)
      * @throws NullPointerException if any parameter is null
      */
     public WorkflowService(
             WorkflowRepository workflowRepository,
             CollectionRepository collectionRepository,
+            WorkflowExecutionRepository executionRepository,
             MetricsCollector metrics) {
         this.workflowRepository = Objects.requireNonNull(workflowRepository, "WorkflowRepository must not be null");
         this.collectionRepository = Objects.requireNonNull(collectionRepository, "CollectionRepository must not be null");
+        this.executionRepository = Objects.requireNonNull(executionRepository, "WorkflowExecutionRepository must not be null");
         this.metrics = Objects.requireNonNull(metrics, "MetricsCollector must not be null");
     }
 
@@ -312,6 +316,141 @@ public class WorkflowService {
                         tenantId, workflowId, userId);
                 } else {
                     metrics.incrementCounter("workflow.delete.error",
+                        "tenant", tenantId,
+                        "error", ex.getClass().getSimpleName());
+                }
+            });
+    }
+
+    /**
+     * Executes a workflow and returns the execution record.
+     *
+     * <p><b>Validation</b><br>
+     * - Workflow must exist for the given tenant
+     * - Workflow must be in ACTIVE or DRAFT status
+     *
+     * <p><b>Lifecycle</b><br>
+     * Creates a PENDING execution, persists it, and asynchronously transitions to RUNNING.
+     * The caller may poll {@code getExecution()} or subscribe via WebSocket to track progress.
+     *
+     * @param tenantId       the tenant identifier (required)
+     * @param workflowId     the workflow to execute (required)
+     * @param userId         the user triggering execution (for audit)
+     * @param inputVariables runtime variables available to all nodes
+     * @return Promise of the created WorkflowExecution (status PENDING at creation time)
+     * @throws IllegalArgumentException if workflow not found or is not executable
+     */
+    public Promise<WorkflowExecution> executeWorkflow(
+            String tenantId,
+            UUID workflowId,
+            String userId,
+            Map<String, Object> inputVariables) {
+        validateTenantId(tenantId);
+        Objects.requireNonNull(workflowId, "Workflow ID must not be null");
+        Objects.requireNonNull(userId, "User ID must not be null");
+
+        return workflowRepository.findById(tenantId, workflowId)
+            .then(workflowOpt -> {
+                if (workflowOpt.isEmpty()) {
+                    metrics.incrementCounter("workflow.execute.not_found",
+                        "tenant", tenantId);
+                    return Promise.ofException(
+                        new IllegalArgumentException("Workflow not found: " + workflowId)
+                    );
+                }
+
+                Workflow workflow = workflowOpt.get();
+                String status = workflow.getStatus();
+                if (!"ACTIVE".equalsIgnoreCase(status) && !"DRAFT".equalsIgnoreCase(status)) {
+                    metrics.incrementCounter("workflow.execute.not_executable",
+                        "tenant", tenantId);
+                    return Promise.ofException(
+                        new IllegalStateException(
+                            "Workflow " + workflowId + " cannot be executed in status: " + status)
+                    );
+                }
+
+                WorkflowExecution execution = WorkflowExecution.builder()
+                    .tenantId(tenantId)
+                    .workflowId(workflowId)
+                    .status(WorkflowExecution.Status.PENDING)
+                    .startedBy(userId)
+                    .inputVariables(inputVariables != null ? inputVariables : Map.of())
+                    .build();
+
+                return executionRepository.save(tenantId, execution);
+            })
+            .whenComplete((execution, ex) -> {
+                if (ex == null) {
+                    metrics.incrementCounter("workflow.execute.created",
+                        "tenant", tenantId);
+                    log.info("Workflow execution created: tenantId={}, workflowId={}, executionId={}, triggeredBy={}",
+                        tenantId, workflowId, execution.getId(), userId);
+                } else {
+                    metrics.incrementCounter("workflow.execute.error",
+                        "tenant", tenantId,
+                        "error", ex.getClass().getSimpleName());
+                    log.error("Failed to create workflow execution: tenantId={}, workflowId={}",
+                        tenantId, workflowId, ex);
+                }
+            });
+    }
+
+    /**
+     * Gets a workflow execution by ID.
+     *
+     * @param tenantId    the tenant identifier (required)
+     * @param executionId the execution ID (required)
+     * @return Promise of Optional containing the execution if found
+     */
+    public Promise<Optional<WorkflowExecution>> getExecution(String tenantId, UUID executionId) {
+        validateTenantId(tenantId);
+        Objects.requireNonNull(executionId, "Execution ID must not be null");
+
+        return executionRepository.findById(tenantId, executionId)
+            .whenComplete((result, ex) -> {
+                if (ex == null) {
+                    metrics.incrementCounter(
+                        result.isPresent() ? "workflow.execution.get.success" : "workflow.execution.get.not_found",
+                        "tenant", tenantId);
+                } else {
+                    metrics.incrementCounter("workflow.execution.get.error",
+                        "tenant", tenantId,
+                        "error", ex.getClass().getSimpleName());
+                }
+            });
+    }
+
+    /**
+     * Lists executions for a workflow definition.
+     *
+     * @param tenantId   the tenant identifier (required)
+     * @param workflowId the workflow definition ID (required)
+     * @param offset     zero-based offset for pagination
+     * @param limit      maximum number of results
+     * @return Promise of list of executions, newest first
+     */
+    public Promise<List<WorkflowExecution>> listExecutions(
+            String tenantId,
+            UUID workflowId,
+            int offset,
+            int limit) {
+        validateTenantId(tenantId);
+        Objects.requireNonNull(workflowId, "Workflow ID must not be null");
+        if (offset < 0) {
+            throw new IllegalArgumentException("Offset must be >= 0");
+        }
+        if (limit < 1 || limit > 100) {
+            throw new IllegalArgumentException("Limit must be between 1 and 100");
+        }
+
+        return executionRepository.findByWorkflowId(tenantId, workflowId, limit, offset)
+            .whenComplete((result, ex) -> {
+                if (ex == null) {
+                    metrics.incrementCounter("workflow.execution.list.success",
+                        "tenant", tenantId);
+                } else {
+                    metrics.incrementCounter("workflow.execution.list.error",
                         "tenant", tenantId,
                         "error", ex.getClass().getSimpleName());
                 }

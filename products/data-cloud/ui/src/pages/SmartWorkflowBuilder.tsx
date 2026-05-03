@@ -168,12 +168,13 @@ const STEP_TYPE_CONFIG: Record<
 
 /**
  * Example prompts for inspiration
+ * P1-2: Improved clarification prompts with specific guidance
  */
 const EXAMPLE_PROMPTS = [
-  'Load data from S3, clean email addresses, save to PostgreSQL',
-  'Read customer events, aggregate by day, write to analytics table',
-  'Ingest JSON files, validate schema, transform to parquet, store in data lake',
-  'Filter orders by status, join with customers, export to CSV',
+  'Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields, remove duplicate records by user_id, save to PostgreSQL table users.cleaned',
+  'Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, write to analytics warehouse table metrics.daily_user_activity',
+  'Ingest JSON files from /data/incoming/*.json, validate schema against expected fields, transform to parquet format with compression, partition by date, store in data lake bucket analytics.lake',
+  'Filter orders by status=completed, join with customers table on customer_id, select order_id, customer_name, total_amount, order_date, export to CSV file with headers',
 ];
 
 /**
@@ -185,41 +186,36 @@ interface PipelineTemplate {
   description: string;
   category: 'etl' | 'analytics' | 'ml' | 'sync';
   prompt: string;
-  popularity: number;
 }
 
 const PIPELINE_TEMPLATES: PipelineTemplate[] = [
   {
     id: 'etl-s3-postgres',
     name: 'S3 to PostgreSQL ETL',
-    description: 'Extract from S3, transform, load to PostgreSQL',
+    description: 'Extract CSV from S3, clean and validate records, remove duplicates, load to PostgreSQL',
     category: 'etl',
-    prompt: 'Load CSV data from S3 bucket, clean and validate records, remove duplicates, save to PostgreSQL',
-    popularity: 95,
+    prompt: 'Load CSV data from S3 bucket my-bucket/data/, clean email addresses using regex, validate required fields (email, phone, address), remove duplicate records by user_id, save to PostgreSQL table users.cleaned',
   },
   {
     id: 'daily-aggregation',
     name: 'Daily Aggregation',
-    description: 'Aggregate events by day for analytics',
+    description: 'Aggregate events by day for analytics reporting',
     category: 'analytics',
-    prompt: 'Read events from kafka, aggregate by day and user, calculate metrics, write to analytics warehouse',
-    popularity: 88,
+    prompt: 'Read customer events from Kafka topic events.user, aggregate by day and user_id, calculate metrics: total_orders, avg_order_value, active_days, distinct_products, write to analytics warehouse table metrics.daily_user_activity',
   },
   {
     id: 'data-sync',
     name: 'Database Sync',
-    description: 'Sync data between two databases',
+    description: 'Sync changed records between source and destination databases',
     category: 'sync',
-    prompt: 'Read changed records from source MySQL, compare with target, upsert changes to destination PostgreSQL',
-    popularity: 76,
+    prompt: 'Read changed records from source MySQL table users (where updated_at > last_sync), compare with target PostgreSQL table users by user_id, upsert changes (insert new, update existing), log conflicts to audit table',
   },
   {
     id: 'ml-feature',
     name: 'ML Feature Pipeline',
-    description: 'Prepare features for machine learning',
+    description: 'Prepare and normalize features for machine learning',
     category: 'ml',
-    prompt: 'Load user data, compute engagement features, normalize values, write to feature store',
-    popularity: 72,
+    prompt: 'Load user data from PostgreSQL table users, compute engagement features: login_frequency, session_duration, pages_per_session, normalize values using z-score, handle nulls with mean imputation, write to feature store table features.user_engagement',
   },
 ];
 
@@ -258,7 +254,6 @@ function TemplateCard({
         <span className={cn('text-xs px-2 py-0.5 rounded', CATEGORY_COLORS[template.category])}>
           {template.category.toUpperCase()}
         </span>
-        <span className="text-xs text-gray-400">{template.popularity}% popular</span>
       </div>
       <h3 className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400">
         {template.name}

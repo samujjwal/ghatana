@@ -2,10 +2,13 @@
  * @fileoverview YAPPC product-local phase-specific canvas actions.
  *
  * Defines the action sets for each phase of the YAPPC lifecycle:
- * INTENT → SHAPE → VALIDATE → GENERATE → BUILD → RUN → IMPROVE
+ * INTENT → SHAPE → VALIDATE → GENERATE → RUN → IMPROVE
  *
  * These are product-specific and must NOT live in platform canvas.
  * Inject into the canvas action registry via `initializeActionRegistry({ phaseActions })`.
+ *
+ * Phase availability is gated by feature flags to prevent use of incomplete phases.
+ * See `usePhaseFeatureGate` for the phase enablement registry.
  *
  * @doc.type actions
  * @doc.purpose YAPPC lifecycle phase action definitions

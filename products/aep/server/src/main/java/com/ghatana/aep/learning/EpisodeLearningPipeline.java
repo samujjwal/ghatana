@@ -14,6 +14,9 @@ import com.ghatana.agent.learning.review.ReviewItemType;
 import com.ghatana.datacloud.DataCloudClient;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +77,9 @@ public class EpisodeLearningPipeline {
     private final CompositeEvaluationGate evaluationGate;
     private final HumanReviewQueue reviewQueue;
 
+    private final Counter episodesProcessedCounter;
+    private final Counter policiesProposedCounter;
+
     /** Minimum episodes required for a skill before proposing a policy update. */
     private final int minEpisodeCount;
 
@@ -95,7 +101,15 @@ public class EpisodeLearningPipeline {
             @NotNull DataCloudClient agentDataCloud,
             @NotNull CompositeEvaluationGate evaluationGate,
             @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue) {
-        this(agentDataCloud, evaluationGate, reviewQueue, 10, 0.70, 0.85);
+        this(agentDataCloud, evaluationGate, reviewQueue, Metrics.globalRegistry);
+    }
+
+    public EpisodeLearningPipeline(
+            @NotNull DataCloudClient agentDataCloud,
+            @NotNull CompositeEvaluationGate evaluationGate,
+            @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue,
+            @NotNull MeterRegistry meterRegistry) {
+        this(agentDataCloud, evaluationGate, reviewQueue, 10, 0.70, 0.85, meterRegistry);
     }
 
     /**
@@ -115,12 +129,29 @@ public class EpisodeLearningPipeline {
             int minEpisodeCount,
             double reviewThreshold,
             double autoPromoteThreshold) {
+        this(agentDataCloud, evaluationGate, reviewQueue, minEpisodeCount, reviewThreshold, autoPromoteThreshold, Metrics.globalRegistry);
+    }
+
+    public EpisodeLearningPipeline(
+            @NotNull DataCloudClient agentDataCloud,
+            @NotNull CompositeEvaluationGate evaluationGate,
+            @org.jetbrains.annotations.Nullable HumanReviewQueue reviewQueue,
+            int minEpisodeCount,
+            double reviewThreshold,
+            double autoPromoteThreshold,
+            @NotNull MeterRegistry meterRegistry) {
         this.agentDataCloud = agentDataCloud;
         this.evaluationGate = evaluationGate;
         this.reviewQueue = reviewQueue;
         this.minEpisodeCount = minEpisodeCount;
         this.reviewThreshold = reviewThreshold;
         this.autoPromoteThreshold = autoPromoteThreshold;
+        this.episodesProcessedCounter = Counter.builder("aep.learning.episodes.processed.total")
+                .description("Total number of episodes processed by the learning pipeline")
+                .register(meterRegistry);
+        this.policiesProposedCounter = Counter.builder("aep.learning.policies.proposed.total")
+                .description("Total number of policy proposals submitted to the human review queue")
+                .register(meterRegistry);
     }
 
     // ─── Public API ───────────────────────────────────────────────────────────
@@ -169,6 +200,7 @@ public class EpisodeLearningPipeline {
                 .collect(Collectors.groupingBy(
                         e -> (String) e.data().getOrDefault("agentId", "unknown")));
 
+        episodesProcessedCounter.increment(rawEpisodes.size());
         log.info("[learning-pipeline] tenant={} \u2014 {} episodes across {} skills",
                 tenantId, rawEpisodes.size(), bySkill.size());
 
@@ -238,6 +270,7 @@ public class EpisodeLearningPipeline {
                             1, episodeIds, metrics, confidence);
 
                     boolean autoPromotable = confidence >= autoPromoteThreshold;
+                    policiesProposedCounter.increment();
                     return submitForReview(tenantId, skillId, proposedVersion, confidence,
                             changeDescription, gateResult, provenance, autoPromotable)
                             .map(item -> new SkillResult(skillId, SkillOutcome.QUEUED_FOR_REVIEW, confidence));

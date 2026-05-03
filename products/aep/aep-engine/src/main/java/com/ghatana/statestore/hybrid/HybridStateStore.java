@@ -547,16 +547,11 @@ public class HybridStateStore implements StateStore {
             .then(() -> localStore != null ? localStore.close() : Promise.complete())
             .then(() -> centralStore != null ? centralStore.close() : Promise.complete())
             .whenComplete((r, e) -> {
-                // Shutdown scheduler AFTER stores are closed
-                scheduler.shutdown();
-                try {
-                    if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                        scheduler.shutdownNow();
-                    }
-                } catch (InterruptedException ex) {
-                    scheduler.shutdownNow();
-                    Thread.currentThread().interrupt();
-                }
+                // Immediately stop: do NOT call awaitTermination() here — it would block the
+                // ActiveJ event loop thread. The periodic task was cancelled above; any tasks
+                // that were already posted to the event loop via eventloop.execute() have
+                // been processed during the flushPendingWrites() chain above.
+                scheduler.shutdownNow();
 
                 if (e != null) {
                     logger.error("Error closing HybridStateStore", e);

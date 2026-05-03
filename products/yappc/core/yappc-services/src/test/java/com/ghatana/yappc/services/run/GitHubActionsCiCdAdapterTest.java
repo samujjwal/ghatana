@@ -43,7 +43,7 @@ class GitHubActionsCiCdAdapterTest extends EventloopTestBase {
     class UnconfiguredAdapterTests {
 
         private final GitHubActionsCiCdAdapter adapter =
-            new GitHubActionsCiCdAdapter(null, "owner/repo", "https://api.github.com");
+            new GitHubActionsCiCdAdapter(null, "owner/repo", "https://api.github.com", false);
 
         @Test
         @DisplayName("isReady() returns false when token is null")
@@ -111,7 +111,7 @@ class GitHubActionsCiCdAdapterTest extends EventloopTestBase {
     class ConfiguredAdapterFailClosedTests {
 
         private final GitHubActionsCiCdAdapter adapter =
-            new GitHubActionsCiCdAdapter("ghp_fake_token_for_test", "owner/repo", "https://api.github.com");
+            new GitHubActionsCiCdAdapter("ghp_fake_token_for_test", "owner/repo", "https://api.github.com", true);
 
         @Test
         @DisplayName("isReady() returns true when token is present")
@@ -212,7 +212,7 @@ class GitHubActionsCiCdAdapterTest extends EventloopTestBase {
         @DisplayName("isReady() returns false when token is blank")
         void isReadyFalseWhenTokenBlank() {
             GitHubActionsCiCdAdapter adapter =
-                new GitHubActionsCiCdAdapter("   ", "owner/repo", "https://api.github.com");
+                new GitHubActionsCiCdAdapter("   ", "owner/repo", "https://api.github.com", false);
             assertThat(adapter.isReady()).isFalse();
         }
 
@@ -220,7 +220,7 @@ class GitHubActionsCiCdAdapterTest extends EventloopTestBase {
         @DisplayName("build() with blank token returns NOT_READY")
         void buildWithBlankTokenReturnsNotReady() {
             GitHubActionsCiCdAdapter adapter =
-                new GitHubActionsCiCdAdapter("", "owner/repo", "https://api.github.com");
+                new GitHubActionsCiCdAdapter("", "owner/repo", "https://api.github.com", false);
             RunTask task = buildTask("task-blank", "build");
             TaskResult result = runPromise(() -> adapter.build(task));
 
@@ -260,7 +260,7 @@ class GitHubActionsCiCdAdapterTest extends EventloopTestBase {
     class TaskIdPreservationTests {
 
         private final GitHubActionsCiCdAdapter adapter =
-            new GitHubActionsCiCdAdapter("ghp_test_token", "owner/repo", null);
+            new GitHubActionsCiCdAdapter("ghp_test_token", "owner/repo", null, true);
 
         @Test
         @DisplayName("build result preserves task ID")

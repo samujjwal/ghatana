@@ -62,6 +62,7 @@ import com.ghatana.datacloud.launcher.http.handlers.EntityAnomalyHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EntityValidationHandler;
 import com.ghatana.datacloud.launcher.http.handlers.EventHandler;
 import com.ghatana.datacloud.launcher.http.handlers.PipelineCheckpointHandler;
+import com.ghatana.datacloud.launcher.http.handlers.WorkflowExecutionHandler;
 import com.ghatana.datacloud.launcher.http.handlers.MemoryPlaneHandler;
 import com.ghatana.datacloud.launcher.http.handlers.McpToolsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.BrainHandler;
@@ -69,7 +70,6 @@ import com.ghatana.datacloud.launcher.http.handlers.LearningHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AnalyticsHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiModelHandler;
 import com.ghatana.datacloud.launcher.http.handlers.HealthHandler;
-import com.ghatana.datacloud.launcher.http.handlers.WorkflowExecutionHandler;
 import com.ghatana.datacloud.launcher.http.handlers.SseStreamingHandler;
 import com.ghatana.datacloud.launcher.http.handlers.AiAssistHandler;
 import com.ghatana.datacloud.launcher.http.handlers.VoiceGatewayHandler;
@@ -341,9 +341,8 @@ public class DataCloudHttpServer {
     private EntityValidationHandler validationHandler;
     private EventHandler eventHandler;
     private PipelineCheckpointHandler pipelineCheckpointHandler;
-    private AlertingHandler alertingHandler;
     private WorkflowExecutionHandler workflowExecutionHandler;
-    private boolean workflowExecutionEnabled = true;
+    private AlertingHandler alertingHandler;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
     private LearningHandler learningHandler;
@@ -836,28 +835,6 @@ public class DataCloudHttpServer {
 
     /**
      * Enables the built-in workflow execution plugin (simulation mode).
-     * When {@code false} (default), workflow execution endpoints return 503,
-     * requiring a real first-party workflow engine to be installed as a plugin.
-     *
-     * @param enabled whether to enable the built-in simulation plugin
-     * @return {@code this} for method chaining
-     *
-     * @doc.type method
-     * @doc.purpose Hard-gate workflow execution to prevent synthetic execution in production
-     * @doc.layer product
-     * @doc.pattern Builder
-     */
-    public DataCloudHttpServer withWorkflowExecutionEnabled(boolean enabled) {
-        this.workflowExecutionEnabled = enabled;
-        return this;
-    }
-
-    /**
-     * Enables or disables the plugin hot-swap upgrade endpoint ({@code POST /api/v1/plugins/:id/upgrade}).
-     *
-     * <p>Defaults to {@code false} — the endpoint returns HTTP 501 until explicitly enabled.
-     * Do not enable in production until the platform JAR hot-swap capability is ready.
-     *
      * @param enabled {@code true} to activate the upgrade route
      * @return this server (fluent)
      * @doc.type method
@@ -1120,6 +1097,7 @@ public class DataCloudHttpServer {
         eventHandler.withTraceSupport(traceSpanSupport);
         if (tenantQuotaService != null) eventHandler.withTenantQuotaService(tenantQuotaService);
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
+        workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
         runtimePluginManager = new DataCloudRuntimePluginManager();
         try {
@@ -1127,13 +1105,6 @@ public class DataCloudHttpServer {
             log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
         } catch (Exception e) {
             log.error("[DC-AUD-005] Failed to register OOB plugins", e);
-        }
-        if (workflowExecutionEnabled) {
-            runtimePluginManager.registerWorkflowPlugin(client);
-            log.info("[DC-AUD-005] Built-in workflow execution plugin enabled (simulation mode)");
-        } else {
-            log.info("[DC-AUD-005] Workflow execution hard-gated — built-in simulation plugin disabled. "
-                    + "Set DATACLOUD_WORKFLOW_EXECUTION_ENABLED=true to enable.");
         }
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);
@@ -1147,11 +1118,6 @@ public class DataCloudHttpServer {
             analyticsHandler.withReportService(reportService);
         }
         analyticsHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
-
-        workflowExecutionHandler = new WorkflowExecutionHandler(httpSupport, runtimePluginManager);
-        if (client != null) {
-            workflowExecutionHandler.withClient(client);
-        }
 
         aiModelHandler = new AiModelHandler(aiModelManager, featureStoreService, httpSupport);
         aiModelHandler.withMetrics(new DataCloudHttpMetrics(metricsCollector));
@@ -1270,8 +1236,17 @@ public class DataCloudHttpServer {
         tierMigrationHandler = new TierMigrationHandler(httpSupport, warmMigrationScheduler, coldMigrationScheduler);
 
         // DC-S14: Admin settings handler — use injected persistent store or fall back to in-memory
+        // P0-2/P0-6: Validate that production profiles do not use in-memory settings
         SettingsStore resolvedStore = settingsStore != null ? settingsStore : new InMemorySettingsStore();
+        if ("in-memory".equals(resolvedStore.getStorageMode()) && strictTenantResolution) {
+            throw new IllegalStateException(
+                "PRODUCTION VALIDATION ERROR: Settings persistence is required in non-embedded profiles. " +
+                "In-memory settings store cannot be used in production environments. " +
+                "Configure DATACLOUD_DB_* environment variables to enable JDBC-backed settings storage. " +
+                "Current storage mode: " + resolvedStore.getStorageMode());
+        }
         settingsHandler = new SettingsHandler(httpSupport, resolvedStore);
+        log.info("[SETTINGS] Settings handler configured with storage mode: {}", resolvedStore.getStorageMode());
 
         userActivityHandler = new UserActivityHandler(httpSupport);
 
@@ -1321,8 +1296,9 @@ public class DataCloudHttpServer {
             .withMemoryRoutes(memoryHandler)
             .withBrainRoutes(brainHandler, sseHandler)
             .withLearningRoutes(learningHandler)
-            .withAnalyticsRoutes(analyticsHandler)
+            .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
             .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
+            .withExecutionRoutes(workflowExecutionHandler)
             .withModelRoutes(aiModelHandler)
             .withFeatureRoutes(aiModelHandler)
             .withWebSocketRoutes(sseHandler)
@@ -1475,7 +1451,7 @@ public class DataCloudHttpServer {
         Map<String, Object> workflowExecution = capabilityEntry(workflowExecutionAvailable, null);
         workflowExecution.put("executionStore", workflowExecutionAvailable ? "datacloud" : "none");
         workflowExecution.put("lifecycleModel", workflowExecutionAvailable ? "durable-single-process" : "absent");
-        workflowExecution.put("gated", !workflowExecutionEnabled);
+        workflowExecution.put("gated", true);
         capabilities.put("pipelines.metadata", capabilityEntry(true, null));
         capabilities.put("pipelines.execution", workflowExecution);
         capabilities.put("authentication.apiKey", capabilityEntry(apiKeyResolver != null, null));
@@ -1503,13 +1479,13 @@ public class DataCloudHttpServer {
         capabilities.put("tierMigration.cold", capabilityEntry(coldMigrationScheduler != null, null));
         // P1.4: Document tier routing policy in capability registry
         List<Map<String, Object>> tiers = new ArrayList<>();
-        Map<String, Object> hotTier = new LinkedHashMap<>();
+        Map<String, Object> hotTier = new java.util.LinkedHashMap<>();
         hotTier.put("name", "hot");
         hotTier.put("description", "Recent, frequently accessed data — in-memory / high-performance storage");
         hotTier.put("defaultRetentionDays", 7);
         hotTier.put("autoMigrateAfterDays", 7);
         tiers.add(hotTier);
-        Map<String, Object> warmTier = new LinkedHashMap<>();
+        Map<String, Object> warmTier = new java.util.LinkedHashMap<>();
         warmTier.put("name", "warm");
         warmTier.put("description", "Older, less frequently accessed data — columnar / Iceberg catalog");
         warmTier.put("defaultRetentionDays", 90);

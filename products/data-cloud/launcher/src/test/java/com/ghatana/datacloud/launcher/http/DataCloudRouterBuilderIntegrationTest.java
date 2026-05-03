@@ -134,6 +134,11 @@ class DataCloudRouterBuilderIntegrationTest {
         AutonomyHandler autonomyHandler = mock(AutonomyHandler.class);
         AgentCatalogHandler agentCatalogHandler = mock(AgentCatalogHandler.class);
         PluginInstallHandler pluginInstallHandler = mock(PluginInstallHandler.class);
+        HttpHandlerSupport httpSupport = mock(HttpHandlerSupport.class);
+        FederatedQueryHandler federatedQueryHandler = mock(FederatedQueryHandler.class);
+        TierMigrationHandler tierMigrationHandler = mock(TierMigrationHandler.class);
+        DataSourceRegistryHandler dataSourceRegistryHandler = mock(DataSourceRegistryHandler.class);
+        StorageCostHandler storageCostHandler = mock(StorageCostHandler.class);
         
         DataCloudRouterBuilder builder = new DataCloudRouterBuilder(eventloop);
         
@@ -148,8 +153,9 @@ class DataCloudRouterBuilderIntegrationTest {
             .withMemoryRoutes(memoryHandler)
             .withBrainRoutes(brainHandler, sseHandler)
             .withLearningRoutes(learningHandler)
-            .withAnalyticsRoutes(analyticsHandler)
+            .withAnalyticsRoutes(analyticsHandler, workflowExecutionHandler)
             .withReportingRoutes(analyticsHandler, workflowExecutionHandler)
+            .withExecutionRoutes(workflowExecutionHandler)
             .withModelRoutes(aiModelHandler)
             .withFeatureRoutes(aiModelHandler)
             .withSseRoutes(sseHandler)

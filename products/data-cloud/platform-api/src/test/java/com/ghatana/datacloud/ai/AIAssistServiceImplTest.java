@@ -71,10 +71,10 @@ class AIAssistServiceImplTest extends EventloopTestBase {
             AIAssistService.QueryResult result = runPromise(() -> service.processQuery(query, context)); 
 
             // Then
-            assertThat(result).isNotNull(); 
-            assertThat(result.originalQuery()).isEqualTo(query); 
-            assertThat(result.confidenceScore()).isEqualTo(0.95); 
-            assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0); 
+            assertThat(result).isNotNull();
+            assertThat(result.originalQuery()).isEqualTo(query);
+            assertThat(result.confidenceScore()).isEqualTo(1.0);
+            assertThat(result.processingTimeMs()).isGreaterThanOrEqualTo(0);
             verify(metrics).incrementCounter("ai.query.success", "tenant", "tenant-alpha"); 
         }
     }

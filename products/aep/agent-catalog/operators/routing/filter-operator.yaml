@@ -1,0 +1,78 @@
+id: filter-operator
+namespace: aep.operators.routing
+name: Filter Operator
+version: 1.0.0
+status: active
+owners:
+  - team: aep-platform
+    contact: aep-team@ghatana.com
+summary: Filters events based on configurable conditions and expressions
+description: |
+  Routes events to downstream operators based on configurable filter conditions.
+  Supports simple field comparisons, boolean expressions, and custom predicates.
+  Events that don't match the filter can be dropped or routed to a dead letter queue.
+
+metadata:
+  level: 2
+  domain: event-processing
+  tags: [routing, filtering, conditional, expression]
+
+identity:
+  agentType: deterministic
+  subtype: routing
+  determinismGuarantee: full
+  stateMutability: stateless
+  failureMode: drop
+  criticality: medium
+  autonomyLevel: autonomous
+
+aep:
+  operatorType: ROUTING
+  inputEventTypes: ["*"]
+  outputEventTypes: ["filtered"]
+  backpressure:
+    bufferSize: 10000
+    overflowStrategy: DROP_LATEST
+  reliability:
+    checkpointInterval: "30s"
+    maxRetries: 1
+    deadLetterQueue: "filter-dlq"
+
+capabilities:
+  - event-filtering
+  - condition-evaluation
+  - expression-parsing
+
+tools:
+  - name: filterEvaluator
+    type: SERVICE
+    endpoint: /aep/routing/evaluate-filter
+
+interfaces:
+  inputs:
+    - name: inputEvent
+      schema: "*"
+      required: true
+  outputs:
+    - name: matchedEvent
+      schema: filtered
+    - name: unmatchedEvent
+      schema: filtered
+
+memory:
+  type: WORKING
+  scope: filter_config
+  retention: short
+  ttl: "1h"
+  stateKeys:
+    - "filterRules"
+
+resources:
+  memory: "512MB"
+  cpu: "1"
+  timeout: "5s"
+  scaling:
+    minReplicas: 1
+    maxReplicas: 4
+    metric: "filter_queue_depth"
+    threshold: 3000

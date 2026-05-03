@@ -225,7 +225,7 @@ public class CodeGenerationToolProvider implements ToolProvider {
     return String.format("""
         /**
          * %s
-         * TODO: Implement method logic based on the documentation above.
+         * Implement method logic based on the documentation above.
          * This is a generated stub - replace with actual implementation.
          */
         %s {

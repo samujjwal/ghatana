@@ -204,6 +204,9 @@ public class AiAssistHandler {
                 int    limit   = ((Number) input.getOrDefault("limit", 5)).intValue();
 
                 if (completionService == null) {
+                    // P2-2: Explicit logging for AI Operations fallback
+                    log.warn("[P2-2] AI Operations fallback: completionService is null for entity-suggest collection={} tenant={} requestId={}", 
+                            collection, tenantId, requestId);
                     HttpResponse resp = heuristicEntitySuggestResponse(collection, context, limit, tenantId, requestId);
                     recommendationMetrics.recordRecommendation(
                         AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId,
@@ -230,8 +233,9 @@ public class AiAssistHandler {
                     })
                     .then(Promise::of,
                           e -> {
-                              log.warn("[DC-E3] entity suggest AI call failed for collection={} tenant={}: {}",
-                                        collection, tenantId, e.getMessage());
+                              // P2-2: Explicit logging for AI Operations fallback due to error
+                              log.warn("[P2-2] AI Operations fallback: entity-suggest AI call failed for collection={} tenant={} requestId={} error={}", 
+                                        collection, tenantId, requestId, e.getMessage());
                               recommendationMetrics.recordError(
                                   AiRecommendationMetrics.TYPE_ENTITY_SUGGEST, tenantId, e);
                               recordAiAction(tenantId, "entity-suggest", "collection=" + collection,
@@ -364,6 +368,9 @@ public class AiAssistHandler {
                 String intent = (String) input.getOrDefault("intent", "");
 
                 if (completionService == null) {
+                    // P2-2: Explicit logging for AI Operations fallback
+                    log.warn("[P2-2] AI Operations fallback: completionService is null for analytics-suggest tenant={} requestId={}", 
+                            tenantId, requestId);
                     HttpResponse resp = heuristicAnalyticsSuggestResponse(intent, tenantId, requestId);
                     recommendationMetrics.recordRecommendation(
                         AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
@@ -437,6 +444,9 @@ public class AiAssistHandler {
                 String context = String.valueOf(input.getOrDefault("context", "{}"));
 
                 if (completionService == null) {
+                    // P2-2: Explicit logging for AI Operations fallback
+                    log.warn("[P2-2] AI Operations fallback: completionService is null for analytics-automate tenant={} requestId={}", 
+                            tenantId, requestId);
                     HttpResponse resp = heuristicAnalyticsAutomateResponse(query, schema, tenantId, requestId);
                     recommendationMetrics.recordRecommendation(
                         AiRecommendationMetrics.TYPE_ANALYTICS_SUGGEST, tenantId,
@@ -505,6 +515,9 @@ public class AiAssistHandler {
                 }
 
                 if (completionService == null) {
+                    // P2-2: Explicit logging for AI Operations fallback
+                    log.warn("[P2-2] AI Operations fallback: completionService is null for pipeline-draft tenant={} requestId={}", 
+                            tenantId, requestId);
                     HttpResponse resp = heuristicPipelineDraftResponse(prompt, tenantId, requestId);
                     recommendationMetrics.recordRecommendation(
                         AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,
@@ -585,6 +598,9 @@ public class AiAssistHandler {
                 Map<String, Object> draft = (Map<String, Object>) input.getOrDefault("draft", Map.of());
 
                 if (completionService == null) {
+                    // P2-2: Explicit logging for AI Operations fallback
+                    log.warn("[P2-2] AI Operations fallback: completionService is null for pipeline-refine tenant={} requestId={}", 
+                            tenantId, requestId);
                     HttpResponse resp = heuristicPipelineRefineResponse(draftId, draft, tenantId, requestId);
                     recommendationMetrics.recordRecommendation(
                         AiRecommendationMetrics.TYPE_PIPELINE_DRAFT,

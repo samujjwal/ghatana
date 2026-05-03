@@ -218,6 +218,7 @@ include(":products:yappc:core:refactorer:api")
 include(":products:yappc:core:refactorer:engine")
 include(":products:yappc:infrastructure:datacloud")
 include(":products:yappc:libs:java:yappc-domain")
+include(":products:yappc:integration")
 
 // =============================================================================
 // Product: Flashit

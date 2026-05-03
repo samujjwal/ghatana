@@ -1,19 +1,12 @@
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 
 /**
- * Workflow List Page
- * 
- * Legacy workflow-list stub retained for deep-link compatibility work.
+ * WorkflowList legacy compatibility redirect.
+ *
+ * Redirects deep-links from the old /workflow-list route to the canonical
+ * Pipelines surface at /pipelines.
  */
-export const WorkflowList: React.FC = () => {
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Legacy Workflow List</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <p>This legacy stub is not the canonical pipelines list. Use the Pipelines surface instead.</p>
-      </div>
-    </div>
-  );
-};
+export const WorkflowList: React.FC = () => <Navigate to="/pipelines" replace />;
 
 export default WorkflowList;
