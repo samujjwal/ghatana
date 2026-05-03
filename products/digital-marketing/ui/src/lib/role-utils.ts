@@ -8,15 +8,52 @@
 
 import type { ApprovalRecordResponse } from '@/types/approval';
 
+// DMOS-P1-12: Valid role constants
+export const VALID_ROLES = [
+  'brand-manager',
+  'marketing-director',
+  'exec-sponsor',
+  'admin',
+  'viewer',
+] as const;
+
+export type ValidRole = typeof VALID_ROLES[number];
+
+/**
+ * Validates that all roles are from the known set of valid roles.
+ *
+ * @param roles the roles to validate
+ * @returns true if all roles are valid, false otherwise
+ */
+export function validateRoles(roles: string[]): boolean {
+  if (roles.length === 0) {
+    return false; // Empty roles are invalid per DMOS-P1-12
+  }
+  return roles.every(role => VALID_ROLES.includes(role as ValidRole));
+}
+
+/**
+ * Normalizes and filters roles to only include valid roles.
+ *
+ * @param roles the roles to normalize
+ * @returns array of valid, normalized roles (lowercase)
+ */
+export function normalizeRoles(roles: string[]): string[] {
+  return roles
+    .map(role => role.toLowerCase().trim())
+    .filter(role => VALID_ROLES.includes(role as ValidRole));
+}
+
 /**
  * Checks if the user has the required role to approve a given approval.
  *
  * <p>Role hierarchy (least to most privileged):</p>
  * <ul>
- *   <li>None (no roles) → view-only</li>
+ *   <li>viewer → view-only, no approval rights</li>
  *   <li>brand-manager → can approve brand-manager level approvals</li>
  *   <li>marketing-director → can approve medium-risk approvals</li>
  *   <li>exec-sponsor → can approve override/high-risk approvals</li>
+ *   <li>admin → can approve any approval</li>
  * </ul>
  *
  * @param roles the user's roles from auth context
@@ -29,7 +66,14 @@ export function canApprove(roles: string[], approval: ApprovalRecordResponse | n
   }
 
   const requiredRole = approval.requiredApproverRole.toLowerCase();
-  return roles.some(role => role.toLowerCase() === requiredRole);
+  const normalizedRoles = normalizeRoles(roles);
+  
+  // Admin can approve anything
+  if (normalizedRoles.includes('admin')) {
+    return true;
+  }
+
+  return normalizedRoles.some(role => role === requiredRole);
 }
 
 /**
@@ -43,5 +87,6 @@ export function hasApproverRole(roles: string[]): boolean {
     return false;
   }
   const approverRoles = ['brand-manager', 'marketing-director', 'exec-sponsor', 'admin'];
-  return roles.some(role => approverRoles.includes(role.toLowerCase()));
+  const normalizedRoles = normalizeRoles(roles);
+  return normalizedRoles.some(role => approverRoles.includes(role));
 }

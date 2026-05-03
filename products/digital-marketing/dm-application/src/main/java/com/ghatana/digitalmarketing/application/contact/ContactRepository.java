@@ -13,8 +13,11 @@ import java.util.Optional;
  * <p>All methods are workspace-scoped; implementations must enforce isolation
  * so that cross-workspace data access is structurally impossible.</p>
  *
+ * <p>PII-safe implementation (DMOS-P0-001): Email lookups use hash instead of raw
+ * email to protect PII. Use findByEmailHash for privacy-compliant lookups.</p>
+ *
  * @doc.type interface
- * @doc.purpose Contact persistence contract enforcing workspace-scoped isolation
+ * @doc.purpose Contact persistence contract enforcing workspace-scoped isolation with PII protection
  * @doc.layer product
  * @doc.pattern Repository
  */
@@ -38,12 +41,25 @@ public interface ContactRepository {
     Promise<Optional<Contact>> findById(DmWorkspaceId workspaceId, String contactId);
 
     /**
+     * Finds a contact by email hash within the given workspace (DMOS-P0-001).
+     * This is the preferred method for privacy-compliant email lookups.
+     *
+     * @param workspaceId the owning workspace; must not be null
+     * @param emailHash   the HMAC-SHA256 hash of the email; must not be blank
+     * @return promise resolving to an optional contact
+     */
+    Promise<Optional<Contact>> findByEmailHash(DmWorkspaceId workspaceId, String emailHash);
+
+    /**
      * Finds a contact by email address within the given workspace.
+     * @deprecated Use findByEmailHash instead for privacy compliance (DMOS-P0-001).
+     * This method is provided for backward compatibility during migration.
      *
      * @param workspaceId the owning workspace; must not be null
      * @param email       the email address; must not be blank
      * @return promise resolving to an optional contact
      */
+    @Deprecated
     Promise<Optional<Contact>> findByEmail(DmWorkspaceId workspaceId, String email);
 
     /**
@@ -62,4 +78,13 @@ public interface ContactRepository {
      * @return promise resolving to the count
      */
     Promise<Integer> countMarketingEligible(DmWorkspaceId workspaceId);
+    
+    /**
+     * Deletes a contact by ID within the given workspace for DSAR compliance.
+     *
+     * @param workspaceId the owning workspace; must not be null
+     * @param contactId   the contact ID; must not be null
+     * @return promise resolving to true if deleted, false if not found
+     */
+    Promise<Boolean> deleteById(DmWorkspaceId workspaceId, String contactId);
 }

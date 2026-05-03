@@ -28,6 +28,7 @@ import {
   setAuthToken,
   setRequestContext,
 } from '@/lib/http-client';
+import { normalizeRoles, validateRoles } from '@/lib/role-utils';
 
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 const SESSION_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
@@ -121,8 +122,14 @@ export function AuthProvider({
 
   const login = useCallback(
     (newToken: string, wsId: string, tId: string, pId: string, newSessionId: string, newRoles: string[] = []) => {
+      // DMOS-P1-12: Validate and normalize roles
+      const normalizedRoles = normalizeRoles(newRoles);
+      if (!validateRoles(normalizedRoles) && normalizedRoles.length > 0) {
+        console.warn('[DMOS] Invalid roles provided, using empty array:', newRoles);
+      }
+      
       setAuthToken(newToken);
-      setRequestContext(tId, pId, newSessionId, newRoles, []);
+      setRequestContext(tId, pId, newSessionId, normalizedRoles, []);
       // Use sessionStorage instead of localStorage for session data (DMOS-P1-013)
       sessionStorage.setItem('dmos_workspace_id', wsId);
       sessionStorage.setItem('dmos_tenant_id', tId);
@@ -133,7 +140,7 @@ export function AuthProvider({
       setTenantId(tId);
       setPrincipalId(pId);
       setSessionId(newSessionId);
-      setRoles(newRoles);
+      setRoles(normalizedRoles);
       setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
     },
     [],

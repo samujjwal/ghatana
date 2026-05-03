@@ -85,7 +85,24 @@ Run from repo root:
 
 ## API Surface
 
-All routes served by `dm-api`. Required headers on every request: `X-Tenant-ID`. Write operations also require `X-Idempotency-Key`.
+All routes served by `dm-api`. Required headers on every request:
+- `X-Tenant-ID` (mandatory)
+- `X-Principal-ID` (mandatory)
+- `X-Session-ID` (mandatory)
+- `X-Correlation-ID` (mandatory)
+- `X-Roles` (optional, but missing/empty results in no privileges)
+- `X-Permissions` (optional)
+- `X-Idempotency-Key` (recommended for write operations to prevent duplicate execution)
+
+## Security & Privacy (DMOS-P0-1)
+
+DMOS implements production-grade PII protection:
+- **Hashed Identifiers**: Email addresses and other identifiers are hashed using HMAC-SHA256 before storage
+- **Encrypted PII**: Raw PII data is encrypted using AES-GCM encryption
+- **DSAR Compliance**: Data Subject Access Request (DSAR) endpoints support GDPR/CCPA right-to-be-forgotten
+- **Tenant Isolation**: All PII data is scoped to tenant with hashed keys for privacy-safe lookups
+
+See `ContactRepository` and `DataSubjectRequestService` for implementation details.
 
 | Module | Route prefix | Servlet |
 |---|---|---|

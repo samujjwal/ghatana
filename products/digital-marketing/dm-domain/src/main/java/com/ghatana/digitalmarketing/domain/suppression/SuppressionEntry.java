@@ -8,11 +8,12 @@ import java.util.Objects;
 /**
  * Domain entity representing a do-not-contact suppression entry.
  *
- * <p>PII-safe implementation (DMOS-P1-014): Stores contact point hash instead of raw email/phone
- * to protect PII. The raw contact information is never stored in the database.</p>
+ * <p>PII-safe implementation (DMOS-P0-001): Stores contact point hash instead of raw email/phone
+ * to protect PII. The raw contact information is never stored in the database.
+ * All suppression matching uses the hash for privacy protection.</p>
  *
  * @doc.type class
- * @doc.purpose DMOS suppression and DNC record for contact channels (DMOS-P1-014)
+ * @doc.purpose DMOS suppression and DNC record for contact channels with PII protection
  * @doc.layer product
  * @doc.pattern Entity
  */
@@ -55,7 +56,7 @@ public final class SuppressionEntry {
         return workspaceId;
     }
 
-    /** Returns the contact point hash (HMAC-SHA256) for suppression matching (DMOS-P1-014). */
+    /** Returns the contact point hash (HMAC-SHA256) for suppression matching (DMOS-P0-001). */
     public String getContactPointHash() {
         return contactPointHash;
     }

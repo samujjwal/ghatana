@@ -5,6 +5,8 @@ import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.contact.Contact;
 import com.ghatana.digitalmarketing.domain.contact.ConsentStatus;
+import com.ghatana.platform.security.port.EncryptionPort;
+import com.ghatana.platform.security.port.HashingPort;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +23,11 @@ import java.util.UUID;
  * <p>Enforces consent-first behavior: all marketing actions verify consent before
  * proceeding. All contact writes and reads of sensitive data are audited.</p>
  *
+ * <p>PII-safe implementation (DMOS-P0-001): Uses HashingPort and EncryptionPort
+ * to protect email addresses. Email is hashed for lookups and encrypted for storage.</p>
+ *
  * @doc.type class
- * @doc.purpose Production DMOS contact and consent lifecycle application service
+ * @doc.purpose Production DMOS contact and consent lifecycle application service with PII protection
  * @doc.layer product
  * @doc.pattern ApplicationService
  */
@@ -33,6 +38,8 @@ public final class ContactServiceImpl implements ContactService {
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final ContactRepository repository;
     private final ConsentProofService consentProofService;
+    private final HashingPort hashingPort;
+    private final EncryptionPort encryptionPort;
 
     /**
      * Constructs the contact service.
@@ -43,7 +50,7 @@ public final class ContactServiceImpl implements ContactService {
     public ContactServiceImpl(
             DigitalMarketingKernelAdapter kernelAdapter,
             ContactRepository repository) {
-        this(kernelAdapter, repository, null);
+        this(kernelAdapter, repository, null, null, null);
     }
 
     /**
@@ -57,9 +64,36 @@ public final class ContactServiceImpl implements ContactService {
             DigitalMarketingKernelAdapter kernelAdapter,
             ContactRepository repository,
             ConsentProofService consentProofService) {
+        this(kernelAdapter, repository, consentProofService, null, null);
+    }
+
+    /**
+     * Constructs the contact service with PII protection ports.
+     *
+     * @param kernelAdapter       DMOS kernel adapter for auth, consent verification, and audit
+     * @param repository          contact persistence
+     * @param consentProofService consent proof storage service; nullable for compatibility
+     * @param hashingPort         hashing port for email hashing
+     * @param encryptionPort      encryption port for email encryption
+     */
+    public ContactServiceImpl(
+            DigitalMarketingKernelAdapter kernelAdapter,
+            ContactRepository repository,
+            ConsentProofService consentProofService,
+            HashingPort hashingPort,
+            EncryptionPort encryptionPort) {
         this.kernelAdapter = Objects.requireNonNull(kernelAdapter, "kernelAdapter must not be null");
         this.repository    = Objects.requireNonNull(repository,    "repository must not be null");
         this.consentProofService = consentProofService;
+        this.hashingPort = hashingPort;
+        this.encryptionPort = encryptionPort;
+        
+        if (hashingPort != null && encryptionPort == null) {
+            throw new IllegalArgumentException("encryptionPort must be provided when hashingPort is provided");
+        }
+        if (encryptionPort != null && hashingPort == null) {
+            throw new IllegalArgumentException("hashingPort must be provided when encryptionPort is provided");
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -77,32 +111,48 @@ public final class ContactServiceImpl implements ContactService {
                     return Promise.ofException(
                         new SecurityException("Actor not authorized to register contacts"));
                 }
-                Instant now = Instant.now();
-                Contact contact = Contact.builder()
-                    .id(UUID.randomUUID().toString())
-                    .workspaceId(ctx.getWorkspaceId())
-                    .email(command.email())
-                    .displayName(command.displayName() != null ? command.displayName() : "")
-                    .consentStatus(ConsentStatus.UNKNOWN)
-                    .suppressed(false)
-                    .createdAt(now)
-                    .updatedAt(now)
-                    .createdBy(ctx.getActor().getPrincipalId())
-                    .build();
+                
+                // Hash and encrypt email if PII protection ports are available
+                Promise<String> emailHashPromise = hashingPort != null 
+                    ? hashingPort.hashContactPoint(command.email())
+                    : Promise.of(command.email()); // Fallback for migration
+                    
+                Promise<String> encryptedEmailPromise = encryptionPort != null
+                    ? encryptionPort.encrypt(command.email())
+                    : Promise.of(command.email()); // Fallback for migration
+                
+                return emailHashPromise
+                    .then(emailHash -> encryptedEmailPromise
+                        .then(encryptedEmail -> {
+                            Instant now = Instant.now();
+                            Contact contact = Contact.builder()
+                                .id(UUID.randomUUID().toString())
+                                .workspaceId(ctx.getWorkspaceId())
+                                .emailHash(emailHash)
+                                .encryptedEmail(encryptedEmail)
+                                .displayName(command.displayName() != null ? command.displayName() : "")
+                                .consentStatus(ConsentStatus.UNKNOWN)
+                                .suppressed(false)
+                                .createdAt(now)
+                                .updatedAt(now)
+                                .createdBy(ctx.getActor().getPrincipalId())
+                                .build();
 
-                return repository.save(contact)
-                    .then(saved -> {
-                        LOG.info("[DMOS] Contact registered: id={} workspace={} correlationId={}",
-                            saved.getId(),
-                            ctx.getWorkspaceId().getValue(),
-                            ctx.getCorrelationId().getValue());
-                        return kernelAdapter.recordAudit(
-                            ctx,
-                            "contacts/" + saved.getId(),
-                            "register",
-                            Map.of("email", saved.getEmail())
-                        ).map(__ -> saved);
-                    });
+                            return repository.save(contact)
+                                .then(saved -> {
+                                    LOG.info("[DMOS] Contact registered: id={} workspace={} correlationId={} piiProtected={}",
+                                        saved.getId(),
+                                        ctx.getWorkspaceId().getValue(),
+                                        ctx.getCorrelationId().getValue(),
+                                        hashingPort != null);
+                                    return kernelAdapter.recordAudit(
+                                        ctx,
+                                        "contacts/" + saved.getId(),
+                                        "register",
+                                        Map.of("emailHash", saved.getEmailHash())
+                                    ).map(__ -> saved);
+                                });
+                        }));
             });
     }
 

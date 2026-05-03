@@ -4,7 +4,9 @@ import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Startup bindings that register all DMOS plugin rule packs and hooks into
@@ -53,9 +55,15 @@ public final class DigitalMarketingPluginBindings {
      * when all registrations have completed successfully. Any single failure causes the
      * combined promise to fail — the caller should abort startup if this promise fails.</p>
      *
+     * <p>DMOS-P2-15: Startup validation is performed before registration to ensure
+     * rule IDs are unique, properly prefixed, and non-empty.</p>
+     *
      * @return promise completing when all rule packs are registered; never {@code null}
      */
     public Promise<Void> registerAll() {
+        // DMOS-P2-15: Startup validation
+        validateRulePacks();
+
         return Promises.all(
             compliancePlugin.registerRuleSet(
                 DmComplianceRuleSetIds.DM_MARKETING_INTEGRITY,
@@ -86,5 +94,58 @@ public final class DigitalMarketingPluginBindings {
                 DigitalMarketingComplianceRulePack.connectorExecutionSafetyRules()
             )
         );
+    }
+
+    /**
+     * DMOS-P2-15: Validates all rule packs before registration.
+     *
+     * <p>Ensures:
+     * <ul>
+     *   <li>All rule IDs are unique</li>
+     *   <li>All rule IDs start with DM- prefix</li>
+     *   <li>No rule sets are empty</li>
+     *   <li>All required rule sets are present</li>
+     * </ul></p>
+     *
+     * @throws IllegalStateException if validation fails
+     */
+    private void validateRulePacks() {
+        Set<String> allRuleIds = new HashSet<>();
+
+        validateRuleSet(DmComplianceRuleSetIds.DM_MARKETING_INTEGRITY, DigitalMarketingComplianceRulePack.marketingIntegrityRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_CONSENT_LIFECYCLE, DigitalMarketingComplianceRulePack.consentLifecycleRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_AUDIT_TRACEABILITY, DigitalMarketingComplianceRulePack.auditTraceabilityRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_CAMPAIGN_PREFLIGHT, DigitalMarketingComplianceRulePack.campaignPreflightRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_CLAIMS_DISCLOSURES, DigitalMarketingComplianceRulePack.claimsDisclosuresRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_EMAIL_COMPLIANCE, DigitalMarketingComplianceRulePack.emailComplianceRules(), allRuleIds);
+        validateRuleSet(DmComplianceRuleSetIds.DM_CONNECTOR_EXECUTION_SAFETY, DigitalMarketingComplianceRulePack.connectorExecutionSafetyRules(), allRuleIds);
+    }
+
+    /**
+     * Validates a single rule set.
+     *
+     * @param ruleSetId the rule set identifier
+     * @param rules the compliance rules
+     * @param allRuleIds set of all rule IDs seen so far (for duplicate detection)
+     */
+    private void validateRuleSet(String ruleSetId, 
+                                   java.util.List<com.ghatana.plugin.compliance.CompliancePlugin.ComplianceRule> rules,
+                                   Set<String> allRuleIds) {
+        if (rules.isEmpty()) {
+            throw new IllegalStateException("Rule set " + ruleSetId + " is empty");
+        }
+
+        for (var rule : rules) {
+            String ruleId = rule.ruleId();
+            if (ruleId == null || ruleId.isBlank()) {
+                throw new IllegalStateException("Rule set " + ruleSetId + " contains rule with blank ID");
+            }
+            if (!ruleId.startsWith("DM-")) {
+                throw new IllegalStateException("Rule set " + ruleSetId + " contains rule with invalid prefix: " + ruleId);
+            }
+            if (!allRuleIds.add(ruleId)) {
+                throw new IllegalStateException("Duplicate rule ID found: " + ruleId + " in rule set " + ruleSetId);
+            }
+        }
     }
 }

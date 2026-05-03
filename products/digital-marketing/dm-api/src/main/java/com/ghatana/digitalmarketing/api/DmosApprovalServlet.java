@@ -7,6 +7,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService.RecordApprovalDecisionCommand;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService.SubmitForApprovalCommand;
+import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService;
+import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService.IdempotentResponse;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
@@ -61,6 +63,7 @@ public final class DmosApprovalServlet {
 
     private static final Logger LOG = LoggerFactory.getLogger(DmosApprovalServlet.class);
     private static final String CONTENT_JSON = "application/json; charset=utf-8";
+    private static final String IDEMPOTENCY_KEY_HEADER = "X-Idempotency-Key";
 
     private static final ObjectMapper MAPPER = new ObjectMapper()
         .registerModule(new JavaTimeModule())
@@ -69,10 +72,16 @@ public final class DmosApprovalServlet {
 
     private final ApprovalWorkflowService approvalService;
     private final Eventloop eventloop;
+    private final IdempotencyService idempotencyService;
 
     public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop) {
+        this(approvalService, eventloop, null);
+    }
+
+    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop, IdempotencyService idempotencyService) {
         this.approvalService = Objects.requireNonNull(approvalService, "approvalService must not be null");
-        this.eventloop       = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.eventloop       = Objects.requireNonNull(eventloop,       "eventloop must not be null");
+        this.idempotencyService = idempotencyService;
     }
 
     /**
@@ -108,51 +117,89 @@ public final class DmosApprovalServlet {
         String workspaceId = request.getPathParameter("workspaceId");
 
         try {
-            return request.loadBody()
-                .then(body -> {
-                    try {
-                        SubmitRequest req;
-                        try {
-                            req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), SubmitRequest.class);
-                        } catch (Exception e) {
-                            LOG.warn("Invalid submit approval request body: {}", e.getMessage());
-                            return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
-                        }
-
-                        ApprovalTargetType targetType;
-                        try {
-                            targetType = ApprovalTargetType.valueOf(req.targetType());
-                        } catch (IllegalArgumentException e) {
-                            return Promise.of(badRequest("Unknown targetType: " + req.targetType()));
-                        }
-
-                        DmOperationContext ctx = buildContext(request, workspaceId);
-                        SubmitForApprovalCommand command = new SubmitForApprovalCommand(
-                            targetType,
-                            req.targetId(),
-                            req.description(),
-                            req.riskLevel() != null ? req.riskLevel() : 1,
-                            req.requiredApproverRole() != null ? req.requiredApproverRole() : "brand-manager",
-                            req.validationResultId()
-                        );
-
-                        return approvalService.submitForApproval(ctx, command)
-                            .map(this::toRecordResponse)
-                            .map(r -> jsonResponse(201, r))
-                            .then(r -> Promise.of(r), e -> mapServiceError("submit", e));
-                    } catch (IllegalArgumentException e) {
-                        return Promise.of(badRequest("Invalid request: " + e.getMessage()));
-                    } catch (Exception e) {
-                        LOG.error("Unexpected error during submit approval", e);
-                        return Promise.of(internalError("Unexpected error"));
-                    }
-                });
+            // P0-6.1: Check idempotency key if service is available
+            if (idempotencyService != null) {
+                String idempotencyKey = request.getHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER));
+                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                    DmOperationContext ctx = buildContext(request, workspaceId);
+                    return idempotencyService.getCachedResponse(ctx, idempotencyKey)
+                        .then(cached -> {
+                            if (cached != null) {
+                                LOG.info("[DMOS] Idempotency cache hit: returning cached response");
+                                return Promise.of(jsonResponse(cached.statusCode(), cached.body()));
+                            }
+                            // Continue with normal processing
+                            return handleSubmitInternal(request, workspaceId, ctx, idempotencyKey);
+                        });
+                }
+            }
+            return handleSubmitInternal(request, workspaceId, null, null);
         } catch (IllegalArgumentException e) {
             return Promise.of(badRequest("Invalid request: " + e.getMessage()));
         } catch (Exception e) {
             LOG.error("Error in handleSubmit", e);
             return Promise.of(internalError("Error processing request"));
         }
+    }
+
+    private Promise<HttpResponse> handleSubmitInternal(HttpRequest request, String workspaceId, 
+                                                         DmOperationContext ctx, String idempotencyKey) {
+        if (ctx == null) {
+            ctx = buildContext(request, workspaceId);
+        }
+
+        return request.loadBody()
+            .then(body -> {
+                try {
+                    SubmitRequest req;
+                    try {
+                        req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), SubmitRequest.class);
+                    } catch (Exception e) {
+                        LOG.warn("Invalid submit approval request body: {}", e.getMessage());
+                        return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                    }
+
+                    ApprovalTargetType targetType;
+                    try {
+                        targetType = ApprovalTargetType.valueOf(req.targetType());
+                    } catch (IllegalArgumentException e) {
+                        return Promise.of(badRequest("Unknown targetType: " + req.targetType()));
+                    }
+
+                    SubmitForApprovalCommand command = new SubmitForApprovalCommand(
+                        targetType,
+                        req.targetId(),
+                        req.description(),
+                        req.riskLevel() != null ? req.riskLevel() : 1,
+                        req.requiredApproverRole() != null ? req.requiredApproverRole() : "brand-manager",
+                        req.validationResultId()
+                    );
+
+                    return approvalService.submitForApproval(ctx, command)
+                        .map(this::toRecordResponse)
+                        .then(record -> {
+                            // P0-6.2: Store response for idempotency
+                            if (idempotencyService != null && idempotencyKey != null) {
+                                try {
+                                    String responseBody = MAPPER.writeValueAsString(record);
+                                    IdempotentResponse response = new IdempotentResponse(responseBody, 201, null);
+                                    return idempotencyService.storeResponse(ctx, idempotencyKey, response)
+                                        .then(__ -> Promise.of(jsonResponse(201, record)));
+                                } catch (Exception e) {
+                                    LOG.warn("Failed to store idempotency response", e);
+                                    return Promise.of(jsonResponse(201, record));
+                                }
+                            }
+                            return Promise.of(jsonResponse(201, record));
+                        })
+                        .then(r -> Promise.of(r), e -> mapServiceError("submit", e));
+                } catch (IllegalArgumentException e) {
+                    return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                } catch (Exception e) {
+                    LOG.error("Unexpected error during submit approval", e);
+                    return Promise.of(internalError("Unexpected error"));
+                }
+            });
     }
 
     private Promise<HttpResponse> handleDecide(HttpRequest request) {
@@ -284,10 +331,13 @@ public final class DmosApprovalServlet {
     // -------------------------------------------------------------------------
 
     private DmOperationContext buildContext(HttpRequest request, String workspaceId) {
+        // P0-3.3: Enforce mandatory headers - return 400 when missing
         String tenantId      = getRequiredHeader(request, "X-Tenant-ID");
-        String principal     = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", "no-correlation-id");
-        String sessionId     = getHeader(request, "X-Session-ID", "no-session");
+        String principal     = getRequiredHeader(request, "X-Principal-ID");
+        String correlationId = getRequiredHeader(request, "X-Correlation-ID");
+        String sessionId     = getRequiredHeader(request, "X-Session-ID");
+        
+        // P0-3.4: Treat missing/empty roles as no privileges (deny by default)
         Set<String> roles    = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
         Set<String> perms    = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
 
@@ -300,6 +350,7 @@ public final class DmosApprovalServlet {
             .correlationId(DmCorrelationId.of(correlationId))
             .build();
 
+        // Empty roles/permissions result in no privileges (deny by default)
         TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
             baseContext, sessionId, roles, perms, null);
 

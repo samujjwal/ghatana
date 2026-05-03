@@ -23,15 +23,17 @@ export function DashboardPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
   const { isAuthenticated, tenantId } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // P0-5.1: Call hooks unconditionally at the top level (React rule violation fix)
   const { approvals, isLoading, isError } = useApprovalQueue(
     workspaceId ?? null,
     tenantId ?? 'unknown',
   );
   const aiActions = useAiActionLog(workspaceId ?? null);
+
+  // P0-5.3: Handle loading state separately from early return
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
 
   const pendingCount = approvals.filter((a) => a.status === 'PENDING').length;
   const setupComplete = approvals.length > 0 || !isLoading;

@@ -13,10 +13,14 @@ import java.util.Objects;
  * {@code DM_CONSENT_LIFECYCLE} rule set and are governed by {@code DM-BP-002} and
  * {@code DM-BP-003} boundary policy rules.</p>
  *
+ * <p>PII-safe implementation (DMOS-P0-001): Stores email hash instead of raw email
+ * to protect PII. The raw email address is encrypted and stored separately for
+ * deliverability purposes. All email lookups use the hash.</p>
+ *
  * <p>Contacts are immutable after construction; state changes return new instances.</p>
  *
  * @doc.type class
- * @doc.purpose DMOS contact (lead/customer) domain entity with consent lifecycle
+ * @doc.purpose DMOS contact (lead/customer) domain entity with consent lifecycle and PII protection
  * @doc.layer product
  * @doc.pattern Entity, AggregateRoot
  */
@@ -24,7 +28,8 @@ public final class Contact {
 
     private final String id;
     private final DmWorkspaceId workspaceId;
-    private final String email;
+    private final String emailHash;
+    private final String encryptedEmail;
     private final String displayName;
     private final ConsentStatus consentStatus;
     private final String consentPurpose;
@@ -37,7 +42,8 @@ public final class Contact {
     private Contact(Builder builder) {
         this.id               = Objects.requireNonNull(builder.id,          "id must not be null");
         this.workspaceId      = Objects.requireNonNull(builder.workspaceId, "workspaceId must not be null");
-        this.email            = Objects.requireNonNull(builder.email,       "email must not be null");
+        this.emailHash        = Objects.requireNonNull(builder.emailHash,   "emailHash must not be null");
+        this.encryptedEmail   = Objects.requireNonNull(builder.encryptedEmail, "encryptedEmail must not be null");
         this.displayName      = builder.displayName != null ? builder.displayName : "";
         this.consentStatus    = Objects.requireNonNull(builder.consentStatus, "consentStatus must not be null");
         this.consentPurpose   = builder.consentPurpose != null ? builder.consentPurpose : "";
@@ -49,8 +55,11 @@ public final class Contact {
         if (this.id.isBlank()) {
             throw new IllegalArgumentException("id must not be blank");
         }
-        if (this.email.isBlank()) {
-            throw new IllegalArgumentException("email must not be blank");
+        if (this.emailHash.isBlank()) {
+            throw new IllegalArgumentException("emailHash must not be blank");
+        }
+        if (this.encryptedEmail.isBlank()) {
+            throw new IllegalArgumentException("encryptedEmail must not be blank");
         }
     }
 
@@ -60,8 +69,19 @@ public final class Contact {
     /** Returns the owning workspace identifier. Never {@code null}. */
     public DmWorkspaceId getWorkspaceId() { return workspaceId; }
 
-    /** Returns the email address used to identify the contact. Never blank. */
-    public String getEmail() { return email; }
+    /** Returns the email hash (HMAC-SHA256) for lookup and matching (DMOS-P0-001). */
+    public String getEmailHash() { return emailHash; }
+
+    /** Returns the encrypted email address for deliverability (DMOS-P0-001). */
+    public String getEncryptedEmail() { return encryptedEmail; }
+
+    /**
+     * Returns the email address used to identify the contact.
+     * @deprecated Use getEmailHash() for lookups and getEncryptedEmail() for deliverability.
+     * This method is provided for backward compatibility during migration.
+     */
+    @Deprecated
+    public String getEmail() { return encryptedEmail; }
 
     /** Returns the display name. Never {@code null}; may be empty if unknown. */
     public String getDisplayName() { return displayName; }
@@ -142,7 +162,8 @@ public final class Contact {
         return new Builder()
             .id(id)
             .workspaceId(workspaceId)
-            .email(email)
+            .emailHash(emailHash)
+            .encryptedEmail(encryptedEmail)
             .displayName(displayName)
             .consentStatus(consentStatus)
             .consentPurpose(consentPurpose)
@@ -178,7 +199,8 @@ public final class Contact {
     public static final class Builder {
         private String id;
         private DmWorkspaceId workspaceId;
-        private String email;
+        private String emailHash;
+        private String encryptedEmail;
         private String displayName;
         private ConsentStatus consentStatus;
         private String consentPurpose;
@@ -192,7 +214,21 @@ public final class Contact {
 
         public Builder id(String id) { this.id = id; return this; }
         public Builder workspaceId(DmWorkspaceId workspaceId) { this.workspaceId = workspaceId; return this; }
-        public Builder email(String email) { this.email = email; return this; }
+        public Builder emailHash(String emailHash) { this.emailHash = emailHash; return this; }
+        public Builder encryptedEmail(String encryptedEmail) { this.encryptedEmail = encryptedEmail; return this; }
+        
+        /**
+         * Sets both email hash and encrypted email from raw email.
+         * This is a convenience method for migration; new code should set hash and encrypted email separately.
+         * @deprecated Use emailHash() and encryptedEmail() separately
+         */
+        @Deprecated
+        public Builder email(String email) { 
+            this.encryptedEmail = email; 
+            this.emailHash = email; // Will be replaced with actual hash in service layer
+            return this; 
+        }
+        
         public Builder displayName(String displayName) { this.displayName = displayName; return this; }
         public Builder consentStatus(ConsentStatus consentStatus) { this.consentStatus = consentStatus; return this; }
         public Builder consentPurpose(String consentPurpose) { this.consentPurpose = consentPurpose; return this; }

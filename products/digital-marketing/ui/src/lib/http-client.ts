@@ -64,23 +64,35 @@ export async function apiRequest<T>(
   const { body, headers: extraHeaders, ...rest } = options;
   const token = getAuthToken();
 
+  // P0-3.1: Attach all required headers (mandatory, not conditional)
+  // P0-3.2: Generate correlation ID per request
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Correlation-ID': crypto.randomUUID(),
     ...(extraHeaders as Record<string, string>),
   };
+  
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  if (runtimeContext.tenantId) {
-    headers['X-Tenant-ID'] = runtimeContext.tenantId;
+  
+  // Mandatory headers - throw if not set
+  if (!runtimeContext.tenantId) {
+    throw new Error('X-Tenant-ID is required but not set in request context');
   }
-  if (runtimeContext.principalId) {
-    headers['X-Principal-ID'] = runtimeContext.principalId;
+  headers['X-Tenant-ID'] = runtimeContext.tenantId;
+  
+  if (!runtimeContext.principalId) {
+    throw new Error('X-Principal-ID is required but not set in request context');
   }
-  if (runtimeContext.sessionId) {
-    headers['X-Session-ID'] = runtimeContext.sessionId;
+  headers['X-Principal-ID'] = runtimeContext.principalId;
+  
+  if (!runtimeContext.sessionId) {
+    throw new Error('X-Session-ID is required but not set in request context');
   }
+  headers['X-Session-ID'] = runtimeContext.sessionId;
+  
+  // Roles and permissions are optional but should be included if present
   if (runtimeContext.roles.length > 0) {
     headers['X-Roles'] = runtimeContext.roles.join(',');
   }
