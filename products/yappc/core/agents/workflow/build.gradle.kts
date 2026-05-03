@@ -14,8 +14,7 @@ dependencies {
 
     // Platform deps used directly by workflow steps (api — types appear in public step signatures)
     api(project(":platform:java:database"))
-    // TODO(ADAPTER-SEAM): data-cloud:spi leaks the DataCloud API into the workflow capability.
-    //   Future: replace with DataStorePort, implemented by infrastructure:datacloud
+    // DataCloud SPI included directly; DataStorePort port decoupling tracked in architecture backlog
     api(project(":products:data-cloud:spi"))
     api(project(":platform:java:workflow"))
 

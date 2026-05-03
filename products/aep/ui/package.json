@@ -18,7 +18,9 @@
     "generate-client": "npx openapi-typescript ../contracts/openapi.yaml -o src/generated/aep-client.ts"
   },
   "dependencies": {
+    "@ghatana/audit": "workspace:*",
     "@ghatana/canvas": "workspace:*",
+    "@ghatana/design-system": "workspace:*",
     "@ghatana/domain-components": "workspace:*",
     "@ghatana/realtime": "workspace:*",
     "@monaco-editor/react": "^4.7.0",

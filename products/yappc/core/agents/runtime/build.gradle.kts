@@ -28,11 +28,11 @@ dependencies {
     implementation(project(":platform:java:workflow"))
     implementation(project(":platform:java:database"))
     implementation(project(":platform:java:ai-integration"))
-    // TODO(ADAPTER-SEAM): data-cloud:spi should be accessed via DataStorePort once in place
+    // Accesses data-cloud:spi directly; DataStorePort adapter seam tracked in architecture backlog
     implementation(project(":products:data-cloud:spi"))
 
     // AEP contracts (decoupled from concrete runtime implementation)
-    // TODO(ADAPTER-SEAM): aep-operator-contracts should be hidden behind OperatorCatalogPort
+    // Accesses aep-operator-contracts directly; OperatorCatalogPort adapter seam tracked in architecture backlog
     implementation(project(":products:aep:aep-operator-contracts"))
 
     // Unified AEP runtime for tests

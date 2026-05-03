@@ -55,7 +55,7 @@ tasks.jacocoTestCoverageVerification {
                 limit {
                     counter = "INSTRUCTION"
                     value = "COVEREDRATIO"
-                    minimum = "0.25".toBigDecimal()  // TODO: Raise to 0.50 after covering interface-heavy packages (actual ~28%)
+                    minimum = "0.50".toBigDecimal()
             }
         }
     }

@@ -1,16 +1,15 @@
 /**
- * Unified Canvas Demo
+ * Unified Canvas
  * 
- * Demonstrates the new unified canvas approach where users can directly
+ * Unified canvas approach where users can directly
  * add and interact with different content types without mode switching.
  * 
- * This component shows how the unified system would replace the current
- * mode-based approach.
+ * This component replaces the previous mode-based approach.
  * 
  * @doc.type component
- * @doc.purpose Demo of unified canvas functionality
+ * @doc.purpose Unified canvas workspace with multi-content-type support
  * @doc.layer product
- * @doc.pattern Demo Component
+ * @doc.pattern Component
  */
 
 import React, { useCallback, useMemo } from 'react';
@@ -33,13 +32,13 @@ const nodeTypes: NodeTypes = {
     unified: UnifiedCanvasNode as NodeTypes[string],
 };
 
-interface UnifiedCanvasDemoProps {
+interface UnifiedCanvasProps {
     projectId: string;
     currentPhase: unknown;
     flowStage: unknown;
 }
 
-export const UnifiedCanvasDemo: React.FC<UnifiedCanvasDemoProps> = ({
+export const UnifiedCanvas: React.FC<UnifiedCanvasProps> = ({
     projectId,
     currentPhase,
     flowStage

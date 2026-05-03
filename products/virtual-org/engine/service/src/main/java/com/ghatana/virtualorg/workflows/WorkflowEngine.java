@@ -4,6 +4,8 @@ import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -127,14 +129,103 @@ public class WorkflowEngine {
      * @return Promise completing with workflow result
      */
     public Promise<WorkflowResult> executeWorkflow(WorkflowDefinition workflow, WorkflowContext context) {
-        // TODO: Implement workflow definition execution
-        // For now, return a stub success result
-        log.warn("executeWorkflow stub called for workflow: {}",
-            workflow != null ? "defined" : "null");
+        if (workflow == null) {
+            return Promise.of(WorkflowResult.failure("WorkflowDefinition must not be null").build());
+        }
 
-        return Promise.of(WorkflowResult.success()
-            .withOutput("result", "Workflow definition execution not yet implemented")
-            .build());
+        List<WorkflowDefinition.StepEntry> entries = workflow.getStepEntries();
+        if (entries.isEmpty()) {
+            log.warn("WorkflowDefinition has no step entries — completing with empty result");
+            return Promise.of(WorkflowResult.success()
+                .withOutput("stepCount", 0)
+                .build());
+        }
+
+        log.info("Executing WorkflowDefinition with {} entries for tenant: {}",
+            entries.size(), context.getTenantId());
+
+        // Accumulate step outputs as a mutable map that aggregation steps can reduce.
+        java.util.Map<String, Object> accumulatedOutputs = new java.util.LinkedHashMap<>();
+
+        // Sequentially chain each entry into a single Promise.
+        Promise<WorkflowResult.Builder> chain = Promise.of(WorkflowResult.success());
+
+        for (int i = 0; i < entries.size(); i++) {
+            final WorkflowDefinition.StepEntry entry = entries.get(i);
+            final int entryIndex = i;
+
+            chain = chain.then(builder -> switch (entry) {
+                case WorkflowDefinition.AggregationStep<?> agg -> {
+                    @SuppressWarnings("unchecked")
+                    WorkflowDefinition.AggregationStep<Object> typedAgg =
+                        (WorkflowDefinition.AggregationStep<Object>) agg;
+                    Object aggregated = typedAgg.aggregator().apply(accumulatedOutputs);
+                    accumulatedOutputs.put(agg.stepId(), aggregated);
+                    log.debug("Aggregation step [{}]: {} → {} output keys aggregated",
+                        entryIndex + 1, agg.stepId(), accumulatedOutputs.size());
+                    yield Promise.of(builder.withOutput(agg.stepId(), aggregated));
+                }
+                case WorkflowDefinition.ConditionalStep cond -> {
+                    if (!cond.shouldExecute(accumulatedOutputs)) {
+                        log.debug("Conditional step [{}]: {} skipped (condition=false)",
+                            entryIndex + 1, cond.stepId());
+                        yield Promise.of(builder);
+                    }
+                    yield executeStep(cond.step(), entryIndex, entries.size(),
+                        context, accumulatedOutputs, builder);
+                }
+                case WorkflowDefinition.PlainStep plain ->
+                    executeStep(plain.step(), entryIndex, entries.size(),
+                        context, accumulatedOutputs, builder);
+            });
+        }
+
+        return chain
+            .map(builder -> builder
+                .withMetric("totalEntries", entries.size())
+                .build())
+            .mapException(e -> {
+                log.error("WorkflowDefinition execution failed", e);
+                return new RuntimeException("Workflow execution failed", e);
+            });
+    }
+
+    /** Executes a single agent-backed workflow step and records its output. */
+    private Promise<WorkflowResult.Builder> executeStep(
+            WorkflowStep step,
+            int index,
+            int total,
+            WorkflowContext context,
+            java.util.Map<String, Object> outputs,
+            WorkflowResult.Builder builder) {
+
+        log.debug("Running step [{}/{}]: {} (executor: {})",
+            index + 1, total, step.getStepName(), step.getExecutor().getAgentId());
+
+        com.ghatana.virtualorg.v1.TaskProto task = com.ghatana.virtualorg.v1.TaskProto.newBuilder()
+            .setTaskId(step.getStepId() + "-" + System.nanoTime())
+            .setTitle(step.getStepName())
+            .setDescription(step.getTaskDescription())
+            .build();
+
+        com.ghatana.virtualorg.v1.TaskRequestProto request =
+            com.ghatana.virtualorg.v1.TaskRequestProto.newBuilder()
+                .setTask(task)
+                .build();
+
+        return step.getExecutor().processTask(request)
+            .map(response -> {
+                log.debug("Step [{}/{}] completed: {} → {}",
+                    index + 1, total, step.getStepName(), response.getStatus());
+                outputs.put(step.getStepId(), response.getResult());
+                return builder
+                    .withOutput(step.getStepId(), response.getResult())
+                    .withMetric("step_" + index + "_status", response.getStatus().getNumber());
+            })
+            .mapException(e -> {
+                log.error("Step [{}/{}] failed: {}", index + 1, total, step.getStepName(), e);
+                return new RuntimeException("Step '" + step.getStepName() + "' failed", e);
+            });
     }
 
     /**

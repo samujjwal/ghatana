@@ -342,6 +342,11 @@ public class DataCloudHttpServer {
     private EventHandler eventHandler;
     private PipelineCheckpointHandler pipelineCheckpointHandler;
     private WorkflowExecutionHandler workflowExecutionHandler;
+    /**
+     * Optional pre-wired workflow execution capability for testing or embedded deployments.
+     * When set, it takes precedence over the runtime plugin manager discovery.
+     */
+    private WorkflowExecutionCapability workflowExecutionCapabilityOverride;
     private AlertingHandler alertingHandler;
     private MemoryPlaneHandler memoryHandler;
     private BrainHandler brainHandler;
@@ -834,6 +839,26 @@ public class DataCloudHttpServer {
     }
 
     /**
+     * Pre-wires a {@link WorkflowExecutionCapability} directly, bypassing runtime plugin discovery.
+     *
+     * <p>Intended for integration testing or embedded deployments where the plugin manager
+     * is not available. When set before {@link #start()}, this capability is applied to
+     * the workflow execution handler and takes precedence over plugin manager discovery.
+     *
+     * @param capability the capability to wire; {@code null} clears the override
+     * @return {@code this} for method chaining
+     *
+     * @doc.type method
+     * @doc.purpose Allow direct capability injection for testing and embedded deployments
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withWorkflowExecutionCapability(WorkflowExecutionCapability capability) {
+        this.workflowExecutionCapabilityOverride = capability;
+        return this;
+    }
+
+    /**
      * Enables the built-in workflow execution plugin (simulation mode).
      * @param enabled {@code true} to activate the upgrade route
      * @return this server (fluent)
@@ -1103,8 +1128,13 @@ public class DataCloudHttpServer {
         try {
             runtimePluginManager.registerBuiltInPlugins();
             log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
+            runtimePluginManager.findCapability(WorkflowExecutionCapability.class)
+                .ifPresent(workflowExecutionHandler::withExecutionCapability);
         } catch (Exception e) {
             log.error("[DC-AUD-005] Failed to register OOB plugins", e);
+        }
+        if (workflowExecutionCapabilityOverride != null) {
+            workflowExecutionHandler.withExecutionCapability(workflowExecutionCapabilityOverride);
         }
         memoryHandler = new MemoryPlaneHandler(client, httpSupport);
         brainHandler = new BrainHandler(brain, httpSupport);

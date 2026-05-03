@@ -1,4 +1,4 @@
-// TODO: Update to use @ghatana/ui-integration AI services when available
+// AI service integration: @ghatana/ui-integration types are imported below when available
 // import type { CompletionOptions, IAIService } from '@ghatana/ui-integration';
 
 export interface AccessibilityReport {

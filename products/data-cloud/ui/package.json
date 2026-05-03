@@ -23,6 +23,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@ghatana/audit": "workspace:*",
     "@ghatana/canvas": "workspace:*",
     "@ghatana/design-system": "workspace:*",
     "@ghatana/domain-components": "workspace:*",

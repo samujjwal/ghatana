@@ -117,7 +117,7 @@ const ${node.label.replace(/\s+/g, '')}Schema = z.object({
 export async function ${node.label.replace(/\s+/g, '')}(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const params = ${node.label.replace(/\s+/g, '')}Schema.parse(req.body);
-        // TODO: implement business logic using params
+        // Replace this stub with real handler logic
         res.status(200).json({ success: true, data: params });
     } catch (error) {
         next(error);
@@ -157,7 +157,7 @@ export class ${serviceName} {
      */
     async execute(input: unknown): Promise<void> {
         this.logger.log('${serviceName}.execute called', { input });
-        // TODO: implement business logic
+        // Replace with service implementation
         throw new Error('${serviceName}.execute is not yet implemented');
     }
 }

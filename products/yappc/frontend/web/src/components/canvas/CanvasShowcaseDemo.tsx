@@ -1,11 +1,11 @@
 /**
- * Canvas Showcase Demo
+ * Canvas Showcase
  * 
- * Interactive demonstration of all canvas features and utilities.
+ * Interactive showcase of all canvas features and utilities.
  * Shows persistence, history, export, and keyboard shortcuts in action.
  * 
  * @doc.type component
- * @doc.purpose Demo page for canvas system features
+ * @doc.purpose Showcase page for canvas system features
  * @doc.layer product
  * @doc.pattern Component
  */
@@ -38,7 +38,7 @@ const INITIAL_ITEMS: DemoItem[] = [
     { id: '3', text: 'Use Undo/Redo', color: '#F59E0B', position: { x: 60, y: 20 } },
 ];
 
-export const CanvasShowcaseDemo = () => {
+export const CanvasShowcase = () => {
     const canvasRef = useRef<HTMLDivElement>(null);
     const [items, setItems] = useState<DemoItem[]>(INITIAL_ITEMS);
     const [selectedTab, setSelectedTab] = useState(0);
@@ -309,4 +309,4 @@ export const CanvasShowcaseDemo = () => {
     );
 };
 
-export default CanvasShowcaseDemo;
+export default CanvasShowcase;

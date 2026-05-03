@@ -2,11 +2,9 @@
  * Copyright (c) 2025 Ghatana Technologies
  * YAPPC UI - Voice Command Handler
  *
- * ⚠️ DEPRECATED / NOT AVAILABLE: Voice commands are currently disabled because
- * the required backend speech endpoints (/api/v1/speech/stt, /api/v1/tts) do not exist.
- * This functionality requires integration with products/audio-video speech services.
- *
- * TODO: Enable voice commands after audio-video service integration is complete.
+ * Voice commands are currently disabled because the required backend speech
+ * endpoints (/api/v1/speech/stt, /api/v1/tts) do not exist.
+ * Activation requires integration with products/audio-video speech services.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';

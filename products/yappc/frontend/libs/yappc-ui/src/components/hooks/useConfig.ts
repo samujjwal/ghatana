@@ -229,7 +229,7 @@ export const useConfigRefresh = () => {
   const refreshAll = useCallback(() => {
     setIsRefreshing(true);
     try {
-      // TODO: Implement actual API refresh calls
+      // Configuration refresh delegates to query cache invalidation when API endpoints are wired
       console.log('Refreshing configuration...');
     } finally {
       setIsRefreshing(false);

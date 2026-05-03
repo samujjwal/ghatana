@@ -217,12 +217,10 @@ public class GovernanceAdapter {
         return Promise.ofBlocking(eventloop, () -> {
             log.info("Initializing GovernanceAdapter for agent: {}", agentId);
 
-            // TODO: Connect to core/governance module
-            // This would involve:
-            // 1. Loading agent's security policies from core/governance
-            // 2. Setting up authentication providers
-            // 3. Initializing authorization engine
-            // 4. Starting audit event stream
+            // Governance adapter uses local RBAC/PBKDF2/AES-GCM implementations.
+            // When a core/governance platform module is available, wire it via
+            // constructor injection and delegate the authenticate/authorize/loadPolicy
+            // calls to that module instead.
 
             initialized = true;
             log.info("GovernanceAdapter initialized for agent: {}", agentId);
@@ -249,13 +247,6 @@ public class GovernanceAdapter {
             }
 
             log.debug("Authenticating principal: username={}", username);
-
-            // TODO: Delegate to core/governance authentication
-            // This would involve:
-            // 1. Querying authentication provider
-            // 2. Validating credentials
-            // 3. Creating authenticated principal
-            // 4. Emitting authentication event
 
             String storedCredential = credentialStore.get(username);
             if (storedCredential == null) {
@@ -315,13 +306,6 @@ public class GovernanceAdapter {
             log.debug("Authorizing: principal={}, resource={}, action={}",
                     principal.getName(), resource, action);
 
-            // TODO: Delegate to core/governance authorization
-            // This would involve:
-            // 1. Loading authorization context for principal
-            // 2. Evaluating policies against resource and action
-            // 3. Checking role-based permissions
-            // 4. Applying attribute-based controls
-
             boolean allowed = performAuthorizationCheck(principal, resource, action);
 
             // Emit authorization event
@@ -359,14 +343,6 @@ public class GovernanceAdapter {
 
             log.debug("Encrypting message from principal: {}", principal.getName());
 
-            // TODO: Delegate to core/governance encryption
-            // This would involve:
-            // 1. Loading encryption policy for agent/principal
-            // 2. Encrypting plaintext
-            // 3. Adding metadata (algorithm, key version)
-            // 4. Returning encrypted blob
-
-            // Placeholder - return plaintext until governance integration complete
             String encrypted = encryptWithPolicy(plaintext, principal);
 
             emitSecurityEvent(
@@ -399,14 +375,6 @@ public class GovernanceAdapter {
 
             log.debug("Decrypting message for principal: {}", principal.getName());
 
-            // TODO: Delegate to core/governance decryption
-            // This would involve:
-            // 1. Parsing metadata from ciphertext
-            // 2. Loading decryption key
-            // 3. Decrypting message
-            // 4. Validating integrity
-
-            // Placeholder - return ciphertext until governance integration complete
             String decrypted = decryptWithPolicy(ciphertext, principal);
 
             emitSecurityEvent(
@@ -434,8 +402,10 @@ public class GovernanceAdapter {
 
             log.debug("Loading policy: policyId={}", policyId);
 
-            // TODO: Load from core/governance policy store
-            Optional<SecurityPolicy> policy = Optional.empty();
+            // Resolve from the built-in default policy registry.
+            // When a persistent governance policy store is available, replace
+            // this lookup with a remote call and update the cache on miss.
+            Optional<SecurityPolicy> policy = Optional.ofNullable(DEFAULT_POLICIES.get(policyId));
 
             if (policy.isPresent()) {
                 policyCache.put(policyId, policy.get());
@@ -456,13 +426,6 @@ public class GovernanceAdapter {
 
         return Promise.ofBlocking(eventloop, () -> {
             log.debug("Loading authorization context: principal={}", principal.getName());
-
-            // TODO: Build context from core/governance
-            // This would involve:
-            // 1. Loading roles for principal
-            // 2. Loading permissions for each role
-            // 3. Loading attributes (e.g., department, team)
-            // 4. Building combined context
 
             Set<String> roles = loadRolesForPrincipal(principal);
             Set<String> permissions = loadPermissionsForRoles(roles);
@@ -505,12 +468,6 @@ public class GovernanceAdapter {
             log.info("Audit: event={}, principal={}, resource={}, action={}, outcome={}",
                     eventType, principal.getName(), resource, action, outcome);
 
-            // TODO: Write to core/governance audit store
-            // This would involve:
-            // 1. Serializing audit entry
-            // 2. Writing to persistent audit log
-            // 3. Emitting audit event to event stream
-
             emitAuditEvent(entry);
 
             return entry;
@@ -538,6 +495,29 @@ public class GovernanceAdapter {
     // =============================
     // Private helper methods
     // =============================
+
+    /**
+     * Built-in default security policies used when no external policy store is configured.
+     * Keys are policy IDs. In production, these should be loaded from a persistent store.
+     */
+    private static final Map<String, SecurityPolicy> DEFAULT_POLICIES = Map.of(
+        "policy-auth-required", new SecurityPolicy(
+            "policy-auth-required", "AUTHENTICATION",
+            "All operations require authentication",
+            Map.of("require_auth", "true"), true),
+        "policy-rbac-enforce", new SecurityPolicy(
+            "policy-rbac-enforce", "AUTHORIZATION",
+            "Role-based access control enforcement",
+            Map.of("model", "rbac", "hierarchy", "true"), true),
+        "policy-audit-all", new SecurityPolicy(
+            "policy-audit-all", "AUDIT",
+            "Audit all security-relevant operations",
+            Map.of("level", "INFO", "include_details", "true"), true),
+        "policy-encrypt-sensitive", new SecurityPolicy(
+            "policy-encrypt-sensitive", "ENCRYPTION",
+            "Encrypt sensitive messages at rest and in transit",
+            Map.of("algorithm", "AES/GCM/NoPadding", "key_length", "256"), true)
+    );
 
     /** Default RBAC role-to-permission mapping for virtual-org agents. */
     private static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.ofEntries(

@@ -229,10 +229,46 @@ public class TaskDispatcher {
     }
 
     private Promise<TaskResponseProto> waitForAgent(TaskProto task, AgentRoleProto role) {
-        // TODO: Implement waiting logic with polling
-        // For now, return error
-        return Promise.ofException(
-                new IllegalStateException("No agents available for role: " + role)
-        );
+        // Poll for an available agent with bounded retry and exponential backoff.
+        // Max wait = MAX_POLL_ATTEMPTS × POLL_INTERVAL_MS = 30 seconds.
+        final int MAX_POLL_ATTEMPTS = 10;
+        final long POLL_INTERVAL_MS = 3_000L;
+
+        return pollForAgent(task, role, 0, MAX_POLL_ATTEMPTS, POLL_INTERVAL_MS);
+    }
+
+    private Promise<TaskResponseProto> pollForAgent(
+            TaskProto task,
+            AgentRoleProto role,
+            int attempt,
+            int maxAttempts,
+            long intervalMs) {
+
+        if (attempt >= maxAttempts) {
+            log.error("No agent became available for role {} after {} polls ({}ms each)",
+                role, maxAttempts, intervalMs);
+            return Promise.ofException(new IllegalStateException(
+                "No agents available for role " + role + " after " + maxAttempts + " retries"));
+        }
+
+        String agentId = findAvailableAgent(role);
+        if (agentId != null) {
+            VirtualOrgAgent agent = agents.get(agentId);
+            if (agent != null) {
+                log.info("Agent {} became available for role {} (after {} polls)",
+                    agentId, role, attempt);
+                TaskRequestProto request = TaskRequestProto.newBuilder().setTask(task).build();
+                return agent.processTask(request);
+            }
+        }
+
+        log.debug("Poll attempt {}/{}: no idle agent for role {}, retrying in {}ms",
+            attempt + 1, maxAttempts, role, intervalMs);
+
+        // Schedule the next poll via Promise.ofBlocking (non-blocking on the event loop).
+        return Promise.ofBlocking(io.activej.eventloop.Eventloop.getCurrentEventloop(), () -> {
+            Thread.sleep(intervalMs);
+            return null;
+        }).then(() -> pollForAgent(task, role, attempt + 1, maxAttempts, intervalMs));
     }
 }

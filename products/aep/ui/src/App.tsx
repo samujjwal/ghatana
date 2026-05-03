@@ -30,7 +30,6 @@
  *   /agents               → /catalog/agents
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { lazy, Suspense } from 'react';
 import {
   BrowserRouter,
@@ -43,6 +42,7 @@ import {
 import { BarChart3, FileText, Database, Shield, Settings } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from '@/components/security/ProtectedRoute';
+import { RoleProtectedRoute } from '@/components/security/RoleProtectedRoute';
 import { NavBar } from '@/components/shared/NavBar';
 import { Breadcrumbs } from '@/components/core/Breadcrumbs';
 import { FuzzyFinder } from '@/components/core/FuzzyFinder';
@@ -365,11 +365,11 @@ function formatBreadcrumbLabel(segment: string): string {
 
 function ProtectedShell() {
   return (
-    <ProtectedRoute>
+    <RoleProtectedRoute>
       <PageShell>
         <Outlet />
       </PageShell>
-    </ProtectedRoute>
+    </RoleProtectedRoute>
   );
 }
 

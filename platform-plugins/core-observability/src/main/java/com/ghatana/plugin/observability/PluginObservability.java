@@ -103,12 +103,13 @@ public abstract class PluginObservability {
      * @param value amount to increment
      */
     protected void recordMetric(String metricName, Map<String, String> labels, long value) {
-        // TODO: Re-implement when OpenTelemetry metrics API is properly configured
-        // String fullName = String.format("ghatana.plugin.%s.%s", pluginId, metricName);
-        // Counter counter = meter.counterBuilder(fullName)
-        //     .setDescription("Plugin metric: " + metricName)
-        //     .build();
-        // counter.add(value, attributes(labels));
+        String fullName = String.format("ghatana.plugin.%s.%s", pluginId, metricName);
+        io.opentelemetry.api.common.Attributes.Builder attrsBuilder = io.opentelemetry.api.common.Attributes.builder();
+        labels.forEach((k, v) -> attrsBuilder.put(k, v));
+        meter.counterBuilder(fullName)
+            .setDescription("Plugin metric: " + metricName)
+            .build()
+            .add(value, attrsBuilder.build());
     }
     
     /**

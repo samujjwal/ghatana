@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-// import { tokens } from '@ghatana/tokens'; // TODO: Fix tokens import when available
+import { tokens } from '@ghatana/tokens';
 
 export interface FormContextType {
   errors: Record<string, string>;
@@ -97,17 +97,17 @@ export const FormGroup: React.FC<FormGroupProps> = ({
   className,
 }) => {
   const groupStyles: React.CSSProperties = {
-    border: '1px solid #E0E0E0', // TODO: Replace with tokens.colors.neutral[200] when available
-    borderRadius: '0.25rem', // TODO: Replace with tokens.borderRadius.md when available
-    padding: '1rem', // TODO: Replace with tokens.spacing[4] when available
-    marginBottom: '1rem', // TODO: Replace with tokens.spacing[4] when available
+    border: `1px solid ${tokens.colors.palette.neutral[200]}`,
+    borderRadius: tokens.borderRadius.md,
+    padding: tokens.spacing[4],
+    marginBottom: tokens.spacing[4],
   };
 
   const legendStyles: React.CSSProperties = {
-    fontSize: 16, // TODO: Replace with tokens.typography.fontSize.base when available
+    fontSize: tokens.typography.fontSize.base,
     fontWeight: 600,
-    marginBottom: '0.75rem', // TODO: Replace with tokens.spacing[3] when available
-    color: '#212121', // TODO: Replace with tokens.colors.neutral[900] when available
+    marginBottom: tokens.spacing[3],
+    color: tokens.colors.palette.neutral[900],
   };
 
   return (
@@ -137,16 +137,16 @@ export const FormSubmitButton: React.FC<FormSubmitButtonProps> = ({
   className,
 }) => {
   const buttonStyles: React.CSSProperties = {
-    padding: '0.5rem 1rem', // TODO: Replace with tokens.spacing[2] and tokens.spacing[4] when available
-    backgroundColor: '#3498db', // TODO: Replace with tokens.colors.primary[600] when available
-    color: '#fff', // TODO: Replace with tokens.colors.neutral[0] when available
+    padding: `${tokens.spacing[2]} ${tokens.spacing[4]}`,
+    backgroundColor: tokens.colors.palette.primary[600],
+    color: tokens.colors.white,
     border: 'none',
-    borderRadius: '0.25rem', // TODO: Replace with tokens.borderRadius.md when available
-    fontSize: 16, // TODO: Replace with tokens.typography.fontSize.base when available
+    borderRadius: tokens.borderRadius.md,
+    fontSize: tokens.typography.fontSize.base,
     fontWeight: 600,
     cursor: disabled || loading ? 'not-allowed' : 'pointer',
     opacity: disabled || loading ? 0.5 : 1,
-    transition: 'all 0.2s ease-in-out', // TODO: Replace with tokens.transitions.duration.fast and tokens.transitions.easing.easeInOut when available
+    transition: `all ${tokens.transitions.transitions.fast} ease-in-out`,
   };
 
   return (

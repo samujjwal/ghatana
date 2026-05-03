@@ -45,6 +45,48 @@ jobs:
       - name: Enforce strict tsconfig policy
         run: pnpm run check:tsconfig-strict
 
+  production-readiness-enforcement:
+    name: Production Readiness Enforcement
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Enforce production-readiness rules
+        run: node ./scripts/check-production-readiness.mjs
+
+      - name: Enforce anti-test-theatre policy
+        run: bash ./scripts/check-test-authenticity.sh
+
+  audit-todo-burndown:
+    name: Audit TODO Burndown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate TODO burndown report
+        run: node ./scripts/generate-audit-todo-burndown.mjs
+
+      - name: Upload TODO burndown artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-todo-burndown
+          path: |
+            build/reports/audit/todo-burndown.json
+            build/reports/audit/todo-burndown.md
+          retention-days: 30
+
   # ─────────────────────────────────────────────
   # SBOM Generation
   # ─────────────────────────────────────────────
@@ -284,7 +326,7 @@ jobs:
   # ─────────────────────────────────────────────
   governance-summary:
     name: Generate Governance Summary
-    needs: [platform-typescript-package-governance, sbom-generation, license-compliance, dependency-convergence, naming-convention, security-audit]
+    needs: [platform-typescript-package-governance, typescript-strict-enforcement, production-readiness-enforcement, audit-todo-burndown, sbom-generation, license-compliance, dependency-convergence, naming-convention, security-audit]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -300,6 +342,9 @@ jobs:
           echo "## Check Results" >> governance-summary.md
           echo "" >> governance-summary.md
           echo "- SBOM Generation: ${{ needs.sbom-generation.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
+          echo "- TypeScript Strict Enforcement: ${{ needs.typescript-strict-enforcement.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
+          echo "- Production Readiness Enforcement: ${{ needs.production-readiness-enforcement.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
+          echo "- Audit TODO Burndown: ${{ needs.audit-todo-burndown.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
           echo "- License Compliance: ${{ needs.license-compliance.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
           echo "- Dependency Convergence: ${{ needs.dependency-convergence.result == 'success' && '✅' || '❌' }}" >> governance-summary.md
           echo "- Naming Convention: ${{ needs.naming-convention.result == 'success' && '✅' || '❌' }}" >> governance-summary.md

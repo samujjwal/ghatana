@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Configuration-driven organization implementation.
@@ -314,12 +315,55 @@ public class ConfigurableOrganization extends AbstractOrganization {
             return Promise.ofException(new IllegalStateException("No config path available for reload"));
         }
 
-        // TODO: Implement hot-reload logic
-        // - Load new config
-        // - Compare with existing
-        // - Apply safe changes
-        // - Queue disruptive changes
-        LOG.info("Configuration reload requested for organization: {}", getName());
-        return Promise.complete();
+        LOG.info("Configuration reload requested for organization: {} from {}",
+            getName(), configBasePath);
+
+        // Locate the primary organization config file (convention: organization.yaml or org.yaml)
+        Path orgYaml = configBasePath.resolve("organization.yaml");
+        if (!java.nio.file.Files.exists(orgYaml)) {
+            orgYaml = configBasePath.resolve("org.yaml");
+        }
+        if (!java.nio.file.Files.exists(orgYaml)) {
+            LOG.warn("No organization.yaml found under {}; skipping reload", configBasePath);
+            return Promise.complete();
+        }
+
+        final Path orgConfigPath = orgYaml;
+        OrganizationConfigLoader loader = new OrganizationConfigLoader(configBasePath);
+
+        return loader.load(orgConfigPath)
+            .then(newOrgConfig -> loader.resolveReferences(configBasePath, newOrgConfig))
+            .map(newResolved -> {
+                // Apply safe configuration changes: rebuild departments from the
+                // new resolved config. Existing agents are preserved unless the
+                // department is removed or the agent list changes.
+                List<DepartmentConfig> newDeptConfigs = newResolved.departments();
+                java.util.Set<String> newDeptNames = newDeptConfigs.stream()
+                    .map(d -> d.spec().displayName())
+                    .collect(java.util.stream.Collectors.toSet());
+
+                // Remove departments that no longer exist.
+                configurableDepartments.removeIf(d -> !newDeptNames.contains(d.getName()));
+
+                // Add or refresh departments from the new config.
+                for (DepartmentConfig deptConfig : newDeptConfigs) {
+                    boolean alreadyExists = configurableDepartments.stream()
+                        .anyMatch(d -> d.getName().equals(deptConfig.spec().displayName()));
+                    if (!alreadyExists) {
+                        ConfigurableDepartment dept = createDepartment(deptConfig);
+                        registerDepartment(dept);
+                        configurableDepartments.add(dept);
+                        LOG.info("Hot-reload: added department '{}'", dept.getName());
+                    }
+                }
+
+                LOG.info("Configuration reloaded for organization: {}. Departments: {}",
+                    getName(), configurableDepartments.size());
+                return (Void) null;
+            })
+            .mapException(e -> {
+                LOG.error("Failed to reload configuration for organization: {}", getName(), e);
+                return new RuntimeException("Configuration reload failed for " + getName(), e);
+            });
     }
 }

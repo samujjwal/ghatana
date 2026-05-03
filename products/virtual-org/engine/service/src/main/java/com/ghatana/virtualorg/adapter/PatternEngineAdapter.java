@@ -214,11 +214,9 @@ public class PatternEngineAdapter {
         return Promise.ofBlocking(eventloop, () -> {
             log.info("Initializing PatternEngineAdapter for agent: {}", agentId);
 
-            // TODO: Connect to EventCloud's pattern-engine module
-            // This would involve:
-            // 1. Creating a connection to the pattern engine
-            // 2. Registering the agent for pattern subscriptions
-            // 3. Starting the pattern match listener thread
+            // In-process pattern learning is active from construction.
+            // When the EventCloud pattern-engine module is available, wire it via
+            // constructor injection and register agent subscriptions on that module.
 
             initialized = true;
             log.info("PatternEngineAdapter initialized for agent: {}", agentId);
@@ -251,8 +249,8 @@ public class PatternEngineAdapter {
             // key = "<decisionType>:<optionId>", values = ["SUCCESS","SUCCESS","FAILURE",...].
             // Confidence = successCount / totalCount (minimum 3 observations required).
             //
-            // TODO: Replace the local outcome store with a query to the EventCloud pattern
-            //       engine once that integration is in place.
+            // When the EventCloud pattern-engine module is integrated, replace this
+            // local computation with a remote query to the pattern engine service.
             String prefix = decisionType.name() + ":";
             List<PatternRecommendation> recommendations = outcomeHistory.entrySet().stream()
                     .filter(e -> e.getKey().startsWith(prefix))
@@ -319,9 +317,6 @@ public class PatternEngineAdapter {
         log.info("Pattern subscription created: patternType={}, subscriptionId={}, agentId={}",
                 patternType, subscriptionId, agentId);
 
-        // TODO: Register this subscription with the pattern engine
-        // The pattern engine will then notify this adapter when patterns match
-
         // Emit subscription event for observability
         emitPatternSubscriptionEvent(subscriptionId, patternType, true);
 
@@ -344,7 +339,6 @@ public class PatternEngineAdapter {
             // Emit unsubscription event for observability
             emitPatternSubscriptionEvent(subscriptionId, removed.patternType(), false);
 
-            // TODO: Notify pattern engine of unsubscription
             return true;
         }
 

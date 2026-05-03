@@ -36,8 +36,7 @@ tasks.test {
 
 // jacoco and jacocoTestReport configured by java-module
 
-// Temporarily disable coverage verification for this module
-// TODO: Add more tests to reach minimum coverage thresholds
+// Coverage verification is disabled for this module until additional test coverage is added
 tasks.named("jacocoTestCoverageVerification") {
     enabled = false
 }

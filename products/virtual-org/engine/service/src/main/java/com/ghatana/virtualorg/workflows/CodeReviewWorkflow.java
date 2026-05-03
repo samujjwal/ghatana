@@ -392,7 +392,6 @@ public class CodeReviewWorkflow {
             return Decision.builder()
                 .type(DecisionType.REJECT)
                 .rationale("Review blockers: " + String.join("; ", blockers))
-                // TODO: Add metadata field to Decision model if needed
                 .build();
         }
 
@@ -401,7 +400,6 @@ public class CodeReviewWorkflow {
             .type(DecisionType.APPROVE)
             .rationale("All reviews approved - ready for final team lead decision")
             .confidence(calculateAggregateConfidence(technicalReview, architectReview, qaValidation))
-            // TODO: Add metadata field to Decision model if needed
             .build();
     }
 

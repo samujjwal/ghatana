@@ -3,93 +3,131 @@ package com.ghatana.phr.launcher;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @doc.type class
- * @doc.purpose Tests for PHR launcher configuration and HTTP binding
+ * @doc.purpose Tests for PHR launcher configuration argument parsing
  * @doc.layer test
  * @doc.pattern Test
  */
 @DisplayName("PHR Launcher Tests")
 class PhrLauncherTest {
 
+    /** Resolve the private inner record class. */
+    private static Class<?> configClass() throws ClassNotFoundException {
+        return Class.forName("com.ghatana.phr.launcher.PhrLauncher$PhrLauncherConfig");
+    }
+
+    /** Invoke the private static factory {@code PhrLauncherConfig.from(String[])}. */
+    private static Object parseConfig(String[] args) throws Exception {
+        Method from = configClass().getDeclaredMethod("from", String[].class);
+        from.setAccessible(true);
+        return from.invoke(null, (Object) args);
+    }
+
+    /** Read a named component from the record. */
+    private static Object component(Object record, String name) throws Exception {
+        Method accessor = record.getClass().getDeclaredMethod(name);
+        accessor.setAccessible(true);
+        return accessor.invoke(record);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Port parsing
+    // ──────────────────────────────────────────────────────────────────────────
+
     @Test
-    @DisplayName("Should use default port when no port argument provided")
-    void shouldUseDefaultPortWhenNoPortArgumentProvided() {
-        String[] args = new String[]{};
-        // Note: We can't directly test the launcher's main method in a unit test,
-        // but we can verify the config parsing logic
-        // This is a placeholder for the actual config parsing test
-        // TODO: Implement actual config parsing test when launcher config is available
-        assertNotNull(args, "Args array should not be null");
+    @DisplayName("Should use default port (8080) when no --port argument provided")
+    void shouldUseDefaultPortWhenNoPortArgumentProvided() throws Exception {
+        Object config = parseConfig(new String[]{});
+        int port = (int) component(config, "httpPort");
+        assertEquals(8080, port, "Default HTTP port must be 8080");
     }
 
     @Test
-    @DisplayName("Should use custom port when port argument provided")
-    void shouldUseCustomPortWhenPortArgumentProvided() {
-        String[] args = new String[]{"--port", "9090"};
-        // Placeholder for config parsing test
-        // TODO: Implement actual config parsing test when launcher config is available
-        assertEquals(2, args.length, "Args should contain port argument");
-        assertEquals("--port", args[0], "First arg should be --port");
-        assertEquals("9090", args[1], "Second arg should be port value");
+    @DisplayName("Should use custom port from --port argument")
+    void shouldUseCustomPortWhenPortArgumentProvided() throws Exception {
+        Object config = parseConfig(new String[]{"--port", "9090"});
+        int port = (int) component(config, "httpPort");
+        assertEquals(9090, port, "Port must be parsed from --port argument");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Host parsing
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Should use default host (0.0.0.0) when no --host argument provided")
+    void shouldUseDefaultHostWhenNoHostArgumentProvided() throws Exception {
+        Object config = parseConfig(new String[]{});
+        String host = (String) component(config, "httpHost");
+        assertEquals("0.0.0.0", host, "Default host must be 0.0.0.0");
     }
 
     @Test
-    @DisplayName("Should use default host when no host argument provided")
-    void shouldUseDefaultHostWhenNoHostArgumentProvided() {
-        String[] args = new String[]{};
-        // Placeholder for config parsing test
-        // TODO: Implement actual config parsing test when launcher config is available
-        assertNotNull(args, "Args array should not be null");
+    @DisplayName("Should use custom host from --host argument")
+    void shouldUseCustomHostWhenHostArgumentProvided() throws Exception {
+        Object config = parseConfig(new String[]{"--host", "127.0.0.1"});
+        String host = (String) component(config, "httpHost");
+        assertEquals("127.0.0.1", host, "Host must be parsed from --host argument");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Environment parsing
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("Should default to 'local' environment when no --environment argument provided")
+    void shouldDefaultToLocalEnvironment() throws Exception {
+        Object config = parseConfig(new String[]{});
+        String env = (String) component(config, "environment");
+        assertEquals("local", env, "Default environment must be 'local'");
     }
 
     @Test
-    @DisplayName("Should use custom host when host argument provided")
-    void shouldUseCustomHostWhenHostArgumentProvided() {
-        String[] args = new String[]{"--host", "127.0.0.1"};
-        // Placeholder for config parsing test
-        // TODO: Implement actual config parsing test when launcher config is available
-        assertEquals(2, args.length, "Args should contain host argument");
-        assertEquals("--host", args[0], "First arg should be --host");
-        assertEquals("127.0.0.1", args[1], "Second arg should be host value");
+    @DisplayName("Should parse environment from --environment argument")
+    void shouldParseEnvironmentFromArgument() throws Exception {
+        Object config = parseConfig(new String[]{"--environment", "production"});
+        String env = (String) component(config, "environment");
+        assertEquals("production", env, "Environment must be parsed from --environment argument");
     }
 
     @Test
-    @DisplayName("Smoke test: Launcher should expose default HTTP port configuration")
-    void smokeTestDefaultHttpPortConfiguration() {
-        // Verify the default HTTP port is correctly defined
-        // This is a smoke test to ensure the launcher has explicit HTTP binding configuration
-        int expectedDefaultPort = 8080;
-        assertNotNull(expectedDefaultPort, "Default HTTP port should be defined");
-        assertTrue(expectedDefaultPort > 0 && expectedDefaultPort < 65536, 
-            "Default port should be in valid range");
+    @DisplayName("Should parse environment from --env short form")
+    void shouldParseEnvironmentFromShortArgument() throws Exception {
+        Object config = parseConfig(new String[]{"--env", "staging"});
+        String env = (String) component(config, "environment");
+        assertEquals("staging", env, "Environment must be parsed from --env argument");
     }
 
-    @Test
-    @DisplayName("Smoke test: Launcher should support health probe endpoint")
-    void smokeTestHealthProbeEndpoint() {
-        // Verify the launcher supports health probe endpoints
-        // This is a smoke test to ensure health endpoints are documented
-        String healthEndpoint = "/health";
-        String readyEndpoint = "/ready";
-        
-        assertNotNull(healthEndpoint, "Health endpoint should be defined");
-        assertNotNull(readyEndpoint, "Readiness endpoint should be defined");
-        assertTrue(healthEndpoint.startsWith("/"), "Health endpoint should be a valid path");
-        assertTrue(readyEndpoint.startsWith("/"), "Readiness endpoint should be a valid path");
-    }
+    // ──────────────────────────────────────────────────────────────────────────
+    // Combined arguments
+    // ──────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Smoke test: Launcher should support environment configuration")
-    void smokeTestEnvironmentConfiguration() {
-        // Verify the launcher supports environment configuration
-        String[] envVars = {"PHR_ENVIRONMENT", "PHR_HTTP_PORT", "PHR_HTTP_HOST"};
-        
-        for (String envVar : envVars) {
-            assertNotNull(envVar, "Environment variable " + envVar + " should be documented");
-            assertFalse(envVar.isBlank(), "Environment variable name should not be blank");
-        }
+    @DisplayName("Should parse all arguments together")
+    void shouldParseAllArgumentsTogether() throws Exception {
+        Object config = parseConfig(
+            new String[]{"--port", "8443", "--host", "10.0.0.1", "--env", "production"});
+        assertEquals(8443, component(config, "httpPort"));
+        assertEquals("10.0.0.1", component(config, "httpHost"));
+        assertEquals("production", component(config, "environment"));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Record structure
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("PhrLauncherConfig must be a record with exactly 3 components")
+    void phrLauncherConfigMustBeARecordWith3Components() throws ClassNotFoundException {
+        Class<?> clazz = configClass();
+        assertTrue(clazz.isRecord(), "PhrLauncherConfig must be a record");
+        RecordComponent[] components = clazz.getRecordComponents();
+        assertEquals(3, components.length, "Record must have exactly 3 components");
     }
 }
