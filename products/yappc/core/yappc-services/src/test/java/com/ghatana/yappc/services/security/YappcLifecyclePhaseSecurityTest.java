@@ -15,6 +15,7 @@ import com.ghatana.yappc.domain.run.RunResult;
 import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
+import com.ghatana.yappc.domain.validate.PolicySpec;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
@@ -218,7 +219,9 @@ class YappcLifecyclePhaseSecurityTest extends EventloopTestBase {
             });
             ValidationService strictService = new ValidationServiceImpl(strictPolicyEngine, auditLogger, metrics);
 
-            runPromise(() -> strictService.validate(shapeSpec));
+                runPromise(() -> strictService.validateWithPolicy(
+                    shapeSpec,
+                    PolicySpec.builder().id("strict-policy").name("strict-policy").build()));
 
             assertThat(policyEngineConsulted.get())
                     .as("ValidationService must always consult the policy engine — bypass is not permitted")
@@ -233,7 +236,9 @@ class YappcLifecyclePhaseSecurityTest extends EventloopTestBase {
             when(auditLogger.log(anyMap())).thenReturn(Promise.complete());
             ValidationService denyingService = new ValidationServiceImpl(denyingPolicyEngine, auditLogger, metrics);
 
-            LifecycleValidationResult result = runPromise(() -> denyingService.validate(shapeSpec));
+                LifecycleValidationResult result = runPromise(() -> denyingService.validateWithPolicy(
+                    shapeSpec,
+                    PolicySpec.builder().id("deny-policy").name("deny-policy").build()));
 
             assertThat(result.passed())
                     .as("ValidationResult must reflect policy denial — passed must be false")
@@ -243,7 +248,9 @@ class YappcLifecyclePhaseSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("validate() with permissive policy returns passed=true")
         void validateWithPermissivePolicyReturnsPassed() {
-            LifecycleValidationResult result = runPromise(() -> validationService.validate(shapeSpec));
+            LifecycleValidationResult result = runPromise(() -> validationService.validateWithPolicy(
+                    shapeSpec,
+                    PolicySpec.builder().id("allow-policy").name("allow-policy").build()));
 
             assertThat(result.passed()).isTrue();
         }

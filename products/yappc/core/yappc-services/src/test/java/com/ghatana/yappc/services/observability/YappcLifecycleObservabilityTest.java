@@ -124,11 +124,9 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
             when(aiService.complete(any(CompletionRequest.class)))
                     .thenReturn(Promise.ofException(new RuntimeException("llm down")));
 
-            // Capture the failed promise — don't runPromise() to avoid unwrapping exception
-            Promise<?> failed = service.capture(IntentInput.of("Build auth service", "obs-tenant"));
-            assertThat(failed.isException()).isTrue();
-
-            verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.intent.capture.error"), anyMap());
+            IntentSpec spec = runPromise(() -> service.capture(IntentInput.of("Build auth service", "obs-tenant")));
+            assertThat(spec).isNotNull();
+            verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.ai.intent.capture.fallback"), anyMap());
         }
 
         @Test
@@ -194,10 +192,9 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
             when(aiService.complete(any(CompletionRequest.class)))
                     .thenReturn(Promise.ofException(new RuntimeException("shape llm down")));
 
-            Promise<?> failed = shapeService.derive(intent);
-            assertThat(failed.isException()).isTrue();
-
-            verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.shape.derive.error"), anyMap());
+            ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
+            assertThat(shape).isNotNull();
+            verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.ai.shape.derive.fallback"), anyMap());
         }
     }
 
@@ -228,7 +225,7 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
             runPromise(() -> validationService.validate(shape));
 
-            verify(metrics, atLeastOnce()).recordTimer(eq("yappc.validate"), anyLong(), anyMap());
+                verify(metrics, atLeastOnce()).recordTimer(eq("yappc.validate.execute"), anyLong(), anyMap());
         }
 
         @Test
@@ -239,7 +236,7 @@ class YappcLifecycleObservabilityTest extends EventloopTestBase {
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
             runPromise(() -> validationService.validate(shape));
 
-            verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.validate.success"), anyMap());
+                verify(metrics, atLeastOnce()).incrementCounter(eq("yappc.validate.execute.success"), anyMap());
         }
     }
 

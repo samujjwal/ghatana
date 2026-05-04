@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("PostgresAiActionLogRepository — integration tests")
 class PostgresAiActionLogRepositoryIT extends EventloopTestBase {
 

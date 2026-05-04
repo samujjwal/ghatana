@@ -58,7 +58,7 @@ public class StandardCompliancePlugin implements CompliancePlugin {
     private PluginState state = PluginState.UNLOADED;
 
     public StandardCompliancePlugin() {
-        super("compliance");
+        // no-op
     }
 
     @Override

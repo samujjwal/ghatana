@@ -1,5 +1,7 @@
 package com.ghatana.yappc.api;
 
+import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
+import com.ghatana.yappc.domain.pageartifact.http.PageArtifactRoutes;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -35,11 +37,12 @@ public class YappcHttpServer extends HttpServerLauncher {
             LearnApiController learnController,
             EvolveApiController evolveController,
             LifecycleApiController lifecycleController,
-            ArtifactGraphController artifactGraphController) {
+            ArtifactGraphController artifactGraphController,
+            PageArtifactController pageArtifactController) {
 
         ApiVersionPolicy versionPolicy = new ApiVersionPolicy();
 
-        return RoutingServlet.builder(eventloop)
+        RoutingServlet routing = RoutingServlet.builder(eventloop)
                 // Health check
                 .with(HttpMethod.GET, "/health", request ->
                     Promise.of(HttpResponse.ok200().withPlainText("OK").build()))
@@ -102,6 +105,9 @@ public class YappcHttpServer extends HttpServerLauncher {
                         }
                         """).build())))
                 .build();
+
+        // Configure Page Artifact routes (uses same routing servlet)
+        return PageArtifactRoutes.configure(routing, pageArtifactController);
     }
 
     private AsyncServlet secureVersioned(

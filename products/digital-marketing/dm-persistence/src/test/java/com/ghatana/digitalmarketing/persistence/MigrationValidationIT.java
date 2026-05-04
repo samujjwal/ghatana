@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("Flyway migrations — validation")
 class MigrationValidationIT {
 

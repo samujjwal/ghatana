@@ -430,7 +430,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all shadow-sm hover:shadow"
                 >
                     <AiIcon className="w-4 h-4" />
-                    <span className="text-sm font-medium">Ask AI Assistant</span>
+                    <span className="text-sm font-medium">Get Guidance</span>
                 </button>
             </footer>
         </aside>

@@ -1,0 +1,50 @@
+{
+  "rules": {
+    "yappc/no-raw-buttons": [
+      "warn",
+      {
+        "allowedFiles": [
+          "node_modules",
+          "__tests__",
+          ".test.",
+          ".spec."
+        ]
+      }
+    ],
+    "yappc/no-raw-inputs": [
+      "warn",
+      {
+        "allowedFiles": [
+          "node_modules",
+          "__tests__",
+          ".test.",
+          ".spec."
+        ]
+      }
+    ],
+    "yappc/no-raw-select": [
+      "warn",
+      {
+        "allowedFiles": [
+          "node_modules",
+          "__tests__",
+          ".test.",
+          ".spec."
+        ]
+      }
+    ],
+    "yappc/no-hardcoded-color-tokens": [
+      "warn",
+      {
+        "allowedFiles": [
+          "theme/",
+          "tokens/",
+          "node_modules"
+        ]
+      }
+    ],
+    "yappc/no-ad-hoc-card-classes": [
+      "warn"
+    ]
+  }
+}

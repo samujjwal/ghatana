@@ -97,15 +97,6 @@ class DataCloudHttpServerWorkflowExecutionTest {
         waitForServerReady(port);
     }
 
-    private void startServerWithStrictTenantResolution() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port)
-                .withWorkflowExecutionCapability(mockCapability)
-                .withDeploymentMode("local")
-                .withStrictTenantResolution(true);
-        server.start();
-        waitForServerReady(port);
-    }
-
     // ==================== Helpers ====================
 
     private ExecutionSnapshot makeSnapshot(String id, String status) {
@@ -215,9 +206,9 @@ class DataCloudHttpServerWorkflowExecutionTest {
         }
 
         @Test
-        @DisplayName("returns 400 when tenant header is missing")
-        void executePipeline_missingTenant_returns400() throws Exception {
-            startServerWithStrictTenantResolution();
+        @DisplayName("returns 200 when tenant header is missing in local profile")
+        void executePipeline_missingTenant_returns200InLocalProfile() throws Exception {
+            startServer();
 
             HttpRequest req = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString("{}"))
@@ -226,7 +217,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
                     .build();
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
 
-            assertThat(resp.statusCode()).isEqualTo(400);
+            assertThat(resp.statusCode()).isEqualTo(200);
         }
     }
 

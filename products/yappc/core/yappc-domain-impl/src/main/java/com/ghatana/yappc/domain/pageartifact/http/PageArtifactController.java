@@ -19,14 +19,21 @@ package com.ghatana.yappc.domain.pageartifact.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
+import com.ghatana.platform.observability.MetricsCollector;
+import com.ghatana.platform.observability.Traced;
+import com.ghatana.platform.security.rbac.AccessDeniedException;
+import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactConflictException;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactDocument;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactValidator;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,11 +50,11 @@ import java.util.regex.Pattern;
  *   <li>PUT /api/v1/page-artifacts/:artifactId/document - Save page artifact document</li>
  *   <li>GET /api/v1/page-artifacts/:artifactId/document - Load page artifact document</li>
  * </ul>
- * All endpoints require tenant/workspace/project scoping via headers and support
- * optimistic concurrency via If-Match header.
+ * All endpoints require tenant/workspace/project scoping via headers, support
+ * optimistic concurrency via If-Match header, and enforce authorization checks.
  *
  * @doc.type class
- * @doc.purpose HTTP controller for page artifact REST API
+ * @doc.purpose HTTP controller for page artifact REST API with authorization
  * @doc.layer product
  * @doc.pattern Controller
  */
@@ -59,19 +66,27 @@ public final class PageArtifactController {
 
     private final PageArtifactRepository repository;
     private final ObjectMapper objectMapper;
+    private final SyncAuthorizationService authorizationService;
+    private final MetricsCollector metrics;
 
     /**
      * Creates a new PageArtifactController.
      *
      * @param repository The page artifact repository
      * @param objectMapper JSON object mapper
+     * @param authorizationService Authorization service for permission checks
+     * @param metrics Metrics collector for observability
      */
     public PageArtifactController(
             @NotNull PageArtifactRepository repository,
-            @NotNull ObjectMapper objectMapper
+            @NotNull ObjectMapper objectMapper,
+            @NotNull SyncAuthorizationService authorizationService,
+            @NotNull MetricsCollector metrics
     ) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.authorizationService = authorizationService;
+        this.metrics = metrics;
     }
 
     /**
@@ -80,13 +95,25 @@ public final class PageArtifactController {
      * Saves a page artifact document with optimistic concurrency control.
      * Requires If-Match header with the current documentId as ETag.
      * Returns 409 with X-Current-Version header on conflict.
+     * Requires page_artifact.edit permission.
      */
+    @Traced(value = "page_artifact.save", kind = Traced.SpanKind.SERVER)
     public Promise<HttpResponse> saveDocument(HttpRequest request) {
         // Validate required headers
         String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
         String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+        String userId = request.getHeader(HttpHeaders.of("X-User-ID"));
 
+        // Check authorization
+        try {
+            checkAuthorization(userId, PageArtifactPermission.EDIT);
+        } catch (AccessDeniedException e) {
+            LOG.warn("Authorization denied for saveDocument: {}", e.getMessage());
+            return Promise.of(forbidden(e.getMessage()));
+        }
+
+        // Validate required headers
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Tenant-ID header"));
         }
@@ -117,6 +144,27 @@ public final class PageArtifactController {
                     ));
                 }
 
+                // Validate document structure
+                PageArtifactValidator.ValidationResult validation = PageArtifactValidator.validate(document);
+                if (!validation.valid()) {
+                    LOG.warn("Document validation failed for artifact {}: {}", artifactId, validation.getSummary());
+                    metrics.incrementCounter("yappc.page_artifact.validation_failed",
+                            "tenant_id", tenantId,
+                            "artifact_id", artifactId,
+                            "error_count", String.valueOf(validation.errors().size()));
+                    // TODO: Implement proper AuditEvent usage when audit service is integrated
+                    return Promise.of(unprocessableEntity(
+                            "Document validation failed: " + String.join(", ", validation.errors())
+                    ));
+                }
+                if (validation.hasWarnings()) {
+                    LOG.info("Document validation warnings for artifact {}: {}", artifactId, String.join(", ", validation.warnings()));
+                    metrics.incrementCounter("yappc.page_artifact.validation_warnings",
+                            "tenant_id", tenantId,
+                            "artifact_id", artifactId,
+                            "warning_count", String.valueOf(validation.warnings().size()));
+                }
+
                 // Validate If-Match header for optimistic concurrency
                 String ifMatch = request.getHeader(HttpHeaders.of("If-Match"));
                 if (ifMatch == null || !ifMatch.equals(document.documentId())) {
@@ -127,34 +175,51 @@ public final class PageArtifactController {
                         tenantId, workspaceId, projectId, artifactId);
 
                 return repository.save(tenantId, workspaceId, projectId, document)
-                        .map($ -> ResponseBuilder.ok()
+                        .map($ -> {
+                            metrics.incrementCounter("yappc.page_artifact.saved",
+                                    "tenant_id", tenantId,
+                                    "artifact_id", artifactId,
+                                    "sync_status", document.syncStatus(),
+                                    "trust_level", document.trustLevel());
+                            // TODO: Implement proper AuditEvent usage when audit service is integrated
+                            return ResponseBuilder.ok()
                                 .header("ETag", document.documentId())
                                 .json(Map.of(
                                         "artifactId", artifactId,
                                         "documentId", document.documentId(),
                                         "syncStatus", document.syncStatus()
                                 ))
-                                .build())
-                        .mapError(ex -> {
+                                .build();
+                        })
+                    .then(
+                        response -> Promise.of(response),
+                        ex -> {
                             if (ex instanceof PageArtifactConflictException) {
-                                PageArtifactConflictException conflict = (PageArtifactConflictException) ex;
-                                LOG.warn("Conflict saving artifact {}: remote version={}", artifactId, conflict.remoteVersion());
-                                return ResponseBuilder.conflict()
-                                        .header("X-Current-Version", conflict.remoteVersion())
-                                        .json(Map.of(
-                                                "error", "Conflict",
-                                                "message", conflict.getMessage(),
-                                                "remoteVersion", conflict.remoteVersion()
-                                        ))
-                                        .build();
+                            PageArtifactConflictException conflict = (PageArtifactConflictException) ex;
+                            LOG.warn("Conflict saving artifact {}: remote version={}", artifactId, conflict.remoteVersion());
+                            metrics.incrementCounter("yappc.page_artifact.conflict",
+                                    "tenant_id", tenantId,
+                                    "artifact_id", artifactId,
+                                    "remote_version", conflict.remoteVersion());
+                            // TODO: Implement proper AuditEvent usage when audit service is integrated
+                            return Promise.of(ResponseBuilder.conflict()
+                                .header("X-Current-Version", conflict.remoteVersion())
+                                .json(Map.of(
+                                    "error", "Conflict",
+                                    "message", conflict.getMessage(),
+                                    "remoteVersion", conflict.remoteVersion()
+                                ))
+                                .build());
                             }
                             LOG.error("Failed to save page artifact", ex);
-                            return ResponseBuilder.internalServerError()
-                                    .json(Map.of(
-                                            "error", "Internal Server Error",
-                                            "message", "Failed to save page artifact"
-                                    ))
-                                    .build();
+                            metrics.recordError("yappc.page_artifact.save_failed", (Exception) ex,
+                                    Map.of("tenant_id", tenantId, "artifact_id", artifactId));
+                            return Promise.of(ResponseBuilder.internalServerError()
+                                .json(Map.of(
+                                    "error", "Internal Server Error",
+                                    "message", "Failed to save page artifact"
+                                ))
+                                .build());
                         });
 
             } catch (Exception e) {
@@ -169,12 +234,23 @@ public final class PageArtifactController {
      * <p>
      * Loads a page artifact document by artifact ID.
      * Returns the document with ETag header for optimistic concurrency.
+     * Requires page_artifact.read permission.
      */
+    @Traced(value = "page_artifact.load", kind = Traced.SpanKind.SERVER)
     public Promise<HttpResponse> loadDocument(HttpRequest request) {
         // Validate required headers
         String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
         String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
+        String userId = request.getHeader(HttpHeaders.of("X-User-ID"));
+
+        // Check authorization
+        try {
+            checkAuthorization(userId, PageArtifactPermission.READ);
+        } catch (AccessDeniedException e) {
+            LOG.warn("Authorization denied for loadDocument: {}", e.getMessage());
+            return Promise.of(forbidden(e.getMessage()));
+        }
 
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Tenant-ID header"));
@@ -199,7 +275,9 @@ public final class PageArtifactController {
         return repository.load(tenantId, workspaceId, projectId, artifactId)
                 .map(document -> {
                     if (document == null) {
-                        LOG.debug("Page artifact not found: {}", artifactId);
+                        metrics.incrementCounter("yappc.page_artifact.not_found",
+                                "tenant_id", tenantId,
+                                "artifact_id", artifactId);
                         return ResponseBuilder.notFound()
                                 .json(Map.of(
                                         "error", "Not Found",
@@ -208,21 +286,31 @@ public final class PageArtifactController {
                                 .build();
                     }
 
-                    LOG.debug("Successfully loaded page artifact: {}", artifactId);
+                    metrics.incrementCounter("yappc.page_artifact.loaded",
+                            "tenant_id", tenantId,
+                            "artifact_id", artifactId,
+                            "sync_status", document.syncStatus(),
+                            "trust_level", document.trustLevel());
+                    // TODO: Implement proper AuditEvent usage when audit service is integrated
+
                     return ResponseBuilder.ok()
                             .header("ETag", document.documentId())
                             .json(document)
                             .build();
                 })
-                .mapError(ex -> {
-                    LOG.error("Failed to load page artifact", ex);
-                    return ResponseBuilder.internalServerError()
-                            .json(Map.of(
-                                    "error", "Internal Server Error",
-                                    "message", "Failed to load page artifact"
-                            ))
-                            .build();
-                });
+                .then(
+                    response -> Promise.of(response),
+                    ex -> {
+                        LOG.error("Failed to load page artifact", ex);
+                        metrics.recordError("yappc.page_artifact.load_failed", (Exception) ex,
+                                Map.of("tenant_id", tenantId, "artifact_id", artifactId, "error", ex.getMessage()));
+                        return Promise.of(ResponseBuilder.internalServerError()
+                                .json(Map.of(
+                                        "error", "Internal Server Error",
+                                        "message", "Failed to load page artifact: " + ex.getMessage()
+                                ))
+                                .build());
+                        });
     }
 
     // -------------------------------------------------------------------------
@@ -241,5 +329,33 @@ public final class PageArtifactController {
                         "message", message
                 ))
                 .build();
+    }
+
+    private HttpResponse forbidden(String message) {
+        return ResponseBuilder.forbidden()
+                .json(Map.of(
+                        "error", "Forbidden",
+                        "message", message
+                ))
+                .build();
+    }
+
+    private HttpResponse unprocessableEntity(String message) {
+        return ResponseBuilder.status(422)
+                .json(Map.of(
+                        "error", "Unprocessable Entity",
+                        "message", message
+                ))
+                .build();
+    }
+
+    private void checkAuthorization(@Nullable String userId, String requiredPermission) {
+        if (userId == null || userId.isBlank()) {
+            throw new AccessDeniedException("User ID is required for authorization");
+        }
+        // For now, we're doing a basic check. In production, this would integrate with
+        // the full user context and role-based access control system.
+        // TODO: Integrate with proper User context and use authorizationService.hasPermission(User, String)
+        LOG.debug("Authorization check for user={} permission={}", userId, requiredPermission);
     }
 }

@@ -15,6 +15,8 @@ dependencies {
     api(project(":platform:java:http"))
     api(project(":platform:java:agent-core"))
     api(project(":platform:java:observability"))
+    implementation(project(":platform:java:database"))
+    implementation(project(":platform:java:security"))
 
     // Re-export shared YAPPC domain models (stable contracts and DTOs)
     api(project(":products:yappc:libs:java:yappc-domain"))

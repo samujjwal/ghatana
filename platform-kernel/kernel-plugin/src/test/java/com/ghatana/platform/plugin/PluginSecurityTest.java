@@ -154,7 +154,12 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-2d: Valid T2 quotas pass validation")
         void validT2QuotasPassValidation() throws Exception {
-            PluginResourceQuota validQuota = PluginResourceQuota.defaults();
+            PluginResourceQuota validQuota = PluginResourceQuota.builder()
+                    .tier(com.ghatana.kernel.plugin.PluginTier.T2)
+                    .maxMemoryMB(128)
+                    .maxCpuPercent(25)
+                    .maxFileDescriptors(20)
+                    .build();
 
             // Must not throw
             resourceEnforcer.validateQuotas(validQuota);
@@ -166,9 +171,9 @@ class PluginSecurityTest extends EventloopTestBase {
             // Keep other quotas within T2 limits so this asserts the CPU guard specifically.
             PluginResourceQuota oversizedCpu = PluginResourceQuota.builder()
                     .tier(com.ghatana.kernel.plugin.PluginTier.T2)
-                .maxMemoryMB(128)
+                    .maxMemoryMB(128)
                     .maxCpuPercent(26)
-                .maxFileDescriptors(20)
+                    .maxFileDescriptors(20)
                     .build();
 
             assertThatThrownBy(() -> resourceEnforcer.validateQuotas(oversizedCpu))

@@ -374,12 +374,14 @@ class LifecycleApiControllerTest extends EventloopTestBase {
 
         @Override
         public Promise<RunResult> execute(RunSpec spec) {
-            return null;
+            executeCallCount++;
+            return Promise.of(executeResult);
         }
 
         @Override
         public Promise<RunResult> executeWithObservation(RunSpec spec, ObservationConfig config) {
-            return null;
+            executeCallCount++;
+            return Promise.of(executeResult);
         }
 
         @Override

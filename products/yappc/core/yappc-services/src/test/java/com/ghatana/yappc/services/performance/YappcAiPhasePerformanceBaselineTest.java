@@ -313,7 +313,7 @@ class YappcAiPhasePerformanceBaselineTest extends EventloopTestBase {
             long elapsed = System.currentTimeMillis() - start;
 
             assertThat(result).isNotNull();
-            assertThat(result.runRef()).isEqualTo("run-perf-001");
+                assertThat(result.runRef()).isEqualTo("spec-perf-001");
             assertThat(elapsed)
                     .as("observation collect must complete within %dms — actual: %dms", SINGLE_BUDGET_MS, elapsed)
                     .isLessThan(SINGLE_BUDGET_MS);

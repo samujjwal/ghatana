@@ -236,7 +236,7 @@ function WorkspaceStep({
                                 </span>
                             ) : (
                                 <span className="text-sm text-purple-600 dark:text-purple-400">
-                                    AI suggests:{' '}
+                                    Suggested:{' '}
                                     <button
                                         onClick={useSuggestion}
                                         className="font-medium underline hover:no-underline"
@@ -396,7 +396,7 @@ function ProjectStep({
                                 </span>
                             ) : (
                                 <span className="text-sm text-green-600 dark:text-green-400">
-                                    AI suggests:{' '}
+                                    Suggested:{' '}
                                     <button
                                         onClick={useSuggestion}
                                         className="font-medium underline hover:no-underline"

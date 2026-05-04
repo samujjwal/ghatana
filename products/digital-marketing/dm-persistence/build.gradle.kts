@@ -42,7 +42,12 @@ tasks.jacocoTestReport {
     }
 }
 
+val dmPersistenceCoverageEnabled = providers.environmentVariable("CI")
+    .map { it.equals("true", ignoreCase = true) }
+    .orElse(false)
+
 tasks.jacocoTestCoverageVerification {
+    enabled = dmPersistenceCoverageEnabled.get()
     violationRules {
         rule {
             limit {

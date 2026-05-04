@@ -80,7 +80,7 @@ const QUICK_ACTIONS: Record<CanvasMode, Array<{ label: string; prompt: string; i
         { label: 'Responsive', prompt: 'How should this work on mobile?', icon: '📱' },
     ],
     code: [
-        { label: 'Generate code', prompt: 'Generate implementation code', icon: '💻' },
+        { label: 'Prepare implementation', prompt: 'Prepare implementation code', icon: '💻' },
         { label: 'Explain code', prompt: 'Explain how this works', icon: '📖' },
         { label: 'Find bugs', prompt: 'Look for potential bugs', icon: '🐛' },
     ],

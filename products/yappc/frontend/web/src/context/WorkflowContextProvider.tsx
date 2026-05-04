@@ -165,7 +165,7 @@ const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'c
         { id: 'shape-1', title: 'Add components', description: 'Drag components from the palette to the canvas', action: 'Open component palette' },
         { id: 'shape-2', title: 'Connect nodes', description: 'Draw edges between components to define relationships' },
         { id: 'shape-3', title: 'Configure properties', description: 'Select a node and edit its properties in the panel' },
-        { id: 'shape-4', title: 'Use AI assistance', description: 'Ask AI to add features or modify your design' },
+        { id: 'shape-4', title: 'Use assistance', description: 'Get help to add features or modify your design' },
     ],
     [LifecyclePhase.PLAN]: [
         { id: 'validate-1', title: 'Run validation', description: 'AI will check your design for issues and gaps' },
@@ -174,7 +174,7 @@ const PHASE_GUIDANCE: Record<LifecyclePhase, Omit<GuidanceStep, 'completed' | 'c
     ],
     [LifecyclePhase.EXECUTE]: [
         { id: 'generate-1', title: 'Configure generation', description: 'Choose language, framework, and options' },
-        { id: 'generate-2', title: 'Generate code', description: 'AI will generate production-ready code' },
+        { id: 'generate-2', title: 'Prepare implementation', description: 'System will generate production-ready code' },
         { id: 'generate-3', title: 'Review output', description: 'Preview generated files and make adjustments' },
     ],
     [LifecyclePhase.VERIFY]: [

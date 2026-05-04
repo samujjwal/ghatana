@@ -18,6 +18,7 @@ import com.ghatana.yappc.domain.run.RunStatus;
 import com.ghatana.yappc.domain.run.RunTask;
 import com.ghatana.yappc.domain.shape.ShapeSpec;
 import com.ghatana.yappc.domain.validate.LifecycleValidationResult;
+import com.ghatana.yappc.domain.validate.PolicySpec;
 import com.ghatana.yappc.domain.evolve.EvolutionPlan;
 import com.ghatana.yappc.services.evolve.EvolutionService;
 import com.ghatana.yappc.services.evolve.EvolutionServiceImpl;
@@ -147,7 +148,9 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             IntentSpec intent = runPromise(() ->
                     intentService.capture(IntentInput.of("Build auth service", "allow-tenant")));
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
-            LifecycleValidationResult result = runPromise(() -> validationService.validate(shape));
+                LifecycleValidationResult result = runPromise(() -> validationService.validateWithPolicy(
+                    shape,
+                    PolicySpec.builder().id("allow-policy").name("allow-policy").build()));
 
             assertThat(result.passed()).isTrue();
             assertThat(result.hasBlockingIssues()).isFalse();
@@ -162,7 +165,9 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             IntentSpec intent = runPromise(() ->
                     intentService.capture(IntentInput.of("Build auth service", "deny-tenant")));
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
-            LifecycleValidationResult result = runPromise(() -> deniedService.validate(shape));
+                LifecycleValidationResult result = runPromise(() -> deniedService.validateWithPolicy(
+                    shape,
+                    PolicySpec.builder().id("deny-policy").name("deny-policy").build()));
 
             assertThat(result.passed()).isFalse();
         }
@@ -176,7 +181,9 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
                             "component-tenant")));
             ShapeSpec shape = runPromise(() -> shapeService.derive(intent));
 
-            assertThat(shape.workflows()).isNotEmpty();
+            assertThat(shape.id()).isNotBlank();
+            assertThat(shape.intentRef()).isEqualTo(intent.id());
+            assertThat(shape.tenantId()).isEqualTo("component-tenant");
         }
     }
 
@@ -208,7 +215,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
 
             assertThat(obs).isNotNull();
             assertThat(obs.id()).isNotBlank();
-            assertThat(obs.runRef()).isEqualTo("run-integration-001");
+            assertThat(obs.runRef()).isEqualTo("spec-run-integration-001");
         }
 
         @Test
@@ -238,7 +245,7 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             Observation obs = runPromise(() -> observeService.collect(failedRun));
 
             assertThat(obs).isNotNull();
-            assertThat(obs.runRef()).isEqualTo("run-failed-003");
+            assertThat(obs.runRef()).isEqualTo("spec-failed-003");
         }
 
         @Test
@@ -251,8 +258,8 @@ class YappcLifecycleServiceIntegrationTest extends EventloopTestBase {
             Observation obs2 = runPromise(() -> observeService.collect(run2));
 
             assertThat(obs1.id()).isNotEqualTo(obs2.id());
-            assertThat(obs1.runRef()).isEqualTo("run-seq-001");
-            assertThat(obs2.runRef()).isEqualTo("run-seq-002");
+            assertThat(obs1.runRef()).isEqualTo("spec-run-seq-001");
+            assertThat(obs2.runRef()).isEqualTo("spec-run-seq-002");
         }
     }
 

@@ -1,362 +1,1051 @@
-I re-reviewed `samujjwal/ghatana` at the exact head you provided: `14ddc1e49609071335fca215597042d62b66e4b6`. The commit itself is labeled `build fixes 11` and mainly contains Data Cloud/AEP audit/test changes, but I reviewed the YAPPC/page-builder files at that ref directly. 
+Below is an execution-ready implementation plan for YAPPC based on the corrected latest head: `719869ab1ac1bdef9608c8646079d96d28441c5b`. That commit is a changelog update pointing to the substantive YAPPC refactor `e1248a9e6e31fb2c78f48011747a2bc4161d21b2`. 
 
-External web search is disabled in this chat, so I could not do live market/tooling research. The analysis below is source-backed from the repo plus established product architecture guidance.
+# YAPPC UI/UX + Builder Hardening Implementation Plan
 
-## Executive verdict
+## 0. Target outcome
 
-YAPPC’s page/UI builder has improved significantly. It is no longer just a small embedded page editor. At this head, it now has:
+YAPPC should become a **low-cognitive-load, canvas-native product creation system** where users always see the next best action, while the system handles planning, UI/page building, design-system consistency, compiler/decompiler flows, preview, validation, audit, privacy, security, and observability underneath.
 
-* In-canvas `PageDesignerNode` with HTTP-first persistence, local fallback, conflict handling, import of additional pages as new canvas nodes, sync status badges, reload/force-save conflict UI, and AI lineage recording. 
-* `PageArtifactDocument` with serialized `BuilderDocument`, source, round-trip fidelity, residual islands, sync status, trust level, data classification, validation summary, and product-scoped AI change records. 
-* A registry-aware builder document factory that now includes active component contracts in new documents. 
-* Page-level drag/drop for palette components and existing nodes, including before/after drops and named slot drops.  
-* Built-in live preview route `/preview/builder`, registered outside the app shell and capable of receiving `MOUNT_DOCUMENT` / `UPDATE_DOCUMENT`.  
-* Improved preview trust mapping and validation so platform trust levels like `GENERATED_TRUSTED` now map to preview trust ranks correctly. 
-* Starter component contracts now include more realistic design-system prop values, enum validation, builder metadata, privacy, telemetry, observability, preview restrictions, AI policy, and configurator metadata. 
-
-That said, this is still **not fully production-grade** for the full vision: drag/drop + compiler/decompiler + live reloading + design-system generator + implicit AI + first-class o11y/privacy/security/audit. The biggest remaining gaps are backend persistence, security hardening of preview messaging, generic extensibility beyond five starter components, real artifact compiler integration, semantic operation-level audit, and turning AI from a visible panel into implicit product intelligence.
-
----
-
-## Major improvements since the prior review
-
-### 1. Persistence is much stronger, but still frontend-led
-
-`PageDesignerNode` now uses a `ResilientPageArtifactPersistenceAdapter` combining `HttpPageArtifactPersistenceAdapter` and `LocalStoragePageArtifactPersistenceAdapter`. It debounces save, detects conflict errors, marks offline fallback, and exposes conflict UI with reload/force save. 
-
-The persistence adapter uses:
-
-* `PUT /api/v1/page-artifacts/:artifactId/document`
-* `GET /api/v1/page-artifacts/:artifactId/document`
-* `If-Match` for optimistic concurrency
-* `409` + `X-Current-Version` for conflict detection 
-
-There are focused tests for local storage, HTTP calls, fallback behavior, conflict errors, `If-Match`, and no fallback on conflict. 
-
-**Remaining issue:** repository search only found the frontend adapter/tests for `/api/v1/page-artifacts`; I did not find a backend implementation for that endpoint.   So this is architecturally correct but likely not end-to-end complete unless the backend route exists outside indexed search.
-
-### 2. Drag/drop is now meaningfully better
-
-`PageDesigner` now includes logic for finding node locations, reordering within root/slots, moving between containers, preventing descendant cycles, before/after placement, and slot placement. 
-
-`ComponentRenderer` now exposes:
-
-* `application/x-page-component`
-* `application/x-page-node`
-* drop-before zones
-* drop-after zones
-* named slot drop targets
-* node dragging for existing components 
-
-This is a major step toward a real page builder.
-
-**Remaining issue:** drop behavior is still visually primitive and not fully layout-aware. It does not yet support grid/flex visual placement, responsive layout editing, keyboard equivalent reorder, drag handles separate from content, or canvas-level component snapping.
-
-### 3. Live preview now has an actual runtime
-
-`LivePreviewPanel` now defaults to `/preview/builder`, computes trusted origins from that route, and sends `MOUNT_DOCUMENT` / debounced `UPDATE_DOCUMENT`.  The route is registered outside app shell layout. 
-
-The preview route listens for host messages, renders root nodes using `ComponentRenderer`, and posts `READY`, `MOUNTED`, `UPDATED`, and `PONG` messages back. 
-
-**Remaining issue:** preview security needs tightening. `preview-builder.tsx` posts messages back using `window.parent.postMessage(message, '*')`, and incoming messages only check `event.source === window.parent`, not `event.origin`.  The host side has proper trusted-origin validation.  The preview runtime should mirror that strictness.
-
-### 4. Registry and design-system metadata are improving
-
-The starter contracts now have better builder metadata, enum validation, and design-system-consistent values. For example, `Button.variant` now uses `solid | outline | ghost`, `Button.size` uses `sm | md | lg`, and prop metadata drives select/toggle controls. 
-
-`registry.ts` now exposes configurator groups and a governance profile with review-required props, privacy, telemetry events, observability marks, and required a11y props. 
-
-`PropertyForm` consumes those fields, supports select/toggle controls, displays configurator groups, and shows governance/a11y/telemetry hints. 
-
-**Remaining issue:** governance is mostly displayed, not enforced. Privacy, telemetry consent, a11y requirements, AI policy, and observability metadata need to become active behavior, not only labels.
-
-### 5. Artifact import/decompile UX exists, but is still a bridge
-
-`PageDesigner` now has an import panel where users paste a JSON semantic model, then it calls `importPageArtifactsFromCode`, loads the first page, surfaces residual islands and round-trip fidelity, and creates additional page nodes through `onImportArtifacts`. 
-
-`artifactCompilerBridge.ts` converts a simplified semantic model shape into `PageArtifactDocument[]`, preserving residual island IDs and round-trip fidelity. 
-
-**Remaining issue:** this is not yet the full artifact compiler/decompiler. It expects already-serialized BuilderDocuments or simplified JSON pages. The actual artifact compiler’s `toBuilderDocument` still has limitations: it selects one page as root, puts additional pages into metadata/loss points, appends orphan components, and does not convert token/theme/style/data/API/state models into BuilderDocument nodes. 
-
----
-
-## Critical gaps and risks
-
-### P0 — Backend persistence endpoint is not proven
-
-The frontend now expects `/api/v1/page-artifacts/:artifactId/document`, but repository search only surfaced the frontend adapter/tests, not server implementation.  
-
-**Required fix:** implement and test backend page artifact persistence:
+The target experience:
 
 ```text
-PUT /api/v1/page-artifacts/{artifactId}/document
-GET /api/v1/page-artifacts/{artifactId}/document
+Workspace → Project → Current Phase Cockpit
+  → one primary next action
+  → canvas/page builder only when useful
+  → live preview always nearby
+  → suggestions are outcome-oriented, not “AI-branded”
+  → governance/audit available on demand
+  → advanced power tools progressively disclosed
+```
+
+---
+
+# Milestone 1 — Correctness and persistence hardening
+
+## Goal
+
+Move the page/UI builder from “works locally and through HTTP API proof” to **durable, authorized, observable, audited persistence**.
+
+The latest head now includes `PageArtifactController` with `PUT` and `GET` document APIs, tenant/workspace/project headers, `If-Match`, `ETag`, and `409` conflict handling.  The route registration also exists in `PageArtifactRoutes`. 
+
+## Tasks
+
+### YAPPC-PERSIST-001 — Replace in-memory repository with durable repository
+
+Implement a DB-backed `PageArtifactRepository`.
+
+Suggested files/modules:
+
+```text
+products/yappc/core/yappc-domain-impl/src/main/java/com/ghatana/yappc/domain/pageartifact/
+  PageArtifactRepository.java
+  InMemoryPageArtifactRepository.java
+  DbPageArtifactRepository.java        new
+  PageArtifactDocument.java
+```
+
+Required behavior:
+
+* Persist by `tenantId`, `workspaceId`, `projectId`, `artifactId`.
+* Store `documentId` as optimistic concurrency version.
+* Store serialized builder document payload.
+* Store sync status, trust level, data classification, validation summary, residual islands, round-trip fidelity, and governance records.
+* Preserve historical document versions or snapshots for rollback.
+
+Acceptance criteria:
+
+* `GET` returns latest persisted document with `ETag`.
+* `PUT` with matching `If-Match` saves and returns new persisted state.
+* `PUT` with stale `If-Match` returns `409` and `X-Current-Version`.
+* Cross-tenant/workspace/project access is impossible.
+* Repository is deterministic under concurrent updates.
+
+### YAPPC-PERSIST-002 — Add authorization and capability checks
+
+The controller validates required tenant/workspace/project headers today.  Add explicit authorization.
+
+Required checks:
+
+* User can read project.
+* User can edit project.
+* User can edit page artifacts.
+* User can force-save over conflict.
+* User can import/decompile artifacts.
+* User can approve generated/suggested changes.
+
+Acceptance criteria:
+
+* Unauthorized read returns `403`.
+* Unauthorized write returns `403`.
+* Missing/invalid tenant/workspace/project scope returns safe `400`/`403`.
+* Audit entry records denied access attempts.
+
+### YAPPC-PERSIST-003 — Add server-side validation
+
+Before saving a page artifact:
+
+* Deserialize `PageArtifactDocument`.
+* Validate `BuilderDocument`.
+* Validate design-system contract references.
+* Validate trust policy.
+* Validate data classification.
+* Validate residual island metadata.
+* Validate no unsupported executable payload enters persisted document.
+
+Acceptance criteria:
+
+* Invalid document returns `422`.
+* Trust-violating preview/runtime document cannot be saved as trusted.
+* Unknown component renders through fallback but is marked review-required.
+* Validation errors are returned in a structured response the UI can display.
+
+### YAPPC-PERSIST-004 — Add audit and OTel instrumentation
+
+Each page artifact operation should emit:
+
+* Audit event.
+* OTel span.
+* Metrics.
+
+Events:
+
+```text
+page_artifact.loaded
+page_artifact.saved
+page_artifact.save_conflict
+page_artifact.validation_failed
+page_artifact.force_saved
+page_artifact.imported
+page_artifact.decompiled
+page_artifact.codegen_requested
+```
+
+Metrics:
+
+```text
+page_artifact_save_latency_ms
+page_artifact_load_latency_ms
+page_artifact_conflict_count
+page_artifact_validation_error_count
+page_artifact_force_save_count
 ```
 
 Acceptance criteria:
 
-* Uses tenant/workspace/project scoping.
-* Enforces authz.
-* Validates serialized `BuilderDocument`.
-* Persists `PageArtifactDocument`.
-* Enforces `If-Match`.
-* Returns `409` with `X-Current-Version`.
-* Writes audit events.
-* Emits OTel spans/metrics.
-* Has DB/Testcontainers integration tests.
-* Frontend E2E proves save → reload → conflict resolution.
+* Every API request has correlation ID.
+* Audit event includes actor, tenant, workspace, project, artifact, operation, result.
+* Metrics can be viewed by project/workspace/tenant.
 
-### P0 — Preview runtime postMessage security must be hardened
+---
 
-Host side is fairly strict: `PreviewHostService` sends to a trusted origin and uses `createSafeMessageHandler`.  But preview runtime sends to `'*'` and does not validate `event.origin`. 
+# Milestone 2 — Full YAPPC phase-specific UX
 
-**Required fix:**
+## Goal
 
-* In preview runtime, derive expected parent origin from `document.referrer` or a signed query/session bootstrap.
-* Reject messages where `event.origin !== expectedParentOrigin`.
-* Use `window.parent.postMessage(message, expectedParentOrigin)`, never `'*'`.
-* Add tests for spoofed origin, malformed messages, wrong source, and CSP/sandbox behavior.
+Stop making multiple phases render the same generic route. Keep the 8-phase lifecycle, but give each phase a **distinct cockpit** with one primary outcome and low cognitive load.
 
-### P0 — AI is still too visible
+Current route structure is strong, but several phase routes reuse canvas or lifecycle views. Shape and Generate route to canvas; Validate, Observe, Learn, and Evolve route to lifecycle; Run is disabled.       
 
-The user requirement says AI/ML should be implicit and pervasive without the user needing to know. The current UI explicitly shows “AI changes — review required,” “AI lineage count,” and import is recorded as an AI action.  
+## Tasks
 
-Audit lineage is good. User-facing labels should be outcome-oriented.
+### YAPPC-UX-001 — Add phase cockpit shell
 
-**Required fix:**
+Create reusable phase cockpit layout:
 
-Rename UX surfaces:
+```text
+products/yappc/frontend/web/src/components/phase/
+  PhaseCockpitLayout.tsx
+  PhasePrimaryActionCard.tsx
+  PhaseBlockerPanel.tsx
+  PhaseEvidencePanel.tsx
+  PhaseSuggestedNextStep.tsx
+  PhaseAdvancedDisclosure.tsx
+  PhaseGovernanceTrace.tsx
+```
 
-* “AI changes” → “Suggested improvements”
-* “AI lineage count” → “Governance trace” or hidden behind audit details
-* “AI review required” → “Review required”
-* Internally keep `AIActionLineage` for audit/governance.
+Each phase page should show:
 
-### P0 — Generic rendering is still not extensible enough
-
-`ComponentRenderer` has a hardcoded `COMPONENT_RENDER_MAP` for `Button`, `Card`, `TextField`, `Typography`, and `Box`.  That limits the design-system generator and decompiler story.
-
-**Required fix:**
-
-Move rendering to a manifest/registry/plugin model:
-
-```ts
-interface BuilderRendererManifest {
-  contractName: string;
-  render(instance, slots, context): ReactNode;
-  propAdapters?: Record<string, PropAdapter>;
-  previewPolicy?: PreviewPolicy;
-}
+```text
+1. Current phase purpose
+2. One primary next action
+3. Current blockers
+4. Evidence supporting the next action
+5. Suggested automation
+6. Governance/provenance on demand
+7. Advanced tools collapsed by default
 ```
 
 Acceptance criteria:
 
-* New design-system components can be registered without editing `ComponentRenderer.tsx`.
-* Decompiled components can appear as “review required custom component” with safe fallback rendering.
-* Renderer validates prop compatibility and logs unsupported props as loss points.
+* User can understand “what to do next” in under 5 seconds.
+* Every phase has exactly one primary CTA.
+* Advanced panels are collapsed by default.
+* Empty states are actionable and truthful.
 
-### P1 — Artifact compiler integration is still shallow
+### YAPPC-UX-002 — Implement phase-specific cockpits
 
-The bridge imports a simplified semantic JSON model.  The real compiler library remains richer but not fully connected to the canvas workflow. The actual converter still collapses multi-page context and loses several model kinds. 
-
-**Required fix:**
-
-Add a real compiler/decompiler flow:
+Create:
 
 ```text
-Source repo/file/route/story
-→ inventory scan
+IntentCockpit
+ShapeCockpit
+ValidateCockpit
+GenerateCockpit
+RunCockpit
+ObserveCockpit
+LearnCockpit
+EvolveCockpit
+```
+
+Phase behavior:
+
+| Phase    | Primary action                                           | Default surface                  |
+| -------- | -------------------------------------------------------- | -------------------------------- |
+| Intent   | Clarify problem and user outcome                         | Intent capture + evidence        |
+| Shape    | Convert intent into requirements and UI/page structure   | Canvas/page builder              |
+| Validate | Review and approve requirements/design/generation packet | Approval/gate cockpit            |
+| Generate | Prepare implementation package                           | Generator cockpit + code preview |
+| Run      | Prepare/execute safe run path                            | Capability-gated run cockpit     |
+| Observe  | Review health, preview, telemetry, incidents             | Observability cockpit            |
+| Learn    | Capture lessons and reusable patterns                    | Retrospective cockpit            |
+| Evolve   | Plan next cycle                                          | Roadmap/backlog cockpit          |
+
+Acceptance criteria:
+
+* No phase is just a blind alias to generic lifecycle unless wrapped in phase-specific framing.
+* Each phase has phase-specific copy, CTA, blockers, and evidence.
+* Run phase no longer shows only a disabled construction page; it shows useful readiness/planning while execution is feature-gated.
+
+### YAPPC-UX-003 — Add provenance badges everywhere
+
+Every lifecycle item should show provenance:
+
+```text
+Backed        persisted API data
+Derived       computed from backed data
+Suggested     generated recommendation requiring review
+Preview       non-production / preview-only
+Unavailable   missing capability or integration
+```
+
+Acceptance criteria:
+
+* Seeded/suggested content is never displayed as persisted truth.
+* Users can tell what is safe to act on.
+* Governance trace shows source, timestamp, actor/system, confidence, and review state.
+
+---
+
+# Milestone 3 — Design-system consistency and low cognitive load
+
+## Goal
+
+Make YAPPC visually and behaviorally consistent by using `@ghatana/design-system` across the entire app instead of raw controls and ad-hoc Tailwind patterns.
+
+The app already uses the design system in important shell/canvas areas, but major routes still use raw controls and custom styling: dashboard, workspaces, projects, login, onboarding, preview, and parts of lifecycle.      
+
+## Tasks
+
+### YAPPC-DS-001 — Create product UI primitive mapping
+
+Map raw elements to design-system primitives:
+
+| Raw usage         | Replace with          |
+| ----------------- | --------------------- |
+| `button`          | `Button`              |
+| `input`           | `TextField` / `Input` |
+| `select`          | `Select`              |
+| custom card div   | `Card`                |
+| status badge span | `Badge` / `Chip`      |
+| modal/dialog      | `Dialog`              |
+| table             | `DataTable`           |
+| alert div         | `Alert`               |
+| skeleton div      | `Skeleton`            |
+
+Acceptance criteria:
+
+* No raw form controls in product routes unless inside design-system components.
+* Common variants are standardized: primary, secondary, destructive, ghost, subtle.
+* Loading, empty, error, and unavailable states use shared components.
+
+### YAPPC-DS-002 — Migrate key routes
+
+Migrate in this order:
+
+1. Login.
+2. Onboarding.
+3. Dashboard.
+4. Workspaces.
+5. Projects.
+6. Project overview.
+7. Preview.
+8. Lifecycle/phase cockpits.
+9. Canvas side panels.
+10. Page builder inspector.
+
+Acceptance criteria:
+
+* Visual density is consistent.
+* Dark mode works without route-specific patches.
+* Keyboard focus states are consistent.
+* All controls have accessible labels.
+
+### YAPPC-DS-003 — Add enforcement
+
+Add lint/check rules:
+
+```text
+No raw button/input/select/textarea in product routes.
+No hardcoded color tokens outside approved theme files.
+No unapproved ad-hoc card classes.
+No direct status color mapping outside status-token helpers.
+```
+
+Acceptance criteria:
+
+* CI fails when new raw controls are introduced.
+* Exceptions require explicit comments and design-system issue references.
+* Storybook/visual snapshots cover route-level states.
+
+---
+
+# Milestone 4 — Canvas + page builder integration
+
+## Goal
+
+Make page/UI builder a first-class canvas capability, not a separate editor embedded in a node.
+
+At latest head, `ComponentRenderer` now uses a renderer manifest registry and fallback rendering rather than the prior hardcoded map.  The renderer manifest system supports dynamic registration, prop adapters, preview policy, and fallback renderers. 
+
+## Tasks
+
+### YAPPC-CANVAS-001 — Add semantic page-builder commands
+
+Current page-node updates still risk being too coarse. Add semantic commands:
+
+```text
+InsertComponentCommand
+MoveComponentCommand
+ReorderComponentCommand
+UpdateComponentPropsCommand
+DeleteComponentCommand
+SetResponsiveVariantCommand
+AddActionBindingCommand
+AddDataBindingCommand
+ImportSemanticModelCommand
+ApplySuggestedImprovementCommand
+```
+
+Each command must emit:
+
+```text
+undo/redo delta
+audit event
+telemetry event
+validation result
+autosave request
+governance record if generated/suggested
+```
+
+Acceptance criteria:
+
+* Undo/redo works at component-operation level, not only whole page-doc replacement.
+* Audit log says exactly what changed.
+* Persistence saves after command commit.
+* Validation runs after each semantic operation.
+
+### YAPPC-CANVAS-002 — Add phase-aware canvas defaults
+
+Canvas should automatically adapt by phase:
+
+| Phase    | Default mode | Visible tools                               |
+| -------- | ------------ | ------------------------------------------- |
+| Intent   | Brainstorm   | notes, problem, research, persona           |
+| Shape    | Design       | requirements, page builder, diagrams        |
+| Validate | Review       | approvals, comments, gates                  |
+| Generate | Code         | implementation plan, generated files, tests |
+| Run      | Deploy       | run plan, pipeline readiness                |
+| Observe  | Observe      | metrics, preview, incidents                 |
+| Learn    | Knowledge    | retrospectives, learnings                   |
+| Evolve   | Roadmap      | next cycle, backlog, capability plan        |
+
+Acceptance criteria:
+
+* Canvas opens with phase-relevant tools only.
+* Advanced tools are available through command palette or disclosure.
+* User can override mode, but the UI explains the current default.
+
+### YAPPC-CANVAS-003 — Add bidirectional preview selection
+
+Preview protocol already has typed host/preview messaging, and preview-builder security has improved. 
+
+Add:
+
+* Click in preview selects component in page builder.
+* Hover in preview highlights component in builder.
+* Selecting builder node highlights preview element.
+* Preview emits interaction telemetry.
+* Unsupported components show fallback review state.
+
+Acceptance criteria:
+
+* Builder selection and preview selection stay in sync.
+* Preview remains sandboxed and origin-safe.
+* Hover/click events do not mutate data unless explicitly intended.
+
+---
+
+# Milestone 5 — Renderer/plugin extensibility hardening
+
+## Goal
+
+Turn the new renderer manifest and plugin loader into a safe, flexible design-system extension model.
+
+`ComponentPluginLoader` now validates package name, version, builder compatibility, renderers, and elevated-permission allowlisting. 
+
+## Tasks
+
+### YAPPC-PLUGIN-001 — Add runtime policy enforcement
+
+Current plugin loader validates metadata, but runtime behavior still needs enforcement.
+
+Add:
+
+```text
+PluginRuntimePolicy
+PluginSandboxBoundary
+PluginNetworkPolicy
+PluginStoragePolicy
+PluginBrowserApiPolicy
+PluginTelemetryPolicy
+```
+
+Acceptance criteria:
+
+* Plugin cannot access localStorage unless allowed.
+* Plugin cannot perform network calls outside allowlist.
+* Plugin cannot execute unsafe script payloads.
+* Plugin preview policy is enforced in preview mode.
+* Elevated plugin requires explicit workspace/project approval.
+
+### YAPPC-PLUGIN-002 — Add component compatibility validation
+
+Before loading renderer package:
+
+* Validate renderer contract exists or is imported as custom contract.
+* Validate prop adapter outputs match design-system prop schema.
+* Validate fallback renderer is used for unknown components.
+* Validate preview policy compatibility with document trust level.
+
+Acceptance criteria:
+
+* Invalid renderer package cannot load.
+* Unknown custom components render as review-required, not broken UI.
+* Contract mismatch produces actionable validation error.
+
+### YAPPC-PLUGIN-003 — Add design-system generator handoff
+
+When compiler/decompiler sees custom components:
+
+```text
+custom component
+→ inferred contract candidate
+→ design-system generator
+→ review
+→ registry entry
+→ renderer manifest
+→ codegen mapping
+```
+
+Acceptance criteria:
+
+* Decompiled custom components become registry candidates.
+* Candidate has confidence, source location, props, slots, events, styles.
+* Human review can accept, edit, or reject.
+* Accepted candidate becomes reusable design-system component.
+
+---
+
+# Milestone 6 — Artifact compiler/decompiler full integration
+
+## Goal
+
+Move from pasted JSON import bridge to a true artifact compiler/decompiler workflow.
+
+Current bridge is useful but shallow. The product needs:
+
+```text
+source files/routes/stories
 → extractors
-→ ArtifactGraph
-→ SemanticProductModel
-→ PageArtifactDocument[]
-→ canvas page nodes
+→ artifact graph
+→ semantic product model
+→ page artifact documents
+→ canvas nodes
 → residual review
-→ registry component candidate generation
 → codegen/diff/merge
 ```
 
+## Tasks
+
+### YAPPC-COMPILER-001 — Add “Import from source” workflow
+
+UI entry points:
+
+```text
+Canvas toolbar → Import
+Command palette → Import existing UI/page
+Page builder → Import from source
+Project phase Generate → Decompile existing app
+```
+
+Import options:
+
+* TSX component.
+* Route file.
+* Storybook story.
+* Existing generated artifact.
+* Zip/project folder later.
+
 Acceptance criteria:
 
-* Import TSX/route/story directly, not just pasted JSON.
-* Multi-page apps become multiple canvas page nodes.
-* Residual islands are reviewable and linked to source locations.
-* Design tokens/themes are extracted into design-system generator candidates.
-* Data/API/state bindings become BuilderDocument bindings/actions, not metadata-only.
-* Round-trip fidelity is visible and blocks unsafe generation.
+* User does not paste raw JSON for primary workflow.
+* Pasted JSON remains developer/debug import only.
+* Import produces one or more `PageArtifactDocument`s.
+* Multi-page imports create multiple page nodes.
 
-### P1 — Operation-level audit is too coarse
+### YAPPC-COMPILER-002 — Add residual island review UI
 
-The shared builder operations support an `OperationEventBus` for inserted/moved/deleted/updated/binding events.  But `PageDesignerNode` currently receives whole updated `PageArtifactDocument` objects through `UpdateNodeDataCommand`. 
+Residual islands should be visible but not overwhelming.
 
-**Required fix:**
+Create:
 
-Introduce semantic page-builder commands:
+```text
+ResidualIslandPanel.tsx
+ResidualIslandCard.tsx
+RoundTripFidelityBadge.tsx
+CompilerLossPointList.tsx
+SourceLocationLink.tsx
+```
 
-* `InsertComponentCommand`
-* `MoveComponentCommand`
-* `ReorderComponentCommand`
-* `UpdateComponentPropsCommand`
-* `DeleteComponentCommand`
-* `SetResponsiveVariantCommand`
-* `AddActionBindingCommand`
-* `ImportSemanticModelCommand`
-* `ApplySuggestionCommand`
+Acceptance criteria:
 
-Each command should emit audit, telemetry, validation, persistence, and undo/redo metadata.
+* Residuals show source location, reason, severity, and required action.
+* Low-fidelity imports require review.
+* User can accept fallback, map to design-system component, or mark as custom.
+* No unmodeled logic is silently dropped.
 
-### P1 — Property inspector still lacks full configurator behavior
+### YAPPC-COMPILER-003 — Add codegen preview and diff/merge
 
-`PropertyForm` displays configurator group labels, but it does not actually group fields into sections/tabs, enforce validation min/max, support token pickers, support object/array editors, support binding controls, or support action wiring. 
+Add workflow:
 
-**Required fix:**
+```text
+BuilderDocument
+→ generate React code
+→ show generated files
+→ show ownership regions
+→ compare with existing source
+→ safe apply / create PR / export patch
+```
 
-Build a real registry-driven inspector:
+Acceptance criteria:
 
-* Group fields by `configurator.groups`.
-* Use enum/select/toggle/text/number/token-ref/component-ref controls.
-* Enforce `validation.min/max/enum`.
-* Show a11y/privacy/security/telemetry implications inline.
-* Add binding/action editors.
-* Add responsive/state variant editors.
-* Route review-required props through review state.
-
-### P1 — Privacy/security/o11y metadata is not active enough
-
-Contracts include privacy, telemetry, observability, preview restrictions, and AI policy.  The UI exposes some hints through `PropertyForm`. 
-
-But behavior is not yet enforced end to end.
-
-**Required fix:**
-
-When a component is inserted:
-
-* Copy privacy metadata into node metadata.
-* Mark TextField and input-like components as consent-sensitive.
-* Add default telemetry policy based on consent.
-* Add required a11y checks.
-* Add OTel performance marks for render/update/preview/save.
-* Add audit events for risky components and review-required props.
-
-### P1 — Live preview lacks bidirectional selection
-
-The preview protocol defines `ELEMENT_CLICK` and `ELEMENT_HOVER`.  But the preview route renders `ComponentRenderer` without passing click/hover feedback to the host; `LivePreviewPanel` does not subscribe to selection events from preview. 
-
-**Required fix:**
-
-* Preview click selects corresponding component in PageDesigner.
-* PageDesigner selection highlights corresponding preview element.
-* Hover in preview shows node outline.
-* Preview emits render/interaction telemetry.
-
-### P1 — Tests are still below production confidence
-
-There are good tests for persistence.  But search did not reveal tests for `preview-builder`, `LivePreviewPanel`, `ComponentRenderer` drag/drop, artifact import bridge, or full page-builder E2E.
-
-**Required test matrix:**
-
-* Create page node → add components → nest → reorder → save → reload.
-* Slot drop into `Card.actions` and `Box.default`.
-* Drag existing node before/after/into slot.
-* Invalid slot drop rejected.
-* Preview receives `MOUNT_DOCUMENT` and `UPDATE_DOCUMENT`.
-* Preview blocks invalid/trust-violating documents.
-* Preview postMessage spoofing rejected.
-* Import semantic model → creates multiple page nodes.
-* Residual islands shown and review required.
-* Conflict save path: `409` → error badge → reload/force save.
-* AI lineage records created internally but user-facing labels remain outcome-oriented.
-* Codegen produces expected imports, ownership, and fidelity loss points.
+* Generated code shows imports, components, tests, and ownership regions.
+* Loss points are visible.
+* Unsafe overwrite is blocked.
+* Merge requires review for residual or low-confidence areas.
 
 ---
 
-## Updated readiness assessment
+# Milestone 7 — Full registry-driven property inspector
 
-| Capability                              | Current head status                                   | Readiness |
-| --------------------------------------- | ----------------------------------------------------- | --------: |
-| In-canvas page designer                 | Stronger and usable                                   |       75% |
-| Serialized page artifact model          | Good                                                  |       80% |
-| HTTP + local persistence                | Frontend implemented, backend not proven              |       55% |
-| Conflict handling                       | Good frontend path                                    |       65% |
-| Registry-driven palette                 | Good for starter contracts                            |       70% |
-| Registry-driven inspector               | Improved, still shallow                               |       55% |
-| Generic component rendering             | Still hardcoded to starters                           |       40% |
-| Slot-aware drag/drop                    | Meaningfully improved                                 |       65% |
-| Responsive/state/action editing         | Shared model exists, UI missing                       |       30% |
-| Live preview route/runtime              | Implemented                                           |       65% |
-| Preview security                        | Host good, runtime needs hardening                    |       55% |
-| Artifact compiler/decompiler UX         | Bridge exists, full compiler not integrated           |       45% |
-| Codegen                                 | Shared core exists, not surfaced enough               |       50% |
-| Design-system generator integration     | Metadata improved, generator workflow missing         |       40% |
-| AI/ML implicit assistance               | Lineage exists, UX too explicit                       |       35% |
-| Privacy/security/audit/o11y enforcement | Metadata exists, partial display, limited enforcement |       40% |
-| E2E confidence                          | Focused unit tests, not enough E2E                    |       35% |
+## Goal
 
----
+Make the page builder inspector truly driven by design-system contracts, not hand-coded fields.
 
-## Recommended implementation roadmap
+## Tasks
 
-### Phase 0 — Production correctness hardening
+### YAPPC-INSPECTOR-001 — Build real configurator groups
 
-1. Implement backend `/api/v1/page-artifacts/:artifactId/document`.
-2. Add tenant/workspace/project authorization.
-3. Add DB persistence and optimistic concurrency.
-4. Harden preview postMessage origin validation.
-5. Add preview runtime tests.
-6. Replace explicit AI labels in user-facing UI with outcome/governance wording.
-7. Add page-builder E2E happy path.
+Use registry metadata to group fields:
 
-### Phase 1 — Make builder extensible
+```text
+Content
+Appearance
+Layout
+Behavior
+Accessibility
+Data binding
+Actions
+Responsive
+Governance
+```
 
-1. Replace hardcoded `COMPONENT_RENDER_MAP` with renderer manifests.
-2. Support generated/custom component registry entries.
-3. Add safe fallback renderer for unsupported/custom components.
-4. Add component package/plugin loading boundaries.
-5. Add contract compatibility tests.
+Acceptance criteria:
 
-### Phase 2 — Full registry-driven inspector
+* Field grouping comes from contract metadata.
+* Empty/irrelevant groups are hidden.
+* Required fields are surfaced first.
+* Advanced groups are collapsed by default.
 
-1. Render configurator groups as actual sections.
-2. Enforce validation min/max/enum.
-3. Add token pickers and design-token references.
-4. Add data binding editor.
-5. Add action/event editor.
-6. Add responsive/state variant editor.
-7. Apply governance policies, not just display them.
+### YAPPC-INSPECTOR-002 — Add rich field controls
 
-### Phase 3 — Real compiler/decompiler workflow
+Support:
 
-1. Connect UI import to artifact compiler, not just JSON bridge.
-2. Add route/component/story extractors as UI actions.
-3. Represent each imported page as a page node.
-4. Convert tokens/themes/styles into design-system generator candidates.
-5. Convert API/state/data dependencies into bindings/actions.
-6. Add codegen preview, diff, merge, and apply.
-7. Require review for residual islands and low-confidence imports.
+```text
+text
+number
+boolean
+enum/select
+token reference
+color token
+spacing token
+component reference
+slot reference
+action binding
+data binding
+object editor
+array editor
+responsive override
+state variant
+```
 
-### Phase 4 — Implicit AI/ML
+Acceptance criteria:
 
-1. Add “Improve layout,” “Fix accessibility,” “Prepare responsive view,” “Resolve validation,” and “Map to design system” actions.
-2. Auto-apply only high-confidence, reversible, policy-approved changes.
-3. Route risky changes to review.
-4. Store AI lineage internally.
-5. Surface audit trace only when user opens governance/audit details.
+* Invalid values cannot be entered through normal UI.
+* Token pickers use active design-system theme.
+* Action/data binding changes create semantic commands.
+* Responsive/state edits are visible in preview.
 
-### Phase 5 — O11y, privacy, security, audit as first-class behavior
+### YAPPC-INSPECTOR-003 — Enforce governance metadata
 
-1. Emit OTel spans for insert/move/update/delete/import/preview/save/codegen.
-2. Emit metrics for validation errors, preview latency, save latency, conflict rate, import fidelity, residual count.
-3. Create audit records for every semantic builder operation.
-4. Enforce privacy metadata on input/data-bound components.
-5. Require consent for telemetry-sensitive components.
-6. Add security tests for iframe sandbox, CSP, origin spoofing, and unsafe custom code.
+For every selected component, show and enforce:
+
+* Required accessibility props.
+* Privacy classification.
+* Telemetry sensitivity.
+* Review-required props.
+* Preview trust restrictions.
+* Suggested improvements.
+
+Acceptance criteria:
+
+* Missing required a11y props produce validation errors.
+* Input-like components default to privacy-sensitive.
+* Telemetry-sensitive components require consent policy.
+* Review-required changes cannot be promoted silently.
 
 ---
 
-## Bottom line
+# Milestone 8 — Implicit AI/ML and automation UX
 
-At commit `14ddc1e49609071335fca215597042d62b66e4b6`, YAPPC’s page builder is in a much better state than before. The latest head adds real architectural substance: HTTP-first persistence with conflict handling, registry-aware documents, improved drag/drop, a live preview runtime, import/decompile bridge, residual/fidelity display, and AI lineage records.
+## Goal
 
-The next milestone should be **hardening and extensibility**, not broad new features. The most important work is:
+Make AI/ML pervasive internally but invisible as a product concept unless governance requires disclosure.
 
-**backend persistence → preview security → generic renderer manifests → real compiler/decompiler integration → semantic audit/event bus → full registry-driven inspector → implicit AI assistance → privacy/security/o11y enforcement → E2E proof.**
+Current UI still exposes explicit AI wording in onboarding, action registry, and builder lineage/review surfaces. The command/action registry has explicit AI actions and categories.  Onboarding uses explicit AI suggestion wording. 
+
+## Tasks
+
+### YAPPC-AUTO-001 — Rename visible AI surfaces
+
+Replace:
+
+| Current        | New                           |
+| -------------- | ----------------------------- |
+| AI is thinking | Finding a good starting point |
+| AI suggests    | Suggested                     |
+| AI changes     | Suggested improvements        |
+| AI lineage     | Governance trace              |
+| Ask AI         | Help me move forward          |
+| Generate Code  | Prepare implementation        |
+| Open AI Chat   | Open guidance                 |
+| /fix           | Resolve issue                 |
+| /improve       | Improve selection             |
+
+Acceptance criteria:
+
+* Users do not need to know AI exists to use the product.
+* Governance trace still records AI/model involvement internally.
+* Review-required suggestions explain impact, not model mechanics.
+
+### YAPPC-AUTO-002 — Add next-best-action service
+
+Create a service that ranks actions by:
+
+```text
+current phase
+current project state
+selected canvas/artifact node
+blockers
+role/persona
+permissions
+recent activity
+capability availability
+validation errors
+```
+
+Acceptance criteria:
+
+* Dashboard shows one primary next action.
+* Phase cockpit shows one primary next action.
+* Command palette shows best actions first.
+* Advanced actions require search or disclosure.
+
+### YAPPC-AUTO-003 — Auto-apply safe improvements
+
+Safe improvements:
+
+* Add missing accessible labels.
+* Normalize spacing/token values.
+* Fix invalid enum prop.
+* Suggest responsive defaults.
+* Map obvious imported component to known design-system contract.
+* Resolve simple validation warnings.
+
+Risky improvements require review:
+
+* Data binding.
+* Action binding.
+* Security/privacy changes.
+* Generated code merge.
+* Deleting/replacing components.
+* Low-confidence decompiler mappings.
+
+Acceptance criteria:
+
+* Safe changes are reversible and audited.
+* Risky changes are review-gated.
+* Every automated change has confidence, source, rationale, and rollback.
+
+---
+
+# Milestone 9 — Preview and runtime security
+
+## Goal
+
+Harden preview beyond current postMessage improvements.
+
+The latest preview runtime now derives expected parent origin, validates source and origin, and posts back to explicit origin.  Security tests now cover spoofed origins, wrong source, explicit origin targeting, malformed messages, unknown types, and sandbox/referrer behavior. 
+
+## Tasks
+
+### YAPPC-SEC-001 — Add signed preview session
+
+Instead of relying only on referrer:
+
+```text
+host creates previewSessionId
+host signs/records allowed origin + document id + trust level
+iframe loads /preview/builder?session=...
+runtime validates session before accepting messages
+```
+
+Acceptance criteria:
+
+* Preview rejects messages without valid session.
+* Session expires.
+* Session scoped to project/artifact/document.
+* Session trust level controls preview capabilities.
+
+### YAPPC-SEC-002 — Add CSP and iframe sandbox policy
+
+Define:
+
+```text
+Content-Security-Policy
+frame-ancestors
+script-src
+connect-src
+style-src
+img-src
+sandbox attributes
+```
+
+Acceptance criteria:
+
+* Preview cannot navigate top frame.
+* Preview cannot call unapproved domains.
+* Custom components cannot escape sandbox.
+* Security tests verify blocked behavior.
+
+### YAPPC-SEC-003 — Add unsafe custom component handling
+
+For custom/decompiled components:
+
+* Render fallback by default.
+* Require review for interactive behavior.
+* Block browser APIs unless approved.
+* Block network/storage unless approved.
+
+Acceptance criteria:
+
+* Unknown component never executes arbitrary code.
+* Review can map to approved design-system component.
+* Approved plugin policy is explicit and audited.
+
+---
+
+# Milestone 10 — Full-flow E2E and anti-test-theater cleanup
+
+## Goal
+
+Replace skeletal tests with real, behavior-proving tests.
+
+The new `pageBuilderE2E.test.tsx` describes the right scenarios, but many tests are comments/placeholders and it includes a local `vi` mock instead of using Vitest normally.  This needs to be fixed before claiming E2E confidence.
+
+## Tasks
+
+### YAPPC-TEST-001 — Fix page builder E2E test
+
+Replace placeholder tests with real interactions:
+
+* Render page designer.
+* Drag component from palette.
+* Drop into root.
+* Drop into `Card.actions`.
+* Drag existing component before/after another.
+* Update properties.
+* Validate document.
+* Assert `onDocumentChange`.
+* Assert governance record created for suggested import.
+* Assert fallback renderer for unknown component.
+
+Acceptance criteria:
+
+* No comment-only tests.
+* No local fake `vi`.
+* Tests fail if interaction does not work.
+* Tests assert real DOM and document mutations.
+
+### YAPPC-TEST-002 — Add Playwright full-flow tests
+
+Add real browser E2E:
+
+```text
+onboarding → workspace → project → intent → shape canvas
+shape canvas → create page node → add components → preview
+validate → approval cockpit
+generate → codegen preview
+run → capability-gated run cockpit
+observe → project preview
+learn → retrospective
+evolve → next cycle plan
+```
+
+Acceptance criteria:
+
+* Tests use real routes.
+* Tests mock only external integrations at network boundary.
+* No route components are replaced with fake components.
+* Accessibility checks run in each major route.
+
+### YAPPC-TEST-003 — Add security and accessibility tests
+
+Security:
+
+* Preview spoofed origin rejected.
+* Unknown message rejected.
+* Invalid session rejected.
+* Unsafe plugin rejected.
+* Cross-tenant artifact load denied.
+
+Accessibility:
+
+* Keyboard-only onboarding.
+* Keyboard-only command palette.
+* Keyboard-only phase navigation.
+* Keyboard-only page builder selection and inspector.
+* Focus trap in dialogs.
+* ARIA labels for icon buttons.
+* Color contrast for statuses.
+
+---
+
+# Milestone 11 — Full YAPPC UI/UX consolidation
+
+## Goal
+
+Make YAPPC feel like one coherent product, not a collection of screens.
+
+## Tasks
+
+### YAPPC-UX-010 — Dashboard-first next-action system
+
+Dashboard should show:
+
+```text
+Primary: Continue recommended work
+Secondary: Review blocker
+Tertiary: Create new project
+Quiet: workspace/project health
+```
+
+Acceptance criteria:
+
+* Dashboard does not expose unnecessary controls.
+* User can resume meaningful work in one click.
+* Blockers explain exactly what to do.
+
+### YAPPC-UX-011 — Project overview as command center
+
+Project overview should show:
+
+```text
+Current phase
+Current readiness
+Primary next action
+Current blocker
+Recent backed activity
+Suggested improvement
+Governance trace link
+```
+
+Acceptance criteria:
+
+* No synthetic activity appears as real activity.
+* Promotion readiness explains blocker/evidence.
+* Clicking next action takes user to exact phase/surface.
+
+### YAPPC-UX-012 — Command palette as action discovery, not second nav
+
+Command palette should default to:
+
+```text
+Best next actions
+Recent actions
+Current selection actions
+Navigation actions
+Advanced search
+```
+
+Acceptance criteria:
+
+* Only context-relevant actions show first.
+* AI category removed/reworded.
+* Disabled actions explain why.
+* Dangerous actions require confirmation.
+
+---
+
+# Release gates
+
+## Gate A — Persistence readiness
+
+Required before enabling production save:
+
+* Durable repository implemented.
+* Tenant/workspace/project authz.
+* Optimistic concurrency.
+* Server-side validation.
+* Audit events.
+* OTel spans/metrics.
+* DB integration tests.
+
+## Gate B — Builder readiness
+
+Required before calling builder production-grade:
+
+* Semantic commands.
+* Registry-driven inspector.
+* Renderer manifest compatibility tests.
+* Slot-aware drag/drop real tests.
+* Live preview selection sync.
+* Fallback renderer for unknown components.
+* No placeholder E2E tests.
+
+## Gate C — Security readiness
+
+Required before custom/decompiled components:
+
+* Signed preview session.
+* CSP/sandbox policy.
+* Runtime plugin policy enforcement.
+* Unknown component review gate.
+* Spoofing and unsafe-code tests.
+
+## Gate D — UX readiness
+
+Required before broader user testing:
+
+* Phase-specific cockpits.
+* No visible AI-first wording.
+* Design-system migration for core routes.
+* Provenance badges.
+* Dashboard/project next-best-action flow.
+* Keyboard/accessibility validation.
+
+---
+
+# Suggested implementation order
+
+## Sprint 1 — Correct latest-head hardening gaps
+
+1. Implement DB-backed `PageArtifactRepository`.
+2. Wire repository into YAPPC runtime.
+3. Add authz checks to page artifact controller.
+4. Add server-side validation.
+5. Fix page-builder E2E test from placeholder to real interactions.
+6. Add audit + OTel for save/load/conflict.
+
+## Sprint 2 — Phase cockpit and low-cognitive-load UX
+
+1. Build `PhaseCockpitLayout`.
+2. Implement `IntentCockpit`, `ShapeCockpit`, `ValidateCockpit`.
+3. Replace generic phase route aliases with cockpit wrappers.
+4. Add provenance badges.
+5. Rename AI-visible wording to outcome-oriented wording.
+
+## Sprint 3 — Canvas/page builder integration
+
+1. Add semantic page-builder commands.
+2. Add operation-level audit.
+3. Add phase-aware canvas defaults.
+4. Add bidirectional preview selection.
+5. Add slot/drop visual polish and keyboard reorder.
+
+## Sprint 4 — Design-system and inspector
+
+1. Migrate login/onboarding/dashboard/workspaces/projects to design-system controls.
+2. Build grouped property inspector.
+3. Add token pickers, binding editors, action editors.
+4. Enforce privacy/a11y/telemetry metadata.
+
+## Sprint 5 — Compiler/decompiler and generator workflow
+
+1. Replace pasted JSON import with source import workflow.
+2. Add residual island review UI.
+3. Add design-system component candidate flow.
+4. Add codegen preview/diff/merge.
+5. Add round-trip fidelity release gate.
+
+## Sprint 6 — Plugin/runtime security and full E2E
+
+1. Add signed preview sessions.
+2. Add CSP/sandbox enforcement.
+3. Add runtime plugin policy enforcement.
+4. Add Playwright full-flow tests.
+5. Add accessibility/security regression suite.
+
+---
+
+# Final prioritized backlog
+
+| Priority | ID                  | Work item                                                      |
+| -------- | ------------------- | -------------------------------------------------------------- |
+| P0       | YAPPC-PERSIST-001   | DB-backed page artifact repository                             |
+| P0       | YAPPC-PERSIST-002   | Authz and scoping for page artifact API                        |
+| P0       | YAPPC-TEST-001      | Replace skeletal page-builder E2E with real tests              |
+| P0       | YAPPC-UX-001        | Phase cockpit shell                                            |
+| P0       | YAPPC-UX-003        | Provenance badges for backed/derived/suggested/preview content |
+| P0       | YAPPC-AUTO-001      | Remove visible AI-first wording                                |
+| P1       | YAPPC-CANVAS-001    | Semantic page-builder commands                                 |
+| P1       | YAPPC-INSPECTOR-001 | Full registry-driven inspector                                 |
+| P1       | YAPPC-COMPILER-001  | Source-based compiler/decompiler import                        |
+| P1       | YAPPC-SEC-001       | Signed preview sessions                                        |
+| P1       | YAPPC-PLUGIN-001    | Runtime plugin policy enforcement                              |
+| P1       | YAPPC-DS-002        | Design-system migration of core routes                         |
+| P2       | YAPPC-AUTO-002      | Next-best-action ranking service                               |
+| P2       | YAPPC-CANVAS-002    | Phase-aware canvas defaults                                    |
+| P2       | YAPPC-TEST-002      | Full Playwright lifecycle tests                                |
+
+This plan shifts the work from “add more UI” to **make the existing system truthful, durable, extensible, secure, observable, and cognitively light**.

@@ -200,7 +200,9 @@ class KernelDeploymentModeValidationTest {
         @Test
         @DisplayName("Module-by-capability search returns only domain-alpha module")
         void moduleByCapabilitySearchReturnsOnlyDomainAlpha() {
-            Set<String> moduleIds = registry.findModulesProviding("domain-alpha.patient-records");
+            Set<String> moduleIds = registry.getModulesByCapability(DOMAIN_ALPHA_PATIENT_RECORDS).stream()
+                .map(KernelModule::getModuleId)
+                .collect(java.util.stream.Collectors.toSet());
             assertThat(moduleIds)
                 .containsExactly("domain-alpha-core");
         }
@@ -214,7 +216,7 @@ class KernelDeploymentModeValidationTest {
                 Set.of(DOMAIN_ALPHA_PATIENT_RECORDS, CORE_USER_AUTH, CORE_DATA_STORAGE),
                 Set.of(capDep("data.storage"), capDep("user.authentication"))
             );
-            assertThat(registry.validateModule(freshModule).isValid())
+            assertThat(registry.validateDependencies(freshModule))
                 .as("Domain-alpha imaging module must validate — core capabilities are present")
                 .isTrue();
         }
@@ -278,7 +280,7 @@ class KernelDeploymentModeValidationTest {
                 Set.of(DOMAIN_BETA_TRADE_PROCESSING, CORE_USER_AUTH, CORE_DATA_STORAGE),
                 Set.of(capDep("data.storage"), capDep("user.authentication"))
             );
-            assertThat(registry.validateModule(freshModule).isValid())
+            assertThat(registry.validateDependencies(freshModule))
                 .as("Domain-beta reconciliation module must validate — core capabilities are present")
                 .isTrue();
         }
@@ -343,7 +345,9 @@ class KernelDeploymentModeValidationTest {
         void capabilitiesNamespaceIsolatedInSharedRegistry() {
             // Domain-alpha IDs use domain-alpha.* prefix
             // Domain-beta IDs use domain-beta.* prefix
-            Set<String> allCapabilityIds = registry.getAllCapabilityIds();
+            Set<String> allCapabilityIds = registry.getAllCapabilities().stream()
+                .map(KernelCapability::getCapabilityId)
+                .collect(java.util.stream.Collectors.toSet());
             assertThat(allCapabilityIds)
                 .filteredOn(id -> id.startsWith("domain-alpha."))
                 .hasSize(3);
@@ -355,7 +359,9 @@ class KernelDeploymentModeValidationTest {
         @Test
         @DisplayName("All capability IDs are unique — no namespace collision")
         void allCapabilityIdsUniqueNoCollision() {
-            Set<String> allCapabilityIds = registry.getAllCapabilityIds();
+            Set<String> allCapabilityIds = registry.getAllCapabilities().stream()
+                .map(KernelCapability::getCapabilityId)
+                .collect(java.util.stream.Collectors.toSet());
             long uniqueCount = allCapabilityIds.stream()
                 .distinct()
                 .count();

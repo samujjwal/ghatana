@@ -31,7 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("PostgresWorkspaceRepository — integration tests")
 class PostgresWorkspaceRepositoryIT extends EventloopTestBase {
 

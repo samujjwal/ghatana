@@ -9,3 +9,10 @@
 
 export { CommandPalette } from './CommandPalette';
 export type { CommandPaletteProps } from './CommandPalette';
+
+export { ActionDiscoveryPalette } from './ActionDiscoveryPalette';
+export type {
+  Action,
+  ActionGroup,
+  ActionDiscoveryPaletteProps,
+} from './ActionDiscoveryPalette';

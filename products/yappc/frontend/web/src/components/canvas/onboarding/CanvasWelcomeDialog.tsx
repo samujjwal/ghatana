@@ -109,7 +109,7 @@ const DEFAULT_STEPS: OnboardingStep[] = [
             'Ask the AI assistant for architecture recommendations',
             'Get real-time validation feedback on your design',
             'Generate code with a single click',
-            'AI suggests improvements based on best practices',
+            'Suggested improvements based on best practices',
         ],
         visual: <SmartToyOutlined className="text-[40px]" />,
     },

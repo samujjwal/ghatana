@@ -110,7 +110,6 @@ class YappcLifecycleApiContractTest {
             // Contract: server must respond 400 when rawText blank
         }
 
-        @Test
         @DisplayName("environment field accepts staging, production, dev, test")
         @ParameterizedTest
         @ValueSource(strings = {"staging", "production", "dev", "test"})
@@ -197,7 +196,6 @@ class YappcLifecycleApiContractTest {
             assertThat(node.at("/validationResult/hasBlockingIssues").asBoolean()).isTrue();
         }
 
-        @Test
         @DisplayName("status must be one of: SUCCESS, FAILED, VALIDATION_FAILED")
         @ParameterizedTest
         @ValueSource(strings = {"SUCCESS", "FAILED", "VALIDATION_FAILED"})

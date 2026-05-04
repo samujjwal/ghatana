@@ -99,9 +99,9 @@ export function DashboardView({
                     </IconButton>
                     <InputBase
                         className="ml-2 flex-1"
-                        placeholder="Search tasks, projects, code, or ask AI..."
+                        placeholder="Search tasks, projects, code, or get guidance..."
                         readOnly
-                        inputProps={{ 'aria-label': 'Search tasks, projects, code, or ask AI' }}
+                        inputProps={{ 'aria-label': 'Search tasks, projects, code, or get guidance' }}
                         onKeyDown={handleSearchKeyDown}
                     />
                     <Chip label="Cmd+K" size="sm" className="mr-2 text-xs rounded h-[24px]" />

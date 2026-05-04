@@ -3,8 +3,6 @@ package com.ghatana.kernel.plugin.validation;
 import com.ghatana.kernel.plugin.PluginManifest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.jsonSchema.JsonSchema;
-import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +88,7 @@ public class PluginConfigValidator {
 
         // Validate capabilities
         for (var capability : manifest.getCapabilities()) {
-            String capId = capability.getId();
+            String capId = capability.getCapabilityId();
             if (capId != null && !capId.matches("^[a-z][a-z0-9-]*:[a-z][a-z0-9-]*$")) {
                 errors.add("capability ID '" + capId + "' must follow pattern 'domain:capability'");
             }
@@ -107,7 +105,7 @@ public class PluginConfigValidator {
         // Validate resource quotas
         if (manifest.getResourceQuotas() != null) {
             var quotas = manifest.getResourceQuotas();
-            if (quotas.getMaxMemoryMB() < 64) {
+            if (quotas.getMaxMemoryMb() < 64) {
                 errors.add("maxMemoryMB must be at least 64");
             }
             if (quotas.getMaxCpuPercent() < 0.1 || quotas.getMaxCpuPercent() > 100.0) {

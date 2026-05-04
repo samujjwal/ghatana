@@ -15,3 +15,6 @@ export type { AISuggestionPanelProps } from './AISuggestionPanel';
 
 export { ExportButton } from './ExportButton';
 export type { ExportButtonProps } from './ExportButton';
+
+export { ProvenanceBadge } from './ProvenanceBadge';
+export type { ProvenanceBadgeProps, ProvenanceType } from './ProvenanceBadge';

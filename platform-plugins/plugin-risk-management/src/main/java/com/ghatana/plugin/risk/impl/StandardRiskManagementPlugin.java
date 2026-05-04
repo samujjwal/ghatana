@@ -70,6 +70,7 @@ public class StandardRiskManagementPlugin extends PluginObservability implements
 
     /** Constructs the plugin and registers built-in generic evaluators. */
     public StandardRiskManagementPlugin() {
+        super("risk-management-plugin");
         registerBuiltinEvaluators();
     }
 

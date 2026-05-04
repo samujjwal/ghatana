@@ -229,7 +229,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   >(null);
   const importTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // AI lineage tracker — scoped to this designer session
+  // Governance trace tracker — scoped to this designer session
   const lineageTrackerRef = useRef(new AIActionLineageTracker());
   const [pendingAIActions, setPendingAIActions] = useState<readonly import('./pageArtifactDocument').AIActionLineage[]>([]);
 

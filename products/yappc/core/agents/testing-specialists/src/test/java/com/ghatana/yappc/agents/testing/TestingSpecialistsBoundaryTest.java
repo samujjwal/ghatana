@@ -2,6 +2,7 @@ package com.ghatana.yappc.agents.testing;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 class TestingSpecialistsBoundaryTest {
 
     private static final JavaClasses CLASSES = new ClassFileImporter()
+        .withImportOption(new ImportOption.DoNotIncludeTests())
         .importPackages("com.ghatana.yappc.agents.testing");
 
     @Test
