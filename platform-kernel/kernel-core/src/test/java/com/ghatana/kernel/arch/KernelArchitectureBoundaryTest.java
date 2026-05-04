@@ -91,10 +91,10 @@ class KernelArchitectureBoundaryTest {
         return new DescribedPredicate<>("not in adapter packages") {
             @Override
             public boolean test(JavaClass item) {
-                return !item.getPackageName().contains(".adapter.") && 
+                return !item.getPackageName().contains(".adapter.") &&
                        !item.getSimpleName().startsWith("AepKernelAdapter") &&
                        !item.getSimpleName().startsWith("DataCloudKernelAdapter") &&
-                       !item.getSimpleName().equals("PhrPatientDataService") &&
+                       !item.getSimpleName().startsWith("ProductDataService") &&
                        !item.getSimpleName().equals("AbstractKernelBridge");
             }
         };

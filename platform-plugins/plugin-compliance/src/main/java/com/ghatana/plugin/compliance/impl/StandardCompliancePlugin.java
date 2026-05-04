@@ -57,16 +57,8 @@ public class StandardCompliancePlugin implements CompliancePlugin {
     private PluginContext context;
     private PluginState state = PluginState.UNLOADED;
 
-    public String getId() {
-        return "compliance-plugin";
-    }
-
-    public String getName() {
-        return "Compliance Plugin";
-    }
-
-    public String getVersion() {
-        return "1.2.0";
+    public StandardCompliancePlugin() {
+        super("compliance");
     }
 
     @Override

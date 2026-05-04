@@ -15,9 +15,9 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Integration tests for cross-product module dependency resolution. */
+/** Integration tests for cross-domain module dependency resolution. */
 @DisplayName("Cross-Domain Module Integration Tests")
-class PhrFinanceIntegrationTest {
+class CrossDomainModuleIntegrationTest {
 
     @Test
     @DisplayName("D-6: kernel resolves dependencies across domain-module IDs")

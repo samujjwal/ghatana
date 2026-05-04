@@ -1,7 +1,7 @@
 # Kernel Purity Rules
 
 > **Status**: Enforced by `checkKernelPurity`, `checkKernelResourcePurity`, and `checkKernelDocsPurity` Gradle tasks.
-> **Last Updated**: 2026-04-20
+> **Last Updated**: 2026-05-03
 
 ## 1. What Is Kernel Purity?
 

@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * PHR-Finance Cross-Scope Integration Tests.
+ * Cross-Scope Boundary and Audit Integration Tests.
  *
  * <p>Validates the canonical cross-scope boundary enforcement and audit pipeline
  * using {@link ScopeBoundaryEnforcer} and {@link CrossScopeAuditService}.
@@ -38,8 +38,8 @@ import static org.junit.jupiter.api.Assertions.*;
  *
  * <p>Test scenarios cover the two most representative cross-domain access patterns:
  * <ul>
- *   <li>PHR data sharing (healthcare domain, RESTRICTED sensitivity, Nepal-2081 compliance)</li> 
- *   <li>Finance trade data access (finance domain, CONFIDENTIAL sensitivity, SEBON compliance)</li> 
+ *   <li>Domain-alpha data sharing (regulated domain, RESTRICTED sensitivity, long-retention compliance)</li>
+ *   <li>Domain-beta data access (regulatory domain, CONFIDENTIAL sensitivity, standard-retention compliance)</li>
  * </ul></p>
  *
  * @doc.type test
@@ -49,8 +49,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Ghatana Kernel Team
  * @since 1.1.0
  */
-@DisplayName("PHR-Finance Cross-Scope Integration Tests")
-class PhrFinanceCrossProductIntegrationTest {
+@DisplayName("Cross-Scope Boundary and Audit Integration Tests")
+class CrossScopeBoundaryIntegrationTest {
 
     private ScopeBoundaryEnforcer boundaryEnforcer;
     private CrossScopeAuditService auditService;
@@ -87,15 +87,15 @@ class PhrFinanceCrossProductIntegrationTest {
         auditService = new CrossScopeAuditService(auditPolicyResolver, auditStore);
     }
 
-    // â”€â”€ PHR Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ Domain-Alpha Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
-    @DisplayName("PHR data access boundary enforcement")
-    class PhrBoundaryTests {
+    @DisplayName("Domain-alpha data access boundary enforcement")
+    class DomainAlphaBoundaryTests {
 
         @Test
-        @DisplayName("Finance cannot read PHR restricted patient records without consent")
-        void financeCannotReadPhrRestrictedDataWithoutConsentFeature() { 
+        @DisplayName("Domain-beta cannot read domain-alpha restricted records without consent")
+        void domainBetaCannotReadDomainAlphaRestrictedDataWithoutConsentFeature() { 
             // No permissions, no consent feature â†’ Layer 2 and Layer 3 both fail
             KernelTenantContext tenant = tenantContext("tenant-1", 
                     Set.of("read:patient.records"),
@@ -108,12 +108,12 @@ class PhrFinanceCrossProductIntegrationTest {
                     tenant);
 
             assertFalse(allowed, 
-                "Finance must not read PHR restricted records without the consent feature enabled");
+                "Domain-beta must not read domain-alpha restricted records without the consent feature enabled");
         }
 
         @Test
-        @DisplayName("Finance can read PHR restricted records when tenant has consent feature")
-        void financeCanReadPhrRestrictedDataWithConsentFeature() { 
+        @DisplayName("Domain-beta can read domain-alpha restricted records when tenant has consent feature")
+        void domainBetaCanReadDomainAlphaRestrictedDataWithConsentFeature() { 
             // Layer 2: has permission; Layer 3: has consent feature for DOMAIN_PACK target
             KernelTenantContext tenant = tenantContext("tenant-1", 
                     Set.of("read:patient.records"),
@@ -144,12 +144,12 @@ class PhrFinanceCrossProductIntegrationTest {
                     tenant);
 
             assertTrue(allowed, 
-                "Platform should read INTERNAL PHR data with permission alone (no consent required)"); 
+                "Platform should read INTERNAL domain-alpha data with permission alone (no consent required)"); 
         }
 
         @Test
-        @DisplayName("PHR data with residency restriction is blocked cross-scope even with consent")
-        void phrResidencyLockedDataBlockedCrossScope() { 
+        @DisplayName("Domain-alpha data with residency restriction is blocked cross-scope even with consent")
+        void domainAlphaResidencyLockedDataBlockedCrossScope() { 
             KernelTenantContext tenant = tenantContext("tenant-1", 
                     Set.of("read:patient.records"),
                     Set.of("cross-scope.consent.domain_pack"));
@@ -165,15 +165,15 @@ class PhrFinanceCrossProductIntegrationTest {
         }
     }
 
-    // â”€â”€ Finance Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // â”€â”€ Domain-Beta Boundary Tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Nested
-    @DisplayName("Finance trade data access boundary enforcement")
-    class FinanceBoundaryTests {
+    @DisplayName("Domain-beta data access boundary enforcement")
+    class DomainBetaBoundaryTests {
 
         @Test
-        @DisplayName("PHR can write finance trade records when it holds the write permission")
-        void phrCanWriteFinanceTradeRecordsWithPermission() { 
+        @DisplayName("Domain-alpha can write domain-beta records when it holds the write permission")
+        void domainAlphaCanWriteDomainBetaRecordsWithPermission() { 
             // CONFIDENTIAL data â†’ no consent required, Layer 2 permission sufficient
             KernelTenantContext tenant = tenantContext("tenant-3", 
                     Set.of("write:trade.records"),
@@ -186,7 +186,7 @@ class PhrFinanceCrossProductIntegrationTest {
                     tenant);
 
             assertTrue(allowed, 
-                "PHR with write permission can write finance CONFIDENTIAL trade records (requires audit, not consent)"); 
+                "Domain-alpha with write permission can write domain-beta CONFIDENTIAL trade records (requires audit, not consent)"); 
         }
 
         @Test
@@ -229,8 +229,8 @@ class PhrFinanceCrossProductIntegrationTest {
     class AuditPolicyTests {
 
         @Test
-        @DisplayName("PHR audit record uses Nepal-2081 25-year retention")
-        void phrAuditUsesNepal2081Retention() { 
+        @DisplayName("Domain-alpha audit record uses long-retention compliance")
+        void domainAlphaAuditUsesLongRetention() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(DOMAIN_BETA_SCOPE) 
                     .targetScope(DOMAIN_ALPHA_SCOPE) 
@@ -245,14 +245,14 @@ class PhrFinanceCrossProductIntegrationTest {
             assertEquals(1, auditStore.records.size()); 
             ScopeAuditRecord stored = auditStore.records.get(0); 
             assertEquals(25, stored.getRetentionYears(), 
-                "PHR data under nepal-2081 compliance tag should use 25-year retention");
+                "Domain-alpha data under long-retention compliance tag should use 25-year retention");
             assertEquals("archive", stored.getStorageTier(), 
                 "25-year retention should use 'archive' storage tier");
         }
 
         @Test
-        @DisplayName("Finance audit record uses SEBON 10-year retention")
-        void financeAuditUsesSebon10YearRetention() { 
+        @DisplayName("Domain-beta audit record uses standard-retention compliance")
+        void domainBetaAuditUsesStandardRetention() { 
             CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
                     .sourceScope(DOMAIN_ALPHA_SCOPE) 
                     .targetScope(DOMAIN_BETA_SCOPE) 
@@ -267,7 +267,7 @@ class PhrFinanceCrossProductIntegrationTest {
             assertEquals(1, auditStore.records.size()); 
             ScopeAuditRecord stored = auditStore.records.get(0); 
             assertEquals(10, stored.getRetentionYears(), 
-                "Finance data under sebon compliance tag should use 10-year retention");
+                "Domain-beta data under standard-retention compliance tag should use 10-year retention");
             assertEquals("compliance", stored.getStorageTier(), 
                 "10-year retention should use 'compliance' storage tier");
         }
@@ -377,7 +377,7 @@ class PhrFinanceCrossProductIntegrationTest {
                     tenantWithConsent);
 
             assertTrue(allowed, 
-                "Policy-driven access must work for any domain-pack pair, not just phr/finance-named scopes");
+                "Policy-driven access must work for any domain-pack pair, not just product-specific scope names");
         }
     }
 

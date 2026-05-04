@@ -60,13 +60,13 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         String entityB = "portfolio-B-" + UUID.randomUUID();
 
         Map<String, BigDecimal> limitsA = Map.of(
-                "position_size", new BigDecimal("1000"),
+                "exposure_size", new BigDecimal("1000"),
                 "max_exposure", new BigDecimal("50000"));
         runPromise(() -> plugin.setRiskLimits(entityA, limitsA));
 
         // Calculate a very large risk for entity-A to trigger alerts
-        runPromise(() -> plugin.calculateRisk(entityA, RiskManagementPlugin.RiskModelId.MARKET,
-                Map.of("position_value", 100_000, "var_95", 60_000)));
+        runPromise(() -> plugin.calculateRisk(entityA, RiskManagementPlugin.RiskModelId.VOLATILITY,
+                Map.of("exposure_value", 100_000, "var_95", 60_000)));
 
         // Entity-B should have zero alerts (no limits set, no large position)
         List<RiskManagementPlugin.RiskAlert> alertsB = runPromise(() -> plugin.getActiveAlerts(entityB));
@@ -84,14 +84,14 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         String entityId = "portfolio-BREACH-" + UUID.randomUUID();
 
         Map<String, BigDecimal> limits = Map.of(
-                "position_size", new BigDecimal("1000"),
+                "exposure_size", new BigDecimal("1000"),
                 "max_exposure", new BigDecimal("5000"));
         runPromise(() -> plugin.setRiskLimits(entityId, limits));
 
-        // Position value far exceeds the max position limit of 5000
+        // Exposure value far exceeds the max exposure limit of 5000
         RiskManagementPlugin.RiskScore score = runPromise(() -> plugin.calculateRisk(
-                entityId, RiskManagementPlugin.RiskModelId.MARKET,
-                Map.of("position_size", 50_000.0, "volatility", 0.9)));
+                entityId, RiskManagementPlugin.RiskModelId.VOLATILITY,
+                Map.of("exposure_size", 50_000.0, "variance", 0.9)));
 
         assertThat(score).isNotNull();
 
@@ -114,8 +114,8 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
                 "max_exposure", new BigDecimal("100000"));
         runPromise(() -> plugin.setRiskLimits(entityId, limits));
 
-        runPromise(() -> plugin.calculateRisk(entityId, RiskManagementPlugin.RiskModelId.MARKET,
-                Map.of("position_size", 500.0, "volatility", 0.1)));
+        runPromise(() -> plugin.calculateRisk(entityId, RiskManagementPlugin.RiskModelId.VOLATILITY,
+                Map.of("exposure_size", 500.0, "variance", 0.1)));
 
         List<RiskManagementPlugin.RiskAlert> alerts = runPromise(() -> plugin.getActiveAlerts(entityId));
         assertThat(alerts)
@@ -131,8 +131,8 @@ class RiskManagementTenantIsolationTest extends EventloopTestBase {
         String entityId = "portfolio-EXPLAIN-" + UUID.randomUUID();
 
         RiskManagementPlugin.RiskScore score = runPromise(() -> plugin.calculateRisk(
-                entityId, RiskManagementPlugin.RiskModelId.CREDIT,
-                Map.of("credit_score", 650, "debt_ratio", 0.6)));
+                entityId, RiskManagementPlugin.RiskModelId.COUNTERPARTY,
+                Map.of("trust_score", 650, "obligation_ratio", 0.6)));
 
         assertThat(score.componentScores())
                 .as("risk score must include contributing factor explanations for audit purposes")

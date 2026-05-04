@@ -159,17 +159,17 @@ class KernelCoreUnitTest extends EventloopTestBase {
 
     @Test
     void kernelCapabilitySupportsProductCheck() { 
-        KernelCapability capability = new KernelCapability( 
+        KernelCapability capability = new KernelCapability(
             "test.capability",
             "Test",
             "Test",
             KernelCapability.CapabilityType.DATA_MANAGEMENT,
-            Map.of("supported_products", "phr,finance") 
+            Map.of("supported_products", "domain-alpha,domain-beta")
         );
 
-        assertTrue(capability.supportsProduct("phr"));
-        assertTrue(capability.supportsProduct("finance"));
-        assertFalse(capability.supportsProduct("flashit"));
+        assertTrue(capability.supportsProduct("domain-alpha"));
+        assertTrue(capability.supportsProduct("domain-beta"));
+        assertFalse(capability.supportsProduct("domain-gamma"));
     }
 
     @Test

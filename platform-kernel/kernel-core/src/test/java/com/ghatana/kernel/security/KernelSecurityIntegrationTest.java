@@ -152,31 +152,31 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
     void testCrossModuleSecurityPolicies() { 
         // GIVEN: Security policy for module access
         SecurityPolicy policy = new SecurityPolicy("module-access-policy");
-        policy.addRule("module:finance", "role:finance-user"); 
-        policy.addRule("module:phr", "role:healthcare-user"); 
+        policy.addRule("module:domain-alpha", "role:domain-alpha-user");
+        policy.addRule("module:domain-beta", "role:domain-beta-user");
 
-        securityManager.registerPolicy(policy); 
+        securityManager.registerPolicy(policy);
 
         // WHEN: Check access for different users
-        String financeUser = "finance-user";
-        String phrUser = "phr-user";
+        String domainAlphaUser = "domain-alpha-user";
+        String domainBetaUser = "domain-beta-user";
 
-        securityManager.assignRole(financeUser, "finance-user"); 
-        securityManager.assignRole(phrUser, "healthcare-user"); 
+        securityManager.assignRole(domainAlphaUser, "domain-alpha-user");
+        securityManager.assignRole(domainBetaUser, "domain-beta-user");
 
-        boolean financeAccess = runPromise(() -> 
-            securityManager.checkPolicyAccess(financeUser, "module:finance") 
+        boolean domainAlphaAccess = runPromise(() ->
+            securityManager.checkPolicyAccess(domainAlphaUser, "module:domain-alpha")
         );
-        boolean phrAccess = runPromise(() -> 
-            securityManager.checkPolicyAccess(phrUser, "module:phr") 
+        boolean domainBetaAccess = runPromise(() ->
+            securityManager.checkPolicyAccess(domainBetaUser, "module:domain-beta")
         );
-        boolean crossAccess = runPromise(() -> 
-            securityManager.checkPolicyAccess(financeUser, "module:phr") 
+        boolean crossAccess = runPromise(() ->
+            securityManager.checkPolicyAccess(domainAlphaUser, "module:domain-beta")
         );
 
         // THEN: Policies correctly enforced
-        assertThat(financeAccess).isTrue(); 
-        assertThat(phrAccess).isTrue(); 
+        assertThat(domainAlphaAccess).isTrue();
+        assertThat(domainBetaAccess).isTrue();
         assertThat(crossAccess).isFalse(); 
     }
 
@@ -240,11 +240,11 @@ class KernelSecurityIntegrationTest extends EventloopTestBase {
         private final java.util.Map<String, Long> tokens = new java.util.HashMap<>(); 
         private final java.util.Map<String, String> tokenUsers = new java.util.HashMap<>(); 
 
-        TestSecurityManager() { 
+        TestSecurityManager() {
             validUsers.add("test-user");
             validUsers.add("admin-user");
-            validUsers.add("finance-user");
-            validUsers.add("phr-user");
+            validUsers.add("domain-alpha-user");
+            validUsers.add("domain-beta-user");
         }
 
         Promise<AuthenticationResult> authenticate(String username, String password) { 

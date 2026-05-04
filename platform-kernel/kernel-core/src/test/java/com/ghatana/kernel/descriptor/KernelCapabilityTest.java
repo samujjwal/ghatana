@@ -29,9 +29,9 @@ class KernelCapabilityTest {
     @Test
     @DisplayName("Should create capability with all fields")
     void shouldCreateCapabilityWithAllFields() { 
-        Map<String, Object> metadata = Map.of( 
+        Map<String, Object> metadata = Map.of(
             "required_services", "auth-service,storage-service",
-            "product", "phr",
+            "product", "domain-alpha",
             "priority", "high"
         );
 
@@ -128,7 +128,7 @@ class KernelCapabilityTest {
         KernelCapability capability = make("universal.capability", "Universal"); 
 
         assertTrue(capability.supportsProduct("any"));
-        assertTrue(capability.supportsProduct("phr"));
+        assertTrue(capability.supportsProduct("domain-alpha"));
     }
 
     @Test

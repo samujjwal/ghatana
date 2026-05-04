@@ -350,7 +350,7 @@ val PLUGIN_BANNED_TERMS = listOf(
     "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
     "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
     "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
-    "plugin-billing-ledger", "plugin_billing_ledger"
+    "plugin-ledger", "plugin_ledger"
 )
 
 tasks.register("checkPluginPurity") {

@@ -1,7 +1,7 @@
 # Plugin Purity Rules
 
 > **Status**: Enforced by `checkPluginPurity` Gradle tasks on platform-plugins modules.
-> **Last Updated**: 2026-04-20
+> **Last Updated**: 2026-05-03
 
 ## 1. What Is Plugin Purity?
 

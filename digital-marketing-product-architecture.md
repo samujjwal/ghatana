@@ -1372,7 +1372,7 @@ public record RegionalPolicy(
 - `plugin-compliance` - Marketing compliance (SOX, GDPR, FTC)
 - `plugin-audit-trail` - Comprehensive audit logging
 - `plugin-consent` - Consent management (GDPR/CCPA)
-- `plugin-billing-ledger` - Subscription and usage billing
+- `plugin-ledger` - Subscription and usage billing
 - `plugin-human-approval` - Human-in-the-loop approval workflows
 
 ### TypeScript Platform Reuse

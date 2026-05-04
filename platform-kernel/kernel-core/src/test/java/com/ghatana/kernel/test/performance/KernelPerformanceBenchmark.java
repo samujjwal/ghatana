@@ -56,30 +56,30 @@ public class KernelPerformanceBenchmark {
     }
 
     @Benchmark
-    public boolean benchmarkAuthorizeAction() { 
-        KernelSecurityManager.Action action = new KernelSecurityManager.Action( 
-            "patient-records", "read", "phr"
+    public boolean benchmarkAuthorizeAction() {
+        KernelSecurityManager.Action action = new KernelSecurityManager.Action(
+            "domain-records", "read", "domain-alpha"
         );
-        return securityManager.authorizeAction(action, securityContext); 
+        return securityManager.authorizeAction(action, securityContext);
     }
 
     @Benchmark
-    public PolicyEnforcementPoint.EnforcementDecision benchmarkPolicyEnforcement() { 
-        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() 
-            .resource("patient-records")
+    public PolicyEnforcementPoint.EnforcementDecision benchmarkPolicyEnforcement() {
+        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder()
+            .resource("domain-records")
             .operation("read")
-            .scope("phr")
-            .build(); 
+            .scope("domain-alpha")
+            .build();
 
-        return policyEnforcementPoint.enforce(request, securityContext); 
+        return policyEnforcementPoint.enforce(request, securityContext);
     }
 
     @Benchmark
-    public PrivacyManager.ConsentStatus benchmarkConsentCheck() { 
-        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest( 
-            "user-1", "patient-data", "treatment", Map.of() 
+    public PrivacyManager.ConsentStatus benchmarkConsentCheck() {
+        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest(
+            "user-1", "domain-data", "treatment", Map.of()
         );
-        return privacyManager.checkConsent(request, "tenant-1"); 
+        return privacyManager.checkConsent(request, "tenant-1");
     }
 
     @Benchmark
@@ -128,7 +128,7 @@ public class KernelPerformanceBenchmark {
                 .userId(userId) 
                 .sessionId("session-1")
                 .role("user")
-                .permission("read:patient-records")
+                .permission("read:domain-records")
                 .build(); 
         }
 

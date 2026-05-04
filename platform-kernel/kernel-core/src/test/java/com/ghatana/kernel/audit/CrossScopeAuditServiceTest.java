@@ -48,8 +48,8 @@ class CrossScopeAuditServiceTest {
         auditStore = new InMemoryAuditStore();
         // Use custom retention mappings for test scenarios
         DefaultRetentionPolicyResolver retentionResolver = new DefaultRetentionPolicyResolver(Map.of(
-            "nepal-2081", 25,
-            "sebon", 10,
+            "long-retention", 25,
+            "standard-retention", 10,
             "gdpr", 7
         ));
         AuditPolicyResolver resolver = new DefaultAuditPolicyResolver(retentionResolver);
@@ -63,16 +63,16 @@ class CrossScopeAuditServiceTest {
     class RetentionPolicyResolutionTests {
 
         @Test
-        @DisplayName("Healthcare classification resolves to 25 years per Nepal Directive 2081")
-        void healthcareRetention() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("phr"))
-                    .targetScope(ScopeDescriptor.product("finance"))
+        @DisplayName("Regulated classification resolves to 25 years per long-retention compliance")
+        void regulatedRetention() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-alpha"))
+                    .targetScope(ScopeDescriptor.product("domain-beta"))
                     .action("billing.request")
                     .userId("user-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( 
-                            "healthcare", SensitivityLevel.RESTRICTED, "nepal-2081"))
+                    .classification(ClassificationDescriptor.of(
+                            "regulated", SensitivityLevel.RESTRICTED, "long-retention"))
                     .build(); 
 
             service.auditCrossScopeAction(event).getResult(); 
@@ -83,16 +83,16 @@ class CrossScopeAuditServiceTest {
         }
 
         @Test
-        @DisplayName("Finance classification resolves to 10 years per SEBON regulation")
-        void financeRetention() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("finance"))
-                    .targetScope(ScopeDescriptor.product("phr"))
+        @DisplayName("Regulatory classification resolves to 10 years per standard-retention compliance")
+        void regulatoryRetention() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-beta"))
+                    .targetScope(ScopeDescriptor.product("domain-alpha"))
                     .action("payment.complete")
                     .userId("user-2")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( 
-                            "finance", SensitivityLevel.CONFIDENTIAL, "sebon"))
+                    .classification(ClassificationDescriptor.of(
+                            "regulatory", SensitivityLevel.CONFIDENTIAL, "standard-retention"))
                     .build(); 
 
             service.auditCrossScopeAction(event).getResult(); 
@@ -104,14 +104,14 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Default classification resolves to 7 years")
-        void defaultRetention() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("flashit"))
-                    .targetScope(ScopeDescriptor.product("aura"))
+        void defaultRetention() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-gamma"))
+                    .targetScope(ScopeDescriptor.product("domain-delta"))
                     .action("recommendation.request")
                     .userId("user-3")
                     .tenantId("tenant-2")
-                    .classification(ClassificationDescriptor.of( 
+                    .classification(ClassificationDescriptor.of(
                             "general", SensitivityLevel.INTERNAL))
                     .build(); 
 
@@ -124,21 +124,21 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Multiple compliance tags resolve to longest retention")
-        void multipleComplianceTags() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("phr"))
-                    .targetScope(ScopeDescriptor.product("finance"))
+        void multipleComplianceTags() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-alpha"))
+                    .targetScope(ScopeDescriptor.product("domain-beta"))
                     .action("cross-domain.operation")
                     .userId("user-4")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( 
-                            "cross-domain", SensitivityLevel.RESTRICTED, "sebon", "nepal-2081"))
-                    .build(); 
+                    .classification(ClassificationDescriptor.of(
+                            "cross-domain", SensitivityLevel.RESTRICTED, "standard-retention", "long-retention"))
+                    .build();
 
-            service.auditCrossScopeAction(event).getResult(); 
+            service.auditCrossScopeAction(event).getResult();
 
-            assertEquals(1, auditStore.records.size()); 
-            // nepal-2081 (25 years) wins over sebon (10 years) 
+            assertEquals(1, auditStore.records.size());
+            // long-retention (25 years) wins over standard-retention (10 years)
             assertEquals(25, auditStore.records.get(0).getRetentionYears()); 
         }
     }
@@ -151,28 +151,28 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Audit records carry source and target scope descriptors")
-        void recordsCarryScopeDescriptors() { 
-            ScopeDescriptor source = new ScopeDescriptor( 
-                    ScopeType.DOMAIN_PACK, "healthcare-pack", Map.of("region", "nepal")); 
-            ScopeDescriptor target = ScopeDescriptor.product("finance");
+        void recordsCarryScopeDescriptors() {
+            ScopeDescriptor source = new ScopeDescriptor(
+                    ScopeType.DOMAIN_PACK, "domain-alpha-pack", Map.of("region", "region-1"));
+            ScopeDescriptor target = ScopeDescriptor.product("domain-beta");
 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(source) 
-                    .targetScope(target) 
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(source)
+                    .targetScope(target)
                     .action("data.access")
                     .userId("user-1")
                     .tenantId("tenant-1")
                     .capabilityId("data.storage")
-                    .classification(ClassificationDescriptor.of("healthcare", SensitivityLevel.RESTRICTED)) 
-                    .build(); 
+                    .classification(ClassificationDescriptor.of("regulated", SensitivityLevel.RESTRICTED))
+                    .build();
 
-            service.auditCrossScopeAction(event).getResult(); 
+            service.auditCrossScopeAction(event).getResult();
 
-            ScopeAuditRecord record = auditStore.records.get(0); 
-            assertEquals(ScopeType.DOMAIN_PACK, record.getSourceScope().getScopeType()); 
-            assertEquals("healthcare-pack", record.getSourceScope().getScopeId()); 
-            assertEquals(ScopeType.PRODUCT, record.getTargetScope().getScopeType()); 
-            assertEquals("finance", record.getTargetScope().getScopeId()); 
+            ScopeAuditRecord record = auditStore.records.get(0);
+            assertEquals(ScopeType.DOMAIN_PACK, record.getSourceScope().getScopeType());
+            assertEquals("domain-alpha-pack", record.getSourceScope().getScopeId());
+            assertEquals(ScopeType.PRODUCT, record.getTargetScope().getScopeType());
+            assertEquals("domain-beta", record.getTargetScope().getScopeId());
             assertEquals("data.storage", record.getCapabilityId()); 
         }
 
@@ -204,15 +204,15 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Confidential/restricted events get cryptographic signatures")
-        void restrictedEventsAreSigned() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("finance"))
-                    .targetScope(ScopeDescriptor.product("finance"))
+        void restrictedEventsAreSigned() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-beta"))
+                    .targetScope(ScopeDescriptor.product("domain-beta"))
                     .action("trade.execute")
                     .userId("trader-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( 
-                            "finance", SensitivityLevel.RESTRICTED, "sebon"))
+                    .classification(ClassificationDescriptor.of(
+                            "regulatory", SensitivityLevel.RESTRICTED, "standard-retention"))
                     .build(); 
 
             service.auditCrossScopeAction(event).getResult(); 
@@ -223,14 +223,14 @@ class CrossScopeAuditServiceTest {
 
         @Test
         @DisplayName("Low-sensitivity events skip signature")
-        void lowSensitivityEventsSkipSignature() { 
-            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder() 
-                    .sourceScope(ScopeDescriptor.product("flashit"))
-                    .targetScope(ScopeDescriptor.product("flashit"))
+        void lowSensitivityEventsSkipSignature() {
+            CrossScopeAuditEvent event = CrossScopeAuditEvent.builder()
+                    .sourceScope(ScopeDescriptor.product("domain-gamma"))
+                    .targetScope(ScopeDescriptor.product("domain-gamma"))
                     .action("content.view")
                     .userId("user-1")
                     .tenantId("tenant-1")
-                    .classification(ClassificationDescriptor.of( 
+                    .classification(ClassificationDescriptor.of(
                             "general", SensitivityLevel.PUBLIC))
                     .build(); 
 

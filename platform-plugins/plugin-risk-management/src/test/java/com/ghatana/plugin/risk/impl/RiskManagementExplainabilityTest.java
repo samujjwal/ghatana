@@ -56,20 +56,20 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
     class ComponentScoreBreakdown {
 
         @Test
-        @DisplayName("credit risk score includes component breakdown for all input factors")
-        void creditRiskScoreHasComponentBreakdown() {
+        @DisplayName("counterparty risk score includes component breakdown for all input factors")
+        void counterpartyRiskScoreHasComponentBreakdown() {
             Map<String, Object> factors = Map.of(
-                "credit_score", 620.0,
-                "debt_ratio", 0.45,
-                "payment_history", 0.70
+                "trust_score", 620.0,
+                "obligation_ratio", 0.45,
+                "fulfillment_history", 0.70
             );
             RiskManagementPlugin.RiskScore score =
-                runPromise(() -> plugin.calculateRisk("customer-1",
-                    RiskManagementPlugin.RiskModelId.CREDIT, factors));
+                runPromise(() -> plugin.calculateRisk("entity-1",
+                    RiskManagementPlugin.RiskModelId.COUNTERPARTY, factors));
 
             assertThat(score.componentScores())
                 .as("component scores must include each input factor")
-                .containsKeys("credit_score", "debt_ratio", "payment_history");
+                .containsKeys("trust_score", "obligation_ratio", "fulfillment_history");
 
             // All component scores must be within [0, 1]
             score.componentScores().values().forEach(v ->
@@ -81,20 +81,20 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("market risk score includes component breakdown for all input factors")
-        void marketRiskScoreHasComponentBreakdown() {
+        @DisplayName("volatility risk score includes component breakdown for all input factors")
+        void volatilityRiskScoreHasComponentBreakdown() {
             Map<String, Object> factors = Map.of(
-                "volatility", 0.6,
-                "position_size", 500_000.0,
+                "variance", 0.6,
+                "exposure_size", 500_000.0,
                 "concentration", 0.3,
                 "liquidity", 0.8
             );
             RiskManagementPlugin.RiskScore score =
-                runPromise(() -> plugin.calculateRisk("portfolio-1",
-                    RiskManagementPlugin.RiskModelId.MARKET, factors));
+                runPromise(() -> plugin.calculateRisk("entity-1",
+                    RiskManagementPlugin.RiskModelId.VOLATILITY, factors));
 
             assertThat(score.componentScores())
-                .containsKeys("volatility", "position_size", "concentration", "liquidity");
+                .containsKeys("variance", "exposure_size", "concentration", "liquidity");
         }
 
                 @Test
@@ -134,13 +134,13 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
     class RiskLevelCalibration {
 
         @Test
-        @DisplayName("very poor credit score produces HIGH or CRITICAL risk")
-        void poorCreditScoreProducesHighRisk() {
-            // credit_score=300 â†’ 1-(300/850)â‰ˆ0.647 â†’ HIGH
-            Map<String, Object> factors = Map.of("credit_score", 300.0);
+        @DisplayName("very poor trust score produces HIGH or CRITICAL risk")
+        void poorTrustScoreProducesHighRisk() {
+            // trust_score=300 → 1-(300/850)≈0.647 → HIGH
+            Map<String, Object> factors = Map.of("trust_score", 300.0);
             RiskManagementPlugin.RiskScore score =
-                runPromise(() -> plugin.calculateRisk("poor-credit",
-                    RiskManagementPlugin.RiskModelId.CREDIT, factors));
+                runPromise(() -> plugin.calculateRisk("poor-trust",
+                    RiskManagementPlugin.RiskModelId.COUNTERPARTY, factors));
 
             assertThat(score.level())
                 .isIn(
@@ -150,13 +150,13 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
         }
 
         @Test
-        @DisplayName("excellent credit score produces LOW risk")
-        void excellentCreditProducesLowRisk() {
-            // credit_score=800 â†’ 1-(800/850)â‰ˆ0.059 â†’ LOW
-            Map<String, Object> factors = Map.of("credit_score", 800.0);
+        @DisplayName("excellent trust score produces LOW risk")
+        void excellentTrustProducesLowRisk() {
+            // trust_score=800 → 1-(800/850)≈0.059 → LOW
+            Map<String, Object> factors = Map.of("trust_score", 800.0);
             RiskManagementPlugin.RiskScore score =
-                runPromise(() -> plugin.calculateRisk("excellent-credit",
-                    RiskManagementPlugin.RiskModelId.CREDIT, factors));
+                runPromise(() -> plugin.calculateRisk("excellent-trust",
+                    RiskManagementPlugin.RiskModelId.COUNTERPARTY, factors));
 
             assertThat(score.level()).isEqualTo(RiskManagementPlugin.RiskScore.RiskLevel.LOW);
         }
@@ -189,62 +189,62 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
     class LimitBreachAlerts {
 
         @Test
-        @DisplayName("high market risk with limits set produces an alert")
-        void highMarketRiskWithLimitsGeneratesAlert() {
+        @DisplayName("high volatility risk with limits set produces an alert")
+        void highVolatilityRiskWithLimitsGeneratesAlert() {
             Map<String, BigDecimal> limits = Map.of(
-                "position_size", BigDecimal.valueOf(100_000),
+                "exposure_size", BigDecimal.valueOf(100_000),
                 "max_exposure",  BigDecimal.valueOf(500_000)
             );
-            runPromise(() -> plugin.setRiskLimits("trader-1", limits));
+            runPromise(() -> plugin.setRiskLimits("entity-1", limits));
 
-            // volatility=1.0 â†’ component score=0.3; position_size=5M â†’ 1.0; â†’ avg ~0.65 â†’ HIGH
-            Map<String, Object> factors = Map.of("volatility", 1.0, "position_size", 5_000_000.0);
-            runPromise(() -> plugin.calculateRisk("trader-1",
-                RiskManagementPlugin.RiskModelId.MARKET, factors));
+            // variance=1.0 → component score=0.3; exposure_size=5M → 1.0; → avg ~0.65 → HIGH
+            Map<String, Object> factors = Map.of("variance", 1.0, "exposure_size", 5_000_000.0);
+            runPromise(() -> plugin.calculateRisk("entity-1",
+                RiskManagementPlugin.RiskModelId.VOLATILITY, factors));
 
             List<RiskManagementPlugin.RiskAlert> activeAlerts =
-                runPromise(() -> plugin.getActiveAlerts("trader-1"));
+                runPromise(() -> plugin.getActiveAlerts("entity-1"));
 
             assertThat(activeAlerts)
-                .as("breach of market risk threshold must generate at least one alert")
+                .as("breach of volatility risk threshold must generate at least one alert")
                 .isNotEmpty();
 
             RiskManagementPlugin.RiskAlert alert = activeAlerts.getFirst();
-            assertThat(alert.entityId()).isEqualTo("trader-1");
+            assertThat(alert.entityId()).isEqualTo("entity-1");
             assertThat(alert.alertType()).isIn("LIMIT_BREACH", "HIGH_RISK_SCORE");
             assertThat(alert.message()).isNotBlank();
             assertThat(alert.severity()).isGreaterThan(0.0);
         }
 
         @Test
-        @DisplayName("low market risk does not generate any alert")
-        void lowMarketRiskNoAlert() {
+        @DisplayName("low volatility risk does not generate any alert")
+        void lowVolatilityRiskNoAlert() {
             Map<String, BigDecimal> limits = Map.of(
-                "position_size", BigDecimal.valueOf(100_000)
+                "exposure_size", BigDecimal.valueOf(100_000)
             );
-            runPromise(() -> plugin.setRiskLimits("trader-2", limits));
+            runPromise(() -> plugin.setRiskLimits("entity-2", limits));
 
-            Map<String, Object> factors = Map.of("volatility", 0.1, "liquidity", 0.9);
-            runPromise(() -> plugin.calculateRisk("trader-2",
-                RiskManagementPlugin.RiskModelId.MARKET, factors));
+            Map<String, Object> factors = Map.of("variance", 0.1, "liquidity", 0.9);
+            runPromise(() -> plugin.calculateRisk("entity-2",
+                RiskManagementPlugin.RiskModelId.VOLATILITY, factors));
 
             List<RiskManagementPlugin.RiskAlert> activeAlerts =
-                runPromise(() -> plugin.getActiveAlerts("trader-2"));
+                runPromise(() -> plugin.getActiveAlerts("entity-2"));
 
             assertThat(activeAlerts)
-                .as("low market risk should not trigger any alerts")
+                .as("low volatility risk should not trigger any alerts")
                 .isEmpty();
         }
 
         @Test
         @DisplayName("alerts without limits set are not generated")
         void noLimitsNoAlerts() {
-            Map<String, Object> factors = Map.of("volatility", 1.0, "position_size", 5_000_000.0);
-            runPromise(() -> plugin.calculateRisk("unlim-trader",
-                RiskManagementPlugin.RiskModelId.MARKET, factors));
+            Map<String, Object> factors = Map.of("variance", 1.0, "exposure_size", 5_000_000.0);
+            runPromise(() -> plugin.calculateRisk("entity-unlim",
+                RiskManagementPlugin.RiskModelId.VOLATILITY, factors));
 
             List<RiskManagementPlugin.RiskAlert> alerts =
-                runPromise(() -> plugin.getActiveAlerts("unlim-trader"));
+                runPromise(() -> plugin.getActiveAlerts("entity-unlim"));
 
             assertThat(alerts)
                 .as("risk calculation without limits must not auto-generate alerts")
@@ -266,9 +266,9 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
             Instant start = Instant.now().minusSeconds(5);
 
             runPromise(() -> plugin.calculateRisk("ent-rpt",
-                RiskManagementPlugin.RiskModelId.CREDIT, Map.of("credit_score", 200.0)));
+                RiskManagementPlugin.RiskModelId.COUNTERPARTY, Map.of("trust_score", 200.0)));
             runPromise(() -> plugin.calculateRisk("ent-rpt",
-                RiskManagementPlugin.RiskModelId.MARKET, Map.of("volatility", 0.9)));
+                RiskManagementPlugin.RiskModelId.VOLATILITY, Map.of("variance", 0.9)));
 
             Instant end = Instant.now().plusSeconds(5);
             RiskManagementPlugin.RiskReport report =
@@ -309,7 +309,7 @@ class RiskManagementExplainabilityTest extends EventloopTestBase {
             Instant before = Instant.now();
 
             runPromise(() -> plugin.calculateRisk("filtered-ent",
-                RiskManagementPlugin.RiskModelId.FRAUD, Map.of("anomaly_score", 0.5)));
+                RiskManagementPlugin.RiskModelId.ANOMALY, Map.of("anomaly_score", 0.5)));
 
             Instant after = Instant.now();
 

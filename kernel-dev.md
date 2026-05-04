@@ -36,7 +36,7 @@
 
 ### P1 — Platform plugin cleanup
 
-11. **Rename or reframe `plugin-billing-ledger`.**
+11. **Rename or reframe `plugin-ledger`.**
     Prefer `plugin-ledger` or `plugin-accounting-ledger`; “billing” sounds product/use-case-specific.
 
 12. **Ensure `plugin-compliance` is only a rule evaluation engine.**

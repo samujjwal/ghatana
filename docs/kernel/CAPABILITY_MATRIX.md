@@ -1,7 +1,7 @@
 # Capability Matrix
 
 > **Source**: Derived from canonical plugin module metadata.
-> **Last Generated**: 2026-04-20
+> **Last Generated**: 2026-05-03
 > **How to regenerate**: Run `./gradlew :platform-plugins:generateCapabilityMatrix` (Phase 6 task — scheduled).
 
 ## 1. Platform Plugin Modules
@@ -35,14 +35,26 @@ All bridge adapters extend `AbstractKernelBridge` which provides:
 - Bounded retry with exponential back-off
 - Sensitive metadata redaction for logging
 
-## 3. Product Pack Registry
+## 3. Risk Model IDs (Generic)
+
+| Model ID | Description | Factor Keys |
+|----------|-------------|-------------|
+| `VOLATILITY` | Evaluates volatility risk factors | `variance`, `exposure_size`, `concentration`, `liquidity` |
+| `COUNTERPARTY` | Evaluates counterparty risk | `trust_score`, `obligation_ratio`, `fulfillment_history` |
+| `OPERATIONAL` | Evaluates operational risk | `system_downtime`, `error_rate`, `staff_turnover` |
+| `ANOMALY` | Evaluates anomaly/fraud patterns | `velocity`, `anomaly_score`, `pattern_match` |
+| `COMPLIANCE` | Evaluates compliance risk | `regulatory_score`, `policy_violation_count` |
+
+> **Note**: Risk model IDs are generic strings, not enums. Products register their own evaluators via the pack-driven model.
+
+## 4. Product Pack Registry
 
 | Product | BoundaryPolicyStore | ComplianceRulePack | Rule ID Prefix |
 |---------|--------------------|--------------------|:---:|
 | PHR | `PhrBoundaryPolicyStore` | `PhrComplianceRulePack` | `PHR-` |
 | Finance | `FinanceBoundaryPolicyStore` | `FinanceComplianceRulePack` | `FIN-` |
 
-## 4. Compliance Rule Sets per Product
+## 5. Compliance Rule Sets per Product
 
 ### PHR
 
@@ -60,7 +72,7 @@ All bridge adapters extend `AbstractKernelBridge` which provides:
 | `FIN_AUDIT_RECORD_KEEPING` | `auditRecordKeepingRules()` | 3 |
 | `FIN_TRADE_SURVEILLANCE` | `tradeSurveillanceRules()` | 3 |
 
-## 5. Boundary Policy Rule Summary
+## 6. Boundary Policy Rule Summary
 
 ### PHR Boundary Policies
 
@@ -82,7 +94,7 @@ All bridge adapters extend `AbstractKernelBridge` which provides:
 | `FIN-BP-004` | `market-data/**` | `read` | ALLOW | Feature flag: `finance.market-data.interop.enabled` |
 | `FIN-BP-005` | `**` / `finance.*` | `*` | DENY | Default-deny catch-all |
 
-## 6. CI Gate Checklist
+## 7. CI Gate Checklist
 
 All the following gates must pass on every PR touching platform or product code:
 
@@ -91,13 +103,3 @@ All the following gates must pass on every PR touching platform or product code:
 | Kernel purity | `checkKernelPurity` | `platform-kernel/kernel-core/src/main` |
 | Resource purity | `checkKernelResourcePurity` | `platform-kernel/kernel-core/src/main/resources` |
 | Docs purity | `checkKernelDocsPurity` | `docs/examples/**` |
-| Plugin purity | `checkPluginPurity` | `platform-plugins/*/src/main` |
-| Domain pack validation | `validateDomainPackManifest` | Product build |
-| Policy pack validation | `validatePolicyPack` | Product build |
-| Compliance rule validation | `validateComplianceRulePack` | Product build |
-| Architecture tests | `test` (ArchUnit) | `kernel-core` + plugin modules |
-| Contract tests | `test` (`*PackContractTest`) | Product modules |
-
----
-
-*See also: [KERNEL_PURITY_RULES.md](KERNEL_PURITY_RULES.md), [PLUGIN_PURITY_RULES.md](PLUGIN_PURITY_RULES.md), [PRODUCT_DEVELOPMENT_GUIDE.md](PRODUCT_DEVELOPMENT_GUIDE.md)*

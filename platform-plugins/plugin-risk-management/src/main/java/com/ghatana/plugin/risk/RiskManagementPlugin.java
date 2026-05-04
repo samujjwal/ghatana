@@ -68,14 +68,14 @@ public interface RiskManagementPlugin extends Plugin {
      * <p>Well-known generic IDs are provided as constants but any string is valid.</p>
      */
     final class RiskModelId {
-        /** Generic market-volatility and position risk. */
-        public static final RiskModelId MARKET      = new RiskModelId("MARKET");
-        /** Counterparty and debt-obligation risk. */
-        public static final RiskModelId CREDIT      = new RiskModelId("CREDIT");
+        /** Generic volatility and exposure risk. */
+        public static final RiskModelId VOLATILITY  = new RiskModelId("VOLATILITY");
+        /** Counterparty and obligation risk. */
+        public static final RiskModelId COUNTERPARTY = new RiskModelId("COUNTERPARTY");
         /** Operational-process and infrastructure risk. */
         public static final RiskModelId OPERATIONAL = new RiskModelId("OPERATIONAL");
-        /** Transaction-fraud risk. */
-        public static final RiskModelId FRAUD       = new RiskModelId("FRAUD");
+        /** Anomaly and abuse risk. */
+        public static final RiskModelId ANOMALY     = new RiskModelId("ANOMALY");
         /** Regulatory-compliance risk. */
         public static final RiskModelId COMPLIANCE  = new RiskModelId("COMPLIANCE");
 

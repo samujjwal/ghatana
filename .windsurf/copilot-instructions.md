@@ -415,7 +415,7 @@ platform-kernel/           # Module system
 
 platform-plugins/          # Cross-cutting plugins
 ├── plugin-audit-trail/
-├── plugin-billing-ledger/
+├── plugin-ledger/
 ├── plugin-compliance/
 ├── plugin-consent/
 ├── plugin-fraud-detection/

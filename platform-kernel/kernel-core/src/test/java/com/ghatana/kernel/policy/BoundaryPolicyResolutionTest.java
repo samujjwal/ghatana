@@ -40,14 +40,14 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     @DisplayName("Should resolve single policy without conflicts")
     void testSinglePolicyResolution() { 
         // GIVEN: Single policy
-        BoundaryPolicy policy = new BoundaryPolicy("policy-1", PolicyType.ALLOW); 
-        policy.addRule("module:finance", "action:read"); 
+        BoundaryPolicy policy = new BoundaryPolicy("policy-1", PolicyType.ALLOW);
+        policy.addRule("module:domain-alpha", "action:read");
 
-        policyResolver.registerPolicy(policy); 
+        policyResolver.registerPolicy(policy);
 
         // WHEN: Resolve policy
-        PolicyDecision decision = runPromise(() -> 
-            policyResolver.resolve("module:finance", "action:read") 
+        PolicyDecision decision = runPromise(() ->
+            policyResolver.resolve("module:domain-alpha", "action:read")
         );
 
         // THEN: Policy allows action
@@ -59,20 +59,20 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     @DisplayName("Should resolve conflicting policies with priority")
     void testConflictingPolicyResolution() { 
         // GIVEN: Conflicting policies with different priorities
-        BoundaryPolicy allowPolicy = new BoundaryPolicy("allow-policy", PolicyType.ALLOW); 
-        allowPolicy.setPriority(10); 
-        allowPolicy.addRule("module:finance", "action:write"); 
+        BoundaryPolicy allowPolicy = new BoundaryPolicy("allow-policy", PolicyType.ALLOW);
+        allowPolicy.setPriority(10);
+        allowPolicy.addRule("module:domain-alpha", "action:write");
 
-        BoundaryPolicy denyPolicy = new BoundaryPolicy("deny-policy", PolicyType.DENY); 
-        denyPolicy.setPriority(20); // Higher priority 
-        denyPolicy.addRule("module:finance", "action:write"); 
+        BoundaryPolicy denyPolicy = new BoundaryPolicy("deny-policy", PolicyType.DENY);
+        denyPolicy.setPriority(20); // Higher priority
+        denyPolicy.addRule("module:domain-alpha", "action:write");
 
-        policyResolver.registerPolicy(allowPolicy); 
-        policyResolver.registerPolicy(denyPolicy); 
+        policyResolver.registerPolicy(allowPolicy);
+        policyResolver.registerPolicy(denyPolicy);
 
         // WHEN: Resolve conflicting policies
-        PolicyDecision decision = runPromise(() -> 
-            policyResolver.resolve("module:finance", "action:write") 
+        PolicyDecision decision = runPromise(() ->
+            policyResolver.resolve("module:domain-alpha", "action:write")
         );
 
         // THEN: Higher priority policy wins (deny) 
@@ -87,19 +87,19 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
         BoundaryPolicy parentPolicy = new BoundaryPolicy("parent-policy", PolicyType.ALLOW); 
         parentPolicy.addRule("module:*", "action:read"); 
 
-        BoundaryPolicy childPolicy = new BoundaryPolicy("child-policy", PolicyType.DENY); 
-        childPolicy.setPriority(1); 
-        childPolicy.addRule("module:finance:sensitive", "action:read"); 
+        BoundaryPolicy childPolicy = new BoundaryPolicy("child-policy", PolicyType.DENY);
+        childPolicy.setPriority(1);
+        childPolicy.addRule("module:domain-alpha:sensitive", "action:read");
 
-        policyResolver.registerPolicy(parentPolicy); 
-        policyResolver.registerPolicy(childPolicy); 
+        policyResolver.registerPolicy(parentPolicy);
+        policyResolver.registerPolicy(childPolicy);
 
         // WHEN: Resolve for child module
-        PolicyDecision generalDecision = runPromise(() -> 
-            policyResolver.resolve("module:finance", "action:read") 
+        PolicyDecision generalDecision = runPromise(() ->
+            policyResolver.resolve("module:domain-alpha", "action:read")
         );
-        PolicyDecision sensitiveDecision = runPromise(() -> 
-            policyResolver.resolve("module:finance:sensitive", "action:read") 
+        PolicyDecision sensitiveDecision = runPromise(() ->
+            policyResolver.resolve("module:domain-alpha:sensitive", "action:read")
         );
 
         // THEN: Child policy overrides parent
@@ -126,18 +126,18 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     @DisplayName("Should handle wildcard policy patterns")
     void testWildcardPolicyPatterns() { 
         // GIVEN: Wildcard policy
-        BoundaryPolicy wildcardPolicy = new BoundaryPolicy("wildcard-policy", PolicyType.ALLOW); 
-        wildcardPolicy.addRule("module:*", "action:read"); 
-        wildcardPolicy.addRule("module:finance", "action:*"); 
+        BoundaryPolicy wildcardPolicy = new BoundaryPolicy("wildcard-policy", PolicyType.ALLOW);
+        wildcardPolicy.addRule("module:*", "action:read");
+        wildcardPolicy.addRule("module:domain-alpha", "action:*");
 
-        policyResolver.registerPolicy(wildcardPolicy); 
+        policyResolver.registerPolicy(wildcardPolicy);
 
         // WHEN: Resolve with wildcards
-        PolicyDecision readAny = runPromise(() -> 
-            policyResolver.resolve("module:phr", "action:read") 
+        PolicyDecision readAny = runPromise(() ->
+            policyResolver.resolve("module:domain-beta", "action:read")
         );
-        PolicyDecision financeAny = runPromise(() -> 
-            policyResolver.resolve("module:finance", "action:delete") 
+        PolicyDecision financeAny = runPromise(() ->
+            policyResolver.resolve("module:domain-alpha", "action:delete")
         );
 
         // THEN: Wildcards match correctly
@@ -149,18 +149,18 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     @DisplayName("Should resolve time-based policies")
     void testTimeBasedPolicies() { 
         // GIVEN: Time-based policy
-        BoundaryPolicy timePolicy = new BoundaryPolicy("time-policy", PolicyType.ALLOW); 
-        timePolicy.addRule("module:finance", "action:trade"); 
-        timePolicy.setTimeWindow(9, 17); // 9 AM to 5 PM 
+        BoundaryPolicy timePolicy = new BoundaryPolicy("time-policy", PolicyType.ALLOW);
+        timePolicy.addRule("module:domain-alpha", "action:trade");
+        timePolicy.setTimeWindow(9, 17); // 9 AM to 5 PM
 
-        policyResolver.registerPolicy(timePolicy); 
+        policyResolver.registerPolicy(timePolicy);
 
         // WHEN: Resolve during and outside time window
-        PolicyDecision duringHours = runPromise(() -> 
-            policyResolver.resolveWithTime("module:finance", "action:trade", 12) 
+        PolicyDecision duringHours = runPromise(() ->
+            policyResolver.resolveWithTime("module:domain-alpha", "action:trade", 12)
         );
-        PolicyDecision afterHours = runPromise(() -> 
-            policyResolver.resolveWithTime("module:finance", "action:trade", 20) 
+        PolicyDecision afterHours = runPromise(() ->
+            policyResolver.resolveWithTime("module:domain-alpha", "action:trade", 20)
         );
 
         // THEN: Time window enforced
@@ -198,19 +198,19 @@ class BoundaryPolicyResolutionTest extends EventloopTestBase {
     @DisplayName("Should audit policy decisions")
     void testPolicyDecisionAuditing() { 
         // GIVEN: Policy with auditing enabled
-        BoundaryPolicy policy = new BoundaryPolicy("audit-policy", PolicyType.ALLOW); 
-        policy.addRule("module:finance", "action:transfer"); 
-        policy.setAuditEnabled(true); 
+        BoundaryPolicy policy = new BoundaryPolicy("audit-policy", PolicyType.ALLOW);
+        policy.addRule("module:domain-alpha", "action:transfer");
+        policy.setAuditEnabled(true);
 
-        policyResolver.registerPolicy(policy); 
+        policyResolver.registerPolicy(policy);
 
         // WHEN: Resolve policy
-        runPromise(() -> policyResolver.resolve("module:finance", "action:transfer")); 
+        runPromise(() -> policyResolver.resolve("module:domain-alpha", "action:transfer"));
 
         // THEN: Decision is audited
-        assertThat(policyResolver.getAuditLog()).isNotEmpty(); 
-        assertThat(policyResolver.getAuditLog().get(0)) 
-            .contains("module:finance")
+        assertThat(policyResolver.getAuditLog()).isNotEmpty();
+        assertThat(policyResolver.getAuditLog().get(0))
+            .contains("module:domain-alpha")
             .contains("action:transfer")
             .contains("ALLOW");
     }

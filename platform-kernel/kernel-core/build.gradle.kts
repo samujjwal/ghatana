@@ -37,16 +37,22 @@ tasks.register("checkKernelPurity") {
     val projectDirPath = layout.projectDirectory.asFile
     doLast {
         val PRODUCT_TERMS = listOf(
-            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
-            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
-            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+            // Legacy product-specific terms (should not appear after neutralization)
+            "phr", "PHR", "finance", "Finance", "FINANCE", "CLINICAL", "Clinical",
+            "phr-kernel", "finance-kernel", "patient\\.records", "trade\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
+            // Compliance tags that should be neutralized
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS",
+            // Product package references
+            "com\\.ghatana\\.phr", "com\\.ghatana\\.finance",
+            "com\\.ghatana\\.products\\.(aura|flashit|yappc|aep|datacloud)"
         )
         if (!srcDir.exists()) return@doLast
         val violations = mutableListOf<String>()
         srcDir.walkTopDown().filter { it.isFile && it.extension == "java" }.forEach { javaFile ->
             val content = javaFile.readText()
             PRODUCT_TERMS.forEach { term ->
-                val regex = Regex(term)
+                val regex = Regex(term, RegexOption.IGNORE_CASE)
                 if (regex.containsMatchIn(content)) {
                     violations += "${javaFile.relativeTo(projectDirPath)}: contains banned term '$term'"
                 }
@@ -69,16 +75,22 @@ tasks.register("checkKernelResourcePurity") {
     val projectDirPath = layout.projectDirectory.asFile
     doLast {
         val PRODUCT_TERMS = listOf(
-            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
-            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
-            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+            // Legacy product-specific terms (should not appear after neutralization)
+            "phr", "PHR", "finance", "Finance", "FINANCE", "CLINICAL", "Clinical",
+            "phr-kernel", "finance-kernel", "patient\\.records", "trade\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
+            // Compliance tags that should be neutralized
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS",
+            // Product package references
+            "com\\.ghatana\\.phr", "com\\.ghatana\\.finance",
+            "com\\.ghatana\\.products\\.(aura|flashit|yappc|aep|datacloud)"
         )
         if (!resourceDir.exists()) return@doLast
         val violations = mutableListOf<String>()
         resourceDir.walkTopDown().filter { it.isFile }.forEach { resFile ->
             val content = resFile.readText()
             PRODUCT_TERMS.forEach { term ->
-                val regex = Regex(term)
+                val regex = Regex(term, RegexOption.IGNORE_CASE)
                 if (regex.containsMatchIn(content)) {
                     violations += "${resFile.relativeTo(projectDirPath)}: contains banned term '$term'"
                 }
@@ -101,9 +113,15 @@ tasks.register("checkKernelDocsPurity") {
     val rootDirPath = layout.projectDirectory.dir("../..").asFile
     doLast {
         val PRODUCT_TERMS = listOf(
-            "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
-            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
-            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
+            // Legacy product-specific terms (should not appear after neutralization)
+            "phr", "PHR", "finance", "Finance", "FINANCE", "CLINICAL", "Clinical",
+            "phr-kernel", "finance-kernel", "patient\\.records", "trade\\.records",
+            "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
+            // Compliance tags that should be neutralized
+            "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS",
+            // Product package references
+            "com\\.ghatana\\.phr", "com\\.ghatana\\.finance",
+            "com\\.ghatana\\.products\\.(aura|flashit|yappc|aep|datacloud)"
         )
         if (!docsDir.exists()) return@doLast
         val violations = mutableListOf<String>()
@@ -112,7 +130,7 @@ tasks.register("checkKernelDocsPurity") {
             .forEach { docFile ->
                 val content = docFile.readText()
                 PRODUCT_TERMS.forEach { term ->
-                    val regex = Regex(term)
+                    val regex = Regex(term, RegexOption.IGNORE_CASE)
                     if (regex.containsMatchIn(content)) {
                         violations += "${docFile.relativeTo(rootDirPath)}: contains banned term '$term'"
                     }
@@ -128,6 +146,15 @@ tasks.register("checkKernelDocsPurity") {
     }
 }
 
+// Wire purity gates into check lifecycle
 tasks.named("check") {
-    dependsOn("checkKernelPurity", "checkKernelResourcePurity")
+    dependsOn("checkKernelPurity", "checkKernelResourcePurity", "checkKernelDocsPurity")
+}
+
+// Ensure purity validation tests run as part of test
+tasks.named<Test>("test") {
+    // Run purity validation tests as part of standard test suite
+    useJUnitPlatform {
+        includeTags("purity-validation")
+    }
 }

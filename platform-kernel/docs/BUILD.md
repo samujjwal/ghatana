@@ -78,11 +78,11 @@ cd platform-plugins
 ../../gradlew :plugin-consent:build
 ../../gradlew :plugin-human-approval:build
 ../../gradlew :plugin-audit-trail:build
-../../gradlew :plugin-billing-ledger:build
+../../gradlew :plugin-ledger:build
 ../../gradlew :core-observability:build
 
 # Build all platform-plugins modules in one command
-../../gradlew :plugin-risk-management:build :plugin-compliance:build :plugin-consent:build :plugin-human-approval:build :plugin-audit-trail:build :plugin-billing-ledger:build :core-observability:build
+../../gradlew :plugin-risk-management:build :plugin-compliance:build :plugin-consent:build :plugin-human-approval:build :plugin-audit-trail:build :plugin-ledger:build :core-observability:build
 
 # Test platform-plugins
 ../../gradlew :plugin-risk-management:test
@@ -90,7 +90,7 @@ cd platform-plugins
 ../../gradlew :plugin-consent:test
 ../../gradlew :plugin-human-approval:test
 ../../gradlew :plugin-audit-trail:test
-../../gradlew :plugin-billing-ledger:test
+../../gradlew :plugin-ledger:check
 ../../gradlew :core-observability:test
 
 # Check platform-plugins
@@ -99,7 +99,7 @@ cd platform-plugins
 ../../gradlew :plugin-consent:check
 ../../gradlew :plugin-human-approval:check
 ../../gradlew :plugin-audit-trail:check
-../../gradlew :plugin-billing-ledger:check
+../../gradlew :plugin-ledger:check
 ../../gradlew :core-observability:check
 ```
 

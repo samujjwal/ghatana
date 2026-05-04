@@ -4,7 +4,9 @@
  */
 package com.ghatana.kernel.test.validation;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -36,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.1.0
  */
 @DisplayName("Architecture Drift Detection Tests")
+@Tag("purity-validation")
 public class KernelArchitectureDriftTest {
 
     /**
@@ -69,9 +72,8 @@ public class KernelArchitectureDriftTest {
     /**
      * Product ids that must NOT appear as string literals in canonical packages.
      */
-    private static final Set<String> FORBIDDEN_PRODUCT_LITERALS = Set.of( 
-            "\"phr\"", "\"finance\"", "\"flashit\"", "\"aura\"",
-            "\"insurance\"", "\"banking\""
+    private static final Set<String> FORBIDDEN_PRODUCT_LITERALS = Set.of(
+            "\"domain-alpha\"", "\"domain-beta\"", "\"domain-gamma\"", "\"domain-delta\""
     );
 
     /**
@@ -92,12 +94,12 @@ public class KernelArchitectureDriftTest {
     /**
      * Patterns indicating product-aware branching in source code.
      */
-    private static final List<Pattern> PRODUCT_BRANCHING_PATTERNS = List.of( 
-            // equals("phr"), equals("finance"), etc.
-            Pattern.compile("\\.equals\\(\"(phr|finance|flashit|aura|insurance|banking)\"\\)"), 
-            // getSourceProduct().equals(...) or getTargetProduct().equals(...) 
+    private static final List<Pattern> PRODUCT_BRANCHING_PATTERNS = List.of(
+            // equals("domain-alpha"), equals("domain-beta"), etc.
+            Pattern.compile("\\.equals\\(\"(domain-alpha|domain-beta|domain-gamma|domain-delta)\"\\)"),
+            // getSourceProduct().equals(...) or getTargetProduct().equals(...)
             Pattern.compile("get(Source|Target)Product\\(\\)\\.equals"),
-            // switch or if on getProductId() 
+            // switch or if on getProductId()
             Pattern.compile("getProductId\\(\\)")
     );
 

@@ -157,11 +157,11 @@ class StandardHumanApprovalPluginTest extends EventloopTestBase {
 
         ApprovalRecord decided = runPromise( 
                 () -> plugin.completeApproval(req.requestId(), ApprovalDecision.APPROVED, 
-                        "dr-jones", "Clinically justified"));
+                        "dr-jones", "Domain justified"));
 
         assertThat(decided.status()).isEqualTo(ApprovalStatus.APPROVED); 
         assertThat(decided.reviewerId()).isEqualTo("dr-jones");
-        assertThat(decided.reviewerNotes()).isEqualTo("Clinically justified");
+        assertThat(decided.reviewerNotes()).isEqualTo("Domain justified");
         assertThat(decided.decidedAt()).isNotNull(); 
     }
 

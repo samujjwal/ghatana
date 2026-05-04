@@ -4,6 +4,7 @@ import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
 import com.ghatana.platform.plugin.PluginType;
+import com.ghatana.plugin.observability.PluginObservability;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -20,8 +21,8 @@ import java.util.stream.Collectors;
  *
  * <p>Factor evaluation is model-driven: callers register a {@link FactorEvaluator}
  * per {@link RiskModelId}. Built-in evaluators are provided for the standard
- * generic model IDs ({@code MARKET}, {@code CREDIT}, {@code OPERATIONAL},
- * {@code FRAUD}, {@code COMPLIANCE}). Products register their own evaluators
+ * generic model IDs ({@code VOLATILITY}, {@code COUNTERPARTY}, {@code OPERATIONAL},
+ * {@code ANOMALY}, {@code COMPLIANCE}). Products register their own evaluators
  * for domain-specific models without touching this class.</p>
  *
  * @doc.type class
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
  * @doc.pattern Plugin Implementation
  * @since 1.2.0
  */
-public class StandardRiskManagementPlugin implements RiskManagementPlugin {
+public class StandardRiskManagementPlugin extends PluginObservability implements RiskManagementPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(StandardRiskManagementPlugin.class);
 
@@ -196,28 +197,28 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private void registerBuiltinEvaluators() {
-        evaluators.put(RiskModelId.MARKET.getId(), this::evaluateMarketFactor);
-        evaluators.put(RiskModelId.CREDIT.getId(), this::evaluateCreditFactor);
+        evaluators.put(RiskModelId.VOLATILITY.getId(), this::evaluateVolatilityFactor);
+        evaluators.put(RiskModelId.COUNTERPARTY.getId(), this::evaluateCounterpartyFactor);
         evaluators.put(RiskModelId.OPERATIONAL.getId(), this::evaluateOperationalFactor);
-        evaluators.put(RiskModelId.FRAUD.getId(), this::evaluateFraudFactor);
+        evaluators.put(RiskModelId.ANOMALY.getId(), this::evaluateAnomalyFactor);
         evaluators.put(RiskModelId.COMPLIANCE.getId(), this::evaluateComplianceFactor);
     }
 
-    private double evaluateMarketFactor(String key, Object value) {
+    private double evaluateVolatilityFactor(String key, Object value) {
         return switch (key) {
-            case "volatility"      -> toDouble(value) * 0.3;
-            case "position_size"   -> Math.min(toDouble(value) / 1_000_000, 1.0);
+            case "variance"        -> toDouble(value) * 0.3;
+            case "exposure_size"   -> Math.min(toDouble(value) / 1_000_000, 1.0);
             case "concentration"   -> toDouble(value);
             case "liquidity"       -> 1.0 - toDouble(value);
             default                -> 0.5;
         };
     }
 
-    private double evaluateCreditFactor(String key, Object value) {
+    private double evaluateCounterpartyFactor(String key, Object value) {
         return switch (key) {
-            case "credit_score"    -> 1.0 - (toDouble(value) / 850);
-            case "debt_ratio"      -> toDouble(value);
-            case "payment_history" -> 1.0 - toDouble(value);
+            case "trust_score"    -> 1.0 - (toDouble(value) / 850);
+            case "obligation_ratio" -> toDouble(value);
+            case "fulfillment_history" -> 1.0 - toDouble(value);
             default                -> 0.5;
         };
     }
@@ -231,7 +232,7 @@ public class StandardRiskManagementPlugin implements RiskManagementPlugin {
         };
     }
 
-    private double evaluateFraudFactor(String key, Object value) {
+    private double evaluateAnomalyFactor(String key, Object value) {
         return switch (key) {
             case "velocity"        -> Math.min(toDouble(value) / 100, 1.0);
             case "anomaly_score"   -> toDouble(value);

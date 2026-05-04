@@ -69,8 +69,8 @@ class SecurityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should check consent status for data request")
     void testCheckConsent() { 
-        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest( 
-            "user-1", "patient-data", "treatment", Map.of() 
+        PrivacyManager.DataRequest request = new PrivacyManager.DataRequest(
+            "user-1", "domain-data", "treatment", Map.of()
         );
 
         PrivacyManager.ConsentStatus status = privacyManager.checkConsent(request, "tenant-1"); 
@@ -121,11 +121,11 @@ class SecurityFrameworkIntegrationTest {
     @Test
     @DisplayName("Should deny policy enforcement without authentication")
     void testPolicyEnforcementWithoutAuthentication() { 
-        SecurityContext context = new MockSecurityContext("tenant-1", "user-1", false); 
-        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder() 
-            .resource("patient-records")
+        SecurityContext context = new MockSecurityContext("tenant-1", "user-1", false);
+        PolicyEnforcementPoint.Request request = PolicyEnforcementPoint.Request.builder()
+            .resource("domain-records")
             .operation("read")
-            .scope("phr")
+            .scope("domain-alpha")
             .build(); 
 
         PolicyEnforcementPoint.EnforcementDecision decision =
@@ -164,7 +164,7 @@ class SecurityFrameworkIntegrationTest {
                 .userId(userId) 
                 .sessionId("session-" + System.currentTimeMillis()) 
                 .role("user")
-                .permission("read:patient-records")
+                .permission("read:domain-records")
                 .authenticated(true) 
                 .build(); 
         }

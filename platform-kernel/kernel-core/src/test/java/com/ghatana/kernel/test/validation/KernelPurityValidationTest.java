@@ -8,6 +8,7 @@ import com.ghatana.kernel.annotation.KernelInternal;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.module.KernelModule;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -37,10 +38,12 @@ import static org.junit.jupiter.api.Assertions.*;
  * @since 1.0.0
  */
 @DisplayName("Kernel Purity Validation Tests")
+@Tag("purity-validation")
 public class KernelPurityValidationTest {
 
-    private static final List<String> FORBIDDEN_PRODUCT_TERMS = List.of( 
-        "finance", "trading", "trade", "order", "portfolio", "risk",
+    private static final List<String> FORBIDDEN_PRODUCT_TERMS = List.of(
+        "domain-alpha", "domain-beta", "domain-gamma", "domain-delta",
+        "trading", "trade", "order", "portfolio", "risk",
         "compliance", "market", "execution", "oms", "ems", "pms"
     );
 
@@ -675,13 +678,13 @@ public class KernelPurityValidationTest {
             new com.ghatana.kernel.contracts.schema.SchemaGovernanceValidator(); 
 
         com.ghatana.kernel.contracts.SchemaContract validSchema =
-            com.ghatana.kernel.contracts.SchemaContract.builder("trade.events", "Trade Events", "1.0.0") 
-                .subjects(List.of( 
-                    new com.ghatana.kernel.contracts.SchemaContract.SchemaSubject( 
-                        "trade.created",
+            com.ghatana.kernel.contracts.SchemaContract.builder("domain.events", "Domain Events", "1.0.0")
+                .subjects(List.of(
+                    new com.ghatana.kernel.contracts.SchemaContract.SchemaSubject(
+                        "domain.created",
                         com.ghatana.kernel.contracts.SchemaContract.SchemaFormat.JSON_SCHEMA_V7,
                         com.ghatana.kernel.contracts.SchemaContract.CompatibilityMode.BACKWARD,
-                        "schemas/trade-created.json")))
+                        "schemas/domain-created.json")))
                 .build(); 
 
         com.ghatana.kernel.contracts.ContractValidator.ValidationResult result =

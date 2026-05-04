@@ -66,46 +66,46 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("Should calculate market risk")
-    void testCalculateRisk_Market() { 
-        runPromise(() -> riskPlugin.initialize(mockContext) 
-                .then(v -> riskPlugin.start())); 
+    @DisplayName("Should calculate volatility risk")
+    void testCalculateRisk_Volatility() {
+        runPromise(() -> riskPlugin.initialize(mockContext)
+                .then(v -> riskPlugin.start()));
 
-        Map<String, Object> factors = Map.of( 
-            "volatility", 0.25,
-            "position_size", 500000.0,
+        Map<String, Object> factors = Map.of(
+            "variance", 0.25,
+            "exposure_size", 500000.0,
             "concentration", 0.15,
             "liquidity", 0.8
         );
 
         Promise<RiskManagementPlugin.RiskScore> result =
-                riskPlugin.calculateRisk("portfolio1", RiskManagementPlugin.RiskModelId.MARKET, factors); 
-        RiskManagementPlugin.RiskScore score = runPromise(() -> result); 
+                riskPlugin.calculateRisk("entity1", RiskManagementPlugin.RiskModelId.VOLATILITY, factors);
+        RiskManagementPlugin.RiskScore score = runPromise(() -> result);
 
-        assertThat(score.entityId()).isEqualTo("portfolio1");
-        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.MARKET); 
-        assertThat(score.score()).isBetween(0.0, 1.0); 
-        assertThat(score.componentScores()).isNotEmpty(); 
+        assertThat(score.entityId()).isEqualTo("entity1");
+        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.VOLATILITY);
+        assertThat(score.score()).isBetween(0.0, 1.0);
+        assertThat(score.componentScores()).isNotEmpty();
     }
 
     @Test
-    @DisplayName("Should calculate credit risk")
-    void testCalculateRisk_Credit() { 
-        runPromise(() -> riskPlugin.initialize(mockContext) 
-                .then(v -> riskPlugin.start())); 
+    @DisplayName("Should calculate counterparty risk")
+    void testCalculateRisk_Counterparty() {
+        runPromise(() -> riskPlugin.initialize(mockContext)
+                .then(v -> riskPlugin.start()));
 
-        Map<String, Object> factors = Map.of( 
-            "credit_rating", 850.0,
-            "default_probability", 0.01,
-            "exposure", 100000.0
+        Map<String, Object> factors = Map.of(
+            "trust_score", 850.0,
+            "obligation_ratio", 0.01,
+            "fulfillment_history", 0.95
         );
 
         Promise<RiskManagementPlugin.RiskScore> result =
-                riskPlugin.calculateRisk("borrower1", RiskManagementPlugin.RiskModelId.CREDIT, factors); 
-        RiskManagementPlugin.RiskScore score = runPromise(() -> result); 
+                riskPlugin.calculateRisk("entity1", RiskManagementPlugin.RiskModelId.COUNTERPARTY, factors);
+        RiskManagementPlugin.RiskScore score = runPromise(() -> result);
 
-        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.CREDIT); 
-        assertThat(score.calculatedAt()).isNotNull(); 
+        assertThat(score.modelId()).isEqualTo(RiskManagementPlugin.RiskModelId.COUNTERPARTY);
+        assertThat(score.calculatedAt()).isNotNull();
     }
 
     @Test
@@ -122,7 +122,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
             "max_loss",          new BigDecimal("500000.00")
         );
 
-        Promise<Void> result = riskPlugin.setRiskLimits("trader123", limits); 
+        Promise<Void> result = riskPlugin.setRiskLimits("entity123", limits); 
         runPromise(() -> result); 
 
         // Verify limits were set
@@ -148,7 +148,7 @@ class StandardRiskManagementPluginTest extends EventloopTestBase {
         runPromise(() -> riskPlugin.initialize(mockContext) 
                 .then(v -> riskPlugin.start()) 
                 .then(v -> { 
-                    Map<String, Object> factors = Map.of("volatility", 0.2); 
+                    Map<String, Object> factors = Map.of("variance", 0.2); 
                     return riskPlugin.calculateRisk("entity456", 
                         RiskManagementPlugin.RiskModelId.OPERATIONAL, factors);
                 }));

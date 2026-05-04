@@ -59,6 +59,8 @@ class PluginsArchitectureBoundaryTest {
                 .that().resideInAPackage("com.ghatana.plugin..")
                 .should().dependOnClassesThat().resideInAPackage("com.ghatana.phr..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.finance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.domain-alpha..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.domain-beta..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.yappc..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.aep..")
                 .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.datacloud..")

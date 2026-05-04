@@ -93,13 +93,13 @@ class StandardFraudDetectionPluginTest extends EventloopTestBase {
         FraudDetectionPlugin.FraudRule rule = new FraudDetectionPlugin.FraudRule( 
             "RULE_001", "AMOUNT_THRESHOLD", "Amount exceeds threshold", 0.5);
 
-        Promise<Void> result = fraudPlugin.registerRule("product_finance", rule); 
+        Promise<Void> result = fraudPlugin.registerRule("domain-alpha", rule); 
         runPromise(() -> result); 
 
         // Verify rule was registered by assessing with product
         FraudDetectionPlugin.FraudDetectionRequest request =
             new FraudDetectionPlugin.FraudDetectionRequest( 
-                "txn999", "product_finance", Map.of("amount", 50000), "model_v1"); 
+                "txn999", "domain-alpha", Map.of("amount", 50000), "model_v1"); 
 
         Promise<FraudDetectionPlugin.FraudAssessment> assessResult =
                 fraudPlugin.assessTransaction("txn999", request); 

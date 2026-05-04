@@ -17,19 +17,19 @@ bindings:
     description: "Capital-markets risk management: market, credit, operational risk"
     config:
       evaluators:
-        - modelId: MARKET
-          description: "Evaluates market risk factors (volatility, position size, concentration, liquidity)"
+        - modelId: VOLATILITY
+          description: "Evaluates volatility risk factors (variance, exposure size, concentration, liquidity)"
           factorKeys:
-            - volatility
-            - position_size
+            - variance
+            - exposure_size
             - concentration
             - liquidity
-        - modelId: CREDIT
-          description: "Evaluates counterparty credit risk"
+        - modelId: COUNTERPARTY
+          description: "Evaluates counterparty risk"
           factorKeys:
-            - credit_score
-            - debt_ratio
-            - payment_history
+            - trust_score
+            - obligation_ratio
+            - fulfillment_history
         - modelId: OPERATIONAL
           description: "Evaluates operational risk across trading infrastructure"
           factorKeys:

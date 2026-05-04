@@ -177,7 +177,7 @@ HAVING COUNT(*) > 1;
 EOF
 
 # Check plugin billing-ledger logs for errors
-grep -i "error\|exception\|fail" logs/plugin-billing-ledger.log | tail -50 | \
+grep -i "error\|exception\|fail" logs/plugin-ledger.log | tail -50 | \
   jq -r '{timestamp, level, message, exception}' > billing_ledger_errors.json
 ```
 

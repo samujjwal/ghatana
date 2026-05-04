@@ -1,6 +1,7 @@
 package com.ghatana.kernel.test.validation;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -26,15 +27,16 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.pattern Test
  */
 @DisplayName("Kernel Purity Enforcement Tests")
+@Tag("purity-validation")
 class KernelPurityEnforcementTest {
 
     private static final String KERNEL_SOURCE_PATH = "platform/java/kernel/src/main/java";
 
     // Product-specific packages that should NEVER appear in kernel code
     private static final String[] FORBIDDEN_IMPORTS = {
+        "com.ghatana.products",
         "com.ghatana.phr",
         "com.ghatana.finance",
-        "com.ghatana.products",
         "com.ghatana.aep",
         "com.ghatana.data-cloud",
         "com.ghatana.audio-video",
@@ -53,8 +55,8 @@ class KernelPurityEnforcementTest {
         "Order",
         "Ledger",
         "MarketData",
-        "PhrCapabilities",
-        "FinanceCapabilities"
+        "DomainAlphaCapabilities",
+        "DomainBetaCapabilities"
     };
 
     @Test

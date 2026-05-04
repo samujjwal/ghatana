@@ -1,7 +1,7 @@
 # Product Development Guide: Onboarding onto the Kernel
 
 > **Audience**: Product engineering teams building on Ghatana's platform kernel.
-> **Last Updated**: 2026-04-20
+> **Last Updated**: 2026-05-03
 
 ## 1. Overview
 
