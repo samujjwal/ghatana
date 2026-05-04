@@ -6,7 +6,9 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.datacloud.DataCloudClient;
-import io.activej.eventloop.Eventloop;
+import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.http.HttpHeaders;
+import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
 import org.junit.jupiter.api.AfterEach;
@@ -20,14 +22,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 /**
  * Production-grade tests for DataSourceRegistryHandler.
@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("DataSourceRegistryHandler Production Tests")
 @ExtendWith(MockitoExtension.class)
 @Tag("production")
-class DataSourceRegistryHandlerTest {
+class DataSourceRegistryHandlerTest extends EventloopTestBase {
 
     @Mock
     private DataCloudClient client;
@@ -58,7 +58,8 @@ class DataSourceRegistryHandlerTest {
             new ObjectMapper(),
             "*",
             "GET,POST,PUT,DELETE,OPTIONS",
-            "Content-Type,Authorization"
+            "Content-Type,Authorization",
+            true // strictTenantResolution — ensures missing X-Tenant-Id returns null (not a fallback)
         );
         handler = new DataSourceRegistryHandler(client, http, null);
         originalProfile = System.getenv("DATACLOUD_PROFILE");
@@ -76,16 +77,16 @@ class DataSourceRegistryHandlerTest {
     @Test
     @DisplayName("Fabric metrics disabled in production profile")
     void fabricMetricsDisabledInProductionProfile() {
-        // Set production profile
         System.setProperty("DATACLOUD_PROFILE", "production");
 
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics")
-            .withHeader("X-Tenant-Id", "test-tenant");
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        
+
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("disabled")).isEqualTo(true);
         assertThat(body.get("preview")).isEqualTo(true);
@@ -98,16 +99,16 @@ class DataSourceRegistryHandlerTest {
     @Test
     @DisplayName("Fabric metrics disabled in staging profile")
     void fabricMetricsDisabledInStagingProfile() {
-        // Set staging profile
         System.setProperty("DATACLOUD_PROFILE", "staging");
 
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics")
-            .withHeader("X-Tenant-Id", "test-tenant");
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        
+
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("disabled")).isEqualTo(true);
         assertThat(body.get("preview")).isEqualTo(true);
@@ -117,20 +118,19 @@ class DataSourceRegistryHandlerTest {
     @Test
     @DisplayName("Fabric metrics return empty when no storage profiles configured in local profile")
     void fabricMetricsEmptyWhenNoStorageProfilesInLocalProfile() {
-        // Set local profile (development)
         System.setProperty("DATACLOUD_PROFILE", "local");
 
-        // Mock empty query result
         lenient().when(client.query(anyString(), anyString(), any()))
-            .thenReturn(Promise.of(List.of()));
+            .thenReturn(io.activej.promise.Promise.of(List.of()));
 
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics")
-            .withHeader("X-Tenant-Id", "test-tenant");
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        
+
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("preview")).isEqualTo(true);
         assertThat(body.get("tiers")).isEqualTo(List.of());
@@ -138,13 +138,12 @@ class DataSourceRegistryHandlerTest {
         assertThat(body.get("totalStorageGb")).isEqualTo(0.0);
         assertThat(body.get("message")).isNotNull();
         // Should NOT have disabled flag in local profile
-        assertThat(body.containsKey("disabled")).isFalse();
+        assertThat(body.containsKey("disabled")).isEqualTo(false);
     }
 
     @Test
     @DisplayName("Fabric metrics return real data from storage profiles when configured")
     void fabricMetricsReturnRealDataFromStorageProfiles() {
-        // Set local profile (development)
         System.setProperty("DATACLOUD_PROFILE", "local");
 
         // Mock storage profile entities with real metrics
@@ -170,23 +169,24 @@ class DataSourceRegistryHandlerTest {
         ));
 
         lenient().when(client.query(anyString(), anyString(), any()))
-            .thenReturn(Promise.of(List.of(hotEntity, warmEntity)));
+            .thenReturn(io.activej.promise.Promise.of(List.of(hotEntity, warmEntity)));
 
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics")
-            .withHeader("X-Tenant-Id", "test-tenant");
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        
+
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("preview")).isEqualTo(true);
-        assertThat(body.get("disabled")).isFalse(); // Should not be disabled in local profile
-        
+        assertThat(body.containsKey("disabled")).isEqualTo(false);
+
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> tiers = (List<Map<String, Object>>) body.get("tiers");
         assertThat(tiers).hasSize(2);
-        
+
         // Verify HOT tier metrics
         Map<String, Object> hotTier = tiers.stream()
             .filter(t -> "HOT".equals(t.get("tier")))
@@ -195,7 +195,7 @@ class DataSourceRegistryHandlerTest {
         assertThat(hotTier.get("throughputEps")).isEqualTo(1500.0);
         assertThat(hotTier.get("latencyP99Ms")).isEqualTo(2.5);
         assertThat(hotTier.get("status")).isEqualTo("healthy");
-        
+
         // Verify WARM tier metrics
         Map<String, Object> warmTier = tiers.stream()
             .filter(t -> "WARM".equals(t.get("tier")))
@@ -203,7 +203,7 @@ class DataSourceRegistryHandlerTest {
             .orElseThrow();
         assertThat(warmTier.get("throughputEps")).isEqualTo(800.0);
         assertThat(warmTier.get("storageGb")).isEqualTo(50.0);
-        
+
         // Verify totals are calculated from real data
         assertThat(body.get("totalEventsPerSec")).isEqualTo(2300.0);
         assertThat(body.get("totalStorageGb")).isEqualTo(50.0);
@@ -212,10 +212,10 @@ class DataSourceRegistryHandlerTest {
     @Test
     @DisplayName("Fabric metrics require tenant ID header")
     void fabricMetricsRequireTenantId() {
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics");
-        // No X-Tenant-Id header
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(400);
     }
@@ -227,15 +227,17 @@ class DataSourceRegistryHandlerTest {
 
         // Mock query failure
         lenient().when(client.query(anyString(), anyString(), any()))
-            .thenReturn(Promise.ofException(new RuntimeException("Database connection failed")));
+            .thenReturn(io.activej.promise.Promise.ofException(
+                new RuntimeException("Database connection failed")));
 
-        HttpRequest request = HttpRequest.get("/api/v1/data-fabric/metrics")
-            .withHeader("X-Tenant-Id", "test-tenant");
+        HttpRequest request = HttpRequest.builder(HttpMethod.GET, "http://localhost/api/v1/data-fabric/metrics")
+            .withHeader(HttpHeaders.of("X-Tenant-Id"), "test-tenant")
+            .build();
 
-        HttpResponse response = handler.handleGetFabricMetrics(request).join();
+        HttpResponse response = runPromise(() -> handler.handleGetFabricMetrics(request));
 
         assertThat(response.getCode()).isEqualTo(200);
-        
+
         Map<String, Object> body = parseJsonBody(response);
         assertThat(body.get("preview")).isEqualTo(true);
         assertThat(body.get("degraded")).isEqualTo(true);
@@ -248,8 +250,9 @@ class DataSourceRegistryHandlerTest {
     @SuppressWarnings("unchecked")
     private Map<String, Object> parseJsonBody(HttpResponse response) {
         try {
-            String body = response.loadBody().get().asString();
-            return http.objectMapper().readValue(body, Map.class);
+            String bodyStr = runPromise(() ->
+                response.loadBody().map(buf -> buf.getString(java.nio.charset.StandardCharsets.UTF_8)));
+            return http.objectMapper().readValue(bodyStr, Map.class);
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse JSON response", e);
         }
@@ -260,58 +263,5 @@ class DataSourceRegistryHandlerTest {
         lenient().when(entity.id()).thenReturn(id);
         lenient().when(entity.data()).thenReturn(data);
         return entity;
-    }
-
-    // Simple Promise implementation for testing
-    private static class Promise<T> {
-        private final T value;
-        private final Throwable error;
-
-        private Promise(T value) {
-            this.value = value;
-            this.error = null;
-        }
-
-        private Promise(Throwable error) {
-            this.value = null;
-            this.error = error;
-        }
-
-        static <T> Promise<T> of(T value) {
-            return new Promise<>(value);
-        }
-
-        static <T> Promise<T> ofException(Throwable error) {
-            return new Promise<>(error);
-        }
-
-        T join() {
-            if (error != null) {
-                throw new RuntimeException(error);
-            }
-            return value;
-        }
-
-        <R> Promise<R> map(java.util.function.Function<T, R> mapper) {
-            if (error != null) {
-                return new Promise<>(error);
-            }
-            try {
-                return new Promise<>(mapper.apply(value));
-            } catch (Exception e) {
-                return new Promise<>(e);
-            }
-        }
-
-        <R> Promise<R> then(java.util.function.Function<T, Promise<R>> mapper) {
-            if (error != null) {
-                return new Promise<>(error);
-            }
-            try {
-                return mapper.apply(value);
-            } catch (Exception e) {
-                return new Promise<>(e);
-            }
-        }
     }
 }

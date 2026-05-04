@@ -36,7 +36,6 @@ public class AnalyticsHandler {
     // P2-PERF-1: Performance limits to prevent resource exhaustion
     private static final int DEFAULT_ROW_LIMIT = 10000;
     private static final int MAX_ROW_LIMIT = 50000;
-    private static final int STREAMING_THRESHOLD = 1000;
     private static final long QUERY_TIMEOUT_MS = 300000; // 5 minutes
 
     private final AnalyticsQueryEngine analyticsEngine;
@@ -82,49 +81,50 @@ public class AnalyticsHandler {
         String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
         
-        // P2-PERF-1: Enforce query timeout
-        return Promise.ofBlocking(http.blockingExecutor(), () -> {
-            // Apply timeout to prevent long-running queries
-            return request.loadBody().then(buf -> {
-                try {
-                    String body = buf.getString(StandardCharsets.UTF_8);
-                    Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                    String queryText = (String) payload.get("query");
-                    if (queryText == null || queryText.isBlank()) {
-                        return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
-                    }
-                    
-                    // P2-PERF-1: Parse and enforce row limit from request
-                    int rowLimit = DEFAULT_ROW_LIMIT;
-                    if (payload.containsKey("limit")) {
-                        try {
-                            int requestedLimit = ((Number) payload.get("limit")).intValue();
-                            rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
-                        } catch (Exception e) {
-                            log.warn("[P2-PERF-1] Invalid limit parameter, using default: {}", e.getMessage());
+        return request.loadBody()
+            .then(
+                buf -> {
+                    String body;
+                    Map<String, Object> payload;
+                    String queryText;
+                    int rowLimit;
+                    Map<String, Object> paramsWithLimit;
+                    try {
+                        body = buf.getString(StandardCharsets.UTF_8);
+                        payload = http.objectMapper().readValue(body, Map.class);
+                        queryText = (String) payload.get("query");
+                        if (queryText == null || queryText.isBlank()) {
+                            return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
                         }
+                        rowLimit = DEFAULT_ROW_LIMIT;
+                        if (payload.containsKey("limit")) {
+                            try {
+                                int requestedLimit = ((Number) payload.get("limit")).intValue();
+                                rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
+                            } catch (Exception e) {
+                                log.warn("[P2-PERF-1] Invalid limit parameter, using default: {}", e.getMessage());
+                            }
+                        }
+                        Map<String, Object> params = payload.containsKey("parameters")
+                            ? (Map<String, Object>) payload.get("parameters")
+                            : Map.of();
+                        paramsWithLimit = new LinkedHashMap<>(params);
+                        paramsWithLimit.put("_rowLimit", rowLimit);
+                    } catch (Exception e) {
+                        log.error("[DC-9] analytics query request parse error traceId={}: {}", traceId, e.getMessage(), e);
+                        return Promise.of(http.errorResponse(400, "Invalid request body"));
                     }
-                    
-                    Map<String, Object> params = payload.containsKey("parameters")
-                        ? (Map<String, Object>) payload.get("parameters")
-                        : Map.of();
-                    
-                    // P2-PERF-1: Add limit to params for query engine
-                    Map<String, Object> paramsWithLimit = new LinkedHashMap<>(params);
-                    paramsWithLimit.put("_rowLimit", rowLimit);
-                    
+                    final int finalRowLimit = rowLimit;
                     return analyticsEngine.submitQuery(tenantId, queryText, paramsWithLimit)
                         .map(result -> {
-                            // P2-PERF-1: Enforce row limit on results
                             List<Map<String, Object>> rows = result.getRows();
                             int rowCount = rows.size();
-                            boolean truncated = rowCount >= rowLimit;
-                            
+                            int totalRows = result.getTotalRows();
+                            boolean truncated = totalRows > rowCount;
                             if (truncated) {
-                                log.info("[P2-PERF-1] Query result truncated to {} rows (limit: {}) for tenant: {}", 
-                                    rowCount, rowLimit, tenantId);
+                                log.info("[P2-PERF-1] Query result truncated to {} rows (limit: {}) for tenant={} traceId={}",
+                                    rowCount, finalRowLimit, tenantId, traceId);
                             }
-                            
                             Map<String, Object> responseBody = new LinkedHashMap<>();
                             responseBody.put("queryId",         result.getQueryId());
                             responseBody.put("queryType",       result.getQueryType());
@@ -134,37 +134,28 @@ public class AnalyticsHandler {
                             responseBody.put("executionTimeMs", result.getExecutionTimeMs());
                             responseBody.put("optimized",       result.isOptimized());
                             responseBody.put("timestamp",       Instant.now().toString());
-                            responseBody.put("limit",          rowLimit);
+                            responseBody.put("traceId",         traceId);
+                            responseBody.put("limit",           finalRowLimit);
                             responseBody.put("truncated",       truncated);
-                            // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
-                            
-                            // P2-PERF-1: Use streaming response for large result sets
-                            HttpResponse response;
-                            if (rowCount >= STREAMING_THRESHOLD) {
-                                response = http.jsonResponse(responseBody); // FIXME: jsonStreamingResponse not implemented
-                                log.debug("[P2-PERF-1] Using streaming response for large result set: {} rows", rowCount);
-                            } else {
-                                response = http.jsonResponse(responseBody);
-                            }
-                            
+                            HttpResponse response = http.jsonResponse(responseBody);
                             httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
                             httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
                             return response;
                         })
                         .then(
-                            response -> Promise.of(response),
+                            Promise::of,
                             e -> {
-                                log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
+                                log.error("[DC-9] analytics query execution failed traceId={}: {}", traceId, e.getMessage(), e);
                                 httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsQuery", e);
-                                return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
+                                return Promise.of(http.errorResponse(500, "Query execution failed"));
                             }
                         );
-                } catch (Exception e) {
-                    log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
-                    return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
+                },
+                e -> {
+                    log.error("[DC-9] analytics query body load failed traceId={}: {}", traceId, e.getMessage(), e);
+                    return Promise.of(http.errorResponse(400, "Failed to read request body"));
                 }
-            });
-        });
+            );
     }
 
     public Promise<HttpResponse> handleAnalyticsGetResult(HttpRequest request) {
@@ -187,6 +178,7 @@ public class AnalyticsHandler {
                 log.warn("[P2-PERF-1] Invalid limit parameter in request: {}", limitParam);
             }
         }
+        final int finalRowLimit = rowLimit;
         
         return analyticsEngine.getResult(queryId)
             .map(result -> {
@@ -194,16 +186,14 @@ public class AnalyticsHandler {
                     return http.errorResponse(404, "No result found for queryId: " + queryId);
                 }
                 
-                // P2-PERF-1: Enforce row limit on result retrieval
                 List<Map<String, Object>> rows = result.getRows();
-                int rowCount = Math.min(rows.size(), rowLimit);
-                boolean truncated = rows.size() > rowLimit;
-                
+                int rowCount = Math.min(rows.size(), finalRowLimit);
+                int totalRows = result.getTotalRows();
+                boolean truncated = totalRows > rowCount || rows.size() > finalRowLimit;
                 if (truncated) {
-                    log.info("[P2-PERF-1] Result retrieval truncated to {} rows (limit: {}) for queryId: {}", 
-                        rowCount, rowLimit, queryId);
+                    log.info("[P2-PERF-1] Result retrieval truncated to {} rows (limit: {}) for queryId={}",
+                        rowCount, finalRowLimit, queryId);
                 }
-                
                 Map<String, Object> responseBody = new LinkedHashMap<>();
                 responseBody.put("queryId",         result.getQueryId());
                 responseBody.put("queryType",       result.getQueryType());
@@ -213,26 +203,16 @@ public class AnalyticsHandler {
                 responseBody.put("executionTimeMs", result.getExecutionTimeMs());
                 responseBody.put("optimized",       result.isOptimized());
                 responseBody.put("timestamp",       Instant.now().toString());
-                responseBody.put("limit",          rowLimit);
+                responseBody.put("traceId",         traceId);
+                responseBody.put("limit",           finalRowLimit);
                 responseBody.put("truncated",       truncated);
-                // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
-                
-                // P2-PERF-1: Use streaming response for large result sets
-                HttpResponse response;
-                if (rowCount >= STREAMING_THRESHOLD) {
-                    response = http.jsonResponse(responseBody); // FIXME: jsonStreamingResponse not implemented
-                    log.debug("[P2-PERF-1] Using streaming response for large result retrieval: {} rows", rowCount);
-                } else {
-                    response = http.jsonResponse(responseBody);
-                }
-                
-                return response;
+                return http.jsonResponse(responseBody);
             })
             .then(
-                response -> Promise.of(response),
+                Promise::of,
                 e -> {
                     log.error("[DC-9] analytics getResult failed queryId={}: {}", queryId, e.getMessage(), e);
-                    return Promise.of(http.errorResponse(500, "Failed to retrieve result: " + e.getMessage()));
+                    return Promise.of(http.errorResponse(500, "Failed to retrieve result"));
                 }
             );
     }
@@ -257,14 +237,14 @@ public class AnalyticsHandler {
                 Map<String, Object> planFields = http.objectMapper().convertValue(plan, Map.class);
                 response.putAll(planFields);
                 response.put("timestamp", Instant.now().toString());
-                // enrichWithBrokerContract(response, traceId, 0); // FIXME: Not implemented
-                return Promise.of(http.jsonResponse(response));
+                response.put("traceId", traceId);
+                return http.jsonResponse(response);
             })
             .then(
-                response -> Promise.of(response),
+                Promise::of,
                 e -> {
                     log.error("[DC-9] analytics getPlan failed queryId={}: {}", queryId, e.getMessage(), e);
-                    return Promise.of(http.errorResponse(500, "Failed to retrieve plan: " + e.getMessage()));
+                    return Promise.of(http.errorResponse(500, "Failed to retrieve query plan"));
                 }
             );
     }
@@ -312,28 +292,28 @@ public class AnalyticsHandler {
                                 responseBody.put("executionTimeMs", result.getExecutionTimeMs());
                                 responseBody.put("optimized",       result.isOptimized());
                                 responseBody.put("timestamp",       Instant.now().toString());
-                                // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
+                                responseBody.put("traceId",         traceId);
                                 HttpResponse response = http.jsonResponse(responseBody);
                                 httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsAggregate", tenantId, response.getCode());
                                 httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsAggregate", System.currentTimeMillis() - start);
                                 return response;
                             })
                             .then(
-                                response -> Promise.of(response),
+                                Promise::of,
                                 e -> {
                                     log.error("[DC-9] analytics aggregate failed: {}", e.getMessage(), e);
                                     httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsAggregate", e);
-                                    return Promise.of(http.errorResponse(500, "Aggregate query failed: " + e.getMessage()));
+                                    return Promise.of(http.errorResponse(500, "Aggregate query failed"));
                                 }
                             );
                     } catch (Exception e) {
                         log.error("[DC-9] analytics aggregate request parse error: {}", e.getMessage(), e);
-                        return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
+                        return Promise.of(http.errorResponse(400, "Invalid request body"));
                     }
                 },
                 e -> {
                     log.error("[DC-9] analytics aggregate body load error: {}", e.getMessage(), e);
-                    return Promise.of(http.errorResponse(400, "Failed to read request body: " + e.getMessage()));
+                    return Promise.of(http.errorResponse(400, "Failed to read request body"));
                 }
             );
     }
@@ -380,16 +360,16 @@ public class AnalyticsHandler {
                             Map<String, Object> response = new LinkedHashMap<>(planFields);
                             response.put("explain", true);
                             response.put("timestamp", Instant.now().toString());
+                            response.put("traceId", http.resolveCorrelationId(request));
                             return http.jsonResponse(response);
                         })
                         .then(Promise::of, e -> {
                             log.error("[DC-9] analytics explain failed: {}", e.getMessage(), e);
-                            return Promise.of(http.errorResponse(500,
-                                    "Explain failed: " + e.getMessage()));
+                            return Promise.of(http.errorResponse(500, "Explain query failed"));
                         });
             } catch (Exception e) {
                 log.error("[DC-9] analytics explain parse error: {}", e.getMessage(), e);
-                return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
+                return Promise.of(http.errorResponse(400, "Invalid request body"));
             }
         });
     }
@@ -408,7 +388,8 @@ public class AnalyticsHandler {
                     try {
                         definition = ReportDefinition.fromMap(payload);
                     } catch (IllegalArgumentException e) {
-                        return Promise.of(http.errorResponse(400, "Invalid report definition: " + e.getMessage()));
+                        log.warn("[DC-10] invalid report definition: {}", e.getMessage());
+                        return Promise.of(http.errorResponse(400, "Invalid report definition"));
                     }
                     String tenantId = http.requireTenantIdOrFail(request);
                     if (tenantId == null) {
@@ -434,16 +415,16 @@ public class AnalyticsHandler {
                         .then(Promise::of, e -> {
                             log.error("[DC-10] report generation failed name='{}': {}",
                                     definition.getName(), e.getMessage(), e);
-                            return Promise.of(http.errorResponse(500, "Report generation failed: " + e.getMessage()));
+                            return Promise.of(http.errorResponse(500, "Report generation failed"));
                         });
                 } catch (Exception e) {
                     log.error("[DC-10] report request parse error: {}", e.getMessage(), e);
-                    return Promise.of(http.errorResponse(400, "Invalid request body: " + e.getMessage()));
+                    return Promise.of(http.errorResponse(400, "Invalid request body"));
                 }
             })
             .then(Promise::of, e -> {
                 log.error("[DC-10] report body load error: {}", e.getMessage(), e);
-                return Promise.of(http.errorResponse(400, "Failed to read request body: " + e.getMessage()));
+                return Promise.of(http.errorResponse(400, "Failed to read request body"));
             });
     }
 
@@ -519,4 +500,5 @@ public class AnalyticsHandler {
             }
         };
     }
+
 }

@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":products:digital-marketing:dm-persistence"))
     implementation(project(":products:digital-marketing:dm-kernel-bridge"))
     implementation(project(":products:digital-marketing:dm-infra"))
+    implementation(project(":products:digital-marketing:dm-connector-google-ads"))
 
     // Platform plugins for production-grade implementations
     implementation(project(":platform-plugins:plugin-consent"))

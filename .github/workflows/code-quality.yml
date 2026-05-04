@@ -128,9 +128,19 @@ jobs:
             libs/java/platform-architecture-tests/build/reports/tests/**/*
           retention-days: 7
 
+  production-placeholder-scan:
+    name: Production Placeholder Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Scan for TODO/FIXME/stub markers in production code
+        run: |
+          chmod +x scripts/scan-production-placeholders.sh
+          ./scripts/scan-production-placeholders.sh
+
   quality-gate:
     name: Quality Gate
-    needs: [checkstyle, spotbugs, pmd, architecture-tests]
+    needs: [checkstyle, spotbugs, pmd, architecture-tests, production-placeholder-scan]
     runs-on: ubuntu-latest
     steps:
       - name: All quality checks passed

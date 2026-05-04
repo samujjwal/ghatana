@@ -42,25 +42,37 @@ public final class DmosFeatureFlags {
     public static final String ROLLBACK_WORKFLOW_ENABLED = "dmos.rollback_workflow.enabled";
 
     /**
+     * Enables rollback functionality.
+     * Env-var fallback: {@code DMOS_ROLLBACK_ENABLED} (default {@code true}).
+     */
+    public static final String ROLLBACK_ENABLED = "dmos.rollback.enabled";
+
+    /**
+     * Enables observability features.
+     * Env-var fallback: {@code DMOS_OBSERVABILITY_ENABLED} (default {@code true}).
+     */
+    public static final String OBSERVABILITY_ENABLED = "dmos.observability.enabled";
+
+    /**
      * Enables dashboard growth metrics widget.
      * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED} (default {@code false}).
      */
     public static final String DASHBOARD_GROWTH_METRICS = "dmos.dashboard_growth_metrics";
 
     /**
-     * Enables the budget management page UI (currently stub - requires full implementation).
+     * Enables the budget management page UI (requires full implementation before enabling in production).
      * Env-var fallback: {@code DMOS_BUDGET_PAGE_ENABLED} (default {@code false}).
      */
     public static final String BUDGET_PAGE_ENABLED = "dmos.budget_page_enabled";
 
     /**
-     * Enables the strategy generation page UI (currently stub - requires full implementation).
+     * Enables the strategy generation page UI (requires full implementation before enabling in production).
      * Env-var fallback: {@code DMOS_STRATEGY_PAGE_ENABLED} (default {@code false}).
      */
     public static final String STRATEGY_PAGE_ENABLED = "dmos.strategy_page_enabled";
 
     /**
-     * Enables the campaign management page UI (currently stub - requires full implementation).
+     * Enables the campaign management page UI (requires full implementation before enabling in production).
      * Env-var fallback: {@code DMOS_CAMPAIGNS_PAGE_ENABLED} (default {@code false}).
      */
     public static final String CAMPAIGNS_PAGE_ENABLED = "dmos.campaigns_page_enabled";

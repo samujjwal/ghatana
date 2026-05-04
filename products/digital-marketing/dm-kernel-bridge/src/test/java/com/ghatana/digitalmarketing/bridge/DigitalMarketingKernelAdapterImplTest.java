@@ -21,6 +21,7 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
     private InMemoryApprovalPlugin approvalPlugin;
     private InMemoryAuditTrailPlugin auditTrailPlugin;
     private InMemoryRiskManagementPlugin riskManagementPlugin;
+    private InMemoryNotificationPlugin notificationPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private static final DmTenantId TENANT = DmTenantId.of("acme-corp");
@@ -66,6 +68,7 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         approvalPlugin = new InMemoryApprovalPlugin();
         auditTrailPlugin = new InMemoryAuditTrailPlugin();
         riskManagementPlugin = new InMemoryRiskManagementPlugin();
+        notificationPlugin = new InMemoryNotificationPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -74,7 +77,8 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
             consentPlugin,
             approvalPlugin,
             auditTrailPlugin,
-            riskManagementPlugin
+            riskManagementPlugin,
+            notificationPlugin
         );
 
         ctx = DmOperationContext.builder()
@@ -210,34 +214,34 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 null, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
-                riskManagementPlugin
+                riskManagementPlugin, notificationPlugin
             ));
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, null, approvalPlugin, auditTrailPlugin,
-                riskManagementPlugin
+                riskManagementPlugin, notificationPlugin
             ))
             .withMessageContaining("consentPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, null, auditTrailPlugin,
-                riskManagementPlugin
+                riskManagementPlugin, notificationPlugin
             ))
             .withMessageContaining("approvalPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, null,
-                riskManagementPlugin
+                riskManagementPlugin, notificationPlugin
             ))
             .withMessageContaining("auditTrailPlugin");
 
         assertThatNullPointerException()
             .isThrownBy(() -> new DigitalMarketingKernelAdapterImpl(
                 authService, auditEmitter, healthIndicator, consentPlugin, approvalPlugin, auditTrailPlugin,
-                null
+                null, notificationPlugin
             ))
             .withMessageContaining("riskManagementPlugin");
     }
@@ -568,6 +572,67 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
             return PluginMetadata.builder()
                 .id("dm-audit-test-plugin")
                 .name("DM Audit Test Plugin")
+                .type(PluginType.CUSTOM)
+                .build();
+        }
+
+        @Override
+        public PluginState getState() {
+            return PluginState.RUNNING;
+        }
+
+        @Override
+        public Promise<Void> initialize(PluginContext context) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> start() {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> stop() {
+            return Promise.of(null);
+        }
+    }
+
+    private static final class InMemoryNotificationPlugin implements NotificationPlugin {
+
+        @Override
+        public Promise<String> dispatch(String recipientId, String template, Map<String, String> attributes) {
+            return Promise.of(java.util.UUID.randomUUID().toString());
+        }
+
+        @Override
+        public Promise<NotificationPlugin.DeliveryStatus> getDeliveryStatus(String notificationId) {
+            return Promise.of(new NotificationPlugin.DeliveryStatus(
+                notificationId, "recipient", "template",
+                NotificationPlugin.DeliveryState.DELIVERED, 1,
+                java.time.Instant.now(), null, java.time.Instant.now()
+            ));
+        }
+
+        @Override
+        public Promise<Void> retry(String notificationId) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<java.util.List<NotificationPlugin.DeadLetterEntry>> listDeadLetterQueue(int limit, int offset) {
+            return Promise.of(java.util.List.of());
+        }
+
+        @Override
+        public Promise<Void> reprocessDeadLetter(String notificationId) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder()
+                .id("dm-notification-test-plugin")
+                .name("DM Notification Test Plugin")
                 .type(PluginType.CUSTOM)
                 .build();
         }

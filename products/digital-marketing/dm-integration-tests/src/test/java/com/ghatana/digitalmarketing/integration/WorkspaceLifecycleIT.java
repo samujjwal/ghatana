@@ -24,6 +24,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
+import org.postgresql.ds.PGSimpleDataSource;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -42,7 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  *
  * <p>P1: PostgreSQL integration test configuration.</p>
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("Workspace Lifecycle Integration (PostgreSQL)")
 class WorkspaceLifecycleIT extends EventloopTestBase {
 

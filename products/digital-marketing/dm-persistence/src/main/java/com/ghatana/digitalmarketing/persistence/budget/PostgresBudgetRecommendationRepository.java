@@ -60,6 +60,13 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
         "FROM dmos_budget_recommendations " +
         "WHERE recommendation_id = ? AND workspace_id = ?";
 
+    private static final String SELECT_BY_RECOMMENDATION_ID_ONLY_SQL =
+        "SELECT recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
+        "       risk_level, rationale, assumptions, model_version, generated_at, generated_by " +
+        "FROM dmos_budget_recommendations " +
+        "WHERE recommendation_id = ? " +
+        "LIMIT 1";
+
     private static final String SELECT_LATEST_BY_WORKSPACE_SQL =
         "SELECT recommendation_id, workspace_id, monthly_budget, channel_split, daily_caps, " +
         "       risk_level, rationale, assumptions, model_version, generated_at, generated_by " +
@@ -133,14 +140,12 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
     }
 
     @Override
-    public Promise<Optional<BudgetRecommendation>> findById(DmWorkspaceId workspaceId, String recommendationId) {
-        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+    public Promise<Optional<BudgetRecommendation>> findById(String recommendationId) {
         Objects.requireNonNull(recommendationId, "recommendationId must not be null");
         return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection();
-                 PreparedStatement stmt = conn.prepareStatement(SELECT_BY_ID_SQL)) {
+                 PreparedStatement stmt = conn.prepareStatement(SELECT_BY_RECOMMENDATION_ID_ONLY_SQL)) {
                 stmt.setString(1, recommendationId);
-                stmt.setString(2, workspaceId.getValue());
                 try (ResultSet rs = stmt.executeQuery()) {
                     if (rs.next()) {
                         return Optional.of(mapRow(rs));
@@ -148,8 +153,8 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
                     return Optional.empty();
                 }
             } catch (SQLException e) {
-                LOG.error("[DMOS-PERSIST] failed to find recommendation id={} workspace={}: {}",
-                    recommendationId, workspaceId.getValue(), e.getMessage(), e);
+                LOG.error("[DMOS-PERSIST] failed to find recommendation id={}: {}",
+                    recommendationId, e.getMessage(), e);
                 throw new DmPersistenceException("Failed to find budget recommendation: " + recommendationId, e);
             }
         });
@@ -186,12 +191,15 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
         for (Object item : rawList) {
             if (item instanceof java.util.Map<?, ?>) {
                 java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
-                allocations.add(new BudgetChannelAllocation(
-                    (String) map.get("channel"),
-                    ((Number) map.get("allocationPct")).doubleValue(),
-                    ((Number) map.get("monthlyBudget")).doubleValue(),
-                    ((Number) map.get("dailyCap")).doubleValue()
-                ));
+                String channelTypeRaw = (String) map.get("channelType");
+                String channelType = channelTypeRaw != null ? channelTypeRaw : (String) map.get("channel");
+                double recommendedAmount = map.get("recommendedAmount") != null
+                    ? ((Number) map.get("recommendedAmount")).doubleValue()
+                    : map.get("allocationPct") != null ? ((Number) map.get("allocationPct")).doubleValue() : 0.0;
+                double dailyCap = map.get("dailyCap") != null ? ((Number) map.get("dailyCap")).doubleValue() : 0.0;
+                String rationaleRaw = (String) map.get("rationale");
+                String rationale = rationaleRaw != null ? rationaleRaw : "";
+                allocations.add(new BudgetChannelAllocation(channelType != null ? channelType : "unknown", recommendedAmount, dailyCap, rationale));
             }
         }
         return List.copyOf(allocations);
@@ -200,7 +208,7 @@ public final class PostgresBudgetRecommendationRepository implements BudgetRecom
     private static java.util.Map<String, Object> buildDailyCapsMap(BudgetRecommendation recommendation) {
         java.util.Map<String, Object> dailyCaps = new java.util.HashMap<>();
         for (BudgetChannelAllocation allocation : recommendation.getChannelAllocations()) {
-            dailyCaps.put(allocation.channel(), allocation.dailyCap());
+            dailyCaps.put(allocation.channelType(), allocation.dailyCap());
         }
         return dailyCaps;
     }

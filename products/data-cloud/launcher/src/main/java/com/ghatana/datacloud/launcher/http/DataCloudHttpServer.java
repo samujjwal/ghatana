@@ -647,7 +647,7 @@ public class DataCloudHttpServer {
      * Attaches a persistent {@link SettingsStore} for admin settings (DC-S14).
      *
      * <p>When not called, an {@link InMemorySettingsStore} is used. Production
-     * deployments should provide a {@link JdbcSettingsStore} backed by a
+     * deployments should provide a persistent {@code JdbcSettingsStore} backed by a
      * real JDBC {@link javax.sql.DataSource}.
      *
      * @param store the settings store implementation; must not be {@code null}
@@ -764,6 +764,25 @@ public class DataCloudHttpServer {
      */
     public DataCloudHttpServer withApiKeyResolver(ApiKeyResolver resolver) {
         this.apiKeyResolver = resolver;
+        return this;
+    }
+
+    /**
+     * Attaches a {@link DataCloudRuntimePluginManager} to enable runtime plugin management.
+     *
+     * <p>An externally-created plugin manager can be wired in for testing, or to share a
+     * plugin manager between multiple subsystems. When this method is not called, the server
+     * creates and owns its own plugin manager during {@link #start()}.
+     *
+     * @param pluginManager the runtime plugin manager to attach; must not be {@code null}
+     * @return {@code this} for method chaining
+     * @doc.type method
+     * @doc.purpose Wire an external runtime plugin manager into the server
+     * @doc.layer product
+     * @doc.pattern Builder
+     */
+    public DataCloudHttpServer withPluginManager(DataCloudRuntimePluginManager pluginManager) {
+        this.runtimePluginManager = pluginManager;
         return this;
     }
 
@@ -1124,7 +1143,9 @@ public class DataCloudHttpServer {
         pipelineCheckpointHandler = new PipelineCheckpointHandler(client, httpSupport);
         workflowExecutionHandler = new WorkflowExecutionHandler(client, httpSupport);
         alertingHandler = new AlertingHandler(client, httpSupport).withAutonomyController(autonomyController);
-        runtimePluginManager = new DataCloudRuntimePluginManager();
+        if (runtimePluginManager == null) {
+            runtimePluginManager = new DataCloudRuntimePluginManager();
+        }
         try {
             runtimePluginManager.registerBuiltInPlugins();
             log.info("[DC-AUD-005] Built-in OOB plugins registered: entity-storage, event-log, semantic-search, lineage, notifications, brain, learning, autonomy");
@@ -1677,8 +1698,7 @@ public class DataCloudHttpServer {
      *
      * <p>Responds to OPTIONS preflight requests immediately with the CORS policy headers.
      * All other requests are forwarded to the delegate unchanged; individual response
-     * builders are responsible for adding CORS headers via {@link #jsonResponse} /
-     * {@link #errorResponse}.
+     * builders are responsible for adding CORS headers via the JSON response helpers.
      *
      * @param delegate the upstream servlet to forward non-OPTIONS requests to
      * @return CORS-filtered servlet

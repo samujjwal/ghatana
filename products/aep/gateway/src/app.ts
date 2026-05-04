@@ -65,9 +65,11 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
 
   // ── Authentication preHandler ────────────────────────────────────────────────
   async function authenticate(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const correlationId = resolveCorrelationId(request);
     const token = extractBearerToken(request.headers.authorization);
     if (!token) {
-      void reply.status(401).send({ error: 'Unauthorized', message: 'Missing Bearer token' });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      void reply.status(401).send({ error: 'Unauthorized', message: 'Missing Bearer token', correlationId });
       return;
     }
     try {
@@ -75,16 +77,19 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       const headerTenantId = extractHeaderTenantId(request.headers['x-tenant-id']);
       const payloadTenantId = extractPayloadTenantId(payload);
       if (headerTenantId && payloadTenantId && headerTenantId !== payloadTenantId) {
+        reply.header(CORRELATION_ID_HEADER, correlationId);
         void reply.status(403).send({
           error: 'Forbidden',
           message: 'Tenant mismatch between X-Tenant-Id header and JWT payload',
+          correlationId,
         });
         return;
       }
       (request as FastifyRequest & { user: JwtPayload }).user = payload;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Invalid token';
-      void reply.status(401).send({ error: 'Unauthorized', message: msg });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      void reply.status(401).send({ error: 'Unauthorized', message: msg, correlationId });
     }
   }
 
@@ -161,7 +166,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       backendRes = await fetch(targetUrl, { method, headers: proxyHeaders, body });
     } catch (err: unknown) {
       fastify.log.error(err, `Backend unreachable at ${targetUrl}`);
-      return reply.status(502).send({ error: 'Bad Gateway', message: 'AEP backend unreachable' });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      return reply.status(502).send({ error: 'Bad Gateway', message: 'AEP backend unreachable', correlationId });
     }
 
     reply.status(backendRes.status);
@@ -173,15 +179,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
 
   // ── SSE event stream proxy (canonical path: /events/stream) ──────────────────
   fastify.get('/events/stream', async (request, reply) => {
+    const correlationId = resolveCorrelationId(request);
     const token = extractBearerToken(request.headers.authorization) ?? (request.query as Record<string, string>)['token'] ?? null;
     if (!token) {
-      return reply.status(401).send({ error: 'Authentication required' });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      return reply.status(401).send({ error: 'Authentication required', correlationId });
     }
     let payload: JwtPayload;
     try {
       payload = verifyJwt(token, config.jwtSecret);
     } catch {
-      return reply.status(403).send({ error: 'Invalid or expired token' });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      return reply.status(403).send({ error: 'Invalid or expired token', correlationId });
     }
 
     const query = request.query as Record<string, string>;
@@ -190,16 +199,17 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       : null;
     const jwtTenantId = extractPayloadTenantId(payload);
     if (queryTenantId && jwtTenantId && queryTenantId !== jwtTenantId) {
+      reply.header(CORRELATION_ID_HEADER, correlationId);
       return reply.status(403).send({
         error: 'Forbidden',
         message: 'Tenant mismatch between tenantId query parameter and JWT payload',
+        correlationId,
       });
     }
 
     const params = new URLSearchParams();
     const effectiveTenantId = jwtTenantId ?? queryTenantId;
     if (effectiveTenantId) params.set('tenantId', effectiveTenantId);
-    const correlationId = resolveCorrelationId(request);
 
     const backendUrl = `${config.backendUrl}/events/stream?${params.toString()}`;
     const backendRes = await fetch(backendUrl, {
@@ -211,7 +221,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
     }).catch(() => null);
 
     if (!backendRes || !backendRes.ok || !backendRes.body) {
-      return reply.status(502).send({ error: 'Bad Gateway', message: 'SSE backend unreachable' });
+      reply.header(CORRELATION_ID_HEADER, correlationId);
+      return reply.status(502).send({ error: 'Bad Gateway', message: 'SSE backend unreachable', correlationId });
     }
 
     reply.raw.writeHead(200, {
@@ -259,7 +270,10 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
         return;
       }
 
-      const correlationId = resolveCorrelationId(req);
+      const correlationId =
+        extractCorrelationId(req.headers[CORRELATION_ID_HEADER]) ??
+        extractCorrelationId((req.query as Record<string, string>)['correlationId']) ??
+        randomUUID();
       const tenantId = extractPayloadTenantId(payload) ?? extractHeaderTenantId(req.headers['x-tenant-id']);
 
       const backendWsUrl = config.backendUrl.replace(/^http/, 'ws') + '/api/v1/tail/events';
@@ -275,6 +289,18 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
 
       const backendWs = new WebSocket(backendWsUrl, { headers: backendHeaders });
 
+      // Buffer messages from the client until the backend WS is open.
+      // Without this, messages sent before the backend handshake completes are silently dropped.
+      const pendingClientMessages: string[] = [];
+
+      backendWs.on('open', () => {
+        for (const msg of pendingClientMessages) {
+          if (backendWs.readyState === WebSocket.OPEN) {
+            backendWs.send(msg);
+          }
+        }
+        pendingClientMessages.length = 0;
+      });
       backendWs.on('message', (data) => {
         if (clientSocket.readyState === WebSocket.OPEN) {
           clientSocket.send(data.toString());
@@ -293,6 +319,8 @@ export async function buildApp(config: GatewayConfig): Promise<FastifyInstance> 
       clientSocket.on('message', (msg) => {
         if (backendWs.readyState === WebSocket.OPEN) {
           backendWs.send(msg.toString());
+        } else {
+          pendingClientMessages.push(msg.toString());
         }
       });
       clientSocket.on('close', () => {

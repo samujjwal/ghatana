@@ -148,6 +148,8 @@ describe('Authentication', () => {
     const res = await app.inject({ method: 'GET', url: '/api/v1/events' });
     expect(res.statusCode).toBe(401);
     expect(res.json().message).toBe('Missing Bearer token');
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
   });
 
   it('rejects requests with invalid token', async () => {
@@ -158,6 +160,8 @@ describe('Authentication', () => {
       headers: { authorization: `Bearer ${token}` },
     });
     expect(res.statusCode).toBe(401);
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
   });
 
   it('rejects expired tokens', async () => {
@@ -169,6 +173,7 @@ describe('Authentication', () => {
     });
     expect(res.statusCode).toBe(401);
     expect(res.json().message).toBe('JWT has expired');
+    expect(res.headers['x-correlation-id']).toBeDefined();
   });
 
   it('rejects tenant mismatch between JWT and X-Tenant-Id header', async () => {
@@ -183,6 +188,19 @@ describe('Authentication', () => {
     });
     expect(res.statusCode).toBe(403);
     expect(res.json().message).toBe('Tenant mismatch between X-Tenant-Id header and JWT payload');
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
+  });
+
+  it('preserves inbound correlation ID in auth error responses', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/v1/events',
+      headers: { 'x-correlation-id': 'corr-auth-999' },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(res.headers['x-correlation-id']).toBe('corr-auth-999');
+    expect(res.json().correlationId).toBe('corr-auth-999');
   });
 });
 
@@ -491,7 +509,9 @@ describe('SSE /events/stream tenant handling', () => {
     });
 
     expect(res.statusCode).toBe(401);
-    expect(res.json()).toEqual({ error: 'Authentication required' });
+    expect(res.json()).toMatchObject({ error: 'Authentication required' });
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
     expect(lastSseRequestUrl).toBeUndefined();
   });
 
@@ -503,7 +523,9 @@ describe('SSE /events/stream tenant handling', () => {
     });
 
     expect(res.statusCode).toBe(403);
-    expect(res.json()).toEqual({ error: 'Invalid or expired token' });
+    expect(res.json()).toMatchObject({ error: 'Invalid or expired token' });
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
     expect(lastSseRequestUrl).toBeUndefined();
   });
 
@@ -539,7 +561,9 @@ describe('SSE /events/stream tenant handling', () => {
     });
 
     expect(res.statusCode).toBe(502);
-    expect(res.json()).toEqual({ error: 'Bad Gateway', message: 'SSE backend unreachable' });
+    expect(res.json()).toMatchObject({ error: 'Bad Gateway', message: 'SSE backend unreachable' });
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
   });
 
   it('rejects tenant mismatch between query tenantId and JWT tenantId', async () => {
@@ -552,6 +576,8 @@ describe('SSE /events/stream tenant handling', () => {
 
     expect(res.statusCode).toBe(403);
     expect(res.json().message).toBe('Tenant mismatch between tenantId query parameter and JWT payload');
+    expect(res.headers['x-correlation-id']).toBeDefined();
+    expect(res.json().correlationId).toBeDefined();
   });
 
   it('propagates tenantId from JWT when query tenantId is absent', async () => {

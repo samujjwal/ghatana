@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class DataCloudMigrationTest {
 
     @Container

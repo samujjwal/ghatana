@@ -149,6 +149,16 @@ public final class DataCloudSecurityFilter {
                     Principal authenticatedPrincipal = request.getAttachment(Principal.class);
                     String tenantId = extractTenantId(request, authenticatedPrincipal);
                     String principalName = resolvePrincipalName(authenticatedPrincipal);
+                    int code = response.getCode();
+                    // In audit-only mode (enforcing=false), authentication/authorization failures
+                    // are logged and audited but do not block the request — request passes through.
+                    if (!enforcing && (code == 401 || code == 403)) {
+                        String requestId = ensureRequestId(request, response);
+                        log.warn("[DC-SEC][AUDIT-ONLY] Auth failed (status={}) but enforcing=false — request passes through path={} requestId={}",
+                                code, path, requestId);
+                        emitAudit(request, path, method, sensitivity, false, code, requestId, tenantId, principalName);
+                        return serveDelegate(tenantWrapped, request);
+                    }
                     return handlePostAuth(
                             request,
                             response,

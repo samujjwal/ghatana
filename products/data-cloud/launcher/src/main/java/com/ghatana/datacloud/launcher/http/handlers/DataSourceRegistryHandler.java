@@ -607,8 +607,10 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
-        // Check if fabric metrics capability is enabled (preview capability, disabled in production by default)
-        String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE", "local");
+        // Check if fabric metrics capability is enabled (preview capability, disabled in production by default).
+        // Reads env var first (production deployment), then system property (test/CI override).
+        String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE",
+                System.getProperty("DATACLOUD_PROFILE", "local"));
         boolean isProductionProfile = "production".equalsIgnoreCase(profile) || "staging".equalsIgnoreCase(profile);
         
         if (isProductionProfile) {

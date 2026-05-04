@@ -32,6 +32,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
+import org.postgresql.ds.PGSimpleDataSource;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +51,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  *
  * <p>P1: PostgreSQL integration test configuration.</p>
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DisplayName("Campaign Lifecycle Integration (PostgreSQL)")
 class CampaignLifecycleIT extends EventloopTestBase {
 

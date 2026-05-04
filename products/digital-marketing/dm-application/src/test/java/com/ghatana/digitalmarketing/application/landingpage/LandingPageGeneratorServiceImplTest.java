@@ -163,7 +163,7 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
         LandingPageGeneratorService.GenerateLandingPageCommand cmd =
             new LandingPageGeneratorService.GenerateLandingPageCommand(
                 "item-lp-1", "strat-1", "Acme", "", "Services", "",
-                "Denver", List.of(), List.of("Results may vary.", "T&C apply."), List.of()
+                "Denver", List.of("5-star rated"), List.of("Results may vary.", "T&C apply."), List.of()
             );
 
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, cmd));
@@ -197,7 +197,7 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
         LandingPageGeneratorService.GenerateLandingPageCommand cmd =
             new LandingPageGeneratorService.GenerateLandingPageCommand(
                 "item-lp-1", "strat-1", "Acme", "", "Services", "",
-                "Denver", List.of(), List.of(), List.of("claim-1", "claim-2")
+                "Denver", List.of("5-star rated"), List.of("Results may vary."), List.of("claim-1", "claim-2")
             );
 
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, cmd));
@@ -213,7 +213,7 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             new LandingPageGeneratorService.GenerateLandingPageCommand(
                 "item-lp-1", "strat-1", "CleanSweep", "friendly",
                 "Cleaning Services", "Deep cleaning specialists",
-                "Portland, OR", List.of(), List.of(), List.of()
+                "Portland, OR", List.of("5-star rated"), List.of("Results may vary."), List.of()
             );
 
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, cmd));
@@ -450,6 +450,23 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
         public Promise<String> requestApproval(DmOperationContext ctx, String operationType,
                 String subjectId, String description) {
             return Promise.of("approval-1");
+        }
+
+        @Override
+        public Promise<Double> evaluateRisk(DmOperationContext context, String entityId,
+                String riskModelId, Map<String, Object> factors) {
+            return Promise.of(0.0);
+        }
+
+        @Override
+        public Promise<Void> notifyUser(DmOperationContext context, String recipientId,
+                String template, Map<String, String> attributes) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(true);
         }
     }
 

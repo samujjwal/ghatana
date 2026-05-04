@@ -2,7 +2,9 @@ package com.ghatana.plugin.notification.impl;
 
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,6 +44,28 @@ public final class InMemoryNotificationPlugin implements NotificationPlugin {
     private PluginState state = PluginState.UNLOADED;
 
     @Override
+    public PluginMetadata metadata() {
+        return new PluginMetadata(
+            "notification-in-memory",
+            "In-Memory Notification Plugin",
+            "1.0.0",
+            "In-memory notification delivery for development and testing",
+            PluginType.INTEGRATION,
+            "Ghatana",
+            "Proprietary",
+            Set.of("notification", "in-memory", "testing"),
+            Map.of(),
+            Set.of(),
+            null
+        );
+    }
+
+    @Override
+    public PluginState getState() {
+        return state;
+    }
+
+    @Override
     public Promise<Void> initialize(PluginContext context) {
         state = PluginState.INITIALIZED;
         LOG.info("[NotificationPlugin] In-memory notification plugin initialized");
@@ -49,12 +74,14 @@ public final class InMemoryNotificationPlugin implements NotificationPlugin {
 
     @Override
     public Promise<Void> start() {
+        state = PluginState.RUNNING;
         LOG.info("[NotificationPlugin] In-memory notification plugin started");
         return Promise.complete();
     }
 
     @Override
     public Promise<Void> stop() {
+        state = PluginState.STOPPED;
         LOG.info("[NotificationPlugin] In-memory notification plugin stopped");
         notifications.clear();
         deadLetterQueue.clear();

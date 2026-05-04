@@ -76,11 +76,11 @@ class PostgresMarketingStrategyRepositoryIT extends EventloopTestBase {
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private static MarketingStrategy buildStrategy(String strategyId, String workspaceId) {
-        StrategyGoal goal = new StrategyGoal("awareness", "Increase brand awareness by 20%");
+        StrategyGoal goal = new StrategyGoal("awareness", "Increase brand awareness by 20%", "20% increase", "surveys");
         CampaignPlan plan = new CampaignPlan(
             StrategyChannel.GOOGLE_SEARCH,
             "drive traffic",
-            5000.0,
+            5000,
             List.of("keyword1", "keyword2"),
             List.of("message1", "message2")
         );
@@ -91,7 +91,7 @@ class PostgresMarketingStrategyRepositoryIT extends EventloopTestBase {
             .status(StrategyStatus.DRAFT)
             .goals(List.of(goal))
             .channelPlans(List.of(plan))
-            .budgetCap(10000.0)
+            .budgetCap(10000)
             .rationale("Test rationale")
             .assumptions("Test assumptions")
             .measurementPlan("Test measurement plan")
@@ -160,11 +160,11 @@ class PostgresMarketingStrategyRepositoryIT extends EventloopTestBase {
         MarketingStrategy original = buildStrategy("str-004", "ws-delta");
         runPromise(() -> repository.save(original));
 
-        StrategyGoal updatedGoal = new StrategyGoal("conversion", "Increase conversion rate by 15%");
+        StrategyGoal updatedGoal = new StrategyGoal("conversion", "Increase conversion rate by 15%", "15% increase", "analytics");
         CampaignPlan updatedPlan = new CampaignPlan(
             StrategyChannel.LANDING_PAGE,
             "optimize landing page",
-            7500.0,
+            7500,
             List.of("keyword3"),
             List.of("message3")
         );
@@ -175,7 +175,7 @@ class PostgresMarketingStrategyRepositoryIT extends EventloopTestBase {
             .status(StrategyStatus.APPROVED)
             .goals(List.of(updatedGoal))
             .channelPlans(List.of(updatedPlan))
-            .budgetCap(15000.0)
+            .budgetCap(15000)
             .rationale("Updated rationale")
             .assumptions("Updated assumptions")
             .measurementPlan("Updated measurement plan")

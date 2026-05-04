@@ -178,14 +178,16 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
             String serialized = objectMapper.writeValueAsString(payload);
             return DmCommand.builder()
                 .id("cmd-1")
-                .type(DmCommandType.GOOGLE_ADS_CAMPAIGN_ROLLBACK)
+                .commandType(DmCommandType.GOOGLE_ADS_CAMPAIGN_ROLLBACK)
                 .tenantId(tenantId)
                 .workspaceId("ws-1")
                 .correlationId("corr-1")
-                .issuer("user-1")
+                .issuedBy("user-1")
                 .serializedPayload(serialized)
                 .status(DmCommandStatus.PENDING)
                 .attemptCount(0)
+                .createdAt(Instant.now())
+                .scheduledAt(Instant.now())
                 .build();
         } catch (Exception e) {
             throw new RuntimeException(e);

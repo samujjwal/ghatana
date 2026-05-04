@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 public class AnalyticsQueryEngine implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsQueryEngine.class);
     private static final int DEFAULT_QUERY_LIMIT = 1000;
-    private static final int MAX_QUERY_LIMIT = 10_000;
+    private static final int MAX_QUERY_LIMIT = 50_000;
     /** DC3-M2: Guard against OOM from massive in-memory hash joins. */
     private static final int MAX_JOIN_SIDE_SIZE = 50_000;
 
@@ -202,7 +202,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         // Extract pagination parameters
         int offset = extractOffset(query.getQueryText(), query.getParameters());
-        int limit = extractLimit(query.getQueryText());
+        int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         // Execute query against real data sources
         return executeQueryAgainstDataSources(query, plan)
@@ -275,7 +275,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String tenantId = query.getTenantId();
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
-        int limit = extractLimit(query.getQueryText());
+        int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         QuerySpec spec = QuerySpec.builder()
                 .filter(filterExpr)
@@ -306,13 +306,14 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
         String groupByField = extractGroupByField(query.getQueryText());
+        int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         logger.debug("Executing AGGREGATE: collection={}, groupBy={}", collectionName, groupByField);
 
         // Use collection-name QuerySpec overload to avoid the synthetic UUID → UUID-string roundtrip
         QuerySpec spec = QuerySpec.builder()
                 .filter(filterExpr)
-                .limit(MAX_QUERY_LIMIT)
+            .limit(limit)
                 .build();
 
         return storageConnector.query(tenantId, collectionName, spec)
@@ -349,6 +350,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String tenantId = query.getTenantId();
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
+        int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         // Extract time window from query parameters or text
         Instant windowStart = query.getParameters() != null && query.getParameters().containsKey("timeWindowStart")
@@ -361,7 +363,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         QuerySpec spec = QuerySpec.builder()
                 .filter(filterExpr)
                 .timeWindow(windowStart, windowEnd)
-                .limit(MAX_QUERY_LIMIT)
+            .limit(limit)
                 .build();
 
         logger.debug("Executing TIMESERIES: collection={}, window=[{}, {}]",
@@ -386,6 +388,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
     private Promise<List<Map<String, Object>>> executeJoin(AnalyticsQuery query, QueryPlan plan) {
         String tenantId = query.getTenantId();
         List<String> collections = extractJoinCollections(query.getQueryText());
+        int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         if (collections.size() < 2) {
             logger.warn("JOIN query requires at least 2 collections, found: {}", collections.size());
@@ -400,8 +403,8 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         logger.debug("Executing JOIN: left={}, right={}, key={}", leftCollection, rightCollection, joinKey);
 
         // Use name-based QuerySpec query to avoid synthetic-UUID -> UUID-string roundtrip
-        QuerySpec leftSpec = QuerySpec.builder().filter(filterExpr).limit(MAX_QUERY_LIMIT).build();
-        QuerySpec rightSpec = QuerySpec.builder().limit(MAX_QUERY_LIMIT).build();
+        QuerySpec leftSpec = QuerySpec.builder().filter(filterExpr).limit(limit).build();
+        QuerySpec rightSpec = QuerySpec.builder().limit(limit).build();
 
         Promise<List<Entity>> leftPromise  = storageConnector.query(tenantId, leftCollection, leftSpec).map(StorageConnector.QueryResult::entities);
         Promise<List<Entity>> rightPromise = storageConnector.query(tenantId, rightCollection, rightSpec).map(StorageConnector.QueryResult::entities);
@@ -575,6 +578,80 @@ public class AnalyticsQueryEngine implements AutoCloseable {
             }
         }
         return DEFAULT_QUERY_LIMIT;
+    }
+
+    /**
+     * Resolves effective query limit from SQL text and optional request parameter.
+     *
+     * <p>Rules:</p>
+     * <ul>
+     *   <li>When both SQL LIMIT and request `_rowLimit` are present, use the stricter one.</li>
+     *   <li>When only `_rowLimit` is present, use it.</li>
+     *   <li>When only SQL LIMIT is present, use it.</li>
+     *   <li>When neither is present, use {@link #DEFAULT_QUERY_LIMIT}.</li>
+     * </ul>
+     */
+    private int resolveQueryLimit(String queryText, Map<String, Object> parameters) {
+        Integer sqlLimit = extractSqlLimit(queryText);
+        Integer requestLimit = extractRequestLimit(parameters);
+
+        int resolved;
+        if (sqlLimit != null && requestLimit != null) {
+            resolved = Math.min(sqlLimit, requestLimit);
+        } else if (requestLimit != null) {
+            resolved = requestLimit;
+        } else if (sqlLimit != null) {
+            resolved = sqlLimit;
+        } else {
+            resolved = DEFAULT_QUERY_LIMIT;
+        }
+
+        return Math.min(Math.max(resolved, 1), MAX_QUERY_LIMIT);
+    }
+
+    private Integer extractRequestLimit(Map<String, Object> parameters) {
+        if (parameters == null || !parameters.containsKey("_rowLimit")) {
+            return null;
+        }
+        Object rawLimit = parameters.get("_rowLimit");
+        if (!(rawLimit instanceof Number)) {
+            return null;
+        }
+        return ((Number) rawLimit).intValue();
+    }
+
+    /**
+     * Extracts SQL LIMIT if explicitly present in query text.
+     */
+    private Integer extractSqlLimit(String queryText) {
+        PlainSelect select = parsePlainSelect(queryText);
+        if (select != null) {
+            Limit limit = select.getLimit();
+            if (limit != null && limit.getRowCount() != null) {
+                try {
+                    return Integer.parseInt(limit.getRowCount().toString());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        String upper = queryText.toUpperCase();
+        int limitIdx = upper.indexOf("LIMIT ");
+        if (limitIdx < 0) {
+            return null;
+        }
+        String afterLimit = queryText.substring(limitIdx + 6).trim();
+        String[] tokens = afterLimit.split("\\s+");
+        if (tokens.length == 0) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(tokens[0].replaceAll("[;,]", ""));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     /**

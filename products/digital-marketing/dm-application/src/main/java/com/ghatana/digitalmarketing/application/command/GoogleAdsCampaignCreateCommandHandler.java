@@ -61,7 +61,6 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
     
     // P1-8: Retry configuration for transient failures
     private static final int MAX_RETRIES = 3;
-    private static final long RETRY_DELAY_MS = 1000;
 
     public GoogleAdsCampaignCreateCommandHandler(
             DmConnectorRepository connectorRepository,
@@ -271,27 +270,27 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
             int retryCount) {
         Instant apiStartTime = Instant.now();
         return apiClient.createSearchCampaign(credential.getAccessToken(), request)
-            .then(externalCampaignId -> {
-                long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
-                observability.recordConnectorDuration("GOOGLE_ADS", "createSearchCampaign", apiDuration);
-                if (retryCount > 0) {
-                    span.setAttribute("retry.count", retryCount);
-                    LOG.info("[DMOS-HANDLER] Campaign creation succeeded after {} retries", retryCount);
+            .then(
+                externalCampaignId -> {
+                    long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
+                    observability.recordConnectorDuration("GOOGLE_ADS", "createSearchCampaign", apiDuration);
+                    if (retryCount > 0) {
+                        span.setAttribute("retry.count", retryCount);
+                        LOG.info("[DMOS-HANDLER] Campaign creation succeeded after {} retries", retryCount);
+                    }
+                    return Promise.of(externalCampaignId);
+                },
+                e -> {
+                    // Retry on transient failures
+                    if (isTransientFailure(e) && retryCount < MAX_RETRIES) {
+                        LOG.warn("[DMOS-HANDLER] Transient failure, retrying ({}/{}): {}",
+                            retryCount + 1, MAX_RETRIES, e.getMessage());
+                        return createCampaignWithRetry(credential, request, span, retryCount + 1);
+                    }
+                    LOG.error("[DMOS-HANDLER] Campaign creation failed after {} retries: {}", retryCount, e.getMessage());
+                    return Promise.ofException(e);
                 }
-                return Promise.of(externalCampaignId);
-            })
-            .whenException(e -> {
-                // P1-8: Retry on transient failures
-                if (isTransientFailure(e) && retryCount < MAX_RETRIES) {
-                    LOG.warn("[DMOS-HANDLER] Transient failure, retrying ({}/{}): {}",
-                        retryCount + 1, MAX_RETRIES, e.getMessage());
-                    return Promise.of(null)
-                        .delay(RETRY_DELAY_MS)
-                        .then(ignored -> createCampaignWithRetry(credential, request, span, retryCount + 1));
-                }
-                LOG.error("[DMOS-HANDLER] Campaign creation failed after {} retries: {}", retryCount, e.getMessage());
-                return Promise.ofException(e);
-            });
+            );
     }
 
     /**
