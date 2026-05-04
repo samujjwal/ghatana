@@ -351,7 +351,9 @@ export function enforceBrowserAPIPolicy(
         ? { allowed: true }
         : { allowed: false, reason: 'WebSockets not allowed' };
     default:
-      return { allowed: true }; // Allow unknown APIs by default
+      // Unknown APIs are denied by default. Plugins must explicitly declare
+      // every browser API they need in the allowedAPIs allowlist.
+      return { allowed: false, reason: `Unknown browser API '${api}' is not permitted. Add it to the allowedAPIs allowlist to request access.` };
   }
 }
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+import React from 'react';
 import { Sparkles as AutoAwesomeIcon, ArrowRight as ArrowForwardIcon } from 'lucide-react';
 import { Surface as Paper, IconButton, Input as InputBase, Box, Typography, Chip } from '@ghatana/design-system';
 
@@ -22,14 +22,14 @@ export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
                 className="flex items-center w-full rounded-xl border border-solid border-gray-200 dark:border-gray-700 p-[2px 4px]"
             >
                 <IconButton className="p-[10px]" aria-label="magic">
-                    <AutoAwesomeIcon tone="primary" />
+                    <AutoAwesomeIcon />
                 </IconButton>
                 <InputBase
                     className="ml-2 flex-1 text-[1.1rem]"
                     placeholder="Describe your idea (e.g., 'A kanban board for marketing teams')..."
                     autoFocus
                     value={value}
-                    onChange={(e) => onChange && onChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange?.(e.target.value)}
                     onKeyDown={handleKeyPress}
                 />
                 <IconButton

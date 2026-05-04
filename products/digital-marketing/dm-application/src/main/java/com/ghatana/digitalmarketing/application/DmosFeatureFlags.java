@@ -43,15 +43,27 @@ public final class DmosFeatureFlags {
 
     /**
      * Enables dashboard growth metrics widget.
-     * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS} (default {@code false}).
+     * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS_ENABLED} (default {@code false}).
      */
     public static final String DASHBOARD_GROWTH_METRICS = "dmos.dashboard_growth_metrics";
 
     /**
-     * Enables the observability baseline (metrics + structured logging).
-     * Env-var fallback: {@code DMOS_OBSERVABILITY_ENABLED} (default {@code true}).
+     * Enables the budget management page UI (currently stub - requires full implementation).
+     * Env-var fallback: {@code DMOS_BUDGET_PAGE_ENABLED} (default {@code false}).
      */
-    public static final String OBSERVABILITY_ENABLED = "dmos.observability.enabled";
+    public static final String BUDGET_PAGE_ENABLED = "dmos.budget_page_enabled";
+
+    /**
+     * Enables the strategy generation page UI (currently stub - requires full implementation).
+     * Env-var fallback: {@code DMOS_STRATEGY_PAGE_ENABLED} (default {@code false}).
+     */
+    public static final String STRATEGY_PAGE_ENABLED = "dmos.strategy_page_enabled";
+
+    /**
+     * Enables the campaign management page UI (currently stub - requires full implementation).
+     * Env-var fallback: {@code DMOS_CAMPAIGNS_PAGE_ENABLED} (default {@code false}).
+     */
+    public static final String CAMPAIGNS_PAGE_ENABLED = "dmos.campaigns_page_enabled";
 
     private DmosFeatureFlags() {
         // Utility class - prevent instantiation

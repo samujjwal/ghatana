@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 import React, { useMemo, useState } from 'react';
-import { useParams, Navigate } from 'react-router';
+import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { ApprovalQueueTable } from '@/components/approval/ApprovalQueueTable';

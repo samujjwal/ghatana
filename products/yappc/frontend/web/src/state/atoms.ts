@@ -73,12 +73,12 @@ const createWorkspaceService = () => ({
 // Re-export Existing Atoms
 // ============================================================================
 
-export const userAtom = atom(null);
+export const userAtom = atom<User | null>(null);
 export const isAuthenticatedAtom = atom(false);
 export const breadcrumbsAtom = atom<Breadcrumb[]>([]);
-export const currentProjectAtom = atom(null);
+export const currentProjectAtom = atom<Project | null>(null);
 export const sidebarCollapsedAtom = atom(false);
-export const notificationsAtom = atom([]);
+export const notificationsAtom = atom<Notification[]>([]);
 export const unreadNotificationsCountAtom = atom(0);
 export const globalSearchOpenAtom = atom(false);
 globalSearchOpenAtom.debugLabel = 'globalSearchOpenAtom';
@@ -88,18 +88,18 @@ export const globalSearchResultsAtom = atom([]);
 globalSearchResultsAtom.debugLabel = 'globalSearchResultsAtom';
 export const globalSearchLoadingAtom = atom(false);
 globalSearchLoadingAtom.debugLabel = 'globalSearchLoadingAtom';
-export const bootstrapSessionAtom = atom(null);
-export const savedSessionsAtom = atom([]);
-export const selectedTemplateAtom = atom(null);
-export const canvasNodesAtom = atom([]);
-export const canvasEdgesAtom = atom([]);
-export const uploadedDocsAtom = atom([]);
-export const sprintStoriesAtom = atom([]);
-export const selectedStoryAtom = atom(null);
-export const sprintsAtom = atom([]);
-export const alertsAtom = atom([]);
-export const metricsAtom = atom([]);
-export const securityAlertsAtom = atom([]);
+export const bootstrapSessionAtom = atom<BootstrapSession | null>(null);
+export const savedSessionsAtom = atom<BootstrapSession[]>([]);
+export const selectedTemplateAtom = atom<string | null>(null);
+export const canvasNodesAtom = atom<unknown[]>([]);
+export const canvasEdgesAtom = atom<unknown[]>([]);
+export const uploadedDocsAtom = atom<unknown[]>([]);
+export const sprintStoriesAtom = atom<unknown[]>([]);
+export const selectedStoryAtom = atom<unknown>(null);
+export const sprintsAtom = atom<unknown[]>([]);
+export const alertsAtom = atom<unknown[]>([]);
+export const metricsAtom = atom<unknown[]>([]);
+export const securityAlertsAtom = atom<SecurityAlert[]>([]);
 export const getWorkspaceService = createWorkspaceService;
 
 // ============================================================================

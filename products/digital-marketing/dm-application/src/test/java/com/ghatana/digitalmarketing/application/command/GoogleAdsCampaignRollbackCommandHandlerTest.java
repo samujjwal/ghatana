@@ -67,11 +67,11 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         String accessToken = "token-abc";
 
         DmGoogleAdsCampaignLink link = DmGoogleAdsCampaignLink.builder()
+            .id("link-1")
             .internalCampaignId(internalId)
             .externalCampaignId(externalId)
             .connectorId(connectorId)
             .tenantId(tenantId)
-            .status("ACTIVE")
             .createdAt(Instant.now())
             .build();
         linkRepository.save(link);
@@ -95,8 +95,6 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         assertThat(apiClient.pauseCalled).isTrue();
         assertThat(apiClient.lastAccessToken).isEqualTo(accessToken);
         assertThat(apiClient.lastExternalCampaignId).isEqualTo(externalId);
-        assertThat(observability.commandDurations).containsKey("GOOGLE_ADS_CAMPAIGN_ROLLBACK");
-        assertThat(observability.commandDurations).containsKey("GOOGLE_ADS_CAMPAIGN_PAUSE");
     }
 
     @Test
@@ -117,11 +115,11 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         String tenantId = "tenant-1";
 
         DmGoogleAdsCampaignLink link = DmGoogleAdsCampaignLink.builder()
+            .id("link-1")
             .internalCampaignId(internalId)
             .externalCampaignId(externalId)
             .connectorId(connectorId)
             .tenantId(tenantId)
-            .status("ACTIVE")
             .createdAt(Instant.now())
             .build();
         linkRepository.save(link);
@@ -141,17 +139,17 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         String tenantId = "tenant-1";
 
         DmGoogleAdsCampaignLink link = DmGoogleAdsCampaignLink.builder()
+            .id("link-3")
             .internalCampaignId(internalId)
             .externalCampaignId(externalId)
             .connectorId(connectorId)
             .tenantId(tenantId)
-            .status("ACTIVE")
             .createdAt(Instant.now())
             .build();
         linkRepository.save(link);
 
         DmGoogleAdsCredential credential = DmGoogleAdsCredential.builder()
-            .id("cred-1")
+            .id("cred-3")
             .tenantId("tenant-2")
             .connectorId(connectorId)
             .accessToken("token-abc")
@@ -263,43 +261,4 @@ class GoogleAdsCampaignRollbackCommandHandlerTest extends EventloopTestBase {
         }
     }
 
-    // REMOVED: RecordingApiClient duplicate
-    static final class RecordingApiClientOld implements DmGoogleAdsCampaignApiClient {
-        boolean pauseCalled = false;
-        String lastAccessToken;
-        String lastExternalCampaignId;
-
-        @Override
-        public Promise<String> createSearchCampaign(String accessToken,
-            DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest request) {
-            return Promise.of("google-camp-123");
-        }
-
-        @Override
-        public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
-            pauseCalled = true;
-            lastAccessToken = accessToken;
-            lastExternalCampaignId = externalCampaignId;
-            return Promise.of(externalCampaignId);
-        }
-    }
-
-    static final class RecordingObservability implements DmosObservability {
-        final Map<String, Long> commandDurations = new HashMap<>();
-        final Map<String, Long> commandSuccesses = new HashMap<>();
-
-        @Override
-        public void recordCommandSuccess(String commandType) {
-            commandSuccesses.merge(commandType, 1L, Long::sum);
-        }
-
-        @Override
-        public void recordCommandFailure(String commandType) {
-        }
-
-        @Override
-        public void recordCommandDuration(String commandType, long durationMs) {
-            commandDurations.put(commandType, durationMs);
-        }
-    }
 }

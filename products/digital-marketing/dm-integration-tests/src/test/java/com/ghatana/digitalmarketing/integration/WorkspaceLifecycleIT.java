@@ -12,12 +12,18 @@ import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
 import com.ghatana.digitalmarketing.domain.workspace.WorkspaceStatus;
+import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepository;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.sql.DataSource;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -29,24 +35,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Integration tests for the DMOS workspace lifecycle using in-memory fakes.
+ * Integration tests for the DMOS workspace lifecycle using PostgreSQL.
  *
  * <p>Covers: create, get, list, suspend, reactivate, and authorization enforcement
- * across the full application-service stack without any external infrastructure.</p>
+ * across the full application-service stack with real PostgreSQL persistence.</p>
+ *
+ * <p>P1: PostgreSQL integration test configuration.</p>
  */
-@DisplayName("Workspace Lifecycle Integration")
+@Testcontainers
+@DisplayName("Workspace Lifecycle Integration (PostgreSQL)")
 class WorkspaceLifecycleIT extends EventloopTestBase {
 
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES =
+        new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("dmos")
+            .withUsername("dmos")
+            .withPassword("dmos_password");
+
     private RecordingKernelAdapter kernelAdapter;
-    private InMemoryWorkspaceRepository repository;
+    private WorkspaceRepository repository;
     private WorkspaceService workspaceService;
     private DmOperationContext writeCtx;
     private DmOperationContext readCtx;
+    private Eventloop eventloop;
 
     @BeforeEach
     void setUp() {
-        repository     = new InMemoryWorkspaceRepository();
-        kernelAdapter  = new RecordingKernelAdapter();
+        eventloop = Eventloop.create();
+        DataSource dataSource = createPostgresDataSource();
+        repository = new PostgresWorkspaceRepository(dataSource, eventloop);
+        kernelAdapter = new RecordingKernelAdapter();
         workspaceService = new WorkspaceServiceImpl(kernelAdapter, repository);
 
         writeCtx = DmOperationContext.builder()
@@ -65,6 +84,14 @@ class WorkspaceLifecycleIT extends EventloopTestBase {
             .build();
 
         kernelAdapter.setDefaultAuthorization(true);
+    }
+
+    private DataSource createPostgresDataSource() {
+        org.postgresql.ds.PGSimpleDataSource dataSource = new org.postgresql.ds.PGSimpleDataSource();
+        dataSource.setURL(POSTGRES.getJdbcUrl());
+        dataSource.setUser(POSTGRES.getUsername());
+        dataSource.setPassword(POSTGRES.getPassword());
+        return dataSource;
     }
 
     // -----------------------------------------------------------------------

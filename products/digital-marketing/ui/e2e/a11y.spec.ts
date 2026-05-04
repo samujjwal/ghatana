@@ -10,66 +10,176 @@ import { loginAs } from './fixtures';
  */
 test.describe('Accessibility @a11y', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAs(page);
-  });
-
-  test('dashboard has no accessibility violations', async ({ page }) => {
-    await page.goto('/dashboard');
-    await page.addInitScript({
+    await page.addScriptTag({
       content: `
         window.addEventListener('load', () => {
           const script = document.createElement('script');
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.8.2/axe.min.js';
           script.onload = async () => {
-            const results = await axe.run();
-            if (results.violations.length > 0) {
-              console.error('Accessibility violations:', results.violations);
-            }
+            window.axe = axe;
           };
           document.head.appendChild(script);
         });
       `,
     });
-    await expect(page).toHaveURL(/\/dashboard/);
+  });
+
+  test('login page has no accessibility violations', async ({ page }) => {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
+  });
+
+  test('dashboard has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
+    await page.goto('/dashboard');
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('approvals page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/approvals');
-    await expect(page).toHaveURL(/\/approvals/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('strategy page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/strategy');
-    await expect(page).toHaveURL(/\/strategy/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('content page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/content');
-    await expect(page).toHaveURL(/\/content/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('campaigns page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/campaigns');
-    await expect(page).toHaveURL(/\/campaigns/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('leads page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/leads');
-    await expect(page).toHaveURL(/\/leads/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('analytics page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/analytics');
-    await expect(page).toHaveURL(/\/analytics/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('connectors page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/connectors');
-    await expect(page).toHaveURL(/\/connectors/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 
   test('AI recommendations page has no accessibility violations', async ({ page }) => {
+    await loginAs(page);
     await page.goto('/ai-recommendations');
-    await expect(page).toHaveURL(/\/ai-recommendations/);
+    await page.waitForLoadState('networkidle');
+    
+    // Wait for axe-core to load
+    await page.waitForFunction(() => typeof window.axe !== 'undefined');
+    
+    const violations = await page.evaluate(async () => {
+      const results = await window.axe.run();
+      return results.violations;
+    });
+    
+    expect(violations).toHaveLength(0);
   });
 });

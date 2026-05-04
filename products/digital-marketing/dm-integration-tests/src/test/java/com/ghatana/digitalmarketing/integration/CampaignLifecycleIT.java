@@ -15,17 +15,23 @@ import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.persistence.campaign.PostgresCampaignRepository;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
 import com.ghatana.platform.plugin.PluginType;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.plugin.compliance.CompliancePlugin;
+import io.activej.eventloop.Eventloop;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
+import javax.sql.DataSource;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -37,20 +43,36 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 /**
- * Integration tests for the DMOS Campaign lifecycle using in-memory fakes.
+ * Integration tests for the DMOS Campaign lifecycle using PostgreSQL.
+ *
+ * <p>Covers: create, get, list, launch, pause, and compliance enforcement
+ * across the full application-service stack with real PostgreSQL persistence.</p>
+ *
+ * <p>P1: PostgreSQL integration test configuration.</p>
  */
-@DisplayName("Campaign Lifecycle Integration")
+@Testcontainers
+@DisplayName("Campaign Lifecycle Integration (PostgreSQL)")
 class CampaignLifecycleIT extends EventloopTestBase {
+
+    @Container
+    static final PostgreSQLContainer<?> POSTGRES =
+        new PostgreSQLContainer<>("postgres:16-alpine")
+            .withDatabaseName("dmos")
+            .withUsername("dmos")
+            .withPassword("dmos_password");
 
     private RecordingKernelAdapter kernelAdapter;
     private InMemoryCompliancePlugin compliancePlugin;
     private CampaignService campaignService;
     private DmOperationContext writeCtx;
     private DmOperationContext readCtx;
+    private Eventloop eventloop;
 
     @BeforeEach
     void setUp() {
-        CampaignRepository inMemoryRepo = new InMemoryCampaignRepository();
+        eventloop = Eventloop.create();
+        DataSource dataSource = createPostgresDataSource();
+        CampaignRepository inMemoryRepo = new PostgresCampaignRepository(dataSource, eventloop);
         kernelAdapter = new RecordingKernelAdapter();
         compliancePlugin = new InMemoryCompliancePlugin();
         campaignService = new CampaignServiceImpl(
@@ -83,6 +105,18 @@ class CampaignLifecycleIT extends EventloopTestBase {
             .build();
 
         kernelAdapter.setDefaultAuthorization(true);
+    }
+
+    private DataSource createPostgresDataSource() {
+        org.postgresql.ds.PGSimpleDataSource dataSource = new org.postgresql.ds.PGSimpleDataSource();
+        dataSource.setURL(POSTGRES.getJdbcUrl());
+        dataSource.setUser(POSTGRES.getUsername());
+        dataSource.setPassword(POSTGRES.getPassword());
+        return dataSource;
+    }
+
+    @BeforeEach
+    void setCompliant() {
         compliancePlugin.setCompliant(true);
     }
 

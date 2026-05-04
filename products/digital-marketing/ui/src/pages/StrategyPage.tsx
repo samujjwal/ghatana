@@ -6,7 +6,7 @@
  * @doc.layer frontend
  */
 import React, { useState, useCallback } from 'react';
-import { useParams, Navigate } from 'react-router';
+import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import {
   useStrategy,

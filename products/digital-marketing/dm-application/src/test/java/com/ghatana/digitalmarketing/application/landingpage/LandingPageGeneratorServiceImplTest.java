@@ -129,7 +129,7 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
                 "item-lp-1", "strat-1", "Acme Plumbing", "professional",
                 "Plumbing Services", "Fast and reliable", "Denver, CO",
                 List.of("5-star rated", "200+ happy clients"),
-                List.of(), List.of()
+                List.of("Results may vary."), List.of()
             );
 
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, cmd));
@@ -141,22 +141,20 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             .orElse("");
 
         assertThat(proofBody).contains("5-star rated").contains("200+ happy clients");
-        assertThat(proofBody).doesNotContain(LandingPageGeneratorServiceImpl.PROOF_PENDING);
     }
 
     @Test
-    @DisplayName("generateDraft without proof points emits proof pending notice — not fabricated testimonials")
-    void shouldEmitProofPendingWhenNoProofPoints() {
-        ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
+    @DisplayName("generateDraft without proof points throws IllegalStateException")
+    void shouldThrowWhenNoProofPoints() {
+        LandingPageGeneratorService.GenerateLandingPageCommand cmd =
+            new LandingPageGeneratorService.GenerateLandingPageCommand(
+                "item-lp-1", "strat-1", "Acme", "", "Services", "",
+                "Denver", List.of(), List.of("Results may vary."), List.of()
+            );
 
-        String proofBody = version.getContentBlocks().stream()
-            .filter(b -> b.blockId().equals(LandingPageSection.PROOF.name()))
-            .findFirst()
-            .map(b -> b.bodyText())
-            .orElse("");
-
-        assertThat(proofBody).contains(LandingPageGeneratorServiceImpl.PROOF_PENDING);
-        assertThat(proofBody).doesNotContain("[");
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(() -> runPromise(() -> service.generateDraft(ctx, cmd)))
+            .withMessageContaining("Cannot generate landing page without proof points");
     }
 
     @Test
@@ -180,18 +178,17 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("generateDraft without disclosures emits disclosure pending notice")
-    void shouldEmitDisclosurePendingWhenNone() {
-        ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
+    @DisplayName("generateDraft without disclosures throws IllegalStateException")
+    void shouldThrowWhenNoDisclosures() {
+        LandingPageGeneratorService.GenerateLandingPageCommand cmd =
+            new LandingPageGeneratorService.GenerateLandingPageCommand(
+                "item-lp-1", "strat-1", "Acme", "", "Services", "",
+                "Denver", List.of("5-star rated"), List.of(), List.of()
+            );
 
-        String disclaimerBody = version.getContentBlocks().stream()
-            .filter(b -> b.blockId().equals(LandingPageSection.DISCLAIMER.name()))
-            .findFirst()
-            .map(b -> b.bodyText())
-            .orElse("");
-
-        assertThat(disclaimerBody).contains(LandingPageGeneratorServiceImpl.DISCLOSURE_PENDING);
-        assertThat(disclaimerBody).doesNotContain("[");
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(() -> runPromise(() -> service.generateDraft(ctx, cmd)))
+            .withMessageContaining("Cannot generate landing page without disclosure texts");
     }
 
     @Test
@@ -388,7 +385,7 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
         return new LandingPageGeneratorService.GenerateLandingPageCommand(
             "item-lp-1", "strat-1", "Acme Corp", "professional",
             "Plumbing", "Fast reliable plumbing", "Denver, CO",
-            List.of(), List.of(), List.of()
+            List.of("5-star rated"), List.of("Results may vary."), List.of()
         );
     }
 

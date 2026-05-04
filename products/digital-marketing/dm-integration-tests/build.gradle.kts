@@ -15,6 +15,7 @@ dependencies {
     testImplementation(project(":products:digital-marketing:dm-application"))
     testImplementation(project(":products:digital-marketing:dm-infra"))
     testImplementation(project(":products:digital-marketing:dm-api"))
+    testImplementation(project(":products:digital-marketing:dm-persistence"))
 
     testImplementation(project(":platform-kernel:kernel-core"))
     testImplementation(project(":platform-kernel:kernel-testing"))
@@ -29,6 +30,7 @@ dependencies {
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly(libs.junit.jupiter.engine)
 }
 

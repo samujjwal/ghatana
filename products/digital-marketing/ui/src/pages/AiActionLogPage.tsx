@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Navigate, useParams } from 'react-router';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useAiActionDetail, useAiActionLog } from '@/hooks/useAiActionLog';
 

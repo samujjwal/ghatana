@@ -13,6 +13,7 @@
 import React from 'react';
 import type { ComponentInstance } from '@ghatana/ui-builder';
 import type { ReactNode } from 'react';
+import { assessComponentSafety } from '../../../security/UnsafeComponentHandler';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +70,12 @@ export interface BuilderRendererManifest {
   readonly previewPolicy?: PreviewPolicy;
   /** Whether this is a fallback renderer for unknown components */
   readonly isFallback?: boolean;
+  /**
+   * Optional TSX source code for the component. When provided, the registry
+   * runs a security assessment before allowing registration. Manifests with
+   * unsafe code (eval, Function, inline scripts, etc.) are rejected.
+   */
+  readonly sourceCode?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,9 +91,33 @@ class RendererManifestRegistry {
 
   /**
    * Registers a renderer manifest.
+   *
+   * If the manifest carries `sourceCode`, a security assessment is performed
+   * before registration. Components flagged as `unsafe` are rejected to
+   * prevent dangerous APIs (eval, network exfiltration, etc.) from running
+   * inside the canvas runtime.
+   *
+   * Built-in renderers and fallback renderers are exempt from this check
+   * because they are authored within the trusted application bundle.
    */
   register(manifest: BuilderRendererManifest): void {
-    this.manifests.set(manifest.contractName, manifest);
+    if (!manifest.isFallback && manifest.sourceCode) {
+      const assessment = assessComponentSafety(
+        manifest.sourceCode,
+        manifest.contractName,
+      );
+      if (assessment.recommendedAction === 'block') {
+        throw new Error(
+          `Component '${manifest.contractName}' was blocked by the security assessment. ` +
+            `Risk factors: ${assessment.riskFactors.join(', ')}`,
+        );
+      }
+    }
+    if (manifest.isFallback) {
+      this.fallbackRenderer = manifest;
+    } else {
+      this.manifests.set(manifest.contractName, manifest);
+    }
   }
 
   /**
@@ -105,9 +136,10 @@ class RendererManifestRegistry {
 
   /**
    * Sets a fallback renderer for unknown components.
+   * Convenience wrapper around `register()` with `isFallback: true`.
    */
   setFallbackRenderer(manifest: BuilderRendererManifest): void {
-    this.fallbackRenderer = manifest;
+    this.register({ ...manifest, isFallback: true });
   }
 
   /**

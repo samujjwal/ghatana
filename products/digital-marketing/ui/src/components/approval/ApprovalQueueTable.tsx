@@ -8,7 +8,7 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import type { ApprovalRecordResponse } from '@/types/approval';
 
 interface ApprovalQueueTableProps {

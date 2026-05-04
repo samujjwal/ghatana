@@ -16,6 +16,9 @@ export const FEATURE_FLAGS = {
   KILL_SWITCH_ENABLED: 'dmos.kill_switch.enabled',
   ROLLBACK_WORKFLOW_ENABLED: 'dmos.rollback_workflow.enabled',
   DASHBOARD_GROWTH_METRICS: 'dmos.dashboard_growth_metrics',
+  BUDGET_PAGE_ENABLED: 'dmos.budget_page_enabled',
+  STRATEGY_PAGE_ENABLED: 'dmos.strategy_page_enabled',
+  CAMPAIGNS_PAGE_ENABLED: 'dmos.campaigns_page_enabled',
 } as const;
 
 export type FeatureFlag = typeof FEATURE_FLAGS[keyof typeof FEATURE_FLAGS];
@@ -34,7 +37,10 @@ export const flagValues = {
   [FEATURE_FLAGS.GOOGLE_ADS_CONNECTOR_ENABLED]: getFlagValue('DMOS_GOOGLE_ADS_CONNECTOR_ENABLED', false),
   [FEATURE_FLAGS.KILL_SWITCH_ENABLED]: getFlagValue('DMOS_KILL_SWITCH_ENABLED', true),
   [FEATURE_FLAGS.ROLLBACK_WORKFLOW_ENABLED]: getFlagValue('DMOS_ROLLBACK_WORKFLOW_ENABLED', true),
-  [FEATURE_FLAGS.DASHBOARD_GROWTH_METRICS]: getFlagValue('DMOS_DASHBOARD_GROWTH_METRICS', false),
+  [FEATURE_FLAGS.DASHBOARD_GROWTH_METRICS]: getFlagValue('DMOS_DASHBOARD_GROWTH_METRICS_ENABLED', false),
+  [FEATURE_FLAGS.BUDGET_PAGE_ENABLED]: getFlagValue('DMOS_BUDGET_PAGE_ENABLED', false),
+  [FEATURE_FLAGS.STRATEGY_PAGE_ENABLED]: getFlagValue('DMOS_STRATEGY_PAGE_ENABLED', false),
+  [FEATURE_FLAGS.CAMPAIGNS_PAGE_ENABLED]: getFlagValue('DMOS_CAMPAIGNS_PAGE_ENABLED', false),
 };
 
 export function isFeatureEnabled(flag: FeatureFlag): boolean {

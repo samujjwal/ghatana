@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React from 'react';
 import { Grid, Surface as Paper, Box } from '@ghatana/design-system';
 import { Skeleton } from '../common/SkeletonLoaders';

@@ -9,7 +9,7 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { useParams, Navigate, Link } from 'react-router';
+import { useParams, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useApprovalQueue } from '@/hooks/useApprovalQueue';
 import { ApprovalWidget } from '@/components/dashboard/ApprovalWidget';

@@ -27,8 +27,42 @@ import type {
   UpdatedMessage,
 } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
+import {
+  validatePreviewSession,
+  type PreviewSession,
+} from '../security/PreviewSession';
 
 const PREVIEW_RUNTIME_VERSION = '1.1.0';
+
+/**
+ * Read and decode the preview session token from the URL query string.
+ * The token is a base64url-encoded JSON PreviewSession object.
+ * Returns null if absent or malformed (not a security rejection — that happens
+ * in validatePreviewSession).
+ */
+function readSessionFromUrl(): PreviewSession | null {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('session');
+    if (!raw) return null;
+    // Decode base64url → base64 → JSON
+    const base64 = raw.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64);
+    return JSON.parse(json) as PreviewSession;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Retrieve the HMAC secret used to validate preview session tokens.
+ * This MUST be set as a build-time environment variable (VITE_PREVIEW_SESSION_SECRET).
+ * If absent, preview is blocked: denying access is safer than allowing unsigned sessions.
+ */
+function getPreviewSessionSecret(): string | null {
+  const secret = import.meta.env.VITE_PREVIEW_SESSION_SECRET as string | undefined;
+  return secret ?? null;
+}
 
 /**
  * Derive the expected parent origin from document.referrer.
@@ -64,15 +98,52 @@ function sendToHost(message: PreviewToHostMessage): void {
  * Mounted inside an iframe by LivePreviewPanel. Communicates via the typed
  * HostToPreviewMessage / PreviewToHostMessage protocol defined in
  * @ghatana/ui-builder/preview.
+ *
+ * All messages are rejected until the signed preview session token from the
+ * URL query string has been validated using HMAC-SHA-256.
  */
 export default function BuilderPreviewRoute() {
   const [document, setDocument] = useState<BuilderDocument | null>(null);
+  const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const pendingCorrelationRef = useRef<string | null>(null);
+
+  // Validate the signed preview session on mount before accepting any messages.
+  useEffect(() => {
+    const session = readSessionFromUrl();
+    const secret = getPreviewSessionSecret();
+
+    if (!session) {
+      setSessionValid(false);
+      setSessionError('No preview session token found in URL. Access denied.');
+      return;
+    }
+    if (!secret) {
+      setSessionValid(false);
+      setSessionError('Preview session validation is not configured (VITE_PREVIEW_SESSION_SECRET missing). Access denied.');
+      return;
+    }
+
+    void validatePreviewSession(session, secret).then(({ valid, reason }) => {
+      if (valid) {
+        setSessionValid(true);
+      } else {
+        setSessionValid(false);
+        setSessionError(reason ?? 'Invalid preview session. Access denied.');
+      }
+    });
+  }, []);
 
   const handleMessage = useCallback((event: MessageEvent<unknown>): void => {
     // Security: Validate both source and origin to prevent spoofing
     const expectedOrigin = getExpectedParentOrigin();
     if (event.source !== window.parent || event.origin !== expectedOrigin) {
+      return;
+    }
+
+    // Security: Reject all messages until the signed session has been validated.
+    // sessionValid === null means validation is still in progress; wait.
+    if (sessionValid !== true) {
       return;
     }
 
@@ -144,7 +215,7 @@ export default function BuilderPreviewRoute() {
       default:
         break;
     }
-  }, []);
+  }, [sessionValid]);
 
   useEffect(() => {
     window.addEventListener('message', handleMessage);
@@ -160,6 +231,37 @@ export default function BuilderPreviewRoute() {
       window.removeEventListener('message', handleMessage);
     };
   }, [handleMessage]);
+
+  if (sessionValid === false) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          fontFamily: 'system-ui, sans-serif',
+          textAlign: 'center',
+          padding: '2rem',
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: '1rem',
+            color: '#b91c1c',
+            marginBottom: '0.5rem',
+          }}
+        >
+          Preview access denied
+        </div>
+        <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
+          {sessionError}
+        </div>
+      </div>
+    );
+  }
 
   if (!document) {
     return (

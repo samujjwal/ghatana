@@ -22,6 +22,29 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 /**
+ * Shape of the verified JWT payload attached to Express requests by auth
+ * middleware (e.g. passport-jwt or the Fastify-adjacent auth layer).
+ */
+export interface AuthenticatedUser {
+  userId: string;
+  role?: string;
+}
+
+/**
+ * Augment the Express Request type so TypeScript knows about `req.user`.
+ * This must be populated only by verified JWT middleware — never from
+ * client-controllable headers.
+ */
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
+
+/**
  * Interface for audit log entry to be created
  */
 export interface AuditLogData {
@@ -87,7 +110,11 @@ export class AuditLoggingMiddleware {
     private prisma: PrismaClient,
     private tenantExtractor: TenantExtractor,
     private actorExtractor: ActorExtractor = (req) =>
-      (req.headers['x-user-id'] as string) || 'anonymous'
+      // Only use the JWT-verified identity attached by auth middleware.
+      // Never fall back to client-controllable headers (X-User-ID et al.)
+      // which can be trivially spoofed. If no verified user is present, the
+      // actor is recorded as 'anonymous' to surface the unauthenticated call.
+      req.user?.userId ?? 'anonymous'
   ) {}
 
   /**

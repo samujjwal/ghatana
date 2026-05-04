@@ -36,12 +36,6 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
 
     static final String MODEL_VERSION = "lp-gen-v1.0";
     static final String PROMPT_VERSION = "lp-prompt-v1.0";
-    static final String PROOF_PENDING =
-        "Customer success stories and evidence-backed testimonials will be added "
-        + "during the content review process before publishing.";
-    static final String DISCLOSURE_PENDING =
-        "Required legal and regulatory disclosures will be confirmed during the "
-        + "compliance review process before publishing.";
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final ContentItemService contentItemService;
@@ -209,9 +203,10 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
 
     private String buildProofText(GenerateLandingPageCommand cmd) {
         if (cmd.proofPoints().isEmpty()) {
-            LOG.warn("[DMOS] Landing page generated without proof points for item={}; marking for review",
-                cmd.itemId());
-            return PROOF_PENDING;
+            throw new IllegalStateException(
+                "Cannot generate landing page without proof points. "
+                + "Provide evidence-backed testimonials and success stories before generation."
+            );
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < cmd.proofPoints().size(); i++) {
@@ -246,7 +241,10 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
 
     private String buildDisclaimerText(GenerateLandingPageCommand cmd) {
         if (cmd.disclosureTexts().isEmpty()) {
-            return DISCLOSURE_PENDING;
+            throw new IllegalStateException(
+                "Cannot generate landing page without disclosure texts. "
+                + "Provide required legal and regulatory disclosures before generation."
+            );
         }
         return String.join("\n\n", cmd.disclosureTexts());
     }

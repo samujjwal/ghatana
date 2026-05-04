@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.api;
 
+import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowServiceImpl;
@@ -12,6 +13,15 @@ import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationServi
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
+import com.ghatana.digitalmarketing.application.command.DmCommandHandlerRegistry;
+import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
+import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
+import com.ghatana.digitalmarketing.application.inf.DmConnectorInMemoryRepository;
+import com.ghatana.digitalmarketing.application.inf.googleads.DmGoogleAdsCampaignLinkInMemoryRepository;
+import com.ghatana.digitalmarketing.application.inf.googleads.DmGoogleAdsCredentialInMemoryRepository;
 import com.ghatana.digitalmarketing.application.strategy.MarketingStrategyRepository;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorServiceImpl;
@@ -39,6 +49,8 @@ import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepos
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
+import com.ghatana.platform.observability.Metrics;
+import com.ghatana.platform.observability.TracingManager;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.approval.impl.DurableHumanApprovalPlugin;
 import com.ghatana.plugin.approval.impl.StandardHumanApprovalPlugin;
@@ -60,6 +72,7 @@ import io.activej.http.AsyncServlet;
 import io.activej.http.HttpResponse;
 import io.activej.launcher.Launcher;
 import io.activej.service.ServiceGraph;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -186,6 +199,9 @@ public final class DmosApiServer extends Launcher {
         serviceGraph.add(Eventloop.class, () -> eventloop);
         serviceGraph.add(Executor.class, () -> eventloop);
 
+        // Wire observability (P1: OpenTelemetry metrics and traces)
+        wireObservability();
+
         // Create DataSource based on environment
         if (usePostgres()) {
             DataSource dataSource = createPostgresDataSource();
@@ -235,6 +251,9 @@ public final class DmosApiServer extends Launcher {
         // Wire services
         wireServices(kernelAdapter, eventloop, compliancePlugin);
 
+        // Wire command handler registry with observability (P1: OpenTelemetry)
+        wireCommandHandlerRegistry();
+
         // Wire servlets
         wireServlets(kernelAdapter, eventloop);
 
@@ -244,6 +263,78 @@ public final class DmosApiServer extends Launcher {
     private boolean usePostgres() {
         String persistenceType = System.getenv("DMOS_PERSISTENCE_TYPE");
         return "postgresql".equalsIgnoreCase(persistenceType) && !environment.equals(DEVELOPMENT);
+    }
+
+    /**
+     * Wires observability components (Metrics, TracingManager, DmosObservability) into the service graph.
+     * P1: OpenTelemetry metrics and traces integration.
+     */
+    private void wireObservability() {
+        // Create MeterRegistry (SimpleMeterRegistry for now; Prometheus can be added later)
+        SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
+        serviceGraph.add(SimpleMeterRegistry.class, () -> meterRegistry);
+
+        // Create Metrics facade
+        Metrics metrics = new Metrics(meterRegistry);
+        serviceGraph.add(Metrics.class, () -> metrics);
+
+        // Create TracingManager based on environment
+        TracingManager tracingManager;
+        if (environment.equals(PRODUCTION) || environment.equals(STAGING)) {
+            String collectorEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
+            if (collectorEndpoint == null || collectorEndpoint.isBlank()) {
+                collectorEndpoint = "http://localhost:4317";
+            }
+            tracingManager = TracingManager.createDefault("dmos-api", "1.0.0", collectorEndpoint);
+            LOG.info("[{}] Using TracingManager with OTLP endpoint: {}", environment, collectorEndpoint);
+        } else {
+            tracingManager = TracingManager.createNoOp();
+            LOG.info("[{}] Using no-op TracingManager for development", environment);
+        }
+        serviceGraph.add(TracingManager.class, () -> tracingManager);
+
+        // Create DmosObservability
+        DmosObservability observability = new DmosObservability(metrics, tracingManager);
+        serviceGraph.add(DmosObservability.class, () -> observability);
+
+        LOG.info("Observability components wired successfully");
+    }
+
+    /**
+     * Wires command handler registry with observability.
+     * P1: OpenTelemetry metrics and traces for command handlers.
+     */
+    private void wireCommandHandlerRegistry() {
+        // Get observability from service graph
+        DmosObservability observability = serviceGraph.get(DmosObservability.class);
+        
+        // Wire in-memory repositories for command handlers
+        DmConnectorRepository connectorRepo = new DmConnectorInMemoryRepository();
+        DmGoogleAdsCredentialRepository credentialRepo = new DmGoogleAdsCredentialInMemoryRepository();
+        DmGoogleAdsCampaignLinkRepository linkRepo = new DmGoogleAdsCampaignLinkInMemoryRepository();
+        
+        // Get CampaignRepository from service graph
+        CampaignRepository campaignRepo = serviceGraph.get(CampaignRepository.class);
+        
+        // Create Google Ads API client adapter
+        DmGoogleAdsCampaignApiClient apiClient = new HttpDmGoogleAdsCampaignApiClientAdapter();
+        
+        // Create ObjectMapper
+        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        
+        // Create command handler registry with observability
+        DmCommandHandlerRegistry commandHandlerRegistry = new DmCommandHandlerRegistry(
+            connectorRepo,
+            credentialRepo,
+            linkRepo,
+            campaignRepo,
+            apiClient,
+            objectMapper,
+            observability
+        );
+        
+        serviceGraph.add(DmCommandHandlerRegistry.class, () -> commandHandlerRegistry);
+        LOG.info("Command handler registry wired with observability");
     }
 
     private DataSource createPostgresDataSource() {

@@ -192,7 +192,6 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
             GenerateStrategyCommand command,
             GovernedAgentWorkflowService.GovernedWorkflowResult result) {
         try {
-            LOG.info("[AI-PARSING] Attempting to parse AI output for strategy generation");
             String aiOutput = result.output();
             
             // Parse the AI output as JSON
@@ -275,11 +274,10 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                 .approvedBy(null)
                 .build();
             
-            LOG.info("[AI-PARSING] Successfully parsed AI output into strategy: id={}", strategyId);
             return strategy;
             
         } catch (Exception e) {
-            LOG.warn("[AI-PARSING] Failed to parse AI output, falling back to deterministic generation: {}", e.getMessage());
+            LOG.debug("Failed to parse AI output, falling back to deterministic generation: {}", e.getMessage());
             return buildStrategy(ctx, command);
         }
     }

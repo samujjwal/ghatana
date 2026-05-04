@@ -33,6 +33,8 @@ jobs:
             path: products/audio-video/modules/intelligence/ai-voice/apps/desktop
           - product: aep-ui
             path: products/aep/ui
+          - product: digital-marketing-ui
+            path: products/digital-marketing/ui
 
     steps:
       - name: Checkout
@@ -95,7 +97,7 @@ jobs:
               'yappc-frontend', 'flashit-web',
               'tutorputor-web', 'tutorputor-admin',
               'data-cloud-ui', 'audio-video-desktop',
-              'aep-ui'
+              'aep-ui', 'digital-marketing-ui'
             ];
 
             const body = `## ${status} E2E Smoke Tests ${statusText}
