@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: build fixes 11 [`14ddc1e`](https://github.com/samujjwal/ghatana/commit/14ddc1e49609071335fca215597042d62b66e4b6)
 - **Changed**: test fixes + build issues fixes 1 [`d3c2747`](https://github.com/samujjwal/ghatana/commit/d3c2747114c958c77c0ba8d9565e667c738939bc)
 - **Changed**: refactor ffggsshh [`bcc0e31`](https://github.com/samujjwal/ghatana/commit/bcc0e31d58af8095317297a8972814b7cb5e7c38)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`a0c5e70`](https://github.com/samujjwal/ghatana/commit/a0c5e70d1d9f4156acab4c895d0c5eb037f04af6)
