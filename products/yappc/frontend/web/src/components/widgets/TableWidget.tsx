@@ -9,6 +9,7 @@
  * @doc.pattern Component
  */
 import React, { useState, useMemo } from 'react';
+import { Button, Input, Checkbox } from '@ghatana/design-system';
 
 interface ColumnDef<T = Record<string, unknown>> {
   key: string;
@@ -102,24 +103,26 @@ export function TableWidget<T extends Record<string, unknown>>({
   return (
     <div>
       {filterable && (
-        <input
+        <Input
           placeholder="Filter..."
           value={filter}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             setFilter(e.target.value);
             setPage(0);
           }}
-          className="mb-2 border px-2 py-1"
+          className="mb-2"
         />
       )}
       {exportable && (
-        <button
+        <Button
           aria-label="Export"
           onClick={() => onExport?.(data)}
-          className="mb-2 mr-2 rounded border px-3 py-1"
+          variant="outline"
+          size="sm"
+          className="mb-2 mr-2"
         >
           Export
-        </button>
+        </Button>
       )}
       <table>
         <thead>
@@ -128,10 +131,10 @@ export function TableWidget<T extends Record<string, unknown>>({
             {columns.map((col) => (
               <th key={col.key}>
                 {col.sortable ? (
-                  <button aria-label={col.label} onClick={() => handleSort(col.key)}>
+                  <Button aria-label={col.label} variant="ghost" size="sm" onClick={() => handleSort(col.key)}>
                     {col.label}
                     {sortKey === col.key ? (sortAsc ? ' ↑' : ' ↓') : ''}
-                  </button>
+                  </Button>
                 ) : (
                   col.label
                 )}
@@ -146,8 +149,7 @@ export function TableWidget<T extends Record<string, unknown>>({
               <tr key={String(id)}>
                 {selectable && (
                   <td>
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       checked={selectedIds.has(id)}
                       onChange={() => handleSelect(id)}
                     />
@@ -165,23 +167,27 @@ export function TableWidget<T extends Record<string, unknown>>({
       </table>
       {pageSize && totalPages > 1 && (
         <div>
-          <button
+          <Button
             aria-label="Previous"
+            variant="outline"
+            size="sm"
             disabled={page === 0}
             onClick={() => setPage((p) => p - 1)}
           >
             Previous
-          </button>
+          </Button>
           <span>
             {page + 1} / {totalPages}
           </span>
-          <button
+          <Button
             aria-label="Next"
+            variant="outline"
+            size="sm"
             disabled={page >= totalPages - 1}
             onClick={() => setPage((p) => p + 1)}
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>

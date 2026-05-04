@@ -65,7 +65,8 @@ export type HostToPreviewMessage =
   | SetViewportMessage
   | SetThemeMessage
   | SetLocaleMessage
-  | PingMessage;
+  | PingMessage
+  | SelectNodeMessage;
 
 export interface MountDocumentMessage {
   readonly type: 'MOUNT_DOCUMENT';
@@ -106,6 +107,12 @@ export interface SetLocaleMessage {
 export interface PingMessage {
   readonly type: 'PING';
   readonly correlationId: string;
+}
+
+export interface SelectNodeMessage {
+  readonly type: 'SELECT_NODE';
+  /** The node ID to highlight in the preview, or null to clear the highlight. */
+  readonly nodeId: string | null;
 }
 
 // ============================================================================
@@ -172,6 +179,10 @@ export interface PreviewHostServiceCallbacks {
   readonly onMounted?: (message: MountedMessage) => void;
   readonly onUpdated?: (message: UpdatedMessage) => void;
   readonly onError?: (message: ErrorMessage) => void;
+  /** Fired when the user clicks an element in the preview iframe. */
+  readonly onElementClick?: (message: ClickMessage) => void;
+  /** Fired when the user hovers over an element in the preview iframe (null = hover cleared). */
+  readonly onElementHover?: (message: HoverMessage) => void;
 }
 
 /** Interface a builder host must implement to manage a preview iframe. */
@@ -225,6 +236,12 @@ export class PreviewHostService {
         case 'ERROR':
           this.callbacks.onError?.(message);
           break;
+        case 'ELEMENT_CLICK':
+          this.callbacks.onElementClick?.(message);
+          break;
+        case 'ELEMENT_HOVER':
+          this.callbacks.onElementHover?.(message);
+          break;
         default:
           break;
       }
@@ -272,6 +289,12 @@ export class PreviewHostService {
           break;
         case 'ERROR':
           this.callbacks.onError?.(message);
+          break;
+        case 'ELEMENT_CLICK':
+          this.callbacks.onElementClick?.(message);
+          break;
+        case 'ELEMENT_HOVER':
+          this.callbacks.onElementHover?.(message);
           break;
         default:
           break;

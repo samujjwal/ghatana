@@ -35,6 +35,8 @@ export interface ComponentRendererProps {
   readonly nodeId: NodeId;
   readonly selectedNodeId?: string | null;
   readonly onSelect?: (nodeId: string) => void;
+  readonly onNodeClick?: (nodeId: string, coordinates: { readonly x: number; readonly y: number }) => void;
+  readonly onNodeHover?: (nodeId: string | null) => void;
   readonly onDropRequest?: (request: DropRequest) => void;
 }
 
@@ -54,7 +56,7 @@ function readDropSource(event: React.DragEvent<HTMLElement>): DropSource | null 
 
 function getSelectionStyle(isSelected: boolean): React.CSSProperties {
   return {
-    outline: isSelected ? '2px solid #1976d2' : '1px solid transparent',
+    outline: isSelected ? '2px solid var(--accent, #2563eb)' : '1px solid transparent',
     outlineOffset: '2px',
     cursor: 'pointer',
     borderRadius: 8,
@@ -89,6 +91,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
   nodeId,
   selectedNodeId,
   onSelect,
+  onNodeClick,
+  onNodeHover,
   onDropRequest,
 }) => {
   const instance = document.nodes.get(nodeId);
@@ -144,6 +148,8 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         nodeId={childId}
         selectedNodeId={selectedNodeId}
         onSelect={onSelect}
+        onNodeClick={onNodeClick}
+        onNodeHover={onNodeHover}
         onDropRequest={onDropRequest}
       />
     ));
@@ -179,7 +185,10 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
         onClick={(event) => {
           event.stopPropagation();
           onSelect?.(nodeId);
+          onNodeClick?.(nodeId, { x: event.clientX, y: event.clientY });
         }}
+        onMouseEnter={() => onNodeHover?.(nodeId)}
+        onMouseLeave={() => onNodeHover?.(null)}
       >
         {renderInstance(instance, { default: slotDefault, actions: slotActions }, { mode: 'canvas', selectedNodeId })}
 
@@ -247,10 +256,10 @@ const StackedSlotTargets: React.FC<StackedSlotTargetsProps> = ({
             data-testid={`slot-drop-${slotName}`}
             className="rounded border border-dashed px-2 py-1"
             style={{
-              borderColor: isActive ? '#1976d2' : '#cbd5e1',
-              backgroundColor: isActive ? 'rgba(25,118,210,0.12)' : 'rgba(148,163,184,0.08)',
+              borderColor: isActive ? 'var(--accent, #2563eb)' : 'var(--border-subtle, #cbd5e1)',
+              backgroundColor: isActive ? 'var(--accent-soft, #dbeafe)' : 'var(--surface-subtle, #f1f5f9)',
               fontSize: '0.75rem',
-              color: '#334155',
+              color: 'var(--text-muted, #334155)',
             }}
             onDragOver={(event) => onDragOver(event, slotName)}
             onDragLeave={() => onDragLeave(slotName)}

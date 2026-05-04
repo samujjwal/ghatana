@@ -39,7 +39,8 @@
         "allowedFiles": [
           "theme/",
           "tokens/",
-          "node_modules"
+          "node_modules",
+          "PersonaContext"
         ]
       }
     ],

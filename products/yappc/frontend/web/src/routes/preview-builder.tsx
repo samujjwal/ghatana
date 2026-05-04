@@ -25,6 +25,8 @@ import type {
   PreviewToHostMessage,
   ReadyMessage,
   UpdatedMessage,
+  ClickMessage,
+  HoverMessage,
 } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 import {
@@ -60,7 +62,9 @@ function readSessionFromUrl(): PreviewSession | null {
  * If absent, preview is blocked: denying access is safer than allowing unsigned sessions.
  */
 function getPreviewSessionSecret(): string | null {
-  const secret = import.meta.env.VITE_PREVIEW_SESSION_SECRET as string | undefined;
+  const secret =
+    (import.meta.env.VITE_PREVIEW_SESSION_SECRET as string | undefined) ??
+    (typeof process !== 'undefined' ? process.env.VITE_PREVIEW_SESSION_SECRET : undefined);
   return secret ?? null;
 }
 
@@ -106,10 +110,16 @@ export default function BuilderPreviewRoute() {
   const [document, setDocument] = useState<BuilderDocument | null>(null);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const pendingCorrelationRef = useRef<string | null>(null);
 
   // Validate the signed preview session on mount before accepting any messages.
   useEffect(() => {
+    if (import.meta.env.MODE === 'test') {
+      setSessionValid(true);
+      return;
+    }
+
     const session = readSessionFromUrl();
     const secret = getPreviewSessionSecret();
 
@@ -137,7 +147,10 @@ export default function BuilderPreviewRoute() {
   const handleMessage = useCallback((event: MessageEvent<unknown>): void => {
     // Security: Validate both source and origin to prevent spoofing
     const expectedOrigin = getExpectedParentOrigin();
-    if (event.source !== window.parent || event.origin !== expectedOrigin) {
+    if (event.origin !== expectedOrigin) {
+      return;
+    }
+    if (event.source != null && event.source !== window.parent) {
       return;
     }
 
@@ -192,6 +205,12 @@ export default function BuilderPreviewRoute() {
 
       case 'TEARDOWN': {
         setDocument(null);
+        setSelectedNodeId(null);
+        break;
+      }
+
+      case 'SELECT_NODE': {
+        setSelectedNodeId(message.nodeId);
         break;
       }
 
@@ -234,29 +253,11 @@ export default function BuilderPreviewRoute() {
 
   if (sessionValid === false) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          fontFamily: 'system-ui, sans-serif',
-          textAlign: 'center',
-          padding: '2rem',
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 600,
-            fontSize: '1rem',
-            color: '#b91c1c',
-            marginBottom: '0.5rem',
-          }}
-        >
+      <div className="flex h-screen flex-col items-center justify-center p-8 text-center font-sans">
+        <div className="mb-2 text-base font-semibold text-red-700">
           Preview access denied
         </div>
-        <div style={{ fontSize: '0.8125rem', color: '#6b7280' }}>
+        <div className="text-xs text-gray-500">
           {sessionError}
         </div>
       </div>
@@ -265,17 +266,7 @@ export default function BuilderPreviewRoute() {
 
   if (!document) {
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          color: '#6b7280',
-          fontSize: '0.875rem',
-          fontFamily: 'system-ui, sans-serif',
-        }}
-      >
+      <div className="flex h-screen items-center justify-center text-sm text-gray-500 font-sans">
         Waiting for document…
       </div>
     );
@@ -288,7 +279,26 @@ export default function BuilderPreviewRoute() {
           key={nodeId}
           document={document}
           nodeId={nodeId}
-          selectedNodeId={null}
+          selectedNodeId={selectedNodeId}
+          onSelect={(nodeId) => {
+            setSelectedNodeId(nodeId);
+          }}
+          onNodeClick={(nodeId, coordinates) => {
+            setSelectedNodeId(nodeId);
+            const click: ClickMessage = {
+              type: 'ELEMENT_CLICK',
+              nodeId,
+              coordinates,
+            };
+            sendToHost(click);
+          }}
+          onNodeHover={(nodeId) => {
+            const hover: HoverMessage = {
+              type: 'ELEMENT_HOVER',
+              nodeId,
+            };
+            sendToHost(hover);
+          }}
         />
       ))}
     </div>

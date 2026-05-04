@@ -19,6 +19,7 @@ export type {
   SetThemeMessage,
   SetLocaleMessage,
   PingMessage,
+  SelectNodeMessage,
   ReadyMessage,
   MountedMessage,
   UpdatedMessage,
@@ -26,6 +27,7 @@ export type {
   ClickMessage,
   HoverMessage,
   PongMessage,
+  PreviewHostServiceCallbacks,
 } from './protocol.js';
 
 export { PRESET_VIEWPORTS, createSandboxProfile } from './protocol.js';

@@ -3,6 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { LivePreviewPanel } from '../LivePreviewPanel';
 
 const mountDocumentMock = vi.fn();
+const updateDocumentMock = vi.fn();
+const sendMock = vi.fn();
 const teardownMock = vi.fn();
 const resolvePreviewExecutionPolicyMock = vi.fn();
 
@@ -20,6 +22,14 @@ vi.mock('@ghatana/ui-builder/preview', () => ({
 
     mountDocument(document: unknown) {
       return mountDocumentMock(document);
+    }
+
+    updateDocument(document: unknown) {
+      return updateDocumentMock(document);
+    }
+
+    send(message: unknown) {
+      return sendMock(message);
     }
 
     teardown() {
@@ -52,6 +62,8 @@ const baseDocument = {
 describe('LivePreviewPanel - Platform Preview Protocol', () => {
   beforeEach(() => {
     mountDocumentMock.mockReset();
+    updateDocumentMock.mockReset();
+    sendMock.mockReset();
     teardownMock.mockReset();
     resolvePreviewExecutionPolicyMock.mockReset();
     resolvePreviewExecutionPolicyMock.mockReturnValue({

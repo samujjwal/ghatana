@@ -108,6 +108,30 @@ class PageArtifactValidatorTest {
         assertThat(result.warnings()).anyMatch(warning -> warning.contains("No governance records present"));
     }
 
+    @Test
+    @DisplayName("documents containing executable payloads are rejected")
+    void validate_rejectsExecutablePayloads() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of("onLoad", "javascript:alert(1)"),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("potentially executable content"));
+    }
+
     private static PageArtifactDocument sampleDocument(
             String source,
             Map<String, Object> builderDocument,

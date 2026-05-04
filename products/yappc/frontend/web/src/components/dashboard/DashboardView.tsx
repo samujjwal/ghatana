@@ -1,4 +1,4 @@
-// @ts-nocheck
+import React from 'react';
 import { useNavigate } from 'react-router';
 import { Folder, GitBranch as AccountTree, Plus as Add, Search, Building as Business, Code, ExternalLink as Launch } from 'lucide-react';
 import { Card, CardContent, Typography, Button, Box, Grid, Surface as Paper, IconButton, Input as InputBase, Chip, Avatar, Stack } from '@ghatana/design-system';
@@ -64,7 +64,7 @@ export function DashboardView({
         <div className="max-w-7xl mx-auto p-6">
             {/* HERO SECTION */}
             <div className="mb-10">
-                <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'start', md: 'center' }} justifyContent="space-between" mb={2}>
+                <Box className="flex flex-col md:flex-row items-start md:items-center justify-between" mb={2}>
                     <div>
                         <Typography as="h4" fontWeight="bold" className="text-text-primary mb-1">
                             {userName ? `Welcome back, ${userName}` : 'Welcome back'}
@@ -86,7 +86,7 @@ export function DashboardView({
                 </Box>
 
                 <Paper
-                    variant="flat"
+                    variant="outlined"
                     onClick={onSearchClick}
                     className="flex items-center w-full max-w-[700px] rounded-lg border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
                     style={{
@@ -123,13 +123,12 @@ export function DashboardView({
                 {/* IDE Launch Card */}
                 <Grid item xs={12} lg={6}>
                     <Card
-                        variant="flat"
+                        variant="outlined"
                         className="border-[2px_solid] border-blue-600 h-full rounded-lg relative overflow-hidden before:absolute before:top-[0px] before:left-[0px] before:right-[0px] before:h-[4px]" >
                         <CardContent className="p-6">
-                            <Box display="flex" alignItems="center" gap={2} mb={3}>
+                            <Box className="flex items-center gap-2" mb={3}>
                                 <Box
-                                    className="flex h-[48px] w-[48px] items-center justify-center rounded-lg text-white"
-                                    style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                                    className="flex h-[48px] w-[48px] items-center justify-center rounded-lg text-white bg-gradient-to-br from-indigo-400 to-purple-700"
                                 >
                                     <Code className="text-2xl" />
                                 </Box>
@@ -147,7 +146,7 @@ export function DashboardView({
                                 <Typography as="p" className="mb-4 text-sm" color="text.secondary">
                                     Experience the complete IDE with:
                                 </Typography>
-                                <Box component="ul" className="pl-4 m-0 [&_li]:mb-2">
+                                <Box as="ul" className="pl-4 m-0 [&_li]:mb-2">
                                 <Typography component="li" as="p" className="text-sm" color="text.secondary">
                                         Monaco Editor with syntax highlighting
                                     </Typography>
@@ -171,7 +170,7 @@ export function DashboardView({
                         size="lg"
                         startIcon={<Launch />}
                         onClick={() => window.open('/ide', '_blank')}
-                                className="text-white py-[9.6px] px-6 text-base font-bold rounded-lg shadow w-full hover:shadow-md" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} >
+                                className="text-white py-[9.6px] px-6 text-base font-bold rounded-lg shadow w-full hover:shadow-md bg-gradient-to-br from-indigo-400 to-purple-700" >
                         Launch IDE
                     </Button>
                         </CardContent>
@@ -179,12 +178,12 @@ export function DashboardView({
                 </Grid>
 
                 {/* Projects Section */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card variant="flat" className="h-full rounded-lg border border-solid border-gray-200 dark:border-gray-700">
+                <Grid xs={12} md={6}>
+                    <Card variant="outlined" className="h-full rounded-lg">
                         <CardContent>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <Folder color="action" />
+                            <Box className="flex justify-between items-center" mb={3}>
+                                <Box className="flex items-center gap-1">
+                                    <Folder className="text-gray-500 dark:text-gray-400" />
                                     <Typography as="p" className="text-lg font-medium" fontWeight="bold">
                                         Projects
                                     </Typography>
@@ -234,12 +233,12 @@ export function DashboardView({
                 </Grid>
 
                 {/* Workflows Section */}
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card variant="flat" className="h-full rounded-lg border border-solid border-gray-200 dark:border-gray-700">
+                <Grid xs={12} md={6}>
+                    <Card variant="outlined" className="h-full rounded-lg">
                         <CardContent>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                    <AccountTree color="action" />
+                            <Box className="flex justify-between items-center" mb={3}>
+                                <Box className="flex items-center gap-1">
+                                    <AccountTree className="text-gray-500 dark:text-gray-400" />
                                     <Typography as="p" className="text-lg font-medium" fontWeight="bold">
                                         Workflows
                                     </Typography>
@@ -307,14 +306,13 @@ export function DashboardView({
                 </Grid>
 
                 {/* Workspaces List (Compact) */}
-                <Grid size={{ xs: 12 }}>
+                <Grid xs={12}>
                     <Box className="mt-4 flex gap-4 flex-wrap">
                         {workspaces.map(ws => (
                             <Chip
                                 key={ws.id}
                                 icon={<Business className="text-base" />}
                                 label={ws.name}
-                                component="a"
                                 clickable
                                 onClick={() => onWorkspaceClick(ws.id)}
                             />

@@ -19,16 +19,19 @@ package com.ghatana.yappc.domain.pageartifact.http;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.http.security.filter.TenantExtractor;
 import com.ghatana.platform.http.server.response.ResponseBuilder;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.observability.Traced;
 import com.ghatana.platform.security.rbac.AccessDeniedException;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.security.model.User;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactAuditRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactConflictException;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactDocument;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactValidator;
+import java.util.Set;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -40,10 +43,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * HTTP controller for page artifact operations.
@@ -68,6 +70,7 @@ public final class PageArtifactController {
             Pattern.compile("/api/v1/page-artifacts/([^/]+)/document");
 
     private final PageArtifactRepository repository;
+    private final PageArtifactAuditRepository auditRepository;
     private final ObjectMapper objectMapper;
     private final SyncAuthorizationService authorizationService;
     private final MetricsCollector metrics;
@@ -82,11 +85,13 @@ public final class PageArtifactController {
      */
     public PageArtifactController(
             @NotNull PageArtifactRepository repository,
+            @NotNull PageArtifactAuditRepository auditRepository,
             @NotNull ObjectMapper objectMapper,
             @NotNull SyncAuthorizationService authorizationService,
             @NotNull MetricsCollector metrics
     ) {
         this.repository = repository;
+        this.auditRepository = auditRepository;
         this.objectMapper = objectMapper;
         this.authorizationService = authorizationService;
         this.metrics = metrics;
@@ -106,12 +111,12 @@ public final class PageArtifactController {
         String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
         String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-        String userId = request.getHeader(HttpHeaders.of("X-User-ID"));
-        String userRoles = request.getHeader(HttpHeaders.of("X-User-Role"));
+        Principal principal = request.getAttachment(Principal.class);
+        String userId = principal != null ? principal.getName() : null;
 
         // Check authorization
         try {
-            checkAuthorization(userId, userRoles, PageArtifactPermission.EDIT);
+            checkAuthorization(principal, PageArtifactPermission.EDIT);
         } catch (AccessDeniedException e) {
             LOG.warn("Authorization denied for saveDocument: {}", e.getMessage());
             return Promise.of(forbidden(e.getMessage()));
@@ -120,6 +125,9 @@ public final class PageArtifactController {
         // Validate required headers
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Tenant-ID header"));
+        }
+        if (!tenantId.equals(principal.getTenantId())) {
+            return Promise.of(forbidden("Tenant context mismatch between authenticated principal and request header"));
         }
         if (workspaceId == null || workspaceId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Workspace-ID header"));
@@ -270,12 +278,12 @@ public final class PageArtifactController {
         String tenantId = TenantExtractor.fromHttp(request).orElse(null);
         String workspaceId = request.getHeader(HttpHeaders.of("X-Workspace-ID"));
         String projectId = request.getHeader(HttpHeaders.of("X-Project-ID"));
-        String userId = request.getHeader(HttpHeaders.of("X-User-ID"));
-        String userRoles = request.getHeader(HttpHeaders.of("X-User-Role"));
+        Principal principal = request.getAttachment(Principal.class);
+        String userId = principal != null ? principal.getName() : null;
 
         // Check authorization
         try {
-            checkAuthorization(userId, userRoles, PageArtifactPermission.READ);
+            checkAuthorization(principal, PageArtifactPermission.READ);
         } catch (AccessDeniedException e) {
             LOG.warn("Authorization denied for loadDocument: {}", e.getMessage());
             return Promise.of(forbidden(e.getMessage()));
@@ -283,6 +291,9 @@ public final class PageArtifactController {
 
         if (tenantId == null || tenantId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Tenant-ID header"));
+        }
+        if (!tenantId.equals(principal.getTenantId())) {
+            return Promise.of(forbidden("Tenant context mismatch between authenticated principal and request header"));
         }
         if (workspaceId == null || workspaceId.isBlank()) {
             return Promise.of(badRequest("Missing required X-Workspace-ID header"));
@@ -386,33 +397,23 @@ public final class PageArtifactController {
                 .build();
     }
 
-    private void checkAuthorization(
-            @Nullable String userId,
-            @Nullable String userRolesHeader,
-            String requiredPermission
-    ) {
-        if (userId == null || userId.isBlank()) {
-            throw new AccessDeniedException("User ID is required for authorization");
+    private void checkAuthorization(@Nullable Principal principal, String requiredPermission) {
+        if (principal == null) {
+            throw new AccessDeniedException("Authenticated principal is required");
         }
-        if (userRolesHeader == null || userRolesHeader.isBlank()) {
-            throw new AccessDeniedException("User role is required for authorization");
-        }
-        Set<String> roles = java.util.Arrays.stream(userRolesHeader.split(","))
-                .map(String::trim)
-                .filter(role -> !role.isBlank())
-                .collect(Collectors.toSet());
-        if (roles.isEmpty()) {
-            throw new AccessDeniedException("User role is required for authorization");
+        List<String> principalRoles = principal.getRoles();
+        if (principalRoles == null || principalRoles.isEmpty()) {
+            throw new AccessDeniedException("Principal roles are required for authorization");
         }
 
-        User user = new User(userId, userId, roles);
+        User user = new User(principal.getName(), principal.getName(), Set.copyOf(principalRoles));
         boolean hasPermission = authorizationService.hasPermission(user, requiredPermission);
         if (!hasPermission) {
             throw new AccessDeniedException(
                     "User does not have required permission: " + requiredPermission
             );
         }
-        LOG.debug("Authorization check passed for user={} permission={}", userId, requiredPermission);
+        LOG.debug("Authorization check passed for user={} permission={}", principal.getName(), requiredPermission);
     }
 
     private Exception toException(Throwable throwable) {
@@ -430,6 +431,7 @@ public final class PageArtifactController {
             @Nullable String userId,
             String summary
     ) {
+        String actor = userId == null || userId.isBlank() ? "system" : userId;
         LOG.info(
                 "Audit: page-artifact {} tenant={} workspace={} project={} artifact={} actor={} summary={}",
                 action,
@@ -437,8 +439,21 @@ public final class PageArtifactController {
                 workspaceId,
                 projectId,
                 artifactId,
-                userId == null || userId.isBlank() ? "system" : userId,
+            actor,
                 summary
         );
+
+        auditRepository.record(action, tenantId, workspaceId, projectId, artifactId, actor, summary)
+            .whenException(ex -> {
+                LOG.error("Failed to persist page artifact audit event", ex);
+                metrics.recordError("yappc.page_artifact.audit_write_failed", toException(ex),
+                    Map.of(
+                        "tenant_id", tenantId,
+                        "workspace_id", workspaceId,
+                        "project_id", projectId,
+                        "artifact_id", artifactId,
+                        "action", action
+                    ));
+            });
     }
 }

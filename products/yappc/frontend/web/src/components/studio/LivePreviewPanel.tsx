@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Button, Select } from '@ghatana/design-system';
 import { cn } from '@/lib/utils';
 import {
   PreviewHostService,
@@ -8,6 +9,7 @@ import {
   type SandboxProfile,
 } from '@ghatana/ui-builder/preview';
 import type { BuilderDocument } from '@ghatana/ui-builder';
+import { getPreviewSync } from '@/services/canvas/preview/BidirectionalPreviewSync';
 
 /**
  * Live Preview Panel component.
@@ -33,6 +35,12 @@ export interface LivePreviewPanelProps {
     readonly errorCount: number;
     readonly warningCount: number;
   };
+  /** The currently selected node ID in the builder canvas — sent to the preview to highlight it. */
+  selectedNodeId?: string | null;
+  /** Fired when the user clicks a node in the preview iframe. */
+  onElementClick?: (nodeId: string) => void;
+  /** Fired when the user hovers over a node in the preview iframe (null = hover cleared). */
+  onElementHover?: (nodeId: string | null) => void;
 }
 
 export function LivePreviewPanel({
@@ -44,6 +52,9 @@ export function LivePreviewPanel({
   viewportKey = 'desktop',
   onDocumentChange,
   validation,
+  selectedNodeId,
+  onElementClick,
+  onElementHover,
 }: LivePreviewPanelProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +95,8 @@ export function LivePreviewPanel({
   useEffect(() => {
     if (!iframeRef.current) return;
 
+    const previewSync = getPreviewSync();
+
     const service = new PreviewHostService(iframeRef.current, previewPolicy.profile, {
       onMounted: (msg) => {
         console.log('Preview mounted:', msg);
@@ -93,6 +106,18 @@ export function LivePreviewPanel({
         console.error('Preview error:', msg);
         setError(msg.message);
         setIsLoading(false);
+      },
+      onElementClick: (msg) => {
+        previewSync.handlePreviewClick(msg.nodeId);
+        onElementClick?.(msg.nodeId);
+      },
+      onElementHover: (msg) => {
+        if (msg.nodeId) {
+          previewSync.handlePreviewHover(msg.nodeId);
+        } else {
+          previewSync.clearHover();
+        }
+        onElementHover?.(msg.nodeId);
       },
     });
 
@@ -110,6 +135,18 @@ export function LivePreviewPanel({
 
     iframeRef.current.setAttribute('csp', previewPolicy.contentSecurityPolicy);
   }, [previewPolicy.contentSecurityPolicy]);
+
+  // Send SELECT_NODE to preview when canvas selection changes
+  useEffect(() => {
+    if (!previewServiceRef.current || !previewPolicy.profile.trustedOrigins[0]) return;
+    const previewSync = getPreviewSync();
+    if (selectedNodeId) {
+      previewSync.handleCanvasClick(selectedNodeId);
+    } else {
+      previewSync.clearSelection();
+    }
+    previewServiceRef.current.send({ type: 'SELECT_NODE', nodeId: selectedNodeId ?? null });
+  }, [selectedNodeId, previewPolicy.profile.trustedOrigins]);
 
   // Mount/update document when it changes
   useEffect(() => {
@@ -191,42 +228,46 @@ export function LivePreviewPanel({
         </div>
         <div className="flex items-center gap-2">
           {/* Viewport Selector */}
-          <select
+          <Select
             value={currentViewport}
             onChange={(e) => handleViewportChange(e.target.value as keyof typeof PRESET_VIEWPORTS)}
-            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            <option value="mobile">Mobile (375px)</option>
-            <option value="tablet">Tablet (768px)</option>
-            <option value="desktop">Desktop (1440px)</option>
-            <option value="desktop-xl">Desktop XL (1920px)</option>
-          </select>
-          <select
+            className="text-xs"
+            options={[
+              { value: 'mobile', label: 'Mobile (375px)' },
+              { value: 'tablet', label: 'Tablet (768px)' },
+              { value: 'desktop', label: 'Desktop (1440px)' },
+              { value: 'desktop-xl', label: 'Desktop XL (1920px)' },
+            ]}
+          />
+          <Select
             value={currentTheme}
             onChange={(e) => setCurrentTheme(e.target.value)}
-            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            <option value="default">Default theme</option>
-            <option value="contrast">High contrast</option>
-          </select>
-          <select
+            className="text-xs"
+            options={[
+              { value: 'default', label: 'Default theme' },
+              { value: 'contrast', label: 'High contrast' },
+            ]}
+          />
+          <Select
             value={currentLocale}
             onChange={(e) => setCurrentLocale(e.target.value)}
-            className="text-xs border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-          >
-            <option value="en-US">en-US</option>
-            <option value="en-GB">en-GB</option>
-          </select>
+            className="text-xs"
+            options={[
+              { value: 'en-US', label: 'en-US' },
+              { value: 'en-GB', label: 'en-GB' },
+            ]}
+          />
           <span className="text-xs text-gray-500">
             {lastUpdate.toLocaleTimeString()}
           </span>
-          <button
+          <Button
             onClick={handleRefresh}
-            className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded"
+            variant="outline"
+            size="small"
             title="Refresh Preview"
           >
-            <span className="text-sm">🔄</span>
-          </button>
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -251,12 +292,14 @@ export function LivePreviewPanel({
               <p className="text-sm text-red-600 dark:text-red-400">
                 {error ?? 'Preview is paused until validation errors are resolved.'}
               </p>
-              <button
+              <Button
                 onClick={handleRefresh}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="mt-4"
+                variant="solid"
+                size="small"
               >
                 Retry
-              </button>
+              </Button>
             </div>
           </div>
         ) : !document && !componentPath && !previewUrl ? (

@@ -10,7 +10,7 @@
  *  6. Clears the canvas on TEARDOWN.
  */
 
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 import BuilderPreviewRoute from '../preview-builder';
 import type {
@@ -23,6 +23,10 @@ import type {
   PongMessage,
 } from '@ghatana/ui-builder/preview';
 import type { BuilderDocument } from '@ghatana/ui-builder';
+
+vi.mock('../../security/PreviewSession', () => ({
+  validatePreviewSession: vi.fn(async () => ({ valid: true })),
+}));
 
 // ---- Mock ComponentRenderer to avoid pulling in the full React tree ----
 vi.mock('../../components/canvas/page/ComponentRenderer', () => ({
@@ -61,17 +65,31 @@ function makeDocument(rootNodes: string[] = []): BuilderDocument {
  * jsdom where window.parent === window).
  */
 function dispatchFromParent(message: HostToPreviewMessage): void {
+  const expectedOrigin = document.referrer
+    ? new URL(document.referrer).origin
+    : window.location.origin;
   const event = new MessageEvent('message', {
     data: message,
-    source: window,
-    origin: window.location.origin,
+    source: window.parent,
+    origin: expectedOrigin,
   });
   window.dispatchEvent(event);
 }
 
 describe('BuilderPreviewRoute', () => {
+  const session = btoa(JSON.stringify({ sessionId: 's1' })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  const expectedOrigin = document.referrer
+    ? new URL(document.referrer).origin
+    : window.location.origin;
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_PREVIEW_SESSION_SECRET', 'test-secret');
+    window.history.replaceState({}, '', `/preview/builder?session=${session}`);
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it('posts READY to window.parent on mount', () => {
@@ -81,7 +99,7 @@ describe('BuilderPreviewRoute', () => {
 
     expect(postMessageSpy).toHaveBeenCalledWith(
       expect.objectContaining<Partial<ReadyMessage>>({ type: 'READY' }),
-      '*',
+      expectedOrigin,
     );
   });
 
@@ -110,6 +128,7 @@ describe('BuilderPreviewRoute', () => {
     };
 
     await act(async () => {
+      await Promise.resolve();
       dispatchFromParent(mountMsg);
       // Allow the microtask (Promise.resolve().then) to flush
       await Promise.resolve();
@@ -122,7 +141,7 @@ describe('BuilderPreviewRoute', () => {
         type: 'MOUNTED',
         correlationId: 'corr-1',
       }),
-      '*',
+      expectedOrigin,
     );
   });
 
@@ -152,6 +171,7 @@ describe('BuilderPreviewRoute', () => {
     };
 
     await act(async () => {
+      await Promise.resolve();
       dispatchFromParent(mountMsg);
       await Promise.resolve();
     });
@@ -168,7 +188,7 @@ describe('BuilderPreviewRoute', () => {
         type: 'UPDATED',
         correlationId: 'corr-2',
       }),
-      '*',
+      expectedOrigin,
     );
   });
 
@@ -177,6 +197,7 @@ describe('BuilderPreviewRoute', () => {
     render(<BuilderPreviewRoute />);
 
     await act(async () => {
+      await Promise.resolve();
       dispatchFromParent({ type: 'PING', correlationId: 'ping-1' });
     });
 
@@ -185,7 +206,7 @@ describe('BuilderPreviewRoute', () => {
         type: 'PONG',
         correlationId: 'ping-1',
       }),
-      '*',
+      expectedOrigin,
     );
   });
 
@@ -193,6 +214,7 @@ describe('BuilderPreviewRoute', () => {
     render(<BuilderPreviewRoute />);
 
     await act(async () => {
+      await Promise.resolve();
       dispatchFromParent({
         type: 'MOUNT_DOCUMENT',
         document: makeDocument(['node-abc']),

@@ -50,7 +50,7 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             new InMemoryEvolveApiController(),
             lifecycleController,
             new InMemoryArtifactGraphController(),
-            new PageArtifactController(null, null, null, null)
+            new PageArtifactController(null, null, null, null, null)
         );
     }
 

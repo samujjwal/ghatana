@@ -12,6 +12,7 @@
 
 import React, { useState } from 'react';
 import { X as Close, Pencil as Edit, Save, Trash2 as Delete, History } from 'lucide-react';
+import { Button, IconButton, Checkbox, Input } from '@ghatana/design-system';
 import type { LifecycleArtifactKind } from '@/shared/types/lifecycle-artifacts';
 import { LIFECYCLE_ARTIFACT_CATALOG } from '@/shared/types/lifecycle-artifacts';
 
@@ -122,11 +123,9 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
         if (typeof value === 'boolean') {
             return (
                 <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                        type="checkbox"
+                    <Checkbox
                         checked={value}
-                        onChange={(e) => setEditedPayload({ ...editedPayload, [key]: e.target.checked })}
-                        className="w-4 h-4 text-primary-600 rounded"
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedPayload({ ...editedPayload, [key]: e.target.checked })}
                     />
                     <span className="text-sm text-text-primary">Enabled</span>
                 </label>
@@ -134,11 +133,11 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
         }
 
         return (
-            <input
+            <Input
                 type="text"
                 value={String(value)}
-                onChange={(e) => setEditedPayload({ ...editedPayload, [key]: e.target.value })}
-                className="w-full px-3 py-2 text-sm border border-divider rounded-md focus:outline-none focus:ring-2 focus:ring-primary-600"
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedPayload({ ...editedPayload, [key]: e.target.value })}
+                className="w-full"
             />
         );
     };
@@ -172,56 +171,64 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
                             <span>ID: {artifactId.slice(0, 8)}</span>
                         </div>
                     </div>
-                    <button
+                    <IconButton
+                        aria-label="Close"
                         onClick={onClose}
-                        className="p-2 hover:bg-grey-100 rounded-md transition-colors"
                     >
                         <Close className="w-5 h-5 text-text-secondary" />
-                    </button>
+                    </IconButton>
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 px-4 py-2 border-b border-divider bg-bg-default">
                     {isEditing ? (
                         <>
-                            <button
+                            <Button
                                 onClick={handleSave}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                                variant="solid"
+                                size="sm"
+                                startIcon={<Save className="w-4 h-4" />}
                             >
-                                <Save className="w-4 h-4" />
                                 Save
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={() => {
                                     setEditedPayload(payload);
                                     setIsEditing(false);
                                 }}
-                                className="px-3 py-1.5 text-sm text-text-secondary hover:bg-grey-100 rounded-md transition-colors"
+                                variant="ghost"
+                                size="sm"
                             >
                                 Cancel
-                            </button>
+                            </Button>
                         </>
                     ) : (
                         <>
-                            <button
+                            <Button
                                 onClick={() => setIsEditing(true)}
-                                className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-md transition-colors"
+                                variant="ghost"
+                                size="sm"
+                                startIcon={<Edit className="w-4 h-4" />}
                             >
-                                <Edit className="w-4 h-4" />
                                 Edit
-                            </button>
-                            <button className="flex items-center gap-1 px-3 py-1.5 text-sm text-text-secondary hover:bg-grey-100 rounded-md transition-colors">
-                                <History className="w-4 h-4" />
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                startIcon={<History className="w-4 h-4" />}
+                            >
                                 History
-                            </button>
+                            </Button>
                             {onDelete && (
-                                <button
+                                <Button
                                     onClick={onDelete}
-                                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-error-color hover:bg-red-50 rounded-md transition-colors ml-auto"
+                                    variant="ghost"
+                                    size="sm"
+                                    startIcon={<Delete className="w-4 h-4" />}
+                                    className="ml-auto text-error-color"
                                 >
-                                    <Delete className="w-4 h-4" />
                                     Delete
-                                </button>
+                                </Button>
                             )}
                         </>
                     )}

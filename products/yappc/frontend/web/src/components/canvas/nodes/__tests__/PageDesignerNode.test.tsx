@@ -137,6 +137,10 @@ vi.mock('@/components/studio/LivePreviewPanel', () => ({
   LivePreviewPanel: () => <div data-testid="live-preview-panel" />,
 }));
 
+vi.mock('@/context', () => ({
+  usePhaseContext: () => ({ currentPhase: null }),
+}));
+
 vi.mock('jotai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('jotai')>();
   return {

@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 
 import { cn } from '../utils/cn';
+import { Button, IconButton } from '@ghatana/design-system';
 import {
   activeProjectAtom,
   projectPhaseAtom,
@@ -225,47 +226,47 @@ const ProjectHeader: React.FC = () => {
         </div>
 
         {/* Star */}
-        <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-amber-400 transition-colors"
+        <IconButton
           aria-label="Star project"
+          className="text-zinc-400 hover:text-amber-400"
         >
           <Star className="w-5 h-5" />
-        </button>
+        </IconButton>
 
         {/* Share */}
-        <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+        <IconButton
           aria-label="Share project"
+          className="text-zinc-400 hover:text-white"
         >
           <Share2 className="w-5 h-5" />
-        </button>
+        </IconButton>
 
         {/* Search */}
-        <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+        <IconButton
           aria-label="Search in project"
+          className="text-zinc-400 hover:text-white"
         >
           <Search className="w-5 h-5" />
-        </button>
+        </IconButton>
 
         {/* Notifications */}
-        <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors relative"
+        <IconButton
           aria-label="Project notifications"
+          className="text-zinc-400 hover:text-white relative"
         >
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        </IconButton>
 
         {/* More Menu */}
         <div className="relative">
-          <button
+          <IconButton
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
             aria-label="More options"
+            className="text-zinc-400 hover:text-white"
           >
             <MoreVertical className="w-5 h-5" />
-          </button>
+          </IconButton>
 
           <AnimatePresence>
             {menuOpen && (
@@ -280,19 +281,17 @@ const ProjectHeader: React.FC = () => {
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   className="absolute right-0 top-full mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-20 py-1"
                 >
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
-                    <Settings className="w-4 h-4" />
+                  <Button variant="ghost" size="sm" startIcon={<Settings className="w-4 h-4" />} fullWidth className="justify-start text-zinc-300">
                     Project Settings
-                  </button>
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 transition-colors">
-                    <Users className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" startIcon={<Users className="w-4 h-4" />} fullWidth className="justify-start text-zinc-300">
                     Manage Team
-                  </button>
+                  </Button>
                   <hr className="my-1 border-zinc-700" />
-                  <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-zinc-700 transition-colors">
+                  <Button variant="ghost" size="sm" startIcon={<Trash2 className="w-4 h-4" />} fullWidth className="justify-start text-red-400">
                     <Trash2 className="w-4 h-4" />
                     Archive Project
-                  </button>
+                  </Button>
                 </motion.div>
               </>
             )}
@@ -363,12 +362,13 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
           {!collapsed && <span className="text-sm font-medium">Dashboard</span>}
         </NavLink>
         {!collapsed && (
-          <button
+          <IconButton
             onClick={onToggle}
-            className="p-1.5 rounded hover:bg-zinc-800 text-zinc-500 hover:text-white transition-colors"
+            aria-label="Collapse sidebar"
+            className="text-zinc-500 hover:text-white"
           >
             <ChevronLeft className="w-4 h-4" />
-          </button>
+          </IconButton>
         )}
       </div>
 
@@ -434,12 +434,13 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
       {/* Toggle Button (collapsed state) */}
       {collapsed && (
         <div className="p-3 border-t border-zinc-800">
-          <button
+          <IconButton
             onClick={onToggle}
-            className="w-full p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors flex items-center justify-center"
+            aria-label="Expand sidebar"
+            className="w-full text-zinc-400 hover:text-white flex items-center justify-center"
           >
             <ChevronRight className="w-5 h-5" />
-          </button>
+          </IconButton>
         </div>
       )}
     </aside>

@@ -2,23 +2,27 @@ package com.ghatana.yappc.domain.pageartifact.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.observability.MetricsCollector;
 import com.ghatana.platform.security.rbac.InMemoryRolePermissionRegistry;
 import com.ghatana.platform.security.rbac.SyncAuthorizationService;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import com.ghatana.yappc.domain.pageartifact.InMemoryPageArtifactRepository;
+import com.ghatana.yappc.domain.pageartifact.PageArtifactAuditRepository;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactDocument;
 import com.ghatana.yappc.domain.pageartifact.PageArtifactPermission;
 import io.activej.bytebuf.ByteBuf;
 import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
+import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,18 +40,20 @@ class PageArtifactControllerTest extends EventloopTestBase {
     private InMemoryPageArtifactRepository repository;
     private PageArtifactController controller;
     private ObjectMapper objectMapper;
+        private RecordingAuditRepository auditRepository;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryPageArtifactRepository();
         objectMapper = new ObjectMapper().findAndRegisterModules();
+        auditRepository = new RecordingAuditRepository();
 
         InMemoryRolePermissionRegistry registry = new InMemoryRolePermissionRegistry();
         registry.registerRole("EDITOR", Set.of(PageArtifactPermission.READ, PageArtifactPermission.EDIT));
         registry.registerRole("VIEWER", Set.of(PageArtifactPermission.READ));
 
         SyncAuthorizationService authorizationService = new SyncAuthorizationService(registry);
-        controller = new PageArtifactController(repository, objectMapper, authorizationService, MetricsCollector.create());
+                controller = new PageArtifactController(repository, auditRepository, objectMapper, authorizationService, MetricsCollector.create());
     }
 
     @Test
@@ -65,7 +71,7 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
 
-        HttpResponse response = runPromise(() -> controller.saveDocument(request));
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
 
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.of("ETag"))).isEqualTo("doc-1");
@@ -83,13 +89,11 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
-                .withHeader(HttpHeaders.of("X-User-Role"), "EDITOR")
                 .withHeader(HttpHeaders.of("If-Match"), "doc-2")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(document)))
                 .build();
 
-        HttpResponse response = runPromise(() -> controller.saveDocument(request));
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
 
         assertThat(response.getCode()).isEqualTo(422);
         JsonNode body = objectMapper.readTree(runPromise(response::loadBody).asString(StandardCharsets.UTF_8));
@@ -103,11 +107,9 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
-                .withHeader(HttpHeaders.of("X-User-Role"), "UNKNOWN")
                 .build();
 
-        HttpResponse response = runPromise(() -> controller.loadDocument(request));
+        HttpResponse response = runPromise(() -> controller.loadDocument(attachPrincipal(request, "UNKNOWN")));
 
         assertThat(response.getCode()).isEqualTo(403);
     }
@@ -123,13 +125,11 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
-                .withHeader(HttpHeaders.of("X-User-Role"), "EDITOR")
                 .withHeader(HttpHeaders.of("If-Match"), "doc-3")
                 .withBody(ByteBuf.wrapForReading(objectMapper.writeValueAsBytes(created)))
                 .build();
 
-        HttpResponse response = runPromise(() -> controller.saveDocument(request));
+        HttpResponse response = runPromise(() -> controller.saveDocument(attachPrincipal(request, "EDITOR")));
 
         assertThat(response.getCode()).isEqualTo(409);
         assertThat(response.getHeader(HttpHeaders.of("X-Current-Version"))).isEqualTo(updated.documentId());
@@ -145,11 +145,9 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 .withHeader(HttpHeaders.of("X-Tenant-ID"), TENANT_ID)
                 .withHeader(HttpHeaders.of("X-Workspace-ID"), WORKSPACE_ID)
                 .withHeader(HttpHeaders.of("X-Project-ID"), PROJECT_ID)
-                .withHeader(HttpHeaders.of("X-User-ID"), USER_ID)
-                .withHeader(HttpHeaders.of("X-User-Role"), "VIEWER")
                 .build();
 
-        HttpResponse response = runPromise(() -> controller.loadDocument(request));
+        HttpResponse response = runPromise(() -> controller.loadDocument(attachPrincipal(request, "VIEWER")));
 
         assertThat(response.getCode()).isEqualTo(200);
         assertThat(response.getHeader(HttpHeaders.of("ETag"))).isEqualTo("doc-4");
@@ -192,4 +190,19 @@ class PageArtifactControllerTest extends EventloopTestBase {
                 0.92
         );
     }
+
+        private static HttpRequest attachPrincipal(HttpRequest request, String role) {
+                request.attach(Principal.class, new Principal(USER_ID, List.of(role), TENANT_ID));
+                return request;
+        }
+
+        private static final class RecordingAuditRepository implements PageArtifactAuditRepository {
+                private final List<String> events = new ArrayList<>();
+
+                @Override
+                public Promise<Void> record(String action, String tenantId, String workspaceId, String projectId, String artifactId, String actor, String summary) {
+                        events.add(action + ":" + artifactId + ":" + actor);
+                        return Promise.complete();
+                }
+        }
 }

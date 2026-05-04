@@ -27,6 +27,8 @@ import { Handle, Position, NodeResizer, type Node, type NodeProps } from '@xyflo
 import { Box, Button, IconButton, Typography } from '@ghatana/design-system';
 import { Maximize2 as ExpandIcon, Minimize2 as CollapseIcon, Layout as PageIcon } from 'lucide-react';
 import { useSetAtom } from 'jotai';
+import { usePhaseContext } from '@/context';
+import { getPhaseCanvasConfig } from '@/services/canvas/phase-config/PhaseCanvasConfig';
 
 import { PageDesigner } from '@/components/canvas/page/PageDesigner';
 import { LivePreviewPanel } from '@/components/studio/LivePreviewPanel';
@@ -90,6 +92,12 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
 }) => {
   const executeCommand = useSetAtom(executeCommandAtom);
   const [isExpanded, setIsExpanded] = useState<boolean>(data.expanded ?? false);
+  const [previewSelectedNodeId, setPreviewSelectedNodeId] = useState<string | null>(null);
+  const { currentPhase } = usePhaseContext();
+  const phaseConfig = useMemo(
+    () => (currentPhase ? getPhaseCanvasConfig(currentPhase) : undefined),
+    [currentPhase],
+  );
   const builderDocument = useMemo(() => getBuilderDocument(data.pageDocument), [data.pageDocument]);
   const latestPageDocumentRef = useRef<PageArtifactDocument | undefined>(data.pageDocument);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -451,8 +459,11 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
               ) : null}
               <PageDesigner
                 initialComponents={builderDocument}
+                 externalSelectedNodeId={previewSelectedNodeId}
                 onImportArtifacts={handleImportArtifacts}
                 onAIChangeRecord={handleAIChangeRecord}
+                onSelectionChange={setPreviewSelectedNodeId}
+                phaseConfig={phaseConfig}
                 onDocumentChange={(document, validation) => {
                   if (!data.pageDocument) {
                     return;
@@ -477,6 +488,8 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
               <LivePreviewPanel
                 document={builderDocument}
                 validation={data.validationSummary}
+                selectedNodeId={previewSelectedNodeId}
+                onElementClick={setPreviewSelectedNodeId}
               />
             </Box>
           </Box>

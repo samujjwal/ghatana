@@ -6,6 +6,7 @@ import {
   IconButton,
   Button,
   Surface as Paper,
+  TextArea,
 } from '@ghatana/design-system';
 import { Drawer } from '@ghatana/design-system';
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -33,6 +34,7 @@ import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
 import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
 import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
+import type { PhaseCanvasConfig } from '../../../services/canvas/phase-config/PhaseCanvasConfig';
 
 import type { ComponentData } from './schemas';
 import {
@@ -127,6 +129,12 @@ interface PageDesignerProps {
   readonly onImportArtifacts?: (artifacts: readonly import('./pageArtifactDocument').PageArtifactDocument[]) => void;
   /** Called when an AI change is applied to the page (for audit/governance recording) */
   readonly onAIChangeRecord?: (record: PageArtifactAIChangeRecord) => void;
+  /** Called when the user selects a node in the designer canvas */
+  readonly onSelectionChange?: (nodeId: string | null) => void;
+  /** Optional externally controlled selection (used by preview click sync) */
+  readonly externalSelectedNodeId?: string | null;
+  /** Phase-aware canvas configuration controlling available tools and editing capabilities */
+  readonly phaseConfig?: PhaseCanvasConfig;
 }
 
 export const PageDesigner: React.FC<PageDesignerProps> = ({
@@ -135,7 +143,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   onDocumentChange,
   onImportArtifacts,
   onAIChangeRecord,
+  onSelectionChange,
+  externalSelectedNodeId,
+  phaseConfig,
 }) => {
+  const canEdit = phaseConfig?.allowEditing ?? true;
+  const canAdd = phaseConfig?.allowAddComponent ?? true;
+  const canDelete = phaseConfig?.allowDelete ?? true;
   const contracts = useMemo(() => getContractMap(), []);
   const palette = useMemo(() => getBuilderPalette(), []);
   const [document, setDocument] = useState<BuilderDocument>(() => {
@@ -179,6 +193,16 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
   useEffect(() => {
     onDocumentChange?.(document, validation);
   }, [document, onDocumentChange, validation]);
+
+  useEffect(() => {
+    onSelectionChange?.(selectedId);
+  }, [selectedId, onSelectionChange]);
+
+  useEffect(() => {
+    if (externalSelectedNodeId !== undefined && externalSelectedNodeId !== selectedId) {
+      setSelectedId(externalSelectedNodeId);
+    }
+  }, [externalSelectedNodeId, selectedId]);
 
   const selectedInstance = selectedId ? document.nodes.get(selectedId as NodeId) : undefined;
 
@@ -629,6 +653,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               className="justify-start"
               title={entry.tooltip}
               data-testid={`page-component-${entry.name.toLowerCase()}`}
+              disabled={!canAdd}
               draggable
               onDragStart={(event) => handlePaletteDragStart(event, entry.name)}
             >
@@ -658,7 +683,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             <Typography variant="caption" color="muted" style={{ display: 'block', marginBottom: 6 }}>
               Paste a JSON semantic model (SemanticProductModel) to decompile into canvas components.
             </Typography>
-            <textarea
+            <TextArea
               ref={importTextareaRef}
               value={importInput}
               onChange={(e) => {
@@ -669,17 +694,8 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               placeholder='{"pages": [{"name": "Home", ...}]}'
               aria-label="Paste semantic model JSON"
               data-testid="page-designer-import-textarea"
-              style={{
-                width: '100%',
-                fontSize: '0.75rem',
-                fontFamily: 'monospace',
-                border: importError ? '1px solid #ef4444' : '1px solid #c7d2fe',
-                borderRadius: 4,
-                padding: '6px 8px',
-                resize: 'vertical',
-                background: 'white',
-                outline: 'none',
-              }}
+              className="w-full font-mono text-xs"
+              error={importError ?? undefined}
             />
             {importError && (
               <Typography variant="caption" color="danger" style={{ display: 'block', marginTop: 4 }}>
@@ -769,10 +785,12 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               size="small"
               color="primary"
               onClick={() => {
+                if (!canEdit) return;
                 setEditingId(selectedInstance.id);
                 setDrawerOpen(true);
               }}
               title="Edit Properties"
+              disabled={!canEdit}
             >
               <EditIcon size={16} />
             </IconButton>
@@ -781,6 +799,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               color="error"
               onClick={handleDeleteComponent}
               title="Delete"
+              disabled={!canDelete}
             >
               <DeleteIcon size={16} />
             </IconButton>
@@ -796,7 +815,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
           {topLevelNodes.length === 0 ? (
             <Box
               className="flex h-[400px] items-center justify-center rounded-lg"
-              style={{ border: '2px dashed #ccc' }}
+              style={{ border: '2px dashed var(--border-subtle, #d1d5db)' }}
             >
               <Stack alignItems="center" spacing={2}>
                 <AddIcon className="text-5xl text-gray-500 dark:text-gray-400" />

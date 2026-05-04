@@ -156,8 +156,8 @@ public final class PageArtifactValidator {
             validateSlotReferences(nodesMap, errors);
         }
 
-        // Check for executable payloads (security concern)
-        checkForExecutablePayloads(builderDocument, warnings);
+        // Reject executable payloads (security concern, fail-closed)
+        checkForExecutablePayloads(builderDocument, errors);
     }
 
     private static void validateNodeEntries(
@@ -242,18 +242,18 @@ public final class PageArtifactValidator {
 
     private static void checkForExecutablePayloads(
             @NotNull Object currentValue,
-            @NotNull List<String> warnings
+            @NotNull List<String> errors
     ) {
         if (currentValue instanceof Map<?, ?> map) {
             for (Object value : map.values()) {
-                checkForExecutablePayloads(value, warnings);
+                checkForExecutablePayloads(value, errors);
             }
             return;
         }
 
         if (currentValue instanceof List<?> list) {
             for (Object value : list) {
-                checkForExecutablePayloads(value, warnings);
+                checkForExecutablePayloads(value, errors);
             }
             return;
         }
@@ -261,7 +261,7 @@ public final class PageArtifactValidator {
         if (currentValue instanceof String stringValue) {
             String lowered = stringValue.toLowerCase();
             if (lowered.contains("eval(") || lowered.contains("<script") || lowered.contains("javascript:")) {
-                warnings.add("BuilderDocument contains potentially executable content - review required");
+                errors.add("BuilderDocument contains potentially executable content and is rejected");
             }
         }
     }

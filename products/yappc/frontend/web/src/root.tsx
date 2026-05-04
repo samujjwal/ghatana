@@ -55,40 +55,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 // Hydration fallback - shown while JS modules load
 export function HydrateFallback() {
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
-      fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          display: 'inline-block',
-          width: '48px',
-          height: '48px',
-          border: '4px solid rgba(59, 130, 246, 0.2)',
-          borderTop: '4px solid #3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          marginBottom: '16px',
-        }}>
+    <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-100 to-gray-200 font-sans">
+      <div className="text-center">
+        <div className="inline-block w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4">
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
-        <h1 style={{
-          fontSize: '24px',
-          color: '#1f2937',
-          marginBottom: '8px',
-          fontWeight: '600',
-          margin: '0',
-        }}>YAPPC App Creator</h1>
-        <p style={{
-          color: '#6b7280',
-          fontSize: '14px',
-          margin: '0',
-          marginTop: '8px',
-        }}>Loading modules and initializing...</p>
+        <h1 className="text-2xl font-semibold text-gray-800 m-0">YAPPC App Creator</h1>
+        <p className="text-gray-500 text-sm m-0 mt-2">Loading modules and initializing...</p>
       </div>
     </div>
   );
