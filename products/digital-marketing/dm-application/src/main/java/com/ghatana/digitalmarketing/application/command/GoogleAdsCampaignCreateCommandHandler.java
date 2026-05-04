@@ -58,6 +58,10 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
     private final DmGoogleAdsCampaignApiClient apiClient;
     private final ObjectMapper objectMapper;
     private final DmosObservability observability;
+    
+    // P1-8: Retry configuration for transient failures
+    private static final int MAX_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 1000;
 
     public GoogleAdsCampaignCreateCommandHandler(
             DmConnectorRepository connectorRepository,
@@ -128,36 +132,47 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
                     var credential = (DmGoogleAdsCredential) parts[1];
                     var campaign = (Campaign) parts[2];
                     LOG.info("[DMOS-HANDLER] Campaign validated: {}", campaign.getName());
-                    DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest providerRequest =
-                        new DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest(
-                            campaign.getName(),
-                            new BigDecimal(payload.dailyBudget()),
-                            payload.serviceArea(),
-                            payload.keywordTheme()
-                        );
-
-                    LOG.info("[DMOS-HANDLER] Calling Google Ads API to create campaign");
-                    Instant apiStartTime = Instant.now();
-                    return apiClient.createSearchCampaign(credential.getAccessToken(), providerRequest)
-                        .then(externalCampaignId -> {
-                            long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
-                            observability.recordConnectorDuration("GOOGLE_ADS", "createSearchCampaign", apiDuration);
-                            span.setAttribute("external.campaign.id", externalCampaignId);
-                            LOG.info("[DMOS-HANDLER] Google Ads API returned external campaign ID: {}", externalCampaignId);
-                            return linkRepository.save(
-                                DmGoogleAdsCampaignLink.builder()
-                                    .id(UUID.randomUUID().toString())
-                                    .tenantId(command.getTenantId())
-                                    .connectorId(connector.getId())
-                                    .internalCampaignId(campaign.getId())
-                                    .externalCampaignId(externalCampaignId)
-                                    .createdAt(Instant.now())
-                                    .build()
-                            ).then(link -> {
-                                LOG.info("[DMOS-HANDLER] Campaign link persisted: internalId={} externalId={}",
-                                    link.getInternalCampaignId(), link.getExternalCampaignId());
+                    
+                    // P1-8: Idempotency check - if link already exists, return early
+                    return linkRepository.findByInternalCampaignId(campaign.getId())
+                        .then(existingLink -> {
+                            if (existingLink.isPresent()) {
+                                LOG.info("[DMOS-HANDLER] Campaign link already exists (idempotent): externalId={}",
+                                    existingLink.get().getExternalCampaignId());
+                                span.setAttribute("idempotent", true);
+                                span.setAttribute("external.campaign.id", existingLink.get().getExternalCampaignId());
                                 return Promise.<Void>of(null);
-                            });
+                            }
+                            
+                            // Proceed with creation
+                            DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest providerRequest =
+                                new DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest(
+                                    campaign.getName(),
+                                    new BigDecimal(payload.dailyBudget()),
+                                    payload.serviceArea(),
+                                    payload.keywordTheme()
+                                );
+
+                            LOG.info("[DMOS-HANDLER] Calling Google Ads API to create campaign");
+                            return createCampaignWithRetry(credential, providerRequest, span, 0)
+                                .then(externalCampaignId -> {
+                                    span.setAttribute("external.campaign.id", externalCampaignId);
+                                    LOG.info("[DMOS-HANDLER] Google Ads API returned external campaign ID: {}", externalCampaignId);
+                                    return linkRepository.save(
+                                        DmGoogleAdsCampaignLink.builder()
+                                            .id(UUID.randomUUID().toString())
+                                            .tenantId(command.getTenantId())
+                                            .connectorId(connector.getId())
+                                            .internalCampaignId(campaign.getId())
+                                            .externalCampaignId(externalCampaignId)
+                                            .createdAt(Instant.now())
+                                            .build()
+                                    ).then(link -> {
+                                        LOG.info("[DMOS-HANDLER] Campaign link persisted: internalId={} externalId={}",
+                                            link.getInternalCampaignId(), link.getExternalCampaignId());
+                                        return Promise.<Void>of(null);
+                                    });
+                                });
                         });
                 })
                 .whenComplete((result, e) -> {
@@ -244,6 +259,53 @@ public final class GoogleAdsCampaignCreateCommandHandler implements DmCommandHan
                 }
                 return Promise.of(campaign);
             });
+    }
+
+    /**
+     * P1-8: Create campaign with retry logic for transient failures.
+     */
+    private Promise<String> createCampaignWithRetry(
+            DmGoogleAdsCredential credential,
+            DmGoogleAdsCampaignApiClient.CreateGoogleSearchCampaignRequest request,
+            Span span,
+            int retryCount) {
+        Instant apiStartTime = Instant.now();
+        return apiClient.createSearchCampaign(credential.getAccessToken(), request)
+            .then(externalCampaignId -> {
+                long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
+                observability.recordConnectorDuration("GOOGLE_ADS", "createSearchCampaign", apiDuration);
+                if (retryCount > 0) {
+                    span.setAttribute("retry.count", retryCount);
+                    LOG.info("[DMOS-HANDLER] Campaign creation succeeded after {} retries", retryCount);
+                }
+                return Promise.of(externalCampaignId);
+            })
+            .whenException(e -> {
+                // P1-8: Retry on transient failures
+                if (isTransientFailure(e) && retryCount < MAX_RETRIES) {
+                    LOG.warn("[DMOS-HANDLER] Transient failure, retrying ({}/{}): {}",
+                        retryCount + 1, MAX_RETRIES, e.getMessage());
+                    return Promise.of(null)
+                        .delay(RETRY_DELAY_MS)
+                        .then(ignored -> createCampaignWithRetry(credential, request, span, retryCount + 1));
+                }
+                LOG.error("[DMOS-HANDLER] Campaign creation failed after {} retries: {}", retryCount, e.getMessage());
+                return Promise.ofException(e);
+            });
+    }
+
+    /**
+     * P1-8: Determine if a failure is transient and should be retried.
+     */
+    private boolean isTransientFailure(Exception e) {
+        // Retry on network timeouts, rate limits, and temporary service errors
+        String message = e.getMessage();
+        if (message == null) return false;
+        return message.contains("timeout") ||
+               message.contains("rate limit") ||
+               message.contains("503") ||
+               message.contains("502") ||
+               message.contains("429");
     }
 
     /**

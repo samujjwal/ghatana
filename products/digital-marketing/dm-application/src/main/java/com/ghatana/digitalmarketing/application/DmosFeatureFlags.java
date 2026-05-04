@@ -1,20 +1,17 @@
 package com.ghatana.digitalmarketing.application;
 
 /**
- * Canonical runtime feature flag keys for DMOS used with
- * {@link com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter#isFeatureEnabled}.
+ * Canonical DMOS feature flag key constants (P2-3: Manifest-based).
  *
- * <p>These constants replace the static JVM-evaluated booleans in {@link DmosProductConfig}
- * for flags that must be toggleable at runtime without a service restart (KE-05).
- * {@code DmosProductConfig} retains the env-var-based defaults which serve as the
- * fallback when the platform {@code FeatureFlagPlugin} is not yet wired.</p>
+ * <p>This class defines the canonical feature flag keys for DMOS. All flags are
+ * defined in {@code FEATURE_FLAGS_MANIFEST.json} and should be synchronized with
+ * that single source of truth. Do not add new flags here without updating the manifest.</p>
  *
- * <p>Naming convention: {@code dmos.<feature_area>.<flag_name>} using lowercase
- * snake-case matching the env-var suffix (e.g. {@code DMOS_AI_ENABLED →
- * dmos.ai.enabled}).</p>
+ * <p>Runtime flag values are resolved from environment variables with production-safe
+ * defaults (incomplete features default to {@code false} in production).</p>
  *
  * @doc.type class
- * @doc.purpose Canonical DMOS feature flag key constants for KE-05 runtime toggling
+ * @doc.purpose Canonical DMOS feature flag key constants from manifest
  * @doc.layer product
  * @doc.pattern Config
  */
@@ -40,9 +37,15 @@ public final class DmosFeatureFlags {
 
     /**
      * Enables the rollback and compensating-action workflow.
-     * Env-var fallback: {@code DMOS_ROLLBACK_ENABLED} (default {@code true}).
+     * Env-var fallback: {@code DMOS_ROLLBACK_WORKFLOW_ENABLED} (default {@code true}).
      */
-    public static final String ROLLBACK_ENABLED = "dmos.rollback.enabled";
+    public static final String ROLLBACK_WORKFLOW_ENABLED = "dmos.rollback_workflow.enabled";
+
+    /**
+     * Enables dashboard growth metrics widget.
+     * Env-var fallback: {@code DMOS_DASHBOARD_GROWTH_METRICS} (default {@code false}).
+     */
+    public static final String DASHBOARD_GROWTH_METRICS = "dmos.dashboard_growth_metrics";
 
     /**
      * Enables the observability baseline (metrics + structured logging).
@@ -51,6 +54,6 @@ public final class DmosFeatureFlags {
     public static final String OBSERVABILITY_ENABLED = "dmos.observability.enabled";
 
     private DmosFeatureFlags() {
-        // constants-only class
+        // Utility class - prevent instantiation
     }
 }

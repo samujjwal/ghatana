@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "description": "Canonical DMOS feature flags manifest (P2-3). This is the single source of truth for all feature flags across UI and backend.",
+  "flags": [
+    {
+      "key": "dmos.ai.enabled",
+      "name": "AI Features Enabled",
+      "description": "Enables AI-powered generation features: strategy, ad-copy, SOW generation",
+      "defaultValue": false,
+      "productionDefault": false,
+      "environmentVariable": "DMOS_AI_ENABLED",
+      "category": "features",
+      "scope": "both"
+    },
+    {
+      "key": "dmos.google_ads_connector.enabled",
+      "name": "Google Ads Connector Enabled",
+      "description": "Enables the Google Ads connector runtime",
+      "defaultValue": false,
+      "productionDefault": false,
+      "environmentVariable": "DMOS_GOOGLE_ADS_CONNECTOR_ENABLED",
+      "category": "features",
+      "scope": "backend"
+    },
+    {
+      "key": "dmos.kill_switch.enabled",
+      "name": "Kill Switch Enabled",
+      "description": "Enables kill-switch enforcement. Must always be true in production",
+      "defaultValue": true,
+      "productionDefault": true,
+      "environmentVariable": "DMOS_KILL_SWITCH_ENABLED",
+      "category": "governance",
+      "scope": "backend"
+    },
+    {
+      "key": "dmos.rollback_workflow.enabled",
+      "name": "Rollback Workflow Enabled",
+      "description": "Enables the rollback and compensating-action workflow",
+      "defaultValue": true,
+      "productionDefault": true,
+      "environmentVariable": "DMOS_ROLLBACK_WORKFLOW_ENABLED",
+      "category": "governance",
+      "scope": "backend"
+    },
+    {
+      "key": "dmos.dashboard_growth_metrics",
+      "name": "Dashboard Growth Metrics",
+      "description": "Enables growth metrics widget on the dashboard",
+      "defaultValue": false,
+      "productionDefault": false,
+      "environmentVariable": "DMOS_DASHBOARD_GROWTH_METRICS",
+      "category": "ui",
+      "scope": "ui"
+    }
+  ],
+  "categories": {
+    "features": "Product capability toggles",
+    "governance": "Safety and compliance controls",
+    "ui": "User interface feature toggles"
+  },
+  "scopes": {
+    "both": "Available in both UI and backend",
+    "backend": "Backend-only feature flag",
+    "ui": "UI-only feature flag"
+  },
+  "notes": "All flags should be read from this manifest. Do not add flags directly to DmosFeatureFlags.java or ui/src/lib/feature-flags.ts without updating this manifest first."
+}

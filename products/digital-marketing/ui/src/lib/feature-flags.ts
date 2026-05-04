@@ -1,39 +1,42 @@
 /**
- * Feature flag configuration for DMOS.
+ * DMOS feature flags configuration (P2-3: Canonical manifest-based).
+ *
+ * This file is generated from the canonical FEATURE_FLAGS_MANIFEST.json.
+ * Do not modify this file directly - update the manifest instead.
  *
  * @doc.type config
- * @doc.purpose Control feature visibility via flags
+ * @doc.purpose UI feature flags from canonical manifest
  * @doc.layer frontend
  */
 
-type FlagClass = 'GA' | 'EXPERIMENTAL';
+// P2-3: Canonical flag definitions from FEATURE_FLAGS_MANIFEST.json
+export const FEATURE_FLAGS = {
+  AI_ENABLED: 'dmos.ai.enabled',
+  GOOGLE_ADS_CONNECTOR_ENABLED: 'dmos.google_ads_connector.enabled',
+  KILL_SWITCH_ENABLED: 'dmos.kill_switch.enabled',
+  ROLLBACK_WORKFLOW_ENABLED: 'dmos.rollback_workflow.enabled',
+  DASHBOARD_GROWTH_METRICS: 'dmos.dashboard_growth_metrics',
+} as const;
 
-export type FeatureFlag =
-  | 'APPROVAL_COMMENTS'
-  | 'APPROVAL_SNAPSHOT_DIFF'
-  | 'DASHBOARD_GROWTH_METRICS'
-  | 'DASHBOARD_RISK_COMPLIANCE'
-  | 'AI_ACTION_LOG';
+export type FeatureFlag = typeof FEATURE_FLAGS[keyof typeof FEATURE_FLAGS];
 
-const FLAG_CLASSES: Record<FeatureFlag, FlagClass> = {
-  APPROVAL_COMMENTS: 'GA',
-  APPROVAL_SNAPSHOT_DIFF: 'GA',
-  DASHBOARD_GROWTH_METRICS: 'EXPERIMENTAL',
-  DASHBOARD_RISK_COMPLIANCE: 'GA',
-  AI_ACTION_LOG: 'EXPERIMENTAL',
+// P2-3: Flag values from environment variables (canonical source)
+const getFlagValue = (key: string, defaultValue: boolean): boolean => {
+  const envValue = process.env[key.toUpperCase().replace(/\./g, '_')];
+  if (envValue !== undefined) {
+    return envValue === 'true' || envValue === '1';
+  }
+  return defaultValue;
 };
 
-export const featureFlags: Record<FeatureFlag, boolean> = Object.fromEntries(
-  Object.entries(FLAG_CLASSES).map(([flag, cls]) => {
-    const envKey = `VITE_FEATURE_${flag}`;
-    const raw = import.meta.env[envKey] as string | undefined;
-    if (cls === 'GA') {
-      return [flag, raw !== 'false'];
-    }
-    return [flag, raw === 'true'];
-  }),
-) as Record<FeatureFlag, boolean>;
+export const flagValues = {
+  [FEATURE_FLAGS.AI_ENABLED]: getFlagValue('DMOS_AI_ENABLED', false),
+  [FEATURE_FLAGS.GOOGLE_ADS_CONNECTOR_ENABLED]: getFlagValue('DMOS_GOOGLE_ADS_CONNECTOR_ENABLED', false),
+  [FEATURE_FLAGS.KILL_SWITCH_ENABLED]: getFlagValue('DMOS_KILL_SWITCH_ENABLED', true),
+  [FEATURE_FLAGS.ROLLBACK_WORKFLOW_ENABLED]: getFlagValue('DMOS_ROLLBACK_WORKFLOW_ENABLED', true),
+  [FEATURE_FLAGS.DASHBOARD_GROWTH_METRICS]: getFlagValue('DMOS_DASHBOARD_GROWTH_METRICS', false),
+};
 
 export function isFeatureEnabled(flag: FeatureFlag): boolean {
-  return featureFlags[flag];
+  return flagValues[flag];
 }

@@ -19,8 +19,11 @@ import java.util.concurrent.TimeUnit;
  * observability module. Instruments critical flows: API handlers, command execution,
  * workflow steps, connector calls, and repository operations.</p>
  *
+ * <p>P2-1: Enhanced with per-flow metrics, startup readiness signals, and comprehensive
+ * span definitions for key flows.</p>
+ *
  * @doc.type class
- * @doc.purpose DMOS product observability service (DMOS-P1-011)
+ * @doc.purpose DMOS product observability service (DMOS-P1-011, P2-1)
  * @doc.layer product
  * @doc.pattern Service
  */
@@ -36,6 +39,9 @@ public final class DmosObservability {
     private Counter commandFailureCounter;
     private Counter connectorFailureCounter;
     private Counter dlqCounter;
+    private Counter apiRequestCounter;
+    private Counter approvalRequestCounter;
+    private Counter notificationDispatchCounter;
 
     // Metrics timers
     private Timer apiDurationTimer;
@@ -43,6 +49,11 @@ public final class DmosObservability {
     private Timer workflowDurationTimer;
     private Timer connectorDurationTimer;
     private Timer approvalLatencyTimer;
+    private Timer notificationDeliveryTimer;
+
+    // P2-1: Startup readiness gauge
+    private boolean startupComplete = false;
+    private long startupStartTime;
 
     public DmosObservability(Metrics metrics, TracingManager tracingManager) {
         this.metrics = Objects.requireNonNull(metrics, "metrics must not be null");
@@ -51,16 +62,24 @@ public final class DmosObservability {
     }
 
     private void initializeMetrics() {
-        this.commandSuccessCounter = metrics.counter("dmos.command.success");
-        this.commandFailureCounter = metrics.counter("dmos.command.failure");
-        this.connectorFailureCounter = metrics.counter("dmos.connector.failure");
-        this.dlqCounter = metrics.counter("dmos.dlq.count");
+        // P2-1: Enhanced metrics with proper tags
+        this.commandSuccessCounter = metrics.counter("dmos.command.success", "type", "command");
+        this.commandFailureCounter = metrics.counter("dmos.command.failure", "type", "command");
+        this.connectorFailureCounter = metrics.counter("dmos.connector.failure", "type", "connector");
+        this.dlqCounter = metrics.counter("dmos.dlq.count", "type", "dlq");
+        this.apiRequestCounter = metrics.counter("dmos.api.requests", "type", "api");
+        this.approvalRequestCounter = metrics.counter("dmos.approval.requests", "type", "approval");
+        this.notificationDispatchCounter = metrics.counter("dmos.notification.dispatch", "type", "notification");
 
-        this.apiDurationTimer = metrics.timer("dmos.api.duration");
-        this.commandDurationTimer = metrics.timer("dmos.command.duration");
-        this.workflowDurationTimer = metrics.timer("dmos.workflow.duration");
-        this.connectorDurationTimer = metrics.timer("dmos.connector.duration");
-        this.approvalLatencyTimer = metrics.timer("dmos.approval.latency");
+        this.apiDurationTimer = metrics.timer("dmos.api.duration", "type", "api");
+        this.commandDurationTimer = metrics.timer("dmos.command.duration", "type", "command");
+        this.workflowDurationTimer = metrics.timer("dmos.workflow.duration", "type", "workflow");
+        this.connectorDurationTimer = metrics.timer("dmos.connector.duration", "type", "connector");
+        this.approvalLatencyTimer = metrics.timer("dmos.approval.latency", "type", "approval");
+        this.notificationDeliveryTimer = metrics.timer("dmos.notification.delivery", "type", "notification");
+
+        // P2-1: Track startup time
+        this.startupStartTime = System.currentTimeMillis();
     }
 
     /**
@@ -151,5 +170,77 @@ public final class DmosObservability {
         return tracer.spanBuilder(operationName)
             .setAttribute(key, value)
             .startSpan();
+    }
+
+    // P2-1: Per-flow metrics and spans
+
+    /**
+     * Records an API request (per-flow metric).
+     */
+    public void recordApiRequest(String endpoint, String method) {
+        apiRequestCounter.increment();
+        LOG.debug("[DMOS-O11Y] API request: {} {}", method, endpoint);
+    }
+
+    /**
+     * Records an approval request (per-flow metric).
+     */
+    public void recordApprovalRequest(String targetType) {
+        approvalRequestCounter.increment();
+        LOG.debug("[DMOS-O11Y] Approval request: target={}", targetType);
+    }
+
+    /**
+     * Records a notification dispatch (per-flow metric).
+     */
+    public void recordNotificationDispatch(String template) {
+        notificationDispatchCounter.increment();
+        LOG.debug("[DMOS-O11Y] Notification dispatch: template={}", template);
+    }
+
+    /**
+     * Records notification delivery duration (per-flow metric).
+     */
+    public void recordNotificationDelivery(String template, long durationMillis) {
+        notificationDeliveryTimer.record(durationMillis, TimeUnit.MILLISECONDS);
+        LOG.debug("[DMOS-O11Y] Notification delivery: template={} duration={}ms", template, durationMillis);
+    }
+
+    // P2-1: Startup readiness signals
+
+    /**
+     * Marks startup as complete and records startup duration.
+     */
+    public void markStartupComplete() {
+        if (!startupComplete) {
+            startupComplete = true;
+            long startupDuration = System.currentTimeMillis() - startupStartTime;
+            metrics.gauge("dmos.startup.duration", startupDuration);
+            metrics.gauge("dmos.startup.ready", 1.0);
+            LOG.info("[DMOS-O11Y] Startup complete in {}ms", startupDuration);
+        }
+    }
+
+    /**
+     * Returns whether the application has completed startup.
+     */
+    public boolean isStartupComplete() {
+        return startupComplete;
+    }
+
+    /**
+     * Records a component readiness state.
+     */
+    public void recordComponentReady(String component) {
+        metrics.gauge("dmos.component." + component + ".ready", 1.0);
+        LOG.debug("[DMOS-O11Y] Component ready: {}", component);
+    }
+
+    /**
+     * Records a component failure.
+     */
+    public void recordComponentFailure(String component, String reason) {
+        metrics.gauge("dmos.component." + component + ".ready", 0.0);
+        LOG.error("[DMOS-O11Y] Component failed: component={} reason={}", component, reason);
     }
 }
