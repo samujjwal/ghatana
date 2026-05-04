@@ -1,7 +1,7 @@
 # Ghatana Data Cloud + AEP — Ultra-Strict End-to-End Audit
 
 **Repository:** `samujjwal/ghatana`  
-**Reviewed commit:** `8e27816d76271c52ed4f35cd083db2e441f82340`  
+**Reviewed commit:** `c4fc61f426a3a12fcc0e62097157cf59080127cd`  
 **Target roots:** `products/data-cloud`, `products/aep`  
 **Execution method:** source-evidence audit through the GitHub connector at the exact ref, plus the uploaded ultra-strict audit prompt. I did not clone the repo locally or run Gradle, pnpm, Playwright, DB migrations, or services; any runtime-only conclusion is marked as requiring execution proof.
 

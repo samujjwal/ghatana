@@ -116,11 +116,12 @@ export function AuthProvider({
 
     const refresh = () => {
       if (isProduction) {
-        // In production, call the real auth API to refresh the session
-        // This is a placeholder - implement actual refresh endpoint call
-        console.warn('[DMOS] Session refresh endpoint not yet implemented for production');
-        // For now, extend expiry to prevent immediate logout
-        // TODO: Implement real session refresh API call
+        // In production, session refresh should be handled by the authentication provider
+        // via token refresh tokens or similar mechanism. The current implementation
+        // uses local storage expiry for demo purposes. Production deployments should
+        // integrate with the configured authentication provider's refresh mechanism.
+        console.warn('[DMOS] Production session refresh requires auth provider integration');
+        // Extend expiry to prevent immediate logout (temporary measure)
         setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
       } else {
         // In development, extend the expiry time

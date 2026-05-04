@@ -90,69 +90,84 @@ public final class PageArtifactDocument {
     }
 
     @NotNull
+    @JsonProperty("artifactId")
     public String artifactId() {
         return artifactId;
     }
 
     @NotNull
+    @JsonProperty("documentId")
     public String documentId() {
         return documentId;
     }
 
     @NotNull
+    @JsonProperty("name")
     public String name() {
         return name;
     }
 
     @NotNull
+    @JsonProperty("createdBy")
     public String createdBy() {
         return createdBy;
     }
 
     @NotNull
+    @JsonProperty("createdAt")
     public Instant createdAt() {
         return createdAt;
     }
 
     @NotNull
+    @JsonProperty("updatedAt")
     public Instant updatedAt() {
         return updatedAt;
     }
 
     @NotNull
+    @JsonProperty("syncStatus")
     public String syncStatus() {
         return syncStatus;
     }
 
+    @JsonProperty("trustLevel")
     public String trustLevel() {
         return trustLevel;
     }
 
+    @JsonProperty("dataClassification")
     public String dataClassification() {
         return dataClassification;
     }
 
     @NotNull
+    @JsonProperty("builderDocument")
     public Map<String, Object> builderDocument() {
         return builderDocument;
     }
 
+    @JsonProperty("validationSummary")
     public ValidationSummary validationSummary() {
         return validationSummary;
     }
 
+    @JsonProperty("aiChangeRecords")
     public List<GovernanceRecord> aiChangeRecords() {
         return aiChangeRecords;
     }
 
+    @JsonProperty("source")
     public String source() {
         return source;
     }
 
+    @JsonProperty("residualIslandCount")
     public int residualIslandCount() {
         return residualIslandCount;
     }
 
+    @JsonProperty("roundTripFidelity")
     public double roundTripFidelity() {
         return roundTripFidelity;
     }

@@ -21,8 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Server-side validator for PageArtifactDocument.
@@ -49,6 +51,12 @@ public final class PageArtifactValidator {
     private static final int MAX_RESIDUAL_ISLANDS = 10;
     private static final double MIN_ROUND_TRIP_FIDELITY = 0.7;
     private static final int MAX_NODE_COUNT = 10000;
+    private static final Set<String> GOVERNANCE_REQUIRED_SOURCES = Set.of(
+            "generated",
+            "decompiled",
+            "import",
+            "imported"
+    );
 
     // Valid sync status values
     private static final String[] VALID_SYNC_STATUS = {
@@ -101,7 +109,7 @@ public final class PageArtifactValidator {
         validateRoundTripFidelity(document.roundTripFidelity(), errors, warnings);
 
         // Validate governance records
-        validateGovernanceRecords(document.aiChangeRecords(), warnings);
+        validateGovernanceRecords(document.aiChangeRecords(), document.source(), errors, warnings);
 
         LOG.debug("Validation complete: errors={}, warnings={}", errors.size(), warnings.size());
 
@@ -121,34 +129,140 @@ public final class PageArtifactValidator {
             errors.add("BuilderDocument missing required field: nodes");
         }
 
+        Object rootNodes = builderDocument.get("rootNodes");
+        if (!(rootNodes instanceof List<?> rootNodeList)) {
+            errors.add("BuilderDocument.rootNodes must be a list");
+        }
+
         // Validate nodes structure if present
+        Map<String, Object> nodesMap = Map.of();
         if (builderDocument.containsKey("nodes")) {
             Object nodes = builderDocument.get("nodes");
             if (!(nodes instanceof Map)) {
                 errors.add("BuilderDocument.nodes must be a map/object");
             } else {
                 @SuppressWarnings("unchecked")
-                Map<String, Object> nodesMap = (Map<String, Object>) nodes;
+                Map<String, Object> typedNodesMap = (Map<String, Object>) nodes;
+                nodesMap = typedNodesMap;
                 if (nodesMap.size() > MAX_NODE_COUNT) {
                     warnings.add("BuilderDocument contains " + nodesMap.size() + " nodes, exceeds recommended limit of " + MAX_NODE_COUNT);
                 }
+                validateNodeEntries(nodesMap, errors);
             }
+        }
+
+        if (rootNodes instanceof List<?> rootNodeList && !nodesMap.isEmpty()) {
+            validateRootNodeReferences(rootNodeList, nodesMap, errors);
+            validateSlotReferences(nodesMap, errors);
         }
 
         // Check for executable payloads (security concern)
         checkForExecutablePayloads(builderDocument, warnings);
     }
 
+    private static void validateNodeEntries(
+            @NotNull Map<String, Object> nodesMap,
+            @NotNull List<String> errors
+    ) {
+        for (Map.Entry<String, Object> entry : nodesMap.entrySet()) {
+            if (!(entry.getValue() instanceof Map<?, ?> nodeMap)) {
+                errors.add("BuilderDocument node '" + entry.getKey() + "' must be an object");
+                continue;
+            }
+
+            Object contractName = nodeMap.get("contractName");
+            if (!(contractName instanceof String contract) || contract.isBlank()) {
+                errors.add("BuilderDocument node '" + entry.getKey() + "' missing contractName");
+            }
+
+            Object props = nodeMap.get("props");
+            if (props != null && !(props instanceof Map<?, ?>)) {
+                errors.add("BuilderDocument node '" + entry.getKey() + "'.props must be an object");
+            }
+
+            Object slots = nodeMap.get("slots");
+            if (slots != null && !(slots instanceof Map<?, ?>)) {
+                errors.add("BuilderDocument node '" + entry.getKey() + "'.slots must be an object");
+            }
+        }
+    }
+
+    private static void validateRootNodeReferences(
+            @NotNull List<?> rootNodes,
+            @NotNull Map<String, Object> nodesMap,
+            @NotNull List<String> errors
+    ) {
+        Set<String> seenRoots = new HashSet<>();
+        for (Object rootNode : rootNodes) {
+            if (!(rootNode instanceof String rootId) || rootId.isBlank()) {
+                errors.add("BuilderDocument.rootNodes must contain non-empty string node IDs");
+                continue;
+            }
+            if (!nodesMap.containsKey(rootId)) {
+                errors.add("BuilderDocument.rootNodes references unknown node: " + rootId);
+            }
+            if (!seenRoots.add(rootId)) {
+                errors.add("BuilderDocument.rootNodes contains duplicate node: " + rootId);
+            }
+        }
+    }
+
+    private static void validateSlotReferences(
+            @NotNull Map<String, Object> nodesMap,
+            @NotNull List<String> errors
+    ) {
+        for (Map.Entry<String, Object> entry : nodesMap.entrySet()) {
+            if (!(entry.getValue() instanceof Map<?, ?> nodeMap)) {
+                continue;
+            }
+
+            Object slots = nodeMap.get("slots");
+            if (!(slots instanceof Map<?, ?> slotsMap)) {
+                continue;
+            }
+
+            for (Map.Entry<?, ?> slotEntry : slotsMap.entrySet()) {
+                if (!(slotEntry.getValue() instanceof List<?> childIds)) {
+                    errors.add("BuilderDocument node '" + entry.getKey() + "' slot '" + slotEntry.getKey() + "' must be a list");
+                    continue;
+                }
+
+                for (Object childId : childIds) {
+                    if (!(childId instanceof String childNodeId) || childNodeId.isBlank()) {
+                        errors.add("BuilderDocument node '" + entry.getKey() + "' has non-string child reference");
+                        continue;
+                    }
+                    if (!nodesMap.containsKey(childNodeId)) {
+                        errors.add("BuilderDocument node '" + entry.getKey() + "' references missing child node '" + childNodeId + "'");
+                    }
+                }
+            }
+        }
+    }
+
     private static void checkForExecutablePayloads(
-            @NotNull Map<String, Object> builderDocument,
+            @NotNull Object currentValue,
             @NotNull List<String> warnings
     ) {
-        // Recursively check for potentially dangerous patterns
-        // This is a basic check - production should use more sophisticated analysis
-        String json = builderDocument.toString().toLowerCase();
-        
-        if (json.contains("eval(") || json.contains("function(") || json.contains("script")) {
-            warnings.add("BuilderDocument contains potentially executable content - review required");
+        if (currentValue instanceof Map<?, ?> map) {
+            for (Object value : map.values()) {
+                checkForExecutablePayloads(value, warnings);
+            }
+            return;
+        }
+
+        if (currentValue instanceof List<?> list) {
+            for (Object value : list) {
+                checkForExecutablePayloads(value, warnings);
+            }
+            return;
+        }
+
+        if (currentValue instanceof String stringValue) {
+            String lowered = stringValue.toLowerCase();
+            if (lowered.contains("eval(") || lowered.contains("<script") || lowered.contains("javascript:")) {
+                warnings.add("BuilderDocument contains potentially executable content - review required");
+            }
         }
     }
 
@@ -221,15 +335,27 @@ public final class PageArtifactValidator {
 
     private static void validateGovernanceRecords(
             @NotNull List<PageArtifactDocument.GovernanceRecord> governanceRecords,
+            String source,
+            @NotNull List<String> errors,
             @NotNull List<String> warnings
     ) {
+        boolean governanceRequired = source != null && GOVERNANCE_REQUIRED_SOURCES.contains(source.toLowerCase());
+
+        if (governanceRecords.isEmpty() && governanceRequired) {
+            errors.add("Governance records are required for source: " + source);
+            return;
+        }
+
         if (governanceRecords.isEmpty()) {
             warnings.add("No governance records present - changes may lack provenance tracking");
         }
 
         for (PageArtifactDocument.GovernanceRecord record : governanceRecords) {
             if (record.lineage() == null) {
-                warnings.add("Governance record missing lineage information for artifact: " + record.artifactId());
+                errors.add("Governance record missing lineage information for artifact: " + record.artifactId());
+            }
+            if (record.artifactId() == null || record.artifactId().isBlank()) {
+                errors.add("Governance record missing artifactId");
             }
         }
     }

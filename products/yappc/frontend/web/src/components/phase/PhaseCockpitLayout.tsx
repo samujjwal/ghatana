@@ -39,6 +39,8 @@ export interface PhaseCockpitLayoutProps {
   children?: ReactNode;
   /** Custom className */
   className?: string;
+  /** Optional test id for the mounted cockpit */
+  testId?: string;
 }
 
 /**
@@ -61,14 +63,17 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
   advancedTools,
   children,
   className = '',
+  testId,
 }) => {
-  const [showGovernance, setShowGovernance] = React.useState(false);
-  const [showAdvanced, setShowAdvanced] = React.useState(false);
-
   return (
-    <div className={`phase-cockpit-layout ${className}`}>
+    <div
+      className={`phase-cockpit-layout ${className}`}
+      data-testid={testId}
+      role="region"
+      aria-label={`${phaseName} cockpit`}
+    >
       {/* Phase Header */}
-      <header className="mb-6">
+      <header className="mb-6" data-testid="phase-purpose">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {phaseName}
@@ -80,7 +85,7 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
       </header>
 
       {/* Primary Action - Always Visible */}
-      <section className="mb-8">
+      <section className="mb-8" data-testid="primary-next-action">
         {primaryAction}
       </section>
 
@@ -89,12 +94,12 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
         {/* Left Column */}
         <div className="space-y-6">
           {blockers && (
-            <section>
+            <section data-testid="blockers-panel">
               {blockers}
             </section>
           )}
           {evidence && (
-            <section>
+            <section data-testid="evidence-panel">
               {evidence}
             </section>
           )}
@@ -103,12 +108,12 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
         {/* Right Column */}
         <div className="space-y-6">
           {suggestedAutomation && (
-            <section>
+            <section data-testid="suggested-automation-panel">
               {suggestedAutomation}
             </section>
           )}
           {children && (
-            <section>
+            <section data-testid="supporting-surface-panel">
               {children}
             </section>
           )}
@@ -117,7 +122,10 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
 
       {/* Collapsible Governance Trace */}
       {governanceTrace && (
-        <section className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6">
+        <section
+          className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6"
+          data-testid="governance-trace-panel"
+        >
           <details className="group">
             <summary className="flex items-center justify-between cursor-pointer list-none">
               <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -136,7 +144,10 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
 
       {/* Collapsible Advanced Tools */}
       {advancedTools && (
-        <section className="border-t border-gray-200 dark:border-gray-700 pt-6">
+        <section
+          className="border-t border-gray-200 dark:border-gray-700 pt-6"
+          data-testid="advanced-tools-panel"
+        >
           <details className="group">
             <summary className="flex items-center justify-between cursor-pointer list-none">
               <h2 className="text-sm font-medium text-gray-700 dark:text-gray-300">

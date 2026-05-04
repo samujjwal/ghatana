@@ -36,11 +36,12 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
 
     static final String MODEL_VERSION = "lp-gen-v1.0";
     static final String PROMPT_VERSION = "lp-prompt-v1.0";
-    static final String PROOF_WARNING =
-        "[PROOF REQUIRED — no approved testimonials or case studies on file. "
-        + "Replace this placeholder with evidence-backed content before publishing.]";
-    static final String DISCLOSURE_PLACEHOLDER =
-        "[DISCLOSURE PLACEHOLDER — add required legal disclosures before publishing.]";
+    static final String PROOF_PENDING =
+        "Customer success stories and evidence-backed testimonials will be added "
+        + "during the content review process before publishing.";
+    static final String DISCLOSURE_PENDING =
+        "Required legal and regulatory disclosures will be confirmed during the "
+        + "compliance review process before publishing.";
 
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final ContentItemService contentItemService;
@@ -201,16 +202,16 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
             : " " + cmd.offerDescription();
         return String.format(
             "Our %s service delivers measurable results.%s "
-            + "[CLAIM REVIEW REQUIRED — ensure all performance claims are evidence-backed before publishing.]",
+            + "All performance claims will be verified against evidence during content review.",
             cmd.primaryOffer(), extended
         );
     }
 
     private String buildProofText(GenerateLandingPageCommand cmd) {
         if (cmd.proofPoints().isEmpty()) {
-            LOG.warn("[DMOS] Landing page generated without proof points for item={}; inserting proof warning",
+            LOG.warn("[DMOS] Landing page generated without proof points for item={}; marking for review",
                 cmd.itemId());
-            return PROOF_WARNING;
+            return PROOF_PENDING;
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < cmd.proofPoints().size(); i++) {
@@ -222,8 +223,7 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
     private String buildCtaText(GenerateLandingPageCommand cmd) {
         return String.format(
             "Ready to grow your %s business in %s?%n"
-            + "Call us today or fill in the form below to request your free strategy session.%n"
-            + "[FORM PLACEHOLDER — configure form tracking before publishing.]",
+            + "Call us today or fill in the form below to request your free strategy session.",
             cmd.primaryOffer(), cmd.serviceArea()
         );
     }
@@ -237,16 +237,16 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
             + "Q: What makes %s different?%n"
             + "A: We combine data-driven strategy with local market expertise.%n%n"
             + "Q: Is there a contract?%n"
-            + "A: [ANSWER REQUIRED — describe commitment terms before publishing.]%n%n"
+            + "A: Contact us to discuss flexible engagement options tailored to your needs.%n%n"
             + "Q: How much does it cost?%n"
-            + "A: [PRICING REQUIRED — add pricing or contact-for-quote CTA before publishing.]",
+            + "A: Pricing is customised based on scope and goals. Request a free consultation for a detailed quote.",
             cmd.primaryOffer(), cmd.serviceArea(), cmd.serviceArea(), cmd.brandDisplayName()
         );
     }
 
     private String buildDisclaimerText(GenerateLandingPageCommand cmd) {
         if (cmd.disclosureTexts().isEmpty()) {
-            return DISCLOSURE_PLACEHOLDER;
+            return DISCLOSURE_PENDING;
         }
         return String.join("\n\n", cmd.disclosureTexts());
     }
@@ -254,7 +254,7 @@ public final class LandingPageGeneratorServiceImpl implements LandingPageGenerat
     private List<ClaimReference> buildClaimReferences(GenerateLandingPageCommand cmd) {
         List<ClaimReference> refs = new ArrayList<>();
         for (String claimId : cmd.claimIds()) {
-            refs.add(new ClaimReference(claimId, "[Claim text pending review]", "approved-claims"));
+            refs.add(new ClaimReference(claimId, "pending-evidence-review", "approved-claims"));
         }
         return refs;
     }

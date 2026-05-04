@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
+import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
 import com.ghatana.digitalmarketing.domain.command.DmCommand;
 import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCampaignLink;
+import com.ghatana.digitalmarketing.domain.googleads.DmGoogleAdsCredential;
 import io.activej.promise.Promise;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.context.Scope;
@@ -38,16 +40,19 @@ public final class GoogleAdsCampaignRollbackCommandHandler implements DmCommandH
     private static final Logger LOG = LoggerFactory.getLogger(GoogleAdsCampaignRollbackCommandHandler.class);
 
     private final DmGoogleAdsCampaignLinkRepository linkRepository;
+    private final DmGoogleAdsCredentialRepository credentialRepository;
     private final DmGoogleAdsCampaignApiClient apiClient;
     private final ObjectMapper objectMapper;
     private final DmosObservability observability;
 
     public GoogleAdsCampaignRollbackCommandHandler(
             DmGoogleAdsCampaignLinkRepository linkRepository,
+            DmGoogleAdsCredentialRepository credentialRepository,
             DmGoogleAdsCampaignApiClient apiClient,
             ObjectMapper objectMapper,
             DmosObservability observability) {
         this.linkRepository = Objects.requireNonNull(linkRepository, "linkRepository must not be null");
+        this.credentialRepository = Objects.requireNonNull(credentialRepository, "credentialRepository must not be null");
         this.apiClient = Objects.requireNonNull(apiClient, "apiClient must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
         this.observability = Objects.requireNonNull(observability, "observability must not be null");
@@ -106,12 +111,35 @@ public final class GoogleAdsCampaignRollbackCommandHandler implements DmCommandH
                     LOG.info("[DMOS-ROLLBACK] Rolling back Google Ads campaign externalId={} for internalCampaignId={}",
                         link.getExternalCampaignId(), payload.internalCampaignId());
 
-                    // Call Google Ads API to pause/remove the campaign
-                    Instant apiStartTime = Instant.now();
-                    // Campaign pause implementation pending - pauseCampaign method in DmGoogleAdsCampaignApiClient
-                    // return apiClient.pauseCampaign(link.getExternalCampaignId())
-                    LOG.info("[DMOS-ROLLBACK] Campaign pause not yet implemented for externalId={}", link.getExternalCampaignId());
-                    return Promise.<Void>of(null);
+                    // Fetch credential for the connector to authenticate the pause call
+                    return credentialRepository.findByConnectorId(link.getConnectorId())
+                        .then(optCredential -> {
+                            if (optCredential.isEmpty()) {
+                                span.recordException(new NoSuchElementException("No credential found"));
+                                throw new NoSuchElementException(
+                                    "No Google Ads credential for connectorId=" + link.getConnectorId());
+                            }
+                            DmGoogleAdsCredential credential = optCredential.get();
+                            if (!credential.isValid()) {
+                                span.recordException(new SecurityException("Credential expired or revoked"));
+                                throw new SecurityException(
+                                    "Google Ads credential expired or revoked for connectorId=" + link.getConnectorId());
+                            }
+                            if (!credential.getTenantId().equals(command.getTenantId())) {
+                                span.recordException(new SecurityException("Credential tenant mismatch"));
+                                throw new SecurityException(
+                                    "Google Ads credential tenant mismatch for connectorId=" + link.getConnectorId());
+                            }
+                            // Call Google Ads API to pause/remove the campaign
+                            Instant apiStartTime = Instant.now();
+                            return apiClient.pauseCampaign(credential.getAccessToken(), link.getExternalCampaignId())
+                                .then(pausedResourceName -> {
+                                    long apiDuration = ChronoUnit.MILLIS.between(apiStartTime, Instant.now());
+                                    observability.recordCommandDuration("GOOGLE_ADS_CAMPAIGN_PAUSE", apiDuration);
+                                    LOG.info("[DMOS-ROLLBACK] Paused campaign resourceName={} in {}ms", pausedResourceName, apiDuration);
+                                    return Promise.<Void>of(null);
+                                });
+                        });
                 })
                 .whenComplete((result, e) -> {
                     long duration = ChronoUnit.MILLIS.between(startTime, Instant.now());

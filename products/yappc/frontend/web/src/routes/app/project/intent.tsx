@@ -11,4 +11,10 @@
  * @doc.pattern Page Component
  */
 
-export { default, ErrorBoundary } from './index';
+import { IntentCockpitRoute } from './_phaseCockpit';
+import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+
+export default IntentCockpitRoute;
+export function ErrorBoundary() {
+  return <RouteErrorBoundary />;
+}

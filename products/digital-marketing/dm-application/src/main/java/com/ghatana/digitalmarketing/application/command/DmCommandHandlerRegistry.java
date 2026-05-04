@@ -71,6 +71,7 @@ public final class DmCommandHandlerRegistry {
 
         GoogleAdsCampaignRollbackCommandHandler googleAdsRollbackHandler = new GoogleAdsCampaignRollbackCommandHandler(
             linkRepository,
+            credentialRepository,
             apiClient,
             objectMapper,
             observability

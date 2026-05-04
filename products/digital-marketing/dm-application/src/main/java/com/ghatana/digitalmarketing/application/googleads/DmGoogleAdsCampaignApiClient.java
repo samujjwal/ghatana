@@ -18,6 +18,15 @@ public interface DmGoogleAdsCampaignApiClient {
     Promise<String> createSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request);
 
     /**
+     * Pauses a Google Ads campaign by external resource name.
+     *
+     * @param accessToken          valid OAuth2 access token for the Google Ads API
+     * @param externalCampaignId   Google Ads resource name (e.g. customers/{customerId}/campaigns/{campaignId})
+     * @return Promise of the paused campaign resource name
+     */
+    Promise<String> pauseCampaign(String accessToken, String externalCampaignId);
+
+    /**
      * Payload used to create a Google Search campaign.
      */
     record CreateGoogleSearchCampaignRequest(

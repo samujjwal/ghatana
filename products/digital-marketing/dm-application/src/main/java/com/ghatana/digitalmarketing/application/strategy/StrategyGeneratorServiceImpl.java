@@ -167,17 +167,121 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
 
     /**
      * Parses AI output into MarketingStrategy (DMOS-P1-019).
-     * For now, falls back to deterministic generation.
-     * Actual AI output parsing implementation pending Kernel integration.
+     *
+     * <p>Parses structured JSON output from the governed AI workflow into a MarketingStrategy.
+     * If parsing fails, falls back to deterministic generation to ensure system reliability.</p>
+     *
+     * <p>Expected AI output format:</p>
+     * <pre>
+     * {
+     *   "goals": [
+     *     {"goalType": "lead-generation", "description": "...", "targetMetric": "...", "measurementMethod": "..."}
+     *   ],
+     *   "channelPlans": [
+     *     {"channelType": "GOOGLE_SEARCH", "objective": "...", "estimatedBudget": 1000, "keyMessages": [...], "targetKeywords": [...]}
+     *   ],
+     *   "rationale": "...",
+     *   "assumptions": "...",
+     *   "measurementPlan": "...",
+     *   "contentPlan": "..."
+     * }
+     * </pre>
      */
     private MarketingStrategy parseAiOutputToStrategy(
             DmOperationContext ctx,
             GenerateStrategyCommand command,
             GovernedAgentWorkflowService.GovernedWorkflowResult result) {
-        // For now, use deterministic generation as placeholder
-        // In production, this would parse result.output() into MarketingStrategy
-        LOG.info("AI output received, using deterministic parsing as placeholder");
-        return buildStrategy(ctx, command);
+        try {
+            LOG.info("[AI-PARSING] Attempting to parse AI output for strategy generation");
+            String aiOutput = result.output();
+            
+            // Parse the AI output as JSON
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(aiOutput);
+            
+            // Parse goals
+            List<StrategyGoal> goals = new ArrayList<>();
+            com.fasterxml.jackson.databind.JsonNode goalsNode = root.get("goals");
+            if (goalsNode != null && goalsNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode goalNode : goalsNode) {
+                    goals.add(new StrategyGoal(
+                        goalNode.get("goalType").asText(),
+                        goalNode.get("description").asText(),
+                        goalNode.get("targetMetric").asText(),
+                        goalNode.get("measurementMethod").asText()
+                    ));
+                }
+            }
+            
+            // Parse channel plans
+            List<CampaignPlan> channelPlans = new ArrayList<>();
+            com.fasterxml.jackson.databind.JsonNode plansNode = root.get("channelPlans");
+            if (plansNode != null && plansNode.isArray()) {
+                for (com.fasterxml.jackson.databind.JsonNode planNode : plansNode) {
+                    List<String> keyMessages = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode messagesNode = planNode.get("keyMessages");
+                    if (messagesNode != null && messagesNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode msgNode : messagesNode) {
+                            keyMessages.add(msgNode.asText());
+                        }
+                    }
+                    
+                    List<String> targetKeywords = new ArrayList<>();
+                    com.fasterxml.jackson.databind.JsonNode keywordsNode = planNode.get("targetKeywords");
+                    if (keywordsNode != null && keywordsNode.isArray()) {
+                        for (com.fasterxml.jackson.databind.JsonNode kwNode : keywordsNode) {
+                            targetKeywords.add(kwNode.asText());
+                        }
+                    }
+                    
+                    channelPlans.add(new CampaignPlan(
+                        StrategyChannel.valueOf(planNode.get("channelType").asText()),
+                        planNode.get("objective").asText(),
+                        planNode.get("estimatedBudget").asInt(),
+                        keyMessages,
+                        targetKeywords
+                    ));
+                }
+            }
+            
+            // Parse text fields with fallbacks
+            String rationale = root.has("rationale") ? root.get("rationale").asText() : buildRationale(command);
+            String assumptions = root.has("assumptions") ? root.get("assumptions").asText() : buildAssumptions(command);
+            String measurementPlan = root.has("measurementPlan") ? root.get("measurementPlan").asText() : buildMeasurementPlan(command);
+            String contentPlan = root.has("contentPlan") ? root.get("contentPlan").asText() : buildContentPlan(command);
+            
+            // Use AI budget if provided, otherwise use command budget
+            int budgetCap = root.has("budgetCap") ? root.get("budgetCap").asInt() : command.monthlyBudget();
+            
+            // Build the strategy from parsed AI output
+            DmWorkspaceId workspaceId = ctx.getWorkspaceId();
+            String strategyId = "strat-" + UUID.randomUUID();
+            
+            MarketingStrategy strategy = MarketingStrategy.builder()
+                .strategyId(strategyId)
+                .workspaceId(workspaceId)
+                .status(StrategyStatus.DRAFT)
+                .goals(goals.isEmpty() ? deriveGoals(command) : goals)
+                .channelPlans(channelPlans.isEmpty() ? buildChannelPlans(command) : channelPlans)
+                .budgetCap(budgetCap)
+                .rationale(rationale)
+                .assumptions(assumptions)
+                .measurementPlan(measurementPlan)
+                .contentPlan(contentPlan)
+                .modelVersion(MODEL_VERSION + "-ai")
+                .generatedAt(Instant.now())
+                .generatedBy(ctx.getActor().getPrincipalId())
+                .approvedAt(null)
+                .approvedBy(null)
+                .build();
+            
+            LOG.info("[AI-PARSING] Successfully parsed AI output into strategy: id={}", strategyId);
+            return strategy;
+            
+        } catch (Exception e) {
+            LOG.warn("[AI-PARSING] Failed to parse AI output, falling back to deterministic generation: {}", e.getMessage());
+            return buildStrategy(ctx, command);
+        }
     }
 
     @Override
@@ -205,7 +309,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                 if (!authorized) {
                     return Promise.ofException(new SecurityException("Actor not authorized to submit strategy for approval"));
                 }
-                return repository.findById(strategyId)
+                return repository.findById(ctx.getWorkspaceId(), strategyId)
                     .then(opt -> {
                         MarketingStrategy strategy = opt.orElseThrow(
                             () -> new NoSuchElementException("Strategy not found: " + strategyId));
@@ -225,7 +329,7 @@ public final class StrategyGeneratorServiceImpl implements StrategyGeneratorServ
                 if (!authorized) {
                     return Promise.ofException(new SecurityException("Actor not authorized to approve strategy"));
                 }
-                return repository.findById(strategyId)
+                return repository.findById(ctx.getWorkspaceId(), strategyId)
                     .then(opt -> {
                         MarketingStrategy strategy = opt.orElseThrow(
                             () -> new NoSuchElementException("Strategy not found: " + strategyId));

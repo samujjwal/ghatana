@@ -107,8 +107,8 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     workingDir = rootDir
 
     val command = when {
-        hasPnpmCommand -> listOf("pnpm.cmd", "exec", "tsc")
-        hasNpxCommand -> listOf("npx.cmd", "tsc")
+        hasPnpmCommand -> listOf("pnpm", "exec", "tsc")
+        hasNpxCommand -> listOf("npx", "tsc")
         else -> null
     }
 

@@ -34,10 +34,11 @@ public interface MarketingStrategyRepository {
     Promise<Optional<MarketingStrategy>> findLatestByWorkspace(DmWorkspaceId workspaceId);
 
     /**
-     * Retrieves a specific strategy by its identifier.
+     * Retrieves a specific strategy by its identifier and workspace.
      *
+     * @param workspaceId the workspace identifier
      * @param strategyId the strategy identifier
      * @return promise resolving to an optional containing the strategy, or empty if not found
      */
-    Promise<Optional<MarketingStrategy>> findById(String strategyId);
+    Promise<Optional<MarketingStrategy>> findById(DmWorkspaceId workspaceId, String strategyId);
 }

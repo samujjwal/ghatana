@@ -231,7 +231,6 @@ if (isStandaloneBuild) {
             "core:yappc-services",
             "core:yappc-infrastructure",
             // core:yappc-agents removed — consolidated into core:agents
-            "core:yappc-api",
             "core:yappc-shared")
 
     yappcAliasModules.forEach { modulePath ->

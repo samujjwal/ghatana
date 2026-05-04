@@ -85,6 +85,13 @@ export default defineConfig({
         ),
       },
       {
+        find: 'immer',
+        replacement: resolve(
+          __dirname,
+          '../../../../node_modules/.pnpm/immer@10.2.0/node_modules/immer/dist/immer.mjs'
+        ),
+      },
+      {
         find: '@ghatana/theme',
         replacement: resolve(__dirname, 'src/__mocks__/@ghatana/theme.ts'),
       },

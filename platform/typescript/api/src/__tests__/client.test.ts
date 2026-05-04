@@ -379,20 +379,27 @@ describe("ApiClient — schema validation", () => {
 describe("createCorrelationMiddleware", () => {
   const originalFetch = globalThis.fetch;
 
+  async function runMiddleware(
+    middleware: ReturnType<typeof createCorrelationMiddleware>,
+    req: { url: string; method: "GET"; headers: Record<string, string> },
+  ) {
+    return await middleware(req);
+  }
+
   afterEach(() => {
     globalThis.fetch = originalFetch;
   });
 
-  it("stamps X-Correlation-ID on a request that has no existing header", () => {
+  it("stamps X-Correlation-ID on a request that has no existing header", async () => {
     const middleware = createCorrelationMiddleware();
     const req = { url: "/test", method: "GET" as const, headers: {} };
-    const result = middleware(req);
+    const result = await runMiddleware(middleware, req);
     expect(result.headers?.["X-Correlation-ID"]).toBeDefined();
     expect(typeof result.headers?.["X-Correlation-ID"]).toBe("string");
     expect((result.headers?.["X-Correlation-ID"] as string).length).toBeGreaterThan(0);
   });
 
-  it("does not overwrite an existing X-Correlation-ID header", () => {
+  it("does not overwrite an existing X-Correlation-ID header", async () => {
     const middleware = createCorrelationMiddleware();
     const existingId = "my-trace-12345";
     const req = {
@@ -400,31 +407,31 @@ describe("createCorrelationMiddleware", () => {
       method: "GET" as const,
       headers: { "X-Correlation-ID": existingId },
     };
-    const result = middleware(req);
+    const result = await runMiddleware(middleware, req);
     expect(result.headers?.["X-Correlation-ID"]).toBe(existingId);
   });
 
-  it("uses a custom header name when configured", () => {
+  it("uses a custom header name when configured", async () => {
     const middleware = createCorrelationMiddleware({ headerName: "X-Trace-ID" });
     const req = { url: "/test", method: "GET" as const, headers: {} };
-    const result = middleware(req);
+    const result = await runMiddleware(middleware, req);
     expect(result.headers?.["X-Trace-ID"]).toBeDefined();
     expect(result.headers?.["X-Correlation-ID"]).toBeUndefined();
   });
 
-  it("uses the ID returned by getCorrelationId when provided", () => {
+  it("uses the ID returned by getCorrelationId when provided", async () => {
     const fixedId = "fixed-correlation-id";
     const middleware = createCorrelationMiddleware({ getCorrelationId: () => fixedId });
     const req = { url: "/test", method: "GET" as const, headers: {} };
-    const result = middleware(req);
+    const result = await runMiddleware(middleware, req);
     expect(result.headers?.["X-Correlation-ID"]).toBe(fixedId);
   });
 
-  it("reuses the same session ID across multiple requests", () => {
+  it("reuses the same session ID across multiple requests", async () => {
     const middleware = createCorrelationMiddleware();
     const req = { url: "/test", method: "GET" as const, headers: {} };
-    const r1 = middleware(req);
-    const r2 = middleware(req);
+    const r1 = await runMiddleware(middleware, req);
+    const r2 = await runMiddleware(middleware, req);
     expect(r1.headers?.["X-Correlation-ID"]).toBe(r2.headers?.["X-Correlation-ID"]);
   });
 

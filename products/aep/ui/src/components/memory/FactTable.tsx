@@ -5,10 +5,10 @@
  * @doc.purpose Display memory facts
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState, useMemo } from 'react';
 import type { AgentFact } from '@/api/aep.api';
 import { ConfidenceBadge } from '@/components/shared/ConfidenceBadge';
+import { Input } from '@ghatana/design-system';
 
 // ─── Validity Status ──────────────────────────────────────────────────────────
 
@@ -95,12 +95,12 @@ export function FactTable({ facts, isLoading = false, isError = false }: FactTab
             </span>
           )}
         </h3>
-        <input
+        <Input
           type="search"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter by subject, predicate, or object…"
-          className="flex-1 max-w-xs rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm px-3 py-1.5 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="flex-1 max-w-xs"
           aria-label="Filter facts"
         />
       </div>

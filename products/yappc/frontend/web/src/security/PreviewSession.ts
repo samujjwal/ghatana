@@ -10,121 +10,179 @@
  */
 
 export interface PreviewSession {
-  /** Session ID */
   sessionId: string;
-  /** Project ID */
   projectId: string;
-  /** Artifact ID */
   artifactId: string;
-  /** User ID who created the session */
   userId: string;
-  /** Session creation timestamp */
   createdAt: string;
-  /** Session expiration timestamp */
   expiresAt: string;
-  /** Session scope */
   scope: PreviewSessionScope;
-  /** Session signature */
   signature: string;
 }
 
 export interface PreviewSessionScope {
-  /** Allowed artifact IDs */
   allowedArtifactIds?: string[];
-  /** Allowed project IDs */
   allowedProjectIds?: string[];
-  /** Read-only flag */
   readOnly?: boolean;
-  /** Allow download flag */
   allowDownload?: boolean;
-  /** Allow clipboard flag */
   allowClipboard?: boolean;
-  /** Maximum session duration in seconds */
   maxDuration?: number;
 }
 
 export interface PreviewSessionOptions {
-  /** Project ID */
   projectId: string;
-  /** Artifact ID */
   artifactId: string;
-  /** User ID */
   userId: string;
-  /** Session scope */
+  secretKey: string;
   scope?: PreviewSessionScope;
-  /** Session duration in seconds (default: 1 hour) */
   duration?: number;
 }
 
-/**
- * Default session duration: 1 hour
- */
-const DEFAULT_SESSION_DURATION = 3600; // 1 hour in seconds
+const DEFAULT_SESSION_DURATION = 3600;
+const MAX_SESSION_DURATION = 86400;
 
-/**
- * Maximum session duration: 24 hours
- */
-const MAX_SESSION_DURATION = 86400; // 24 hours in seconds
-
-/**
- * Generate a session ID
- */
 function generateSessionId(): string {
-  return `preview_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+  return `preview_${Date.now()}_${Math.random().toString(36).slice(2, 15)}`;
 }
 
-/**
- * Create a preview session
- */
-export function createPreviewSession(options: PreviewSessionOptions): PreviewSession {
-  const { projectId, artifactId, userId, scope = {}, duration = DEFAULT_SESSION_DURATION } = options;
-
-  // Enforce maximum duration
-  const actualDuration = Math.min(duration, MAX_SESSION_DURATION);
-  
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + actualDuration * 1000);
-
-  const sessionId = generateSessionId();
-  const signature = generateSignature(sessionId, projectId, artifactId, userId, expiresAt.toISOString());
-
+function normalizeScope(
+  projectId: string,
+  artifactId: string,
+  scope: PreviewSessionScope = {},
+  maxDuration: number
+): PreviewSessionScope {
   return {
-    sessionId,
-    projectId,
-    artifactId,
-    userId,
-    createdAt: now.toISOString(),
-    expiresAt: expiresAt.toISOString(),
-    scope: {
-      readOnly: true,
-      allowDownload: false,
-      allowClipboard: false,
-      maxDuration: actualDuration,
-      ...scope,
-    },
-    signature,
+    readOnly: scope.readOnly ?? true,
+    allowDownload: scope.allowDownload ?? false,
+    allowClipboard: scope.allowClipboard ?? false,
+    maxDuration,
+    allowedProjectIds: sortUnique(scope.allowedProjectIds ?? [projectId]),
+    allowedArtifactIds: sortUnique(scope.allowedArtifactIds ?? [artifactId]),
   };
 }
 
-/**
- * Validate a preview session
- */
-export function validatePreviewSession(session: PreviewSession): { valid: boolean; reason?: string } {
+function sortUnique(values: string[]): string[] {
+  return [...new Set(values)].sort();
+}
+
+function createSigningPayload(session: Omit<PreviewSession, 'signature'>): string {
+  return JSON.stringify({
+    sessionId: session.sessionId,
+    projectId: session.projectId,
+    artifactId: session.artifactId,
+    userId: session.userId,
+    createdAt: session.createdAt,
+    expiresAt: session.expiresAt,
+    scope: {
+      ...session.scope,
+      allowedProjectIds: sortUnique(session.scope.allowedProjectIds ?? []),
+      allowedArtifactIds: sortUnique(session.scope.allowedArtifactIds ?? []),
+    },
+  });
+}
+
+async function importSigningKey(secretKey: string): Promise<CryptoKey> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) {
+    throw new Error('Web Crypto API is unavailable');
+  }
+
+  return subtle.importKey(
+    'raw',
+    new TextEncoder().encode(secretKey),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+}
+
+function toBase64Url(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function generateSignature(
+  session: Omit<PreviewSession, 'signature'>,
+  secretKey: string
+): Promise<string> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) {
+    throw new Error('Web Crypto API is unavailable');
+  }
+
+  const signingKey = await importSigningKey(secretKey);
+  const payload = createSigningPayload(session);
+  const signature = await subtle.sign('HMAC', signingKey, new TextEncoder().encode(payload));
+  return `hmac_${toBase64Url(new Uint8Array(signature))}`;
+}
+
+export async function createPreviewSession(options: PreviewSessionOptions): Promise<PreviewSession> {
+  const { projectId, artifactId, userId, secretKey, scope = {}, duration = DEFAULT_SESSION_DURATION } = options;
+  const actualDuration = Math.min(duration, MAX_SESSION_DURATION);
   const now = new Date();
+  const createdAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + actualDuration * 1000).toISOString();
+  const normalizedScope = normalizeScope(projectId, artifactId, scope, actualDuration);
+
+  const sessionWithoutSignature = {
+    sessionId: generateSessionId(),
+    projectId,
+    artifactId,
+    userId,
+    createdAt,
+    expiresAt,
+    scope: normalizedScope,
+  };
+
+  return {
+    ...sessionWithoutSignature,
+    signature: await generateSignature(sessionWithoutSignature, secretKey),
+  };
+}
+
+export async function validatePreviewSession(
+  session: PreviewSession,
+  secretKey: string
+): Promise<{ valid: boolean; reason?: string }> {
+  const createdAt = new Date(session.createdAt);
   const expiresAt = new Date(session.expiresAt);
 
-  // Check expiration
-  if (now > expiresAt) {
+  if (Number.isNaN(createdAt.getTime()) || Number.isNaN(expiresAt.getTime())) {
+    return { valid: false, reason: 'Invalid session timestamps' };
+  }
+
+  if (expiresAt <= createdAt) {
+    return { valid: false, reason: 'Session expiration must be after creation' };
+  }
+
+  const actualDurationSeconds = Math.floor((expiresAt.getTime() - createdAt.getTime()) / 1000);
+  if (actualDurationSeconds > MAX_SESSION_DURATION) {
+    return { valid: false, reason: 'Session exceeds maximum duration' };
+  }
+
+  if (new Date() > expiresAt) {
     return { valid: false, reason: 'Session expired' };
   }
 
-  // Verify signature
-  const expectedSignature = generateSignature(
-    session.sessionId,
-    session.projectId,
-    session.artifactId,
-    session.userId,
-    session.expiresAt
+  const expectedSignature = await generateSignature(
+    {
+      sessionId: session.sessionId,
+      projectId: session.projectId,
+      artifactId: session.artifactId,
+      userId: session.userId,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      scope: normalizeScope(
+        session.projectId,
+        session.artifactId,
+        session.scope,
+        session.scope.maxDuration ?? actualDurationSeconds
+      ),
+    },
+    secretKey
   );
 
   if (session.signature !== expectedSignature) {
@@ -134,110 +192,75 @@ export function validatePreviewSession(session: PreviewSession): { valid: boolea
   return { valid: true };
 }
 
-/**
- * Check if a resource is within session scope
- */
 export function isResourceInScope(
   session: PreviewSession,
   projectId: string,
   artifactId: string
 ): boolean {
-  const { scope } = session;
+  if (session.projectId !== projectId || session.artifactId !== artifactId) {
+    return false;
+  }
 
-  // Check project scope
+  const { scope } = session;
   if (scope.allowedProjectIds && !scope.allowedProjectIds.includes(projectId)) {
     return false;
   }
-
-  // Check artifact scope
   if (scope.allowedArtifactIds && !scope.allowedArtifactIds.includes(artifactId)) {
     return false;
   }
-
   return true;
 }
 
-/**
- * Generate a session signature
- * Note: In production, this should use a proper HMAC with a secret key
- */
-function generateSignature(
-  sessionId: string,
-  projectId: string,
-  artifactId: string,
-  userId: string,
-  expiresAt: string | Date
-): string {
-  const expiresAtStr = typeof expiresAt === 'string' ? expiresAt : expiresAt.toISOString();
-  
-  // Simple hash for demonstration - use HMAC in production
-  const data = `${sessionId}:${projectId}:${artifactId}:${userId}:${expiresAtStr}`;
-  
-  // Simple hash function (replace with proper HMAC in production)
-  let hash = 0;
-  for (let i = 0; i < data.length; i++) {
-    const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  
-  return `sig_${Math.abs(hash).toString(36)}`;
-}
-
-/**
- * Get session expiration time
- */
 export function getSessionExpirationTime(session: PreviewSession): Date {
   return new Date(session.expiresAt);
 }
 
-/**
- * Check if session is expired
- */
 export function isSessionExpired(session: PreviewSession): boolean {
-  const now = new Date();
-  const expiresAt = getSessionExpirationTime(session);
-  return now > expiresAt;
+  return new Date() > getSessionExpirationTime(session);
 }
 
-/**
- * Get remaining session time in seconds
- */
 export function getRemainingSessionTime(session: PreviewSession): number {
-  const now = new Date();
-  const expiresAt = getSessionExpirationTime(session);
-  const remainingMs = expiresAt.getTime() - now.getTime();
+  const remainingMs = getSessionExpirationTime(session).getTime() - Date.now();
   return Math.max(0, Math.floor(remainingMs / 1000));
 }
 
-/**
- * Extend session expiration
- */
-export function extendSession(
+export async function extendSession(
   session: PreviewSession,
-  additionalDuration: number
-): PreviewSession {
-  const currentExpiresAt = getSessionExpirationTime(session);
-  const newExpiresAt = new Date(currentExpiresAt.getTime() + additionalDuration * 1000);
-  
-  // Enforce maximum duration from creation
+  additionalDuration: number,
+  secretKey: string
+): Promise<PreviewSession> {
   const createdAt = new Date(session.createdAt);
+  const currentExpiresAt = getSessionExpirationTime(session);
   const maxExpiresAt = new Date(createdAt.getTime() + MAX_SESSION_DURATION * 1000);
-  
-  const finalExpiresAt = newExpiresAt > maxExpiresAt ? maxExpiresAt : newExpiresAt;
-
-  const newSignature = generateSignature(
-    session.sessionId,
+  const requestedExpiresAt = new Date(currentExpiresAt.getTime() + additionalDuration * 1000);
+  const finalExpiresAt = requestedExpiresAt > maxExpiresAt ? maxExpiresAt : requestedExpiresAt;
+  const updatedScope = normalizeScope(
     session.projectId,
     session.artifactId,
-    session.userId,
-    finalExpiresAt.toISOString()
+    session.scope,
+    Math.floor((finalExpiresAt.getTime() - createdAt.getTime()) / 1000)
   );
 
-  return {
+  const updatedSession = {
     ...session,
     expiresAt: finalExpiresAt.toISOString(),
-    signature: newSignature,
+    scope: updatedScope,
+  };
+
+  return {
+    ...updatedSession,
+    signature: await generateSignature(
+      {
+        sessionId: updatedSession.sessionId,
+        projectId: updatedSession.projectId,
+        artifactId: updatedSession.artifactId,
+        userId: updatedSession.userId,
+        createdAt: updatedSession.createdAt,
+        expiresAt: updatedSession.expiresAt,
+        scope: updatedSession.scope,
+      },
+      secretKey
+    ),
   };
 }
 

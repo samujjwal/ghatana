@@ -1,9 +1,12 @@
 // @ts-nocheck
+import { enableMapSet } from 'immer';
 import '@testing-library/jest-dom/vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, expect, vi } from 'vitest';
+
+enableMapSet();
 
 // Extend Vitest's expect with jest-dom matchers
 expect.extend(matchers);

@@ -588,12 +588,15 @@ public final class DataSourceRegistryHandler {
     // ─── GET /api/v1/data-fabric/metrics ────────────────────────────────────────
 
     /**
-     * Handles GET /api/v1/data-fabric/metrics - returns real fabric tier metrics.
+     * Handles GET /api/v1/data-fabric/metrics - returns fabric tier metrics from real storage profiles.
      *
      * <p>Aggregates metrics from storage profiles across tiers (HOT, WARM, COOL, COLD)
      * to provide real-time fabric topology metrics for the Data Fabric UI.
      *
-     * <p>This replaces the previous demo metrics with real data from storage profiles.
+     * <p>This endpoint requires real storage profile entities to be configured.
+     * When no storage profiles exist, it returns an empty metrics response rather than
+     * synthetic demo data. This is a preview capability and is disabled by default
+     * in production profiles.
      *
      * @param request HTTP request
      * @return Promise with fabric metrics response
@@ -604,22 +607,44 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
+        // Check if fabric metrics capability is enabled (preview capability, disabled in production by default)
+        String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE", "local");
+        boolean isProductionProfile = "production".equalsIgnoreCase(profile) || "staging".equalsIgnoreCase(profile);
+        
+        if (isProductionProfile) {
+            log.warn("[getFabricMetrics] tenant={} - Data Fabric metrics are preview-only and disabled in {} profile", 
+                tenantId, profile);
+            return Promise.of(http.jsonResponse(Map.of(
+                "tiers", List.of(),
+                "totalEventsPerSec", 0.0,
+                "totalStorageGb", 0.0,
+                "lastUpdated", Instant.now().toString(),
+                "preview", true,
+                "disabled", true,
+                "message", "Data Fabric metrics are a preview capability and disabled in production profiles"
+            )));
+        }
+
         // Query storage profiles to get tier information
         return client.query(tenantId, DC_CONNECTIONS, DataCloudClient.Query.limit(500))
             .map(entities -> {
-                // Aggregate metrics by tier based on storage profile types
-                Map<String, Object> hotTier = buildTierMetrics(entities, "HOT", "Redis", 3);
-                Map<String, Object> warmTier = buildTierMetrics(entities, "WARM", "PostgreSQL", 2);
-                Map<String, Object> coolTier = buildTierMetrics(entities, "COOL", "Iceberg", 1);
-                Map<String, Object> coldTier = buildTierMetrics(entities, "COLD", "S3/Archive", 1);
+                // Build real tier metrics from storage profile entities
+                List<Map<String, Object>> tiers = buildRealTierMetrics(entities);
 
-                List<Map<String, Object>> tiers = new java.util.ArrayList<>();
-                if (!hotTier.isEmpty()) tiers.add(hotTier);
-                if (!warmTier.isEmpty()) tiers.add(warmTier);
-                if (!coolTier.isEmpty()) tiers.add(coolTier);
-                if (!coldTier.isEmpty()) tiers.add(coldTier);
+                if (tiers.isEmpty()) {
+                    log.info("[getFabricMetrics] tenant={} - no storage profiles configured, returning empty metrics", 
+                        tenantId);
+                    return http.jsonResponse(Map.of(
+                        "tiers", List.of(),
+                        "totalEventsPerSec", 0.0,
+                        "totalStorageGb", 0.0,
+                        "lastUpdated", Instant.now().toString(),
+                        "preview", true,
+                        "message", "No storage profiles configured. Data Fabric metrics require configured storage profiles."
+                    ));
+                }
 
-                // Calculate totals
+                // Calculate totals from real data
                 double totalEventsPerSec = tiers.stream()
                     .mapToDouble(t -> ((Number) t.getOrDefault("throughputEps", 0)).doubleValue())
                     .sum();
@@ -634,7 +659,8 @@ public final class DataSourceRegistryHandler {
                     "tiers", tiers,
                     "totalEventsPerSec", totalEventsPerSec,
                     "totalStorageGb", totalStorageGb,
-                    "lastUpdated", Instant.now().toString()
+                    "lastUpdated", Instant.now().toString(),
+                    "preview", true
                 ));
             })
             .then(
@@ -647,6 +673,7 @@ public final class DataSourceRegistryHandler {
                         "totalEventsPerSec", 0.0,
                         "totalStorageGb", 0.0,
                         "lastUpdated", Instant.now().toString(),
+                        "preview", true,
                         "degraded", true,
                         "error", "Metrics temporarily unavailable"
                     )));
@@ -654,82 +681,145 @@ public final class DataSourceRegistryHandler {
     }
 
     /**
-     * Builds tier metrics from storage profile entities.
+     * Builds real tier metrics from storage profile entities.
+     *
+     * <p>Extracts actual metrics from configured storage profile entities.
+     * Returns empty list if no storage profiles are configured for a tier.
+     * No synthetic or demo metrics are generated.
      *
      * @param entities storage profile entities
-     * @param tier tier identifier (HOT, WARM, COOL, COLD)
-     * @param defaultBackend default backend name for the tier
-     * @param defaultInstances default instance count for the tier
-     * @return tier metrics map
+     * @return list of tier metrics maps from real storage profile data
      */
-    private Map<String, Object> buildTierMetrics(
-        List<DataCloudClient.Entity> entities,
-        String tier,
-        String defaultBackend,
-        int defaultInstances
-    ) {
-        // Filter entities by tier (based on type or config)
-        long count = entities.stream()
-            .filter(e -> {
-                Map<String, Object> data = e.data();
-                String type = String.valueOf(data.getOrDefault("type", ""));
-                return type.toLowerCase().contains(tier.toLowerCase()) ||
-                       (tier.equals("HOT") && type.toLowerCase().contains("redis")) ||
-                       (tier.equals("WARM") && type.toLowerCase().contains("postgresql")) ||
-                       (tier.equals("COOL") && type.toLowerCase().contains("iceberg")) ||
-                       (tier.equals("COLD") && type.toLowerCase().contains("s3"));
-            })
-            .count();
+    private List<Map<String, Object>> buildRealTierMetrics(List<DataCloudClient.Entity> entities) {
+        List<Map<String, Object>> tiers = new java.util.ArrayList<>();
+        
+        // Group entities by tier based on their type/configuration
+        Map<String, List<DataCloudClient.Entity>> tierGroups = new java.util.LinkedHashMap<>();
+        tierGroups.put("HOT", new java.util.ArrayList<>());
+        tierGroups.put("WARM", new java.util.ArrayList<>());
+        tierGroups.put("COOL", new java.util.ArrayList<>());
+        tierGroups.put("COLD", new java.util.ArrayList<>());
 
-        if (count == 0 && defaultInstances == 0) {
-            return Map.of();
+        for (DataCloudClient.Entity entity : entities) {
+            Map<String, Object> data = entity.data();
+            String type = String.valueOf(data.getOrDefault("type", "")).toLowerCase();
+            String tierConfig = String.valueOf(data.getOrDefault("tier", "")).toLowerCase();
+            
+            if (type.contains("redis") || tierConfig.contains("hot")) {
+                tierGroups.get("HOT").add(entity);
+            } else if (type.contains("postgresql") || tierConfig.contains("warm")) {
+                tierGroups.get("WARM").add(entity);
+            } else if (type.contains("iceberg") || tierConfig.contains("cool")) {
+                tierGroups.get("COOL").add(entity);
+            } else if (type.contains("s3") || tierConfig.contains("cold") || tierConfig.contains("archive")) {
+                tierGroups.get("COLD").add(entity);
+            }
         }
 
-        // Simulate realistic metrics based on tier characteristics
-        double throughputEps = switch (tier) {
-            case "HOT" -> 1500 + Math.random() * 500;
-            case "WARM" -> 800 + Math.random() * 200;
-            case "COOL" -> 200 + Math.random() * 100;
-            case "COLD" -> 50 + Math.random() * 50;
-            default -> 0;
-        };
+        // Build metrics for each tier that has configured storage profiles
+        for (Map.Entry<String, List<DataCloudClient.Entity>> entry : tierGroups.entrySet()) {
+            String tier = entry.getKey();
+            List<DataCloudClient.Entity> tierEntities = entry.getValue();
+            
+            if (tierEntities.isEmpty()) {
+                continue; // Skip tiers with no configured storage profiles
+            }
 
-        double latencyP99Ms = switch (tier) {
-            case "HOT" -> 2 + Math.random() * 3;
-            case "WARM" -> 8 + Math.random() * 5;
-            case "COOL" -> 50 + Math.random() * 20;
-            case "COLD" -> 200 + Math.random() * 100;
-            default -> 0;
-        };
+            // Aggregate metrics from real storage profile entities
+            double totalThroughput = 0.0;
+            double totalLatency = 0.0;
+            double totalErrorRate = 0.0;
+            int totalQueueDepth = 0;
+            double totalStorage = 0.0;
+            int healthyCount = 0;
+            int warningCount = 0;
+            int errorCount = 0;
 
-        double errorRate = 0.001 + Math.random() * 0.005;
-        int queueDepth = (int) (10 + Math.random() * 30);
-        int instanceCount = (int) (count > 0 ? count : defaultInstances);
+            for (DataCloudClient.Entity entity : tierEntities) {
+                Map<String, Object> data = entity.data();
+                
+                // Extract metrics from entity data if present
+                Object throughput = data.get("throughputEps");
+                if (throughput instanceof Number) {
+                    totalThroughput += ((Number) throughput).doubleValue();
+                }
+                
+                Object latency = data.get("latencyP99Ms");
+                if (latency instanceof Number) {
+                    totalLatency += ((Number) latency).doubleValue();
+                }
+                
+                Object errorRate = data.get("errorRate");
+                if (errorRate instanceof Number) {
+                    totalErrorRate += ((Number) errorRate).doubleValue();
+                }
+                
+                Object queueDepth = data.get("queueDepth");
+                if (queueDepth instanceof Number) {
+                    totalQueueDepth += ((Number) queueDepth).intValue();
+                }
+                
+                Object storage = data.get("storageGb");
+                if (storage instanceof Number) {
+                    totalStorage += ((Number) storage).doubleValue();
+                }
+                
+                // Count health status
+                String healthStatus = String.valueOf(data.getOrDefault("healthStatus", "unknown"));
+                if ("healthy".equalsIgnoreCase(healthStatus)) {
+                    healthyCount++;
+                } else if ("warning".equalsIgnoreCase(healthStatus)) {
+                    warningCount++;
+                } else if ("error".equalsIgnoreCase(healthStatus)) {
+                    errorCount++;
+                }
+            }
 
-        double storageGb = switch (tier) {
-            case "HOT" -> 10 + Math.random() * 5;
-            case "WARM" -> 50 + Math.random() * 20;
-            case "COOL" -> 200 + Math.random() * 100;
-            case "COLD" -> 500 + Math.random() * 200;
-            default -> 0;
-        };
+            int instanceCount = tierEntities.size();
+            double avgThroughput = instanceCount > 0 ? totalThroughput / instanceCount : 0.0;
+            double avgLatency = instanceCount > 0 ? totalLatency / instanceCount : 0.0;
+            double avgErrorRate = instanceCount > 0 ? totalErrorRate / instanceCount : 0.0;
+            double avgQueueDepth = instanceCount > 0 ? (double) totalQueueDepth / instanceCount : 0.0;
+            
+            // Determine overall tier status
+            String status;
+            if (errorCount > 0) {
+                status = "error";
+            } else if (warningCount > 0 || avgErrorRate > 0.01) {
+                status = "warning";
+            } else if (healthyCount > 0) {
+                status = "healthy";
+            } else {
+                status = "inactive";
+            }
 
-        String status = errorRate > 0.004 ? "warning" : "healthy";
+            // Determine default backend label based on tier
+            String defaultBackend = switch (tier) {
+                case "HOT" -> "Redis";
+                case "WARM" -> "PostgreSQL";
+                case "COOL" -> "Iceberg";
+                case "COLD" -> "S3/Archive";
+                default -> "Unknown";
+            };
 
-        Map<String, Object> metrics = new LinkedHashMap<>();
-        metrics.put("tier", tier);
-        metrics.put("label", tier + " Tier (" + defaultBackend + ")");
-        metrics.put("throughputEps", throughputEps);
-        metrics.put("latencyP99Ms", latencyP99Ms);
-        metrics.put("errorRate", errorRate);
-        metrics.put("queueDepth", queueDepth);
-        metrics.put("status", status);
-        metrics.put("instanceCount", instanceCount);
-        if (!tier.equals("HOT")) {
-            metrics.put("storageGb", storageGb);
+            Map<String, Object> metrics = new LinkedHashMap<>();
+            metrics.put("tier", tier);
+            metrics.put("label", tier + " Tier (" + defaultBackend + ")");
+            metrics.put("throughputEps", avgThroughput);
+            metrics.put("latencyP99Ms", avgLatency);
+            metrics.put("errorRate", avgErrorRate);
+            metrics.put("queueDepth", (int) avgQueueDepth);
+            metrics.put("status", status);
+            metrics.put("instanceCount", instanceCount);
+            
+            if (!tier.equals("HOT")) {
+                metrics.put("storageGb", totalStorage);
+            }
+
+            tiers.add(metrics);
         }
 
-        return metrics;
+        return tiers;
     }
     // ─── DELETE /api/v1/connectors/:connectionId ─────────────────────────────
 

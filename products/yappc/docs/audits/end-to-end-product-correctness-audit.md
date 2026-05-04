@@ -1,479 +1,752 @@
-# YAPPC End-to-End Product Correctness Audit
+implement all the tasks from # 1. Verified baseline
 
-**Audit Date:** 2026-05-02  
-**Auditor:** Principal Product Engineer / Staff Architect (AI-assisted deep audit)  
-**Scope Root:** `products/yappc`  
-**Audit Doctrine:** Evidence-based, zero-tolerance for production stubs in critical flows
+I reviewed commit head `b90f644a9575c3c19d6ae29ee71bf907a2230146`.
 
----
+Important clarification: `b90f644a...` itself is a merge/changelog-facing commit whose direct diff shown by the connector updates `products/yappc/CHANGELOG.md` and references `8e27816d76271c52ed4f35cd083db2e441f82340`.  However, comparing from the previous reviewed head to `b90f644a...` shows a large YAPPC delta, including DB page-artifact persistence, validation, phase cockpit components, design-system enforcement, compiler workflow shells, security utilities, semantic command services, and E2E specs.
 
-## 1. Executive Summary
+Key files reviewed include:
 
-| Rating Dimension | Score | Notes |
-|---|---|---|
-| Overall Correctness | 5/10 | Core auth, RBAC, workspace, project, canvas flows are correct. AI Agent GraphQL resolvers and lifecycle advanced features are stubs. |
-| Overall Completeness | 4/10 | Phases 0–2 have partial coverage. Phases 3–7 are in active implementation. Many domain model entities are duplicated with no converged canonical. |
-| Production Readiness | 2/10 | Consistent with self-assessment in README (2/10). Multiple P0 stubs in critical AI flows, workflow cancellation durability gaps, console logging in production. |
-| Mock/Stub Risk | **Critical** | `AIAgentsResolver` uses stub clients verbatim from `src/stubs/ai/agents/api-client.ts`. All four AI agent mutations return "Stub response" to users in production. |
-
-### Top P0 Issues
-
-1. `AIAgentsResolver.ts` — All AI agent GraphQL mutations and the `aiAgents()` query return hardcoded stub data in every environment. `AIAgentClientFactory` from `src/stubs/ai/agents/api-client.ts` is imported and used in production resolvers.
-2. `AIAgentsResolver.Query.aiAgents()` — Returns a hardcoded static array of four agents with comment "In production, this would call the Java backend's registry." This is production-reachable fake behavior with no feature-flag guard.
-3. `GraphQL context (index.ts)` — GraphQL auth only checks for `authorization` header presence in production; it does not verify token validity at the yoga context level. Authentication for GraphQL relies entirely on `authMiddleware` ordering correctness (correct but fragile).
-4. Legacy canvas endpoint `GET /canvas/:projectId/:canvasId?` — No resource-level ownership check (no `preHandler`). Global auth ensures request is authenticated, but any authenticated user can read any project's canvas data by guessing a project ID.
-5. Domain model duplication — `Project`, `Incident`, `Compliance`, `SecurityScan`, `Alert` exist in both `backend/api/domain/` and `libs/java/yappc-domain/` with no completed migration. The deprecated API domain versions remain in active use.
-
-### Top P1 Issues
-
-1. `console.error` / `console.log` used throughout production routes (`canvas.ts`, `workspaces.ts`, `lifecycle.ts`) instead of structured Fastify logger (`request.log`).
-2. `devAuthBypass` creates a new user in production database if no admin user exists — risky behavior if `ENABLE_DEV_AUTH_BYPASS` is misconfigured (though guarded by `assertDevAuthBypassAllowed`).
-3. `embedding-pipeline.ts` falls back to a stub provider (zero vectors) if no `OPENAI_API_KEY` or `OLLAMA_BASE_URL` is set. Zero vectors silently corrupt semantic search results.
-4. Backend Implementation Backlog (self-documented): workflow cancel durability, cost-per-project API, conversation retention policy, PII classification on logs — all unfixed.
-5. Multiple seed files (`seed.ts`, `seed-basic.ts`, `seed-minimal.ts`, `seed-simple.ts`, `seed-workflows.ts`) with no documented canonical production seed behavior.
-
-### Production Readiness Gate
-
-**Safe to release to production: NO**  
-**Safe for internal demo (with feature flags): CONDITIONAL** — AI agent features must be feature-flagged off.  
-**Safe for development use: YES**
+* Page artifact backend: `DbPageArtifactRepository`, `PageArtifactValidator`, `PageArtifactController`, `PageArtifactRoutes`
+* Phase UX: `PhaseCockpitLayout`, `IntentCockpit`, other phase cockpit components
+* Project UX: `CommandCenter`, `ProvenanceBadge`
+* Canvas/page builder: `PageBuilderCommands`, `PageDesigner`, `ComponentRenderer`, renderer/plugin infrastructure
+* Compiler/decompiler: `ImportSourceWorkflow`, residual review components
+* Security: `PreviewSession`, `UnsafeComponentHandler`
+* Design system: ESLint enforcement rule and primitive mapping docs
+* Tests: `pageBuilderE2E.test.tsx`, `yappc-full-flow.spec.ts`
 
 ---
 
-## 2. Scope and Method
+# 2. Executive summary
 
-### Reviewed
+YAPPC at `b90f644a...` has improved significantly since `719869a`. The repo now contains many of the architectural pieces requested in the previous implementation plan:
 
-| Area | Paths |
-|---|---|
-| Backend API (Node.js/TypeScript) | `frontend/apps/api/src/` |
-| Frontend (React/TypeScript) | `frontend/web/src/` |
-| Database schema and migrations | `frontend/apps/api/prisma/` |
-| Stub directory | `frontend/apps/api/src/stubs/` |
-| Middleware | `frontend/apps/api/src/middleware/` |
-| Services | `frontend/apps/api/src/services/` |
-| GraphQL resolvers | `frontend/apps/api/src/graphql/resolvers/` |
-| Observability utils | `frontend/apps/api/src/utils/` |
-| Product docs | `docs/` including README, RELEASE_READINESS_CHECKLIST, BACKEND_IMPLEMENTATION_BACKLOG, CRITICAL_JOURNEYS, DOMAIN_MODEL_REGISTRY |
-| Feature flags | `frontend/web/FEATURE_FLAGS.md` |
-| Route tests | `frontend/apps/api/src/__tests__/`, `frontend/apps/api/src/routes/__tests__/` |
+* DB-backed page artifact repository with optimistic concurrency and historical version archiving. 
+* Server-side page artifact validation. 
+* Phase cockpit component family for low-cognitive-load phase UX. 
+* Provenance badge component for backed/derived/suggested/preview/unavailable data truth. 
+* Project command center pattern with readiness, next action, backed activity, suggested improvement, and governance trace. 
+* Next-best-action service. 
+* Design-system ESLint enforcement rule. 
+* Preview session and unsafe component security utilities.  
+* Playwright full-flow and accessibility E2E spec. 
 
-### Excluded
+The biggest remaining concern: many of these additions are **service/component shells or partially wired implementations**, while the mounted app routes still largely point to the older generic project overview, canvas, or lifecycle surfaces. For example, `intent.tsx` still exports project overview, `shape.tsx` and `generate.tsx` still export canvas, and `validate.tsx` still exports lifecycle.    
 
-- `node_modules/`, `dist/`, `build/`, `.next/`, `coverage/`
-- Java core modules (referenced for context only; Java unit tests reviewed at surface level)
-- `e2e/`, `k6-tests/` (considered as evidence, not directly re-executed)
+## Top critical findings
 
----
-
-## 3. Complete Product Inventory
-
-### 3.1 UI Inventory
-
-| UI Item | File(s) | Purpose | User Actions | Completeness Status | Issues |
-|---|---|---|---|---|---|
-| Login Page | `frontend/web/src/routes/login.tsx` | Authenticate user | Submit credentials, Demo login | Complete | Demo login only available in dev (`isDemoLoginEnabled()` is `DEV && VITE_ENABLE_DEMO_LOGIN=true`) — correct. |
-| Workspaces Page | `frontend/web/src/pages/dashboard/` | List/manage workspaces | Create, view, delete workspace | Partial | Create/view exist; delete UX not confirmed |
-| Dashboard | `frontend/web/src/pages/dashboard/DashboardPage.tsx` | Project overview | Navigate to phases | Partial | Phase 3-7 views incomplete |
-| Phase Overview | `frontend/web/src/pages/dashboard/PhaseOverviewPage.tsx` | Show lifecycle phase details | Transition phase, view artifacts | Partial | Advanced lifecycle gating not fully wired |
-| Projects Page | `frontend/web/src/pages/dashboard/ProjectsPage.tsx` | List/manage projects | Create, filter, open project | Partial | Activity feed partially wired |
-| Canvas | `frontend/web/src/canvas/` | Visual workspace | Draw, connect nodes, save | Mostly complete | Real-time collaboration via WebSocket; versioning exists |
-| Auth Profile | `frontend/web/src/pages/auth/ProfilePage.tsx` | User profile | Edit profile | Partial | Profile update wired to backend |
-| SSO Callback | `frontend/web/src/pages/auth/SSOCallbackPage.tsx` | Handle SSO login redirect | — | Present | SSO actual provider integration not confirmed |
-| Admin pages | `frontend/web/src/pages/admin/` | Admin management | Manage users/roles | Incomplete | Admin surface is sparse |
-| Security pages | `frontend/web/src/pages/security/` | Security dashboard | View scan results | Partial | Relies on DevSecOps routes |
-| Operations pages | `frontend/web/src/pages/operations/` | Ops monitoring | View metrics | Partial | Prometheus integration exists server-side |
-| Settings | `frontend/web/src/routes/settings.tsx` | Application settings | Update preferences | Partial | Feature flag settings not UI-exposed |
-| Onboarding | `frontend/web/src/routes/onboarding.tsx` | New user onboarding | Complete setup steps | Partial | Bootstrapping session model exists but journey completeness unknown |
-| Not Found | `frontend/web/src/routes/not-found.tsx` | 404 state | — | Complete | — |
-| Error Boundary | `frontend/web/src/components/route/ErrorBoundary.tsx` | Error display | Retry | Present | — |
-
-### 3.2 User Action Inventory
-
-| Action | UI Source | Expected Result | Actual Handler | Backend/API Called | Complete? | Issues |
-|---|---|---|---|---|---|---|
-| Login | `routes/login.tsx` | JWT session, redirect | `authService.login()` → `ProxyAuthService` → Java lifecycle service | `POST /auth/login` | Yes | Cookie plugin registration falls back silently |
-| Logout | `services/auth/AuthService.ts` | Session cleared | `authService.logout()` | `POST /auth/logout` | Yes | — |
-| Create Workspace | `routes/workspaces.ts` | Workspace created + member record | `POST /workspaces` → Prisma | DB write | Yes | — |
-| Create Project | `routes/projects.ts` | Project created | `POST /projects` → Prisma | DB write + audit | Yes | — |
-| Transition Lifecycle Phase | `routes/lifecycle.ts` | Phase advances with gate check | `PUT /lifecycle/:projectId/phase` | DB write + audit + AI recommendation | Partial | AI persona recommendation falls back silently on error |
-| Execute AI Agent (GraphQL) | GraphQL | Agent executes, returns result | `AIAgentsResolver.Mutation.*` | **Stub — returns "Stub response"** | **NO — P0** | Stub client in production |
-| Save Canvas | `routes/canvas.ts` | Canvas persisted with version | `PUT /projects/:projectId/canvas` | DB write + version record | Yes | console.error instead of structured log |
-| Restore Canvas Version | `routes/canvas.ts` | Canvas reverted to version | `POST /canvas/restore/:projectId` | DB write | Yes | — |
-| View Project Activity | `routes/projects.ts` | Activity events from lifecycle + audit | `GET /projects/:projectId/activity` | DB read + lifecycle service | Partial | Lifecycle service call may fail silently |
-| Request Approval | GraphQL `requirements-approvals.resolver.ts` | Approval request created | Resolver → Prisma | DB write | Yes | — |
-| Cancel Workflow | `services/` | Workflow cancelled durably | `WorkflowService.cancelWorkflow()` | Flag write to DB **only** | **NO — P1** | AEP not notified; durability gap (BACKEND_IMPLEMENTATION_BACKLOG item C-Y2) |
-| Demo Login | `routes/login.tsx` | Dev user session | `authService.demoLogin()` | Dev bypass | Dev-only gated correctly | Not reachable in production |
-
-### 3.3 API and Backend Inventory
-
-| Backend Item | File(s) | Expected Behavior | Auth/AuthZ | Validation | DB Access | Complete? | Issues |
-|---|---|---|---|---|---|---|---|
-| `POST /auth/login` | `routes/auth.ts` | Proxy to Java lifecycle service | Public | Schema-validated body | Via Java lifecycle | Yes | Cookie plugin fallback logs warning |
-| `GET /workspaces` | `routes/workspaces.ts` | List user's workspaces | JWT required | None | Prisma + tenant scoping | Yes | `console.error` for logging |
-| `POST /workspaces` | `routes/workspaces.ts` | Create workspace + default project | JWT required + `workspace:create` RBAC | Schema | Prisma transaction | Yes | — |
-| `GET /projects` | `routes/projects.ts` | List projects in workspace | JWT required + `requireProjectReadable` | Query params | Prisma | Yes | — |
-| `POST /projects` | `routes/projects.ts` | Create project + canvas + default lifecycle | JWT + `project:create` | Schema | Prisma | Yes | — |
-| `GET /projects/:id/activity` | `routes/projects.ts` | Combined audit + lifecycle events | JWT + `requireProjectReadable` | Params | Prisma + lifecycle proxy | Partial | Lifecycle proxy failure silently returns empty |
-| `GET /projects/:id/canvas` | `routes/canvas.ts` | Load canvas data | JWT + `requireCanvasReadable` | Params | Prisma | Yes | — |
-| `PUT /projects/:id/canvas` | `routes/canvas.ts` | Save canvas + version | JWT + RBAC + `requireCanvasWritable` | Body type | Prisma | Yes | — |
-| `GET /canvas/:projectId/:canvasId?` (legacy) | `routes/canvas.ts` | Load canvas by ID | JWT (global) | Params | Prisma | Partial | **No resource-auth check — any authenticated user can read any canvas by project ID** |
-| `PUT /lifecycle/:projectId/phase` | `routes/lifecycle.ts` | Advance lifecycle phase with gate | JWT + RBAC | Params + body | Prisma + audit | Partial | AI persona recommendation error falls back silently with `console.error` |
-| `Query aiAgents` (GraphQL) | `graphql/resolvers/AIAgentsResolver.ts` | Return registered agents from Java registry | JWT (via yoga context) | None | None | **NO — P0** | Hardcoded static list, no registry call |
-| `Mutation executeCopilotAgent` (GraphQL) | `graphql/resolvers/AIAgentsResolver.ts` | Execute real AI inference | JWT | Type-safe input | `agentExecution` log | **NO — P0** | Stub client returns "Stub response" always |
-| `Mutation executeQueryParserAgent` (GraphQL) | `graphql/resolvers/AIAgentsResolver.ts` | Parse natural language query | JWT | Type-safe input | `agentExecution` log | **NO — P0** | Stub client returns fake intent |
-| `Mutation executePredictionAgent` (GraphQL) | `graphql/resolvers/AIAgentsResolver.ts` | Run ML prediction | JWT | Type-safe input | `agentExecution` log | **NO — P0** | Stub client returns `predictions: []` always |
-| `Mutation executeAnomalyDetector` (GraphQL) | `graphql/resolvers/AIAgentsResolver.ts` | Detect anomalies | JWT | Type-safe input | `agentExecution` log | **NO — P0** | Stub client returns `anomalies: []` always |
-| `POST /ai/suggest-artifacts` | `routes/ai.ts` | Rule-based heuristic artifact suggestions | JWT | Typed body | None | Yes | Explicitly labeled as `rule_based_heuristic` — acceptable |
-| `GET /security-scans` | `routes/security-scans.ts` | DevSecOps scan results | JWT | Query | Prisma | Partial | Unknown if scans are triggered by real CI |
-| `GET /metrics` | `index.ts` | Prometheus metrics | JWT or internal IP or API key | — | None | Yes | — |
-| `GET /health` | `index.ts` | DB + Java backend reachability | Public | — | DB ping | Yes | — |
-| `GET /ready` | `index.ts` | Strict readiness probe | Public | — | DB ping + Java ping | Yes | — |
-| Embedding Pipeline Job | `jobs/embedding-pipeline.ts` | Generate embeddings for semantic search | N/A (background) | — | Prisma | Partial | Falls back to zero-vector stub if no `OPENAI_API_KEY` / `OLLAMA_BASE_URL` — silently corrupts semantic search |
-
-### 3.4 Database Inventory
-
-| DB Model | File(s) | Purpose | Constraints | Indexes | Complete? | Issues |
-|---|---|---|---|---|---|---|
-| `User` | `prisma/schema.prisma` | User identity | `email @unique` | `email` | Yes | `passwordHash` nullable — supports SSO users |
-| `UserSession` | `prisma/schema.prisma` | JWT refresh token session | `sessionToken @unique` | `userId`, `sessionToken`, `userId+revokedAt` | Yes | — |
-| `Workspace` | `prisma/schema.prisma` | Workspace container | `ownerId` required | `ownerId` | Yes | — |
-| `WorkspaceMember` | `prisma/schema.prisma` | Membership | `@@unique([userId, workspaceId])` | `workspaceId` | Yes | — |
-| `Project` | `prisma/schema.prisma` | Project container | `ownerWorkspaceId` FK | — | Yes | Duplicate concept in Java domain (`libs/java/yappc-domain/`) |
-| `CanvasDocument` | `prisma/schema.prisma` | Canvas data | `projectId` FK | — | Yes | Versioning via `CanvasVersion` |
-| `LifecycleHub` | `prisma/schema.prisma` | Project lifecycle state | `projectId @unique` | — | Yes | Phase transition history tracked |
-| `Requirement` | `prisma/schema.prisma` | Project requirements | `projectId` FK | — | Yes | — |
-| `ApprovalRequest` | `prisma/schema.prisma` | Approval workflow | `projectId`, `requesterId` FKs | — | Yes | — |
-| `AgentRun` | `prisma/schema.prisma` | Agent execution record | `projectId` FK | — | Yes | — |
-| `AgentExecution` | `prisma/schema.prisma` | AI agent invocation log | — | — | Yes | Used by `AIAgentsResolver` for audit even when stub returns fake data |
-| `AuditLogEntry` | `prisma/schema.prisma` | HTTP-level audit log | — | — | Yes | Sensitive fields redacted |
-| Migrations | `prisma/migrations/` | Schema evolution | 6 migrations tracked | — | Yes | `migration_lock.toml` present |
-| Seeds | `prisma/seed*.ts` | Test/dev data | — | — | **Partial** | 5 seed files with no canonical production seed documented |
-
-### 3.5 Test Inventory
-
-| Test | File | Type | Feature Covered | Real or Mocked | Valid? | Gaps |
-|---|---|---|---|---|---|---|
-| Routes integration | `__tests__/routes.integration.test.ts` | Integration (Prisma mocked) | Workspace, project, canvas CRUD | Prisma mocked via fixture | Yes — invokes real route handlers | Tenant isolation assertions present |
-| Auth flow E2E | `__tests__/auth-flow.api-e2e.test.ts` | API E2E | Login, token refresh, logout | Calls real server instance | Yes | — |
-| Security session ownership | `__tests__/security-session-ownership.test.ts` | Security | JWT ownership across users | Real route + mocked Prisma | Yes | Good cross-user isolation tests |
-| API versioning | `__tests__/api-versioning.test.ts` | Integration | Versioned API headers | Real server | Yes | — |
-| Lifecycle gates | `__tests__/lifecycle-gates.integration.test.ts` | Integration | Lifecycle phase gating | Real handlers | Yes | — |
-| Phase preview routes | `__tests__/lifecycle-phase-preview-routes.test.ts` | Unit | Phase preview API | Real handlers | Yes | — |
-| AI routes | `__tests__/ai-routes.test.ts` | Integration | AI suggestion endpoints | Real handlers | Partial | Tests `rule_based_heuristic` routes only — stub GraphQL AI agents not tested for correctness |
-| OpenAPI contract | `__tests__/openapi-contract.test.ts` | Contract | OpenAPI schema compliance | Real server | Yes | — |
-| Migration prefix routes | `__tests__/migration-prefix-routes.test.ts` | Regression | `/api` → `/api/v1` deprecation | Real server | Yes | — |
-| Phase 2b critical routes | `__tests__/phase2b-critical-routes.integration.test.ts` | Integration | Phase 2b endpoints | Real handlers | Yes | — |
-| Requirements approvals | `graphql/resolvers/__tests__/requirements-approvals.resolver.test.ts` | Unit | Approval resolver logic | vi.stubEnv for OPENAI_API_KEY | Yes | Properly stubs env, not production code |
-| DevSecOps routes | `routes/__tests__/devsecops.test.ts` | Unit | DevSecOps API | Real handler | Yes | — |
-| Projects activity | `routes/__tests__/projects.activity.test.ts` | Unit | Activity endpoint | Real handler | Yes | — |
-| Projects audit | `routes/__tests__/projects.audit.test.ts` | Unit | Audit log behavior | Real handler | Yes | — |
-| Workspace audit | `routes/__tests__/workspaces.audit.test.ts` | Unit | Workspace audit | Real handler | Yes | — |
-| **MISSING** | — | Integration | `AIAgentsResolver` mutations against stub | — | — | **No test verifies that stub returns are unacceptable** |
-| **MISSING** | — | Integration | Legacy canvas endpoint cross-user access | — | — | **No test verifies resource-auth gap on `/canvas/:projectId/:canvasId?`** |
-| **MISSING** | — | Integration | Embedding pipeline with zero-vector fallback detection | — | — | **Silent data corruption path untested** |
+| Severity | Finding                                                                                                                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | Phase cockpit components exist but are not yet mounted into the actual phase routes.                                                                      |
+| P0       | Compiler/import workflow is still placeholder-heavy and does not yet perform real TSX/route/story extraction.                                             |
+| P0       | Page builder “E2E” test remains partly test-theater; it still contains comments instead of real interactions and locally mocks `vi`.                      |
+| P0       | DB repository exists, but persistence still needs production concurrency, authz, transaction, testcontainer, and audit/O11y hardening.                    |
+| P0       | Server-side validation is structural and string-based, not yet full design-system/BuilderDocument/schema/trust validation.                                |
+| P1       | Next-best-action service exists but appears rule-based and likely not yet wired to real project state and route surfaces.                                 |
+| P1       | Governance metadata enforcement exists as a service, but enforcement must be integrated into the inspector, save path, preview path, and promotion gates. |
+| P1       | Security utilities exist, but signed preview sessions use a demo hash with a comment saying production should use HMAC.                                   |
+| P1       | Design-system lint rule exists, but routes still need migration and CI enforcement proof.                                                                 |
+| P1       | Full-flow Playwright spec exists but likely targets test IDs/routes that are not mounted yet.                                                             |
 
 ---
 
-## 4. Product Behavior Map
+# 3. Full flow analysis
 
-| Capability | Expected UX | Expected Backend Behavior | Expected Data Behavior | Status |
-|---|---|---|---|---|
-| Authenticated workspace management | User creates/views/manages workspaces; RBAC enforced | JWT auth → workspace CRUD with membership enforcement | Workspace + member rows; cascade delete | Mostly complete |
-| Project lifecycle orchestration | 8-phase lifecycle (Intent→Evolve) with gating, AI suggestions, evidence artifacts | Phase transition with gate evaluation, audit trail | `LifecycleHub` phase state, `AuditLogEntry` | Phases 0–2 partial, 3–7 in progress |
-| Visual canvas | Miro-like canvas with nodes, edges, real-time collab | Canvas CRUD + WebSocket broadcast + versioning | `CanvasDocument` + `CanvasVersion` | Mostly complete |
-| AI agent execution | User submits task to copilot/query-parser/prediction/anomaly agents; real AI inference returns | GraphQL mutation → Java AI backend via `AIAgentClientFactory` | `AgentExecution` log | **Stub — P0** |
-| AI artifact suggestions | Rule-based suggestions per lifecycle phase | Deterministic heuristic scoring; explicit confidence labels | No DB write | Complete — correctly labeled |
-| Semantic search / embeddings | Natural language search over codebase/artifacts | Embedding pipeline background job via OpenAI or Ollama | Vector embeddings stored in DB | Partial — zero-vector fallback corrupts data |
-| Security scanning | DevSecOps scan results and vulnerability tracking | Scan triggers from CI, results stored | `SecurityScan` / scan records | Partial |
-| Requirements and approvals | Create requirements, request approvals, LLM-enriched analysis | Prisma CRUD + optional LLM call for enrichment | `Requirement` + `ApprovalRequest` | Yes — LLM gated by env var |
-| Real-time collaboration | Collaborative canvas editing | WebSocket rooms via `RealTimeService` + Redis store | Event broadcast | Present |
-| Observability | Prometheus metrics, OTLP tracing, audit logs | All HTTP requests instrumented; traces exported to Jaeger | Prometheus registry + audit DB table | Mostly complete |
-| Auth | Login, refresh, logout | Proxy to Java lifecycle service (single auth authority) | `UserSession` table for refresh token rotation | Complete |
+## Login → onboarding
 
----
+The prior concerns still mostly stand. The onboarding flow was already guided, durable, and useful, but it contained explicit AI wording. The new delta only shows small wording changes in onboarding, not a full design-system migration or phase-aware onboarding model. The UX should continue moving toward “suggested starting point” rather than “AI is thinking.”
 
-## 5. Requirement-to-Implementation Traceability Matrix
+## Workspace → projects
 
-| Requirement / Capability | UI | API/Backend | Service/Domain | DB | Tests | Status |
-|---|---|---|---|---|---|---|
-| Authentication (Login/Logout/Refresh) | `routes/login.tsx` | `routes/auth.ts` | `proxy-auth.service.ts` → Java | `UserSession` | `auth-flow.api-e2e.test.ts` | **Complete and correct** |
-| Workspace CRUD | Dashboard pages | `routes/workspaces.ts` | Inline service logic | `Workspace`, `WorkspaceMember` | `routes.integration.test.ts` | **Complete** |
-| Project CRUD | Projects page | `routes/projects.ts` | Inline | `Project`, `LifecycleHub` | `routes.integration.test.ts` | **Complete** |
-| Canvas save/restore/version | Canvas UI | `routes/canvas.ts` | — | `CanvasDocument`, `CanvasVersion` | Integration tests present | **Mostly complete** — legacy endpoint missing resource-auth |
-| Lifecycle phase transition | Phase Overview | `routes/lifecycle.ts` | `lifecycle-taxonomy` domain | `LifecycleHub` | `lifecycle-gates.integration.test.ts` | **Partially implemented** (phases 3-7) |
-| AI Agent execution | — | `graphql/resolvers/AIAgentsResolver.ts` | `stubs/ai/agents/api-client.ts` | `AgentExecution` | **No test for stub correctness** | **STUB — P0** |
-| AI artifact suggestions | Phase UI | `routes/ai.ts` | Rule-based heuristics | None | `ai-routes.test.ts` | **Complete and correctly labeled** |
-| Semantic search embeddings | — | `jobs/embedding-pipeline.ts` | Configurable provider (OpenAI/Ollama/stub) | Vector fields | **No test for zero-vector corruption** | **Partial — P1** |
-| Requirements / Approvals | Phase UI | `graphql/resolvers/requirements-approvals.resolver.ts` | LLM enrichment (conditional) | `Requirement`, `ApprovalRequest` | `requirements-approvals.resolver.test.ts` | **Mostly complete** |
-| DevSecOps / Security scans | Security pages | `routes/security-scans.ts`, `routes/devsecops.ts` | — | Scan models | `devsecops.test.ts` | **Partial** |
-| Workflow cancellation (durable) | — | `core/workflow/` (Java) | `WorkflowService.cancelWorkflow()` | `workflow_events` (planned) | **No integration test** | **Missing — P1** |
-| Cost tracking per project | — | **Not implemented** | `CostTrackingService` (planned) | — | — | **Missing — P1** |
-| Conversation retention policy | — | **Not implemented** | `ConversationRetentionJob` (planned) | — | — | **Missing — P1** |
-| PII classification on logs | — | **Not implemented** | — | — | — | **Missing — P1** |
-| RBAC enforcement | All protected routes | `rbac.middleware.ts`, `resource-auth.middleware.ts` | `permissions.ts` | — | `security-session-ownership.test.ts` | **Complete** |
-| Observability (metrics/tracing/audit) | — | `utils/metrics.ts`, `utils/tracing.ts`, `middleware/audit.middleware.ts` | — | `AuditLogEntry` | — | **Mostly complete** |
-| Multi-tenant isolation | All routes | `tenant-scoping.middleware.ts` | `workspaceMember` scoping | — | `routes.integration.test.ts` | **Partial** — `tenantId` optional in JWT |
+The new `CommandCenter` and `NextActionDashboard` additions suggest the product is moving from list-heavy navigation toward next-action UX. `CommandCenter` has the right structure: current phase, readiness, next action, recent backed activity, suggested improvement, and governance trace. 
 
----
+Gap: I did not find strong evidence that this command center has replaced the existing route-level overview in the mounted flow. The component is valuable, but it must be wired into `app/project/index.tsx` or the relevant shell to change actual UX.
 
-## 6. End-to-End Journey Audit
+## Project overview / Intent
 
-| Journey | Entry Point | Expected Outcome | Actual Behavior | Correct? | Mock/Stub Risk | Gaps | Severity |
-|---|---|---|---|---|---|---|---|
-| Login → Workspace | `/login` | Auth → workspace list | Works via Java proxy auth | Yes | None | Cookie plugin fallback silent | Low |
-| Create Workspace → Add Project | Workspace dashboard | Workspace + default project | Fully wired with Prisma | Yes | None | — | — |
-| Open Project → View Lifecycle Phase | Project view | Phase overview with AI suggestions | Rule-based suggestions work; phase details complete for phases 0-2 | Partial | None (AI suggestions are real heuristics) | Phases 3-7 incomplete | P1 |
-| Execute AI Agent (Copilot) | GraphQL playground / UI | AI responds with inference result | Returns "Stub response" always | **NO** | **Critical** | Stub in production path | **P0** |
-| Canvas edit → Save → Version restore | Canvas UI | Canvas saved, version created, restore works | All three paths wired to real DB | Yes | None | Legacy endpoint missing resource-auth | P1 |
-| Approve Requirement | Phase UI | Approval request created, LLM enrichment applied | LLM call conditional on `OPENAI_API_KEY` | Yes | None if no key is set — enrichment simply skipped with error logged | — | P2 |
-| Lifecycle Phase Transition (gate check) | Phase Overview | Phase advances if gates pass | Gate check from lifecycle taxonomy; audit trail written | Partial | None | Phases 3-7 gates partially defined | P1 |
-| View Metrics Dashboard | `/metrics` endpoint | Prometheus metrics | Protected by JWT / IP / API key | Yes | None | — | — |
-| First-time user (onboarding) | `/onboarding` | Guided setup creates workspace + project | Onboarding route present; bootstrapping session model exists | Partial | None | Full onboarding journey not end-to-end verified | P2 |
-| Permission denied | Any protected route without token | 401 response | `authMiddleware` returns 401 | Yes | None | — | — |
-| Admin governance | `/admin/*` | Admin management UI | Admin pages exist; backend routes have RBAC | Partial | None | Admin surface sparse | P2 |
+`IntentCockpit` exists and correctly frames Intent around defining the goal, blockers, evidence, suggested steps, and governance records. 
+
+But `intent.tsx` still exports `./index`, meaning the Intent phase still renders the project overview route rather than the new `IntentCockpit`. 
+
+Verdict: **component implemented, route integration incomplete.**
+
+## Shape
+
+`ShapeCockpit` exists in the repo, but `shape.tsx` still exports `./canvas`. 
+
+Verdict: Shape still drops users into generic canvas rather than a shape-specific cockpit that explains requirements, design artifacts, page builder entry point, blockers, and evidence.
+
+## Validate
+
+`ValidateCockpit` exists, but `validate.tsx` still exports `./lifecycle`. 
+
+Verdict: Validate is still lifecycle-generic rather than approval/gate-first.
+
+## Generate
+
+`GenerateCockpit` exists, but `generate.tsx` still exports `./canvas`. 
+
+Verdict: Generate still lacks mounted codegen/implementation cockpit.
+
+## Run / Observe / Learn / Evolve
+
+New cockpit components exist for these phases, but route integration was not evident in the files inspected. The Playwright spec expects direct `/run`, `/observe`, `/learn`, `/evolve` cockpit test IDs.  The existing route structure historically used project-scoped routes such as `/p/:projectId/run`, so these tests may not reflect the actual route model.
+
+Verdict: **good target UX components exist; mounted route/user-flow correctness still needs proof.**
 
 ---
 
-## 7. UI/UX Completeness Audit
+# 4. Area-by-area review
 
-| UI Area | File(s) | Finding | Severity | Required Fix |
-|---|---|---|---|---|
-| Demo login button visibility | `routes/login.tsx` | Demo login only shown when `DEV && VITE_ENABLE_DEMO_LOGIN=true`. Correctly hidden in production. | None | — |
-| Loading/empty states | Various pages | Loading states present via TanStack Query `isLoading`. Empty states partially implemented for projects list. | P2 | Audit all pages for consistent empty state components |
-| Error states | `components/route/ErrorBoundary.tsx` | Route-level error boundary exists. Form-level errors returned from client actions. | P2 | Verify all API error shapes surface meaningfully to users |
-| AI agent UI | Not confirmed in frontend | If UI exists for AI agent execution, it displays stub results to users. | **P0** | AI agent UI must be feature-flagged off or show "coming soon" correctly until real backend wired |
-| Phase 3-7 UI completeness | `pages/operations/`, `pages/development/` | Phase 3-7 capabilities incomplete per README. UI may expose incomplete features. | P1 | Audit each phase's UI against what is feature-flagged |
-| Canvas legacy endpoint accessibility | — | Legacy canvas endpoint exposed without resource-auth guard | P1 | Add `preHandler: requireCanvasReadable()` to legacy canvas GET route |
-| Responsive design | All pages | Not audited — no browser test run. | Unknown | Run Lighthouse or Playwright visual audit |
+## A. Page artifact persistence
 
----
+### Current state
 
-## 8. Frontend Action, State, and Data Flow Audit
+The new `DbPageArtifactRepository` is a major improvement. It uses JDBC, tenant/workspace/project/artifact scoping, optimistic concurrency with `document_id`, historical version archiving, JSON serialization, load/save/delete, and conflict exceptions. 
 
-| Action/State Flow | File(s) | Expected | Actual | Production Mock/Stub? | Required Fix |
-|---|---|---|---|---|---|
-| Login form submit | `routes/login.tsx` → `AuthService.login()` | POST to `/api/v1/auth/login` | Correct — uses `fetch` via `ProxyAuthService` chain | No | — |
-| Session storage | `services/auth/AuthService.ts` | Tokens stored securely | `sessionStorage` / `localStorage` used for session — **not httpOnly cookies from frontend** | No | Use httpOnly cookie from server response; avoid localStorage for tokens |
-| MSW in production | `mocks/browser.ts` | MSW disabled in production | Correctly gated by `VITE_ENABLE_MSW=true` | No (correctly gated) | — |
-| Feature flags (GrowthBook) | `providers/FeatureFlagProvider.tsx` | GrowthBook SDK fetches flags from CDN | Falls back to defaults if `VITE_GROWTHBOOK_CLIENT_KEY` not set | No | Document required env vars for each deployment environment |
-| State management | `state/` (Jotai atoms), TanStack Query | Canonical atoms for shared state | Pattern present and consistent with `@ghatana/state` pattern | No | — |
-| AI agent GraphQL call | Frontend GraphQL client | Mutation returns real AI inference | Returns stub data — but the stub surface is server-side, not frontend | **Yes (server-side stub)** | Replace stub clients in `AIAgentsResolver` with real Java backend integration |
+### Strengths
 
----
+* Durable repository exists.
+* Version table archive flow exists.
+* Conflict detection exists.
+* Tenant/workspace/project scoping is part of every query.
+* Builder document, validation summary, governance records, residual count, and fidelity are persisted.
 
-## 9. Backend/API/Domain Logic Audit
+### Problems
 
-| Backend Flow | File(s) | Expected Behavior | Actual Behavior | Correct? | Mock/Stub? | Security Risk | Required Fix |
-|---|---|---|---|---|---|---|---|
-| Auth proxy | `services/auth/proxy-auth.service.ts` | All auth ops delegated to Java lifecycle service | `login`, `validateAccessToken`, `refreshTokens`, `logout`, `register` all proxy correctly | Yes | No | HTTP error bodies not parsed (only status code) | Add response body parsing for error shape on auth failures |
-| JWT validation | `middleware/auth.middleware.ts` | Verify token on every non-public request | Global `onRequest` hook; `verifyToken` via `jsonwebtoken` | Yes | No | `tenantId` and `workspaceId` optional in payload — downstream may receive undefined | Enforce `tenantId` in JWT where multi-tenancy is critical |
-| RBAC enforcement | `middleware/rbac.middleware.ts` | Role → permission check before handler | `isAllowed()` matrix from `services/auth/permissions.ts` | Yes | No | None identified | — |
-| Resource auth (project/canvas) | `middleware/resource-auth.middleware.ts` | DB membership check | `checkWorkspaceMembership`, `checkProjectAccess` via Prisma | Yes | No | — | Apply to legacy canvas endpoint |
-| Legacy canvas GET | `routes/canvas.ts` lines 130-155 | Read canvas with ownership check | Reads any canvas by project ID for any authenticated user | **No** | No | Cross-project data leak | Add `requireCanvasReadable()` preHandler |
-| AI Agent copilot mutation | `graphql/resolvers/AIAgentsResolver.ts` | Execute real AI model via Java | `copilotClient.processMessage()` returns `{ message: 'Stub response', ... }` | **No** | **Yes — P0** | Users receive fake AI responses silently | Implement real `AIAgentClientFactory` backed by Java HTTP client |
-| AI Agent registry query | `graphql/resolvers/AIAgentsResolver.ts` | Return live agent registry | Hardcoded array of 4 agents with no Java registry call | **No** | **Yes — P0** | None | Call Java agent registry endpoint |
-| Embedding pipeline | `jobs/embedding-pipeline.ts` | Generate real semantic embeddings | Falls back to zero-vector stub when no LLM provider configured | Partial | **Yes (fallback)** | Corrupts semantic search | Log a prominent WARNING; do not insert zero-vector rows — skip instead |
-| Audit logging middleware | `middleware/audit.middleware.ts` | Fire-and-forget audit log per request | Correctly uses `onResponse` hook; sensitive fields redacted | Yes | No | None | — |
-| Tenant scoping middleware | `middleware/tenant-scoping.middleware.ts` | Scope all queries by user's workspaces | Queries `workspaceMember` and sets `request.tenantContext` | Yes | No | Not applied globally to all routes | Document which routes require `tenantScopingMiddleware` preHandler explicitly |
-| Dev auth bypass | `middleware/devAuth.ts` | Dev-only auth bypass | `assertDevAuthBypassAllowed()` prevents production use; `ENABLE_DEV_AUTH_BYPASS=true` + `NODE_ENV=development` required | Yes | Dev-only (correctly gated) | Would create DB admin user in non-dev if misconfigured | — |
-| Correlation ID | `index.ts` (onRequest hook) | X-Correlation-ID propagated; required in production | Mandatory in production; generated in development | Yes | No | — | — |
+1. `BLOCKING_EXECUTOR = Executors.newCachedThreadPool()` inside repository is risky. It creates an unbounded executor per class lifecycle and does not show managed shutdown or platform-level executor reuse. 
+
+2. Save logic checks existing version, archives, and updates across multiple statements. Without explicit transaction boundaries shown in the file, archive/update consistency can fail under partial failure.
+
+3. The update writes `document_id = document.documentId()` while the WHERE clause also checks `existingDoc.documentId()`. If the frontend does not create a new document/version ID before save, the persisted version ID may not advance, weakening concurrency semantics.
+
+4. JSON mapping for governance records uses `objectMapper.readValue(json, java.util.List.class)`, which returns raw maps, not typed `GovernanceRecord` instances. 
+
+### Required fixes
+
+* Inject a managed blocking executor.
+* Wrap insert/update/archive in transactions.
+* Define version semantics: client-provided version vs server-generated version.
+* Use typed Jackson `TypeReference<List<GovernanceRecord>>`.
+* Add integration tests with real Postgres/Testcontainers and concurrent writers.
 
 ---
 
-## 10. Database and Persistence Audit
+## B. Server-side validation
 
-| DB Operation/Model | File(s) | Expected Data Rule | Actual Behavior | Correct? | Integrity Risk | Required Fix |
-|---|---|---|---|---|---|---|
-| User creation | `prisma/schema.prisma`, routes | Email unique; password hashed | `email @unique` enforced; `passwordHash` stored (hashing done by Java lifecycle service) | Yes | None | — |
-| Session rotation | `UserSession` model | Refresh token revoked after use | Session tracking in DB; `revokedAt` field | Yes | None | Verify Java lifecycle service revokes old session on `refreshTokens` |
-| Workspace cascade delete | `Workspace` model | Delete workspace cascades to members + projects | `onDelete: Cascade` on `WorkspaceMember`; `Project` has cascade from ownerWorkspace | Yes | None | — |
-| Canvas versioning | `CanvasVersion` model | Every save creates a version | `CanvasVersion.create` on each PUT | Yes | None | Pagination of version history should be bounded |
-| Agent execution log | `AgentExecution` model | Every AI agent call logged | `logAgentExecution()` called even for stub results — logs fake success as `SUCCESS` | **No** | Data accuracy | Log stub invocations as `STUB` status or suppress until real implementation |
-| Lifecycle phase constraint | `LifecyclePhase` enum | Only valid phases accepted | `normalizeLifecyclePhaseId()` in domain normalizes legacy/alias phases | Yes | None | — |
-| Multiple seeds | `prisma/seed*.ts` | Single canonical seed | 5 seed files with no documented canonical | **No** | Dev/test data in production risk | Document which seed is used for what environment; remove unused seeds |
-| Approval request | `ApprovalRequest` model | Requests linked to project + requester | FKs present | Yes | None | — |
-| Domain model duplication | `backend/api/domain/`, `libs/java/yappc-domain/` | Single canonical domain model | `Project`, `Incident`, `Compliance`, `SecurityScan`, `Alert` exist in both; migration incomplete | **No** | Drift between models | Complete migration per `DOMAIN_MODEL_REGISTRY.md` plan |
+### Current state
 
----
+`PageArtifactValidator` validates builder document root fields, nodes map, max node count, sync status, trust level, data classification, residual count, round-trip fidelity, governance record presence, and potential executable payloads by scanning string content. 
 
-## 11. Production Mock/Stub/Shortcut Audit
+### Strengths
 
-| File | Evidence | Production Reachable? | Critical Flow? | Feature Flagged? | Severity | Required Action |
-|---|---|---|---|---|---|---|
-| `src/stubs/ai/agents/api-client.ts` | `AIAgentClientFactory.createCopilotClient().processMessage()` returns `{ message: 'Stub response', ... }`. All four agent methods are stubs. | **Yes** — imported in `AIAgentsResolver.ts` | **Yes** — GraphQL AI agent mutations | **No** | **P0** | Implement real HTTP client against Java AI backend (`JAVA_AI_BACKEND_URL`). Do not use this factory in production until real implementation exists. Add feature flag to disable AI agent mutations. |
-| `src/stubs/ai/providers.ts` | `createProviderFactory()` returns `stub-provider` with `embed()` returning `new Array(1536).fill(0)`. | **Yes** — imported in `jobs/embedding-pipeline.ts` | Partial (background job) | Partially (real providers used if env vars set) | **P1** | When no LLM provider configured, **skip** embedding insertion instead of inserting zero vectors. Log `WARN` with actionable message. |
-| `graphql/resolvers/AIAgentsResolver.ts` | `async aiAgents()` — comment "In production, this would call the Java backend's registry" — returns hardcoded array | **Yes** | **Yes** | **No** | **P0** | Call Java agent registry endpoint. Remove hardcoded list. |
-| `graphql/resolvers/AIAgentsResolver.ts` | `agentExecution` log records stub responses as `status: 'SUCCESS'` with `tokensUsed: 0` | **Yes** | Audit integrity | **No** | **P1** | Log stub invocations with a distinct status (e.g. `STUB`) or suppress until real implementation |
-| Multiple seed files | `prisma/seed*.ts` — 5 files, no documented canonical seed for production | Yes (build artifact risk) | Low | No | **P2** | Declare canonical seed, delete unused files, document which seed is for which environment |
-| `middleware/devAuth.ts` comment | "DO NOT USE IN PRODUCTION" — correctly gated by `assertDevAuthBypassAllowed()` | **No** (properly gated) | N/A | Yes (env var required) | None | Current guards are correct. No action required. |
-| `routes/login.tsx` demo login | `isDemoLoginEnabled()` — requires `DEV && VITE_ENABLE_DEMO_LOGIN=true` | **No** (correctly gated) | N/A | Yes | None | — |
+* Server-side validation now exists.
+* It explicitly recognizes trust, classification, residuals, fidelity, governance, and executable content as validation concerns.
+* It sets thresholds such as max residual islands and minimum round-trip fidelity.
 
----
+### Problems
 
-## 12. Duplicate and Source-of-Truth Audit
+1. Validation is too shallow for production. It only checks `rootNodes`, `nodes`, and whether `nodes` is a map. It does not validate component instances, slots, contract names, prop schemas, data bindings, actions, responsive variants, or state variants. 
 
-| Duplicate Area | Files | Why Duplicate | Risk | Required Fix |
-|---|---|---|---|---|
-| `Project` domain model | `backend/api/domain/Project.java` + `libs/java/yappc-domain/Project.java` (Java) + `prisma/schema.prisma` (TypeScript) | Historical layering; migration incomplete | Model drift between API responses and domain truth | Complete Java migration per `DOMAIN_MODEL_REGISTRY.md`: delete `api.domain.Project`, use `yappc-domain.model.Project` |
-| `Incident` domain model | `backend/api/domain/Incident.java` + `libs/java/yappc-domain/Incident.java` | Same as above | — | Delete `api.domain.Incident`; use `yappc-domain.model.Incident` |
-| `Compliance` / `ComplianceAssessment` | `api.domain.Compliance` + `yappc-domain.ComplianceAssessment` | Different names, same concept | Mapper missing | Create mapper; delete deprecated `api.domain.Compliance` |
-| `SecurityScan` / `ScanJob`+`ScanFinding` | `api.domain.SecurityScan` + `yappc-domain.ScanJob`+`ScanFinding` | Flattened vs. normalized model | API responses may miss granular scan data | Complete migration per registry plan |
-| `Alert` / `SecurityAlert` | `api.domain.Alert` + `yappc-domain.SecurityAlert` | Name mismatch | — | Create mapper; delete deprecated `api.domain.Alert` |
-| Auth service | `services/auth/auth.service.ts` + `services/auth/proxy-auth.service.ts` | Proxy service wraps original; both exist | `authService` export points to proxy (correct); original file can be removed after migration | Delete `auth.service.ts` if only proxy is used; remove dead code |
-| Multiple seed files | `prisma/seed.ts`, `seed-basic.ts`, `seed-minimal.ts`, `seed-simple.ts`, `seed-workflows.ts`, `seed-ai.ts` | Iterative development without cleanup | Risk of wrong seed in production | Keep only `seed.ts` as canonical; delete others or move to `prisma/seeds/dev/` |
+2. Executable payload checking is string-based (`eval(`, `function(`, `script`) and will miss many unsafe cases while producing false positives. 
+
+3. Trust/data classification enums may not align with frontend/platform trust values unless there is a shared canonical enum.
+
+4. “No governance records” is only a warning. For generated/decompiled/imported documents, missing governance should likely be a blocking error.
+
+### Required fixes
+
+* Reuse shared BuilderDocument schema validation.
+* Validate design-system contract compatibility.
+* Validate slots and required props.
+* Validate action/data bindings.
+* Validate trust policy against preview/runtime security rules.
+* Replace string scanning with AST/schema-based unsafe payload detection.
+* Make governance records mandatory for non-manual/generated/imported sources.
 
 ---
 
-## 13. Security, Privacy, and Permission Audit
+## C. Phase-specific UX and cognitive load
 
-| Area | File(s) | Risk | Actual Behavior | Severity | Required Fix |
-|---|---|---|---|---|---|
-| Legacy canvas endpoint auth | `routes/canvas.ts:130-155` | Any authenticated user can read any project's canvas by guessing project ID | No `requireCanvasReadable()` preHandler on `GET /canvas/:projectId/:canvasId?` | **P1** | Add `requireCanvasReadable()` preHandler to legacy endpoint or deprecate and remove it |
-| Token storage in frontend | `services/auth/AuthService.ts` | Tokens in `sessionStorage`/`localStorage` vulnerable to XSS | Session stored in browser storage | **P1** | Ensure tokens use httpOnly cookies from server; if sessionStorage is used, document XSS mitigations |
-| CORS config | `index.ts` | Misconfigured CORS allows any origin | `ALLOWED_ORIGINS` env var controls; defaults to `http://localhost:5173` | Low in production if env set | Document required production `ALLOWED_ORIGINS` in deployment guide |
-| Production env var defaults | `index.ts` | Startup aborts if `DATABASE_URL`, `JWT_ACCESS_SECRET` not set | Correctly throws at startup | None | — |
-| Dev cookie secret default | `routes/auth.ts` | `COOKIE_SECRET || 'change-me-in-production'` | Production startup check rejects default value | None | — |
-| GraphQL auth in production | `index.ts` | GraphQL requires auth | Yoga context throws if no `authorization` header in production — but this is weak (no token validation at context level) | **P1** | Validate JWT in Yoga context, not just check header presence; or rely on `authMiddleware` ordering (verify it runs before Yoga handler) |
-| `tenantId` optional in JWT | `middleware/auth.middleware.ts` | Tenant isolation requires `tenantId` | `tenantId` optional in `JWTUserPayload`; downstream queries may not scope by tenant | **P1** | Require `tenantId` in JWT for multi-tenant deployments; enforce in `tenantScopingMiddleware` |
-| PII in logs | Production routes | Prompt payloads and AI responses logged without PII classification | `console.error` with error details; audit middleware redacts known sensitive fields but not conversation content | **P1** | Implement PII classification on AI/conversation logs per BACKEND_IMPLEMENTATION_BACKLOG item F-Y034 |
-| Metrics endpoint | `index.ts` | `/metrics` should not be public | Protected by JWT or internal IP or API key | Acceptable | Ensure `METRICS_API_KEY` is set in production deployments |
-| Audit logging | `middleware/audit.middleware.ts` | Critical actions auditable | HTTP-level audit + service-level audit via `getAuditService()` | Good | Verify audit service writes are not fire-and-forget on critical mutations |
-| No hardcoded secrets found | All production files | No secrets in code | Confirmed: all secrets via env vars | None | — |
+### Current state
 
----
+The new `PhaseCockpitLayout` encodes the right structure: phase purpose, primary next action, blockers, evidence, suggested automation, governance/provenance, and advanced tools collapsed by default. 
 
-## 14. Observability and Operability Audit
+`IntentCockpit` is a good example of the intended phase-specific pattern. 
 
-| Flow | Logs | Metrics | Traces | Audit Events | Gaps | Required Fix |
-|---|---|---|---|---|---|---|
-| HTTP requests | Fastify structured logger (all routes) | `yappc_api_http_request_duration_seconds`, `yappc_api_http_requests_total` | OTLP spans via manual Fastify instrumentation | `AuditLogEntry` per request | `console.error` in some route handlers (not Fastify logger) | Replace `console.error` with `request.log.error()` in all routes |
-| AI agent execution | `console.error` on log failure | None specific to AI agents | None | `AgentExecution` DB log (logs stub results as SUCCESS) | No AI-specific metrics; stub responses indistinguishable from real | Add `ai_agent_call_total{agent, status}` counter; add stub detection |
-| Lifecycle phase transition | `console.error` on AI recommendation failure | None | None | `AuditLogEntry` | Phase transition has no dedicated metric | Add `lifecycle_phase_transition_total{from, to, status}` |
-| Embedding pipeline | `console.log` only | None | None | None | No visibility into embedding job health; zero-vector fallback silent | Add job execution metric; emit structured log on fallback |
-| WebSocket real-time | Not confirmed | `yappc_api_websocket_connections` gauge | None | None | WebSocket disconnect/reconnect not observable | Add WebSocket event metrics |
-| Database queries | Prisma logging not confirmed | `yappc_api_db_query_duration_seconds` | None | None | No slow query alerts | Enable Prisma `log: ['warn', 'error']` in production |
-| Health/readiness | — | — | — | — | Readiness checks DB + Java backend — **correct** | — |
-| Correlation ID propagation | All requests via `X-Correlation-ID` hook | — | Spans correlatable via correlation ID | — | Good | — |
+### Strengths
 
----
+* The UX model is now represented in code.
+* Advanced/governance sections are collapsed by default.
+* Each phase cockpit can express one primary action.
 
-## 15. Performance and Scalability Audit
+### Problems
 
-| Area | Risk | Evidence | Impact | Required Fix |
-|---|---|---|---|---|
-| Canvas version history unbounded | High | `CanvasVersion` created on every save; no limit or pagination | Canvas with many saves accumulates unbounded rows | Add pagination to version history endpoint; add TTL or max-version limit |
-| N+1 query risk in activity feed | Medium | `GET /projects/:id/activity` fetches from both Prisma and lifecycle proxy in parallel — but audit events fetched without pagination | Could return large result set | Add `take`/`skip` pagination to activity endpoint |
-| Embedding pipeline blocking | Medium | Background job uses `for await` loop over all projects without batch size limit | Could OOM on large datasets | Add batch size config and progress logging |
-| WebSocket connection scalability | Medium | `RedisCanvasRoomStore` exists — suggests Redis-backed room storage | Redis dependency for horizontal scaling | Document Redis configuration requirement |
-| Bundle size | Unknown | `.size-limit.json` present in frontend | Not audited in this run | Run `pnpm size-limit` and verify limits are respected |
-| Rate limiting | Good | `apiRateLimitMiddleware` and `aiRateLimitMiddleware` registered on all non-health endpoints | — | Verify rate limit values match production expectations |
+1. Route integration appears incomplete. Existing phase route files still export old generic pages.    
+
+2. Cockpit layout uses raw `div`, `header`, `section`, `details`, and Tailwind classes directly rather than design-system layout/disclosure components. 
+
+3. `PhaseCockpitLayout` has internal `showGovernance` and `showAdvanced` state variables that are declared but not used; native `<details>` handles state instead. 
+
+### Required fixes
+
+* Wire all phase routes to cockpit wrappers.
+* Use design-system components for cards, disclosure, alerts, badges, and buttons.
+* Add `data-testid`, ARIA roles, and keyboard/focus behavior.
+* Remove unused state.
+* Drive cockpit content from real project/phase API data.
 
 ---
 
-## 16. Test Correctness and Coverage Audit
+## D. Project command center and provenance
 
-| Capability/Flow | Existing Tests | Missing Tests | Invalid Tests | Required Tests | Priority |
-|---|---|---|---|---|---|
-| Login / Auth proxy | `auth-flow.api-e2e.test.ts` | Test auth proxy failure (Java lifecycle service down) | None identified | Java lifecycle service timeout → 503 response test | P1 |
-| AI Agent mutations | `ai-routes.test.ts` (rule-based only) | **All AI agent GraphQL mutations** | None | Integration test that asserts stub client is NOT used in production path; or test that mutations return real data | **P0** |
-| Legacy canvas resource auth | None | Cross-user canvas access via legacy endpoint | None | Test that User A cannot read User B's canvas via `GET /canvas/:projectId` | **P1** |
-| Embedding pipeline zero-vector | None | Zero-vector fallback detection | None | Test that pipeline skips DB insert (not inserts zeros) when no provider configured | **P1** |
-| Workflow cancel durability | None | AEP notification after DB flag write | None | Integration test: simulate process crash after flag, verify background worker re-notifies AEP | P1 |
-| Session token reuse attack | `security-session-ownership.test.ts` | Refresh token reuse after logout | None | Test that reusing a revoked refresh token returns 401 | P1 |
-| CORS policy | None | CORS rejection for unlisted origin | None | Test that request from unlisted origin is rejected | P2 |
-| GraphQL auth in production | None | Unauthenticated GraphQL request in production mode | None | Test that GraphQL returns 401 without valid token | P1 |
-| Phase gate enforcement | `lifecycle-gates.integration.test.ts` | Phase 3-7 gate conditions | None | Gate rejection test for each phase transition | P1 |
-| Metrics endpoint auth | None | Unauthenticated `/metrics` in production mode | None | Verify 401 for unauthenticated external access | P2 |
+### Current state
 
----
+`CommandCenter` is directionally strong: current phase, readiness, primary next action, recent backed activity, suggested improvement, governance trace link. 
 
-## 17. Prioritized Remediation Plan
+`ProvenanceBadge` supports backed, derived, suggested, preview, and unavailable states with accessible label/title. 
 
-| Priority | Area | Issue | Evidence/File(s) | Required Fix | Acceptance Criteria | Tests Required |
-|---|---|---|---|---|---|---|
-| **P0** | AI Agent GraphQL | All 4 AI agent mutations return hardcoded stub data ("Stub response") | `graphql/resolvers/AIAgentsResolver.ts`, `stubs/ai/agents/api-client.ts` | Implement real `AIAgentClientFactory` backed by HTTP calls to `JAVA_AI_BACKEND_URL`. OR feature-flag disable all AI agent mutations behind a clearly named flag disabled in production. | AI agent mutations invoke Java backend and return real inference results; or are inaccessible when feature flag is off | Integration test calling real (or Testcontainers-mocked) Java endpoint; test that stub file is no longer imported in production resolvers |
-| **P0** | AI Agent registry | `aiAgents()` query returns hardcoded static list with no registry call | `graphql/resolvers/AIAgentsResolver.ts:220-260` | Call Java agent registry endpoint (`GET /api/v1/agents` on AEP) | Agent list reflects registered agents from AEP registry | Test against Testcontainers or WireMock of AEP registry |
-| **P1** | Legacy canvas endpoint | `GET /canvas/:projectId/:canvasId?` has no resource-auth preHandler | `routes/canvas.ts:130-155` | Add `{ preHandler: requireCanvasReadable() }` to the legacy endpoint or remove the endpoint | Test shows User A gets 403 trying to read User B's canvas | New test: `legacy-canvas-resource-auth.test.ts` |
-| **P1** | Embedding pipeline | Zero-vector fallback silently inserts corrupt data | `jobs/embedding-pipeline.ts`, `stubs/ai/providers.ts` | On stub fallback: skip DB insert, log structured `WARN` with `action: 'embedding_skipped'`, do not insert zero vectors | Zero vectors never appear in `canvasDocument.embedding` in integration test | Test: no zero-vector rows after pipeline run without LLM provider |
-| **P1** | Structured logging | `console.error`/`console.log` used in production route handlers | `routes/canvas.ts`, `routes/workspaces.ts`, `routes/lifecycle.ts` | Replace with `request.log.error()` / `request.log.warn()` from Fastify logger | No `console.*` calls in non-test production route files | Lint rule or grep CI check |
-| **P1** | GraphQL auth | Yoga context only checks `authorization` header presence, not validity | `index.ts:yoga context` | Extract `request.user` populated by `authMiddleware` into Yoga context; throw `GraphQLError` with code `UNAUTHENTICATED` if not set in production | Unauthenticated GraphQL request in production returns `UNAUTHENTICATED` error | API test in production mode config |
-| **P1** | Token storage | Frontend may store JWT in `sessionStorage`/`localStorage` | `services/auth/AuthService.ts` | Prefer httpOnly cookie returned by server; document XSS mitigations if localStorage is used | Session tokens not readable by JavaScript from localStorage in production | Security audit + automated XSS header check |
-| **P1** | Workflow cancel durability | `cancelWorkflow()` writes DB flag but does not notify AEP | `BACKEND_IMPLEMENTATION_BACKLOG.md` C-Y2 | Implement durable cancel: write `workflow_events` row, background worker calls AEP, mark cancelled after confirmation | Round-trip cancel test passes with simulated crash | `WorkflowCancellationDurabilityIT.java` |
-| **P1** | PII in logs | Conversation/prompt payloads logged without PII classification | `BACKEND_IMPLEMENTATION_BACKLOG.md` F-Y034 | Add PII classification layer; redact `content`, `prompt`, `message` fields in AI-related log entries | No conversation content appears in Elasticsearch/Loki in sanitized test | PII log audit test |
-| **P1** | Domain model duplication | 5 entity duplicates between `api.domain.*` and `yappc-domain.*` with migration incomplete | `DOMAIN_MODEL_REGISTRY.md` | Delete deprecated `api.domain.*` entities; update all usages to `yappc-domain`; create missing mappers | No `api.domain.Project/Incident/Compliance/SecurityScan/Alert` imports remain in active production code | Compile-time check; tests with `yappc-domain` entities |
-| **P2** | Multiple seed files | 5+ seed files with no canonical documented | `prisma/seed*.ts` | Designate `seed.ts` as canonical; move dev-only seeds to `prisma/seeds/dev/`; delete or archive unused seeds | `prisma db seed` uses only canonical seed | Document in `DEVELOPMENT.md` |
-| **P2** | Agent execution audit log | Stub responses logged as `SUCCESS` in `AgentExecution` | `graphql/resolvers/AIAgentsResolver.ts` | Log stub invocations as `STUB` status until real implementation; or suppress log | Audit log accurately reflects execution status | Unit test checking status field |
-| **P2** | Cost tracking API | `CostTrackingService` has no project/tenant aggregate API | `BACKEND_IMPLEMENTATION_BACKLOG.md` C-Y14 | Implement `GET /api/projects/{projectId}/ai-cost` and tenant-scoped admin endpoint | Cockpit cost tile renders real data from API | `CostTrackingServiceTest.java` with tenant isolation |
-| **P2** | Canvas version pagination | `CanvasVersion` rows unbounded | `routes/canvas.ts` | Add `take: 50` limit to version history query; add cursor-based pagination | Version list endpoint returns max 50 items by default | Test with >50 versions |
+### Strengths
+
+* Exactly matches the desired “always know next action and truth source” model.
+* Provenance taxonomy is now explicitly reusable.
+* Suggested improvement wording avoids AI-first language.
+
+### Problems
+
+1. `CommandCenter` duplicates provenance badge logic internally rather than using `ProvenanceBadge`.  
+
+2. It uses raw `div`, `span`, `a`, Tailwind, and hardcoded colors rather than design-system components. 
+
+3. `role="button"` on a `div` for next action is less ideal than using a real design-system `Button`/`CardAction`.
+
+### Required fixes
+
+* Replace internal provenance badge code with `ProvenanceBadge`.
+* Use `Card`, `Button`, `Badge`, `Alert`, and layout primitives.
+* Wire CommandCenter into actual project overview.
+* Add backed/derived/suggested/preview source metadata from real API.
 
 ---
 
-## 18. Production Readiness Gate
+## E. Canvas/page-builder command system
 
-| Gate | Status | Details |
-|---|---|---|
-| **Ready for production** | **NO** | P0 AI Agent stub resolvers serve fake data to users. Legacy canvas endpoint has resource-auth gap. |
-| **Ready for internal demo** | **CONDITIONAL** | AI agent features must be hidden or feature-flagged off. Canvas, workspace, project, lifecycle (phases 0-2), and observability are usable. |
-| **Ready behind feature flag** | **YES** for AI agents | Wrap AI agent GraphQL mutations behind a GrowthBook feature flag disabled in production. All other features are usable with P1 issues tracked. |
+### Current state
 
-### Critical Blockers Before Production Release
+`PageBuilderCommands` exists and provides command history, undo/redo stacks, audit callback, telemetry callback, and autosave scheduling. 
 
-1. **P0-A** — Replace stub `AIAgentClientFactory` in `AIAgentsResolver.ts` with real Java backend HTTP client or feature-flag all AI agent mutations off.
-2. **P0-B** — Replace hardcoded `aiAgents()` static list with real AEP registry call.
-3. **P1-A** — Add resource-auth `preHandler` to legacy canvas GET endpoint.
-4. **P1-B** — Fix embedding pipeline zero-vector fallback to skip instead of insert.
-5. **P1-C** — Validate GraphQL auth properly rejects unauthenticated requests.
+### Strengths
 
-### Minimum Required Fixes Before Release
+* Moves toward semantic operations.
+* Defines audit and telemetry hooks.
+* Has autosave concept.
 
-All 5 blockers above plus:
-- Replace `console.error` with structured Fastify logger in all production routes.
-- Document required production env vars (`ALLOWED_ORIGINS`, `METRICS_API_KEY`, `LIFECYCLE_SERVICE_URL`, `JAVA_AI_BACKEND_URL`, `OTEL_EXPORTER_OTLP_ENDPOINT`).
-- Run `pnpm typecheck` and `pnpm lint` clean.
-- Pass existing test suite without skipped tests (no `it.skip` on main branch).
+### Problems
+
+1. Command types are still generic canvas/document actions (`add-node`, `remove-node`, `save-document`) rather than page-builder semantic actions such as `insert-component`, `move-component-to-slot`, `update-prop`, `set-responsive-variant`, `add-action-binding`. 
+
+2. Undo implementation simply re-executes the same command with an `undo-` ID; it does not compute or apply inverse operations. 
+
+3. Calling `execute()` from `undo()` pushes the undo command back into undo history, which can pollute command stacks. 
+
+4. Autosave uses command history as data, not necessarily the actual current BuilderDocument/page artifact state. 
+
+### Required fixes
+
+* Replace generic command types with builder-specific semantic commands.
+* Define inverse operation for each command.
+* Keep undo/redo stack transitions separate from normal execute.
+* Persist actual page artifact document state.
+* Emit audit/telemetry with artifactId, nodeId, contractName, operation, before/after deltas.
 
 ---
 
-## 19. Final Checklist
+## F. Compiler/decompiler
 
-| Category | Item | Status |
-|---|---|---|
-| **Correctness** | Authentication flow (login, refresh, logout) | ✅ Correct |
-| **Correctness** | RBAC enforcement on all protected routes | ✅ Correct |
-| **Correctness** | Workspace/Project CRUD | ✅ Correct |
-| **Correctness** | Canvas CRUD and versioning | ✅ Mostly correct (legacy endpoint resource-auth gap) |
-| **Correctness** | AI Agent execution (GraphQL) | ❌ Stub — returns fake data |
-| **Correctness** | AI artifact suggestions (REST) | ✅ Correct (rule-based heuristics, correctly labeled) |
-| **Correctness** | Lifecycle phase transitions (phases 0-2) | ✅ Mostly correct |
-| **Correctness** | Lifecycle phase transitions (phases 3-7) | ⚠️ Partial — in active development |
-| **Completeness** | All routes have auth guards | ⚠️ Legacy canvas GET missing resource-auth |
-| **Completeness** | All critical user journeys wired end-to-end | ⚠️ AI journeys are stub-only |
-| **No production mocks/stubs** | AI agent GraphQL resolvers | ❌ Stubs in production path |
-| **No production mocks/stubs** | Embedding pipeline fallback | ⚠️ Zero-vector fallback (inserts corrupt data) |
-| **No production mocks/stubs** | Dev auth bypass | ✅ Correctly gated |
-| **No production mocks/stubs** | MSW mock service worker | ✅ Correctly gated |
-| **UI/UX** | Loading/empty/error states | ⚠️ Partially consistent |
-| **UI/UX** | Demo login gated to dev | ✅ Correct |
-| **UI/UX** | AI feature UX if stub is visible | ❌ Unclear — confirm UI shows real/stub distinction |
-| **Backend/API** | Structured error responses | ✅ Consistent |
-| **Backend/API** | Correlation ID propagation | ✅ Present |
-| **Backend/API** | Rate limiting | ✅ Present |
-| **DB/Data integrity** | Migrations tracked | ✅ 6 migrations |
-| **DB/Data integrity** | Domain model canonicalized | ❌ 5 overlapping entities unmigrated |
-| **DB/Data integrity** | Seed files canonical | ❌ 5 seed files, no documented canonical |
-| **Security/Privacy** | No hardcoded secrets | ✅ All via env vars |
-| **Security/Privacy** | PII redaction in audit logs | ⚠️ HTTP audit redacts fields; AI conversation content not classified |
-| **Security/Privacy** | No dev tools in production | ✅ Correctly gated |
-| **Observability** | Prometheus metrics exposed | ✅ |
-| **Observability** | OTLP tracing | ✅ |
-| **Observability** | Audit log | ✅ |
-| **Observability** | Structured logging everywhere | ❌ `console.*` calls in route handlers |
-| **Performance** | Canvas version history bounded | ❌ Unbounded |
-| **Tests** | No test-theater (object-literal assertions) | ✅ Tests invoke real route handlers |
-| **Tests** | AI agent stub behavior tested | ❌ No test for stub |
-| **Tests** | Legacy canvas cross-user access | ❌ No test |
-| **Tests** | Embedding zero-vector fallback | ❌ No test |
-| **Documentation** | RELEASE_READINESS_CHECKLIST current | ✅ Present and detailed |
-| **Documentation** | BACKEND_IMPLEMENTATION_BACKLOG current | ✅ Present — honest about gaps |
-| **Documentation** | Module catalog matches settings.gradle | ⚠️ Needs verification |
+### Current state
+
+`ImportSourceWorkflow` defines a nice API shape for TSX, route, Storybook, artifact, and zip imports. But most helpers are explicitly placeholder implementations returning empty strings, empty arrays, or dummy metadata. 
+
+### Strengths
+
+* The desired import workflow types are now codified.
+* Source types and metadata model are reasonable.
+* It gives a future integration point for the existing artifact compiler.
+
+### Problems
+
+This is still not a working compiler/decompiler integration:
+
+* `fetchTSXContent` returns `''`.
+* `fetchRouteContent` returns `''`.
+* `fetchStorybookStory` returns `''`.
+* `fetchStorybookComponent` returns `null`.
+* `unzipArchive` returns `[]`.
+* `extractComponentName` returns `'Component'`.
+* `extractDependencies` returns `[]`. 
+
+### Required fixes
+
+* Wire to actual `yappc-artifact-compiler` extractors.
+* Use TypeScript AST extraction.
+* Convert semantic model into `PageArtifactDocument[]`.
+* Preserve source locations.
+* Surface residual islands and fidelity.
+* Add codegen/diff/merge.
+* Remove placeholder implementations or put behind feature flag.
+
+---
+
+## G. Security
+
+### Current state
+
+`PreviewSession` adds a session model, expiry, scoping, signature, and validation.  `UnsafeComponentHandler` assesses component code for risky browser APIs, eval, network, and storage patterns and can apply policy through string replacement. 
+
+### Strengths
+
+* Security concepts are now first-class in code.
+* Preview sessions are scoped to project/artifact/user.
+* Unsafe component review/fallback/block model exists.
+* Default component policy is restrictive.
+
+### Problems
+
+1. `PreviewSession` signature is explicitly a simple hash with a comment saying production should use HMAC.  This is not production-grade.
+
+2. `UnsafeComponentHandler` uses string includes/replacements; it can be bypassed and can break code. 
+
+3. These services need proof of integration with preview route, plugin loader, compiler import, renderer fallback, and save/promotion gates.
+
+### Required fixes
+
+* Replace hash with server-side HMAC/JWT-like signed preview session.
+* Store preview sessions server-side or validate against a server secret.
+* Use AST/static analysis for unsafe code.
+* Enforce runtime sandbox and CSP.
+* Block unsafe custom component execution by default.
+* Add tests proving integration, not only utility-level behavior.
+
+---
+
+## H. Governance / privacy / accessibility
+
+### Current state
+
+`GovernanceMetadataEnforcer` can validate metadata for a11y, privacy, telemetry, review, preview trust, and suggestions. 
+
+### Strengths
+
+* Good metadata model.
+* Suggestions are outcome-oriented.
+* Missing a11y/privacy/trust fields can produce errors/warnings.
+
+### Problems
+
+1. It operates on a custom `GovernanceMetadata` shape. Need to verify alignment with actual design-system component contract metadata and BuilderDocument node metadata.
+
+2. It is a service; integration into `PropertyForm`, save validation, preview trust, command execution, and promotion gates is not proven.
+
+3. It may generate generic suggestions for every component, producing noise if not context-aware.
+
+### Required fixes
+
+* Use one canonical governance metadata schema across ds-registry, BuilderDocument, inspector, backend validation, preview, and audit.
+* Apply enforcement on insert/update/save/preview/promote.
+* Only show top actionable governance suggestions; keep everything else in trace.
+
+---
+
+## I. Design-system enforcement
+
+### Current state
+
+A custom ESLint rule file exists to ban raw `button`, `input`, `select`, hardcoded colors, and ad-hoc card classes. 
+
+### Strengths
+
+* Enforcement direction is correct.
+* Messages point developers to primitive mapping docs.
+* Includes hardcoded color detection.
+
+### Problems
+
+1. Need proof this custom rule is actually wired into CI/lint script.
+
+2. Rules are simplistic; they may miss JSX member expressions and design-system wrappers, and may over-report in legitimate cases.
+
+3. Many newly added components still use raw HTML and hardcoded Tailwind color classes, including cockpit and command center files.  
+
+### Required fixes
+
+* Wire `.eslintrc.design-system.json` into package scripts and CI.
+* Add allowed wrappers and migration exceptions.
+* Gradually turn warning into error.
+* Refactor phase/command-center components to design-system primitives.
+
+---
+
+## J. Testing
+
+### Current state
+
+There is now a Playwright full-flow spec.  Page-builder “E2E” test was improved but still contains placeholder comments and a local `vi` mock. 
+
+### Strengths
+
+* Full-flow test intent is now captured.
+* The Playwright spec covers onboarding, workspace, project, phase cockpits, canvas, preview, validate, generate, run, observe, learn, evolve, and accessibility. 
+
+### Problems
+
+1. The Playwright spec likely references routes/test IDs that are not mounted yet (`/intent`, `/shape`, `intent-cockpit`, etc.), while actual route files are project-scoped and still alias older pages.   
+
+2. `pageBuilderE2E.test.tsx` is not true E2E. It uses unit rendering, calls callbacks directly, and comments say real behavior would be tested in Playwright. 
+
+3. It still defines local `const vi = { fn: ... }`, despite importing from Vitest not including `vi`. 
+
+### Required fixes
+
+* Convert placeholder tests to real interactions.
+* Align Playwright routes with actual app route structure.
+* Ensure cockpits are mounted before tests expect them.
+* Remove fake local `vi`; import `vi` from Vitest.
+* Add backend API + frontend integration tests for DB page artifact persistence and conflicts.
+
+---
+
+# 5. P0 / P1 / P2 findings
+
+## P0 findings
+
+### P0-001 — Phase cockpits exist but are not wired into routes
+
+Evidence: `PhaseCockpitLayout` and `IntentCockpit` exist, but `intent.tsx`, `shape.tsx`, `generate.tsx`, and `validate.tsx` still export old route surfaces.      
+
+Impact: The user does not actually get the intended no-cognitive-load phase UX.
+
+Fix: Replace route aliases with phase cockpit wrappers that embed canvas/lifecycle/preview panels as needed.
+
+Acceptance criteria: Each phase route renders its cockpit with one primary action, blockers, evidence, provenance, and advanced disclosure.
+
+---
+
+### P0-002 — Compiler/import workflow is mostly placeholder
+
+Evidence: `ImportSourceWorkflow` helper implementations return empty content, empty arrays, nulls, or `'Component'`. 
+
+Impact: Users cannot import real TSX/routes/stories or rely on decompiler/codegen workflow.
+
+Fix: Wire workflow to actual artifact compiler extractors and remove placeholders.
+
+Acceptance criteria: Importing a TSX route produces real page artifacts, residual islands, source locations, and fidelity score.
+
+---
+
+### P0-003 — Page-builder E2E remains test-theater risk
+
+Evidence: Test comments repeatedly state real E2E would be done in Playwright; tests call callbacks directly; local `vi` mock remains. 
+
+Impact: Test suite may pass without proving product behavior.
+
+Fix: Replace with real interactions using Testing Library for unit/integration and Playwright for actual E2E.
+
+Acceptance criteria: Tests fail if drag/drop, save/reload, conflict, slot drop, and preview update do not work.
+
+---
+
+### P0-004 — DB repository needs transaction/concurrency hardening
+
+Evidence: Repository performs select/archive/update statements but file does not show explicit transaction boundaries; uses class-level cached thread pool. 
+
+Impact: Partial writes, version inconsistency, or resource exhaustion under load.
+
+Fix: Use managed executor, transaction wrapper, server-generated versions, and concurrent writer tests.
+
+Acceptance criteria: Concurrent updates deterministically produce one success and one conflict, with no partial archive/update state.
+
+---
+
+## P1 findings
+
+### P1-001 — Server-side validator is too shallow
+
+Evidence: It checks presence of `rootNodes`/`nodes`, enum strings, residual count, fidelity, and string patterns. 
+
+Fix: Add full BuilderDocument + design-system contract validation.
+
+---
+
+### P1-002 — Semantic page-builder commands are generic and undo is not true inverse
+
+Evidence: `PageBuilderCommands` uses generic command types and undo re-executes a modified command. 
+
+Fix: Add true page-builder semantic commands and inverse deltas.
+
+---
+
+### P1-003 — Preview sessions are not production-signed
+
+Evidence: `PreviewSession` uses a simple hash with comment that production should use HMAC. 
+
+Fix: Server-side HMAC/JWT-style signing and validation.
+
+---
+
+### P1-004 — Unsafe component handling is string-based
+
+Evidence: `UnsafeComponentHandler` uses `includes` checks and regex replacement. 
+
+Fix: AST/static analysis + sandbox enforcement.
+
+---
+
+### P1-005 — Design-system enforcement exists but code still bypasses it
+
+Evidence: ESLint rule exists, but new cockpit/command center components use raw HTML/Tailwind.   
+
+Fix: Wire lint to CI and migrate new components.
+
+---
+
+# 6. Implementation plan
+
+## Milestone 1 — Mount the phase cockpit UX
+
+Tasks:
+
+1. Replace `intent.tsx` export with `IntentCockpitRoute`.
+2. Replace `shape.tsx` export with `ShapeCockpitRoute` that embeds canvas/page-builder.
+3. Replace `validate.tsx` export with `ValidateCockpitRoute`.
+4. Replace `generate.tsx` export with `GenerateCockpitRoute`.
+5. Add `RunCockpitRoute`, `ObserveCockpitRoute`, `LearnCockpitRoute`, `EvolveCockpitRoute`.
+6. Feed each cockpit from backed lifecycle/project APIs.
+
+Acceptance criteria:
+
+* Every phase route renders `data-testid="<phase>-cockpit"`.
+* Each phase has exactly one primary CTA.
+* Generic lifecycle/canvas is embedded as a panel, not used as the entire page.
+* Playwright full-flow route expectations match real routes.
+
+## Milestone 2 — Make persistence production-grade
+
+Tasks:
+
+1. Add transaction support to `DbPageArtifactRepository`.
+2. Inject managed executor.
+3. Use server-generated next `documentId` or explicit revision field.
+4. Add typed JSON mapping.
+5. Add authz checks to controller save/load/delete.
+6. Add audit + OTel events.
+7. Add Testcontainers integration tests.
+
+Acceptance criteria:
+
+* Save/load/conflict/delete work against real DB.
+* Cross-tenant reads/writes fail.
+* Conflicts preserve prior version.
+* Audit trail records actor and operation.
+* OTel metrics are emitted.
+
+## Milestone 3 — Replace compiler placeholders
+
+Tasks:
+
+1. Wire `ImportSourceWorkflow` to artifact compiler extractors.
+2. Implement source fetching through project/repo artifact access, not arbitrary client fetch.
+3. Extract TSX AST, dependencies, styles, tests, stories.
+4. Convert semantic model to `PageArtifactDocument[]`.
+5. Surface residual islands.
+6. Add codegen preview/diff/merge.
+
+Acceptance criteria:
+
+* TSX import produces real BuilderDocument.
+* Route import produces multiple page artifacts when needed.
+* Residuals are visible and reviewable.
+* Placeholder helper returns are removed.
+
+## Milestone 4 — Make commands semantic
+
+Tasks:
+
+1. Replace generic `CommandType` with page-builder operations.
+2. Add inverse command definitions.
+3. Integrate with `PageDesigner`.
+4. Emit audit/telemetry/validation/autosave after each command.
+5. Add tests for undo/redo of insert, move, prop update, delete, slot move.
+
+Acceptance criteria:
+
+* Undo truly reverses each operation.
+* Redo reapplies it.
+* Audit shows exact change.
+* Autosave persists document state.
+
+## Milestone 5 — Hard security and plugin/runtime enforcement
+
+Tasks:
+
+1. Replace preview hash with server HMAC/JWT-like signed session.
+2. Enforce preview session in preview route.
+3. Add CSP/sandbox headers.
+4. Replace string unsafe-component checks with AST-based analysis.
+5. Enforce plugin runtime policy at load and render time.
+
+Acceptance criteria:
+
+* Spoofed session fails.
+* Expired session fails.
+* Unsafe component falls back/blocks.
+* Plugin cannot access forbidden APIs.
+* Security tests prove enforcement.
+
+## Milestone 6 — Design-system migration
+
+Tasks:
+
+1. Wire design-system ESLint config into CI.
+2. Migrate new phase components to design-system primitives.
+3. Migrate command center/provenance usage.
+4. Migrate route pages.
+5. Replace hardcoded colors with tokens.
+
+Acceptance criteria:
+
+* CI fails on raw controls outside allowlist.
+* Core routes use design-system components.
+* Dark mode and accessibility states are consistent.
+
+## Milestone 7 — Real tests
+
+Tasks:
+
+1. Fix `pageBuilderE2E.test.tsx`.
+2. Align Playwright route paths/test IDs with mounted app.
+3. Add API integration tests.
+4. Add accessibility tests.
+5. Add visual regression for phase cockpits.
+6. Add security tests for preview sessions and unsafe components.
+
+Acceptance criteria:
+
+* No comment-only tests.
+* No fake local `vi`.
+* Tests fail when routes/cockpits are not mounted.
+* Tests cover real user interaction.
+
+---
+
+# 7. Test plan
+
+## Unit tests
+
+* `PageArtifactValidator`
+* `DbPageArtifactRepository` JSON mapping
+* `NextBestActionService`
+* `PageBuilderCommands`
+* `PreviewSession`
+* `UnsafeComponentHandler`
+* `GovernanceMetadataEnforcer`
+* `ProvenanceBadge`
+
+## Integration tests
+
+* Page artifact save/load/conflict/delete with DB.
+* Controller authz and tenant isolation.
+* Phase cockpit route data loading.
+* Page builder command → document mutation → autosave.
+* Compiler import workflow → artifact compiler → BuilderDocument.
+
+## E2E tests
+
+* Onboarding → workspace → project → IntentCockpit.
+* ShapeCockpit → canvas → page node → add component → preview.
+* ValidateCockpit → approval.
+* GenerateCockpit → codegen preview.
+* RunCockpit → capability-gated plan.
+* Observe → preview/metrics.
+* Learn → retrospective.
+* Evolve → next cycle.
+
+## Security tests
+
+* Preview session invalid/expired/spoofed.
+* Cross-tenant artifact access.
+* Unsafe component fallback/block.
+* Plugin permission denial.
+* CSP/sandbox behavior.
+
+## Accessibility tests
+
+* Keyboard-only full phase navigation.
+* Focus management in dialogs/disclosures.
+* Screen reader labels for primary actions.
+* Color contrast for badges/statuses.
+* Command palette keyboard use.
+
+---
+
+# 8. Readiness score
+
+| Area                            | Score | Reason                                                                                |
+| ------------------------------- | ----: | ------------------------------------------------------------------------------------- |
+| Full UI/UX flow                 |    58 | Good components added, but route mounting incomplete.                                 |
+| Cognitive-load reduction        |    65 | Cockpit model exists; actual phase routes still generic.                              |
+| Phase cockpit maturity          |    45 | Components exist but not wired.                                                       |
+| Canvas maturity                 |    70 | Strong prior canvas foundation; phase-aware defaults still need integration.          |
+| Page builder maturity           |    68 | Improved renderer/persistence/drag-drop; commands/tests still weak.                   |
+| Design-system consistency       |    45 | Enforcement exists, migration incomplete.                                             |
+| Compiler/decompiler integration |    35 | Service shell exists; placeholder implementation.                                     |
+| Live preview                    |    72 | Preview security improved previously; signed sessions need production implementation. |
+| Persistence                     |    72 | DB repo exists; transaction/authz/O11y hardening needed.                              |
+| Security/privacy                |    58 | Utilities exist; runtime enforcement incomplete.                                      |
+| Auditability                    |    55 | Governance/audit concepts exist; operation-level persistence incomplete.              |
+| Observability                   |    45 | Telemetry hooks exist; end-to-end OTel proof weak.                                    |
+| AI/automation implicitness      |    60 | Wording improvements and NBA service exist; integration incomplete.                   |
+| Test confidence                 |    38 | New specs exist but many are likely not executable against mounted routes.            |
+| Production readiness            |    55 | Strong progress but too many shell/placeholder/unwired pieces.                        |
+
+---
+
+# 9. Prioritized backlog
+
+| Priority | ID          | Work item                                                       | Owner area        | Dependencies                | Acceptance criteria                                 |
+| -------- | ----------- | --------------------------------------------------------------- | ----------------- | --------------------------- | --------------------------------------------------- |
+| P0       | UX-001      | Wire phase cockpits into actual phase routes                    | Frontend          | Cockpit components          | Each phase route renders cockpit with primary CTA   |
+| P0       | TEST-001    | Fix page-builder E2E test theater                               | Frontend test     | Mounted builder             | Real drag/drop/save/preview assertions              |
+| P0       | COMP-001    | Replace compiler import placeholders                            | Compiler/frontend | Artifact compiler           | TSX/route import produces real PageArtifactDocument |
+| P0       | PERSIST-001 | Transactional DB page artifact persistence                      | Backend           | DB repo                     | Concurrent writes produce safe conflict behavior    |
+| P0       | VALID-001   | Full server-side BuilderDocument validation                     | Backend/shared    | Contract schemas            | Invalid contracts/slots/props rejected              |
+| P1       | CMD-001     | Semantic page-builder commands                                  | Canvas/builder    | Builder ops                 | True undo/redo and audit deltas                     |
+| P1       | SEC-001     | Production signed preview sessions                              | Security          | Server secret/session store | Invalid/expired/spoofed sessions rejected           |
+| P1       | DS-001      | Wire design-system ESLint into CI                               | Frontend tooling  | Rule file                   | CI fails on raw controls outside allowlist          |
+| P1       | DS-002      | Migrate cockpits/command center to design-system primitives     | Frontend          | DS components               | No raw controls/hardcoded colors in new core UX     |
+| P1       | AUTO-001    | Wire next-best-action service to dashboard/project/phase routes | Frontend/services | Project state APIs          | One best action shown per route                     |
+| P1       | GOV-001     | Enforce governance metadata in inspector/save/preview           | Builder/security  | Metadata schema             | Risky/missing governance blocks promotion           |
+| P2       | O11Y-001    | Add OTel metrics/spans for builder/persistence/preview          | Backend/frontend  | Telemetry infra             | Metrics visible by artifact/project                 |
+| P2       | VIS-001     | Add visual regression for phase cockpits                        | Frontend test     | Cockpit routes              | Snapshot coverage for all major states              |
+| P2       | PERF-001    | Large canvas/page builder performance tests                     | Frontend          | Test fixtures               | 1k/10k nodes measured and budgeted                  |
+
+---
+
+# Bottom line
+
+`b90f644a...` is a meaningful improvement over the last reviewed state. The product now has many of the right architectural pieces: DB persistence, validation, phase cockpit components, provenance badges, command center, next-best-action service, security utilities, design-system enforcement rules, and E2E specs.
+
+But the current state is still **not production-complete**. The most important distinction is:
+
+```text id="72s3q7"
+Many capabilities now exist as files/components/services.
+Fewer are proven to be fully mounted, integrated, enforced, and tested end to end.
+```
+
+The next push should focus on wiring and proof, not adding more shells:
+
+1. Mount phase cockpits into real routes.
+2. Replace compiler placeholders with actual artifact compiler integration.
+3. Make DB persistence transactional/authorized/observable.
+4. Replace page-builder test theater with real tests.
+5. Enforce design-system and governance rules in CI/runtime.
+6. Align Playwright specs with actual mounted route paths and test IDs.

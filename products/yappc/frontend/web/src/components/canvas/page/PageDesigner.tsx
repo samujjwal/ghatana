@@ -32,13 +32,10 @@ import type { DropRequest } from './ComponentRenderer';
 import { importPageArtifactsFromCode } from './artifactCompilerBridge';
 import { AIActionLineageTracker, createAIChangeRecord } from './pageArtifactDocument';
 import type { PageArtifactAIChangeRecord } from './pageArtifactDocument';
+import { PageBuilderCommands, type Command, type InsertComponentCommand, type MoveComponentCommand } from '../../../services/canvas/commands/PageBuilderCommands';
 
 import type { ComponentData } from './schemas';
 import {
-  deleteNode,
-  insertNode,
-  moveNode,
-  updateNodeProps,
   validateDocument,
   deserializeDocument,
 } from '@ghatana/ui-builder';
@@ -86,76 +83,6 @@ function getNodeChildren(document: BuilderDocument, parentId: NodeId | null, slo
   }
 
   return parent.slots[slotName] ?? [];
-}
-
-function withRootOrder(document: BuilderDocument, orderedRootNodes: readonly NodeId[]): BuilderDocument {
-  return {
-    ...document,
-    rootNodes: [...orderedRootNodes],
-  };
-}
-
-function withSlotOrder(
-  document: BuilderDocument,
-  parentId: NodeId,
-  slotName: string,
-  orderedChildren: readonly NodeId[],
-): BuilderDocument {
-  const parent = document.nodes.get(parentId);
-  if (!parent) {
-    return document;
-  }
-
-  const nextParent = {
-    ...parent,
-    slots: {
-      ...parent.slots,
-      [slotName]: [...orderedChildren],
-    },
-  };
-
-  const nextNodes = new Map(document.nodes);
-  nextNodes.set(parentId, nextParent);
-
-  return {
-    ...document,
-    nodes: nextNodes,
-  };
-}
-
-function reorderIntoIndex(
-  items: readonly NodeId[],
-  nodeId: NodeId,
-  targetIndex: number,
-): readonly NodeId[] {
-  const withoutNode = items.filter((id) => id !== nodeId);
-  const clampedIndex = Math.max(0, Math.min(targetIndex, withoutNode.length));
-  return [
-    ...withoutNode.slice(0, clampedIndex),
-    nodeId,
-    ...withoutNode.slice(clampedIndex),
-  ];
-}
-
-function applyOrderInContainer(
-  document: BuilderDocument,
-  nodeId: NodeId,
-  parentId: NodeId | null,
-  slotName: string | undefined,
-  targetIndex: number,
-): BuilderDocument {
-  const children = getNodeChildren(document, parentId, slotName);
-  const nextOrder = reorderIntoIndex(children, nodeId, targetIndex);
-
-  if (!parentId) {
-    return withRootOrder(document, nextOrder);
-  }
-
-  if (!slotName) {
-    return document;
-  }
-
-  return withSlotOrder(document, parentId, slotName, nextOrder);
 }
 
 function isDescendant(document: BuilderDocument, ancestorId: NodeId, candidateId: NodeId): boolean {
@@ -217,6 +144,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
     }
     return componentDataToBuilderDocument(initialComponents as ComponentData[]);
   });
+  const commandServiceRef = useRef<PageBuilderCommands | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -235,6 +163,19 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
   const validation = useMemo(() => validateDocument(document, contracts), [contracts, document]);
 
+  if (!commandServiceRef.current) {
+    commandServiceRef.current = new PageBuilderCommands({
+      initialDocument: document,
+      onAudit: () => undefined,
+      onTelemetry: () => undefined,
+      validate: (candidate) => validateDocument(candidate, contracts),
+    });
+  }
+
+  useEffect(() => () => {
+    commandServiceRef.current?.destroy();
+  }, []);
+
   useEffect(() => {
     onDocumentChange?.(document, validation);
   }, [document, onDocumentChange, validation]);
@@ -247,6 +188,19 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       onComponentsChange?.(builderDocumentToComponentData(nextDocument));
     },
     [onComponentsChange],
+  );
+
+  const executeCommand = useCallback(
+    (command: Command): BuilderDocument | null => {
+      const result = commandServiceRef.current?.execute(command);
+      if (!result?.success) {
+        return null;
+      }
+
+      publishDocument(result.document);
+      return result.document;
+    },
+    [publishDocument],
   );
 
   /**
@@ -315,16 +269,26 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
     // Load the first page into the editor
     const imported = first.serializedBuilderDocument;
-    if (imported) {
-      publishDocument(deserializeDocument(imported));
+    const importedBuilderDocument = deserializeDocument(imported);
+    const importedDocument = executeCommand({
+      id: `import-document-${Date.now()}`,
+      type: 'import-document',
+      timestamp: new Date().toISOString(),
+      data: {
+        document: importedBuilderDocument,
+      },
+    });
+    if (!importedDocument) {
+      setImportError('Could not load the imported page into the builder.');
+      return;
     }
+    setSelectedId(importedDocument.rootNodes[0] ?? null);
 
     // Surface residual islands if any
     const residuals = first.residualIslandIds ?? [];
     setImportResiduals(residuals);
     setImportFidelity(first.roundTripFidelity ?? null);
 
-    const importedDocument = deserializeDocument(first.serializedBuilderDocument);
     const importedNodes = importedDocument.nodes;
     const affectedNodeIds: readonly string[] =
       importedNodes instanceof Map
@@ -355,32 +319,33 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
 
     setImportPanelOpen(false);
     setImportInput('');
-  }, [importInput, onImportArtifacts, publishDocument, recordAIChange]);
+  }, [executeCommand, importInput, onImportArtifacts, recordAIChange]);
 
   const handleAddComponent = useCallback(
     (contractOrType: string) => {
       const contractName = normalizeContractName(contractOrType);
       const legacyType = toLegacyComponentType(contractName) as LegacyComponentType;
       const newComponent = getDefaultComponentData(legacyType) as ComponentData;
-      let insertedNodeId: string | null = null;
       const target = resolveInsertionTarget();
-
-      const nextDocument = insertNode(
-        document,
-        componentDataToInsertableInstance(newComponent),
-        target.parentId,
-        target.slotName,
-        {
-          onNodeInserted: ({ nodeId }) => {
-            insertedNodeId = nodeId;
-          },
+      const result = commandServiceRef.current?.execute({
+        id: `insert-component-${Date.now()}`,
+        type: 'insert-component',
+        timestamp: new Date().toISOString(),
+        data: {
+          instance: componentDataToInsertableInstance(newComponent),
+          parentId: target.parentId,
+          slotName: target.slotName,
         },
-      );
+      } satisfies InsertComponentCommand);
 
-      publishDocument(nextDocument);
-      setSelectedId(insertedNodeId);
+      if (!result?.success) {
+        return;
+      }
+
+      publishDocument(result.document);
+      setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
     },
-    [document, publishDocument, resolveInsertionTarget],
+    [publishDocument, resolveInsertionTarget],
   );
 
   const handlePaletteDragStart = useCallback(
@@ -399,36 +364,42 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         const normalizedName = normalizeContractName(contractName);
         const legacyType = toLegacyComponentType(normalizedName) as LegacyComponentType;
         const newComponent = getDefaultComponentData(legacyType) as ComponentData;
-        let insertedNodeId: string | null = null;
-
-        const insertedDocument = insertNode(
-          document,
-          componentDataToInsertableInstance(newComponent),
-          undefined,
-          undefined,
-          {
-            onNodeInserted: ({ nodeId }) => {
-              insertedNodeId = nodeId;
-            },
+        const result = commandServiceRef.current?.execute({
+          id: `insert-component-${Date.now()}`,
+          type: 'insert-component',
+          timestamp: new Date().toISOString(),
+          data: {
+            instance: componentDataToInsertableInstance(newComponent),
           },
-        );
+        } satisfies InsertComponentCommand);
 
-        publishDocument(insertedDocument);
-        setSelectedId(insertedNodeId);
+        if (!result?.success) {
+          return;
+        }
+
+        publishDocument(result.document);
+        setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
         return;
       }
 
       const draggedNodeId = event.dataTransfer.getData('application/x-page-node');
       if (draggedNodeId && document.nodes.has(draggedNodeId as NodeId)) {
-        const movedDocument = moveNode(document, draggedNodeId as NodeId, null);
-        const reordered = applyOrderInContainer(
-          movedDocument,
-          draggedNodeId as NodeId,
-          null,
-          undefined,
-          movedDocument.rootNodes.length,
-        );
-        publishDocument(reordered);
+        const result = commandServiceRef.current?.execute({
+          id: `move-component-${Date.now()}`,
+          type: 'move-component',
+          timestamp: new Date().toISOString(),
+          data: {
+            nodeId: draggedNodeId as NodeId,
+            newParentId: null,
+            index: document.rootNodes.length,
+          },
+        } satisfies MoveComponentCommand);
+
+        if (!result?.success) {
+          return;
+        }
+
+        publishDocument(result.document);
         setSelectedId(draggedNodeId);
       }
     },
@@ -459,41 +430,30 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         const normalizedName = normalizeContractName(request.source.contractName);
         const legacyType = toLegacyComponentType(normalizedName) as LegacyComponentType;
         const newComponent = getDefaultComponentData(legacyType) as ComponentData;
-        let insertedNodeId: NodeId | null = null;
-
-        let nextDocument = insertNode(
-          document,
-          componentDataToInsertableInstance(newComponent),
-          destinationParentId ?? undefined,
-          destinationSlotName,
-          {
-            onNodeInserted: ({ nodeId }) => {
-              insertedNodeId = nodeId;
-            },
-          },
-        );
-
-        if (!insertedNodeId) {
-          return;
-        }
-
-        const destinationChildren = getNodeChildren(nextDocument, destinationParentId, destinationSlotName);
+        const destinationChildren = getNodeChildren(document, destinationParentId, destinationSlotName);
         const insertionIndex =
           request.placement === 'slot'
             ? destinationChildren.length
             : (targetLocation?.index ?? destinationChildren.length) +
               (request.placement === 'after' ? 1 : 0);
+        const result = commandServiceRef.current?.execute({
+          id: `insert-component-${Date.now()}`,
+          type: 'insert-component',
+          timestamp: new Date().toISOString(),
+          data: {
+            instance: componentDataToInsertableInstance(newComponent),
+            parentId: destinationParentId ?? undefined,
+            slotName: destinationSlotName,
+            index: insertionIndex,
+          },
+        } satisfies InsertComponentCommand);
 
-        nextDocument = applyOrderInContainer(
-          nextDocument,
-          insertedNodeId,
-          destinationParentId,
-          destinationSlotName,
-          insertionIndex,
-        );
+        if (!result?.success) {
+          return;
+        }
 
-        publishDocument(nextDocument);
-        setSelectedId(insertedNodeId);
+        publishDocument(result.document);
+        setSelectedId((result.changedNodeIds[0] as string | undefined) ?? null);
         return;
       }
 
@@ -506,29 +466,38 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
-      let nextDocument = moveNode(
-        document,
-        sourceNodeId,
-        destinationParentId,
-        destinationSlotName,
-      );
-
-      const destinationChildren = getNodeChildren(nextDocument, destinationParentId, destinationSlotName);
-      const insertionIndex =
+      const destinationChildren = getNodeChildren(document, destinationParentId, destinationSlotName);
+      let insertionIndex =
         request.placement === 'slot'
           ? destinationChildren.length
           : (targetLocation?.index ?? destinationChildren.length) +
             (request.placement === 'after' ? 1 : 0);
+      const sourceLocation = findNodeLocation(document, sourceNodeId);
+      if (
+        sourceLocation &&
+        sourceLocation.parentId === destinationParentId &&
+        sourceLocation.slotName === destinationSlotName &&
+        sourceLocation.index < insertionIndex
+      ) {
+        insertionIndex -= 1;
+      }
+      const result = commandServiceRef.current?.execute({
+        id: `move-component-${Date.now()}`,
+        type: 'move-component',
+        timestamp: new Date().toISOString(),
+        data: {
+          nodeId: sourceNodeId,
+          newParentId: destinationParentId,
+          newSlotName: destinationSlotName,
+          index: insertionIndex,
+        },
+      } satisfies MoveComponentCommand);
 
-      nextDocument = applyOrderInContainer(
-        nextDocument,
-        sourceNodeId,
-        destinationParentId,
-        destinationSlotName,
-        insertionIndex,
-      );
+      if (!result?.success) {
+        return;
+      }
 
-      publishDocument(nextDocument);
+      publishDocument(result.document);
       setSelectedId(sourceNodeId);
     },
     [document, publishDocument],
@@ -539,10 +508,20 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       return;
     }
 
-    const nextDocument = deleteNode(document, selectedId as NodeId);
-    publishDocument(nextDocument);
+    const nextDocument = executeCommand({
+      id: `delete-component-${Date.now()}`,
+      type: 'delete-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId: selectedId as NodeId,
+      },
+    });
+    if (!nextDocument) {
+      return;
+    }
+
     setSelectedId(null);
-  }, [document, publishDocument, selectedId]);
+  }, [executeCommand, selectedId]);
 
   const handleUpdateComponent = useCallback(
     (payload: { readonly props: Record<string, unknown>; readonly name?: string }) => {
@@ -550,34 +529,24 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         return;
       }
 
-      let nextDocument = updateNodeProps(
-        document,
-        selectedInstance.id,
-        payload.props,
-      );
-
-      const currentNode = nextDocument.nodes.get(selectedInstance.id);
-      if (currentNode && payload.name !== currentNode.metadata.name) {
-        const updatedNode = {
-          ...currentNode,
-          metadata: {
-            ...currentNode.metadata,
-            name: payload.name,
-          },
-        };
-        const nextNodes = new Map(nextDocument.nodes);
-        nextNodes.set(selectedInstance.id, updatedNode);
-        nextDocument = {
-          ...nextDocument,
-          nodes: nextNodes,
-        };
+      const nextDocument = executeCommand({
+        id: `update-props-${Date.now()}`,
+        type: 'update-props',
+        timestamp: new Date().toISOString(),
+        data: {
+          nodeId: selectedInstance.id,
+          props: payload.props,
+          name: payload.name,
+        },
+      });
+      if (!nextDocument) {
+        return;
       }
 
-      publishDocument(nextDocument);
       setDrawerOpen(false);
       setEditingId(null);
     },
-    [document, publishDocument, selectedInstance],
+    [executeCommand, selectedInstance],
   );
 
   const handleNestSelectedIntoParent = useCallback(() => {
@@ -604,14 +573,20 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       return;
     }
 
-    const nextDocument = moveNode(
-      document,
-      selectedId as NodeId,
-      rootTargetId,
-      slotName,
-    );
-    publishDocument(nextDocument);
-  }, [document, publishDocument, selectedId, selectedInstance]);
+    const nextDocument = executeCommand({
+      id: `move-component-${Date.now()}`,
+      type: 'move-component',
+      timestamp: new Date().toISOString(),
+      data: {
+        nodeId: selectedId as NodeId,
+        newParentId: rootTargetId,
+        newSlotName: slotName,
+      },
+    });
+    if (!nextDocument) {
+      return;
+    }
+  }, [document, executeCommand, selectedId, selectedInstance]);
 
   const topLevelNodes = useMemo(
     () =>

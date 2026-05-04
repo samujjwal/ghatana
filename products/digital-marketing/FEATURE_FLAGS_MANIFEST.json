@@ -45,12 +45,42 @@
     {
       "key": "dmos.dashboard_growth_metrics",
       "name": "Dashboard Growth Metrics",
-      "description": "Enables growth metrics widget on the dashboard",
-      "defaultValue": false,
-      "productionDefault": false,
-      "environmentVariable": "DMOS_DASHBOARD_GROWTH_METRICS",
+      "description": "Enables the growth metrics widget on the dashboard",
+      "defaultDevelopmentValue": false,
+      "defaultProductionValue": false,
+      "environmentVariable": "DMOS_DASHBOARD_GROWTH_METRICS_ENABLED",
       "category": "ui",
-      "scope": "ui"
+      "scope": ["ui"]
+    },
+    {
+      "key": "dmos.budget_page_enabled",
+      "name": "Budget Page Enabled",
+      "description": "Enables the budget management page UI (currently stub - requires full implementation)",
+      "defaultDevelopmentValue": false,
+      "defaultProductionValue": false,
+      "environmentVariable": "DMOS_BUDGET_PAGE_ENABLED",
+      "category": "ui",
+      "scope": ["ui"]
+    },
+    {
+      "key": "dmos.strategy_page_enabled",
+      "name": "Strategy Page Enabled",
+      "description": "Enables the strategy generation page UI (currently stub - requires full implementation)",
+      "defaultDevelopmentValue": false,
+      "defaultProductionValue": false,
+      "environmentVariable": "DMOS_STRATEGY_PAGE_ENABLED",
+      "category": "ui",
+      "scope": ["ui"]
+    },
+    {
+      "key": "dmos.campaigns_page_enabled",
+      "name": "Campaigns Page Enabled",
+      "description": "Enables the campaign management page UI (currently stub - requires full implementation)",
+      "defaultDevelopmentValue": false,
+      "defaultProductionValue": false,
+      "environmentVariable": "DMOS_CAMPAIGNS_PAGE_ENABLED",
+      "category": "ui",
+      "scope": ["ui"]
     }
   ],
   "categories": {

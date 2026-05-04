@@ -41,10 +41,11 @@ public interface PageArtifactRepository {
      * @param workspaceId The workspace ID for scoping
      * @param projectId The project ID for scoping
      * @param document The document to save
-     * @return Promise that completes when saved
+     * @return Promise that completes with the persisted document, including the
+     *         effective documentId/version written to storage
      * @throws PageArtifactConflictException if there's a version conflict
      */
-    Promise<Void> save(
+    Promise<PageArtifactDocument> save(
             String tenantId,
             String workspaceId,
             String projectId,

@@ -14,6 +14,7 @@ import okhttp3.Response;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -104,6 +105,49 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
         return Promise.ofBlocking(blockingExecutor, () -> doCreateSearchCampaign(accessToken, request));
     }
 
+    @Override
+    public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
+        Objects.requireNonNull(accessToken, "accessToken must not be null");
+        Objects.requireNonNull(externalCampaignId, "externalCampaignId must not be null");
+        if (externalCampaignId.isBlank()) throw new IllegalArgumentException("externalCampaignId must not be blank");
+
+        return Promise.ofBlocking(blockingExecutor, () -> doPauseCampaign(accessToken, externalCampaignId));
+    }
+
+    private String doPauseCampaign(String accessToken, String externalCampaignId) throws Exception {
+        GoogleAdsPauseRequestJson payload = new GoogleAdsPauseRequestJson(externalCampaignId);
+        byte[] bodyBytes = objectMapper.writeValueAsBytes(payload);
+
+        String url = apiBaseUrl + "/" + API_VERSION + "/customers/"
+            + customerId + "/campaigns:mutate";
+
+        Request httpRequest = new Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer " + accessToken)
+            .addHeader("developer-token", developerToken)
+            .post(RequestBody.create(bodyBytes, JSON_MEDIA_TYPE))
+            .build();
+
+        try (Response response = httpClient.newCall(httpRequest).execute()) {
+            if (!response.isSuccessful()) {
+                throw new GoogleAdsConnectorException(
+                    "Campaign pause failed: HTTP " + response.code());
+            }
+            byte[] responseBody = response.body() != null ? response.body().bytes() : new byte[0];
+            if (responseBody.length == 0) {
+                throw new GoogleAdsConnectorException("Campaign pause response body was empty");
+            }
+            GoogleAdsCampaignResponseJson json =
+                objectMapper.readValue(responseBody, GoogleAdsCampaignResponseJson.class);
+            if (json.resourceName() == null || json.resourceName().isBlank()) {
+                throw new GoogleAdsConnectorException("Campaign pause returned empty resourceName");
+            }
+            return json.resourceName();
+        } catch (IOException e) {
+            throw new GoogleAdsConnectorException("Campaign pause IO error", e);
+        }
+    }
+
     private String doCreateSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request)
             throws Exception {
         GoogleAdsCampaignRequestJson payload = new GoogleAdsCampaignRequestJson(
@@ -161,6 +205,32 @@ public final class HttpDmGoogleAdsCampaignApiClientAdapter implements DmGoogleAd
         @JsonProperty("serviceArea") String serviceArea,
         @JsonProperty("keywordTheme") String keywordTheme
     ) {}
+
+    private record GoogleAdsPauseRequestJson(
+        @JsonProperty("operations") List<GoogleAdsPauseOperationJson> operations
+    ) {
+        GoogleAdsPauseRequestJson(String resourceName) {
+            this(List.of(new GoogleAdsPauseOperationJson(resourceName)));
+        }
+    }
+
+    private record GoogleAdsPauseOperationJson(
+        @JsonProperty("updateMask") String updateMask,
+        @JsonProperty("update") GoogleAdsPauseUpdateJson update
+    ) {
+        GoogleAdsPauseOperationJson(String resourceName) {
+            this("status", new GoogleAdsPauseUpdateJson(resourceName));
+        }
+    }
+
+    private record GoogleAdsPauseUpdateJson(
+        @JsonProperty("resourceName") String resourceName,
+        @JsonProperty("status") String status
+    ) {
+        GoogleAdsPauseUpdateJson(String resourceName) {
+            this(resourceName, "PAUSED");
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record GoogleAdsCampaignResponseJson(

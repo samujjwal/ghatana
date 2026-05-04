@@ -290,21 +290,28 @@ const mockSchema: CapabilitySchema = {
 };
 
 /**
- * Load the capability schema
- * In production, this would fetch from the backend API
+ * Load the capability schema from backend API
+ * P2-CAP-1: Fetch from backend to ensure single source of truth
  */
 export async function loadCapabilitySchema(): Promise<CapabilitySchema> {
   if (cachedSchema) {
     return cachedSchema;
   }
 
-  // TODO: In production, fetch from backend API
-  // const response = await fetch('/api/v1/capabilities/schema');
-  // cachedSchema = await response.json();
-
-  // For now, use mock schema
-  cachedSchema = mockSchema;
-  return cachedSchema;
+  try {
+    const response = await fetch('/api/v1/capabilities/schema');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch capability schema: ${response.statusText}`);
+    }
+    const envelope = await response.json();
+    cachedSchema = envelope.data as CapabilitySchema;
+    return cachedSchema;
+  } catch (error) {
+    console.error('Failed to load capability schema from backend, falling back to mock:', error);
+    // Fallback to mock schema for development
+    cachedSchema = mockSchema;
+    return cachedSchema;
+  }
 }
 
 /**

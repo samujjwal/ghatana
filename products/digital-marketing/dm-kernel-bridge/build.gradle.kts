@@ -17,6 +17,7 @@ dependencies {
     api(project(":platform-plugins:plugin-human-approval"))
     api(project(":platform-plugins:plugin-risk-management"))
     api(project(":platform-plugins:plugin-audit-trail"))
+    api(project(":platform-plugins:plugin-notification"))
 
     compileOnly(libs.spotbugs.annotations)
 

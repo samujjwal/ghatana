@@ -233,7 +233,67 @@ vi.mock('@ghatana/ui-builder', () => ({
     };
   }),
   validateDocument: (...args: unknown[]) => validateDocumentMock(...args),
-  deserializeDocument: vi.fn((doc: unknown) => doc),
+  serializeDocument: vi.fn((document: unknown) => document),
+  deserializeDocument: vi.fn((doc: unknown) => {
+    if (
+      doc &&
+      typeof doc === 'object' &&
+      'nodes' in doc &&
+      !((doc as { nodes: unknown }).nodes instanceof Map)
+    ) {
+      const serialized = doc as {
+        id?: string;
+        version?: string | number;
+        name?: string;
+        rootNodes?: string[];
+        nodes?: Record<string, {
+          id: string;
+          contractName: string;
+          props?: Record<string, unknown>;
+          slots?: Record<string, string[]>;
+          bindings?: unknown[];
+          metadata?: Record<string, unknown>;
+        }>;
+      };
+
+      return {
+        id: serialized.id ?? 'doc-import',
+        version: String(serialized.version ?? '1'),
+        name: serialized.name ?? 'Imported Page',
+        designSystem: {
+          id: 'ghatana-ds-v1',
+          name: 'Ghatana Design System',
+          version: '1.0.0',
+          tokenSetIds: [],
+          componentContracts: [],
+          themeId: 'default',
+        },
+        rootNodes: serialized.rootNodes ?? [],
+        nodes: new Map(
+          Object.entries(serialized.nodes ?? {}).map(([nodeId, node]) => [
+            nodeId,
+            {
+              id: node.id,
+              contractName: node.contractName,
+              props: node.props ?? {},
+              slots: node.slots ?? {},
+              bindings: node.bindings ?? [],
+              metadata: node.metadata ?? {},
+            },
+          ]),
+        ),
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          author: 'import',
+          dataClassification: 'INTERNAL',
+          trustLevel: 'GENERATED_TRUSTED',
+        },
+      };
+    }
+
+    return doc;
+  }),
   createLineageEntry: vi.fn((hookKind: string, reason: string, confidence: number, affectedNodeIds: readonly string[]) => ({
     actionId: `ai-test-${Math.random().toString(36).slice(2, 9)}`,
     hookKind,

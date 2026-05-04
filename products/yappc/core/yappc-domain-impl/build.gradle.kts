@@ -53,6 +53,7 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.archunit.junit5)
+    testImplementation(libs.h2)
     testImplementation(project(":platform:java:testing"))
 }
 

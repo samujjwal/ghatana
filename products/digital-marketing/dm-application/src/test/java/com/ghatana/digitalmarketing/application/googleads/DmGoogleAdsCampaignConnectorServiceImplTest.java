@@ -432,6 +432,11 @@ class DmGoogleAdsCampaignConnectorServiceImplTest extends EventloopTestBase {
         public Promise<String> createSearchCampaign(String accessToken, CreateGoogleSearchCampaignRequest request) {
             return Promise.of("google-camp-123");
         }
+
+        @Override
+        public Promise<String> pauseCampaign(String accessToken, String externalCampaignId) {
+            return Promise.of(externalCampaignId);
+        }
     }
 
     static final class AllowingKernelAdapter implements DigitalMarketingKernelAdapter {

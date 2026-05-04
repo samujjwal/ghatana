@@ -36,6 +36,16 @@ export interface PhasePrimaryActionCardProps {
   disabledReason?: string;
   /** Custom className */
   className?: string;
+  /** Test id for the card container */
+  testId?: string;
+  /** Test id for the primary action */
+  actionTestId?: string;
+  /** Test id for the secondary action */
+  secondaryActionTestId?: string;
+  /** Optional aria-label for the primary action */
+  actionAriaLabel?: string;
+  /** Optional aria-label for the secondary action */
+  secondaryActionAriaLabel?: string;
 }
 
 /**
@@ -60,9 +70,17 @@ export const PhasePrimaryActionCard: React.FC<PhasePrimaryActionCardProps> = ({
   disabled = false,
   disabledReason,
   className = '',
+  testId,
+  actionTestId,
+  secondaryActionTestId,
+  actionAriaLabel,
+  secondaryActionAriaLabel,
 }) => {
   return (
-    <div className={`phase-primary-action-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm ${className}`}>
+    <div
+      className={`phase-primary-action-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm ${className}`}
+      data-testid={testId}
+    >
       {/* Header with icon and title */}
       <div className="flex items-start gap-4 mb-4">
         {icon && (
@@ -101,6 +119,8 @@ export const PhasePrimaryActionCard: React.FC<PhasePrimaryActionCardProps> = ({
         <button
           onClick={onAction}
           disabled={disabled}
+          data-testid={actionTestId}
+          aria-label={actionAriaLabel ?? actionLabel}
           className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
           aria-describedby={disabled ? 'disabled-reason' : undefined}
         >
@@ -109,6 +129,8 @@ export const PhasePrimaryActionCard: React.FC<PhasePrimaryActionCardProps> = ({
         {secondaryActionLabel && onSecondaryAction && (
           <button
             onClick={onSecondaryAction}
+            data-testid={secondaryActionTestId}
+            aria-label={secondaryActionAriaLabel ?? secondaryActionLabel}
             className="px-6 py-3 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
           >
             {secondaryActionLabel}

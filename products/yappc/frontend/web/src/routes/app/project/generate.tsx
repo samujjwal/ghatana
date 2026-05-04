@@ -10,4 +10,10 @@
  * @doc.pattern Page Component
  */
 
-export { default } from './canvas';
+import { GenerateCockpitRoute } from './_phaseCockpit';
+import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+
+export default GenerateCockpitRoute;
+export function ErrorBoundary() {
+  return <RouteErrorBoundary />;
+}

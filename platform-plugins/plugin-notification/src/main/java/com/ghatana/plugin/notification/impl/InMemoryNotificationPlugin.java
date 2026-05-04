@@ -1,6 +1,8 @@
 package com.ghatana.plugin.notification.impl;
 
 import com.ghatana.plugin.notification.NotificationPlugin;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginState;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,17 +38,27 @@ public final class InMemoryNotificationPlugin implements NotificationPlugin {
     private final ConcurrentHashMap<String, DeliveryStatus> notifications = new ConcurrentHashMap<>();
     private final CopyOnWriteArrayList<DeadLetterEntry> deadLetterQueue = new CopyOnWriteArrayList<>();
     private final AtomicInteger deliveryCounter = new AtomicInteger(0);
+    private PluginState state = PluginState.UNLOADED;
 
     @Override
-    public void start() {
-        LOG.info("[NotificationPlugin] In-memory notification plugin started");
+    public Promise<Void> initialize(PluginContext context) {
+        state = PluginState.INITIALIZED;
+        LOG.info("[NotificationPlugin] In-memory notification plugin initialized");
+        return Promise.complete();
     }
 
     @Override
-    public void stop() {
+    public Promise<Void> start() {
+        LOG.info("[NotificationPlugin] In-memory notification plugin started");
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> stop() {
         LOG.info("[NotificationPlugin] In-memory notification plugin stopped");
         notifications.clear();
         deadLetterQueue.clear();
+        return Promise.complete();
     }
 
     @Override

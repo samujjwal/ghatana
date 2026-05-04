@@ -11,8 +11,8 @@ DMOS is the Ghatana product workspace for an AI-native, governance-first digital
 | `dm-kernel-bridge` | Product-owned adapter over kernel bridge ports (feature flags, audit, compliance, human-approval plugin) | Stable |
 | `dm-domain` | Domain model, aggregates, invariants, approval target types, AI action log | Stable scaffold |
 | `dm-application` | Application services and orchestrations: campaign, strategy, budget, approval, content, connector, workflow, AI actions | MVP scaffold — some services are deterministic stubs |
-| `dm-infra` | In-memory repository adapters for local dev, tests, and single-instance staging (ConcurrentHashMap-backed) | Dev/test only — PostgreSQL adapters not yet implemented |
-| `dm-persistence` | Persistence module (Flyway migrations, future PostgreSQL adapters) | Work in progress |
+| `dm-infra` | In-memory repository adapters for local dev, tests, and single-instance staging (ConcurrentHashMap-backed) | Dev/test only — production uses PostgreSQL adapters from dm-persistence |
+| `dm-persistence` | Persistence module (Flyway migrations, PostgreSQL adapters) | Production-ready with PostgreSQL adapters |
 | `dm-connector-google-ads` | OkHttp adapters for Google Ads OAuth, campaign creation, and performance retrieval (REST API v14) | Adapter layer complete; wiring through command/workflow runtime pending |
 | `dm-api` | ActiveJ HTTP servlets for all DMOS routes; rate limiting, correlation ID, tenant header enforcement | MVP complete |
 | `dm-integration-tests` | DMOS integration test suites | Partial |
@@ -146,9 +146,10 @@ Standard error codes: `400` bad request / missing header, `403` not authorised, 
 | API correctness | ✅ Ready | Enums, DTO shapes, headers aligned with backend |
 | UI (unit-tested) | ✅ Ready | 61 unit tests pass |
 | UI (E2E) | ⚠️ Partial | Playwright config and core E2E tests exist; CI wiring pending |
-| Persistence | ❌ Not ready | `dm-infra` in-memory only; PostgreSQL adapters not yet implemented |
+| Persistence | ✅ Ready | PostgreSQL adapters implemented in dm-persistence with full migration support |
 | Google Ads connector | ⚠️ Partial | HTTP adapters complete; event-loop blocking mitigation and command/workflow wiring pending |
 | Observability (OTel) | ⚠️ Partial | Structured log-based metrics exist; OpenTelemetry traces/metrics not yet wired |
 | Privacy/security | ⚠️ Partial | Rate limiting, tenant isolation, header enforcement in place; PII model and token hardening pending |
 | Approval workflow | ✅ Ready | Full UI + API + plugin integration; snapshot, decide, audit trail |
 | AI action transparency | ✅ Ready | AI action log persisted and surfaced in UI |
+| Kernel bridge integration | ⚠️ Partial | Platform plugins wired; real kernel bridge authorization/audit integration pending |

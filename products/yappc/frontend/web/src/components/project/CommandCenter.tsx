@@ -12,6 +12,7 @@
 
 import React from 'react';
 import { ArrowRight, AlertTriangle, CheckCircle, Clock, TrendingUp, Link } from 'lucide-react';
+import { ProvenanceBadge } from '../shared/ProvenanceBadge';
 
 export interface PhaseInfo {
   name: string;
@@ -102,19 +103,6 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
     }
   };
 
-  const getActivityProvenanceBadge = (type: ActivityItem['type']) => {
-    switch (type) {
-      case 'backed':
-        return <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded">Backed</span>;
-      case 'derived':
-        return <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">Derived</span>;
-      case 'suggested':
-        return <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded">Suggested</span>;
-      case 'preview':
-        return <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-700 rounded">Preview</span>;
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Current Phase & Readiness */}
@@ -147,18 +135,11 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       </div>
 
       {/* Primary Next Action */}
-      <div
+      <button
+        type="button"
         data-testid="next-action"
-        className="bg-primary-50 border border-primary-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+        className="w-full bg-primary-50 border border-primary-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer text-left"
         onClick={nextAction.onExecute}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            nextAction.onExecute();
-          }
-        }}
       >
         <div className="flex items-start gap-4">
           <div className="flex-shrink-0 mt-1">
@@ -176,7 +157,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Recent Backed Activity */}
       <div
@@ -191,7 +172,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
           <div className="space-y-2">
             {recentActivity.slice(0, 5).map((activity) => (
               <div key={activity.id} className="flex items-start gap-3 text-sm">
-                {getActivityProvenanceBadge(activity.type)}
+                <ProvenanceBadge type={activity.type} size="sm" />
                 <div className="flex-1">
                   <span className="text-gray-900">{activity.description}</span>
                   <span className="text-gray-500 ml-2">{activity.timestamp}</span>

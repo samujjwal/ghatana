@@ -154,6 +154,61 @@ class HttpDmGoogleAdsCampaignApiClientAdapterTest extends EventloopTestBase {
             runPromise(() -> adapter.createSearchCampaign("token", validRequest())));
     }
 
+    @Test
+    @DisplayName("pauseCampaign returns resourceName on success")
+    void shouldReturnResourceNameOnPauseSuccess() {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/456\"}"));
+
+        String resourceName = runPromise(() ->
+            adapter.pauseCampaign("acc-token", "customers/123/campaigns/456"));
+
+        assertThat(resourceName).isEqualTo("customers/123/campaigns/456");
+    }
+
+    @Test
+    @DisplayName("pauseCampaign sends Authorization and developer-token headers")
+    void shouldSendRequiredHeadersOnPause() throws InterruptedException {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/456\"}"));
+
+        runPromise(() -> adapter.pauseCampaign("bearer-token", "customers/123/campaigns/456"));
+
+        RecordedRequest request = server.takeRequest();
+        assertThat(request.getHeader("Authorization")).isEqualTo("Bearer bearer-token");
+        assertThat(request.getHeader("developer-token")).isEqualTo("dev-token");
+    }
+
+    @Test
+    @DisplayName("pauseCampaign sends PAUSED status in request payload")
+    void shouldSendPausedStatusInPayload() throws InterruptedException {
+        server.enqueue(new MockResponse()
+            .setResponseCode(200)
+            .addHeader("Content-Type", "application/json")
+            .setBody("{\"resourceName\": \"customers/123/campaigns/456\"}"));
+
+        runPromise(() -> adapter.pauseCampaign("token", "customers/123/campaigns/456"));
+
+        RecordedRequest request = server.takeRequest();
+        String body = request.getBody().readUtf8();
+        assertThat(body).contains("\"status\":\"PAUSED\"");
+        assertThat(body).contains("\"updateMask\":\"status\"");
+        assertThat(body).contains("\"resourceName\":\"customers/123/campaigns/456\"");
+    }
+
+    @Test
+    @DisplayName("pauseCampaign throws GoogleAdsConnectorException on HTTP 4xx")
+    void shouldThrowOnPauseHttpError() {
+        server.enqueue(new MockResponse().setResponseCode(403).setBody("{\"error\":\"forbidden\"}"));
+
+        assertThatExceptionOfType(GoogleAdsConnectorException.class).isThrownBy(() ->
+            runPromise(() -> adapter.pauseCampaign("bad-token", "customers/123/campaigns/456")));
+    }
+
     private static CreateGoogleSearchCampaignRequest validRequest() {
         return new CreateGoogleSearchCampaignRequest(
             "My Campaign",

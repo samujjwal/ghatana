@@ -21,7 +21,9 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,7 +45,7 @@ public final class InMemoryPageArtifactRepository implements PageArtifactReposit
     private final Map<String, PageArtifactDocument> storage = new ConcurrentHashMap<>();
 
     @Override
-    public Promise<Void> save(
+    public Promise<PageArtifactDocument> save(
             @NotNull String tenantId,
             @NotNull String workspaceId,
             @NotNull String projectId,
@@ -65,9 +67,29 @@ public final class InMemoryPageArtifactRepository implements PageArtifactReposit
             ));
         }
 
-        storage.put(key, document);
+        PageArtifactDocument persisted = existing == null
+                ? document
+                : new PageArtifactDocument(
+                        document.artifactId(),
+                        nextDocumentId(existing.documentId()),
+                        document.name(),
+                        existing.createdBy(),
+                        existing.createdAt(),
+                        Instant.now(),
+                        document.syncStatus(),
+                        document.trustLevel(),
+                        document.dataClassification(),
+                        document.builderDocument(),
+                        document.validationSummary(),
+                        document.aiChangeRecords(),
+                        document.source(),
+                        document.residualIslandCount(),
+                        document.roundTripFidelity()
+                );
+
+        storage.put(key, persisted);
         LOG.debug("Successfully saved page artifact: {}", key);
-        return Promise.of(null);
+        return Promise.of(persisted);
     }
 
     @Override
@@ -123,5 +145,9 @@ public final class InMemoryPageArtifactRepository implements PageArtifactReposit
      */
     public int size() {
         return storage.size();
+    }
+
+    private String nextDocumentId(String currentDocumentId) {
+        return currentDocumentId + "@rev-" + UUID.randomUUID();
     }
 }

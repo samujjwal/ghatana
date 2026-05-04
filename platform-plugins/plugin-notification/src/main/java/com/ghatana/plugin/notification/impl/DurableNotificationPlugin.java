@@ -2,6 +2,8 @@ package com.ghatana.plugin.notification.impl;
 
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.platform.core.event.EventBusPort;
+import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginState;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Executor;
 
 /**
  * Durable JDBC-backed implementation of {@link NotificationPlugin}.
@@ -39,27 +42,39 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
 
     private final DataSource dataSource;
     private final EventBusPort eventBus;
+    private final Executor executor;
+    private PluginState state = PluginState.UNLOADED;
     private boolean started = false;
 
-    public DurableNotificationPlugin(DataSource dataSource, EventBusPort eventBus) {
+    public DurableNotificationPlugin(DataSource dataSource, EventBusPort eventBus, Executor executor) {
         this.dataSource = dataSource;
         this.eventBus = eventBus;
+        this.executor = executor;
     }
 
     @Override
-    public void start() {
+    public Promise<Void> initialize(PluginContext context) {
+        state = PluginState.INITIALIZED;
+        LOG.info("[NotificationPlugin] Durable notification plugin initialized");
+        return Promise.complete();
+    }
+
+    @Override
+    public Promise<Void> start() {
         if (started) {
             LOG.warn("[NotificationPlugin] Durable notification plugin already started");
-            return;
+            return Promise.complete();
         }
         started = true;
         LOG.info("[NotificationPlugin] Durable notification plugin started");
+        return Promise.complete();
     }
 
     @Override
-    public void stop() {
+    public Promise<Void> stop() {
         started = false;
         LOG.info("[NotificationPlugin] Durable notification plugin stopped");
+        return Promise.complete();
     }
 
     /**
@@ -68,7 +83,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
      * <p>This method is idempotent and safe to call at each application boot.</p>
      */
     public Promise<Void> ensureSchema() {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection()) {
                 // Create notifications table
                 try (Statement stmt = conn.createStatement()) {
@@ -125,7 +140,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
         String notificationId = UUID.randomUUID().toString();
         Instant now = Instant.now();
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection()) {
                 String sql = """
                     INSERT INTO notification_queue 
@@ -162,7 +177,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
     @Override
     public Promise<DeliveryStatus> getDeliveryStatus(String notificationId) {
         requireStarted();
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection()) {
                 String sql = """
                     SELECT notification_id, recipient_id, template, state, attempt_count,
@@ -191,7 +206,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
     @Override
     public Promise<Void> retry(String notificationId) {
         requireStarted();
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection()) {
                 // Check if in DLQ
                 String checkDlqSql = "SELECT notification_id FROM notification_dead_letter WHERE notification_id = ?";
@@ -240,7 +255,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
     @Override
     public Promise<List<DeadLetterEntry>> listDeadLetterQueue(int limit, int offset) {
         requireStarted();
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(executor, () -> {
             try (Connection conn = dataSource.getConnection()) {
                 String sql = """
                     SELECT notification_id, recipient_id, template, attributes, attempt_count,

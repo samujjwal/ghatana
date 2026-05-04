@@ -14,6 +14,9 @@ type Pages = {
   "/": {
     params: {};
   };
+  "/preview/builder": {
+    params: {};
+  };
   "/login": {
     params: {};
   };
@@ -121,7 +124,11 @@ type Pages = {
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle" | "/admin/prompt-versions" | "/admin/ab-testing" | "/admin/feature-flags" | "/*";
+    page: "/" | "/preview/builder" | "/login" | "/onboarding" | "/workspaces" | "/projects" | "/profile" | "/settings" | "/p/:projectId" | "/p/:projectId/intent" | "/p/:projectId/shape" | "/p/:projectId/validate" | "/p/:projectId/generate" | "/p/:projectId/run" | "/p/:projectId/observe" | "/p/:projectId/learn" | "/p/:projectId/evolve" | "/p/:projectId/settings" | "/p/:projectId/canvas" | "/p/:projectId/preview" | "/p/:projectId/deploy" | "/p/:projectId/lifecycle" | "/admin/prompt-versions" | "/admin/ab-testing" | "/admin/feature-flags" | "/*";
+  };
+  "routes/preview-builder.tsx": {
+    id: "routes/preview-builder";
+    page: "/preview/builder";
   };
   "routes/_root.tsx": {
     id: "routes/_root";
@@ -239,6 +246,7 @@ type RouteFiles = {
 
 type RouteModules = {
   "root": typeof import("./src/root.tsx");
+  "routes/preview-builder": typeof import("./src/routes/preview-builder.tsx");
   "routes/_root": typeof import("./src/routes/_root.tsx");
   "routes/dashboard": typeof import("./src/routes/dashboard.tsx");
   "routes/login": typeof import("./src/routes/login.tsx");

@@ -55,7 +55,14 @@ export function isAlertsSurfaceEnabled(): boolean {
 }
 
 export function isFabricSurfaceEnabled(): boolean {
-  return resolveGate("VITE_FEATURE_FABRIC", true);
+  // Data Fabric is a preview capability and disabled by default in production
+  // Requires explicit VITE_FEATURE_FABRIC=true even in non-production profiles
+  const explicit = readBooleanEnv("VITE_FEATURE_FABRIC");
+  if (typeof explicit === "boolean") {
+    return explicit;
+  }
+  // Default to disabled in all profiles unless explicitly enabled
+  return false;
 }
 
 export function isAiOperationsEnabled(): boolean {

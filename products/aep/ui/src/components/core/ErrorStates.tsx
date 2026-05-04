@@ -8,9 +8,9 @@
  * @doc.purpose Error state display variants
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
 import { AlertCircle, RefreshCw, XCircle, Lock, Clock, FileText } from 'lucide-react';
+import { Button } from '@ghatana/design-system';
 import {
   ApiError,
   ValidationError,
@@ -82,22 +82,26 @@ export const ErrorBanner: React.FC<ErrorBannerProps> = ({
       </div>
       <div className="flex gap-2 flex-shrink-0">
         {onRetry && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={onRetry}
-            className="p-1 hover:opacity-75 transition-opacity"
+            className="p-1"
             aria-label="Retry"
           >
             <RefreshCw className="h-4 w-4" />
-          </button>
+          </Button>
         )}
         {onDismiss && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
             onClick={onDismiss}
-            className="p-1 hover:opacity-75 transition-opacity"
+            className="p-1"
             aria-label="Dismiss"
           >
             <XCircle className="h-4 w-4" />
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -180,12 +184,14 @@ export const ErrorPage: React.FC<ErrorPageProps> = ({
           </p>
           <div className="flex flex-col gap-3">
             {onRetry && (
-              <button
+              <Button
+                type="button"
+                variant="primary"
                 onClick={onRetry}
-                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                fullWidth
               >
                 Try Again
-              </button>
+              </Button>
             )}
             {showHomeButton && (
               <a

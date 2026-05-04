@@ -5,12 +5,10 @@
  * @doc.purpose User authentication
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useMemo, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '@/context/AuthContext';
-import { TextArea } from '@/components/core/TextArea';
-import { Button } from '@/components/core/Button';
+import { TextArea, Button } from '@ghatana/design-system';
 import { isFeatureEnabled } from '@/lib/feature-flags';
 
 const PLATFORM_SSO_URL = import.meta.env.VITE_PLATFORM_SSO_URL ?? '/api/auth/sso/redirect';

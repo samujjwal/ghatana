@@ -5,7 +5,6 @@
  * @doc.purpose Cost monitoring and optimization
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAtomValue } from 'jotai';
@@ -27,7 +26,7 @@ import {
   getPipelineListUrl,
   getRunDetailUrl,
 } from '@/lib/routes';
-import { EmptyState } from '@/components/core/EmptyState';
+import { EmptyState, Button, Input } from '@ghatana/design-system';
 import { ErrorState } from '@/components/core/ErrorState';
 
 function Currency({ value }: { value: number }) {
@@ -157,30 +156,31 @@ export function CostDashboardPage() {
           <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Daily budget (USD)</span>
-              <input
+              <Input
                 value={draftBudget.dailyBudgetUsd}
                 onChange={(event) => setDraftBudget((current) => ({ ...current, dailyBudgetUsd: event.target.value }))}
                 inputMode="decimal"
-                className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                className="mt-2"
               />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Monthly budget (USD)</span>
-              <input
+              <Input
                 value={draftBudget.monthlyBudgetUsd}
                 onChange={(event) => setDraftBudget((current) => ({ ...current, monthlyBudgetUsd: event.target.value }))}
                 inputMode="decimal"
-                className="mt-2 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition focus:border-indigo-400 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                className="mt-2"
               />
             </label>
-            <button
+            <Button
               type="button"
+              variant="primary"
               onClick={applyBudgetThresholds}
               disabled={isUpdatingBudget}
-              className="h-11 self-end rounded-xl bg-indigo-600 px-4 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-11 self-end"
             >
               {isUpdatingBudget ? 'Refreshing…' : 'Apply thresholds'}
-            </button>
+            </Button>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-2">

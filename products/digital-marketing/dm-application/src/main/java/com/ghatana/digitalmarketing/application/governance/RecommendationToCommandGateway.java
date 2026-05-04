@@ -1,17 +1,27 @@
 package com.ghatana.digitalmarketing.application.governance;
 
 import com.ghatana.digitalmarketing.application.command.DmCommandService;
+import com.ghatana.digitalmarketing.contracts.ActorRef;
+import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
+import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
+import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.contracts.DmTenantId;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.command.DmCommand;
+import com.ghatana.digitalmarketing.domain.command.DmCommandType;
 import com.ghatana.digitalmarketing.domain.transparency.AiActionLogEntry;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogRepository;
+import com.ghatana.plugin.compliance.CompliancePlugin;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+import static com.ghatana.digitalmarketing.pack.DmComplianceRuleSetIds.DM_CONNECTOR_EXECUTION_SAFETY;
 
 /**
  * Gateway for converting AI recommendations to governed commands (DMOS-P1-020).
@@ -32,10 +42,15 @@ public final class RecommendationToCommandGateway {
 
     private final DmCommandService commandService;
     private final AiActionLogRepository aiActionLogRepository;
+    private final CompliancePlugin compliancePlugin;
 
-    public RecommendationToCommandGateway(DmCommandService commandService, AiActionLogRepository aiActionLogRepository) {
-        this.commandService = commandService;
-        this.aiActionLogRepository = aiActionLogRepository;
+    public RecommendationToCommandGateway(
+            DmCommandService commandService,
+            AiActionLogRepository aiActionLogRepository,
+            CompliancePlugin compliancePlugin) {
+        this.commandService = Objects.requireNonNull(commandService, "commandService must not be null");
+        this.aiActionLogRepository = Objects.requireNonNull(aiActionLogRepository, "aiActionLogRepository must not be null");
+        this.compliancePlugin = Objects.requireNonNull(compliancePlugin, "compliancePlugin must not be null");
     }
 
     /**
@@ -53,57 +68,55 @@ public final class RecommendationToCommandGateway {
         DmWorkspaceId workspaceId,
         String principalId
     ) {
-        try {
-            // Step 1: Validate recommendation (DMOS-P1-020)
-            ValidationResult validation = validateRecommendation(recommendation);
-            if (!validation.valid()) {
-                logger.warn("Recommendation validation failed: {}", validation.reason());
-                return Promise.of(new GatewayResult(
-                    null,
-                    GatewayStatus.BLOCKED,
-                    validation.reason(),
-                    null,
-                    null
-                ));
-            }
-
-            // Step 2: Classify risk (DMOS-P1-020)
-            RiskLevel riskLevel = classifyRisk(recommendation);
-
-            // Step 3: Check policy/compliance (DMOS-P1-020)
-            PolicyCheckResult policyCheck = checkPolicy(recommendation, riskLevel);
-            if (!policyCheck.compliant()) {
-                logger.warn("Policy check failed: {}", policyCheck.reason());
-                return Promise.of(new GatewayResult(
-                    null,
-                    GatewayStatus.BLOCKED,
-                    policyCheck.reason(),
-                    null,
-                    null
-                ));
-            }
-
-            // Step 4: Determine approval requirement (DMOS-P1-020)
-            boolean approvalRequired = isApprovalRequired(riskLevel, recommendation);
-
-            // Step 5: Create command only if no approval required or if pre-approved (DMOS-P1-020)
-            if (!approvalRequired) {
-                return createCommand(recommendation, tenantId, workspaceId, principalId, riskLevel);
-            } else {
-                // Log recommendation as pending approval
-                AiActionLogEntry logEntry = createLogEntry(recommendation, riskLevel, "PROPOSED", tenantId, workspaceId, principalId);
-                return aiActionLogRepository.save(logEntry)
-                    .then(saved -> Promise.of(new GatewayResult(
-                        null,
-                        GatewayStatus.REQUIRES_APPROVAL,
-                        "Recommendation requires approval due to " + riskLevel,
-                        null,
-                        saved.actionId()
-                    )));
-            }
-        } catch (Exception e) {
-            return Promise.ofException(e);
+        // Step 1: Validate recommendation (DMOS-P1-020)
+        ValidationResult validation = validateRecommendation(recommendation);
+        if (!validation.valid()) {
+            logger.warn("Recommendation validation failed: {}", validation.reason());
+            return Promise.of(new GatewayResult(
+                null,
+                GatewayStatus.BLOCKED,
+                validation.reason(),
+                null,
+                null
+            ));
         }
+
+        // Step 2: Classify risk (DMOS-P1-020)
+        RiskLevel riskLevel = classifyRisk(recommendation);
+
+        // Step 3: Check policy/compliance (DMOS-P1-020) — async via compliance plugin
+        return checkPolicy(recommendation, riskLevel)
+            .then(policyCheck -> {
+                if (!policyCheck.compliant()) {
+                    logger.warn("Policy check failed: {}", policyCheck.reason());
+                    return Promise.of(new GatewayResult(
+                        null,
+                        GatewayStatus.BLOCKED,
+                        policyCheck.reason(),
+                        null,
+                        null
+                    ));
+                }
+
+                // Step 4: Determine approval requirement (DMOS-P1-020)
+                boolean approvalRequired = isApprovalRequired(riskLevel, recommendation);
+
+                // Step 5: Create command only if no approval required or if pre-approved (DMOS-P1-020)
+                if (!approvalRequired) {
+                    return createCommand(recommendation, tenantId, workspaceId, principalId, riskLevel);
+                } else {
+                    // Log recommendation as pending approval
+                    AiActionLogEntry logEntry = createLogEntry(recommendation, riskLevel, "PROPOSED", tenantId, workspaceId, principalId);
+                    return aiActionLogRepository.save(logEntry)
+                        .then(saved -> Promise.of(new GatewayResult(
+                            null,
+                            GatewayStatus.REQUIRES_APPROVAL,
+                            "Recommendation requires approval due to " + riskLevel,
+                            null,
+                            saved.actionId()
+                        )));
+                }
+            });
     }
 
     /**
@@ -115,15 +128,31 @@ public final class RecommendationToCommandGateway {
         DmWorkspaceId workspaceId,
         String principalId
     ) {
-        // Retrieval of recommendation from log entry pending
-        // Currently returns a placeholder result
-        return Promise.of(new GatewayResult(
-            null,
-            GatewayStatus.PROCESSED,
-            "Recommendation processed from approval",
-            null,
-            logEntryId
-        ));
+        return aiActionLogRepository.findById(workspaceId.getValue(), logEntryId)
+            .then(optEntry -> {
+                if (optEntry.isEmpty()) {
+                    logger.warn("Approved recommendation log entry not found: {} in workspace {}",
+                        logEntryId, workspaceId.getValue());
+                    return Promise.of(new GatewayResult(
+                        null,
+                        GatewayStatus.BLOCKED,
+                        "Approved recommendation log entry not found: " + logEntryId,
+                        null,
+                        logEntryId
+                    ));
+                }
+                AiActionLogEntry entry = optEntry.get();
+                Recommendation recommendation = reconstructRecommendation(entry);
+                RiskLevel riskLevel = classifyRisk(recommendation);
+                return createCommand(recommendation, tenantId, workspaceId, principalId, riskLevel)
+                    .map(result -> new GatewayResult(
+                        result.command(),
+                        GatewayStatus.PROCESSED,
+                        "Recommendation processed from approval and command created",
+                        result.commandId(),
+                        logEntryId
+                    ));
+            });
     }
 
     /**
@@ -158,10 +187,29 @@ public final class RecommendationToCommandGateway {
     /**
      * Checks policy/compliance (DMOS-P1-020).
      */
-    private PolicyCheckResult checkPolicy(Recommendation recommendation, RiskLevel riskLevel) {
-        // Policy checks to be implemented via platform compliance integration
-        // For now, always compliant
-        return new PolicyCheckResult(true, null);
+    private Promise<PolicyCheckResult> checkPolicy(Recommendation recommendation, RiskLevel riskLevel) {
+        CompliancePlugin.ComplianceContext complianceCtx = new CompliancePlugin.ComplianceContext(
+            recommendation.targetId(),
+            recommendation.targetType(),
+            Map.of(
+                "confidence", recommendation.confidence(),
+                "riskLevel", riskLevel.name(),
+                "agentType", recommendation.agentType(),
+                "model", recommendation.model()
+            ),
+            "recommendation-gateway",
+            Instant.now()
+        );
+        return compliancePlugin.evaluate(DM_CONNECTOR_EXECUTION_SAFETY, complianceCtx)
+            .map(result -> {
+                if (!result.compliant()) {
+                    String reason = "Policy check failed for " + recommendation.targetType()
+                        + ": " + result.violations();
+                    logger.warn("[DMOS] {}", reason);
+                    return new PolicyCheckResult(false, reason);
+                }
+                return new PolicyCheckResult(true, null);
+            });
     }
 
     /**
@@ -181,17 +229,91 @@ public final class RecommendationToCommandGateway {
         String principalId,
         RiskLevel riskLevel
     ) {
-        // Command creation to be implemented based on recommendation target type
-        // Log AI action (DMOS-P1-020)
-        AiActionLogEntry logEntry = createLogEntry(recommendation, riskLevel, "EXECUTED", tenantId, workspaceId, principalId);
-        return aiActionLogRepository.save(logEntry)
-            .then(saved -> Promise.of(new GatewayResult(
-                null, // Actual command return pending
-                GatewayStatus.CREATED,
-                "Command created from recommendation",
-                null,
-                saved.actionId()
-            )));
+        DmCommandType commandType = resolveCommandType(recommendation.targetType());
+        String payload = buildCommandPayload(recommendation);
+
+        DmOperationContext ctx = DmOperationContext.builder()
+            .tenantId(tenantId)
+            .workspaceId(workspaceId)
+            .actor(ActorRef.user(principalId))
+            .correlationId(DmCorrelationId.generate())
+            .idempotencyKey(DmIdempotencyKey.forCommand(commandType.name(), recommendation.targetId()))
+            .build();
+
+        DmCommandService.IssueCommandRequest issueRequest =
+            new DmCommandService.IssueCommandRequest(commandType, payload);
+
+        return commandService.issue(ctx, issueRequest)
+            .then(command -> {
+                AiActionLogEntry logEntry = createLogEntry(
+                    recommendation, riskLevel, "EXECUTED", tenantId, workspaceId, principalId);
+                return aiActionLogRepository.save(logEntry)
+                    .then(saved -> Promise.of(new GatewayResult(
+                        command,
+                        GatewayStatus.CREATED,
+                        "Command created from recommendation: " + command.getId(),
+                        command.getId(),
+                        saved.actionId()
+                    )));
+            });
+    }
+
+    private DmCommandType resolveCommandType(String targetType) {
+        String upper = targetType.toUpperCase();
+        if (upper.contains("CAMPAIGN")) {
+            return DmCommandType.CAMPAIGN_CREATE;
+        }
+        if (upper.contains("BUDGET")) {
+            return DmCommandType.BUDGET_ADJUST;
+        }
+        if (upper.contains("LANDING_PAGE") || upper.contains("LANDINGPAGE")) {
+            return DmCommandType.LANDING_PAGE_PUBLISH;
+        }
+        if (upper.contains("EMAIL")) {
+            return DmCommandType.EMAIL_SEND;
+        }
+        if (upper.contains("GOOGLE_ADS") || upper.contains("GOOGLEADS")) {
+            return DmCommandType.GOOGLE_ADS_CAMPAIGN_CREATE;
+        }
+        if (upper.contains("CONNECTOR")) {
+            return DmCommandType.CONNECTOR_OAUTH_CONNECT;
+        }
+        return DmCommandType.AUDIT_RECORD;
+    }
+
+    private String buildCommandPayload(Recommendation recommendation) {
+        return "{"
+            + "\"targetType\":\"" + recommendation.targetType() + "\","
+            + "\"targetId\":\"" + recommendation.targetId() + "\","
+            + "\"confidence\":" + recommendation.confidence() + ","
+            + "\"output\":\"" + recommendation.output().replace("\"", "\\\"") + "\","
+            + "\"agentType\":\"" + recommendation.agentType() + "\""
+            + "}";
+    }
+
+    private Recommendation reconstructRecommendation(AiActionLogEntry entry) {
+        return new Recommendation(
+            "approved-recommendation",
+            entry.relatedEntityId() != null ? inferTargetType(entry.summary()) : "UNKNOWN",
+            entry.relatedEntityId() != null ? entry.relatedEntityId() : entry.actionId(),
+            entry.summary(),
+            "unknown",
+            entry.details(),
+            entry.confidence() != null ? entry.confidence() : 0.0,
+            null,
+            0L
+        );
+    }
+
+    private String inferTargetType(String summary) {
+        String upper = summary.toUpperCase();
+        if (upper.contains("CAMPAIGN")) return "CAMPAIGN";
+        if (upper.contains("BUDGET")) return "BUDGET";
+        if (upper.contains("STRATEGY")) return "STRATEGY";
+        if (upper.contains("LANDING")) return "LANDING_PAGE";
+        if (upper.contains("EMAIL")) return "EMAIL";
+        if (upper.contains("GOOGLE ADS")) return "GOOGLE_ADS";
+        return "UNKNOWN";
     }
 
     /**

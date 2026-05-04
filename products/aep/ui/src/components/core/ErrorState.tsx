@@ -5,8 +5,8 @@
  * @doc.purpose Error state display component
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React from 'react';
+import { Button } from '@ghatana/design-system';
 
 interface ErrorStateProps {
   title?: string;
@@ -49,13 +49,14 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
         </p>
       )}
       {onRetry && (
-        <button
+        <Button
           type="button"
+          variant="secondary"
           onClick={onRetry}
-          className="mt-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
+          className="mt-1 text-xs"
         >
           Retry
-        </button>
+        </Button>
       )}
     </div>
   );

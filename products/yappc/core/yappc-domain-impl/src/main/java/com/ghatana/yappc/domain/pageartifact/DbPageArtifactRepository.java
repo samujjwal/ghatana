@@ -16,8 +16,10 @@
 
 package com.ghatana.yappc.domain.pageartifact;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.core.database.jdbc.JdbcTemplate;
+import com.ghatana.platform.observability.util.BlockingExecutors;
 import io.activej.promise.Promise;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -29,7 +31,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Database-backed implementation of PageArtifactRepository.
@@ -45,7 +48,8 @@ import java.util.concurrent.Executors;
 public final class DbPageArtifactRepository implements PageArtifactRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(DbPageArtifactRepository.class);
-    private static final Executor BLOCKING_EXECUTOR = Executors.newCachedThreadPool();
+    private static final Pattern DOCUMENT_REVISION_PATTERN =
+            Pattern.compile("^(.*?)(?:@rev-(\\d+))?$");
 
     private static final String INSERT_ARTIFACT = """
             INSERT INTO page_artifacts (
@@ -87,12 +91,13 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
                 name, created_by, created_at, updated_at,
                 sync_status, trust_level, data_classification, source,
                 builder_document, validation_summary, ai_change_records,
-                residual_island_count, round_trip_fidelity, version_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                residual_island_count, round_trip_fidelity, version_created_at, version_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper objectMapper;
+    private final Executor blockingExecutor;
 
     /**
      * Creates a new DbPageArtifactRepository.
@@ -104,13 +109,22 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
             @NotNull DataSource dataSource,
             @NotNull ObjectMapper objectMapper
     ) {
+        this(dataSource, objectMapper, BlockingExecutors.blockingExecutor());
+    }
+
+    public DbPageArtifactRepository(
+            @NotNull DataSource dataSource,
+            @NotNull ObjectMapper objectMapper,
+            @NotNull Executor blockingExecutor
+    ) {
         this.jdbc = new JdbcTemplate(dataSource);
         this.objectMapper = objectMapper;
+        this.blockingExecutor = blockingExecutor;
         LOG.debug("DbPageArtifactRepository created");
     }
 
     @Override
-    public Promise<Void> save(
+    public Promise<PageArtifactDocument> save(
             @NotNull String tenantId,
             @NotNull String workspaceId,
             @NotNull String projectId,
@@ -119,9 +133,8 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         LOG.debug("Saving page artifact: tenant={}, workspace={}, project={}, artifactId={}, documentId={}",
                 tenantId, workspaceId, projectId, document.artifactId(), document.documentId());
 
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
-            // Check if this is an insert or update
-            Optional<PageArtifactDocument> existing = jdbc.queryForObject(
+        return Promise.ofBlocking(blockingExecutor, () -> jdbc.inTransaction(tx -> {
+            Optional<PageArtifactDocument> existing = tx.queryForObject(
                     SELECT_ARTIFACT,
                     this::mapRow,
                     tenantId,
@@ -131,8 +144,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
             );
 
             if (existing.isEmpty()) {
-                // Insert new artifact
-                jdbc.update(
+                tx.update(
                         INSERT_ARTIFACT,
                         tenantId,
                         workspaceId,
@@ -154,57 +166,81 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
                         document.roundTripFidelity()
                 );
                 LOG.debug("Inserted new page artifact: {}", document.artifactId());
-            } else {
-                // Update existing artifact with optimistic concurrency
-                PageArtifactDocument existingDoc = existing.get();
-                if (!existingDoc.documentId().equals(document.documentId())) {
-                    LOG.warn("Conflict detected for artifact {}: expected documentId={}, got documentId={}",
-                            document.artifactId(), existingDoc.documentId(), document.documentId());
-                    throw new PageArtifactConflictException(
-                            document.artifactId(),
-                            existingDoc.documentId()
-                    );
-                }
-
-                // Archive current version before updating
-                long artifactId = getArtifactId(tenantId, workspaceId, projectId, document.artifactId());
-                archiveVersion(artifactId, tenantId, workspaceId, projectId, existingDoc, "Version before update");
-
-                // Update artifact
-                int updated = jdbc.update(
-                        UPDATE_ARTIFACT,
-                        document.documentId(),
-                        document.name(),
-                        document.updatedAt(),
-                        document.syncStatus(),
-                        document.trustLevel(),
-                        document.dataClassification(),
-                        document.source(),
-                        toJson(document.builderDocument()),
-                        toJson(document.validationSummary()),
-                        toJson(document.aiChangeRecords()),
-                        document.residualIslandCount(),
-                        document.roundTripFidelity(),
-                        tenantId,
-                        workspaceId,
-                        projectId,
-                        document.artifactId(),
-                        existingDoc.documentId()  // WHERE clause checks old documentId
-                );
-
-                if (updated == 0) {
-                    LOG.warn("No rows updated for artifact {}, possible concurrent modification",
-                            document.artifactId());
-                    throw new PageArtifactConflictException(
-                            document.artifactId(),
-                            existingDoc.documentId()
-                    );
-                }
-                LOG.debug("Updated page artifact: {}", document.artifactId());
+                return document;
             }
 
-            return null;
-        });
+            PageArtifactDocument existingDoc = existing.get();
+            if (!existingDoc.documentId().equals(document.documentId())) {
+                LOG.warn("Conflict detected for artifact {}: expected documentId={}, got documentId={}",
+                        document.artifactId(), existingDoc.documentId(), document.documentId());
+                throw new PageArtifactConflictException(
+                        document.artifactId(),
+                        existingDoc.documentId()
+                );
+            }
+
+            PageArtifactDocument persistedDocument = new PageArtifactDocument(
+                    document.artifactId(),
+                    nextDocumentId(existingDoc.documentId()),
+                    document.name(),
+                    existingDoc.createdBy(),
+                    existingDoc.createdAt(),
+                    Instant.now(),
+                    document.syncStatus(),
+                    document.trustLevel(),
+                    document.dataClassification(),
+                    document.builderDocument(),
+                    document.validationSummary(),
+                    document.aiChangeRecords(),
+                    document.source(),
+                    document.residualIslandCount(),
+                    document.roundTripFidelity()
+            );
+
+            long artifactId = getArtifactId(tx, tenantId, workspaceId, projectId, document.artifactId());
+            archiveVersion(
+                    tx,
+                    artifactId,
+                    tenantId,
+                    workspaceId,
+                    projectId,
+                    existingDoc,
+                    "Version before update to " + persistedDocument.documentId()
+            );
+
+            int updated = tx.update(
+                    UPDATE_ARTIFACT,
+                    persistedDocument.documentId(),
+                    persistedDocument.name(),
+                    persistedDocument.updatedAt(),
+                    persistedDocument.syncStatus(),
+                    persistedDocument.trustLevel(),
+                    persistedDocument.dataClassification(),
+                    persistedDocument.source(),
+                    toJson(persistedDocument.builderDocument()),
+                    toJson(persistedDocument.validationSummary()),
+                    toJson(persistedDocument.aiChangeRecords()),
+                    persistedDocument.residualIslandCount(),
+                    persistedDocument.roundTripFidelity(),
+                    tenantId,
+                    workspaceId,
+                    projectId,
+                    persistedDocument.artifactId(),
+                    existingDoc.documentId()
+            );
+
+            if (updated == 0) {
+                LOG.warn("No rows updated for artifact {}, possible concurrent modification",
+                        document.artifactId());
+                throw new PageArtifactConflictException(
+                        document.artifactId(),
+                        existingDoc.documentId()
+                );
+            }
+
+            LOG.debug("Updated page artifact: {}", document.artifactId());
+            return persistedDocument;
+        }));
     }
 
     @Override
@@ -217,7 +253,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         LOG.debug("Loading page artifact: tenant={}, workspace={}, project={}, artifactId={}",
                 tenantId, workspaceId, projectId, artifactId);
 
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             Optional<PageArtifactDocument> document = jdbc.queryForObject(
                     SELECT_ARTIFACT,
                     this::mapRow,
@@ -247,7 +283,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         LOG.debug("Deleting page artifact: tenant={}, workspace={}, project={}, artifactId={}",
                 tenantId, workspaceId, projectId, artifactId);
 
-        return Promise.ofBlocking(BLOCKING_EXECUTOR, () -> {
+        return Promise.ofBlocking(blockingExecutor, () -> {
             jdbc.update(
                     DELETE_ARTIFACT,
                     tenantId,
@@ -289,8 +325,8 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         }
     }
 
-    private long getArtifactId(String tenantId, String workspaceId, String projectId, String artifactId) {
-        return jdbc.queryForObject(
+    private long getArtifactId(JdbcTemplate tx, String tenantId, String workspaceId, String projectId, String artifactId) {
+        return tx.queryForObject(
                 "SELECT id FROM page_artifacts WHERE tenant_id = ? AND workspace_id = ? AND project_id = ? AND artifact_id = ?",
                 rs -> rs.getLong("id"),
                 tenantId,
@@ -301,6 +337,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
     }
 
     private void archiveVersion(
+            JdbcTemplate tx,
             long artifactId,
             String tenantId,
             String workspaceId,
@@ -308,7 +345,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
             PageArtifactDocument document,
             String reason
     ) {
-        jdbc.update(
+        tx.update(
                 INSERT_VERSION,
                 artifactId,
                 tenantId,
@@ -329,6 +366,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
                 toJson(document.aiChangeRecords()),
                 document.residualIslandCount(),
                 document.roundTripFidelity(),
+                Instant.now(),
                 reason
         );
         LOG.debug("Archived version for artifact {}: documentId={}", document.artifactId(), document.documentId());
@@ -339,7 +377,7 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         if (json == null || json.isBlank()) {
             return java.util.Map.of();
         }
-        return objectMapper.readValue(json, java.util.Map.class);
+        return objectMapper.readValue(json, new TypeReference<java.util.Map<String, Object>>() { });
     }
 
     private String toJson(Object obj) {
@@ -366,6 +404,18 @@ public final class DbPageArtifactRepository implements PageArtifactRepository {
         if (json == null || json.isBlank()) {
             return java.util.List.of();
         }
-        return objectMapper.readValue(json, java.util.List.class);
+        return objectMapper.readValue(json, new TypeReference<java.util.List<PageArtifactDocument.GovernanceRecord>>() { });
+    }
+
+    private String nextDocumentId(String currentDocumentId) {
+        Matcher matcher = DOCUMENT_REVISION_PATTERN.matcher(currentDocumentId);
+        if (!matcher.matches()) {
+            return currentDocumentId + "@rev-2";
+        }
+
+        String base = matcher.group(1);
+        String revision = matcher.group(2);
+        long nextRevision = revision == null ? 2L : Long.parseLong(revision) + 1L;
+        return base + "@rev-" + nextRevision;
     }
 }

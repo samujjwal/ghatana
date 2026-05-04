@@ -233,6 +233,7 @@ export default function PreviewPage() {
                         src={previewUrl}
                         className="w-full h-full border-0"
                         title="Project Preview"
+                        data-testid="preview-iframe"
                         sandbox="allow-scripts allow-same-origin allow-forms"
                     />
                 </div>

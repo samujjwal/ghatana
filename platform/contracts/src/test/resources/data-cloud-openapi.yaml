@@ -3986,10 +3986,12 @@ paths:
 
   /api/v1/analytics/queries/{queryId}:
     delete:
-      summary: Cancel a running analytics query
+      summary: Cancel a running analytics query (UNSUPPORTED)
       operationId: apiV1AnalyticsQueriesQueryIdDelete
       tags: [analytics]
       x-capability-required: analytics-query-cancellation
+      x-unsupported: true
+      x-unsupported-reason: Analytics query cancellation is not supported in this deployment. The backend does not implement query cancellation.
       parameters:
         - name: queryId
           in: path
@@ -3997,13 +3999,22 @@ paths:
           schema: { type: string }
         - $ref: "#/components/parameters/tenantIdQuery"
       responses:
-        "202": { description: Cancellation accepted. }
-        "503":
-          description: Query cancellation capability is not enabled in this deployment.
-          headers:
-            Retry-After:
-              description: Seconds before retrying after capability enablement.
-              schema: { type: integer, minimum: 1 }
+        "501":
+          description: Analytics query cancellation is not supported.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        example: NOT_IMPLEMENTED
+                      message:
+                        type: string
+                        example: Analytics query cancellation is not supported in this deployment.
 
   /api/v1/analytics/aggregation:
     post:

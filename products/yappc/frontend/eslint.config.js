@@ -119,7 +119,7 @@ const governanceRules = {
   ],
 
   // Flag StateManager usage - deprecated in favor of @ghatana/state primitives
-  'import/no-restricted-imports': [
+  'no-restricted-imports': [
     'warn',
     {
       patterns: [
@@ -265,7 +265,7 @@ const governanceOverrides = [
   {
     files: ['web/src/**/*.{ts,tsx}'],
     rules: {
-      'import/no-restricted-imports': [
+      'no-restricted-imports': [
         'warn',
         {
           patterns: [

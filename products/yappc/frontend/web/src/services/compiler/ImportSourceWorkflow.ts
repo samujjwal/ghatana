@@ -24,6 +24,7 @@ import {
   type ExtractedStory,
   type ExtractedCsfData,
 } from 'yappc-artifact-compiler';
+import * as ts from 'typescript';
 
 export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 
@@ -192,6 +193,13 @@ async function importFromTSX(
       source,
     });
 
+    if (options?.includeStyles) {
+      files.push(...await extractStyleFiles(source));
+    }
+    if (options?.includeTests) {
+      files.push(...await extractTestFiles(source));
+    }
+
     // Extract dependencies from JSX usage
     dependencies.push(...extractedComponent.jsxUsage);
 
@@ -280,6 +288,13 @@ async function importFromRoute(
       source,
     });
 
+    if (options?.includeStyles) {
+      files.push(...await extractStyleFiles(source));
+    }
+    if (options?.includeTests) {
+      files.push(...await extractTestFiles(source));
+    }
+
     // Extract dependencies from components rendered
     dependencies.push(...extractedPage.componentsRendered);
 
@@ -359,7 +374,16 @@ async function importFromStorybook(
       };
     }
 
-    const componentName = targetComponentName || extractedCsf.meta.componentName || 'Component';
+    const componentName =
+      targetComponentName ||
+      extractedCsf.meta.componentName ||
+      extractedCsf.meta.componentImport ||
+      (extractedCsf.componentFilePath ? extractComponentNameFromPath(extractedCsf.componentFilePath) : null) ||
+      extractStoryComponentNameFromSource(source);
+
+    if (!componentName) {
+      throw new Error('Unable to determine Storybook component name from source metadata');
+    }
 
     files.push({
       path: `${componentName}.stories.tsx`,
@@ -369,8 +393,11 @@ async function importFromStorybook(
     });
 
     // Extract component implementation if available
-    if (options?.includeDependencies && extractedCsf.componentFilePath) {
-      const componentContent = await fetchStorybookComponent(extractedCsf.componentFilePath);
+    if (options?.includeDependencies) {
+      const componentContent = await fetchStorybookComponent(
+        source,
+        extractedCsf.componentFilePath ?? inferSiblingComponentImportPath(source)
+      );
       if (componentContent) {
         files.push({
           path: `${componentName}.tsx`,
@@ -484,6 +511,9 @@ async function importFromZip(
   // Unzip archive
   const zipFiles = await unzipArchive(source);
   const componentName = targetComponentName || extractComponentNameFromZip(zipFiles);
+  if (!componentName) {
+    throw new Error('Unable to determine component name from ZIP archive');
+  }
 
   for (const file of zipFiles) {
     const fileType = determineFileType(file.path);
@@ -522,61 +552,168 @@ async function importFromZip(
   };
 }
 
-// Helper functions (placeholder implementations)
+// Helper functions
 
 async function fetchTSXContent(source: string): Promise<string> {
-  // Placeholder: fetch TSX content from source
-  return '';
+  return readTextSource(source);
 }
 
 async function fetchRouteContent(source: string): Promise<string> {
-  // Placeholder: fetch route content from source
-  return '';
+  return readTextSource(source);
 }
 
 async function fetchStorybookStory(source: string): Promise<string> {
-  // Placeholder: fetch Storybook story from source
-  return '';
+  return readTextSource(source);
 }
 
-async function fetchStorybookComponent(source: string): Promise<string | null> {
-  // Placeholder: fetch component from Storybook
+async function fetchStorybookComponent(storySource: string, componentImportPath?: string): Promise<string | null> {
+  if (!componentImportPath) {
+    return null;
+  }
+  const candidates = resolveImportCandidates(storySource, componentImportPath);
+  for (const candidate of candidates) {
+    try {
+      return await readTextSource(candidate);
+    } catch {
+      // Try the next supported extension/path candidate.
+    }
+  }
   return null;
 }
 
 async function fetchArtifact(source: string): Promise<{ metadata: { name: string }; dependencies?: string[] }> {
-  // Placeholder: fetch artifact from source
-  return { metadata: { name: '' } };
+  const content = await readTextSource(source);
+  const artifactData = JSON.parse(content) as { metadata?: { name?: string }; dependencies?: string[] };
+  return {
+    metadata: { name: artifactData.metadata?.name ?? extractComponentName(content) },
+    dependencies: artifactData.dependencies ?? [],
+  };
 }
 
 async function unzipArchive(source: string): Promise<{ path: string; content: string }[]> {
-  // Placeholder: unzip archive
-  return [];
+  const { default: JSZip } = await import('jszip');
+  const archive = await JSZip.loadAsync(await readBinarySource(source));
+  const files = await Promise.all(
+    Object.values(archive.files)
+      .filter((file) => !file.dir)
+      .map(async (file) => ({
+        path: file.name,
+        content: await file.async('string'),
+      }))
+  );
+  return files;
 }
 
 function extractComponentName(content: string): string {
-  // Placeholder: extract component name from content
-  return 'Component';
+  const extractedComponents = extractComponentsFromSource(content, 'inline-component.tsx');
+  if (extractedComponents.length > 0) {
+    return extractedComponents[0]!.name;
+  }
+
+  const sourceFile = ts.createSourceFile(
+    'inline-component.tsx',
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
+
+  let componentName: string | null = null;
+  sourceFile.forEachChild((node) => {
+    if (componentName) {
+      return;
+    }
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      componentName = node.name.text;
+    } else if (ts.isVariableStatement(node)) {
+      const declaration = node.declarationList.declarations.find((decl) => ts.isIdentifier(decl.name));
+      if (declaration && ts.isIdentifier(declaration.name)) {
+        componentName = declaration.name.text;
+      }
+    }
+  });
+
+  if (!componentName) {
+    throw new Error('Unable to determine component name from source content');
+  }
+
+  return componentName;
 }
 
-function extractComponentNameFromZip(files: { path: string }[]): string {
-  // Placeholder: extract component name from zip files
-  return 'Component';
+function extractComponentNameFromZip(files: { path: string }[]): string | null {
+  const preferredFile = files.find((file) =>
+    /\.(tsx|jsx|ts|js)$/.test(file.path) &&
+    !/(\.stories|\.test|\.spec)\./.test(file.path)
+  );
+  if (!preferredFile) {
+    return null;
+  }
+
+  const fileName = preferredFile.path.split('/').pop() ?? preferredFile.path;
+  const normalized = fileName
+    .replace(/\.(tsx|jsx|ts|js)$/, '')
+    .replace(/(^index$)/, '')
+    .replace(/[-_](\w)/g, (_, letter: string) => letter.toUpperCase());
+
+  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : null;
+}
+
+function extractComponentNameFromPath(path: string): string | null {
+  const fileName = path.split('/').pop() ?? path;
+  const normalized = fileName
+    .replace(/\.(tsx|jsx|ts|js)$/, '')
+    .replace(/^index$/, '')
+    .replace(/[-_](\w)/g, (_, letter: string) => letter.toUpperCase());
+
+  return normalized ? normalized.charAt(0).toUpperCase() + normalized.slice(1) : null;
+}
+
+function extractStoryComponentNameFromSource(source: string): string | null {
+  const fileName = source.split('/').pop() ?? source;
+  const match = fileName.match(/^(.*?)(?:\.stories)?\.(tsx|jsx|ts|js)$/);
+  if (!match?.[1]) {
+    return null;
+  }
+  return extractComponentNameFromPath(match[1]);
+}
+
+function inferSiblingComponentImportPath(source: string): string | undefined {
+  const fileName = source.split('/').pop() ?? source;
+  const match = fileName.match(/^(.*)\.stories\.(tsx|jsx|ts|js)$/);
+  if (!match?.[1]) {
+    return undefined;
+  }
+  return `./${match[1]}`;
 }
 
 function extractDependencies(content: string): string[] {
-  // Placeholder: extract dependencies from content
-  return [];
+  const sourceFile = ts.createSourceFile(
+    'dependencies.tsx',
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
+  const dependencies = new Set<string>();
+  sourceFile.forEachChild((node) => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+      dependencies.add(node.moduleSpecifier.text);
+    }
+  });
+  return [...dependencies];
 }
 
 async function extractStyleFiles(source: string): Promise<ImportedFile[]> {
-  // Placeholder: extract style files
-  return [];
+  return readSiblingFiles(source, ['.css', '.scss', '.sass', '.less'], 'style');
 }
 
 async function extractTestFiles(source: string): Promise<ImportedFile[]> {
-  // Placeholder: extract test files
-  return [];
+  const fileInfo = splitSourcePath(source);
+  const candidates = [
+    `${fileInfo.directory}/${fileInfo.baseName}.test${fileInfo.extension}`,
+    `${fileInfo.directory}/${fileInfo.baseName}.spec${fileInfo.extension}`,
+  ];
+  return readExistingFiles(candidates, 'test', source);
 }
 
 function determineFileType(path: string): ImportedFile['type'] {
@@ -609,3 +746,150 @@ export default {
   importFromArtifact,
   importFromZip,
 };
+
+interface SourcePathParts {
+  readonly directory: string;
+  readonly fileName: string;
+  readonly baseName: string;
+  readonly extension: string;
+}
+
+function isRemoteSource(source: string): boolean {
+  return /^(https?:)?\/\//.test(source);
+}
+
+function splitSourcePath(source: string): SourcePathParts {
+  const normalized = source.replace(/\\/g, '/');
+  const lastSlash = normalized.lastIndexOf('/');
+  const fileName = lastSlash >= 0 ? normalized.slice(lastSlash + 1) : normalized;
+  const directory = lastSlash >= 0 ? normalized.slice(0, lastSlash) : '.';
+  const extensionMatch = fileName.match(/(\.[^.]+)$/);
+  const extension = extensionMatch?.[1] ?? '';
+  const baseName = extension ? fileName.slice(0, -extension.length) : fileName;
+
+  return {
+    directory,
+    fileName,
+    baseName,
+    extension,
+  };
+}
+
+async function readTextSource(source: string): Promise<string> {
+  if (source.startsWith('inline:')) {
+    return source.slice('inline:'.length);
+  }
+
+  if (!isRemoteSource(source)) {
+    const localFile = await tryReadLocalFile(source);
+    if (localFile != null) {
+      return localFile;
+    }
+  }
+
+  const response = await fetch(source);
+  if (!response.ok) {
+    throw new Error(`Failed to load source: ${source} (${response.status})`);
+  }
+  return response.text();
+}
+
+async function readBinarySource(source: string): Promise<Uint8Array> {
+  if (!isRemoteSource(source)) {
+    const localFile = await tryReadLocalBinary(source);
+    if (localFile != null) {
+      return localFile;
+    }
+  }
+
+  const response = await fetch(source);
+  if (!response.ok) {
+    throw new Error(`Failed to load source: ${source} (${response.status})`);
+  }
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+async function tryReadLocalFile(source: string): Promise<string | null> {
+  if (!(typeof process !== 'undefined' && Boolean(process.versions?.node))) {
+    return null;
+  }
+
+  try {
+    const fs = await import('node:fs/promises');
+    return await fs.readFile(source, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+async function tryReadLocalBinary(source: string): Promise<Uint8Array | null> {
+  if (!(typeof process !== 'undefined' && Boolean(process.versions?.node))) {
+    return null;
+  }
+
+  try {
+    const fs = await import('node:fs/promises');
+    return await fs.readFile(source);
+  } catch {
+    return null;
+  }
+}
+
+function resolveImportCandidates(storySource: string, componentImportPath: string): string[] {
+  if (isRemoteSource(componentImportPath) || componentImportPath.startsWith('/')) {
+    return [componentImportPath];
+  }
+
+  const storyPath = splitSourcePath(storySource);
+  const baseDirectory = storyPath.directory === '.' ? '' : storyPath.directory;
+  const baseCandidate = `${baseDirectory}/${componentImportPath}`.replace(/\/+/g, '/');
+  const hasKnownExtension = /\.[a-z]+$/i.test(componentImportPath);
+
+  if (hasKnownExtension) {
+    return [baseCandidate];
+  }
+
+  return [
+    `${baseCandidate}.tsx`,
+    `${baseCandidate}.ts`,
+    `${baseCandidate}.jsx`,
+    `${baseCandidate}.js`,
+    `${baseCandidate}/index.tsx`,
+    `${baseCandidate}/index.ts`,
+    `${baseCandidate}/index.jsx`,
+    `${baseCandidate}/index.js`,
+  ];
+}
+
+async function readSiblingFiles(
+  source: string,
+  extensions: string[],
+  type: ImportedFile['type']
+): Promise<ImportedFile[]> {
+  const fileInfo = splitSourcePath(source);
+  const candidates = extensions.map((extension) => `${fileInfo.directory}/${fileInfo.baseName}${extension}`);
+  return readExistingFiles(candidates, type, source);
+}
+
+async function readExistingFiles(
+  candidates: string[],
+  type: ImportedFile['type'],
+  source: string
+): Promise<ImportedFile[]> {
+  const files = await Promise.all(
+    candidates.map(async (candidate) => {
+      try {
+        return {
+          path: candidate.split('/').pop() ?? candidate,
+          content: await readTextSource(candidate),
+          type,
+          source: candidate,
+        } satisfies ImportedFile;
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return files.filter((file): file is ImportedFile => file != null);
+}

@@ -13,6 +13,11 @@ import java.util.Map;
  * <p>Provides deterministic, testable fallback behavior when the Kernel is unavailable
  * or for development/testing purposes. Generates consistent outputs based on input.</p>
  *
+ * <p><strong>Production Safety:</strong> This adapter is NOT suitable for production use.
+ * It throws an {@link IllegalStateException} when {@code DMOS_ENV=production} to prevent
+ * accidental use of fake AI responses in production. Use real AI orchestration via kernel
+ * integration in production environments.</p>
+ *
  * @doc.type class
  * @doc.purpose Deterministic fallback for agent orchestration (DMOS-P1-018)
  * @doc.layer application
@@ -21,6 +26,8 @@ import java.util.Map;
 public final class DeterministicAgentOrchestrationAdapter implements DmAgentOrchestrationPort {
 
     private static final Logger logger = LoggerFactory.getLogger(DeterministicAgentOrchestrationAdapter.class);
+    private static final String DMOS_ENV = "DMOS_ENV";
+    private static final String PRODUCTION_ENV = "production";
 
     @Override
     public Promise<AgentResponse> invokeAgent(
@@ -30,8 +37,18 @@ public final class DeterministicAgentOrchestrationAdapter implements DmAgentOrch
         Map<String, Object> parameters,
         Duration timeout
     ) {
+        // Production safety check: prevent use of fake AI responses in production
+        String env = System.getenv(DMOS_ENV);
+        if (env != null && PRODUCTION_ENV.equalsIgnoreCase(env.trim())) {
+            return Promise.ofException(new IllegalStateException(
+                "DeterministicAgentOrchestrationAdapter cannot be used in production environment. " +
+                "DMOS_ENV is set to 'production'. Please use real AI orchestration via kernel integration " +
+                "or set DMOS_ENV to 'development' or 'test' for deterministic fallback."
+            ));
+        }
+
         try {
-            logger.info("Using deterministic fallback for agent {}", agentType);
+            logger.info("Using deterministic fallback for agent {} (dev/test only)", agentType);
             return Promise.of(generateDeterministicResponse(agentType, prompt, model));
         } catch (Exception e) {
             return Promise.ofException(e);

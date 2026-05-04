@@ -5,9 +5,9 @@
  * @doc.purpose Show AI confidence scores and explanations
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { Button } from '@ghatana/design-system';
 
 export type ConfidenceTier = 'high' | 'medium' | 'low';
 
@@ -60,24 +60,26 @@ export function ConfidenceExplanation({
         </div>
         <div className="flex items-center gap-2">
           {allowOverride && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onOverride}
-              className="text-[11px] font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+              className="text-[11px] font-medium underline p-0 h-auto"
             >
               Override
-            </button>
+            </Button>
           )}
           {reasoning && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setExpanded((e) => !e)}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1"
               aria-expanded={expanded}
               aria-label={expanded ? 'Hide reasoning' : 'Show reasoning'}
             >
               {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </button>
+            </Button>
           )}
         </div>
       </div>

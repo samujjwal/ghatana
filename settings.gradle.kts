@@ -99,6 +99,7 @@ include(":platform-plugins:plugin-compliance")
 include(":platform-plugins:plugin-consent")
 include(":platform-plugins:plugin-fraud-detection")
 include(":platform-plugins:plugin-risk-management")
+include(":platform-plugins:plugin-notification")
 include(":platform-plugins:core-observability")
 
 // =============================================================================

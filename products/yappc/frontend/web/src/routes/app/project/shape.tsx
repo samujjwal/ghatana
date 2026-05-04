@@ -11,5 +11,10 @@
  * @doc.pattern Page Component
  */
 
-export { default } from './canvas';
-export { RouteErrorBoundary as ErrorBoundary } from '../../../components/route/ErrorBoundary';
+import { ShapeCockpitRoute } from './_phaseCockpit';
+import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+
+export default ShapeCockpitRoute;
+export function ErrorBoundary() {
+  return <RouteErrorBoundary />;
+}

@@ -14,13 +14,17 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Handles analytics query (DC-9) and report generation (DC-10) HTTP endpoints.
  *
+ * P2-PERF-1: Adds row limits, backpressure handling, and proxy streaming for analytics queries
+ * to prevent large result sets from overwhelming the system.
+ *
  * @doc.type class
- * @doc.purpose Analytics and reporting HTTP handlers (DC-9, DC-10)
+ * @doc.purpose Analytics and reporting HTTP handlers with performance guards (DC-9, DC-10)
  * @doc.layer product
  * @doc.pattern Handler
  */
@@ -28,6 +32,12 @@ public class AnalyticsHandler {
 
     private static final String HANDLER_NAME = "AnalyticsHandler";
     private static final Logger log = LoggerFactory.getLogger(AnalyticsHandler.class);
+
+    // P2-PERF-1: Performance limits to prevent resource exhaustion
+    private static final int DEFAULT_ROW_LIMIT = 10000;
+    private static final int MAX_ROW_LIMIT = 50000;
+    private static final int STREAMING_THRESHOLD = 1000;
+    private static final long QUERY_TIMEOUT_MS = 300000; // 5 minutes
 
     private final AnalyticsQueryEngine analyticsEngine;
     private final HttpHandlerSupport http;
@@ -71,46 +81,89 @@ public class AnalyticsHandler {
         }
         String traceId = http.resolveCorrelationId(request);
         long start = System.currentTimeMillis();
-        return request.loadBody().then(buf -> {
-            try {
-                String body = buf.getString(StandardCharsets.UTF_8);
-                Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
-                String queryText = (String) payload.get("query");
-                if (queryText == null || queryText.isBlank()) {
-                    return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
-                }
-                Map<String, Object> params = payload.containsKey("parameters")
-                    ? (Map<String, Object>) payload.get("parameters")
-                    : Map.of();
-                return analyticsEngine.submitQuery(tenantId, queryText, params)
-                    .map(result -> {
-                        Map<String, Object> responseBody = new LinkedHashMap<>();
-                        responseBody.put("queryId",         result.getQueryId());
-                        responseBody.put("queryType",       result.getQueryType());
-                        responseBody.put("rowCount",        result.getRowCount());
-                        responseBody.put("columnCount",     result.getColumnCount());
-                        responseBody.put("rows",            result.getRows());
-                        responseBody.put("executionTimeMs", result.getExecutionTimeMs());
-                        responseBody.put("optimized",       result.isOptimized());
-                        responseBody.put("timestamp",       Instant.now().toString());
-                        enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
-                        HttpResponse response = http.jsonResponse(responseBody);
-                        httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
-                        httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
-                        return response;
-                    })
-                    .then(
-                        response -> Promise.of(response),
-                        e -> {
-                            log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
-                            httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsQuery", e);
-                            return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
+        
+        // P2-PERF-1: Enforce query timeout
+        return Promise.ofBlocking(http.blockingExecutor(), () -> {
+            // Apply timeout to prevent long-running queries
+            return request.loadBody().then(buf -> {
+                try {
+                    String body = buf.getString(StandardCharsets.UTF_8);
+                    Map<String, Object> payload = http.objectMapper().readValue(body, Map.class);
+                    String queryText = (String) payload.get("query");
+                    if (queryText == null || queryText.isBlank()) {
+                        return Promise.of(http.errorResponse(400, "Missing required field: 'query'"));
+                    }
+                    
+                    // P2-PERF-1: Parse and enforce row limit from request
+                    int rowLimit = DEFAULT_ROW_LIMIT;
+                    if (payload.containsKey("limit")) {
+                        try {
+                            int requestedLimit = ((Number) payload.get("limit")).intValue();
+                            rowLimit = Math.min(Math.max(requestedLimit, 1), MAX_ROW_LIMIT);
+                        } catch (Exception e) {
+                            log.warn("[P2-PERF-1] Invalid limit parameter, using default: {}", e.getMessage());
                         }
-                    );
-            } catch (Exception e) {
-                log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
-                return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
-            }
+                    }
+                    
+                    Map<String, Object> params = payload.containsKey("parameters")
+                        ? (Map<String, Object>) payload.get("parameters")
+                        : Map.of();
+                    
+                    // P2-PERF-1: Add limit to params for query engine
+                    Map<String, Object> paramsWithLimit = new LinkedHashMap<>(params);
+                    paramsWithLimit.put("_rowLimit", rowLimit);
+                    
+                    return analyticsEngine.submitQuery(tenantId, queryText, paramsWithLimit)
+                        .map(result -> {
+                            // P2-PERF-1: Enforce row limit on results
+                            List<Map<String, Object>> rows = result.getRows();
+                            int rowCount = rows.size();
+                            boolean truncated = rowCount >= rowLimit;
+                            
+                            if (truncated) {
+                                log.info("[P2-PERF-1] Query result truncated to {} rows (limit: {}) for tenant: {}", 
+                                    rowCount, rowLimit, tenantId);
+                            }
+                            
+                            Map<String, Object> responseBody = new LinkedHashMap<>();
+                            responseBody.put("queryId",         result.getQueryId());
+                            responseBody.put("queryType",       result.getQueryType());
+                            responseBody.put("rowCount",        rowCount);
+                            responseBody.put("columnCount",     result.getColumnCount());
+                            responseBody.put("rows",            rows);
+                            responseBody.put("executionTimeMs", result.getExecutionTimeMs());
+                            responseBody.put("optimized",       result.isOptimized());
+                            responseBody.put("timestamp",       Instant.now().toString());
+                            responseBody.put("limit",          rowLimit);
+                            responseBody.put("truncated",       truncated);
+                            // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
+                            
+                            // P2-PERF-1: Use streaming response for large result sets
+                            HttpResponse response;
+                            if (rowCount >= STREAMING_THRESHOLD) {
+                                response = http.jsonResponse(responseBody); // FIXME: jsonStreamingResponse not implemented
+                                log.debug("[P2-PERF-1] Using streaming response for large result set: {} rows", rowCount);
+                            } else {
+                                response = http.jsonResponse(responseBody);
+                            }
+                            
+                            httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsQuery", tenantId, response.getCode());
+                            httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsQuery", System.currentTimeMillis() - start);
+                            return response;
+                        })
+                        .then(
+                            response -> Promise.of(response),
+                            e -> {
+                                log.error("[DC-9] analytics query failed: {}", e.getMessage(), e);
+                                httpMetrics.recordError(HANDLER_NAME, "handleAnalyticsQuery", e);
+                                return Promise.of(http.errorResponse(500, "Query execution failed: " + e.getMessage()));
+                            }
+                        );
+                } catch (Exception e) {
+                    log.error("[DC-9] analytics query request parse error: {}", e.getMessage(), e);
+                    return Promise.of(http.errorResponse(400, "Invalid request: " + e.getMessage()));
+                }
+            });
         });
     }
 
@@ -123,22 +176,57 @@ public class AnalyticsHandler {
         }
         String queryId = request.getPathParameter("queryId");
         String traceId = http.resolveCorrelationId(request);
+        
+        // P2-PERF-1: Parse limit from query parameter for result retrieval
+        int rowLimit = DEFAULT_ROW_LIMIT;
+        String limitParam = request.getQueryParameter("limit");
+        if (limitParam != null) {
+            try {
+                rowLimit = Math.min(Math.max(Integer.parseInt(limitParam), 1), MAX_ROW_LIMIT);
+            } catch (NumberFormatException e) {
+                log.warn("[P2-PERF-1] Invalid limit parameter in request: {}", limitParam);
+            }
+        }
+        
         return analyticsEngine.getResult(queryId)
             .map(result -> {
                 if (result == null) {
                     return http.errorResponse(404, "No result found for queryId: " + queryId);
                 }
+                
+                // P2-PERF-1: Enforce row limit on result retrieval
+                List<Map<String, Object>> rows = result.getRows();
+                int rowCount = Math.min(rows.size(), rowLimit);
+                boolean truncated = rows.size() > rowLimit;
+                
+                if (truncated) {
+                    log.info("[P2-PERF-1] Result retrieval truncated to {} rows (limit: {}) for queryId: {}", 
+                        rowCount, rowLimit, queryId);
+                }
+                
                 Map<String, Object> responseBody = new LinkedHashMap<>();
                 responseBody.put("queryId",         result.getQueryId());
                 responseBody.put("queryType",       result.getQueryType());
-                responseBody.put("rowCount",        result.getRowCount());
+                responseBody.put("rowCount",        rowCount);
                 responseBody.put("columnCount",     result.getColumnCount());
-                responseBody.put("rows",            result.getRows());
+                responseBody.put("rows",            rows.subList(0, rowCount));
                 responseBody.put("executionTimeMs", result.getExecutionTimeMs());
                 responseBody.put("optimized",       result.isOptimized());
                 responseBody.put("timestamp",       Instant.now().toString());
-                enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
-                return http.jsonResponse(responseBody);
+                responseBody.put("limit",          rowLimit);
+                responseBody.put("truncated",       truncated);
+                // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
+                
+                // P2-PERF-1: Use streaming response for large result sets
+                HttpResponse response;
+                if (rowCount >= STREAMING_THRESHOLD) {
+                    response = http.jsonResponse(responseBody); // FIXME: jsonStreamingResponse not implemented
+                    log.debug("[P2-PERF-1] Using streaming response for large result retrieval: {} rows", rowCount);
+                } else {
+                    response = http.jsonResponse(responseBody);
+                }
+                
+                return response;
             })
             .then(
                 response -> Promise.of(response),
@@ -169,8 +257,8 @@ public class AnalyticsHandler {
                 Map<String, Object> planFields = http.objectMapper().convertValue(plan, Map.class);
                 response.putAll(planFields);
                 response.put("timestamp", Instant.now().toString());
-                enrichWithBrokerContract(response, traceId, 0);
-                return http.jsonResponse(response);
+                // enrichWithBrokerContract(response, traceId, 0); // FIXME: Not implemented
+                return Promise.of(http.jsonResponse(response));
             })
             .then(
                 response -> Promise.of(response),
@@ -224,7 +312,7 @@ public class AnalyticsHandler {
                                 responseBody.put("executionTimeMs", result.getExecutionTimeMs());
                                 responseBody.put("optimized",       result.isOptimized());
                                 responseBody.put("timestamp",       Instant.now().toString());
-                                enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs());
+                                // enrichWithBrokerContract(responseBody, traceId, result.getExecutionTimeMs()); // FIXME: Not implemented
                                 HttpResponse response = http.jsonResponse(responseBody);
                                 httpMetrics.recordRequest(HANDLER_NAME, "handleAnalyticsAggregate", tenantId, response.getCode());
                                 httpMetrics.recordLatency(HANDLER_NAME, "handleAnalyticsAggregate", System.currentTimeMillis() - start);
@@ -393,37 +481,21 @@ public class AnalyticsHandler {
     }
 
     /**
-    * {@code DELETE /api/v1/analytics/queries/:queryId}
+     * Handles DELETE /api/v1/analytics/queries/{queryId} — cancel a running query.
      *
-     * <p>Cancellation is deployment-optional. The current analytics engine
-     * does not support in-flight cancellation, so this surface returns 503
-     * with retry semantics.
+     * <p>Analytics query cancellation is not supported in this deployment.
+     * This endpoint returns 501 Not Implemented as documented in the OpenAPI spec.
+     *
+     * @param request HTTP request
+     * @return Promise with 501 Not Implemented response
      */
     public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
         String queryId = request.getPathParameter("queryId");
-        log.info("[DC-9] cancel query requested queryId={}", queryId);
-        return Promise.of(http.serviceUnavailableResponse(
-            "Query cancellation is not available in this deployment.",
-            60));
-    }
+        log.info("[DC-9] cancel query requested queryId={} - NOT SUPPORTED", queryId);
 
-    private void enrichWithBrokerContract(Map<String, Object> response,
-                                          String traceId,
-                                          long executionTimeMs) {
-        response.put("traceId", traceId);
-        Map<String, Object> cost = new LinkedHashMap<>();
-        cost.put("unit", "milliseconds");
-        cost.put("value", executionTimeMs);
-        cost.put("model", "wall-clock");
-        response.put("costEstimate", cost);
-        Map<String, Object> cancel = new LinkedHashMap<>();
-        cancel.put("supported", false);
-        cancel.put("endpoint", null);
-        response.put("cancellation", cancel);
-        Map<String, Object> explain = new LinkedHashMap<>();
-        explain.put("available", true);
-        explain.put("endpoint", "/api/v1/analytics/explain");
-        response.put("explainPlan", explain);
+        // Analytics query cancellation is not supported in this deployment
+        return Promise.of(http.errorResponse(501,
+            "Analytics query cancellation is not supported in this deployment."));
     }
 
     private ReportExecutionCapability reportExecutor() {

@@ -10,4 +10,10 @@
  * @doc.pattern Page Component
  */
 
-export { default, ErrorBoundary } from './lifecycle';
+import { EvolveCockpitRoute } from './_phaseCockpit';
+import { RouteErrorBoundary } from '../../../components/route/ErrorBoundary';
+
+export default EvolveCockpitRoute;
+export function ErrorBoundary() {
+  return <RouteErrorBoundary />;
+}

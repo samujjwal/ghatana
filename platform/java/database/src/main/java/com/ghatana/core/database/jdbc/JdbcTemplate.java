@@ -6,6 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -581,7 +584,7 @@ public final class JdbcTemplate {
             if (connection.isClosed()) {
                 throw new SQLException("Connection is closed");
             }
-            return connection;
+            return CloseSuppressingConnection.wrap(connection);
         }
 
         @Override
@@ -627,6 +630,44 @@ public final class JdbcTemplate {
         @Override
         public boolean isWrapperFor(Class<?> iface) {
             return iface.isInstance(this);
+        }
+    }
+
+    private static final class CloseSuppressingConnection implements InvocationHandler {
+        private final Connection delegate;
+
+        private CloseSuppressingConnection(Connection delegate) {
+            this.delegate = delegate;
+        }
+
+        private static Connection wrap(Connection delegate) {
+            return (Connection) Proxy.newProxyInstance(
+                    Connection.class.getClassLoader(),
+                    new Class<?>[]{Connection.class},
+                    new CloseSuppressingConnection(delegate)
+            );
+        }
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            String methodName = method.getName();
+            if ("close".equals(methodName)) {
+                return null;
+            }
+            if ("isClosed".equals(methodName)) {
+                return delegate.isClosed();
+            }
+            if ("unwrap".equals(methodName) && args != null && args.length == 1) {
+                Class<?> iface = (Class<?>) args[0];
+                if (iface.isInstance(delegate)) {
+                    return delegate;
+                }
+            }
+            if ("isWrapperFor".equals(methodName) && args != null && args.length == 1) {
+                Class<?> iface = (Class<?>) args[0];
+                return iface.isInstance(delegate);
+            }
+            return method.invoke(delegate, args);
         }
     }
 }

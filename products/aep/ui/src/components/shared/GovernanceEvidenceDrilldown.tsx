@@ -5,9 +5,9 @@
  * @doc.purpose Display detailed governance evidence
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState } from 'react';
 import { Shield, FileText, ExternalLink, ChevronRight, ChevronDown } from 'lucide-react';
+import { Button } from '@ghatana/design-system';
 
 export type EvidenceCategory = 'audit' | 'policy' | 'control' | 'review';
 
@@ -68,10 +68,11 @@ export function GovernanceEvidenceDrilldown({
             key={item.id}
             className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 overflow-hidden"
           >
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setExpanded(isExpanded ? null : item.id)}
-              className="w-full px-4 py-3 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors"
+              className="w-full px-4 py-3 flex items-start gap-3 text-left hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors justify-start"
               aria-expanded={isExpanded}
             >
               <Shield className="h-4 w-4 mt-0.5 flex-shrink-0 text-gray-500" aria-hidden />
@@ -95,7 +96,7 @@ export function GovernanceEvidenceDrilldown({
               ) : (
                 <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-400" aria-hidden />
               )}
-            </button>
+            </Button>
 
             {isExpanded && (
               <div className="px-4 pb-4 pt-1 space-y-2">

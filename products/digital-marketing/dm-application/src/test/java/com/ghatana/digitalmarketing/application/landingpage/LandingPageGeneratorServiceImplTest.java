@@ -141,12 +141,12 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             .orElse("");
 
         assertThat(proofBody).contains("5-star rated").contains("200+ happy clients");
-        assertThat(proofBody).doesNotContain(LandingPageGeneratorServiceImpl.PROOF_WARNING);
+        assertThat(proofBody).doesNotContain(LandingPageGeneratorServiceImpl.PROOF_PENDING);
     }
 
     @Test
-    @DisplayName("generateDraft without proof points emits proof warning — not fabricated testimonials")
-    void shouldEmitProofWarningWhenNoProofPoints() {
+    @DisplayName("generateDraft without proof points emits proof pending notice — not fabricated testimonials")
+    void shouldEmitProofPendingWhenNoProofPoints() {
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
 
         String proofBody = version.getContentBlocks().stream()
@@ -155,7 +155,8 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             .map(b -> b.bodyText())
             .orElse("");
 
-        assertThat(proofBody).contains(LandingPageGeneratorServiceImpl.PROOF_WARNING);
+        assertThat(proofBody).contains(LandingPageGeneratorServiceImpl.PROOF_PENDING);
+        assertThat(proofBody).doesNotContain("[");
     }
 
     @Test
@@ -179,8 +180,8 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("generateDraft without disclosures emits disclosure placeholder")
-    void shouldEmitDisclosurePlaceholderWhenNone() {
+    @DisplayName("generateDraft without disclosures emits disclosure pending notice")
+    void shouldEmitDisclosurePendingWhenNone() {
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
 
         String disclaimerBody = version.getContentBlocks().stream()
@@ -189,7 +190,8 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             .map(b -> b.bodyText())
             .orElse("");
 
-        assertThat(disclaimerBody).contains(LandingPageGeneratorServiceImpl.DISCLOSURE_PLACEHOLDER);
+        assertThat(disclaimerBody).contains(LandingPageGeneratorServiceImpl.DISCLOSURE_PENDING);
+        assertThat(disclaimerBody).doesNotContain("[");
     }
 
     @Test
@@ -229,8 +231,8 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("generateDraft OFFER section contains claim review flag")
-    void shouldFlagOfferSectionForClaimReview() {
+    @DisplayName("generateDraft OFFER section references evidence verification")
+    void shouldReferenceEvidenceVerificationInOfferSection() {
         ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
 
         String offerBody = version.getContentBlocks().stream()
@@ -239,7 +241,20 @@ class LandingPageGeneratorServiceImplTest extends EventloopTestBase {
             .map(b -> b.bodyText())
             .orElse("");
 
-        assertThat(offerBody).contains("CLAIM REVIEW REQUIRED");
+        assertThat(offerBody).contains("verified against evidence during content review");
+        assertThat(offerBody).doesNotContain("[");
+    }
+
+    @Test
+    @DisplayName("generateDraft does not emit bracketed placeholder text in any block")
+    void shouldNotContainBracketedPlaceholdersInAnyBlock() {
+        ContentVersion version = runPromise(() -> service.generateDraft(ctx, minimalCommand()));
+
+        for (var block : version.getContentBlocks()) {
+            assertThat(block.bodyText())
+                .withFailMessage("Block %s contains bracketed placeholder: %s", block.blockId(), block.bodyText())
+                .doesNotContain("[");
+        }
     }
 
     // -------------------------------------------------------------------------

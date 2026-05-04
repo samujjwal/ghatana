@@ -13,6 +13,22 @@ dependencies {
     api(project(":platform:java:http"))
     api(project(":platform:java:core"))
 
+    // Persistence and kernel bridge for composition root
+    implementation(project(":products:digital-marketing:dm-persistence"))
+    implementation(project(":products:digital-marketing:dm-kernel-bridge"))
+    implementation(project(":products:digital-marketing:dm-infra"))
+
+    // Platform plugins for production-grade implementations
+    implementation(project(":platform-plugins:plugin-consent"))
+    implementation(project(":platform-plugins:plugin-human-approval"))
+    implementation(project(":platform-plugins:plugin-audit-trail"))
+    implementation(project(":platform-plugins:plugin-risk-management"))
+    implementation(project(":platform-plugins:plugin-notification"))
+    implementation(project(":platform-plugins:plugin-compliance"))
+
+    // PostgreSQL JDBC
+    implementation(libs.postgresql)
+
     compileOnly(libs.spotbugs.annotations)
     implementation(libs.activej.promise)
     implementation(libs.jackson.databind)

@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@ghatana/design-system';
 import type { ComponentInstance } from '@ghatana/ui-builder';
+import { rendererManifestRegistry } from './rendererManifest';
 import type { BuilderRendererManifest, SlotBag } from './rendererManifest';
 
 /**
@@ -153,8 +154,6 @@ export const boxRenderer: BuilderRendererManifest = {
  * Call this during application initialization.
  */
 export function registerBuiltInRenderers(): void {
-  const { rendererManifestRegistry } = require('./rendererManifest');
-  
   rendererManifestRegistry.register(buttonRenderer);
   rendererManifestRegistry.register(cardRenderer);
   rendererManifestRegistry.register(textFieldRenderer);

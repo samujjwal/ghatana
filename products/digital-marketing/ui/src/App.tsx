@@ -6,17 +6,18 @@
  * @doc.layer frontend
  */
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/context/AuthContext';
-import { LoginPage } from '@/pages/LoginPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
-import { ApprovalDetailPage } from '@/pages/ApprovalDetailPage';
-import { AiActionLogPage } from '@/pages/AiActionLogPage';
-import { CampaignsPage } from '@/pages/CampaignsPage';
-import { StrategyPage } from '@/pages/StrategyPage';
-import { BudgetPage } from '@/pages/BudgetPage';
+import { AuthProvider } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import ApprovalQueuePage from './pages/ApprovalQueuePage';
+import ApprovalDetailPage from './pages/ApprovalDetailPage';
+import AiActionLogPage from './pages/AiActionLogPage';
+import BudgetPage from './pages/BudgetPage';
+import StrategyPage from './pages/StrategyPage';
+import CampaignsPage from './pages/CampaignsPage';
+import FeatureFlaggedRoute from './components/FeatureFlaggedRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,15 +55,27 @@ export function App(): React.ReactElement {
               />
               <Route
                 path="/workspaces/:workspaceId/campaigns"
-                element={<CampaignsPage />}
+                element={
+                  <FeatureFlaggedRoute flagKey="dmos.campaigns_page_enabled">
+                    <CampaignsPage />
+                  </FeatureFlaggedRoute>
+                }
               />
               <Route
                 path="/workspaces/:workspaceId/strategy"
-                element={<StrategyPage />}
+                element={
+                  <FeatureFlaggedRoute flagKey="dmos.strategy_page_enabled">
+                    <StrategyPage />
+                  </FeatureFlaggedRoute>
+                }
               />
               <Route
                 path="/workspaces/:workspaceId/budget"
-                element={<BudgetPage />}
+                element={
+                  <FeatureFlaggedRoute flagKey="dmos.budget_page_enabled">
+                    <BudgetPage />
+                  </FeatureFlaggedRoute>
+                }
               />
               <Route path="/" element={<Navigate to="/login" replace />} />
             </Routes>

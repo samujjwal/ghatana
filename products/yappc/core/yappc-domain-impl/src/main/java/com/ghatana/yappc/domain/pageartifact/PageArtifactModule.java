@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.util.concurrent.Executor;
 
 /**
  * ActiveJ DI module for Page Artifact subsystem.
@@ -58,10 +59,11 @@ public class PageArtifactModule extends AbstractModule {
     @Provides
     PageArtifactRepository pageArtifactRepository(
             DataSource dataSource,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            Executor executor
     ) {
         LOG.info("Creating DbPageArtifactRepository");
-        return new DbPageArtifactRepository(dataSource, objectMapper);
+        return new DbPageArtifactRepository(dataSource, objectMapper, executor);
     }
 
     /**

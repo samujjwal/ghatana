@@ -1,10 +1,8 @@
 /**
- * CanvasScene - Legacy compatibility shim
- * @deprecated Use CanvasRoute. The 1252-line legacy component (canvasAtom,
- * @dnd-kit, useCanvasScene) is replaced by CanvasRoute / CanvasWorkspaceProvider.
- * This stub keeps existing describe.skip tests and Storybook paths compilable.
+ * CanvasScene compatibility adapter
+ * @deprecated Use CanvasRoute directly.
  * @doc.type component
- * @doc.purpose Legacy route compatibility shim
+ * @doc.purpose Legacy route compatibility adapter
  * @doc.layer product
  * @doc.pattern Adapter
  */

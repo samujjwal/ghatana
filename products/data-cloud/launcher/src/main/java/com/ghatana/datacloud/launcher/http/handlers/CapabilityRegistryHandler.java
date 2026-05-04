@@ -12,14 +12,17 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * HTTP handler exposing the runtime capability registry.
+ * HTTP handler exposing the runtime capability registry and capability schema.
  *
  * <p>Returns the feature configuration the server actually started with,
  * translated into client-facing states so the UI can avoid implying support
  * for features that are absent or degraded.
  *
+ * <p>Also serves the unified capability schema which is the single source of truth
+ * for all capability-based feature gates, preventing drift between docs/UI/runtime.
+ *
  * @doc.type class
- * @doc.purpose Runtime capability registry HTTP handler
+ * @doc.purpose Runtime capability registry and schema HTTP handler
  * @doc.layer product
  * @doc.pattern Handler
  */
@@ -37,6 +40,9 @@ public final class CapabilityRegistryHandler {
         this.capabilitySnapshotSupplier = capabilitySnapshotSupplier;
     }
 
+    /**
+     * Handle GET /api/v1/capabilities - returns runtime capability registry
+     */
     public Promise<HttpResponse> handleCapabilities(HttpRequest request) {
         String tenantId = httpSupport.requireTenantIdOrFail(request);
         if (tenantId == null) {
@@ -50,6 +56,28 @@ public final class CapabilityRegistryHandler {
 
         return Promise.of(httpSupport.envelopeResponse(
             ApiResponse.success(response, tenantId, requestId),
+            objectMapper));
+    }
+
+    /**
+     * Handle GET /api/v1/capabilities/schema - returns unified capability schema
+     * 
+     * P2-CAP-1: This endpoint serves the capability schema which is the single source
+     * of truth for all capability-based feature gates, preventing drift between
+     * docs/UI/runtime.
+     */
+    public Promise<HttpResponse> handleCapabilitySchema(HttpRequest request) {
+        String tenantId = httpSupport.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(httpSupport.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String requestId = httpSupport.resolveCorrelationId(request);
+
+        // Generate the capability schema from SPI interfaces
+        CapabilitySchemaGenerator.CapabilitySchema schema = CapabilitySchemaGenerator.generateSchema();
+
+        return Promise.of(httpSupport.envelopeResponse(
+            ApiResponse.success(schema, tenantId, requestId),
             objectMapper));
     }
 }
