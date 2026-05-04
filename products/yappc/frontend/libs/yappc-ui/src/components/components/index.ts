@@ -37,6 +37,7 @@ export * from './ListItem';
 export * from './Button';
 export * from './Card';
 export * from './TextField';
+export * from './Textarea';
 export * from './Badge';
 export * from './Dialog';
 export * from './Drawer';

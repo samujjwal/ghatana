@@ -11,6 +11,7 @@
  */
 
 import React from 'react';
+import { Button, Textarea } from 'yappc-ui/components';
 
 export type ResidualIslandSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -186,27 +187,30 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
                   )}
                 </div>
                 <div className="flex gap-2 ml-4">
-                  <button
+                  <Button
                     onClick={() => onAccept(island.id)}
-                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    variant="contained"
+                    size="small"
                     title="Accept island"
                   >
                     Accept
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => onReject(island.id)}
-                    className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    variant="contained"
+                    size="small"
                     title="Reject island"
                   >
                     Reject
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => setSelectedIsland(island.id)}
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    variant="contained"
+                    size="small"
                     title="Review island"
                   >
                     Review
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -222,20 +226,21 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
               {/* Review Notes */}
               {selectedIsland === island.id && (
                 <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
-                  <textarea
+                  <Textarea
                     value={reviewNotes[island.id] || island.reviewNotes || ''}
-                    onChange={(e) => setReviewNotes({ ...reviewNotes, [island.id]: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewNotes({ ...reviewNotes, [island.id]: e.target.value })}
                     placeholder="Add review notes..."
-                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded text-sm dark:bg-gray-800 dark:text-gray-100"
                     rows={3}
+                    fullWidth
                   />
                   <div className="mt-2 flex justify-end">
-                    <button
+                    <Button
                       onClick={() => handleReviewSubmit(island.id)}
-                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                      variant="contained"
+                      size="small"
                     >
                       Save Notes
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}

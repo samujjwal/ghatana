@@ -8,10 +8,22 @@
  * - Artifacts
  * - ZIP archives
  *
+ * Uses yappc-artifact-compiler library for real extraction logic.
+ *
  * @doc.type service
  * @doc.purpose Import from source workflow
  * @doc.layer product
  */
+
+import {
+  extractComponentsFromSource,
+  extractPageFromSource,
+  parseCsfSource,
+  type ExtractedComponent,
+  type ExtractedPage,
+  type ExtractedStory,
+  type ExtractedCsfData,
+} from 'yappc-artifact-compiler';
 
 export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 
@@ -64,7 +76,7 @@ export interface ImportedFile {
   /** File content */
   content: string;
   /** File type */
-  type: 'component' | 'style' | 'test' | 'documentation' | 'other';
+  type: 'component' | 'style' | 'test' | 'documentation' | 'other' | 'route';
   /** Original source */
   source?: string;
 }
@@ -144,50 +156,80 @@ async function importFromTSX(
   const files: ImportedFile[] = [];
   const dependencies: string[] = [];
 
-  // Parse TSX file and extract component
-  // This is a placeholder implementation
-  const componentContent = await fetchTSXContent(source);
-  const componentName = targetComponentName || extractComponentName(componentContent);
+  try {
+    // Fetch source content from file path or URL
+    const content = await fetchTSXContent(source);
+    
+    // Use real artifact compiler extractor - returns array of components
+    const extractedComponents: ExtractedComponent[] = extractComponentsFromSource(content, source);
+    
+    if (extractedComponents.length === 0) {
+      errors.push('No components found in source file');
+      return {
+        success: false,
+        files,
+        warnings,
+        errors,
+        metadata: {
+          sourceType: 'tsx',
+          source,
+          importedAt: new Date().toISOString(),
+          dependencies,
+          fileCount: 0,
+          totalSize: 0,
+        },
+      };
+    }
 
-  files.push({
-    path: `${componentName}.tsx`,
-    content: componentContent,
-    type: 'component',
-    source,
-  });
+    // Use the first component or specified target
+    const extractedComponent = extractedComponents[0]!;
+    const componentName = targetComponentName || extractedComponent.name;
 
-  // Extract dependencies
-  const deps = extractDependencies(componentContent);
-  dependencies.push(...deps);
-
-  if (options?.includeStyles) {
-    const styleFiles = await extractStyleFiles(source);
-    files.push(...styleFiles);
-  }
-
-  if (options?.includeTests) {
-    const testFiles = await extractTestFiles(source);
-    files.push(...testFiles);
-  }
-
-  const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
-
-  return {
-    success: true,
-    componentId: `${projectId}/${componentName}`,
-    files,
-    warnings,
-    errors,
-    metadata: {
-      sourceType: 'tsx',
+    files.push({
+      path: `${componentName}.tsx`,
+      content,
+      type: 'component',
       source,
-      importedAt: new Date().toISOString(),
-      componentName,
-      dependencies,
-      fileCount: files.length,
-      totalSize,
-    },
-  };
+    });
+
+    // Extract dependencies from JSX usage
+    dependencies.push(...extractedComponent.jsxUsage);
+
+    const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
+
+    return {
+      success: true,
+      componentId: `${projectId}/${componentName}`,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'tsx',
+        source,
+        importedAt: new Date().toISOString(),
+        componentName,
+        dependencies,
+        fileCount: files.length,
+        totalSize,
+      },
+    };
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+    return {
+      success: false,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'tsx',
+        source,
+        importedAt: new Date().toISOString(),
+        dependencies,
+        fileCount: 0,
+        totalSize: 0,
+      },
+    };
+  }
 }
 
 /**
@@ -204,38 +246,78 @@ async function importFromRoute(
   const files: ImportedFile[] = [];
   const dependencies: string[] = [];
 
-  // Fetch route component
-  const routeContent = await fetchRouteContent(source);
-  const componentName = targetComponentName || extractComponentName(routeContent);
+  try {
+    // Fetch source content from file path or URL
+    const content = await fetchRouteContent(source);
+    
+    // Use real artifact compiler extractor for pages
+    const extractedPage: ExtractedPage | null = extractPageFromSource(content, source);
+    
+    if (!extractedPage) {
+      errors.push('No page found in source file');
+      return {
+        success: false,
+        files,
+        warnings,
+        errors,
+        metadata: {
+          sourceType: 'route',
+          source,
+          importedAt: new Date().toISOString(),
+          dependencies,
+          fileCount: 0,
+          totalSize: 0,
+        },
+      };
+    }
 
-  files.push({
-    path: `${componentName}.tsx`,
-    content: routeContent,
-    type: 'component',
-    source,
-  });
+    const pageName = targetComponentName || extractedPage.routePath.replace(/\//g, '-') || 'page';
 
-  const deps = extractDependencies(routeContent);
-  dependencies.push(...deps);
-
-  const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
-
-  return {
-    success: true,
-    componentId: `${projectId}/${componentName}`,
-    files,
-    warnings,
-    errors,
-    metadata: {
-      sourceType: 'route',
+    files.push({
+      path: `${pageName}.tsx`,
+      content,
+      type: 'route',
       source,
-      importedAt: new Date().toISOString(),
-      componentName,
-      dependencies,
-      fileCount: files.length,
-      totalSize,
-    },
-  };
+    });
+
+    // Extract dependencies from components rendered
+    dependencies.push(...extractedPage.componentsRendered);
+
+    const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
+
+    return {
+      success: true,
+      componentId: `${projectId}/${pageName}`,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'route',
+        source,
+        importedAt: new Date().toISOString(),
+        componentName: pageName,
+        dependencies,
+        fileCount: files.length,
+        totalSize,
+      },
+    };
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+    return {
+      success: false,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'route',
+        source,
+        importedAt: new Date().toISOString(),
+        dependencies,
+        fileCount: 0,
+        totalSize: 0,
+      },
+    };
+  }
 }
 
 /**
@@ -252,50 +334,90 @@ async function importFromStorybook(
   const files: ImportedFile[] = [];
   const dependencies: string[] = [];
 
-  // Fetch Storybook story
-  const storyContent = await fetchStorybookStory(source);
-  const componentName = targetComponentName || extractComponentName(storyContent);
-
-  files.push({
-    path: `${componentName}.stories.tsx`,
-    content: storyContent,
-    type: 'documentation',
-    source,
-  });
-
-  // Fetch component implementation if available
-  if (options?.includeDependencies) {
-    const componentContent = await fetchStorybookComponent(source);
-    if (componentContent) {
-      files.push({
-        path: `${componentName}.tsx`,
-        content: componentContent,
-        type: 'component',
-        source: `${source}/component`,
-      });
-      const deps = extractDependencies(componentContent);
-      dependencies.push(...deps);
+  try {
+    // Fetch source content from file path or URL
+    const content = await fetchStorybookStory(source);
+    
+    // Use real artifact compiler extractor for CSF
+    const extractedCsf: ExtractedCsfData | null = parseCsfSource(content, source);
+    
+    if (!extractedCsf) {
+      errors.push('No CSF data found in source file');
+      return {
+        success: false,
+        files,
+        warnings,
+        errors,
+        metadata: {
+          sourceType: 'storybook',
+          source,
+          importedAt: new Date().toISOString(),
+          dependencies,
+          fileCount: 0,
+          totalSize: 0,
+        },
+      };
     }
-  }
 
-  const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
+    const componentName = targetComponentName || extractedCsf.meta.componentName || 'Component';
 
-  return {
-    success: true,
-    componentId: `${projectId}/${componentName}`,
-    files,
-    warnings,
-    errors,
-    metadata: {
-      sourceType: 'storybook',
+    files.push({
+      path: `${componentName}.stories.tsx`,
+      content,
+      type: 'documentation',
       source,
-      importedAt: new Date().toISOString(),
-      componentName,
-      dependencies,
-      fileCount: files.length,
-      totalSize,
-    },
-  };
+    });
+
+    // Extract component implementation if available
+    if (options?.includeDependencies && extractedCsf.componentFilePath) {
+      const componentContent = await fetchStorybookComponent(extractedCsf.componentFilePath);
+      if (componentContent) {
+        files.push({
+          path: `${componentName}.tsx`,
+          content: componentContent,
+          type: 'component',
+          source: extractedCsf.componentFilePath,
+        });
+        const deps = extractDependencies(componentContent);
+        dependencies.push(...deps);
+      }
+    }
+
+    const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
+
+    return {
+      success: true,
+      componentId: `${projectId}/${componentName}`,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'storybook',
+        source,
+        importedAt: new Date().toISOString(),
+        componentName,
+        dependencies,
+        fileCount: files.length,
+        totalSize,
+      },
+    };
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+    return {
+      success: false,
+      files,
+      warnings,
+      errors,
+      metadata: {
+        sourceType: 'storybook',
+        source,
+        importedAt: new Date().toISOString(),
+        dependencies,
+        fileCount: 0,
+        totalSize: 0,
+      },
+    };
+  }
 }
 
 /**

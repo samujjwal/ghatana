@@ -353,9 +353,12 @@ public final class PageArtifactController {
         if (userId == null || userId.isBlank()) {
             throw new AccessDeniedException("User ID is required for authorization");
         }
-        // For now, we're doing a basic check. In production, this would integrate with
-        // the full user context and role-based access control system.
-        // TODO: Integrate with proper User context and use authorizationService.hasPermission(User, String)
-        LOG.debug("Authorization check for user={} permission={}", userId, requiredPermission);
+        boolean hasPermission = authorizationService.hasPermission(userId, requiredPermission);
+        if (!hasPermission) {
+            throw new AccessDeniedException(
+                    "User does not have required permission: " + requiredPermission
+            );
+        }
+        LOG.debug("Authorization check passed for user={} permission={}", userId, requiredPermission);
     }
 }
