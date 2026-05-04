@@ -25,7 +25,7 @@ import {
   type PolicyStatus,
 } from '@/api/aep.api';
 import { isFeatureEnabled } from '@/lib/feature-flags';
-import { Button } from '@ghatana/design-system';
+import { Button, TextField } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 import { PageState } from '@/components/shared/PageState';
@@ -265,14 +265,15 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
                 ].join(' ')}
               >
                 <td className="px-4 py-3">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setSelectedPolicyId(policy.id)}
+                    variant="text"
                     className="text-left"
                   >
                     <p className="font-medium text-gray-900 dark:text-white">{policy.name}</p>
                     <p className="mt-1 font-mono text-[11px] text-gray-500 dark:text-gray-400">{policy.id}</p>
-                  </button>
+                  </Button>
                 </td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white">{policy.skillId}</td>
                 <td className="px-4 py-3 font-mono text-xs text-gray-500">v{policy.version}</td>
@@ -335,13 +336,14 @@ function PoliciesPanel({ tenantId }: { tenantId: string }) {
                         Agent →
                       </Link>
                     )}
-                    <button
+                    <Button
                       type="button"
                       onClick={() => setSelectedPolicyId(policy.id)}
+                      variant="text"
                       className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
                     >
                       Details →
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -723,29 +725,32 @@ function TenancyPanel({ tenantId }: { tenantId: string }) {
           <div className="mt-4 grid gap-4">
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Reason</span>
-              <input
+              <TextField
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                className="mt-2"
                 placeholder="security incident, platform containment, manual recovery"
+                fullWidth
               />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Incident ID</span>
-              <input
+              <TextField
                 value={incidentId}
                 onChange={(event) => setIncidentId(event.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                className="mt-2"
                 placeholder="INC-2026-0428"
+                fullWidth
               />
             </label>
             <label className="block">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">MFA code</span>
-              <input
+              <TextField
                 value={mfaCode}
                 onChange={(event) => setMfaCode(event.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+                className="mt-2"
                 placeholder="Optional when step-up auth is enforced"
+                fullWidth
               />
             </label>
           </div>

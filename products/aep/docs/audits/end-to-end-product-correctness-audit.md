@@ -1,7 +1,10 @@
 # AEP End-to-End Product Correctness, Completeness, and Production-Readiness Audit
 
+> **NOTE:** This document is archived. For the current, authoritative audit, see the repository-level audit at:
+> `/docs/audits/end-to-end-product-correctness-audit.md`
+
 **Product:** Agentic Execution Runtime (AEP)  
-**Audit Date:** 2026-05-02  
+**Audit Date:** 2026-05-02 (Archived)  
 **Auditor:** GitHub Copilot (AI Principal Audit)  
 **Target Path:** `products/aep`  
 **Method:** Deep source-evidence audit per End-to-End-Product-Prompt.md  

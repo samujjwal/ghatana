@@ -14,7 +14,7 @@ import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useSearchParams, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
-import { Button } from '@ghatana/design-system';
+import { Button, TextField } from '@ghatana/design-system';
 import { useAuth } from '@/context/AuthContext';
 import {
   PipelineCanvas,
@@ -637,40 +637,43 @@ export function PipelineBuilderPage() {
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 Suggested stages
               </h3>
-              <button
+              <Button
                 type="button"
                 onClick={() => setSuggestionsOpen(false)}
-                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                variant="text"
+                className="text-xs"
               >
                 Close
-              </button>
+              </Button>
             </div>
             <div className="flex gap-2 mb-2">
-              <input
+              <TextField
                 type="text"
                 value={suggestionDescription}
                 onChange={(e) => setSuggestionDescription(e.target.value)}
                 placeholder="Describe what this pipeline should do..."
-                className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="flex-1"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void handleSuggest();
                 }}
               />
-              <input
+              <TextField
                 type="text"
                 value={suggestionGoal}
                 onChange={(e) => setSuggestionGoal(e.target.value)}
                 placeholder="Goal (optional)"
-                className="w-40 rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className="w-40"
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => void handleSuggest()}
                 disabled={suggestionsLoading || !suggestionDescription.trim()}
-                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                variant="contained"
+                loading={suggestionsLoading}
+                loadingText="Preparing..."
               >
-                {suggestionsLoading ? 'Preparing...' : 'Suggest'}
-              </button>
+                Suggest
+              </Button>
             </div>
             <div className="mt-2 flex gap-2 flex-wrap">
               {[
@@ -679,17 +682,18 @@ export function PipelineBuilderPage() {
                 { label: 'Data quality gate', template: 'Check data quality rules, reject invalid records, and emit quality metrics' },
                 { label: 'Audit log collector', template: 'Collect audit events, normalize schema, and write to durable audit store' },
               ].map((t) => (
-                <button
+                <Button
                   key={t.label}
                   type="button"
                   onClick={() => {
                     setSuggestionDescription(t.template);
                     void requestSuggestions(t.template, suggestionGoal || undefined);
                   }}
-                  className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-600 hover:border-indigo-300 hover:bg-indigo-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-indigo-700 dark:hover:bg-indigo-950"
+                  variant="outlined"
+                  className="rounded-full px-2.5 py-1 text-[11px]"
                 >
                   {t.label}
-                </button>
+                </Button>
               ))}
             </div>
             {suggestions && (
@@ -699,24 +703,26 @@ export function PipelineBuilderPage() {
                     {getAiRoutingLabel(getAiRouting(suggestionConfidence))}
                   </p>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
                       onClick={() => {
                         setSuggestions(null);
                         setSuggestionSources([]);
                       }}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                      variant="text"
+                      className="text-xs"
                     >
                       Dismiss
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
                       onClick={handleApplySuggestions}
                       disabled={getAiRouting(suggestionConfidence) === 'advisory'}
-                      className="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white hover:bg-green-700"
+                      variant="contained"
+                      className="rounded-md px-2 py-1 text-xs"
                     >
                       {getAiRouting(suggestionConfidence) === 'reviewable' ? 'Apply after review' : 'Apply suggestions'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <ConfidenceExplanation

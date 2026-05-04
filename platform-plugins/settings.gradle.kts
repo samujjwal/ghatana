@@ -15,6 +15,7 @@ include("plugin-consent")
 include("plugin-risk-management")
 include("plugin-audit-trail")
 include("plugin-human-approval")
+include("plugin-notification")
 include("core-observability")
 
 // =============================================================================

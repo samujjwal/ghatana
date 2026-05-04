@@ -1,0 +1,424 @@
+# Ghatana Unified Capability Schema
+#
+# Single source of truth for all capabilities across kernel, Data Cloud, and AEP.
+# This schema drives both documentation generation and UI feature gates.
+#
+# Schema version: 1.0.0
+# Last updated: 2026-05-03
+# Generated from: KernelCapability.java, product capability interfaces, and feature flags
+
+capability_schema:
+  version: "1.0.0"
+  metadata:
+    description: "Unified capability schema for Ghatana platform and products"
+    last_updated: "2026-05-03"
+    generators:
+      - "KernelCapability.java"
+      - "Data Cloud SPI capabilities"
+      - "AEP SPI capabilities"
+      - "Product feature flags"
+
+  # Kernel capabilities (platform-level)
+  kernel_capabilities:
+    - id: "data.storage"
+      name: "Data Storage"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["all"]
+      description: "Unified data storage abstraction with multi-tier support"
+      metadata:
+        backends: "postgresql,redis,minio"
+        replication: "true"
+        encryption: "at_rest,in_transit"
+        required_services: "storage_manager,encryption_service"
+
+    - id: "user.authentication"
+      name: "User Authentication"
+      type: "SECURITY"
+      status: "stable"
+      products: ["all"]
+      description: "Multi-factor authentication system with session management"
+      metadata:
+        methods: "password,mfa,sso,oauth"
+        session_management: "true"
+        audit: "true"
+        required_services: "auth_service,session_manager"
+
+    - id: "api.framework"
+      name: "API Framework"
+      type: "API_FRAMEWORK"
+      status: "stable"
+      products: ["all"]
+      description: "RESTful API development framework with validation"
+      metadata:
+        protocols: "rest,graphql,websocket"
+        validation: "json_schema"
+        documentation: "openapi"
+        required_services: "router,validator,documentation_generator"
+
+    - id: "workflow.engine"
+      name: "Workflow Engine"
+      type: "WORKFLOW"
+      status: "stable"
+      products: ["all"]
+      description: "Business workflow orchestration with durability"
+      metadata:
+        engine: "temporal,camunda"
+        persistence: "durable"
+        retries: "exponential_backoff"
+        required_services: "workflow_orchestrator,persistence_service"
+
+    - id: "event.processing"
+      name: "Event Processing"
+      type: "EVENT_PROCESSING"
+      status: "stable"
+      products: ["all"]
+      description: "High-performance event processing with event sourcing"
+      metadata:
+        throughput: "100k_tps"
+        latency: "<1ms"
+        persistence: "event_sourcing"
+        required_services: "event_bus,event_store,processor"
+
+    - id: "ai.ml.framework"
+      name: "AI/ML Framework"
+      type: "AI_ML"
+      status: "stable"
+      products: ["all"]
+      description: "Machine learning and AI capabilities with model management"
+      metadata:
+        models: "classification,generation,embedding"
+        frameworks: "tensorflow,pytorch,huggingface"
+        required_services: "model_service,inference_engine,training_service"
+
+    - id: "observability.framework"
+      name: "Observability Framework"
+      type: "OBSERVABILITY"
+      status: "stable"
+      products: ["all"]
+      description: "Comprehensive observability stack with metrics, logs, and traces"
+      metadata:
+        components: "logging,metrics,tracing,alerting"
+        backends: "prometheus,grafana,jaeger,elasticsearch"
+        required_services: "log_collector,metric_collector,trace_collector"
+
+    - id: "security.framework"
+      name: "Security Framework"
+      type: "SECURITY"
+      status: "stable"
+      products: ["all"]
+      description: "Comprehensive security capabilities including encryption and audit"
+      metadata:
+        features: "encryption,authorization,audit,threat_detection"
+        standards: "oauth2,jwt,rbac"
+        required_services: "encryption_service,auth_service,audit_service"
+
+    - id: "tenant.isolation"
+      name: "Tenant Isolation"
+      type: "SECURITY"
+      status: "stable"
+      products: ["all"]
+      description: "Multi-tenant data and resource isolation"
+      metadata:
+        isolation_level: "strict"
+        data_separation: "true"
+        required_services: "tenant_service,isolation_enforcer"
+
+    - id: "audit.immutable-trail"
+      name: "Immutable Audit Trail"
+      type: "COMPLIANCE"
+      status: "stable"
+      products: ["all"]
+      description: "Cryptographic hash chain audit trail with Merkle anchoring and retention policies"
+      metadata:
+        hash_algorithm: "SHA-256"
+        anchoring: "merkle_tree"
+        required_services: "audit_trail_store"
+
+  # Data Cloud capabilities
+  data_cloud_capabilities:
+    - id: "data.cloud.query"
+      name: "Query Capability"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Filtered queries, range queries, aggregations, and pagination"
+      spi_interface: "com.ghatana.datacloud.spi.capability.QueryCapability"
+      ui_gate: "enableUnifiedDataExplorer"
+
+    - id: "data.cloud.storage"
+      name: "Storage Capability"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Entity storage with CRUD operations"
+      spi_interface: "com.ghatana.datacloud.spi.capability.StorageCapability"
+      ui_gate: null
+
+    - id: "data.cloud.streaming"
+      name: "Streaming Capability"
+      type: "EVENT_PROCESSING"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Real-time event streaming and processing"
+      spi_interface: "com.ghatana.datacloud.spi.capability.StreamingCapability"
+      ui_gate: null
+
+    - id: "data.cloud.transaction"
+      name: "Transaction Capability"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "ACID transaction support for data operations"
+      spi_interface: "com.ghatana.datacloud.spi.TransactionCapability"
+      ui_gate: null
+
+    - id: "data.cloud.workflow.execution"
+      name: "Workflow Execution Capability"
+      type: "WORKFLOW"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Durable workflow execution with checkpoint and rollback"
+      spi_interface: "com.ghatana.datacloud.spi.capability.WorkflowExecutionCapability"
+      ui_gate: "enableSmartWorkflowBuilder"
+
+    - id: "data.cloud.analytics"
+      name: "Analytics Capability"
+      type: "ANALYTICS"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Analytics and aggregation operations"
+      spi_interface: "com.ghatana.datacloud.spi.AggregationCapability"
+      ui_gate: null
+      metadata:
+        cancellation_supported: "false"
+        notes: "Analytics cancellation is unsupported; UI must reflect this"
+
+    - id: "data.cloud.fabric"
+      name: "Data Fabric"
+      type: "DATA_MANAGEMENT"
+      status: "preview"
+      products: ["data-cloud"]
+      description: "Data fabric topology and connector management"
+      spi_interface: null
+      ui_gate: null
+      metadata:
+        production_ready: "false"
+        notes: "Preview/demo-only with hardcoded demo metrics; needs production capability boundary"
+
+    - id: "data.cloud.ai.recommendation"
+      name: "AI Recommendation Capability"
+      type: "AI_ML"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "AI-powered recommendations and suggestions"
+      spi_interface: "com.ghatana.datacloud.spi.ai.RecommendationCapability"
+      ui_gate: "enableAmbientIntelligence"
+
+    - id: "data.cloud.ai.explanation"
+      name: "AI Explanation Capability"
+      type: "AI_ML"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "AI model explanations and interpretability"
+      spi_interface: "com.ghatana.datacloud.spi.ai.ExplanationCapability"
+      ui_gate: "enableContextSidebar"
+
+    - id: "data.cloud.ai.anomaly_detection"
+      name: "Anomaly Detection Capability"
+      type: "AI_ML"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Statistical and ML-based anomaly detection"
+      spi_interface: "com.ghatana.datacloud.spi.ai.AnomalyDetectionCapability"
+      ui_gate: null
+
+    - id: "data.cloud.similarity_search"
+      name: "Similarity Search Capability"
+      type: "AI_ML"
+      status: "stable"
+      products: ["data-cloud"]
+      description: "Vector similarity search for semantic matching"
+      spi_interface: "com.ghatana.datacloud.spi.SimilaritySearchCapability"
+      ui_gate: null
+
+  # AEP capabilities
+  aep_capabilities:
+    - id: "aep.agent.lifecycle"
+      name: "Agent Lifecycle Management"
+      type: "WORKFLOW"
+      status: "stable"
+      products: ["aep"]
+      description: "Agent registration, activation, deactivation, and lifecycle management"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.agent.memory.episodes"
+      name: "Episodic Memory"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["aep"]
+      description: "Episodic memory storage and retrieval for agents"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.agent.memory.facts"
+      name: "Semantic Memory (Facts)"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["aep"]
+      description: "Semantic fact storage and retrieval"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.agent.memory.policies"
+      name: "Procedural Memory (Policies)"
+      type: "DATA_MANAGEMENT"
+      status: "stable"
+      products: ["aep"]
+      description: "Learned policy storage and management"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.eventcloud.durable"
+      name: "Durable EventCloud"
+      type: "EVENT_PROCESSING"
+      status: "stable"
+      products: ["aep"]
+      description: "Durable event storage and processing with fail-closed behavior"
+      spi_interface: null
+      ui_gate: null
+      metadata:
+        fail_closed: "true"
+        notes: "Production requires durable EventCloud provider; in-memory only for dev/test with allow flag"
+
+    - id: "aep.gateway.jwt"
+      name: "JWT Authentication"
+      type: "SECURITY"
+      status: "stable"
+      products: ["aep"]
+      description: "JWT-based authentication for gateway"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.gateway.cors"
+      name: "CORS Support"
+      type: "SECURITY"
+      status: "stable"
+      products: ["aep"]
+      description: "Cross-Origin Resource Sharing support"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.gateway.sse"
+      name: "Server-Sent Events"
+      type: "API_FRAMEWORK"
+      status: "stable"
+      products: ["aep"]
+      description: "SSE support for real-time updates"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.gateway.websocket"
+      name: "WebSocket Support"
+      type: "API_FRAMEWORK"
+      status: "stable"
+      products: ["aep"]
+      description: "WebSocket support for bidirectional communication"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.governance.killswitch"
+      name: "Governance Kill Switch"
+      type: "COMPLIANCE"
+      status: "stable"
+      products: ["aep"]
+      description: "Production kill switch for emergency containment"
+      spi_interface: null
+      ui_gate: null
+
+    - id: "aep.governance.policies"
+      name: "Policy Governance"
+      type: "COMPLIANCE"
+      status: "stable"
+      products: ["aep"]
+      description: "Learned policy review and approval workflow"
+      spi_interface: null
+      ui_gate: null
+
+  # UI feature gates (derived from capability schema)
+  ui_feature_gates:
+    - id: "enableIntelligentHub"
+      name: "Intelligent Hub"
+      description: "Enable the new Intelligent Hub (unified home page)"
+      capability_dependency: "data.cloud.query"
+      default_value: true
+      products: ["data-cloud"]
+
+    - id: "enableCommandBar"
+      name: "Command Bar"
+      description: "Enable the Command Bar (NL command input)"
+      capability_dependency: null
+      default_value: true
+      products: ["data-cloud", "aep"]
+
+    - id: "enableAmbientIntelligence"
+      name: "Ambient Intelligence Bar"
+      description: "Enable the Ambient Intelligence Bar (bottom notifications)"
+      capability_dependency: "data.cloud.ai.recommendation"
+      default_value: true
+      products: ["data-cloud"]
+
+    - id: "enableContextSidebar"
+      name: "Context Sidebar"
+      description: "Enable the Context Sidebar (always-visible assistance panel)"
+      capability_dependency: "data.cloud.ai.explanation"
+      default_value: true
+      products: ["data-cloud", "aep"]
+
+    - id: "enableUnifiedDataExplorer"
+      name: "Unified Data Explorer"
+      description: "Enable unified Data Explorer (merged pages)"
+      capability_dependency: "data.cloud.query"
+      default_value: true
+      products: ["data-cloud"]
+
+    - id: "enableSmartWorkflowBuilder"
+      name: "Smart Workflow Builder"
+      description: "Enable Smart Workflow Builder (intent-based)"
+      capability_dependency: "data.cloud.workflow.execution"
+      default_value: true
+      products: ["data-cloud"]
+
+    - id: "legacyPagesEnabled"
+      name: "Legacy Pages"
+      description: "Keep legacy pages accessible for power users"
+      capability_dependency: null
+      default_value: true
+      products: ["data-cloud", "aep"]
+
+    - id: "enableSimplifiedNav"
+      name: "Simplified Navigation"
+      description: "Enable simplified navigation (5 items vs 12+)"
+      capability_dependency: null
+      default_value: true
+      products: ["data-cloud", "aep"]
+
+  # Status definitions
+  status_definitions:
+    stable:
+      description: "Production-ready with full support"
+      ui_indicator: "green"
+      allowed_in_production: true
+    preview:
+      description: "Preview/demo-only, not production-ready"
+      ui_indicator: "amber"
+      allowed_in_production: false
+    deprecated:
+      description: "Deprecated, will be removed in future version"
+      ui_indicator: "red"
+      allowed_in_production: false
+    experimental:
+      description: "Experimental, may change without notice"
+      ui_indicator: "purple"
+      allowed_in_production: false

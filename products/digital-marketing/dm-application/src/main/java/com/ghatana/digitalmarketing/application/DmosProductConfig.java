@@ -18,17 +18,19 @@ public final class DmosProductConfig {
 
     /**
      * Whether AI-powered generation features (strategy, ad-copy, SOW, etc.) are enabled.
-     * Default: {@code true}. Set {@code DMOS_AI_ENABLED=false} to disable in a region.
+     * Default: {@code false} in production for incomplete features.
+     * Set {@code DMOS_AI_ENABLED=true} to explicitly enable in a region.
      */
     public static final boolean AI_FEATURES_ENABLED =
-        boolEnv("DMOS_AI_ENABLED", true);
+        boolEnv("DMOS_AI_ENABLED", isProduction() ? false : true);
 
     /**
      * Whether the Google Ads connector runtime is enabled.
-     * Default: {@code true}. Set {@code DMOS_GOOGLE_ADS_CONNECTOR_ENABLED=false} to gate.
+     * Default: {@code false} in production until workflow wiring is complete.
+     * Set {@code DMOS_GOOGLE_ADS_CONNECTOR_ENABLED=true} to explicitly enable.
      */
     public static final boolean GOOGLE_ADS_CONNECTOR_ENABLED =
-        boolEnv("DMOS_GOOGLE_ADS_CONNECTOR_ENABLED", true);
+        boolEnv("DMOS_GOOGLE_ADS_CONNECTOR_ENABLED", isProduction() ? false : true);
 
     /**
      * Whether kill-switch enforcement is active.
@@ -133,5 +135,10 @@ public final class DmosProductConfig {
     private static String stringEnv(String key, String defaultValue) {
         String value = System.getenv(key);
         return (value != null && !value.isBlank()) ? value.trim() : defaultValue;
+    }
+
+    private static boolean isProduction() {
+        String env = stringEnv("DMOS_ENV", "development");
+        return "production".equalsIgnoreCase(env);
     }
 }

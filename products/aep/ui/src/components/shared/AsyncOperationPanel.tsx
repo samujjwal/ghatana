@@ -95,10 +95,11 @@ export function AsyncOperationPanel({
                   <span>Attempt {op.attempts}/{op.maxAttempts}</span>
                 </div>
                 {(op.errorMessage || op.auditEntryId || op.resourceId) && (
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setExpandedId(expanded ? null : op.id)}
-                    className="mt-1.5 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    variant="text"
+                    className="mt-1.5 flex items-center gap-1 text-xs"
                     aria-expanded={expanded}
                   >
                     {expanded ? (
@@ -110,7 +111,7 @@ export function AsyncOperationPanel({
                         <ChevronRight className="h-3.5 w-3.5" /> Show details
                       </>
                     )}
-                  </button>
+                  </Button>
                 )}
                 {expanded && (
                   <div className="mt-2 space-y-2 text-xs text-gray-600 dark:text-gray-400">

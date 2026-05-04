@@ -9,11 +9,11 @@
  * @doc.purpose Pipeline dry run simulation dialog
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 import React, { useState, useCallback } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { dryRunPipeline } from '@/api/pipeline.api';
 import type { PipelineDryRunReport } from '@/api/pipeline.api';
+import { Button, Checkbox } from '@ghatana/design-system';
 interface PipelineDryRunDialogProps {
   pipelineId: string;
   pipelineName: string;
@@ -93,16 +93,15 @@ export function PipelineDryRunDialog({
               Pipeline: <span className="font-mono text-xs text-indigo-600 dark:text-indigo-400">{pipelineName}</span>
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            variant="text"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             aria-label="Close"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+            ×
+          </Button>
         </div>
         {/* Body */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
@@ -178,11 +177,9 @@ export function PipelineDryRunDialog({
               {/* Acknowledgement */}
               {report.passed && report.acknowledgementRequired && (
                 <label className="mt-5 flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={acknowledged}
                     onChange={(e) => setAcknowledged(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     I have reviewed the pre-flight report and acknowledge all warnings before publishing.
@@ -194,31 +191,31 @@ export function PipelineDryRunDialog({
         </div>
         {/* Footer */}
         <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            variant="outlined"
           >
             Cancel
-          </button>
+          </Button>
           <div className="flex gap-2">
-            <button
+            <Button
               type="button"
               onClick={handleRun}
               disabled={isPending}
-              className="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+              variant="outlined"
             >
               {report ? 'Re-run' : 'Run dry-run'}
-            </button>
+            </Button>
             {onPublish && (
-              <button
+              <Button
                 type="button"
                 onClick={handlePublish}
                 disabled={!canPublish}
-                className="px-4 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                variant="contained"
               >
                 Publish
-              </button>
+              </Button>
             )}
           </div>
         </div>

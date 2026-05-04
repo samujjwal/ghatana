@@ -22,13 +22,13 @@ public final class DmosFeatureFlags {
 
     /**
      * Enables AI-powered generation features: strategy, ad-copy, SOW generation.
-     * Env-var fallback: {@code DMOS_AI_ENABLED} (default {@code true}).
+     * Env-var fallback: {@code DMOS_AI_ENABLED} (default {@code false} in production).
      */
     public static final String AI_ENABLED = "dmos.ai.enabled";
 
     /**
      * Enables the Google Ads connector runtime.
-     * Env-var fallback: {@code DMOS_GOOGLE_ADS_CONNECTOR_ENABLED} (default {@code true}).
+     * Env-var fallback: {@code DMOS_GOOGLE_ADS_CONNECTOR_ENABLED} (default {@code false} in production).
      */
     public static final String GOOGLE_ADS_CONNECTOR_ENABLED = "dmos.google_ads_connector.enabled";
 

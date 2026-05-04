@@ -6,7 +6,7 @@
  * @doc.layer frontend
  */
 import React from 'react';
-import { Button } from '@ghatana/design-system';
+import { Button, Select, TextField } from '@ghatana/design-system';
 import type {
   MarketplaceAgentListing,
   MarketplaceInstallSimulation,
@@ -100,16 +100,16 @@ export function MarketplaceInstallDialog({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="target-environment">
               Target environment
             </label>
-            <select
+            <Select
               id="target-environment"
               value={environment}
               onChange={(event) => onEnvironmentChange(event.target.value as 'sandbox' | 'staging' | 'production')}
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="mt-2"
             >
               <option value="sandbox">sandbox</option>
               <option value="staging">staging</option>
               <option value="production">production</option>
-            </select>
+            </Select>
             <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
               Marketplace listings may be installed for production, but direct execution remains sandbox-only. Production execution must route through pipeline + HITL.
             </p>
@@ -181,12 +181,13 @@ export function MarketplaceInstallDialog({
             <label htmlFor="install-confirmation" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Type <code className="rounded bg-gray-100 px-1 py-0.5 dark:bg-gray-800">INSTALL</code> to confirm
             </label>
-            <input
+            <TextField
               id="install-confirmation"
               type="text"
               value={confirmText}
               onChange={(event) => setConfirmText(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
+              className="mt-2"
+              fullWidth
             />
           </div>
         </div>

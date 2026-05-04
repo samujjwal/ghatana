@@ -55,13 +55,28 @@ export function clearRequestContext(): void {
 
 export interface FetchOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
+  requireIdempotency?: boolean; // P1-4: Flag to require idempotency key for write operations
+}
+
+/**
+ * Generates a UUID v4 idempotency key.
+ */
+function generateIdempotencyKey(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Determines if the request method requires idempotency.
+ */
+function requiresIdempotency(method: string | undefined): boolean {
+  return method === 'POST' || method === 'PUT' || method === 'DELETE' || method === 'PATCH';
 }
 
 export async function apiRequest<T>(
   path: string,
   options: FetchOptions = {},
 ): Promise<T> {
-  const { body, headers: extraHeaders, ...rest } = options;
+  const { body, headers: extraHeaders, requireIdempotency, ...rest } = options;
   const token = getAuthToken();
 
   // P0-3.1: Attach all required headers (mandatory, not conditional)
@@ -71,6 +86,13 @@ export async function apiRequest<T>(
     'X-Correlation-ID': crypto.randomUUID(),
     ...(extraHeaders as Record<string, string>),
   };
+
+  // P1-4: Generate X-Idempotency-Key for write operations
+  if (requireIdempotency || requiresIdempotency(rest.method)) {
+    if (!headers['X-Idempotency-Key']) {
+      headers['X-Idempotency-Key'] = generateIdempotencyKey();
+    }
+  }
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

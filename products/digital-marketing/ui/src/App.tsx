@@ -14,6 +14,9 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { ApprovalQueuePage } from '@/pages/ApprovalQueuePage';
 import { ApprovalDetailPage } from '@/pages/ApprovalDetailPage';
 import { AiActionLogPage } from '@/pages/AiActionLogPage';
+import { CampaignsPage } from '@/pages/CampaignsPage';
+import { StrategyPage } from '@/pages/StrategyPage';
+import { BudgetPage } from '@/pages/BudgetPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +51,18 @@ export function App(): React.ReactElement {
               <Route
                 path="/workspaces/:workspaceId/ai-actions/:actionId"
                 element={<AiActionLogPage />}
+              />
+              <Route
+                path="/workspaces/:workspaceId/campaigns"
+                element={<CampaignsPage />}
+              />
+              <Route
+                path="/workspaces/:workspaceId/strategy"
+                element={<StrategyPage />}
+              />
+              <Route
+                path="/workspaces/:workspaceId/budget"
+                element={<BudgetPage />}
               />
               <Route path="/" element={<Navigate to="/login" replace />} />
             </Routes>

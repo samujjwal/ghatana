@@ -10,10 +10,10 @@
  * @doc.purpose Fuzzy search dropdown component
  * @doc.layer frontend
  */
-/* eslint-disable ghatana/prefer-design-system-primitives */
 /* eslint-disable ghatana/no-duplicate-utilities */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, Command, FileText, BarChart3, Settings, Shield, Database } from 'lucide-react';
+import { Button, TextField } from '@ghatana/design-system';
 
 /**
  * Finder item
@@ -201,15 +201,11 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
 
   if (!isOpen) {
     return (
-      <button
+      <Button
         onClick={() => setIsOpen(true)}
+        variant="outlined"
         className={cn(
           'flex items-center gap-2 px-3 py-1.5',
-          'bg-gray-100 dark:bg-gray-800',
-          'text-gray-600 dark:text-gray-400',
-          'rounded-lg text-sm',
-          'hover:bg-gray-200 dark:hover:bg-gray-700',
-          'transition-colors',
           className
         )}
         aria-label="Open fuzzy finder (Cmd+K)"
@@ -217,7 +213,7 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
         <Search className="h-4 w-4" />
         <span>Search...</span>
         <Command className="h-3 w-3 ml-auto" />
-      </button>
+      </Button>
     );
   }
 
@@ -226,14 +222,15 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full mx-4 overflow-hidden">
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <Search className="h-5 w-5 text-gray-400" />
-          <input
+          <TextField
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder:text-gray-500"
+            className="flex-1"
+            fullWidth
           />
           <Command className="h-4 w-4 text-gray-400" />
           <span className="text-xs text-gray-500">ESC</span>
@@ -253,17 +250,16 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
                 {categoryItems.map((item, index) => {
                   const globalIndex = flatItems.indexOf(item);
                   return (
-                    <button
+                    <Button
                       key={item.id}
                       onClick={() => {
                         item.action();
                         setIsOpen(false);
                         setQuery('');
                       }}
+                      variant="text"
                       className={cn(
                         'flex items-center gap-3 px-4 py-2 w-full text-left',
-                        'hover:bg-gray-100 dark:hover:bg-gray-800',
-                        'transition-colors',
                         globalIndex === selectedIndex && 'bg-gray-100 dark:bg-gray-800'
                       )}
                     >
@@ -272,7 +268,7 @@ export const FuzzyFinder: React.FC<FuzzyFinderProps> = ({
                       {item.shortcut && (
                         <span className="text-xs text-gray-500">{item.shortcut}</span>
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

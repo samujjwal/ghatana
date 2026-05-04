@@ -7,7 +7,7 @@
 --
 -- Retention windows by domain:
 --   - healthcare: 7 years (Nepal Directive 2081)
---   - finance:    5 years (SEBON)
+--   - domain-alpha:    5 years
 --   - general:    1 year
 --
 -- expires_at is pre-computed at INSERT time from the action timestamp + domain retention.

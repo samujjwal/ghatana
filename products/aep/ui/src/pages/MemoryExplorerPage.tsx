@@ -24,7 +24,7 @@ import { EpisodeTimeline } from '@/components/memory/EpisodeTimeline';
 import { FactTable } from '@/components/memory/FactTable';
 import { PolicyCard } from '@/components/memory/PolicyCard';
 import type { AgentFact, AgentRegistration, EpisodeRecord, AgentEpisodeRecord, LearnedPolicy } from '@/api/aep.api';
-import { Button } from '@ghatana/design-system';
+import { Button, Select } from '@ghatana/design-system';
 import { EmptyState } from '@/components/core/EmptyState';
 import { ErrorState } from '@/components/core/ErrorState';
 
@@ -53,11 +53,11 @@ function AgentSelector({ agents, selectedId, onChange }: AgentSelectorProps) {
       >
         Agent:
       </label>
-      <select
+      <Select
         id="agent-select"
         value={selectedId ?? ''}
         onChange={(e) => onChange(e.target.value || undefined)}
-        className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        size="sm"
       >
         <option value="">All agents (tenant-level)</option>
         {agents.map((a) => (
@@ -65,7 +65,7 @@ function AgentSelector({ agents, selectedId, onChange }: AgentSelectorProps) {
             {a.name} ({a.id})
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }
@@ -416,17 +416,17 @@ export function MemoryExplorerPage() {
           {activeTab === 'episodes' && (
             <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
               Outcome
-              <select
+              <Select
                 value={episodeOutcomeFilter}
                 onChange={(event) => setEpisodeOutcomeFilter(event.target.value as EpisodeOutcomeFilter)}
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                size="sm"
               >
                 <option value="ALL">All outcomes</option>
                 <option value="SUCCESS">Success</option>
                 <option value="FAILURE">Failure</option>
                 <option value="TIMEOUT">Timeout</option>
                 <option value="CANCELLED">Cancelled</option>
-              </select>
+              </Select>
             </label>
           )}
 
@@ -434,30 +434,30 @@ export function MemoryExplorerPage() {
             <>
               <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 Status
-                <select
+                <Select
                   value={factStatusFilter}
                   onChange={(event) => setFactStatusFilter(event.target.value as FactStatusFilter)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  size="sm"
                 >
                   <option value="ALL">All statuses</option>
                   <option value="ACTIVE">Active</option>
                   <option value="STALE">Stale</option>
                   <option value="RETRACTED">Retracted</option>
                   <option value="ARCHIVED">Archived</option>
-                </select>
+                </Select>
               </label>
               <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 Confidence
-                <select
+                <Select
                   value={confidenceFilter}
                   onChange={(event) => setConfidenceFilter(event.target.value as ConfidenceFilter)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  size="sm"
                 >
                   <option value="ALL">All tiers</option>
                   <option value="HIGH">High</option>
                   <option value="MEDIUM">Medium</option>
                   <option value="LOW">Low</option>
-                </select>
+                </Select>
               </label>
             </>
           )}
@@ -466,29 +466,29 @@ export function MemoryExplorerPage() {
             <>
               <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 Status
-                <select
+                <Select
                   value={policyStatusFilter}
                   onChange={(event) => setPolicyStatusFilter(event.target.value as PolicyStatusFilter)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  size="sm"
                 >
                   <option value="ALL">All statuses</option>
                   <option value="ACTIVE">Active</option>
                   <option value="PENDING_REVIEW">Pending review</option>
                   <option value="REJECTED">Rejected</option>
-                </select>
+                </Select>
               </label>
               <label className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                 Confidence
-                <select
+                <Select
                   value={confidenceFilter}
                   onChange={(event) => setConfidenceFilter(event.target.value as ConfidenceFilter)}
-                  className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  size="sm"
                 >
                   <option value="ALL">All tiers</option>
                   <option value="HIGH">High</option>
                   <option value="MEDIUM">Medium</option>
                   <option value="LOW">Low</option>
-                </select>
+                </Select>
               </label>
             </>
           )}

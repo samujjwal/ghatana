@@ -16,7 +16,7 @@
  */
 import React, { useRef, useState, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Button } from '@ghatana/design-system';
+import { Button, TextField } from '@ghatana/design-system';
 
 export interface ImpactItem {
   label: string;
@@ -190,12 +190,12 @@ export function SensitiveActionDialog({
               >
                 Type <code className="font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">{confirmKeyword}</code> to confirm
               </label>
-              <input
+              <TextField
                 id="sensitive-confirm"
                 type="text"
-                className="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
+                fullWidth
               />
             </div>
           )}

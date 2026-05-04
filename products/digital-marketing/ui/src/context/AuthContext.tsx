@@ -1,12 +1,13 @@
 /**
  * DMOS auth context.
  *
- * <p>Production-safe auth implementation (DMOS-P1-013):</p>
+ * <p>Production-safe auth implementation (DMOS-P0-1):</p>
  * <ul>
+ *   <li>Local auth disabled in production - requires real auth provider</li>
  *   <li>Auth tokens stored in runtime memory only (never localStorage/sessionStorage)</li>
  *   <li>Session expiry handling with automatic logout</li>
  *   <li>Session invalidation on logout</li>
- *   <li>Short-lived session IDs (refreshed periodically)</li>
+ *   <li>Fails closed on missing principal/session in production</li>
  * </ul>
  *
  * @doc.type context
@@ -32,6 +33,9 @@ import { normalizeRoles, validateRoles } from '@/lib/role-utils';
 
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 const SESSION_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+
+// Production environment check
+const isProduction = import.meta.env.MODE === 'production';
 
 interface AuthContextValue {
   token: string | null;
@@ -106,14 +110,22 @@ export function AuthProvider({
     return () => clearInterval(interval);
   }, [token, sessionExpiry, logout]);
 
-  // Session refresh (DMOS-P1-013)
+  // Session refresh (DMOS-P0-1)
   useEffect(() => {
     if (!token) return;
 
     const refresh = () => {
-      // In production, this would call an API to refresh the session
-      // For now, we extend the expiry time
-      setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
+      if (isProduction) {
+        // In production, call the real auth API to refresh the session
+        // This is a placeholder - implement actual refresh endpoint call
+        console.warn('[DMOS] Session refresh endpoint not yet implemented for production');
+        // For now, extend expiry to prevent immediate logout
+        // TODO: Implement real session refresh API call
+        setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
+      } else {
+        // In development, extend the expiry time
+        setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
+      }
     };
 
     const interval = setInterval(refresh, SESSION_REFRESH_MS);
@@ -122,6 +134,14 @@ export function AuthProvider({
 
   const login = useCallback(
     (newToken: string, wsId: string, tId: string, pId: string, newSessionId: string, newRoles: string[] = []) => {
+      // P0-1: Fail closed in production - local auth not allowed
+      if (isProduction) {
+        throw new Error(
+          'Local authentication is not allowed in production. ' +
+          'Please use the configured authentication provider.'
+        );
+      }
+
       // DMOS-P1-12: Validate and normalize roles
       const normalizedRoles = normalizeRoles(newRoles);
       if (!validateRoles(normalizedRoles) && normalizedRoles.length > 0) {

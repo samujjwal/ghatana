@@ -20,7 +20,7 @@ import { useAtom } from 'jotai';
 import { useQueryClient } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import { tenantIdAtom, authorizedTenantsAtom } from '@/stores/tenant.store';
-import { Button } from '@ghatana/design-system';
+import { Button, TextField } from '@ghatana/design-system';
 
 // T-27: Session-only recent tenants (no localStorage)
 const MAX_RECENT = 5;
@@ -92,13 +92,14 @@ export function TenantSelector() {
   return (
     <div className="mx-3 mt-1 relative">
       {/* Current tenant display */}
-      <button
+      <Button
         type="button"
         onClick={() => {
           setIsOpen((prev) => !prev);
           setError(null);
         }}
-        className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+        variant="outlined"
+        className="w-full flex items-center gap-1.5 px-2 py-1.5 text-xs"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -110,21 +111,22 @@ export function TenantSelector() {
         </span>
         {/* T-29: Use design-system icon instead of manual SVG */}
         <ChevronDown className="ml-auto h-3 w-3 text-gray-400 flex-shrink-0" />
-      </button>
+      </Button>
 
       {/* Dropdown */}
       {isOpen && (
         <div className="absolute bottom-full left-0 right-0 mb-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 overflow-hidden">
           <div className="py-1" role="listbox">
             {options.map((id) => (
-              <button
+              <Button
                 key={id}
                 type="button"
                 role="option"
                 aria-selected={id === tenantId}
                 onClick={() => handleSelect(id)}
+                variant="text"
                 className={[
-                  'w-full text-left px-3 py-1.5 text-xs font-mono transition-colors',
+                  'w-full text-left px-3 py-1.5 text-xs font-mono',
                   id === tenantId
                     ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800',
@@ -134,13 +136,13 @@ export function TenantSelector() {
                 {id === tenantId && (
                   <span className="ml-1.5 text-[10px] text-gray-400 font-normal">(current)</span>
                 )}
-              </button>
+              </Button>
             ))}
 
             <div className="border-t border-gray-100 dark:border-gray-800 my-1" />
 
             <div className="px-3 py-1.5">
-              <input
+              <TextField
                 type="text"
                 value={customValue}
                 onChange={(e) => {
@@ -154,15 +156,18 @@ export function TenantSelector() {
                   }
                 }}
                 placeholder="Other tenant…"
-                className="w-full px-2 py-1 text-xs rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:border-indigo-400 font-mono"
+                size="sm"
+                fullWidth
+                className="font-mono"
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => handleSelect('__custom__')}
-                className="mt-1 w-full px-2 py-1 text-[10px] rounded bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                variant="contained"
+                className="mt-1 w-full text-[10px]"
               >
                 Switch to custom tenant
-              </button>
+              </Button>
               {error && (
                 <p className="mt-1 text-[10px] text-red-600 dark:text-red-400">{error}</p>
               )}

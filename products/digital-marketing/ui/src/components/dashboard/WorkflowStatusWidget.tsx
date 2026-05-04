@@ -1,8 +1,11 @@
 /**
- * Workflow status widget.
+ * Approval status widget (P1-5: Fixed misleading name).
+ *
+ * Note: This widget shows approval-based status, not general workflow status.
+ * A true workflow status widget would require a workflow execution API.
  *
  * @doc.type component
- * @doc.purpose Dashboard card for active workflow status
+ * @doc.purpose Dashboard card for pending approval status
  * @doc.layer frontend
  */
 import React from 'react';
@@ -47,7 +50,7 @@ export const WorkflowStatusWidget: React.FC<WorkflowStatusWidgetProps> = ({
         id="workflow-status-title"
         className="text-sm font-semibold text-gray-700"
       >
-        Workflow Status
+        Pending Approvals
       </h2>
 
       {isLoading && (

@@ -1,8 +1,9 @@
 # Capability Matrix
 
-> **Source**: Derived from canonical plugin module metadata.
+> **Source**: Derived from canonical plugin module metadata and unified capability schema.
 > **Last Generated**: 2026-05-03
 > **How to regenerate**: Run `./gradlew :platform-plugins:generateCapabilityMatrix` (Phase 6 task — scheduled).
+> **Unified Schema**: See [capability-schema.yaml](./capability-schema.yaml) for the single source of truth for all capabilities.
 
 ## 1. Platform Plugin Modules
 
@@ -103,3 +104,41 @@ All the following gates must pass on every PR touching platform or product code:
 | Kernel purity | `checkKernelPurity` | `platform-kernel/kernel-core/src/main` |
 | Resource purity | `checkKernelResourcePurity` | `platform-kernel/kernel-core/src/main/resources` |
 | Docs purity | `checkKernelDocsPurity` | `docs/examples/**` |
+
+## 8. Unified Capability Schema
+
+The unified capability schema at `capability-schema.yaml` is the single source of truth for all capabilities across kernel, Data Cloud, and AEP. This schema:
+
+- Defines kernel capabilities (platform-level infrastructure)
+- Defines Data Cloud capabilities (product-specific features)
+- Defines AEP capabilities (product-specific features)
+- Maps UI feature gates to capability dependencies
+- Includes status definitions (stable, preview, deprecated, experimental)
+
+### Schema Structure
+
+```yaml
+capability_schema:
+  version: "1.0.0"
+  kernel_capabilities: [...]
+  data_cloud_capabilities: [...]
+  aep_capabilities: [...]
+  ui_feature_gates: [...]
+  status_definitions: {...}
+```
+
+### Usage
+
+- **Documentation**: The CAPABILITY_MATRIX.md should be generated from this schema
+- **UI Feature Gates**: UI components should check capability status before rendering features
+- **API Gateways**: Backend services should check capability status before exposing endpoints
+- **Production Deployment**: Preview capabilities should be disabled in production unless explicitly enabled
+
+### Status Definitions
+
+| Status | Description | Production Allowed | UI Indicator |
+|--------|-------------|-------------------|--------------|
+| stable | Production-ready with full support | Yes | Green |
+| preview | Preview/demo-only, not production-ready | No | Amber |
+| deprecated | Deprecated, will be removed in future version | No | Red |
+| experimental | Experimental, may change without notice | No | Purple |

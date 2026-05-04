@@ -9,10 +9,35 @@ All adapters use `ConcurrentHashMap` as the backing store, making them suitable 
 
 - **Local development** — zero external dependencies, start immediately
 - **Integration tests** — fast, deterministic, no Docker required
-- **Single-instance staging** — non-persistent but fully functional
+
+## ⚠️ Production Safety
+
+**In-memory adapters MUST NOT be used in production environments.**
+
+This module includes a {@link ProductionProfileGuard} that validates the environment
+before allowing in-memory adapter usage. The guard will throw an {@link IllegalStateException}
+if {@code DMOS_ENV=production} is set, preventing accidental data loss.
+
+### Environment Variables
+
+- `DMOS_ENV` - Deployment environment (default: {@code development})
+  - {@code development} - In-memory adapters allowed
+  - {@code test} - In-memory adapters allowed
+  - {@code production} - In-memory adapters **BLOCKED** (throws exception)
+
+### Usage
+
+```java
+// Validate environment before wiring adapters
+ProductionProfileGuard.validate();
+
+// Wire adapters (only allowed in non-production environments)
+WorkspaceRepository workspaceRepo = new InMemoryWorkspaceRepository();
+CampaignRepository campaignRepo = new InMemoryCampaignRepository();
+```
 
 For production persistence (PostgreSQL, Redis, etc.), implement the same repository
-interfaces in a separate module following the same package structure.
+interfaces in the {@code dm-persistence} module following the same package structure.
 
 ## Packages
 

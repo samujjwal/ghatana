@@ -16,6 +16,7 @@
  */
 import React, { useState, useCallback } from 'react';
 import { CheckCircle, ChevronRight, Target, Layers, ShieldCheck, Play, Settings } from 'lucide-react';
+import { Button, TextField, TextArea } from '@ghatana/design-system';
 import type { StageKind } from '@/types/pipeline.types';
 
 // ---------------------------------------------------------------------------
@@ -170,14 +171,14 @@ export function GuidedPipelineFlow({
             Follow the steps to create your pipeline.
           </p>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Settings className="h-3.5 w-3.5" aria-hidden="true" />}
           onClick={onSwitchToAdvanced}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
         >
-          <Settings className="h-3.5 w-3.5" aria-hidden="true" />
           Switch to advanced mode
-        </button>
+        </Button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -192,14 +193,14 @@ export function GuidedPipelineFlow({
             const accessible = idx <= currentStepIndex;
 
             return (
-              <button
+              <Button
                 key={step.id}
-                type="button"
+                variant="text"
                 disabled={!accessible}
                 onClick={() => accessible && setCurrentStep(step.id)}
                 aria-current={isActive ? 'step' : undefined}
                 className={[
-                  'flex items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                  'flex items-start gap-3 px-3 py-2.5 text-left text-sm',
                   isActive
                     ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
                     : accessible
@@ -220,7 +221,7 @@ export function GuidedPipelineFlow({
                     {step.description}
                   </span>
                 </span>
-              </button>
+              </Button>
             );
           })}
         </nav>
@@ -302,14 +303,14 @@ function DescribeStep({
         <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
           Description <span className="text-red-500" aria-hidden="true">*</span>
         </span>
-        <textarea
+        <TextArea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           rows={4}
           placeholder="e.g. Ingest customer events from Kafka, validate schema, enrich with CRM data, and publish to the analytics topic."
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
           required
           aria-required="true"
+          fullWidth
         />
       </label>
 
@@ -317,33 +318,25 @@ function DescribeStep({
         <span className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
           Goal <span className="text-xs font-normal text-gray-400">(optional)</span>
         </span>
-        <input
+        <TextField
           type="text"
           value={goal}
           onChange={(e) => onGoalChange(e.target.value)}
           placeholder="e.g. Reduce latency for real-time analytics"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+          fullWidth
         />
       </label>
 
-      <button
-        type="button"
+      <Button
+        variant="contained"
         onClick={() => void onSubmit()}
         disabled={!description.trim() || loading}
-        className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        endIcon={!loading && <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+        loading={loading}
+        loadingText="Generating suggestions…"
       >
-        {loading ? (
-          <>
-            <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" aria-hidden="true" />
-            Generating suggestions…
-          </>
-        ) : (
-          <>
-            Generate stage suggestions
-            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-          </>
-        )}
-      </button>
+        Generate stage suggestions
+      </Button>
     </div>
   );
 }
@@ -379,12 +372,12 @@ function ReviewStep({
           No stages were suggested. Try refining your description.
         </p>
         <div className="flex gap-3">
-          <button type="button" onClick={onBack} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+          <Button variant="outlined" onClick={onBack}>
             Back
-          </button>
-          <button type="button" onClick={onSwitchToAdvanced} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+          </Button>
+          <Button variant="contained" onClick={onSwitchToAdvanced}>
             Build manually
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -420,20 +413,19 @@ function ReviewStep({
       </ol>
 
       <div className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+        <Button variant="outlined" onClick={onBack}>
           Back
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="contained"
           onClick={onApply}
-          className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          endIcon={<ChevronRight className="ml-1.5 inline h-4 w-4" aria-hidden="true" />}
         >
           Apply stages and continue
-          <ChevronRight className="ml-1.5 inline h-4 w-4" aria-hidden="true" />
-        </button>
-        <button type="button" onClick={onSwitchToAdvanced} className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+        </Button>
+        <Button variant="text" onClick={onSwitchToAdvanced}>
           Edit in canvas
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -470,27 +462,19 @@ function ValidateStep({ onValidate, validating, validationPassed, onBack }: Vali
       )}
 
       <div className="flex items-center gap-3">
-        <button type="button" onClick={onBack} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+        <Button variant="outlined" onClick={onBack}>
           Back
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="contained"
           onClick={() => void onValidate()}
           disabled={validating}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          startIcon={!validating && <ShieldCheck className="h-4 w-4" aria-hidden="true" />}
+          loading={validating}
+          loadingText="Validating…"
         >
-          {validating ? (
-            <>
-              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" aria-hidden="true" />
-              Validating…
-            </>
-          ) : (
-            <>
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              {validationPassed === true ? 'Re-validate' : 'Validate pipeline'}
-            </>
-          )}
-        </button>
+          {validationPassed === true ? 'Re-validate' : 'Validate pipeline'}
+        </Button>
       </div>
     </div>
   );
@@ -520,27 +504,19 @@ function RunStep({ onRunNow, running, canManagePipelines, onSwitchToAdvanced }: 
       )}
 
       <div className="flex items-center gap-3">
-        <button type="button" onClick={onSwitchToAdvanced} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800">
+        <Button variant="outlined" onClick={onSwitchToAdvanced}>
           Open in canvas
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="contained"
           onClick={() => void onRunNow()}
           disabled={running || !canManagePipelines}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          startIcon={!running && <Play className="h-4 w-4" aria-hidden="true" />}
+          loading={running}
+          loadingText="Triggering run…"
         >
-          {running ? (
-            <>
-              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" aria-hidden="true" />
-              Triggering run…
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4" aria-hidden="true" />
-              Run now
-            </>
-          )}
-        </button>
+          Run now
+        </Button>
       </div>
     </div>
   );

@@ -31,14 +31,15 @@ const TARGET_TYPES: Array<ApprovalTargetType | 'ALL'> = [
 
 export function ApprovalQueuePage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
-  const { isAuthenticated, tenantId, roles } = useAuth();
+  const { isAuthenticated, tenantId, principalId, roles } = useAuth();
 
   const [actionFilter, setActionFilter] = useState<ApprovalTargetType | 'ALL'>('ALL');
 
-  const subjectId = tenantId ?? 'unknown';
+  // P1-2: Use principalId (reviewer) instead of tenantId for reviewer-scoped queue
+  const reviewerId = principalId ?? 'unknown';
   const { approvals, isLoading, isError, error } = useApprovalQueue(
     workspaceId ?? null,
-    subjectId,
+    reviewerId,
   );
 
   const filtered = useMemo(

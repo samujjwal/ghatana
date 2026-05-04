@@ -140,15 +140,20 @@ public interface DigitalMarketingKernelAdapter {
      * Returns {@code true} if the given product feature flag is currently enabled.
      *
      * <p>KE-05: When the platform {@code FeatureFlagPlugin} is available, the
-     * production implementation will delegate to it. Until then, the default
-     * returns {@code true} (enabled) to preserve current bootstrap behaviour
-     * where all DMOS features are on by default.</p>
+     * production implementation will delegate to it. The default implementation
+     * fails closed (returns {@code false}) for incomplete features in production
+     * to prevent accidental exposure of non-GA capabilities.</p>
+     *
+     * <p>Production implementations must override this method to delegate to
+     * the platform FeatureFlagPlugin with proper fallback behavior.</p>
      *
      * @param context operation context
      * @param flagKey feature flag key (e.g. {@code "dmos.ai_features_enabled"})
      * @return promise of {@code true} if the flag is enabled
      */
     default Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
-        return Promise.of(true);
+        // Fail closed: return false by default for production safety
+        // Production implementations must override to delegate to FeatureFlagPlugin
+        return Promise.of(false);
     }
 }

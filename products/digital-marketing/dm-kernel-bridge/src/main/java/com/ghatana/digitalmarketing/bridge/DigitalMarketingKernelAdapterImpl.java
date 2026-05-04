@@ -12,6 +12,7 @@ import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin.AuditEntry;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public final class DigitalMarketingKernelAdapterImpl
     private final HumanApprovalPlugin approvalPlugin;
     private final AuditTrailPlugin auditTrailPlugin;
     private final RiskManagementPlugin riskManagementPlugin;
+    private final NotificationPlugin notificationPlugin;
 
     /**
      * Constructs the adapter with all required kernel ports and platform plugins.
@@ -63,6 +65,7 @@ public final class DigitalMarketingKernelAdapterImpl
      * @param approvalPlugin   human approval plugin; must not be {@code null}
      * @param auditTrailPlugin audit trail plugin for DMOS domain audit entries; must not be {@code null}
      * @param riskManagementPlugin risk plugin for model-driven risk scoring; must not be {@code null}
+     * @param notificationPlugin notification plugin for reliable delivery; must not be {@code null}
      */
     public DigitalMarketingKernelAdapterImpl(
             BridgeAuthorizationService authService,
@@ -71,7 +74,8 @@ public final class DigitalMarketingKernelAdapterImpl
             ConsentPlugin consentPlugin,
             HumanApprovalPlugin approvalPlugin,
             AuditTrailPlugin auditTrailPlugin,
-            RiskManagementPlugin riskManagementPlugin) {
+            RiskManagementPlugin riskManagementPlugin,
+            NotificationPlugin notificationPlugin) {
         super(BRIDGE_ID, authService, auditEmitter, healthIndicator);
         this.consentPlugin    = Objects.requireNonNull(consentPlugin,    "consentPlugin must not be null");
         this.approvalPlugin   = Objects.requireNonNull(approvalPlugin,   "approvalPlugin must not be null");
@@ -79,6 +83,10 @@ public final class DigitalMarketingKernelAdapterImpl
         this.riskManagementPlugin = Objects.requireNonNull(
             riskManagementPlugin,
             "riskManagementPlugin must not be null"
+        );
+        this.notificationPlugin = Objects.requireNonNull(
+            notificationPlugin,
+            "notificationPlugin must not be null"
         );
     }
 
@@ -268,10 +276,9 @@ public final class DigitalMarketingKernelAdapterImpl
     /**
      * {@inheritDoc}
      *
-     * <p>KE-02 placeholder: emits a structured INFO log entry so every notification
-     * dispatch is observable via log-based alerting. When the platform
-     * {@code NotificationPlugin} lands the implementation here will delegate to it
-     * via the {@code KernelEventBus}.</p>
+     * <p>Delegates to the platform {@link NotificationPlugin} for durable delivery
+     * with retry and dead-letter queue support. The notification is queued asynchronously
+     * and the returned promise resolves with the notification ID.</p>
      */
     @Override
     public Promise<Void> notifyUser(
@@ -285,13 +292,19 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(template,    "template must not be null");
         Objects.requireNonNull(attributes,  "attributes must not be null");
 
-        LOG.info(
-            "[{}] Notification dispatched: recipientId={}, template={}, tenant={}, correlation={}",
-            BRIDGE_ID, recipientId, template,
-            context.getTenantId().getValue(),
-            context.getCorrelationId().getValue()
-        );
-        return Promise.of(null);
+        // Enrich attributes with context information
+        java.util.Map<String, String> enrichedAttributes = new java.util.HashMap<>(attributes);
+        enrichedAttributes.put("tenantId", context.getTenantId().getValue());
+        enrichedAttributes.put("workspaceId", context.getWorkspaceId().getValue());
+        enrichedAttributes.put("correlationId", context.getCorrelationId().getValue());
+        enrichedAttributes.put("actor", context.getActor().getPrincipalId());
+
+        return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
+            .whenResult(notificationId -> LOG.info(
+                "[{}] Notification dispatched: notificationId={}, recipientId={}, template={}, tenant={}",
+                BRIDGE_ID, notificationId, recipientId, template, context.getTenantId().getValue()
+            ))
+            .map(notificationId -> null);
     }
 
     // -----------------------------------------------------------------------

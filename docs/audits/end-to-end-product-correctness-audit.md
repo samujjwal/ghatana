@@ -1,657 +1,427 @@
-# End-to-End Product Correctness, Completeness, UI/UX, Backend, DB, and Production-Readiness Audit
+# Ghatana Data Cloud + AEP — Ultra-Strict End-to-End Audit
 
-**Product:** `data-cloud`  
-**Path:** `products/data-cloud/`  
-**Audit Date:** 2026-05  
-**Auditor:** GitHub Copilot (Automated Engineering Audit)  
-**Scope:** Full product surface — backend handlers, REST API, database layer, frontend UI, tests, observability, security, and production readiness.
+**Repository:** `samujjwal/ghatana`  
+**Reviewed commit:** `8e27816d76271c52ed4f35cd083db2e441f82340`  
+**Target roots:** `products/data-cloud`, `products/aep`  
+**Execution method:** source-evidence audit through the GitHub connector at the exact ref, plus the uploaded ultra-strict audit prompt. I did not clone the repo locally or run Gradle, pnpm, Playwright, DB migrations, or services; any runtime-only conclusion is marked as requiring execution proof.
 
 ---
 
 ## 1. Executive Summary
 
-The Data Cloud product is a sophisticated, well-architected multi-tenant data platform covering entity CRUD, event streaming, analytics, governance, AI/ML substrate, voice gateway, workflow orchestration, and plugin extensibility. The core infrastructure is solid: authentication is strongly enforced for production profiles, real integration tests exist in the launcher module, observability is integrated via OpenTelemetry and Prometheus, and security-sensitive operations (purge, PII redaction) have token-based confirmation flows.
+| Dimension | Data Cloud | AEP | Combined Verdict |
+|---|---:|---:|---|
+| Correctness | B | B+ | Good source evidence; release still needs runtime/provider proof. |
+| Completeness | B | B | Broad surfaces exist; preview/degraded features need stricter capability truth. |
+| Ghatana architecture consistency | B+ | B+ | Ownership boundaries are mostly aligned with Ghatana rules. |
+| Ghatana design consistency | B | C+ | Data Cloud UI architecture is cleaner; AEP has explicit design-system migration debt. |
+| Production mock/stub risk | Medium | Low-Medium | No current source-confirmed P0 fake-critical path; local/preview/optional surfaces still need gates. |
+| Security/privacy/governance | B+ | B+ | Strong fail-closed patterns, but profile-specific tests must prove them. |
+| Observability/operability | B | B+ | Health/metrics/runtime truth exist; degraded-state and gateway E2E metrics need hardening. |
+| Test authenticity | B- | B | Older test-theatre findings are partly stale; real provider/durable E2E remains missing. |
+| Release readiness | Conditional | Conditional | Internal demo ready; not unrestricted-production ready. |
 
-**However, there are significant production-readiness gaps that must be resolved before the product can be classified as production-ready.**
+**Production readiness:** No, not for unrestricted production.  
+**Internal demo readiness:** Yes, with preview/degraded capability disclosure.  
+**Feature/capability-gated release:** Yes, for live-backed surfaces only.
 
-The most critical issues are:
+### Current top P1 issues
 
-1. **Three endpoints registered in the live HTTP server return hardcoded 501 stubs** — DELETE connector, analytics query cancellation — these expose incomplete backend behaviour through the production API surface.
-2. **The Feature Store Ingest service defaults to an in-memory event log store** — all ML feature data is silently lost on pod restart without an explicit environment variable override.
-3. **Two test files are pure test theater** — they test mock objects, never invoking any production code — providing false green CI confidence.
-4. **The Workflows page exposes disabled actions with "(not yet wired)" labels in the production UI** — a user-visible indicator that backend functionality is incomplete.
-5. **The Data Fabric page is a preview surface** with live metrics not yet connected, shipped without a feature flag gate.
+| ID | Product | Issue | Required Fix |
+|---|---|---|---|
+| P1-DC-1 | Data Cloud | Data Fabric is documented as preview/demo-only and uses hardcoded demo metrics when real metrics are still in development. | Production-disable or show an explicit runtime capability/preview boundary. |
+| P1-DC-2 | Data Cloud | Workflow execution routes and `WorkflowExecutionCapability` exist, but inspected tests use mocked capability/client and do not prove real provider durability. | Add real provider integration tests and restart-persistence tests for execution snapshots/logs/checkpoints. |
+| P1-DC-3 | Data Cloud | Local-profile execution route accepts missing tenant; production tenant/auth fail-closed behavior must be explicitly tested. | Add strict/production profile tests that missing tenant/auth fails. |
+| P1-DC-4 | Data Cloud | Analytics cancellation is unsupported and returns service unavailable; UI/OpenAPI must not imply live cancellation. | Drive cancel UI and OpenAPI from `cancellation.supported=false` / capabilities. |
+| P1-DC-5 | Data Cloud | Checked-in Data Cloud audit doc is stale relative to exact source. | Replace/regenerate the audit doc. |
+| P1-AEP-1 | AEP | AEP UI design-system adoption is incomplete. | Migrate raw controls to `@ghatana/design-system`; enforce lint/visual/a11y checks. |
+| P1-AEP-2 | AEP | AEP EventCloud fail-closed source behavior is strong, but production-launcher tests must prove it. | Add no-provider fail, provider success, and dev/test allow-flag tests. |
+| P1-AEP-3 | AEP | AEP checked-in audit doc is stale and still reports prior P0s. | Replace/regenerate the audit doc. |
+| P1-AEP-4 | AEP | Gateway is improved, but needs full JWT/CORS/tenant/correlation/SSE/WS/backend-failure tests. | Add gateway integration suite. |
 
-**Production Readiness Gate: NOT READY.** Remediate all P0/P1 findings before release.
+No current source-confirmed P0 was found in the inspected exact-ref files.
 
 ---
 
-## 2. Audit Scope and Coverage
+## 2. Scope and Method
 
-| Area | Coverage |
-|------|----------|
-| Backend handlers (Java, ActiveJ) | Full (30+ handler classes reviewed) |
-| HTTP routing (`DataCloudRouterBuilder`) | Full (85+ routes reviewed) |
-| API surface (OpenAPI spec) | Full |
-| Database / storage profiles | Full (local, sovereign, staging, production) |
-| Frontend pages (React/TypeScript) | Full (26 pages reviewed) |
-| Test files (Java + TypeScript) | Full (all test directories reviewed) |
-| Security (auth, tenant isolation) | Full |
-| Observability (metrics, tracing, logs) | Full |
-| Feature Store Ingest service | Full |
-| Governance / lifecycle handler | Partial (constructor, purge, policy flow) |
+### Reviewed evidence
+
+- `products/data-cloud/README.md`
+- `products/data-cloud/ui/ARCHITECTURE.md`
+- `products/data-cloud/ui/src/App.tsx`
+- `products/data-cloud/ui/src/routes.tsx`
+- `products/data-cloud/launcher/src/main/java/.../DataCloudRouterBuilder.java`
+- `products/data-cloud/launcher/src/main/java/.../handlers/AnalyticsHandler.java`
+- `products/data-cloud/launcher/src/main/java/.../plugins/WorkflowExecutionCapability.java`
+- `products/data-cloud/launcher/src/test/java/.../DataCloudHttpServerWorkflowExecutionTest.java`
+- `docs/audits/end-to-end-product-correctness-audit.md`
+- `products/aep/README.md`
+- `products/aep/ui/DESIGN_SYSTEM_ADOPTION.md`
+- `products/aep/ui/src/App.tsx`
+- `products/aep/aep-engine/src/main/java/com/ghatana/aep/Aep.java`
+- `products/aep/gateway/src/app.ts`
+- `products/aep/docs/audits/end-to-end-product-correctness-audit.md`
+- `docs/architecture/ARCHITECTURE_RULES.md`
+- `docs/DATA_CLOUD_OWNERSHIP_CLARIFICATION.md`
+
+### Excluded
+
+- Generated/cache/vendor artifacts.
+- Local test execution and runtime startup.
+- Unrelated products except shared architecture/design constraints.
 
 ---
 
-## 3. Product Module Inventory
+## 3. Complete Product Inventory
 
-### 3.1 Java Backend Modules
+### 3.1 Data Cloud UI Inventory
 
-| Module | Purpose | Status |
-|--------|---------|--------|
-| `launcher/` | HTTP server, router, all handlers, bootstrap | Core |
-| `platform-launcher/` | Platform-level launcher abstraction | Core |
-| `platform-entity/` | Entity CRUD domain model | Core |
-| `platform-event/` | Event model and routing | Core |
-| `platform-event-store/` | EventLogStore SPI and adapters | Core |
-| `platform-analytics/` | Analytics query engine (AnalyticsQueryEngine, ReportService) | Core |
-| `platform-api/` | API contracts and route definitions | Core |
-| `platform-plugins/` | Plugin SPI (StoragePlugin, StoragePluginRegistry) | Core |
-| `platform-config/` | Configuration model | Core |
-| `platform-governance/` | Governance and retention model | Core |
-| `spi/` | Shared SPI interfaces | Core |
-| `kernel-bridge/` | Kernel integration bridge | Core |
-| `feature-store-ingest/` | Real-time ML feature ingestion service | **P1 Risk** |
-| `agent-catalog/` | Agent registry | Core |
-| `sdk/` | Client SDK | Core |
-| `integration-tests/` | E2E/integration test suite | Present |
-| `libs/ui-components/` | Shared UI component library | Present |
+| UI Item | File(s) | Purpose | User Actions | Dependencies | Status | Issues |
+|---|---|---|---|---|---|---|
+| Root providers | `ui/src/App.tsx` | App shell, QueryClient, Jotai, theme, toast, onboarding | app boot/onboarding | routes, session bootstrap | Complete | Need onboarding E2E and role/tenant proof. |
+| `/` | `routes.tsx`, `IntelligentHub` | Command center | navigate to data/query/workflows/trust | launcher APIs | Complete | None from route source. |
+| `/data` | `DataExplorer` | Unified data explorer | browse/filter/select | entities/collections APIs | Complete | Needs large dataset proof. |
+| `/data/new` | `CreateCollectionPage` | Create collection | submit/cancel | entity/collection API | Complete | Duplicate-submit/concurrency tests needed. |
+| `/data/:id/edit` | `EditCollectionPage` | Edit collection | save/cancel | entity/collection API | Complete | Concurrency tests needed. |
+| `/pipelines` | `WorkflowsPage` | Pipeline list/center | list/select/create | pipeline API | Mostly complete | Execution must be capability-gated. |
+| `/pipelines/new` | `SmartWorkflowBuilder` | Intent-to-workflow draft | prompt/generate/review/save | AI draft + pipeline API | Partial-complete | Low-confidence clarification still limited per README. |
+| `/pipelines/:id` | `WorkflowDesigner` | Pipeline design/detail | inspect/edit/execute | pipeline + execution API | Partial | Execution depends on registered capability/provider. |
+| `/query` | `SqlWorkspacePage` | SQL/NLQ workspace | run/explain/query | analytics APIs | Complete/optional | Cancellation unsupported; UI must reflect. |
+| `/trust` | `TrustCenter` | Governance/trust | classify/purge/redact/review | governance APIs | Partial | Broader policy/access review lifecycle incomplete. |
+| `/insights` | `InsightsPage` | Runtime/operator diagnostics | inspect metrics/capabilities | capability/metrics APIs | Complete | Verify no fake metrics. |
+| `/alerts` | `AlertsPage` | Alert triage | acknowledge/resolve/escalate | alerts + SSE | Complete | Role/capability-gated. |
+| `/operations`, `/operations/jobs` | operations pages | Runtime/job diagnostics | inspect jobs/tools | operations/job APIs | Partial | Runtime E2E needed. |
+| `/events` | `EventExplorerPage` | Event stream explorer | filter/inspect | events/SSE | Complete | Long-lived stream tests needed. |
+| `/memory` | `MemoryPlaneViewerPage` | Memory plane | browse/retain/delete | memory APIs | Complete | Privacy/tenant tests needed. |
+| `/entities` | `EntityBrowserPage` | Entity browser | browse/detail | entity APIs | Complete | Role/capability-gated. |
+| `/context` | `ContextExplorerPage` | Context/RAG explorer | query/context actions | context/RAG APIs | Complete | Governance boundary tests needed. |
+| `/fabric` | `DataFabricPage` | Data fabric topology | inspect fabric/connectors | fabric/capability APIs | Preview | P1 preview/demo risk. |
+| `/agents` | `AgentPluginManagerPage` | Agent catalog/plugin view | browse/inspect | agent catalog APIs | Partial/complete | Clarify Data Cloud agent catalog vs AEP agent runtime. |
+| `/settings` | `SettingsPage` | Admin settings | update settings | settings APIs | Complete | Must require durable store in production. |
+| `/plugins`, `/plugins/:id` | plugin pages | Plugin lifecycle | enable/disable/upgrade | plugin APIs | Partial | Upgrade/sandbox/conformance capability truth needed. |
+| `/connectors` | `DataConnectorsPageWrapper` | Connector management | create/edit connector | connector APIs | Unknown/partial | Delete route status needs exact runtime test. |
 
-### 3.2 Frontend Structure
+### 3.2 AEP UI Inventory
 
-| Directory | Contents |
-|-----------|----------|
-| `ui/src/pages/` | 26 page components |
-| `ui/src/api/` | API service layer (typed, Zod-validated) |
-| `ui/src/lib/` | Utilities, API client, mock data (dev/test only) |
-| `ui/src/mocks/` | MSW handlers (dev/test only) |
-| `ui/src/components/` | Shared components, common patterns |
-| `ui/src/contracts/` | Zod schemas for API contract validation |
+| UI Item | File(s) | Purpose | User Actions | Dependencies | Status | Issues |
+|---|---|---|---|---|---|---|
+| Root App/router | `ui/src/App.tsx` | Outcome shell and routes | navigation | gateway APIs/AuthContext | Complete | Raw controls/design migration debt. |
+| `/operate` | `MonitoringDashboardPage` | Runtime monitoring | inspect runs/failures | AEP runtime APIs | Complete | Needs gateway E2E. |
+| `/operate/costs` | `CostDashboardPage` | Cost visibility | view spend/budget | cost APIs | Partial/complete | Synthetic fallback must be verified/disclosed. |
+| `/operate/reviews` | `HitlReviewPage` | HITL review | approve/reject/escalate | HITL APIs/SSE | Complete | SLA escalation tests needed. |
+| `/operate/runs/:runId` | `RunDetailPage` | Run evidence/detail | cancel/inspect | runs API | Complete | Durability depends on Data Cloud/EventLogStore. |
+| `/operate/operations` | `OperationCenterPage` | Operations view | inspect/cancel/retry | operation APIs | Complete | Long-running tests needed. |
+| `/build/pipelines` | `PipelineListPage` | Pipeline list | create/edit/delete/publish/rollback | pipeline APIs | Complete | Version field must be guaranteed in UI. |
+| `/build/pipelines/new` | `PipelineBuilderPage` | Build pipeline | NLQ/manual create | pipeline/NLQ APIs | Complete | AI fallback/provenance tests needed. |
+| `/build/patterns` | `PatternStudioPage` | Pattern/learning studio | create/test/learn | pattern/learning APIs | Complete | Route `/learn/episodes` redirects here. |
+| `/learn/memory` | `MemoryExplorerPage` | Memory explorer | inspect/search | memory APIs | Complete | Tenant/privacy tests. |
+| `/govern` | `GovernancePage` | Governance/policies | kill switch/policy eval | governance APIs | Conditional | MFA/step-up production proof needed. |
+| `/govern/privacy` | `PrivacyRequestPage` | Privacy requests | GDPR/CCPA actions | compliance APIs | Complete | Deletion verification E2E needed. |
+| `/catalog/agents` | `AgentRegistryPage` | Agent registry/detail | register/execute/inspect | agent APIs | Complete | Security scan regex hardening P2. |
+| `/catalog/marketplace` | `AgentMarketplacePage` | Marketplace | install/review | marketplace APIs | Complete | Install rollback tests. |
+| `/catalog/workflows` | `WorkflowCatalogPage` | Workflow catalog | browse/use | workflow APIs | Complete | Role tests. |
+| Auth pages | login/callback/session | Auth/session | login/callback/renew | gateway/auth | Complete | Token freshness/gateway rejection tests. |
 
-### 3.3 Storage Profiles
+### 3.3 Backend/API Inventory Summary
 
-| Profile | Event Store | Entity Store | Config |
-|---------|-------------|-------------|--------|
-| `local` (embedded) | InMemoryEventLogStore | InMemoryEntityStore | No auth required (warn) |
-| `sovereign` | H2 file-based | H2 file-based | LLM disabled |
-| `staging` | Kafka + PostgreSQL | PostgreSQL | Full auth required |
-| `production` | Kafka + PostgreSQL | PostgreSQL + ClickHouse | Full auth required |
+| Backend Item | Product | Expected Behavior | Status | Issues |
+|---|---|---|---|---|
+| Health/probes/metrics | Data Cloud | `/health`, `/ready`, `/live`, `/info`, `/metrics` | Source-complete | Needs profile runtime proof. |
+| Entities/events | Data Cloud | tenant-scoped CRUD, search, event append/query/stream | Source-complete | Durability profile-dependent. |
+| Pipeline metadata | Data Cloud | CRUD pipeline/checkpoints | Source-complete | Update/delete tests needed. |
+| Workflow execution | Data Cloud | execute/list/detail/log/cancel/retry/rollback/checkpoint/restore | Source-partial | Mocked capability test; add real provider/durability proof. |
+| Analytics | Data Cloud | query/result/plan/aggregation/explain | Source-complete/optional | Cancel unsupported; contract/UI must show unsupported. |
+| Governance | Data Cloud | retention, purge, redact, compliance | Source-partial | Broader lifecycle incomplete per README. |
+| Capabilities | Data Cloud | runtime truth surface | Source-complete | UI must consume consistently. |
+| AEP engine factory | AEP | durable provider or explicit dev/test fallback | Source-strong | Add production-launcher tests. |
+| AEP gateway | AEP | JWT/CORS/proxy/SSE/WS/tenant/correlation | Source-improved | Full integration suite missing. |
+| AEP runtime APIs | AEP | pipeline/agent/HITL/governance/analytics/reporting | README-proven | Need exact controller/runtime tests before release. |
+
+### 3.4 DB / Persistence Inventory Summary
+
+| DB/Persistence Item | Product | Purpose | Status | Issues |
+|---|---|---|---|---|
+| EntityStore | Data Cloud | tenant entity storage | Implemented | Provider-dependent. |
+| EventLogStore local | Data Cloud | dev event log | In-memory | Dev only; production must fail closed. |
+| EventLogStore sovereign | Data Cloud | single-node durable H2 | Documented implemented | Restart tests needed. |
+| EventLogStore standard/Kafka | Data Cloud | durable distributed event log | Documented | Provider/topology proof required. |
+| Workflow execution provider | Data Cloud | run snapshots/logs/checkpoints | Contract exists | Real provider/restart proof needed. |
+| AEP EventCloud provider | AEP | durable runtime event store | Fail-closed source behavior | Test required. |
+| AEP run history | AEP | durable run evidence | Requires Data Cloud/EventLogStore | Startup/restart tests required. |
+| Migrations | Both | fresh schema setup | Unknown from this audit | Run exact migration inventory. |
 
 ---
 
 ## 4. Product Behavior Map
 
-| Area | Route / Feature | Backend Implemented | Frontend Wired | Status |
-|------|----------------|---------------------|----------------|--------|
-| Entity CRUD | `GET/POST/PUT/DELETE /api/v1/entities/*` | ✅ | ✅ | Production |
-| Collections | `GET/POST/DELETE /api/v1/collections/*` | ✅ | ✅ | Production |
-| Analytics queries | `POST /api/v1/analytics/queries` | ✅ | ✅ | Production |
-| Analytics cancel | `DELETE /api/v1/analytics/queries/:id` | ❌ 501 stub | N/A | **P1** |
-| Connector CRUD | `GET/POST /data-fabric/connectors` | ✅ | ✅ | Production |
-| Connector delete | `DELETE /data-fabric/connectors/:id` | ❌ 501 stub | Wired | **P1** |
-| Data fabric metrics | `GET /data-fabric/metrics` | ⚠️ Preview backend | ⚠️ Preview UI | **P1** |
-| Workflow list | `GET /api/v1/pipelines` | ✅ | ✅ | Production |
-| Workflow actions | Run/Edit/Logs/Delete | ❌ Backend missing | ❌ Disabled in UI | **P1** |
-| ML feature ingest | Background service | ⚠️ Defaults to in-memory | N/A | **P1** |
-| Schema validation | `POST /api/v1/entities/validate` | ⚠️ 501 if unconfigured | N/A | P2 |
-| Anomaly detection | `POST /api/v1/anomalies/*` | ⚠️ 501 if unconfigured | N/A | P2 |
-| Entity export | `GET /api/v1/entities/*/export` | ⚠️ 501 if unconfigured | N/A | P2 |
-| SSE streaming | `GET /sse/events` | ⚠️ 501 without OpenSearch | N/A | P2 |
-| Plugin upgrade | `POST /api/v1/plugins/:id/upgrade` | ⚠️ 501 by default | ⚠️ Disabled | P2 |
-| AI assist | Various `/api/v1/ai/*` | ⚠️ Stubs without LLM key | Gated | P2 |
-| Governance / TrustCenter | Retention classify, redact, purge | ✅ | ✅ | Production |
-| Access review mutations | Not yet available | ❌ | ❌ | P2 |
-| Health / readiness | `GET /health`, `GET /ready` | ✅ | N/A | Production |
-| Metrics (Prometheus) | `GET /metrics` | ✅ | N/A | Production |
+| Capability | Product | Persona | Problem Solved | Expected UX | Expected Backend/Data Behavior | Success Criteria |
+|---|---|---|---|---|---|---|
+| Trusted entity storage | Data Cloud | Data engineer/operator | Manage canonical records | Simple create/browse/edit/delete | Validate, persist, tenant-isolate, version | Accurate data visible with history. |
+| Event persistence | Data Cloud | Platform/SRE | Event history and streams | Event explorer/streams | Append-only durable provider in prod | Events survive restart. |
+| SQL/NLQ analytics | Data Cloud | Analyst | Query data quickly | SQL workspace with explain/suggestions | Real analytics or clear unavailable state | No fake rows; capability truth. |
+| Data Fabric topology | Data Cloud | Operator/admin | Understand data topology | Fabric canvas/connectors | Real topology metrics | No demo metrics as live truth. |
+| Governance/trust | Data Cloud | Compliance/admin | Retention, purge, redaction | Trust Center with safe actions | Auditable governance operations | Destructive actions confirmed/audited. |
+| Data-local workflow execution | Data Cloud | Data engineer | Run data workflow/plugin | Pipeline execution and logs | Provider executes/persists snapshots/logs | Durable profile keeps execution history. |
+| Agentic runtime | AEP | Operator/agent engineer | Run and govern agents | Operator cockpit/build/catalog | AEP orchestrates runs/agents/HITL | Run state/evidence durable in production. |
+| HITL | AEP | Reviewer | Review low-confidence actions | Review queue | Approve/reject/escalate and learn | Decisions traceable. |
+| Runtime governance | AEP | Admin/SRE | Stop/degrade unsafe automation | Kill switch/degrade/policy eval | MFA/role/audit | Immediate safe state with proof. |
+| Gateway edge | AEP | User/integrator | Secure edge to AEP | API/SSE/WS through gateway | JWT/CORS/tenant/correlation | Invalid auth/tenant rejected. |
 
 ---
 
-## 5. Backend Audit
+## 5. Requirement-to-Implementation Traceability Matrix
 
-### 5.1 Routing Completeness
-
-**File:** [products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/DataCloudRouterBuilder.java)
-
-**P1 — STUB-IN-PRODUCTION: `DELETE /data-fabric/connectors/:connectionId` returns hardcoded 501**
-
-Line 566:
-```java
-.with(HttpMethod.DELETE, "/data-fabric/connectors/:connectionId",
-    req -> Promise.of(httpSupport.errorResponse(501, "Delete connector not implemented")))
-```
-
-This route is registered in the live HTTP server and is wired to the Connectors UI. The inline lambda provides no real handler — it permanently returns 501. Callers (including the frontend) receive a 501 with no retry semantics.
-
-**Remediation:** Either implement `ConnectorHandler#handleDeleteConnector` or remove the route registration and update the OpenAPI spec and frontend to reflect the absence of this capability.
+| Requirement | UI | Actions | Backend | Domain/Service | DB | Tests | Observability | Status |
+|---|---|---|---|---|---|---|---|---|
+| Entity CRUD | `/data`, `/entities` | CRUD | entity routes | entity handlers | EntityStore | launcher tests named in audit | metrics/traces | Source-partial complete |
+| Event append/query | `/events` | inspect/stream | event/SSE routes | EventLogStore/SSE | EventLogStore | unknown exact | streams/metrics | Source-partial complete |
+| Workflow execute | `/pipelines/:id` | execute/cancel/logs | `WorkflowExecutionHandler`/capability | plugin provider | execution store | mocked capability route test | execution logs | Partially proven |
+| Analytics query | `/query` | query/explain | `AnalyticsHandler` | `AnalyticsQueryEngine` | analytics engine | unknown | traceId/cost | Complete/optional |
+| Analytics cancel | `/query` if exposed | cancel | `handleAnalyticsCancelQuery` | unsupported | none | unknown | 503 retry semantics | Backend unsupported; UI must gate |
+| Data Fabric | `/fabric`, `/connectors` | inspect/connectors | fabric/connector routes | registry/metrics | connector store | unknown | capability registry | Preview/gated required |
+| Trust Center | `/trust` | purge/redact/classify | governance routes | lifecycle | governance/audit | governance tests named | audit | Partial-complete |
+| AEP pipeline runtime | `/build/pipelines` | CRUD/publish/rollback | pipeline controller | repo/runtime | DataCloud/EventLog | README tests referenced | SLO/deep health | Complete per docs, execution proof needed |
+| AEP EventCloud durability | runtime | startup | `Aep.create()` | ServiceLoader provider | EventCloud | missing | deep health | Source-proven guard; tests required |
+| AEP gateway | all protected UI/API | API/SSE/WS | Fastify gateway | JWT/proxy logic | n/a | missing | correlation | Source-proven improved; tests required |
+| AEP design consistency | all UI | all controls | n/a | theme/design system | n/a | missing | n/a | Incomplete |
 
 ---
 
-**P1 — STUB-IN-PRODUCTION: `DELETE /api/v1/analytics/queries/:queryId` returns 501**
+## 6. End-to-End Journey Correctness Audit
 
-File: [products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/AnalyticsHandler.java), lines 399–405:
-
-```java
-/**
- * Cancellation stub.  The underlying analytics engine does not yet
- * support in-flight cancellation, so this returns 501.
- */
-public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
-    return Promise.of(http.errorResponse(501,
-        "Query cancellation is not supported by this analytics engine"));
-}
-```
-
-This is a registered production endpoint advertising a capability (analytics query cancellation) that does not exist.
-
-**Remediation:** Implement cancellation in `AnalyticsQueryEngine` or remove the route and update the OpenAPI spec.
-
----
-
-### 5.2 Capability-Optional Endpoints Returning 501
-
-The following handlers return 501 when optional dependencies are not configured. These are partially acceptable patterns for optional capabilities, but they must be clearly documented in the OpenAPI spec (`x-capability-required`) and must not appear as advertised production features.
-
-| Handler | Condition | Response |
-|---------|-----------|----------|
-| `EntityAnomalyHandler` | `StatisticalAnomalyDetector` null | 501 |
-| `EntityValidationHandler` | `EntitySchemaValidator` null | 501 |
-| `EntityExportHandler` | `EntityExportService` null | 501 |
-| `SseStreamingHandler` | `OpenSearchConnector` null | 501 |
-| `PluginInstallHandler` upgrade | `pluginUpgradeEnabled=false` | 501 |
-
-**P2 Finding:** These 501 responses should be documented as `503 Service Unavailable` with `Retry-After` headers to be RFC-compliant and distinguishable from "not implemented" stubs. The OpenAPI spec must mark them as conditional on the deployment configuration.
+| Journey | Entry Point | Expected Outcome | Source-observed Actual | Correct? | Complete? | Mock/Stub Risk | Gaps | Severity | Fix | Tests |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Data Cloud onboarding | app load | onboarding only when incomplete | wizard rendered from App state | Likely | Partial | Low | role/tenant/a11y tests | P2 | test onboarding lifecycle | Browser E2E |
+| Create collection | `/data/new` | collection persists and appears | route exists | Likely | Partial | Low | API/DB proof | P2 | add create/read/delete E2E | API/browser |
+| Execute pipeline | `/pipelines/:id` | run starts, logs/status visible | routes/capability exist; tests mock provider | Partial | No | Medium | real provider/restart missing | P1 | durable provider + capability UI gate | Provider IT/browser |
+| Missing workflow capability | `/pipelines/:id` | UI disables; backend blocks | tests show backend unavailable behavior | Backend likely | UI unknown | Medium | disabled UI test missing | P1 | UI consumes `/capabilities` | UI/API |
+| SQL query | `/query` | query executes or unavailable state | handler supports query; null engine 503 | Yes | Partial | Low | UI 503 handling | P1/P2 | explicit unavailable UX | UI/API |
+| Query cancellation | `/query` | cancel only if supported | backend says unsupported via 503 | Backend yes | UI unknown | Low | OpenAPI/UI gate | P1 | hide cancel unless supported | UI/contract |
+| Fabric topology | `/fabric` | real topology or preview boundary | docs say preview/demo | Partial | No | High if visible as live | production flag/boundary | P1 | feature/capability boundary | browser |
+| Trust purge/redaction | `/trust` | dry run/confirm/audit | README says wired | Likely | Partial | Low | audit proof | P1/P2 | audit assertions | API E2E |
+| AEP login/session | `/login` | authenticated API session | routes exist; gateway auth | Likely | Partial | Low | gateway E2E | P1 | add rejection/expiry tests | gateway/UI |
+| AEP pipeline edit | `/build/pipelines/:id/edit` | stale writes rejected | README says 409/428 | Likely | Partial | Low | exact controller/UI proof | P1/P2 | verify version always sent | API/UI |
+| AEP run detail | `/operate/runs/:runId` | durable run evidence | README requires durable provider | Conditional | Partial | Medium | restart proof | P1 | run-history restart tests | E2E |
+| AEP WS tail | `/tail/events` | tenant-scoped authenticated tail | gateway forwards auth/tenant/correlation | Source-yes | Needs tests | Low | WS mismatch/backpressure tests | P1 | gateway WS suite | Gateway E2E |
+| AEP kill switch | `/govern` | admin+MFA activates/audits | documented | Conditional | Partial | Medium | exact production MFA tests | P1 | verify MFA gate | Security tests |
 
 ---
 
-### 5.3 AI Assist Route Degradation
+## 7. UI/UX Correctness and Completeness Audit
 
-**File:** [products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/bootstrap/DataCloudHttpLauncherBootstrap.java), line 438:
-
-```java
-log.warn("No LLM backend configured (AI_PROVIDER / OPENAI_API_KEY not set). AI assist routes will return stubs.");
-```
-
-AI assist routes degrade to stubs when `AI_PROVIDER` / `OPENAI_API_KEY` are not configured. This is acceptable for optional AI features, but:
-
-- The degradation is only emitted as a single WARN log at startup — no Prometheus metric records the degraded state
-- The frontend must handle stub responses gracefully without misleading the user
-
-**P2 Remediation:** Emit a `data_cloud_ai_provider_configured{result="unavailable"}` metric at startup so dashboards can alert on this degraded state.
+| UI Area | Finding | Impact | Severity | Required Fix | Tests |
+|---|---|---|---|---|---|
+| Data Cloud route IA | Simplified IA with core routes and compatibility routes. | Positive | — | Maintain. | Route tests. |
+| Data Cloud Data Fabric | Preview/demo-only surface can look production-live. | False operational confidence. | P1 | Capability/feature gate and preview boundary. | Feature + browser tests. |
+| Data Cloud workflow actions | Execution provider proof is partial. | Users may see actions before capability is live. | P1 | Bind to `/api/v1/capabilities`. | UI action tests. |
+| Data Cloud onboarding | First-run wizard overlays content. | Could block users if state wrong. | P2 | Test role/state/a11y. | Browser tests. |
+| AEP outcome IA | Operate/Build/Learn/Govern/Catalog is strong. | Positive | — | Keep. | Route tests. |
+| AEP design system | ~64 raw controls reported. | Inconsistent UX/a11y. | P1 | Migrate to design system. | ESLint + visual/a11y. |
+| AEP mobile nav | Raw shell button/svg. | Minor consistency issue. | P2 | Use design-system control if available. | Component test. |
+| Runtime truth banners | AEP uses runtime truth banner pattern; Data Cloud has capability registry. | Positive but must be universal. | P1/P2 | Apply to all optional surfaces. | UI tests. |
 
 ---
 
-### 5.4 In-Memory Policy Storage in DataLifecycleHandler
+## 8. Frontend Action, State, and Data Flow Audit
 
-**File:** [products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/launcher/http/handlers/DataLifecycleHandler.java)
-
-```java
-// P1-1: In-memory policy storage for policy CRUD lifecycle
-private final Map<String, List<Map<String, Object>>> policiesByTenant = new ConcurrentHashMap<>();
-```
-
-Governance policies are stored in-process ConcurrentHashMap. All policies are lost on pod restart. In production multi-replica deployments, policies are not shared between replicas.
-
-**P2 Remediation:** Persist policies to the configured entity store (`_governance_policies` collection already defined as a constant in the class) using the `DataCloudClient` API. The policy CRUD collection string is already present in the code — the persistence layer is ready to be wired.
-
----
-
-### 5.5 Authentication and Security — PASS
-
-The authentication implementation is strong and production-hardened:
-
-- `buildApiKeyResolver()` throws `IllegalStateException` if `DATACLOUD_API_KEYS` is not set in non-embedded profiles — no silent bypass
-- `validateAuthenticationAndResolveBindHost()` throws if no auth is configured for non-embedded profiles
-- Insecure embedded mode forces loopback bind and throws if non-loopback host is configured
-- JWT authentication supports both JWKS endpoint and shared-secret modes
-- API key fingerprinting uses SHA-256
-- Tenant isolation is enforced at the `HttpHandlerSupport.requireTenantIdOrFail()` boundary on all resource handlers
-- Sovereign profile disables external LLM backends explicitly
-
-No security vulnerabilities found in the authentication and authorization layer.
+| Flow | Expected | Actual | Correct? | Complete? | Mock/Stub? | Required Fix | Tests |
+|---|---|---|---|---|---|---|---|
+| Data Cloud lazy routing | Lazy pages with error/loading states | route config with lazy/error boundaries | Yes | Yes | No | Keep. | Route load tests. |
+| Data Cloud optional pages | Gate disabled surfaces | feature gates for several pages | Mostly | Partial | No | Ensure production defaults match backend. | Feature tests. |
+| Workflow execute | Call only when capability live | backend ready; UI proof not inspected | Unknown | Partial | Potential UI risk | Add capability gate. | UI action tests. |
+| Analytics cancel | Hide unless supported | backend unsupported | Unknown UI | Partial | No backend fake | Gate cancel UI. | UI test. |
+| AEP command palette | Navigate canonical routes | route helper list present | Yes | Yes | No | Keep. | keyboard tests. |
+| AEP API through gateway | Protected pages use AuthContext/gateway | source-partial | Partial | Partial | No | static no-direct-backend rule. | static + E2E. |
+| AEP WS proxy | Forward auth/tenant/correlation | source does this | Yes | Needs tests | No | Add WS tests. | Gateway E2E. |
+| AEP raw controls | Use design system | incomplete | No | No | No | migrate controls. | visual/a11y. |
 
 ---
 
-### 5.6 Observability — PASS with Gaps
+## 9. Backend/API/Domain Logic Audit
 
-**Positive:**
-- OpenTelemetry tracing is wired via `TraceExportService` with configurable sampling rate
-- Prometheus metrics via Micrometer (`PrometheusMeterRegistry`) at `/metrics`
-- Correlation IDs propagated via `HttpHandlerSupport.resolveCorrelationId()`
-- Handler-level metrics via `HttpHandlerMetrics` (recordRequest, recordLatency, recordError)
-- Circuit breaker metrics in `FeatureStoreIngestLauncher`
-
-**P2 Gap:** AI provider degradation not metrified (see §5.3). Feature store mode (in-memory vs. postgres) not emitted as a startup metric.
-
----
-
-## 6. Feature Store Ingest Service Audit
-
-### 6.1 Critical: Default In-Memory Store
-
-**File:** [products/data-cloud/feature-store-ingest/src/main/java/com/ghatana/services/featurestore/FeatureStoreIngestLauncher.java](products/data-cloud/feature-store-ingest/src/main/java/com/ghatana/services/featurestore/FeatureStoreIngestLauncher.java), lines 558–559
-
-**File:** [products/data-cloud/feature-store-ingest/src/main/java/com/ghatana/services/featurestore/config/FeatureIngestConfig.java](products/data-cloud/feature-store-ingest/src/main/java/com/ghatana/services/featurestore/config/FeatureIngestConfig.java), line 76
-
-```java
-// Config default:
-.mode(env(ENV_MODE, "inmemory"))  // FeatureIngestConfig.java:76
-
-// Launcher consequence:
-LOG.warn("[feature-ingest] using InMemoryEventLogStore — set FEATURE_INGEST_MODE=postgres for production");
-eventLogStore = new InMemoryEventLogStore();  // FeatureStoreIngestLauncher.java:558-559
-```
-
-**P1 Finding:** The default `FEATURE_INGEST_MODE` is `inmemory`. Any deployment that does not explicitly set `FEATURE_INGEST_MODE=postgres` silently uses an in-memory event log store. All ML training data is lost on pod restart or OOM kill. A single WARN log is emitted, but there is no startup gate to block production deployments with this configuration.
-
-**Remediation:** 
-1. Change the default to fail-fast in non-local profiles: if `FEATURE_INGEST_MODE` is `inmemory` and the resolved profile is not `local` or `embedded`, throw `IllegalStateException` at startup.
-2. Emit a `feature_ingest_store_type{type="inmemory"}` metric at startup so Prometheus alerts can catch this.
-
-### 6.2 Positive Patterns
-
-- Circuit breaker (`CircuitBreaker`) protects against feature store unavailability
-- Dead-letter queue (`DeadLetterQueue`) with 50,000-item cap and 7-day TTL for failed writes
-- Deterministic feature-vector ordering via `TreeMap` iteration (DC3-H7)
-- Event-time feature derivation for replay consistency
-- Per-tenant offset tracking with header-based offset advancement
+| Flow | Expected | Actual | Correct? | Complete? | Mock/Stub? | Risk | Fix | Tests |
+|---|---|---|---|---|---|---|---|---|
+| Data Cloud pipeline routes | CRUD + execution if handler present | source registers conditional execution | Yes | Partial | No | capability mismatch | align handler/capability registry | route/capability |
+| Workflow capability | execute/list/get/cancel/retry/logs | interface exists | Yes | Interface only | No | provider absent | provider implementation proof | Provider IT |
+| Workflow HTTP tests | prove routes | real server, mocked capability/client | Valid limited | Partial | test mocks | no durability proof | provider-backed tests | restart IT |
+| Analytics query | validate tenant/query and submit | implemented; null engine 503 | Yes | Yes | No | query/log sensitivity | security/log review | API/security |
+| Analytics cancellation | unsupported cancel | returns service-unavailable | Correct | Partial | No | UI/contract drift | OpenAPI/UI supported=false | contract/UI |
+| AEP EventCloud discovery | fail closed | implemented source | Yes | Strong | No | startup provider config | production tests | unit/IT |
+| AEP testing fallback | allowed only testing | explicit `allowInMemoryEventCloud(true)` | Yes | Yes | Dev/test only | none | keep isolated | unit |
+| AEP gateway auth | reject missing/invalid token | HTTP/SSE/WS checks | Yes | Needs tests | No | auth bypass if untested | gateway tests | E2E |
+| AEP gateway tenant | reject mismatch | HTTP/SSE rejects; WS derives tenant | Mostly | Needs tests | No | WS mismatch ambiguity | define/test WS mismatch | E2E |
+| AEP gateway errors | structured/correlated | readiness has correlation; some 502 bodies do not | Partial | Partial | No | diagnosability | include correlation everywhere | tests |
 
 ---
 
-## 7. Database and Data Integrity Audit
+## 10. Database and Data Integrity Audit
 
-### 7.1 Profile-Aware Storage Configuration — PASS
-
-The `DataCloudLauncherSettings` correctly resolves the deployment profile from `DATACLOUD_PROFILE` and applies different storage configurations. The multi-profile SPI pattern via `StoragePlugin` is clean.
-
-### 7.2 Tenant Isolation — PASS
-
-Tenant isolation is enforced at multiple layers:
-- `TenantContext.setCurrentTenantId()` in `TenantContextFilter`
-- `HttpHandlerSupport.requireTenantIdOrFail()` in all resource handlers
-- Repository-level filtering via `EntityStore.QuerySpec` tenant field
-
-### 7.3 InMemoryApprovalStore in Production Source Tree — P2
-
-**File:** [products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/governance/approval/InMemoryApprovalStore.java](products/data-cloud/launcher/src/main/java/com/ghatana/datacloud/governance/approval/InMemoryApprovalStore.java)
-
-The `InMemoryApprovalStore` is located in `src/main/java` (production source tree) with a Javadoc note: "In-memory implementation for local / test use." It is not wired into any production constructor, so it is currently dead code in the main source tree.
-
-**P2 Remediation:** Move `InMemoryApprovalStore` to `src/test/java` to prevent it from being shipped in the production JAR and to signal clearly that it is test infrastructure.
-
-### 7.4 Purge / Deletion Safety — PASS
-
-The `DataLifecycleHandler` implements a multi-step purge confirmation flow using HMAC-signed tokens. Purge requires:
-1. A dry-run request returning a confirmation token
-2. A second request with the token to execute the purge
-
-This pattern is sound. The in-memory policy store issue (§5.4) does not affect the purge safety mechanism, since the token is HMAC-signed with a process-scoped secret.
+| Model/Operation | Expected Rule | Actual | Correct? | Complete? | Integrity Risk | Performance Risk | Fix | Tests |
+|---|---|---|---|---|---|---|---|---|
+| Data Cloud local store | dev only, non-durable | documented | Yes | Yes | high if prod misuse | low | production fail-closed | startup tests |
+| Sovereign H2 store | durable single-node | documented | source-partial | needs run | medium | single-node | restart tests | sovereign IT |
+| Standard provider/Kafka | durable standard mode | documented | source-partial | needs run | high if absent | provider-dependent | production startup tests | launcher IT |
+| Workflow execution store | durable snapshots/logs | README claims; test mocks | unknown/partial | partial | medium | unknown | real provider tests | restart IT |
+| Analytics results | query/result by ID | handler delegates engine | source-partial | unknown | medium | row limits | row/paging limits | API/perf |
+| AEP EventCloud | durable provider or explicit allow flag | source fail-closed | Yes | source-proven | startup config | provider-dependent | launcher tests | unit/IT |
+| AEP run history | durable Data Cloud/EventLogStore | documented | source-partial | needs run | high if misconfigured | provider-dependent | restart tests | E2E |
+| Migrations | fresh schema migrates | not executed | unknown | unknown | high if gaps | n/a | exact migration inventory | Flyway tests |
 
 ---
 
-## 8. Frontend / UI Audit
+## 11. Production Mock/Stub/Shortcut Audit
 
-### 8.1 WorkflowsPage — P1: Disabled Actions Visible in Production
-
-**File:** [products/data-cloud/ui/src/pages/WorkflowsPage.tsx](products/data-cloud/ui/src/pages/WorkflowsPage.tsx), lines 86–134
-
-The `WorkflowActions` component renders a dropdown menu with four buttons — Run Now, Edit, View Logs, Delete — all permanently `disabled` with `(not yet wired)` labels visible to end users.
-
-```tsx
-<button
-    disabled
-    title="Pipeline execution API not yet available"
-    className="... cursor-not-allowed">
-    Run Now
-    <span className="ml-2 text-xs text-amber-500">(not yet wired)</span>
-</button>
-```
-
-**P1 Finding:** This is a production-visible affordance indicating incomplete backend functionality. Users can see the three-dot menu, click it, and see four disabled entries with amber "(not yet wired)" labels. This erodes trust and reveals incomplete state.
-
-**Remediation:** Either implement the backend endpoints (`POST /api/v1/pipelines/:id/run`, `DELETE /api/v1/pipelines/:id`, etc.) and wire the buttons, or remove the `WorkflowActions` component from the page until the backend is ready.
+| File / Area | Evidence | Reachable? | Critical? | Feature Flagged? | Allowed? | Severity | Action |
+|---|---|---:|---:|---:|---:|---|---|
+| Data Fabric | README says preview/demo-only | yes if enabled | important | route gated | only if clearly preview/off | P1 | production flag + boundary |
+| Workflow execution tests | mocked capability/client | test only | coverage for critical path | n/a | valid but insufficient | P1 gap | provider/durability tests |
+| Analytics cancel | unsupported 503 | yes | optional | no | allowed if UI/docs truthful | P1/P2 | OpenAPI/capability/UI truth |
+| Local in-memory profile | documented non-durable | local only | critical if prod misuse | profile | allowed local | P1 | production fail-closed tests |
+| AEP raw controls | design debt | yes | UX consistency | no | temporary only | P1 | design migration |
+| AEP `forTesting()` | in-memory + naive engine | test/dev | no | explicit allow flag | allowed | — | keep isolated |
+| AEP audit doc | stale P0s | docs | engineering workflow | n/a | no | P1 | regenerate |
+| Data Cloud audit doc | stale findings | docs | engineering workflow | n/a | no | P1 | regenerate |
 
 ---
 
-### 8.2 DataFabricPage — P1: Preview Surface Without Feature Flag
+## 12. Duplicate and Source-of-Truth Audit
 
-**File:** [products/data-cloud/ui/src/pages/DataFabricPage.tsx](products/data-cloud/ui/src/pages/DataFabricPage.tsx)
-
-```
-// Comment in file header (line 6):
-// This surface is in preview — live topology metrics are not yet connected.
-```
-
-The page is rendered in production and is accessible via navigation. It uses a capability registry gate (`isFabricMetricsAvailable`) to conditionally enable the `useQuery` for fabric metrics, which is a sound pattern. However:
-
-1. The capability check is client-side only — the backend `/data-fabric/metrics` endpoint is also documented as "preview"
-2. When the capability is not active, the page still renders an empty canvas with full UI chrome rather than a clear "coming soon" state
-
-**P1 Finding:** The page is a preview feature with a visible documentation note about incomplete state, shipped to production users without a server-side feature flag.
-
-**Remediation:** Add a `DataFabricBoundary` component that renders a `UnsupportedSurfaceBoundary` (which already exists at `components/common/UnsupportedSurfaceBoundary.tsx`) when the capability is not active. The import for `dataFabricMetricsBoundary` is already present in the file — it is just not used as a short-circuit.
+| Duplicate Area | Files | Issue | Risk | Canonical Owner | Merge/Delete Plan | Tests |
+|---|---|---|---|---|---|---|
+| Audit truth | `docs/audits/...`, `products/aep/docs/audits/...` | stale docs contradict source | wasted work / missed gaps | product audit docs + generated index | regenerate and mark old superseded | doc truth CI |
+| Execution terminology | Data Cloud vs AEP docs/routes | both use pipeline/execution | ownership confusion | terminology ADR | label Data Cloud as data-local plugin execution; AEP as orchestration | contract tests |
+| Design controls | Data Cloud components vs AEP raw controls | inconsistent UI stack | a11y/UX drift | `@ghatana/design-system` | migrate AEP controls | lint/visual |
+| Capability truth | README/OpenAPI/runtime/UI gates | drift risk | visible unavailable features | runtime capability registry | generate docs/UI gates from schema | contract tests |
+| Gateway/backend auth | gateway trusted headers vs backend trust | drift/misconfig | bypass risk | propagation contracts | gateway-backend contract tests | security E2E |
 
 ---
 
-### 8.3 TrustCenter — P2: Access Review Mutations Not Available
+## 13. Security, Privacy, Governance, and Permission Audit
 
-**File:** [products/data-cloud/ui/src/pages/TrustCenter.tsx](products/data-cloud/ui/src/pages/TrustCenter.tsx), line 672:
-
-```ts
-detail: 'The launcher exposes audit posture, but access request review mutations are not yet available.',
-```
-
-Access review mutation actions are routed to `showAccessReviewBoundary()` which renders an `UnsupportedSurfaceBoundary`. This is handled correctly via the boundary pattern — users see a clear "not yet available" message rather than a broken action. This is acceptable but indicates an incomplete governance workflow.
-
----
-
-### 8.4 Mock Data Isolation — PASS
-
-**File:** [products/data-cloud/ui/src/lib/mock-data.ts](products/data-cloud/ui/src/lib/mock-data.ts)
-
-Mock data is correctly isolated:
-- File contains an explicit dev/test-only warning comment
-- Only imported in `ui/src/mocks/handlers.ts` (MSW) and test files
-- No production page component imports from `mock-data.ts`
-- `import type` usage in handlers ensures no runtime coupling
-
-**File:** [products/data-cloud/ui/src/mocks/handlers.ts](products/data-cloud/ui/src/mocks/handlers.ts)
-
-MSW handlers:
-- Used only in development browser mode and Vitest tests
-- Contract validation via `contractJson<T>()` helper that validates mock responses against production Zod schemas at dev/test time
-- Not bundled in production build (MSW is listed as devDependency)
+| Area | Risk | Correct Behavior | Actual | Severity | Fix | Tests |
+|---|---|---|---|---|---|---|
+| Data Cloud tenant isolation | cross-tenant leakage | tenant required outside local | docs say tenant; local execution test permits missing tenant | P1 | strict profile tests | API security |
+| Data Cloud production auth | unauthenticated prod | API key/JWT required | documented | P1/P2 | startup proof | launcher tests |
+| Data Cloud purge/redaction | data loss/privacy | confirmation + audit | source-partial positive | P1/P2 | audit event tests | API E2E |
+| AEP gateway JWT | bypass | reject missing/invalid | implemented | P1 test gap | add tests | gateway auth |
+| AEP tenant mismatch | cross-tenant data | reject mismatch | HTTP/SSE implemented; WS needs policy test | P1 | WS mismatch tests | gateway WS |
+| AEP EventCloud durability | event loss | fail closed without durable provider | implemented source | P1 test gap | production tests | unit/IT |
+| AEP kill switch MFA | unauthorized stop | admin+MFA+audit | documented, not exact verified | P1 | verify production module | security tests |
+| Secrets/logs | exposure | env-only, no secret logs | source-partial | P2 | secret scan | CI scan |
 
 ---
 
-### 8.5 UI Pages Summary
+## 14. Observability and Operability Audit
 
-| Page | API Wired | Actions Complete | Issues |
-|------|-----------|-----------------|--------|
-| `DataExplorer.tsx` | ✅ | ✅ | None |
-| `EntityBrowserPage.tsx` | ✅ | ✅ | None |
-| `CreateCollectionPage.tsx` | ✅ | ✅ | None |
-| `EditCollectionPage.tsx` | ✅ | ✅ | None |
-| `WorkflowsPage.tsx` | ✅ (list) | ❌ (Run/Edit/Delete) | **P1** |
-| `DataFabricPage.tsx` | ⚠️ Preview | ✅ (migration) | **P1** |
-| `TrustCenter.tsx` | ✅ | ⚠️ (access review) | P2 |
-| `InsightsPage.tsx` | ✅ | ✅ | None |
-| `AlertsPage.tsx` | ✅ | ✅ | None |
-| `SettingsPage.tsx` | ✅ | ✅ | None |
-| `PluginsPage.tsx` | ✅ | ⚠️ (upgrade disabled) | P2 |
-| `PluginDetailsPage.tsx` | ✅ | ⚠️ (upgrade disabled) | P2 |
-| `SqlWorkspacePage.tsx` | ✅ | ✅ | None |
-| `OperationsConsolePage.tsx` | ✅ | ✅ | None |
-| `OperationsJobCenterPage.tsx` | ✅ | ✅ | None |
-| `OperatorDashboard.tsx` | ✅ | ✅ | None |
-| `AdminWorkspace.tsx` | ✅ | ✅ | None |
-| `SmartWorkflowBuilder.tsx` | ✅ | ✅ | None |
-| `IntelligentHub.tsx` | ✅ | ✅ | None |
-| `ContextExplorerPage.tsx` | ✅ | ✅ | None |
-| `MemoryPlaneViewerPage.tsx` | ✅ | ✅ | None |
-| `AgentPluginManagerPage.tsx` | ✅ | ✅ | None |
-| `EventExplorerPage.tsx` | ✅ | ✅ | None |
-| `WorkflowDesigner/` | ✅ | ✅ | None |
-| `WorkflowList/` | ✅ | ✅ | None |
+| Flow | Logs | Metrics | Traces | Audit Events | Gaps | Fix |
+|---|---|---|---|---|---|---|
+| Data Cloud health | routes present | `/metrics` route | source-partial | n/a | run profile-specific tests | health CI |
+| Analytics | errors logged | HTTP metrics object | traceId response | n/a | cancellation capability UI/doc drift | expose supported=false |
+| Workflow execution | unknown | unknown | unknown | should audit | real provider metrics not proven | add execution metrics/audit |
+| Capability registry | runtime truth per README | unknown | n/a | n/a | UI must universally consume | UI capability tests |
+| AEP gateway HTTP | backend errors logged | none visible | correlation for many paths | n/a | some error bodies lack correlation | include correlation everywhere |
+| AEP gateway SSE/WS | WS errors logged | none visible | forwards correlation | n/a | no gateway stream metrics | add metrics |
+| AEP runtime deep health | documented | SLO metrics documented | source-partial | n/a | durable provider state proof | deep-health test |
 
 ---
 
-## 9. Test Quality Audit
+## 15. Performance and Scalability Audit
 
-### 9.1 P1 — Test Theater: RouteCompletionTest
-
-**File:** [products/data-cloud/api/src/test/java/com/ghatana/datacloud/api/routes/RouteCompletionTest.java](products/data-cloud/api/src/test/java/com/ghatana/datacloud/api/routes/RouteCompletionTest.java)
-
-This test class is a textbook example of the test theater anti-pattern defined in Section 29 of the repository's copilot-instructions.
-
-The test creates a hand-rolled `MockApiRouter` inner class that maintains a `Map<String, Set<String>>` of registered routes. The `@BeforeEach` registers routes into this mock, and all assertions check the mock's own internal state — never touching `DataCloudRouterBuilder`, `DataCloudHttpServer`, or any production code.
-
-```java
-@BeforeEach
-void setUp() {
-    router = new MockApiRouter();
-    router.register("GET", "/api/v1/datasets");
-    // ...
-}
-
-@Test
-void datasetCrudRoutesRegistered() {
-    assertThat(router.isRegistered("GET", "/api/v1/datasets")).isTrue();
-    // ^^^ This is the mock asserting on itself. Zero production coverage.
-}
-```
-
-**Impact:** This test file contributes to the CI pass rate but provides zero verification that any route is actually registered in the real HTTP server. The 501-returning DELETE connector route (§5.1) would pass these tests because the mock router treats it as any other registered route.
-
-**Remediation:** Delete `RouteCompletionTest.java` and replace with a test that starts a real `DataCloudHttpServer` on a random port (using the `DataCloudHttpServerTestBase` pattern already used in the launcher test module) and probes each critical route.
+| Area | Risk | Evidence | Impact | Fix | Tests |
+|---|---|---|---|---|---|
+| Data Cloud workflow execution | single-process plugin not distributed scheduler | README | HA expectation mismatch | document limits and no HA claims | load/restart |
+| Analytics results | large rows/cancel unsupported | handler returns rows | memory/latency | enforce limits/paging/timeouts | large result tests |
+| Streams | long-lived SSE/WS | routes present | stale connections | backpressure/cleanup metrics | soak tests |
+| Data Fabric | demo metrics | README | bad decisions | disable preview in prod | n/a |
+| AEP gateway proxy | buffers responses via `text()` | source | memory under large responses | stream/cap response bodies | proxy load |
+| AEP WS proxy | long-lived socket pairs | source | leak risk | heartbeat/idle timeout/metrics | WS soak |
+| HITL scans | potential O(n) | older audit only | scale risk | paginate/limit | load tests |
 
 ---
 
-### 9.2 P1 — Test Theater: DataCloudQueryApiOpenApiIntegrationTest
+## 16. Test Correctness and Coverage Audit
 
-**File:** `products/data-cloud/api/src/test/java/com/ghatana/datacloud/api/DataCloudQueryApiOpenApiIntegrationTest.java`
-
-This test uses a `MockQueryApiClient` inner class that returns hardcoded JSON strings. It never makes HTTP calls, never invokes a real handler, and never validates the OpenAPI spec against actual server behavior.
-
-**Remediation:** Delete `DataCloudQueryApiOpenApiIntegrationTest.java` and replace with a test that starts a real server, issues real HTTP requests, and validates responses against the OpenAPI schema.
-
----
-
-### 9.3 Positive: Real Integration Tests in Launcher Module
-
-The `launcher` module has a rich integration test suite that correctly starts a real `DataCloudHttpServer` on a random port and issues real HTTP requests:
-
-- `DataCloudHttpServerAlertsTest` — tests alert functionality via real HTTP
-- `DataCloudHttpServerAutonomyTest` — tests autonomy controller via real HTTP
-- `DataCloudHttpServerObservabilityTest` — tests metrics and tracing
-- `DataCloudHttpServerDisabledCapabilityTest` — tests 501/503 responses for unconfigured capabilities
-- `DataCloudHttpServerCriticalRouteTenantEnforcementTest` — tests tenant enforcement end-to-end
-- `DataCloudHttpServerMcpToolsTest` — tests MCP tool endpoints
-- `DataCloudHttpServerCollectionContextTest` — tests collection CRUD
-- `DbBackedMigrationE2ETest` — tests DB-backed migration paths
-
-These are correctly implemented and provide meaningful production coverage.
+| Capability | Existing Tests | Missing Tests | Invalid/Stale Tests | Required Tests | Priority |
+|---|---|---|---|---|---|
+| Data Cloud workflow HTTP | `DataCloudHttpServerWorkflowExecutionTest` | real provider, restart, strict tenant | none in current route test | provider IT + restart IT | P1 |
+| Analytics cancel | unknown | UI disabled, OpenAPI optional, 503 contract | stale doc says 501 | contract + UI | P1 |
+| Data Fabric | unknown | production-off, capability boundary, preview banner | older audit may be stale | feature + browser | P1 |
+| Tenant/auth | tests named in audit | production startup/missing tenant | unknown | security tests | P1 |
+| AEP EventCloud fail-closed | source guard | no-provider/provider/allow tests | stale doc says old behavior | unit + launcher IT | P1 |
+| AEP gateway | unknown | JWT/CORS/SSE/WS/correlation/backend errors | unknown | gateway integration suite | P1 |
+| AEP design | doc notes debt | lint/visual/a11y | n/a | raw-control lint + Playwright | P1 |
+| AEP stale P0 docs | docs stale | doc truth checks | stale audit doc | regenerate + current behavior tests | P1 |
+| DB migrations | not executed | fresh schema tests | older audit claims gaps | Flyway empty DB test | P1 |
 
 ---
 
-### 9.4 Feature Store Test Coverage — PASS
+## 17. Prioritized Remediation Plan
 
-`FeatureStoreIngestLauncher` has a separate test constructor accepting pre-built `CircuitBreaker` and `DeadLetterQueue` objects, enabling comprehensive unit testing of DLQ routing and circuit-breaker behavior without starting the polling loop. This is a correct and clean testing pattern.
-
----
-
-## 10. Security Audit
-
-### 10.1 Authentication — PASS
-
-- API key resolver throws `IllegalStateException` for non-embedded profiles without keys configured — no silent auth bypass
-- JWT provider supports JWKS endpoint (remote key verification) and shared secret
-- Both auth modes are absent-safe: `null` provider → `IllegalStateException` in production profiles
-- `validateAuthenticationAndResolveBindHost()` is a clean security gate with explicit fail-fast logic
-- API key fingerprinting uses SHA-256 — no plaintext keys in logs
-
-### 10.2 Tenant Isolation — PASS
-
-- All resource handlers call `http.requireTenantIdOrFail(request)` before any data access
-- `TenantContextFilter` sets and clears `TenantContext` per-request
-- Repository-level tenant filtering applied in all entity/event store queries
-
-### 10.3 PII and Sensitive Data — PASS
-
-- `DataLifecycleHandler` maintains a `GLOBAL_PII_FIELDS` set for universally-redacted fields
-- PII redaction uses a standardised `[REDACTED]` placeholder
-- Purge/deletion requires HMAC-signed token flow
-
-### 10.4 Input Validation — PASS with Minor Gaps
-
-- All JSON request bodies are parsed with `ObjectMapper` and validated for required fields
-- Blank/null checks on tenant IDs, query text, collection names are consistent
-- **Minor P3 gap:** Some handlers use unchecked `(Map<String, Object>)` casts from Jackson — prefer typed request record classes or `@SuppressWarnings` + explicit type-safe access to avoid potential `ClassCastException` on malformed input
-
-### 10.5 OWASP Top 10 Assessment
-
-| Risk | Finding |
-|------|---------|
-| A01 Broken Access Control | ✅ Tenant isolation enforced |
-| A02 Cryptographic Failures | ✅ SHA-256 for API key fingerprinting, JWKS for JWT |
-| A03 Injection | ✅ Parameterized queries; no string concatenation in SQL |
-| A04 Insecure Design | ⚠️ InMemoryApprovalStore in main source (P2) |
-| A05 Security Misconfiguration | ⚠️ Default InMemory feature store (P1) |
-| A06 Vulnerable Components | Not assessed in this audit (requires OWASP dependency check run) |
-| A07 Auth Failures | ✅ Strong fail-fast auth enforcement |
-| A08 Data Integrity Failures | ✅ HMAC-signed purge tokens |
-| A09 Logging/Monitoring Failures | ⚠️ AI degradation not metrified (P2) |
-| A10 SSRF | ✅ LLM and JWKS URLs resolved from env variables, not user input |
+| Priority | Area | Issue | Evidence/File(s) | Required Fix | Acceptance Criteria | Tests |
+|---|---|---|---|---|---|---|
+| P1 | Data Cloud UI truth | Data Fabric preview/demo-only risk | README, `ui/src/routes.tsx` | Gate `/fabric` by production flag and capability; show preview boundary. | No production user sees demo metrics as live. | Feature + browser + capability tests. |
+| P1 | Data Cloud execution | Real provider/durability not proven | `WorkflowExecutionCapability.java`, `DataCloudHttpServerWorkflowExecutionTest.java` | Provider-backed execution and restart tests. | snapshots/logs/checkpoints survive restart in durable profiles. | Provider/restart IT. |
+| P1 | Data Cloud tenant/auth | Local accepts missing tenant | workflow execution test | Strict/production missing tenant/auth tests. | Missing tenant/auth rejected outside local/embedded. | API security. |
+| P1 | Data Cloud analytics cancel | Unsupported route could be shown | `AnalyticsHandler.java` | Capability/OpenAPI/UI supported=false. | No cancel action shown unless supported. | Contract/UI. |
+| P1 | Data Cloud docs | stale audit doc | `docs/audits/...` | Replace with current audit. | Docs match exact source. | doc truth check. |
+| P1 | AEP design | raw controls | `DESIGN_SYSTEM_ADOPTION.md` | Migrate controls to design system. | raw controls only in approved primitives. | lint/visual/a11y. |
+| P1 | AEP EventCloud | fail-closed needs tests | `Aep.java` | no-provider fail, provider success, test allow flag. | production cannot start accidentally in-memory. | unit/launcher IT. |
+| P1 | AEP gateway | incomplete edge tests | `gateway/src/app.ts` | JWT/CORS/tenant/SSE/WS/correlation tests. | invalid auth/tenant rejected; correlation preserved. | gateway E2E. |
+| P1 | AEP docs | stale audit doc | `products/aep/docs/audits/...` | Replace with current audit. | no stale P0s remain. | doc truth check. |
+| P2 | Both capability truth | drift risk | README/OpenAPI/runtime/UI | single capability schema drives docs/UI. | no visible unavailable features. | contract tests. |
+| P2 | Browser E2E | critical journeys not proven here | not executed | add full Playwright flows. | CI proves real UX outcomes. | browser E2E. |
 
 ---
 
-## 11. Observability Audit
+## 18. Production Readiness Gate
 
-### 11.1 Metrics — PASS with Gaps
+### Data Cloud
 
-- Prometheus metrics exposed at `/metrics` via Micrometer
-- Handler-level metrics: `recordRequest`, `recordLatency`, `recordError` per handler
-- Feature ingest metrics: event counts, DLQ stores, circuit breaker states
-- AI recommendation metrics via `AiRecommendationMetrics`
+- **Ready for production:** No, conditional.
+- **Ready for internal demo:** Yes.
+- **Ready behind feature/capability gates:** Yes.
+- **Critical blockers:** Data Fabric preview gating; real workflow execution provider/durability tests; strict production tenant/auth tests; stale audit doc replacement.
+- **Minimum release fixes:** P1-DC-1 through P1-DC-5.
 
-**Gaps:**
-- No metric for AI provider availability state at startup
-- No metric for feature store mode (in-memory vs. postgres) at startup
-- No metric for 501 stub endpoint hit counts (useful for detecting misconfigured optional capabilities)
+### AEP
 
-### 11.2 Tracing — PASS
-
-- OpenTelemetry tracing via `TraceSpanSupport`
-- Configurable sampling rate via `DATACLOUD_TRACE_SAMPLING_RATE` env variable
-- Correlation ID propagated from `X-Correlation-ID` request header
-- ClickHouse trace export configured when `CLICKHOUSE_HOST` is present
-
-### 11.3 Structured Logging — PASS
-
-- SLF4J + Logback with structured fields
-- Handler log codes (`[DC-9]`, `[DC-E1]`, etc.) for log filtering
-- Error classification in feature ingest (extraction failure, write failure, circuit open)
-
-### 11.4 Health Endpoints — PASS
-
-- `/health` — basic health check
-- `/ready` — readiness probe
-- Event store health subsystem wired when event log store is present
-- `DataCloudHttpServer` supports additional health subsystems via `withHealthSubsystem()`
+- **Ready for production:** No, conditional.
+- **Ready for internal demo:** Yes.
+- **Ready behind feature/capability gates:** Yes.
+- **Critical blockers:** design-system migration or approved waiver; EventCloud production fail-closed tests; gateway E2E hardening; stale audit doc replacement.
+- **Minimum release fixes:** P1-AEP-1 through P1-AEP-4.
 
 ---
 
-## 12. Performance Audit
+## 19. Final Checklist
 
-No active performance issues identified. Notable considerations:
-
-- Analytics handler uses `System.currentTimeMillis()` for latency recording (millisecond precision, appropriate)
-- Feature ingest uses `System.nanoTime()` for processing duration (nanosecond precision, appropriate)
-- Circuit breaker prevents feature store unavailability from cascading
-- Analytics query engine uses deferred result retrieval pattern to avoid blocking the event loop
-- Kafka event log store offset tracking uses header-based advancement to handle IDENTITY sequence gaps
-
-**P3 Recommendation:** The analytics aggregate endpoint validates the presence of `GROUP BY`, `COUNT`, `SUM`, or `AVG` via string-uppercasing and `contains()` checks. This is fragile for complex nested queries and subqueries. A proper SQL parser should be used for validation.
-
----
-
-## 13. Duplicate and Redundancy Audit
-
-### 13.1 Backend
-
-No significant duplicate implementations found. The SPI pattern (StoragePlugin, EventLogStore, EntityStore, ApprovalStore) is clean and consistently applied.
-
-### 13.2 Frontend
-
-`mock-data.ts` duplicates some shape data that is also defined in API service types. This is acceptable for dev/test scaffolding but should be regularly synchronized with the production Zod schemas (the `contractJson<T>()` helper in MSW handlers handles this at runtime).
+| Checklist | Data Cloud | AEP | Required Before Release |
+|---|---|---|---|
+| Correctness | Mostly source-proven | Mostly source-proven | Execute full tests and provider E2E. |
+| Completeness | Preview/optional gaps | Design/system proof gaps | Gate incomplete surfaces. |
+| No production mocks/stubs | no current source-confirmed P0 | no current source-confirmed P0 | production profile tests. |
+| UI/UX | strong IA, preview risks | strong IA, design debt | capability truth + design migration. |
+| Backend/API | strong route structure | strong runtime/gateway improvements | contract/gateway E2E. |
+| DB/data integrity | profile-dependent | provider-dependent | restart/durability tests. |
+| Security/privacy | strong documented posture | strong source posture | tenant/auth/MFA tests. |
+| Observability | health/metrics present | deep health/gateway correlation present | degraded metrics/correlation everywhere. |
+| Performance | large result/stream tests needed | gateway/WS load tests | load/soak tests. |
+| Tests | real route tests but mocks remain | fail-closed/gateway/design tests needed | P1 tests added. |
+| Documentation | stale audit doc exists | stale audit doc exists | regenerate docs. |
 
 ---
 
-## 14. Remediation Plan
+## 20. Final Recommendation
 
-### P0 (Block Release — No Workaround)
+Do not prioritize feature expansion until release-truth hardening is complete.
 
-None. All critical auth and tenant isolation paths are correctly implemented.
+At commit `8e27816…`, the current source is materially better than some checked-in audit docs imply:
 
-### P1 (Must Fix Before Release)
+1. AEP normal factory paths use `LinearTrendForecastingEngine`, while `NaiveForecastingEngine` is isolated to test factory paths.
+2. AEP now fails closed when no durable EventCloud provider is discovered unless `allowInMemoryEventCloud=true` is explicitly configured.
+3. AEP gateway now forwards tenant/correlation/gateway trust headers for WebSocket backend connections.
+4. Data Cloud workflow execution routes and capability contracts exist.
+5. Data Cloud analytics cancellation now returns service-unavailable semantics rather than the older hardcoded 501 finding.
 
-| ID | Finding | File | Action |
-|----|---------|------|--------|
-| P1-1 | DELETE `/data-fabric/connectors/:id` returns hardcoded 501 | `DataCloudRouterBuilder.java:566` | Implement handler or remove route + update OpenAPI spec |
-| P1-2 | DELETE `/api/v1/analytics/queries/:id` returns hardcoded 501 | `AnalyticsHandler.java:399-405` | Implement cancellation or remove route + update OpenAPI spec |
-| P1-3 | Feature Store Ingest defaults to InMemoryEventLogStore | `FeatureIngestConfig.java:76`, `FeatureStoreIngestLauncher.java:558-559` | Fail-fast in non-local profiles; emit startup metric |
-| P1-4 | `RouteCompletionTest` is test theater | `RouteCompletionTest.java` | Delete and replace with real server integration test |
-| P1-5 | `DataCloudQueryApiOpenApiIntegrationTest` is test theater | `DataCloudQueryApiOpenApiIntegrationTest.java` | Delete and replace with real server integration test |
-| P1-6 | `WorkflowsPage.tsx` shows "(not yet wired)" buttons in production UI | `WorkflowsPage.tsx:86-134` | Implement backend endpoints or remove `WorkflowActions` component |
-| P1-7 | `DataFabricPage.tsx` is a preview surface without server-side feature flag | `DataFabricPage.tsx:6` | Use `UnsupportedSurfaceBoundary` as short-circuit when capability inactive |
-
-### P2 (Fix Before GA)
-
-| ID | Finding | File | Action |
-|----|---------|------|--------|
-| P2-1 | Capability-optional 501 responses not documented in OpenAPI spec | Various handlers | Add `x-capability-required` extension to OpenAPI for all optional-capability routes |
-| P2-2 | AI provider degradation not metrified | `DataCloudHttpLauncherBootstrap.java:438` | Emit `data_cloud_ai_provider_configured` metric at startup |
-| P2-3 | In-memory policy storage in `DataLifecycleHandler` | `DataLifecycleHandler.java` | Persist policies to `_governance_policies` entity store |
-| P2-4 | `InMemoryApprovalStore` in production source tree | `InMemoryApprovalStore.java` | Move to `src/test/java` |
-| P2-5 | Capability-optional 501s should be 503 + `Retry-After` | Various handlers | Change to HTTP 503 for optionally-configured capabilities |
-| P2-6 | Feature store mode not metrified at startup | `FeatureStoreIngestLauncher.java` | Emit `feature_ingest_store_type` metric at startup |
-| P2-7 | Access review mutations not available in TrustCenter | `TrustCenter.tsx:672` | Implement backend access review endpoints or document timeline |
-
-### P3 (Technical Debt)
-
-| ID | Finding | Action |
-|----|---------|--------|
-| P3-1 | Analytics aggregate validation uses string `contains()` | Replace with SQL AST parser |
-| P3-2 | Unchecked `(Map<String, Object>)` casts in several handlers | Refactor to typed request records |
-| P3-3 | 501 stub hit counts not metrified | Add counter metric for each stub endpoint |
-
----
-
-## 15. Production Readiness Gate
-
-| Gate | Status | Notes |
-|------|--------|-------|
-| All P0 issues resolved | ✅ | No P0 issues found |
-| All P1 issues resolved | ❌ | 7 P1 issues open (§14) |
-| Auth enforced in all production profiles | ✅ | Strong fail-fast enforcement |
-| Tenant isolation verified | ✅ | Repository and handler level |
-| No test theater in CI | ❌ | 2 theater tests (P1-4, P1-5) |
-| No hardcoded stubs in production routes | ❌ | 2 stub routes (P1-1, P1-2) |
-| Feature store durable in production | ❌ | Defaults to in-memory (P1-3) |
-| UI shows no "not yet wired" labels | ❌ | WorkflowsPage (P1-6) |
-| Preview surfaces gated by feature flags | ❌ | DataFabricPage (P1-7) |
-| Observability complete | ⚠️ | Missing P2 metrics |
-| OpenAPI spec accurate | ⚠️ | 501 stubs not documented |
-
-**Overall Gate: ❌ NOT READY FOR PRODUCTION**
-
-Resolve all 7 P1 findings and the highest-priority P2 findings before release.
-
----
-
-## 16. Final Checklist
-
-- [x] Product structure and module inventory documented
-- [x] API surface (85+ routes) reviewed against behavior map
-- [x] All backend handlers reviewed for stubs, 501s, and incomplete implementations
-- [x] Feature Store Ingest default configuration reviewed
-- [x] Database profile and tenant isolation verified
-- [x] All 26 frontend pages reviewed for dead UI, disabled actions, and missing wiring
-- [x] Mock data isolation verified (dev/test only)
-- [x] MSW handler scoping verified
-- [x] Authentication implementation reviewed (PASS)
-- [x] Test quality reviewed — 2 theater tests identified
-- [x] Real integration tests verified in launcher module
-- [x] Observability coverage verified
-- [x] OWASP Top 10 assessment completed
-- [x] Remediation plan produced with severity classifications
-- [x] Production readiness gate evaluated: **NOT READY (7 P1 issues)**
+The remaining work is to make production truth impossible to misrepresent: every UI action must be backed by live capability truth, every durable dependency must fail closed in production, and stale audit documents must be replaced so engineers are not working from obsolete P0s.

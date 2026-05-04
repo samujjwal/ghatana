@@ -4,13 +4,17 @@
  * Jotai-based state management for feature flags.
  * Controls progressive rollout of new UI/UX features.
  *
+ * This store now integrates with the unified capability schema to ensure
+ * feature gates are driven by capability availability.
+ *
  * @doc.type store
- * @doc.purpose Feature flags for progressive UI rollout
+ * @doc.purpose Feature flags for progressive UI rollout driven by capability schema
  * @doc.layer frontend
  */
 
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
+import { isFeatureGateEnabled, loadCapabilitySchema } from "@/lib/capabilities";
 
 /**
  * Feature flag definitions
@@ -35,7 +39,8 @@ export interface FeatureFlags {
 }
 
 /**
- * Default feature flags
+ * Default feature flags (these are user-overridable defaults)
+ * The actual availability is determined by the capability schema
  */
 const defaultFlags: FeatureFlags = {
   enableIntelligentHub: true,
@@ -50,6 +55,7 @@ const defaultFlags: FeatureFlags = {
 
 /**
  * Feature flags atom with localStorage persistence
+ * These are user preferences that can override capability-driven defaults
  */
 export const featureFlagsAtom = atomWithStorage<FeatureFlags>(
   "data-cloud-feature-flags",
@@ -58,38 +64,55 @@ export const featureFlagsAtom = atomWithStorage<FeatureFlags>(
 
 /**
  * Derived atoms for individual flags
+ * These check both the capability schema and user preferences
  */
-export const isIntelligentHubEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableIntelligentHub,
-);
+export const isIntelligentHubEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableIntelligentHub", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isCommandBarEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableCommandBar,
-);
+export const isCommandBarEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableCommandBar", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isAmbientIntelligenceEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableAmbientIntelligence,
-);
+export const isAmbientIntelligenceEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableAmbientIntelligence", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isContextSidebarEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableContextSidebar,
-);
+export const isContextSidebarEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableContextSidebar", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isUnifiedDataExplorerEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableUnifiedDataExplorer,
-);
+export const isUnifiedDataExplorerEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableUnifiedDataExplorer", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isSmartWorkflowBuilderEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableSmartWorkflowBuilder,
-);
+export const isSmartWorkflowBuilderEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableSmartWorkflowBuilder", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isLegacyPagesEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).legacyPagesEnabled,
-);
+export const isLegacyPagesEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("legacyPagesEnabled", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
-export const isSimplifiedNavEnabledAtom = atom(
-  (get) => get(featureFlagsAtom).enableSimplifiedNav,
-);
+export const isSimplifiedNavEnabledAtom = atom(async (get) => {
+  const userFlags = get(featureFlagsAtom);
+  const capabilityEnabled = await isFeatureGateEnabled("enableSimplifiedNav", "data-cloud", userFlags);
+  return capabilityEnabled;
+});
 
 /**
  * Atom to update a single flag
@@ -115,21 +138,57 @@ export const resetFeatureFlagsAtom = atom(null, (_get, set) => {
 /**
  * Check if we're in "simple" mode (all new features enabled)
  */
-export const isSimpleModeAtom = atom((get) => {
+export const isSimpleModeAtom = atom(async (get) => {
   const flags = get(featureFlagsAtom);
+  const [
+    intelligentHub,
+    commandBar,
+    ambientIntelligence,
+    contextSidebar,
+    simplifiedNav,
+  ] = await Promise.all([
+    isFeatureGateEnabled("enableIntelligentHub", "data-cloud", flags),
+    isFeatureGateEnabled("enableCommandBar", "data-cloud", flags),
+    isFeatureGateEnabled("enableAmbientIntelligence", "data-cloud", flags),
+    isFeatureGateEnabled("enableContextSidebar", "data-cloud", flags),
+    isFeatureGateEnabled("enableSimplifiedNav", "data-cloud", flags),
+  ]);
   return (
-    flags.enableIntelligentHub &&
-    flags.enableCommandBar &&
-    flags.enableAmbientIntelligence &&
-    flags.enableContextSidebar &&
-    flags.enableSimplifiedNav
+    intelligentHub &&
+    commandBar &&
+    ambientIntelligence &&
+    contextSidebar &&
+    simplifiedNav
   );
 });
 
 /**
  * Check if we're in "advanced" mode (legacy pages enabled)
  */
-export const isAdvancedModeAtom = atom((get) => {
+export const isAdvancedModeAtom = atom(async (get) => {
   const flags = get(featureFlagsAtom);
-  return flags.legacyPagesEnabled && !flags.enableSimplifiedNav;
+  const [legacyPages, simplifiedNav] = await Promise.all([
+    isFeatureGateEnabled("legacyPagesEnabled", "data-cloud", flags),
+    isFeatureGateEnabled("enableSimplifiedNav", "data-cloud", flags),
+  ]);
+  return legacyPages && !simplifiedNav;
+});
+
+/**
+ * Atom to load and cache the capability schema
+ */
+export const capabilitySchemaLoadedAtom = atom(false);
+
+/**
+ * Atom to initialize the capability schema
+ */
+export const initializeCapabilitySchemaAtom = atom(null, async (_get, set) => {
+  try {
+    await loadCapabilitySchema();
+    set(capabilitySchemaLoadedAtom, true);
+  } catch (error) {
+    console.error("Failed to load capability schema:", error);
+    // Continue with defaults if schema fails to load
+    set(capabilitySchemaLoadedAtom, false);
+  }
 });
