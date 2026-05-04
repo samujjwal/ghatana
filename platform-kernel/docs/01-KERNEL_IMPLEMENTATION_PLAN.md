@@ -44,7 +44,6 @@ Integration Tests:
 - SecurityFrameworkIntegrationTest.java
 - ObservabilityFrameworkIntegrationTest.java
 - ContractValidationIntegrationTest.java
-- BillingLedgerPluginIntegrationTest.java
 - KernelCrossProductEventIntegrationTest.java
 
 Registry Tests:

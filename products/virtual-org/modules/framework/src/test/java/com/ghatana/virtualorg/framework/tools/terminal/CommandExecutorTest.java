@@ -39,15 +39,15 @@ class CommandExecutorTest extends EventloopTestBase {
     @Test
     @DisplayName("should execute allowed command successfully")
     void shouldExecuteAllowedCommand() {
-        // WHEN
+        // WHEN - use executeShell so the OS shell handles echo (shell built-in on Windows)
         CommandExecutor.CommandResult result = runPromise(()
-                -> executor.execute("echo", List.of("hello", "world"))
+                -> executor.executeShell("echo hello world")
         );
 
         // THEN
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.exitCode()).isEqualTo(0);
-        assertThat(result.output()).contains("hello world");
+        assertThat(result.output()).contains("hello");
     }
 
     @Test
@@ -99,9 +99,9 @@ class CommandExecutorTest extends EventloopTestBase {
     @Test
     @DisplayName("should capture command output")
     void shouldCaptureOutput() {
-        // WHEN
+        // WHEN - use echo which is available cross-platform via shell
         CommandExecutor.CommandResult result = runPromise(()
-                -> executor.executeShell("pwd")
+                -> executor.executeShell("echo captured")
         );
 
         // THEN

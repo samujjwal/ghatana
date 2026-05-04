@@ -107,7 +107,7 @@ public class FinanceRiskExtension extends AbstractKernelExtension {
      */
     public Promise<com.ghatana.plugin.risk.RiskManagementPlugin.RiskScore> calculateTradingRisk(
             String positionId, Map<String, Object> factors) {
-        return riskPlugin.calculateRisk(positionId, RiskManagementPlugin.RiskModelId.MARKET, factors);
+        return riskPlugin.calculateRisk(positionId, new RiskManagementPlugin.RiskModelId("MARKET"), factors);
     }
 
     /**

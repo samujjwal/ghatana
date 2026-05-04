@@ -2,6 +2,7 @@ package com.ghatana.yappc.api;
 
 import com.ghatana.platform.governance.security.Principal;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
+import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpHeaders;
@@ -48,7 +49,8 @@ class YappcHttpServerAuthTest extends EventloopTestBase {
             new InMemoryLearnApiController(),
             new InMemoryEvolveApiController(),
             lifecycleController,
-            new InMemoryArtifactGraphController()
+            new InMemoryArtifactGraphController(),
+            new PageArtifactController(null, null, null, null)
         );
     }
 

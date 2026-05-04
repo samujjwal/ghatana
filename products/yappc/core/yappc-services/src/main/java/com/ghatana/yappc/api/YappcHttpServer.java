@@ -1,7 +1,6 @@
 package com.ghatana.yappc.api;
 
 import com.ghatana.yappc.domain.pageartifact.http.PageArtifactController;
-import com.ghatana.yappc.domain.pageartifact.http.PageArtifactRoutes;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
 import io.activej.http.HttpMethod;
@@ -104,10 +103,16 @@ public class YappcHttpServer extends HttpServerLauncher {
                           "phases": ["intent", "shape", "validate", "generate", "run", "observe", "learn", "evolve"]
                         }
                         """).build())))
+
+                // Page Artifact routes
+                .with(HttpMethod.PUT, "/api/v1/page-artifacts/:artifactId/document", request ->
+                    authFilter.secure(pageArtifactController::saveDocument).serve(request))
+                .with(HttpMethod.GET, "/api/v1/page-artifacts/:artifactId/document", request ->
+                    authFilter.secure(pageArtifactController::loadDocument).serve(request))
+
                 .build();
 
-        // Configure Page Artifact routes (uses same routing servlet)
-        return PageArtifactRoutes.configure(routing, pageArtifactController);
+        return routing;
     }
 
     private AsyncServlet secureVersioned(
