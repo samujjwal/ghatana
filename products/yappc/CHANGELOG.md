@@ -1,6 +1,7 @@
 # YAPPC Changelog
 
 ## [Unreleased]
+- **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`7432d84`](https://github.com/samujjwal/ghatana/commit/7432d84601747ed3e095555c11a5f9471f0f8595)
 - **Changed**: yappc + build 2344 [`997207a`](https://github.com/samujjwal/ghatana/commit/997207aff233cfdfb93fa8edce8c1c12b7497333)
 - **Changed**: fdaf [`0199653`](https://github.com/samujjwal/ghatana/commit/0199653f00704e35c2519b8593a62938fcb22a1c)
 - **Changed**: Merge branch 'main' of https://github.com/samujjwal/ghatana [`b90f644`](https://github.com/samujjwal/ghatana/commit/b90f644a9575c3c19d6ae29ee71bf907a2230146)
