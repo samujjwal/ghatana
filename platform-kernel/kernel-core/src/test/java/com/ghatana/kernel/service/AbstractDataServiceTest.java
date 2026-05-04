@@ -3,15 +3,18 @@ package com.ghatana.kernel.service;
 import com.ghatana.kernel.adapter.datacloud.*;
 import com.ghatana.kernel.audit.CrossScopeAuditService;
 import com.ghatana.kernel.context.KernelContext;
+import com.ghatana.kernel.policy.AuditPolicyResolver;
 import com.ghatana.platform.testing.activej.EventloopTestBase;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
@@ -288,15 +291,41 @@ class AbstractDataServiceTest extends EventloopTestBase {
         }
     }
 
-    private static final class InMemoryCrossScopeAuditService {
+    private static final class InMemoryCrossScopeAuditService extends CrossScopeAuditService {
         private final java.util.List<AuditEvent> auditEvents = new java.util.ArrayList<>();
+
+        InMemoryCrossScopeAuditService() {
+            super(
+                (sourceScope, targetScope, classification) -> AuditPolicyResolver.AuditPolicy.defaults(),
+                new AuditEventStore() {
+                    @Override
+                    public Promise<Void> store(ScopeAuditRecord record) {
+                        return Promise.complete();
+                    }
+
+                    @Override
+                    public Promise<Set<ScopeAuditRecord>> query(Instant startDate,
+                                                                 Instant endDate,
+                                                                 com.ghatana.kernel.scope.ScopeDescriptor sourceScope,
+                                                                 com.ghatana.kernel.scope.ScopeDescriptor targetScope) {
+                        return Promise.of(Set.of());
+                    }
+                }
+            );
+        }
 
         java.util.List<AuditEvent> getAuditEvents() {
             return auditEvents;
         }
 
-        Promise<Void> recordAuditEvent(String action, String service, String entityId, String details, Map<String, Object> metadata) {
-            auditEvents.add(new AuditEvent(action, service, entityId, details, metadata));
+        @Override
+        public Promise<Void> recordAuditEvent(String action,
+                                              String service,
+                                              String entityId,
+                                              String details,
+                                              Map<String, String> metadata) {
+            auditEvents.add(new AuditEvent(action, service, entityId, details,
+                metadata == null ? Map.of() : new ConcurrentHashMap<>(metadata)));
             return Promise.complete();
         }
 
@@ -314,6 +343,7 @@ class AbstractDataServiceTest extends EventloopTestBase {
             this.dataCloud = dataCloud;
             this.auditService = auditService;
             dependencies.put(DataCloudKernelAdapter.class, dataCloud);
+            dependencies.put(CrossScopeAuditService.class, auditService);
             dependencies.put(InMemoryCrossScopeAuditService.class, auditService);
         }
 

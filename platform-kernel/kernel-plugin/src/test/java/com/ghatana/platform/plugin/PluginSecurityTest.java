@@ -163,12 +163,12 @@ class PluginSecurityTest extends EventloopTestBase {
         @Test
         @DisplayName("SEC-2e: CPU quota exceeding tier limit is rejected")
         void cpuQuotaExceedingLimitIsRejected() {
-            // T1 max CPU is 5%; requesting 100% is a policy violation
+            // Keep other quotas within T2 limits so this asserts the CPU guard specifically.
             PluginResourceQuota oversizedCpu = PluginResourceQuota.builder()
                     .tier(com.ghatana.kernel.plugin.PluginTier.T2)
-                    .maxMemoryMB(513)
+                .maxMemoryMB(128)
                     .maxCpuPercent(26)
-                    .maxFileDescriptors(101)
+                .maxFileDescriptors(20)
                     .build();
 
             assertThatThrownBy(() -> resourceEnforcer.validateQuotas(oversizedCpu))

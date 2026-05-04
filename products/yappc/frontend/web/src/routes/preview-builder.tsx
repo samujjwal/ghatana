@@ -28,10 +28,34 @@ import type {
 } from '@ghatana/ui-builder/preview';
 import { ComponentRenderer } from '../components/canvas/page/ComponentRenderer';
 
-const PREVIEW_RUNTIME_VERSION = '1.0.0';
+const PREVIEW_RUNTIME_VERSION = '1.1.0';
 
+/**
+ * Derive the expected parent origin from document.referrer.
+ * Falls back to window.location.origin if referrer is not available.
+ * This is a security measure to prevent postMessage spoofing.
+ */
+function getExpectedParentOrigin(): string {
+  try {
+    const referrer = document.referrer;
+    if (referrer) {
+      const url = new URL(referrer);
+      return url.origin;
+    }
+  } catch {
+    // If referrer parsing fails, fall back to current origin
+    // This is safe because the preview should be same-origin or explicitly configured
+  }
+  return window.location.origin;
+}
+
+/**
+ * Send a message to the host with explicit origin targeting.
+ * Never uses '*' to prevent postMessage to unintended origins.
+ */
 function sendToHost(message: PreviewToHostMessage): void {
-  window.parent.postMessage(message, '*');
+  const expectedOrigin = getExpectedParentOrigin();
+  window.parent.postMessage(message, expectedOrigin);
 }
 
 /**
@@ -46,8 +70,9 @@ export default function BuilderPreviewRoute() {
   const pendingCorrelationRef = useRef<string | null>(null);
 
   const handleMessage = useCallback((event: MessageEvent<unknown>): void => {
-    // Accept messages only from same origin or parent window.
-    if (event.source !== window.parent) {
+    // Security: Validate both source and origin to prevent spoofing
+    const expectedOrigin = getExpectedParentOrigin();
+    if (event.source !== window.parent || event.origin !== expectedOrigin) {
       return;
     }
 

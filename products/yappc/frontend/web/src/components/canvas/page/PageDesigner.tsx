@@ -879,13 +879,13 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       {pendingAIActions.length > 0 && (
         <Box
           className="absolute bottom-4 right-4 z-20 w-80 rounded-xl border border-indigo-200 bg-white shadow-lg"
-          data-testid="ai-governance-panel"
+          data-testid="governance-panel"
           role="region"
-          aria-label="AI change review panel"
+          aria-label="Governance review panel"
         >
           <Box className="flex items-center justify-between px-4 py-3 border-b border-indigo-100">
             <Typography variant="body2" style={{ fontWeight: 600 }}>
-              AI changes — review required ({pendingAIActions.length})
+              Suggested improvements — review required ({pendingAIActions.length})
             </Typography>
           </Box>
           <Box className="max-h-60 overflow-y-auto p-3 space-y-2">

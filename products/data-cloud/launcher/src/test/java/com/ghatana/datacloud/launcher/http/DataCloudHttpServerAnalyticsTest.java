@@ -101,7 +101,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @DisplayName("POST /aggregate → 503 when engine is null")
         void aggregate_noEngine_returns503() throws Exception { 
             startServerNoEngine(); 
-            HttpResponse<String> resp = post("/api/v1/analytics/aggregate", 
+            HttpResponse<String> resp = post("/api/v1/analytics/aggregation", 
                 "{\"query\":\"SELECT COUNT(*) FROM foo GROUP BY bar\"}"); 
             assertThat(resp.statusCode()).isEqualTo(503); 
         }
@@ -288,7 +288,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
                 .thenReturn(Promise.of(result)); 
 
             startServer(); 
-            HttpResponse<String> resp = post("/api/v1/analytics/aggregate", 
+            HttpResponse<String> resp = post("/api/v1/analytics/aggregation", 
                 "{\"query\":\"SELECT department, COUNT(*) as user_count FROM users GROUP BY department\"}"); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
@@ -300,7 +300,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @DisplayName("non-aggregate query → 400 with validation error")
         void aggregate_nonAggregateQuery_returns400() throws Exception { 
             startServer(); 
-            HttpResponse<String> resp = post("/api/v1/analytics/aggregate", 
+            HttpResponse<String> resp = post("/api/v1/analytics/aggregation", 
                 "{\"query\":\"SELECT * FROM users\"}");
 
             assertThat(resp.statusCode()) 
@@ -320,7 +320,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
                 .thenReturn(Promise.of(result)); 
 
             startServer(); 
-            HttpResponse<String> resp = post("/api/v1/analytics/aggregate", 
+            HttpResponse<String> resp = post("/api/v1/analytics/aggregation", 
                 "{\"query\":\"SELECT SUM(amount) as total FROM transactions\"}"); 
 
             assertThat(resp.statusCode()) 
@@ -332,7 +332,7 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         @DisplayName("missing 'query' field → 400")
         void aggregate_missingQuery_returns400() throws Exception { 
             startServer(); 
-            HttpResponse<String> resp = post("/api/v1/analytics/aggregate", "{\"x\":1}"); 
+            HttpResponse<String> resp = post("/api/v1/analytics/aggregation", "{\"x\":1}"); 
             assertThat(resp.statusCode()).isEqualTo(400); 
         }
     }
@@ -405,13 +405,15 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
 
     @Override
     protected void startServer() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port, null, null, mockEngine);
+        server = new DataCloudHttpServer(mockClient, port, null, null, mockEngine)
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
 
     private void startServerNoEngine() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
+        server = new DataCloudHttpServer(mockClient, port)
+            .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }

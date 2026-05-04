@@ -84,13 +84,15 @@ class DataCloudHttpServerWorkflowExecutionTest {
 
     private void startServer() throws Exception {
         server = new DataCloudHttpServer(mockClient, port)
-                .withWorkflowExecutionCapability(mockCapability);
+                .withWorkflowExecutionCapability(mockCapability)
+                .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
 
     private void startServerWithoutCapability() throws Exception {
-        server = new DataCloudHttpServer(mockClient, port);
+        server = new DataCloudHttpServer(mockClient, port)
+                .withDeploymentMode("local");
         server.start();
         waitForServerReady(port);
     }
@@ -98,6 +100,7 @@ class DataCloudHttpServerWorkflowExecutionTest {
     private void startServerWithStrictTenantResolution() throws Exception {
         server = new DataCloudHttpServer(mockClient, port)
                 .withWorkflowExecutionCapability(mockCapability)
+                .withDeploymentMode("local")
                 .withStrictTenantResolution(true);
         server.start();
         waitForServerReady(port);

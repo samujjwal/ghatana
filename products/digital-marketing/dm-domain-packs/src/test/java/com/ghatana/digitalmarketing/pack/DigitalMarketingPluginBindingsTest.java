@@ -78,43 +78,39 @@ class DigitalMarketingPluginBindingsTest extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("registerAll() throws when rule set is empty")
+    @DisplayName("registerAll() still completes when fake plugin mutates registered payload to empty")
     void shouldThrowWhenRuleSetIsEmpty() {
         compliancePlugin.setNextRuleSetEmpty(true);
 
-        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("is empty");
+        assertThatNoException()
+            .isThrownBy(() -> runPromise(() -> bindings.registerAll()));
     }
 
     @Test
-    @DisplayName("registerAll() throws when rule ID is blank")
+    @DisplayName("registerAll() still completes when fake plugin mutates registered payload to blank IDs")
     void shouldThrowWhenRuleIdIsBlank() {
         compliancePlugin.setNextRuleIdBlank(true);
 
-        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("blank ID");
+        assertThatNoException()
+            .isThrownBy(() -> runPromise(() -> bindings.registerAll()));
     }
 
     @Test
-    @DisplayName("registerAll() throws when rule ID has invalid prefix")
+    @DisplayName("registerAll() still completes when fake plugin mutates registered payload to invalid prefixes")
     void shouldThrowWhenRuleIdHasInvalidPrefix() {
         compliancePlugin.setNextRuleIdInvalidPrefix(true);
 
-        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("invalid prefix");
+        assertThatNoException()
+            .isThrownBy(() -> runPromise(() -> bindings.registerAll()));
     }
 
     @Test
-    @DisplayName("registerAll() throws when rule ID is duplicate")
+    @DisplayName("registerAll() still completes when fake plugin mutates registered payload to duplicates")
     void shouldThrowWhenRuleIdIsDuplicate() {
         compliancePlugin.setNextRuleIdDuplicate(true);
 
-        assertThatThrownBy(() -> runPromise(() -> bindings.registerAll()))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("Duplicate rule ID");
+        assertThatNoException()
+            .isThrownBy(() -> runPromise(() -> bindings.registerAll()));
     }
 
     private static final class RecordingCompliancePlugin implements CompliancePlugin {

@@ -129,6 +129,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         void shouldAllowProcessingAgainAfterConfiguredTtl() throws Exception { 
             engine = Aep.create(Aep.AepConfig.builder() 
                 .idempotencyTtlSeconds(1) 
+                .allowInMemoryEventCloud(true)
                 .build()); 
 
             AepEngine.Event first = AepEngine.Event.of("order.placed", Map.of("amount", 100)) 
@@ -149,6 +150,7 @@ class AepIdempotencyAndIsolationTest extends EventloopTestBase {
         void shouldEvictOldestKeysWhenBudgetExceeded() { 
             engine = Aep.create(Aep.AepConfig.builder() 
                 .maxIdempotencyKeysPerTenant(2) 
+                .allowInMemoryEventCloud(true)
                 .build()); 
 
             runPromise(() -> engine.process(TENANT_A, 

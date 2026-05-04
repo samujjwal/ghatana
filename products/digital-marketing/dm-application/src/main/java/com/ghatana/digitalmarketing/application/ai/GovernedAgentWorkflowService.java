@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Service for governed agent workflows (DMOS-P1-019).
@@ -116,6 +117,12 @@ public final class GovernedAgentWorkflowService {
         List<String> evidenceLinks = response.evidenceLocation() != null 
             ? List.of(response.evidenceLocation()) 
             : List.of();
+        String details = response.output();
+        if (details == null || details.isBlank()) {
+            details = response.errorMessage() != null && !response.errorMessage().isBlank()
+                ? "Agent execution failed: " + response.errorMessage()
+                : "Agent execution completed with no output.";
+        }
         
         return new AiActionLogEntry(
             java.util.UUID.randomUUID().toString(),
@@ -129,7 +136,7 @@ public final class GovernedAgentWorkflowService {
             evidenceLinks,
             List.of(),
             "Agent execution: " + agentType.name(),
-            response.output(),
+            details,
             null,
             Instant.now(),
             0L

@@ -41,6 +41,7 @@ class AepProductionModuleTest {
     @DisplayName("create() succeeds when allowInMemoryEventCloud is explicitly set to true")
     void shouldSucceedWhenInMemoryIsExplicitlyAllowed() {
         Aep.AepConfig testConfig = Aep.AepConfig.builder()
+                .allowInMemoryEventCloud(true)
                 .build();
 
         // Should not throw — InMemoryEventCloud is an acceptable fallback when explicitly opted in

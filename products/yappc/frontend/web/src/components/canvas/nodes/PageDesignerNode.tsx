@@ -274,7 +274,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           id,
           { pageDocument: data.pageDocument } as Record<string, unknown>,
           { pageDocument: updatedPageDocument } as Record<string, unknown>,
-          'Record AI lineage event',
+          'Record governance event',
         ),
       );
     },
@@ -403,10 +403,10 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
             <Typography
               variant="caption"
               style={{ color: '#2563eb', flexShrink: 0 }}
-              title={`${data.pageDocument?.aiChangeRecords?.length ?? 0} AI change record(s)`}
-              data-testid="page-node-ai-lineage-count"
+              title={`${data.pageDocument?.aiChangeRecords?.length ?? 0} governance record(s)`}
+              data-testid="page-node-governance-trace-count"
             >
-              AI {data.pageDocument?.aiChangeRecords?.length}
+              Governance {data.pageDocument?.aiChangeRecords?.length}
             </Typography>
           ) : null}
 

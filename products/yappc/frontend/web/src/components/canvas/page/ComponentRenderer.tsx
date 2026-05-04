@@ -1,17 +1,14 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  TextField,
-  Typography,
-} from '@ghatana/design-system';
+import { Box } from '@ghatana/design-system';
 import React, { useMemo, useState } from 'react';
 
 import { getContractByName } from './registry';
+import { rendererManifestRegistry, type SlotBag, type RenderContext } from './rendererManifest';
+import { registerBuiltInRenderers } from './builtInRenderers';
 
 import type { BuilderDocument, ComponentInstance, NodeId } from '@ghatana/ui-builder';
+
+// Initialize built-in renderers on module load
+registerBuiltInRenderers();
 
 const DND_COMPONENT_MIME = 'application/x-page-component';
 const DND_NODE_MIME = 'application/x-page-node';
@@ -29,89 +26,8 @@ export interface DropRequest {
   readonly slotName?: string;
 }
 
-interface SlotBag {
-  readonly default: React.ReactNode;
-  readonly actions: React.ReactNode;
-}
-
-type ContractRenderFn = (instance: ComponentInstance, slots: SlotBag) => React.ReactNode;
-
-const COMPONENT_RENDER_MAP: Record<string, ContractRenderFn> = {
-  Button: (instance) => (
-    <Button
-      variant={instance.props.variant as 'solid' | 'outline' | 'ghost' | undefined}
-      tone={instance.props.color as
-        | 'primary'
-        | 'secondary'
-        | 'success'
-        | 'warning'
-        | 'danger'
-        | 'info'
-        | undefined}
-      size={instance.props.size as 'sm' | 'md' | 'lg' | undefined}
-      disabled={Boolean(instance.props.disabled)}
-      fullWidth={Boolean(instance.props.fullWidth)}
-    >
-      {(instance.props.children as React.ReactNode) ?? instance.metadata.name ?? 'Button'}
-    </Button>
-  ),
-  Card: (instance, { default: slotDefault, actions: slotActions }) => (
-    <Card elevation={typeof instance.props.elevation === 'number' ? instance.props.elevation : 2}>
-      {instance.props.title || instance.props.subtitle ? (
-        <CardHeader
-          title={instance.props.title as string | undefined}
-          subheader={instance.props.subtitle as string | undefined}
-        />
-      ) : null}
-      <CardContent>
-        {instance.props.content ? <Typography>{instance.props.content as string}</Typography> : null}
-        {slotDefault}
-      </CardContent>
-      {slotActions ? <Box className="flex gap-2 px-4 pb-4">{slotActions}</Box> : null}
-    </Card>
-  ),
-  TextField: (instance) => (
-    <TextField
-      label={instance.props.label as string | undefined}
-      placeholder={instance.props.placeholder as string | undefined}
-      size={instance.props.size as 'small' | 'medium' | undefined}
-      required={Boolean(instance.props.required)}
-      disabled={Boolean(instance.props.disabled)}
-      multiline={Boolean(instance.props.multiline)}
-      style={Boolean(instance.props.fullWidth) ? { width: '100%' } : undefined}
-    />
-  ),
-  Typography: (instance, { default: slotDefault }) => (
-    <Typography
-      variant={instance.props.variant as never}
-      color={instance.props.color as never}
-      align={instance.props.align as React.ComponentProps<typeof Typography>['align']}
-    >
-      {(instance.props.children as React.ReactNode) ?? slotDefault ?? instance.metadata.name}
-    </Typography>
-  ),
-  Box: (instance, { default: slotDefault }) => (
-    <Box
-      p={typeof instance.props.padding === 'number' ? instance.props.padding : 2}
-      m={typeof instance.props.margin === 'number' ? instance.props.margin : 0}
-      backgroundColor={instance.props.backgroundColor as string | undefined}
-      borderRadius={typeof instance.props.borderRadius === 'number' ? instance.props.borderRadius : 0}
-      style={{
-        display: (instance.props.display as string | undefined) ?? 'block',
-        flexDirection: instance.props.flexDirection as React.CSSProperties['flexDirection'],
-        justifyContent: instance.props.justifyContent as React.CSSProperties['justifyContent'],
-        alignItems: instance.props.alignItems as React.CSSProperties['alignItems'],
-        minHeight: 64,
-        border: '1px dashed #d1d5db',
-      }}
-    >
-      {slotDefault}
-    </Box>
-  ),
-};
-
 export function getRegisteredRenderContractNames(): ReadonlySet<string> {
-  return new Set(Object.keys(COMPONENT_RENDER_MAP));
+  return rendererManifestRegistry.getRegisteredContractNames();
 }
 
 export interface ComponentRendererProps {
@@ -148,16 +64,23 @@ function getSelectionStyle(isSelected: boolean): React.CSSProperties {
 function renderInstance(
   instance: ComponentInstance,
   slots: SlotBag,
+  context: RenderContext,
 ): React.ReactNode {
-  const renderFn = COMPONENT_RENDER_MAP[instance.contractName];
-  if (renderFn) {
-    return renderFn(instance, slots);
+  const manifest = rendererManifestRegistry.get(instance.contractName);
+  if (manifest) {
+    return manifest.render(instance, slots, context);
+  }
+
+  // Use fallback renderer for unknown components
+  const fallback = rendererManifestRegistry.getFallbackRenderer();
+  if (fallback) {
+    return fallback.render(instance, slots, context);
   }
 
   return (
-    <Typography color="danger">
+    <div style={{ padding: 16, border: '2px dashed #ef4444', borderRadius: 8 }}>
       Unknown component contract: {instance.contractName}
-    </Typography>
+    </div>
   );
 }
 
@@ -258,7 +181,7 @@ export const ComponentRenderer: React.FC<ComponentRendererProps> = ({
           onSelect?.(nodeId);
         }}
       >
-        {renderInstance(instance, { default: slotDefault, actions: slotActions })}
+        {renderInstance(instance, { default: slotDefault, actions: slotActions }, { mode: 'canvas', selectedNodeId })}
 
         {isContainer && declaredSlots.length > 0 ? (
           <StackedSlotTargets

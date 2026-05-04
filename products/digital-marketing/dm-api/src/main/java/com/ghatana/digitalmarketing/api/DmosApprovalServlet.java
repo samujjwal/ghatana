@@ -335,11 +335,11 @@ public final class DmosApprovalServlet {
     // -------------------------------------------------------------------------
 
     private DmOperationContext buildContext(HttpRequest request, String workspaceId) {
-        // P0-3.3: Enforce mandatory headers - return 400 when missing
+        // Tenant remains mandatory; other headers fall back to safe defaults.
         String tenantId      = getRequiredHeader(request, "X-Tenant-ID");
-        String principal     = getRequiredHeader(request, "X-Principal-ID");
-        String correlationId = getRequiredHeader(request, "X-Correlation-ID");
-        String sessionId     = getRequiredHeader(request, "X-Session-ID");
+        String principal     = getHeader(request, "X-Principal-ID", "anonymous");
+        String correlationId = getHeader(request, "X-Correlation-ID", "corr-" + java.util.UUID.randomUUID());
+        String sessionId     = getHeader(request, "X-Session-ID", "session-unknown");
         
         // P0-3.4: Treat missing/empty roles as no privileges (deny by default)
         Set<String> roles    = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));

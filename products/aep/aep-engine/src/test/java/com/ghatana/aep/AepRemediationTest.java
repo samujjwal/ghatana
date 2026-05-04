@@ -167,7 +167,7 @@ class AepRemediationTest extends EventloopTestBase {
         @Test
         @DisplayName("detectAnomalies() honors configurable anomaly threshold")
         void shouldUseConfiguredAnomalyThreshold() { 
-            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.5).build()); 
+            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.5).allowInMemoryEventCloud(true).build()); 
 
             List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( 
                 TENANT_ID,
@@ -181,7 +181,7 @@ class AepRemediationTest extends EventloopTestBase {
         @Test
         @DisplayName("detectAnomalies() ignores events below threshold")
         void shouldIgnoreEventsBelowThreshold() { 
-            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.8).build()); 
+            engine = Aep.create(Aep.AepConfig.builder().anomalyThreshold(0.8).allowInMemoryEventCloud(true).build()); 
 
             List<AepEngine.Anomaly> anomalies = runPromise(() -> engine.detectAnomalies( 
                 TENANT_ID,
@@ -325,6 +325,7 @@ class AepRemediationTest extends EventloopTestBase {
                 .workerThreads(2) 
                 .maxPipelinesPerTenant(500) 
                 .anomalyThreshold(0.7) 
+                .allowInMemoryEventCloud(true)
                 .build()); 
             assertThat(eng).isNotNull(); 
             eng.close(); 
@@ -335,6 +336,7 @@ class AepRemediationTest extends EventloopTestBase {
         void shouldUseConfiguredConsentProvider() { 
             AepEngine eng = Aep.create(Aep.AepConfig.builder() 
                 .consentProvider("deny-all-test")
+                .allowInMemoryEventCloud(true)
                 .build()); 
             try {
                 AepEngine.ProcessingResult result = runPromise(() -> eng.process( 
@@ -354,6 +356,7 @@ class AepRemediationTest extends EventloopTestBase {
         void shouldFallbackWhenConsentProviderMissing() { 
             AepEngine eng = Aep.create(Aep.AepConfig.builder() 
                 .consentProvider("missing-provider")
+                .allowInMemoryEventCloud(true)
                 .build()); 
             try {
                 AepEngine.ProcessingResult result = runPromise(() -> eng.process( 

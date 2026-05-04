@@ -65,6 +65,7 @@ class AepIntegrationTest extends EventloopTestBase {
             Aep.AepConfig.builder() 
                 .enableTracing(true) 
                 .consentCache(java.time.Duration.ofMinutes(1), 100) 
+                .allowInMemoryEventCloud(true)
                 .build(), 
             deliveryService
         );
@@ -149,6 +150,7 @@ class AepIntegrationTest extends EventloopTestBase {
     void shouldApplyRateLimiting() { 
         engine = Aep.create(Aep.AepConfig.builder() 
             .rateLimiting(1, 1) 
+            .allowInMemoryEventCloud(true)
             .build()); 
 
         AepEngine.Event first = AepEngine.Event.of( 

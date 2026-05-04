@@ -151,7 +151,7 @@ class EventCloudConnectorConfigTest {
         @DisplayName("builder requires url — NullPointerException when null")
         void builderRequiresUrl() {
             assertThatThrownBy(() ->
-                    EventCloudConnectorConfig.builder().build()
+                EventCloudConnectorConfig.builder().url(null).build()
             ).isInstanceOf(NullPointerException.class)
              .hasMessageContaining("url is required");
         }

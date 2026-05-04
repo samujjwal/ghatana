@@ -274,7 +274,7 @@ describe('PageDesignerNode', () => {
       expect(screen.getByTestId('handle-left')).toBeTruthy();
     });
 
-    it('shows AI lineage count badge when page document has AI change records', () => {
+    it('shows governance trace count badge when page document has governance records', () => {
       const pageDocument = {
         ...createPageArtifactDocument({ artifactId: 'artifact-1', name: 'Home Page', createdBy: 'tester' }),
         aiChangeRecords: [
@@ -297,7 +297,7 @@ describe('PageDesignerNode', () => {
       };
 
       render(<PageDesignerNode {...makeNodeProps({ pageDocument })} />);
-      expect(screen.getByTestId('page-node-ai-lineage-count')).toHaveTextContent('AI 1');
+      expect(screen.getByTestId('page-node-governance-trace-count')).toHaveTextContent('Governance 1');
     });
   });
 
