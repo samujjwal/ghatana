@@ -82,6 +82,7 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
                 }
             }
 
+            val buildDirProvider = project.layout.buildDirectory.dir("classes/java/main")
             project.tasks.register("validateComplianceRulePack") {
                 group = "verification"
                 description = "Validates product compliance rule pack wiring."
@@ -116,7 +117,7 @@ class ProductPackValidationConventionPlugin : Plugin<Project> {
                         }
                     } else {
                         val classFileName = extension.complianceClassFileName.get()
-                        val classesDir = project.layout.buildDirectory.dir("classes/java/main").get().asFile.toPath()
+                        val classesDir = buildDirProvider.get().asFile.toPath()
                         require(Files.exists(classesDir)) {
                             "Compiled classes directory does not exist: " + classesDir
                         }

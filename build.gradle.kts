@@ -313,12 +313,13 @@ subprojects {
     }
 
     if (path.startsWith(":platform-kernel:") || path.startsWith(":platform-plugins:")) {
+        // Capture project properties early to avoid null issues during task configuration
+        val projectDirPath = layout.projectDirectory.asFile
+        val projectPathValue = path
+
         tasks.register("checkKernelProductBoundary") {
             group = "verification"
             description = "Fails when product-specific identifiers leak into kernel or platform-plugin production sources."
-
-            val projectDirPath = projectDir
-            val projectPathValue = path
 
             doLast {
                 val mainDir = projectDirPath.resolve("src/main")

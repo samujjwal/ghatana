@@ -192,5 +192,69 @@ public class KillSwitchAuditChain {
 
         return Promise.of(operationId);
     }
+
+    /**
+     * Records a failed kill-switch activation attempt.
+     *
+     * @param tenantId the tenant context
+     * @param actor    the user who attempted activation
+     * @param reason   human-readable reason for the attempt
+     * @param incidentId unique incident identifier
+     * @param failureReason reason for failure (e.g., "insufficient role")
+     * @return Promise with the recorded audit entry ID
+     */
+    public Promise<String> recordFailedActivation(
+            String tenantId,
+            String actor,
+            String reason,
+            String incidentId,
+            String failureReason) {
+        String operationId = UUID.randomUUID().toString();
+        Map<String, Object> auditEntry = buildChainEntry(
+            operationId,
+            tenantId,
+            "KILL_SWITCH_ACTIVATE_FAILED",
+            actor,
+            reason,
+            Map.of("incidentId", incidentId, "failureReason", failureReason, "status", "failed"),
+            null
+        );
+
+        log.warn("Kill-switch activation failure recorded: operationId={}, tenantId={}, actor={}, reason={}",
+            operationId, tenantId, actor, failureReason);
+
+        return Promise.of(operationId);
+    }
+
+    /**
+     * Records a failed kill-switch deactivation attempt.
+     *
+     * @param tenantId the tenant context
+     * @param actor    the user who attempted deactivation
+     * @param reason   human-readable reason for the attempt
+     * @param failureReason reason for failure (e.g., "insufficient role")
+     * @return Promise with the recorded audit entry ID
+     */
+    public Promise<String> recordFailedDeactivation(
+            String tenantId,
+            String actor,
+            String reason,
+            String failureReason) {
+        String operationId = UUID.randomUUID().toString();
+        Map<String, Object> auditEntry = buildChainEntry(
+            operationId,
+            tenantId,
+            "KILL_SWITCH_DEACTIVATE_FAILED",
+            actor,
+            reason,
+            Map.of("failureReason", failureReason, "status", "failed"),
+            null
+        );
+
+        log.warn("Kill-switch deactivation failure recorded: operationId={}, tenantId={}, actor={}, reason={}",
+            operationId, tenantId, actor, failureReason);
+
+        return Promise.of(operationId);
+    }
 }
 

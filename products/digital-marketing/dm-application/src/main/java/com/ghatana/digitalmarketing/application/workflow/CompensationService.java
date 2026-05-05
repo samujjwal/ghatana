@@ -4,6 +4,7 @@ import com.ghatana.digitalmarketing.contracts.DmOperationContext;
 import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignStatus;
 import io.activej.promise.Promise;
+import io.activej.promise.Promises;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -133,7 +134,7 @@ public final class CompensationService {
                     executions.add(executeCompensation(entry));
                 }
 
-                return Promise.all(executions.toArray(new Promise[0]))
+                return Promises.all(executions)
                     .map(v -> entries.size());
             });
     }

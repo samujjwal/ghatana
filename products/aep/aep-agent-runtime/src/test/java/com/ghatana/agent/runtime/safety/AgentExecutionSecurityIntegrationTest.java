@@ -348,7 +348,7 @@ class AgentExecutionSecurityIntegrationTest {
                 Set.of("READ"),
                 10.0, 3, 50,
                 Instant.now(),
-                Instant.now().plusHours(1),
+                Instant.now().plus(Duration.ofHours(1)),
                 true); // revoked
 
             assertThat(grant.isValid()).isFalse();
@@ -361,8 +361,8 @@ class AgentExecutionSecurityIntegrationTest {
                 "grant-1", "agent-1", "tenant-1", "trace-1",
                 Set.of("READ"),
                 10.0, 3, 50,
-                Instant.now().minusHours(2),
-                Instant.now().minusHours(1), // Already expired
+                Instant.now().minus(Duration.ofHours(2)),
+                Instant.now().minus(Duration.ofHours(1)), // Already expired
                 false);
 
             assertThat(grant.isValid()).isFalse();
@@ -483,6 +483,8 @@ class AgentExecutionSecurityIntegrationTest {
                 try {
                     startLatch.await();
                     monitor.register(rule1);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     completeLatch.countDown();
                 }
@@ -492,6 +494,8 @@ class AgentExecutionSecurityIntegrationTest {
                 try {
                     startLatch.await();
                     monitor.register(rule2);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     completeLatch.countDown();
                 }
@@ -501,6 +505,8 @@ class AgentExecutionSecurityIntegrationTest {
                 try {
                     startLatch.await();
                     monitor.register(rule3);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 } finally {
                     completeLatch.countDown();
                 }
@@ -558,7 +564,7 @@ class AgentExecutionSecurityIntegrationTest {
                 "agent-1", "tenant-1", "trace-1",
                 Double.MAX_VALUE, Double.MAX_VALUE, // Extreme cost values
                 Integer.MAX_VALUE, Integer.MAX_VALUE, // Extreme depth values
-                Long.MAX_VALUE, Long.MAX_VALUE, // Extreme action counts
+                (int) Long.MAX_VALUE, (int) Long.MAX_VALUE, // Extreme action counts
                 Instant.MIN, 0, // Extreme time values
                 Map.of());
 

@@ -7,7 +7,9 @@ package com.ghatana.datacloud.analytics;
 import com.ghatana.platform.observability.MetricsCollector;
 import io.activej.promise.Promise;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -15,7 +17,9 @@ import org.slf4j.MDC;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Distributed query tracker for analytics query cancellation.
@@ -166,14 +170,15 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
             metrics.incrementCounter("analytics.query.tracker.registered",
                 "tenant_id", tenantId);
             logger.debug("Registered query: queryId={}, tenantId={}", queryId, tenantId);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            span.setStatus(StatusCode.OK);
             return Promise.of(null);
         } catch (Exception e) {
             logger.error("Failed to register query: queryId={}", queryId, e);
-            metrics.recordError("analytics.query.tracker.register_failed", e,
-                "tenant_id", tenantId);
+            Map<String, String> errorTags = new HashMap<>();
+            errorTags.put("tenant_id", tenantId);
+            metrics.recordError("analytics.query.tracker.register_failed", e, errorTags);
             span.recordException(e);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+            span.setStatus(StatusCode.ERROR);
             return Promise.ofException(e);
         } finally {
             span.end();
@@ -198,7 +203,7 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
                 logger.debug("Cancel requested for unknown query: queryId={}", queryId);
                 metrics.incrementCounter("analytics.query.tracker.cancel.not_found",
                     "tenant_id", tenantId);
-                span.setStatus(io.opentelemetry.api.trace.StatusCode.NOT_FOUND);
+                span.setStatus(StatusCode.ERROR, "NOT_FOUND");
                 return Promise.of(DistributedQueryTracker.CancellationResult.notFound(queryId));
             }
 
@@ -207,7 +212,7 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
                     queryId, info.tenantId(), tenantId);
                 metrics.incrementCounter("analytics.query.tracker.cancel.unauthorized",
                     "tenant_id", tenantId);
-                span.setStatus(io.opentelemetry.api.trace.StatusCode.UNAUTHENTICATED);
+                span.setStatus(StatusCode.ERROR, "UNAUTHENTICATED");
                 return Promise.of(DistributedQueryTracker.CancellationResult.unauthorized(queryId));
             }
 
@@ -215,14 +220,15 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
             metrics.incrementCounter("analytics.query.tracker.cancelled",
                 "tenant_id", tenantId);
             logger.info("Cancelled query: queryId={}, tenantId={}", queryId, tenantId);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            span.setStatus(StatusCode.OK);
             return Promise.of(DistributedQueryTracker.CancellationResult.cancelled(queryId));
         } catch (Exception e) {
             logger.error("Failed to cancel query: queryId={}", queryId, e);
-            metrics.recordError("analytics.query.tracker.cancel_failed", e,
-                "tenant_id", tenantId);
+            Map<String, String> cancelErrorTags = new HashMap<>();
+            cancelErrorTags.put("tenant_id", tenantId);
+            metrics.recordError("analytics.query.tracker.cancel_failed", e, cancelErrorTags);
             span.recordException(e);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+            span.setStatus(StatusCode.ERROR);
             return Promise.ofException(e);
         } finally {
             span.end();
@@ -242,13 +248,13 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
         try (Scope scope = span.makeCurrent()) {
             boolean cancelled = cancelledQueries.contains(queryId);
             span.setAttribute("cancelled", cancelled);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            span.setStatus(StatusCode.OK);
             return Promise.of(cancelled);
         } catch (Exception e) {
             logger.error("Failed to check cancellation status for query: queryId={}", queryId, e);
-            metrics.recordError("analytics.query.tracker.check_cancelled_failed", e);
+            metrics.recordError("analytics.query.tracker.check_cancelled_failed", e, Map.of());
             span.recordException(e);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+            span.setStatus(StatusCode.ERROR);
             return Promise.ofException(e);
         } finally {
             span.end();
@@ -272,14 +278,15 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
             metrics.incrementCounter("analytics.query.tracker.completed",
                 "status", status);
             logger.debug("Marked query complete: queryId={}, status={}", queryId, status);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+            span.setStatus(StatusCode.OK);
             return Promise.of(null);
         } catch (Exception e) {
             logger.error("Failed to mark query complete: queryId={}", queryId, e);
-            metrics.recordError("analytics.query.tracker.mark_complete_failed", e,
-                "status", status);
+            Map<String, String> markCompleteErrorTags = new HashMap<>();
+            markCompleteErrorTags.put("status", status);
+            metrics.recordError("analytics.query.tracker.mark_complete_failed", e, markCompleteErrorTags);
             span.recordException(e);
-            span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+            span.setStatus(StatusCode.ERROR);
             return Promise.ofException(e);
         } finally {
             span.end();
@@ -302,23 +309,24 @@ class InMemoryQueryTracker implements DistributedQueryTracker {
 
     private void cleanupStaleQueries() {
         Instant cutoff = Instant.now().minusSeconds(QUERY_RETENTION_SECONDS);
-        int removedCount = 0;
+        AtomicInteger removedCount = new AtomicInteger(0);
         Instant beforeCleanup = Instant.now();
-        
+
         activeQueries.entrySet().removeIf(entry -> {
             boolean stale = entry.getValue().registeredAt().isBefore(cutoff);
             if (stale) {
                 cancelledQueries.remove(entry.getKey());
                 logger.debug("Cleaned up stale query: queryId={}", entry.getKey());
-                removedCount++;
+                removedCount.incrementAndGet();
             }
             return stale;
         });
-        
-        if (removedCount > 0) {
+
+        int finalRemovedCount = removedCount.get();
+        if (finalRemovedCount > 0) {
             metrics.incrementCounter("analytics.query.tracker.cleanup",
-                "count", String.valueOf(removedCount));
-            logger.info("Cleaned up {} stale queries in {}ms", removedCount,
+                "count", String.valueOf(finalRemovedCount));
+            logger.info("Cleaned up {} stale queries in {}ms", finalRemovedCount,
                 java.time.Duration.between(beforeCleanup, Instant.now()).toMillis());
         }
     }

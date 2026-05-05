@@ -171,7 +171,7 @@ class EventStreamingTest {
 
             assertThat(totalProcessed.get())
                 .as("Should process significant number of events")
-                .isGreaterThan(eventsPerSecond * durationSeconds * 0.8);
+                .isGreaterThan((long) (eventsPerSecond * durationSeconds * 0.8));
             assertThat(memoryIncreaseMb)
                 .as("Memory increase should be reasonable (< 50MB for this test)")
                 .isLessThan(50);

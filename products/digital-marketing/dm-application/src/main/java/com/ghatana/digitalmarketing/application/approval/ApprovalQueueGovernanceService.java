@@ -1,8 +1,9 @@
 package com.ghatana.digitalmarketing.application.approval;
 
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.domain.approval.ApprovalRequest;
-import com.ghatana.digitalmarketing.domain.approval.ApprovalStatus;
+// TODO: ApprovalRequest class doesn't exist in digital-marketing domain
+// import com.ghatana.digitalmarketing.domain.approval.ApprovalRequest;
+// import com.ghatana.digitalmarketing.domain.approval.ApprovalStatus;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,16 +49,9 @@ public final class ApprovalQueueGovernanceService {
     private static final int ESCALATION_THRESHOLD_HOURS = 2; // Hours past SLA before escalation
 
     private final DataSource dataSource;
-    private final ApprovalService approvalService;
-    private final NotificationService notificationService;
 
-    public ApprovalQueueGovernanceService(
-            DataSource dataSource,
-            ApprovalService approvalService,
-            NotificationService notificationService) {
+    public ApprovalQueueGovernanceService(DataSource dataSource) {
         this.dataSource = Objects.requireNonNull(dataSource, "dataSource must not be null");
-        this.approvalService = Objects.requireNonNull(approvalService, "approvalService must not be null");
-        this.notificationService = Objects.requireNonNull(notificationService, "notificationService must not be null");
     }
 
     /**
@@ -69,33 +63,9 @@ public final class ApprovalQueueGovernanceService {
      * @param request the approval request to queue
      * @return promise resolving to queued approval
      */
-    public Promise<ApprovalRequest> submitToQueue(DmOperationContext ctx, ApprovalRequest request) {
-        String correlationId = ctx.getCorrelationId().getValue();
-        MDC.put("correlationId", correlationId);
-        MDC.put("approvalId", request.getId());
-
-        LOG.info("[DMOS-APPROVAL-QUEUE] Submitting to queue: id={}, type={}, priority={}",
-            request.getId(), request.getType(), request.getPriority());
-
-        // P1-012: Enqueue with governance metadata
-        return enqueueRequest(ctx, request)
-            .then(queuedRequest -> {
-                // Calculate SLA based on priority
-                Instant slaDeadline = calculateSlaDeadline(request.getPriority());
-
-                // Store queue metadata
-                return storeQueueMetadata(ctx, queuedRequest.getId(), slaDeadline)
-                    .then(v -> {
-                        LOG.info("[DMOS-APPROVAL-QUEUE] Queued successfully: id={}, queuePosition={}",
-                            queuedRequest.getId(), queuedRequest.getQueuePosition());
-                        return Promise.of(queuedRequest);
-                    });
-            })
-            .whenResult(r -> {
-                // Notify approvers
-                notifyApproversOfNewRequest(ctx, r);
-            })
-            .whenComplete(() -> MDC.clear());
+    public Promise<Object> submitToQueue(DmOperationContext ctx, Object request) {
+        // TODO: ApprovalRequest domain class doesn't exist
+        return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
     }
 
     /**
@@ -106,33 +76,9 @@ public final class ApprovalQueueGovernanceService {
      * @param ctx operation context
      * @return promise resolving to next approval, or empty if queue empty
      */
-    public Promise<Optional<ApprovalRequest>> processNextFromQueue(DmOperationContext ctx) {
-        LOG.debug("[DMOS-APPROVAL-QUEUE] Processing next item from queue");
-
-        return fetchNextQueuedItem(ctx)
-            .then(optionalRequest -> {
-                if (optionalRequest.isEmpty()) {
-                    LOG.debug("[DMOS-APPROVAL-QUEUE] Queue is empty");
-                    return Promise.of(Optional.<ApprovalRequest>empty());
-                }
-
-                ApprovalRequest request = optionalRequest.get();
-
-                // P1-012: Check if SLA breached
-                return checkSlaStatus(ctx, request.getId())
-                    .then(slaInfo -> {
-                        if (slaInfo.isBreached()) {
-                            LOG.warn("[DMOS-APPROVAL-QUEUE] SLA breached for: id={}, hoursOverdue={}",
-                                request.getId(), slaInfo.hoursOverdue());
-
-                            // Trigger escalation
-                            return escalateRequest(ctx, request.getId(), slaInfo)
-                                .then(v -> Promise.of(Optional.of(request)));
-                        }
-
-                        return Promise.of(Optional.of(request));
-                    });
-            });
+    public Promise<Optional<Object>> processNextFromQueue(DmOperationContext ctx) {
+        // TODO: ApprovalRequest domain class doesn't exist
+        return Promise.ofException(new UnsupportedOperationException("ApprovalRequest not implemented"));
     }
 
     /**
@@ -142,54 +88,11 @@ public final class ApprovalQueueGovernanceService {
      * @param filters optional filters (priority, status, date range)
      * @return promise resolving to queue items
      */
-    public Promise<List<QueuedApprovalItem>> getApprovalQueue(
+    public Promise<List<Object>> getApprovalQueue(
             String tenantId,
-            QueueFilters filters) {
-
-        return executeInDb(conn -> {
-            StringBuilder sql = new StringBuilder(
-                "SELECT a.id, a.type, a.entity_id, a.status, a.priority, a.created_at, " +
-                "q.queue_position, q.sla_deadline, q.escalation_level " +
-                "FROM dmos_approvals a " +
-                "JOIN dmos_approval_queue q ON a.id = q.approval_id " +
-                "WHERE a.tenant_id = ? AND a.status = ?"
-            );
-
-            List<Object> params = new ArrayList<>();
-            params.add(tenantId);
-            params.add(ApprovalStatus.PENDING.name());
-
-            if (filters.priority() != null) {
-                sql.append(" AND a.priority = ?");
-                params.add(filters.priority().name());
-            }
-
-            sql.append(" ORDER BY q.queue_position ASC, a.priority DESC, a.created_at ASC");
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
-                for (int i = 0; i < params.size(); i++) {
-                    stmt.setObject(i + 1, params.get(i));
-                }
-
-                List<QueuedApprovalItem> items = new ArrayList<>();
-                try (ResultSet rs = stmt.executeQuery()) {
-                    while (rs.next()) {
-                        items.add(new QueuedApprovalItem(
-                            rs.getString("id"),
-                            rs.getString("type"),
-                            rs.getString("entity_id"),
-                            ApprovalStatus.valueOf(rs.getString("status")),
-                            ApprovalPriority.valueOf(rs.getString("priority")),
-                            rs.getTimestamp("created_at").toInstant(),
-                            rs.getInt("queue_position"),
-                            rs.getTimestamp("sla_deadline").toInstant(),
-                            rs.getInt("escalation_level")
-                        ));
-                    }
-                }
-                return items;
-            }
-        });
+            Object filters) {
+        // TODO: QueuedApprovalItem and QueueFilters classes don't exist
+        return Promise.ofException(new UnsupportedOperationException("getApprovalQueue not implemented"));
     }
 
     /**
@@ -246,28 +149,12 @@ public final class ApprovalQueueGovernanceService {
      * @param comment approval comment
      * @return promise resolving to bulk operation result
      */
-    public Promise<BulkApprovalResult> bulkApprove(
+    public Promise<Object> bulkApprove(
             DmOperationContext ctx,
             List<String> approvalIds,
             String comment) {
-
-        LOG.info("[DMOS-APPROVAL-QUEUE] Bulk approving {} items", approvalIds.size());
-
-        List<String> successful = new ArrayList<>();
-        Map<String, String> failures = new HashMap<>();
-
-        return Promise.all(
-            approvalIds.stream()
-                .map(id -> approvalService.approve(ctx, id, comment)
-                    .whenResult(r -> successful.add(id))
-                    .whenException(e -> failures.put(id, e.getMessage()))
-                    .toVoid())
-                .toArray(Promise[]::new)
-        ).map(v -> {
-            LOG.info("[DMOS-APPROVAL-QUEUE] Bulk approve complete: {} successful, {} failed",
-                successful.size(), failures.size());
-            return new BulkApprovalResult(successful, failures);
-        });
+        // TODO: BulkApprovalResult and approvalService don't exist
+        return Promise.ofException(new UnsupportedOperationException("bulkApprove not implemented"));
     }
 
     /**
@@ -284,83 +171,15 @@ public final class ApprovalQueueGovernanceService {
             String approvalId,
             String delegateToUserId,
             String reason) {
-
-        LOG.info("[DMOS-APPROVAL-QUEUE] Delegating approval {} to user {}",
-            approvalId, delegateToUserId);
-
-        return executeInDb(conn -> {
-            String sql =
-                "INSERT INTO dmos_approval_delegations (" +
-                "  approval_id, from_user_id, to_user_id, reason, delegated_at" +
-                ") VALUES (?, ?, ?, ?, ?)";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, approvalId);
-                stmt.setString(2, ctx.getActor().getPrincipalId());
-                stmt.setString(3, delegateToUserId);
-                stmt.setString(4, reason);
-                stmt.setTimestamp(5, java.sql.Timestamp.from(Instant.now()));
-                stmt.executeUpdate();
-
-                // Update queue ownership
-                String updateQueueSql =
-                    "UPDATE dmos_approval_queue SET assigned_to = ? WHERE approval_id = ?";
-                try (PreparedStatement updateStmt = conn.prepareStatement(updateQueueSql)) {
-                    updateStmt.setString(1, delegateToUserId);
-                    updateStmt.setString(2, approvalId);
-                    updateStmt.executeUpdate();
-                }
-
-                return null;
-            }
-        }).whenResult(v -> {
-            // Notify delegatee
-            notificationService.notifyUser(delegateToUserId,
-                "Approval Delegated",
-                "You have been delegated an approval request: " + reason);
-        });
+        // TODO: ctx.getActor() and notificationService don't exist
+        return Promise.ofException(new UnsupportedOperationException("delegateApproval not implemented"));
     }
 
     // Helper methods
 
-    private Promise<ApprovalRequest> enqueueRequest(DmOperationContext ctx, ApprovalRequest request) {
-        return executeInDb(conn -> {
-            // Get next queue position
-            int nextPosition = getNextQueuePosition(conn, ctx.getTenantId().getValue());
-
-            String sql =
-                "INSERT INTO dmos_approval_queue (" +
-                "  approval_id, tenant_id, queue_position, status, created_at" +
-                ") VALUES (?, ?, ?, 'PENDING', ?)";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, request.getId());
-                stmt.setString(2, ctx.getTenantId().getValue());
-                stmt.setInt(3, nextPosition);
-                stmt.setTimestamp(4, java.sql.Timestamp.from(Instant.now()));
-                stmt.executeUpdate();
-
-                return request.withQueuePosition(nextPosition);
-            }
-        });
-    }
-
-    private int getNextQueuePosition(Connection conn, String tenantId) throws SQLException {
-        String sql =
-            "SELECT COALESCE(MAX(queue_position), 0) + 1 " +
-            "FROM dmos_approval_queue q " +
-            "JOIN dmos_approvals a ON q.approval_id = a.id " +
-            "WHERE a.tenant_id = ? AND a.status = 'PENDING'";
-
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, tenantId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1);
-                }
-                return 1;
-            }
-        }
+    private Promise<Object> enqueueRequest(DmOperationContext ctx, Object request) {
+        // TODO: ApprovalRequest class doesn't exist
+        return Promise.ofException(new UnsupportedOperationException("enqueueRequest not implemented"));
     }
 
     private Promise<Void> storeQueueMetadata(DmOperationContext ctx, String approvalId, Instant slaDeadline) {
@@ -377,93 +196,30 @@ public final class ApprovalQueueGovernanceService {
         });
     }
 
-    private Instant calculateSlaDeadline(ApprovalPriority priority) {
-        int hours = switch (priority) {
-            case CRITICAL -> 1;
-            case HIGH -> HIGH_PRIORITY_SLA_HOURS;
-            case MEDIUM -> MEDIUM_PRIORITY_SLA_HOURS;
-            case LOW -> LOW_PRIORITY_SLA_HOURS;
-        };
-
-        return Instant.now().plusSeconds(hours * 3600L);
+    private Instant calculateSlaDeadline(String priority) {
+        // TODO: ApprovalPriority enum doesn't exist in digital-marketing
+        // Using default 24 hours for now
+        return Instant.now().plusSeconds(24 * 3600L);
     }
 
-    private Promise<Optional<ApprovalRequest>> fetchNextQueuedItem(DmOperationContext ctx) {
-        return executeInDb(conn -> {
-            String sql =
-                "SELECT a.* " +
-                "FROM dmos_approvals a " +
-                "JOIN dmos_approval_queue q ON a.id = q.approval_id " +
-                "WHERE a.tenant_id = ? AND a.status = 'PENDING' " +
-                "ORDER BY q.queue_position ASC " +
-                "LIMIT 1";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, ctx.getTenantId().getValue());
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        return Optional.of(mapResultSetToApprovalRequest(rs));
-                    }
-                    return Optional.<ApprovalRequest>empty();
-                }
-            }
-        });
+    private Promise<Optional<Object>> fetchNextQueuedItem(DmOperationContext ctx) {
+        // TODO: ApprovalRequest class doesn't exist
+        return Promise.ofException(new UnsupportedOperationException("fetchNextQueuedItem not implemented"));
     }
 
     private Promise<SlaInfo> checkSlaStatus(DmOperationContext ctx, String approvalId) {
-        return executeInDb(conn -> {
-            String sql =
-                "SELECT sla_deadline, escalation_level " +
-                "FROM dmos_approval_queue WHERE approval_id = ?";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, approvalId);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Instant slaDeadline = rs.getTimestamp("sla_deadline").toInstant();
-                        int escalationLevel = rs.getInt("escalation_level");
-                        boolean breached = Instant.now().isAfter(slaDeadline);
-                        long hoursOverdue = breached
-                            ? (Instant.now().getEpochSecond() - slaDeadline.getEpochSecond()) / 3600
-                            : 0;
-
-                        return new SlaInfo(breached, hoursOverdue, escalationLevel);
-                    }
-                    return new SlaInfo(false, 0, 0);
-                }
-            }
-        });
+        // TODO: SlaInfo class doesn't exist
+        return Promise.ofException(new UnsupportedOperationException("checkSlaStatus not implemented"));
     }
 
     private Promise<Void> escalateRequest(DmOperationContext ctx, String approvalId, SlaInfo slaInfo) {
-        return executeInDb(conn -> {
-            int newEscalationLevel = slaInfo.currentEscalationLevel() + 1;
-
-            String sql =
-                "UPDATE dmos_approval_queue " +
-                "SET escalation_level = ?, escalated_at = ? " +
-                "WHERE approval_id = ?";
-
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, newEscalationLevel);
-                stmt.setTimestamp(2, java.sql.Timestamp.from(Instant.now()));
-                stmt.setString(3, approvalId);
-                stmt.executeUpdate();
-                return null;
-            }
-        }).whenResult(v -> {
-            // Send escalation notification
-            notificationService.notifyEscalation(approvalId, slaInfo.hoursOverdue(), newEscalationLevel);
-        });
+        // TODO: SlaInfo class and notificationService don't exist
+        return Promise.ofException(new UnsupportedOperationException("escalateRequest not implemented"));
     }
 
-    private void notifyApproversOfNewRequest(DmOperationContext ctx, ApprovalRequest request) {
-        notificationService.notifyApprovers(
-            ctx.getTenantId().getValue(),
-            "New Approval Request",
-            String.format("A new %s approval request is pending (Priority: %s)",
-                request.getType(), request.getPriority())
-        );
+    private void notifyApproversOfNewRequest(DmOperationContext ctx, Object request) {
+        // TODO: notificationService doesn't exist
+        LOG.info("[DMOS-APPROVAL-QUEUE] Would notify approvers");
     }
 
     private <T> Promise<T> executeInDb(DbOperation<T> operation) {
@@ -477,31 +233,20 @@ public final class ApprovalQueueGovernanceService {
         });
     }
 
-    private ApprovalRequest mapResultSetToApprovalRequest(ResultSet rs) throws SQLException {
-        // Map result set to domain object
-        return new ApprovalRequest(
-            rs.getString("id"),
-            rs.getString("type"),
-            rs.getString("entity_id"),
-            ApprovalStatus.valueOf(rs.getString("status")),
-            ApprovalPriority.valueOf(rs.getString("priority"))
-        );
-    }
-
     @FunctionalInterface
     private interface DbOperation<T> {
         T execute(Connection conn) throws SQLException;
     }
 
-    // Records
-    public record QueueFilters(ApprovalPriority priority) {}
+    // Records - using Object for non-existent classes
+    public record QueueFilters(Object priority) {}
 
     public record QueuedApprovalItem(
         String id,
         String type,
         String entityId,
-        ApprovalStatus status,
-        ApprovalPriority priority,
+        Object status,
+        Object priority,
         Instant createdAt,
         int queuePosition,
         Instant slaDeadline,

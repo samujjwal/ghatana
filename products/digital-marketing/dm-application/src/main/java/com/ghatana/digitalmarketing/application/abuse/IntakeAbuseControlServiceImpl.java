@@ -51,7 +51,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
         String email,
         Map<String, String> formData
     ) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(eventloop, () -> {
             // Check rate limits per IP
             RateLimitTracker ipTracker = rateLimitTrackers.computeIfAbsent(
                 "ip:" + clientIp,
@@ -111,7 +111,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
 
     @Override
     public Promise<Void> recordSubmission(DmOperationContext ctx, String clientIp, String email) {
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(eventloop, () -> {
             // Increment IP rate limit
             RateLimitTracker ipTracker = rateLimitTrackers.computeIfAbsent(
                 "ip:" + clientIp,
@@ -142,7 +142,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
             return Promise.of(false);
         }
 
-        return Promise.ofBlocking(() -> {
+        return Promise.ofBlocking(eventloop, () -> {
             String key = email + ":" + formHash;
             Instant lastSubmission = recentSubmissions.get(key);
             Instant cutoff = Instant.now().minus(Duration.ofMinutes(config.duplicateWindowMinutes()));
@@ -168,7 +168,7 @@ public final class IntakeAbuseControlServiceImpl implements IntakeAbuseControlSe
         for (Map.Entry<String, String> entry : formData.entrySet()) {
             String value = entry.getValue();
             if (value != null && value.length() > 5) {
-                int upperCount = value.chars().filter(Character::isUpperCase).count();
+                int upperCount = (int) value.chars().filter(Character::isUpperCase).count();
                 if (upperCount > value.length() * 0.7) {
                     return true;
                 }

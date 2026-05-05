@@ -311,13 +311,13 @@ public final class DigitalMarketingKernelAdapterImpl
                         factors
                     )
                     .map(RiskManagementPlugin.RiskScore::score)
-                    .whenException(e -> {
-                        LOG.error("[{}] Risk evaluation failed: entityId={}, model={}, tenant={}, error={}",
-                            BRIDGE_ID, entityId, riskModelId, context.getTenantId().getValue(), e.getMessage());
-                        if (productionMode) {
-                            return 1.0;
+                    .then((score, exception) -> {
+                        if (exception != null) {
+                            LOG.error("[{}] Risk evaluation failed: entityId={}, model={}, tenant={}, error={}",
+                                BRIDGE_ID, entityId, riskModelId, context.getTenantId().getValue(), exception.getMessage());
+                            return Promise.of(productionMode ? 1.0 : 0.0);
                         }
-                        return 0.0;
+                        return Promise.of(score);
                     })
                     .whenResult(score -> LOG.debug(
                         "[{}] Risk evaluated: entityId={}, model={}, score={}, tenant={}",
@@ -349,10 +349,13 @@ public final class DigitalMarketingKernelAdapterImpl
                     return Promise.of(Boolean.FALSE);
                 }
                 return featureFlagPlugin.isEnabled(flagKey, context.getTenantId().getValue())
-                    .whenException(e -> {
-                        LOG.error("[{}] Feature flag check failed: flagKey={}, tenant={}, error={}",
-                            BRIDGE_ID, flagKey, context.getTenantId().getValue(), e.getMessage());
-                        return false;
+                    .then((enabled, exception) -> {
+                        if (exception != null) {
+                            LOG.error("[{}] Feature flag check failed: flagKey={}, tenant={}, error={}",
+                                BRIDGE_ID, flagKey, context.getTenantId().getValue(), exception.getMessage());
+                            return Promise.of(Boolean.FALSE);
+                        }
+                        return Promise.of(enabled);
                     })
                     .whenResult(enabled -> LOG.debug(
                         "[{}] Feature flag checked: flagKey={}, enabled={}, tenant={}",
@@ -402,31 +405,33 @@ public final class DigitalMarketingKernelAdapterImpl
                 enrichedAttributes.put("actor", context.getActor().getPrincipalId());
 
                 return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
-                    .whenException(e -> {
-                        if (productionMode) {
-                            LOG.error(
-                                "[{}] P1-019: Notification dispatch failed in production: " +
-                                "recipientId={}, template={}, tenant={}, metadata={}, error={}",
-                                BRIDGE_ID, recipientId, template,
-                                context.getTenantId().getValue(),
-                                redact(enrichedAttributes.toString()),
-                                e.getMessage()
-                            );
-                            throw new RuntimeException(
-                                "P1-019: Notification dispatch failed in production mode. " +
-                                "recipientId=" + recipientId + ", template=" + template, e
-                            );
-                        } else {
-                            LOG.warn(
-                                "[{}] Notification dispatch failed: recipientId={}, template={}, tenant={}, metadata={}",
-                                BRIDGE_ID,
-                                recipientId,
-                                template,
-                                context.getTenantId().getValue(),
-                                redact(enrichedAttributes.toString())
-                            );
-                            return null;
+                    .then((notificationId, exception) -> {
+                        if (exception != null) {
+                            if (productionMode) {
+                                LOG.error(
+                                    "[{}] P1-019: Notification dispatch failed in production: " +
+                                    "recipientId={}, template={}, tenant={}, metadata={}, error={}",
+                                    BRIDGE_ID, recipientId, template,
+                                    context.getTenantId().getValue(),
+                                    redact(enrichedAttributes.toString()),
+                                    exception.getMessage()
+                                );
+                                return Promise.ofException(new RuntimeException(
+                                    "P1-019: Notification dispatch failed in production mode. " +
+                                    "recipientId=" + recipientId + ", template=" + template, exception));
+                            } else {
+                                LOG.warn(
+                                    "[{}] Notification dispatch failed: recipientId={}, template={}, tenant={}, metadata={}",
+                                    BRIDGE_ID,
+                                    recipientId,
+                                    template,
+                                    context.getTenantId().getValue(),
+                                    redact(enrichedAttributes.toString())
+                                );
+                                return Promise.of(null);
+                            }
                         }
+                        return Promise.of(notificationId);
                     })
                     .whenResult(notificationId -> LOG.info(
                         "[{}] Notification dispatched: notificationId={}, recipientId={}, template={}, tenant={}",

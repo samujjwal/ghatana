@@ -6,6 +6,7 @@ package com.ghatana.datacloud.analytics;
 
 import com.ghatana.platform.observability.MetricsCollector;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -164,13 +165,10 @@ public class AnalyticsMetrics {
                 TAG_QUERY_TYPE, queryType,
                 TAG_TENANT_ID, tenantId,
                 TAG_STATUS, "success");
-        collector.incrementCounter(QUERY_ROWS_RETURNED, rowCount,
-                TAG_QUERY_TYPE, queryType,
-                TAG_TENANT_ID, tenantId);
-        collector.incrementCounter(QUERY_ACTIVE,
-                TAG_TENANT_ID, tenantId,
-                TAG_STATUS, "completed",
-                -1.0); // Decrement active count
+        collector.increment(QUERY_ROWS_RETURNED, rowCount,
+                Map.of(TAG_QUERY_TYPE, queryType, TAG_TENANT_ID, tenantId));
+        collector.increment(QUERY_ACTIVE, -1.0,
+                Map.of(TAG_TENANT_ID, tenantId, TAG_STATUS, "completed")); // Decrement active count
     }
 
     /**
@@ -187,12 +185,9 @@ public class AnalyticsMetrics {
                 TAG_STATUS, "failure",
                 TAG_ERROR_TYPE, error.getClass().getSimpleName());
         collector.recordError(QUERY_FAILED, error,
-                TAG_QUERY_TYPE, queryType,
-                TAG_TENANT_ID, tenantId);
-        collector.incrementCounter(QUERY_ACTIVE,
-                TAG_TENANT_ID, tenantId,
-                TAG_STATUS, "failed",
-                -1.0); // Decrement active count
+                Map.of(TAG_QUERY_TYPE, queryType, TAG_TENANT_ID, tenantId));
+        collector.increment(QUERY_ACTIVE, -1.0,
+                Map.of(TAG_TENANT_ID, tenantId, TAG_STATUS, "failed")); // Decrement active count
     }
 
     /**
@@ -206,10 +201,8 @@ public class AnalyticsMetrics {
                 TAG_QUERY_TYPE, queryType,
                 TAG_TENANT_ID, tenantId,
                 TAG_STATUS, "cancelled");
-        collector.incrementCounter(QUERY_ACTIVE,
-                TAG_TENANT_ID, tenantId,
-                TAG_STATUS, "cancelled",
-                -1.0); // Decrement active count
+        collector.increment(QUERY_ACTIVE, -1.0,
+                Map.of(TAG_TENANT_ID, tenantId, TAG_STATUS, "cancelled")); // Decrement active count
     }
 
     // ════════════════════════════════════════════════════════════════

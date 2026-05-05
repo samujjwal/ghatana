@@ -89,7 +89,7 @@ public final class PreviewSessionApiController {
                         "expiresAt", expiresAt.toString()
                 );
                 return Promise.of(HttpResponse.ok200()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                         .withJson(objectMapper.writeValueAsString(response))
                         .build());
             } catch (Exception e) {
@@ -118,7 +118,7 @@ public final class PreviewSessionApiController {
 
                 ValidationResult validation = validateToken(payload.sessionToken());
                 return Promise.of(HttpResponse.ok200()
-                        .withHeader("Content-Type", "application/json")
+                        .withHeader(io.activej.http.HttpHeaders.CONTENT_TYPE, "application/json")
                         .withJson(objectMapper.writeValueAsString(Map.of(
                                 "valid", validation.valid(),
                                 "reason", validation.reason()

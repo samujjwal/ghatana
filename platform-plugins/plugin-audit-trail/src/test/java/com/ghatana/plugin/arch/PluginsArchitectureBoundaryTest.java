@@ -227,16 +227,16 @@ class PluginsArchitectureBoundaryTest {
         // Check for product-specific naming patterns in plugin code
         ArchRule rule = noClasses()
                 .that().resideInAPackage("com.ghatana.plugin..")
-                .should().haveSimpleNameMatching(".*Marketing.*")
-                .orShould().haveSimpleNameMatching(".*Campaign.*")
-                .orShould().haveSimpleNameMatching(".*Strategy.*")
-                .orShould().haveSimpleNameMatching(".*Budget.*")
-                .orShould().haveSimpleNameMatching(".*Lead.*")
-                .orShould().haveSimpleNameMatching(".*Patient.*")
-                .orShould().haveSimpleNameMatching(".*Health.*")
-                .orShould().haveSimpleNameMatching(".*Finance.*")
-                .orShould().haveSimpleNameMatching(".*Yappc.*")
-                .orShould().haveSimpleNameMatching(".*Agent.*")
+                .should().haveNameMatching(".*Marketing.*")
+                .orShould().haveNameMatching(".*Campaign.*")
+                .orShould().haveNameMatching(".*Strategy.*")
+                .orShould().haveNameMatching(".*Budget.*")
+                .orShould().haveNameMatching(".*Lead.*")
+                .orShould().haveNameMatching(".*Patient.*")
+                .orShould().haveNameMatching(".*Health.*")
+                .orShould().haveNameMatching(".*Finance.*")
+                .orShould().haveNameMatching(".*Yappc.*")
+                .orShould().haveNameMatching(".*Agent.*")
                 .as("P1-041: platform-plugins must not contain product-specific business logic — " +
                     "plugins should have generic, reusable names");
 

@@ -1,7 +1,7 @@
 package com.ghatana.digitalmarketing.application.workflow;
 
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.kernelbridge.KernelBridge;
+import com.ghatana.digitalmarketing.bridge.KernelBridge;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

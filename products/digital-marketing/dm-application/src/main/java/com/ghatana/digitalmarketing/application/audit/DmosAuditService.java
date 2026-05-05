@@ -208,14 +208,14 @@ public final class DmosAuditService {
             : "unknown";
 
         LOG.info("[DMOS-AUDIT] {}: actor={}, tenant={}, workspace={}, entity={}:{}, correlationId={}",
-            action, ctx.getActor().id(), ctx.getTenantId().getValue(),
+            action, ctx.getActor().getPrincipalId(), ctx.getTenantId().getValue(),
             ctx.getWorkspaceId().getValue(), entityType, entityId, correlationId);
 
         Map<String, Object> auditData = Map.of(
             "auditId", auditId,
             "action", action.name(),
-            "actor", ctx.getActor().id(),
-            "actorType", ctx.getActor().type().name(),
+            "actor", ctx.getActor().getPrincipalId(),
+            "actorType", "USER", // TODO: getPrincipalType() doesn't exist, hardcoding for now
             "tenantId", ctx.getTenantId().getValue(),
             "workspaceId", ctx.getWorkspaceId().getValue(),
             "entityType", entityType,

@@ -194,11 +194,11 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                 metrics.recordEstimatedCost(plan.getQueryType().name(), tenantId, plan.getEstimatedCost());
                 long submissionDuration = System.currentTimeMillis() - submissionStart;
                 metrics.recordSubmissionDuration(plan.getQueryType().name(), tenantId, submissionDuration);
-                span.addEvent("query_planned", 
+                span.addEvent("query_planned",
                     io.opentelemetry.api.common.Attributes.of(
-                        "query_type", plan.getQueryType().name(),
-                        "estimated_cost", plan.getEstimatedCost(),
-                        "data_sources", plan.getDataSources().toString()));
+                        io.opentelemetry.api.common.AttributeKey.stringKey("query_type"), plan.getQueryType().name(),
+                        io.opentelemetry.api.common.AttributeKey.doubleKey("estimated_cost"), plan.getEstimatedCost(),
+                        io.opentelemetry.api.common.AttributeKey.stringKey("data_sources"), plan.getDataSources().toString()));
                 return executeQuery(query, plan, span)
                     .then(result -> {
                         query.setStatus("COMPLETED");
@@ -322,7 +322,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         // Create execution span
         Span executionSpan = tracer.spanBuilder("analytics.query.execute")
-            .setParent(parentSpan)
+            .setParent(io.opentelemetry.context.Context.current().with(parentSpan))
             .setAttribute("query_type", plan.getQueryType().name())
             .setAttribute("data_sources", plan.getDataSources().toString())
             .startSpan();
@@ -436,7 +436,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         Span selectSpan = tracer.spanBuilder("analytics.query.select")
-            .setParent(executionSpan)
+            .setParent(io.opentelemetry.context.Context.current().with(executionSpan))
             .setAttribute("collection", collectionName)
             .setAttribute("limit", limit)
             .startSpan();
@@ -486,7 +486,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         Span aggregateSpan = tracer.spanBuilder("analytics.query.aggregate")
-            .setParent(executionSpan)
+            .setParent(io.opentelemetry.context.Context.current().with(executionSpan))
             .setAttribute("collection", collectionName)
             .setAttribute("group_by_field", groupByField != null ? groupByField : "none")
             .startSpan();
@@ -551,7 +551,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         Span timeseriesSpan = tracer.spanBuilder("analytics.query.timeseries")
-            .setParent(executionSpan)
+            .setParent(io.opentelemetry.context.Context.current().with(executionSpan))
             .setAttribute("collection", collectionName)
             .startSpan();
 
@@ -610,7 +610,7 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
         Span joinSpan = tracer.spanBuilder("analytics.query.join")
-            .setParent(executionSpan)
+            .setParent(io.opentelemetry.context.Context.current().with(executionSpan))
             .setAttribute("collections", collections.toString())
             .setAttribute("limit", limit)
             .startSpan();

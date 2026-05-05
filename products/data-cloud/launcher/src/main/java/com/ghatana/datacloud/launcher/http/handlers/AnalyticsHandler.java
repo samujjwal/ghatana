@@ -529,26 +529,29 @@ public class AnalyticsHandler {
             .then(result -> {
                 if (result.success()) {
                     log.info("[DC-9] cancel query succeeded queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
-                    Map<String, Object> response = Map.of(
-                        "queryId", queryId,
-                        "status", "CANCELLED",
-                        "message", result.message(),
-                        "cancelledAt", result.cancelledAt().toString()
-                    );
-                    return Promise.of(http.jsonResponse(200, response, traceId));
+                    Map<String, Object> response = new java.util.HashMap<>();
+                    response.put("queryId", queryId);
+                    response.put("status", "CANCELLED");
+                    response.put("message", result.message());
+                    response.put("cancelledAt", result.cancelledAt().toString());
+                    response.put("traceId", traceId);
+                    return Promise.of(http.jsonResponse(response));
                 } else {
                     log.warn("[DC-9] cancel query failed queryId={} tenantId={} traceId={} reason={}",
                         queryId, tenantId, traceId, result.message());
                     if (result.message().contains("unauthorized")) {
-                        return Promise.of(http.errorResponse(403, result.message(), traceId));
+                        return Promise.of(http.errorResponse(403, result.message()));
                     }
-                    return Promise.of(http.errorResponse(404, result.message(), traceId));
+                    return Promise.of(http.errorResponse(404, result.message()));
                 }
             })
-            .whenException(exception -> {
-                log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
-                    queryId, tenantId, traceId, exception);
-                return Promise.of(http.errorResponse(500, "Internal error during query cancellation", traceId));
+            .thenEx((result, exception) -> {
+                if (exception != null) {
+                    log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
+                        queryId, tenantId, traceId, exception);
+                    return Promise.of(http.errorResponse(500, "Internal error during query cancellation"));
+                }
+                return Promise.of(result);
             });
     }
 

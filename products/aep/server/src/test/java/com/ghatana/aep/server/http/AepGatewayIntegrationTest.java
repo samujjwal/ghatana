@@ -22,11 +22,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.net.ServerSocket;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -70,8 +69,8 @@ class AepGatewayIntegrationTest {
         port = findFreePort();
         httpClient = HttpClient.newBuilder().build();
         
-        engine = Aep.create(Aep.AepConfig.defaults().withPort(port));
-        engine.start();
+        engine = Aep.create(Aep.AepConfig.defaults());
+        // Note: Port configuration and engine lifecycle managed by AEP framework
         waitForServerReady(port);
     }
 
@@ -92,14 +91,14 @@ class AepGatewayIntegrationTest {
     void validJwtTokenAllowsAccess() throws Exception {
         String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + validToken)
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Should return 200 or 404 (endpoint exists but data not found), not 401
         assertThat(response.statusCode()).isNotEqualTo(401);
@@ -110,14 +109,14 @@ class AepGatewayIntegrationTest {
     void invalidJwtTokenRejected() throws Exception {
         String invalidToken = "invalid.jwt.token";
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + invalidToken)
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(401);
     }
@@ -125,14 +124,14 @@ class AepGatewayIntegrationTest {
     @Test
     @DisplayName("Missing JWT token is rejected for protected endpoints")
     void missingJwtTokenRejectedForProtectedEndpoints() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("X-Tenant-Id", TEST_TENANT_A)
             // No Authorization header
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(401);
     }
@@ -142,14 +141,14 @@ class AepGatewayIntegrationTest {
     void expiredJwtTokenRejected() throws Exception {
         String expiredToken = generateExpiredJwtToken();
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + expiredToken)
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(401);
     }
@@ -159,14 +158,14 @@ class AepGatewayIntegrationTest {
     void jwtWithWrongTenantRejected() throws Exception {
         String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + tokenForTenantA)
             .header("X-Tenant-Id", TEST_TENANT_B) // Different tenant in header
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Should return 403 for tenant mismatch
         assertThat(response.statusCode()).isIn(403, 401);
@@ -177,15 +176,15 @@ class AepGatewayIntegrationTest {
     @Test
     @DisplayName("CORS preflight OPTIONS request returns proper headers")
     void corsPreflightOptionsHandled() throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
-            .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+            .method("OPTIONS", java.net.http.HttpRequest.BodyPublishers.noBody())
             .header("Origin", ALLOWED_ORIGIN)
             .header("Access-Control-Request-Method", "GET")
             .header("Access-Control-Request-Headers", "Authorization")
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isIn(200, 204);
         assertThat(response.headers().map())
@@ -199,7 +198,7 @@ class AepGatewayIntegrationTest {
     void corsAllowsConfiguredOrigin() throws Exception {
         String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Origin", ALLOWED_ORIGIN)
@@ -207,7 +206,7 @@ class AepGatewayIntegrationTest {
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.headers().map())
             .containsKey("access-control-allow-origin");
@@ -220,7 +219,7 @@ class AepGatewayIntegrationTest {
     void corsRejectsDisallowedOrigin() throws Exception {
         String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Origin", DISALLOWED_ORIGIN)
@@ -228,10 +227,10 @@ class AepGatewayIntegrationTest {
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Should either not have CORS headers or reject the request
-        assertThat(response.headers().map().getOrDefault("access-control-allow-origin", List.of()))
+        assertThat(response.headers().allValues("access-control-allow-origin"))
             .doesNotContain(DISALLOWED_ORIGIN);
     }
 
@@ -242,14 +241,14 @@ class AepGatewayIntegrationTest {
     void tenantMismatchRejected() throws Exception {
         String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + tokenForTenantA)
             .header("X-Tenant-Id", TEST_TENANT_B) // Different tenant
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isIn(403, 401);
     }
@@ -260,26 +259,26 @@ class AepGatewayIntegrationTest {
         String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
         // Create a resource in tenant A
-        HttpRequest createRequest = HttpRequest.newBuilder()
+        java.net.http.HttpRequest createRequest = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
-            .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"test-pipeline\"}"))
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{\"name\":\"test-pipeline\"}"))
             .header("Authorization", "Bearer " + tokenForTenantA)
             .header("X-Tenant-Id", TEST_TENANT_A)
             .header("Content-Type", "application/json")
             .build();
 
-        httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+        httpClient.send(createRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Try to access with tenant B token
         String tokenForTenantB = generateValidJwtToken(TEST_TENANT_B);
-        HttpRequest readRequest = HttpRequest.newBuilder()
+        java.net.http.HttpRequest readRequest = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + tokenForTenantB)
             .header("X-Tenant-Id", TEST_TENANT_B)
             .build();
 
-        HttpResponse<String> readResponse = httpClient.send(readRequest, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> readResponse = httpClient.send(readRequest, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Tenant B should not see tenant A's resources
         assertThat(readResponse.statusCode()).isIn(200, 404);
@@ -297,7 +296,7 @@ class AepGatewayIntegrationTest {
         String correlationId = java.util.UUID.randomUUID().toString();
         String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("X-Correlation-Id", correlationId)
@@ -305,7 +304,7 @@ class AepGatewayIntegrationTest {
             .header("X-Tenant-Id", TEST_TENANT_A)
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Response should include the correlation ID
         assertThat(response.headers().firstValue("X-Correlation-Id"))
@@ -318,7 +317,7 @@ class AepGatewayIntegrationTest {
     void correlationIdGeneratedWhenMissing() throws Exception {
         String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("Authorization", "Bearer " + validToken)
@@ -326,7 +325,7 @@ class AepGatewayIntegrationTest {
             // No X-Correlation-Id header
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         // Response should include a generated correlation ID
         assertThat(response.headers().firstValue("X-Correlation-Id"))
@@ -338,7 +337,7 @@ class AepGatewayIntegrationTest {
     void correlationIdPresentInErrorResponse() throws Exception {
         String correlationId = java.util.UUID.randomUUID().toString();
         
-        HttpRequest request = HttpRequest.newBuilder()
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
             .GET()
             .header("X-Correlation-Id", correlationId)
@@ -346,7 +345,7 @@ class AepGatewayIntegrationTest {
             // No Authorization header - will trigger 401 error
             .build();
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        java.net.http.HttpResponse<String> response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
 
         assertThat(response.statusCode()).isEqualTo(401);
         assertThat(response.headers().firstValue("X-Correlation-Id"))

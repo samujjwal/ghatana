@@ -23,14 +23,14 @@ public final class FlashItComplianceRulePack {
                         "FLASHIT-CR-001",
                         MOMENT_PRIVACY,
                         "Sensitive moment exports must emit audit evidence before release",
-                        CompliancePlugin.Severity.HIGH,
+                        CompliancePlugin.ComplianceRule.Severity.HIGH,
                         "$.auditEventEmitted == true"
                 ),
                 new CompliancePlugin.ComplianceRule(
                         "FLASHIT-CR-002",
                         MOMENT_PRIVACY,
                         "AI-assisted reflections must honor explicit disabled mode",
-                        CompliancePlugin.Severity.HIGH,
+                        CompliancePlugin.ComplianceRule.Severity.HIGH,
                         "$.aiDisabled != null"
                 )
         );

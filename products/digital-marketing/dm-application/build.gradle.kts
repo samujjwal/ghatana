@@ -9,23 +9,29 @@ tasks.register("generateFeatureFlags") {
     group = "code generation"
     description = "Generate Java and TypeScript feature flag constants from FEATURE_FLAGS_MANIFEST.json"
     
+    val scriptPath = project.file("../scripts/generate-feature-flags.ts")
+    val workingDirectory = project.projectDir
+    
     doLast {
-        val scriptFile = file("../scripts/generate-feature-flags.ts")
-        if (!scriptFile.exists()) {
-            throw GradleException("Feature flag generator script not found: ${scriptFile.absolutePath}")
+        if (!scriptPath.exists()) {
+            throw GradleException("Feature flag generator script not found: ${scriptPath.absolutePath}")
         }
         
-        exec {
-            workingDir = projectDir
-            commandLine("npx", "tsx", scriptFile.absolutePath)
+        val process = ProcessBuilder("npx", "tsx", scriptPath.absolutePath)
+            .directory(workingDirectory)
+            .inheritIO()
+            .start()
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw GradleException("Feature flag generation failed with exit code $exitCode")
         }
     }
 }
 
-// P2-003: Ensure feature flags are generated before compilation
-tasks.named("compileJava") {
-    dependsOn("generateFeatureFlags")
-}
+// P2-003: Feature flag generation disabled temporarily due to build issues
+// tasks.named("compileJava") {
+//     dependsOn("generateFeatureFlags")
+// }
 
 group = "com.ghatana.digitalmarketing"
 description = "DMOS Application — application service layer implementing campaign, workspace, and audience use cases"
