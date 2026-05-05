@@ -107,7 +107,7 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({ stats }) => {
           <motion.div
             key={stat.label}
             variants={itemVariants}
-            className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4 text-center"
+            className="rounded-lg border border-border bg-surface/50 p-4 text-center"
           >
             <div
               className={cn(
@@ -117,8 +117,8 @@ const ProjectStats: React.FC<ProjectStatsProps> = ({ stats }) => {
             >
               <Icon className="h-5 w-5" />
             </div>
-            <p className="mt-2 text-2xl font-bold text-zinc-100">{stat.value}</p>
-            <p className="text-xs text-zinc-500">{stat.label}</p>
+            <p className="mt-2 text-2xl font-bold text-fg-muted">{stat.value}</p>
+            <p className="text-xs text-fg-muted">{stat.label}</p>
           </motion.div>
         );
       })}
@@ -149,12 +149,12 @@ const ExtractedItems: React.FC<ExtractedItemsProps> = ({
   return (
     <motion.div
       variants={itemVariants}
-      className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4"
+      className="rounded-lg border border-border bg-surface/50 p-4"
     >
       <div className="mb-3 flex items-center gap-2">
-        <Icon className="h-4 w-4 text-zinc-400" />
-        <h3 className="font-medium text-zinc-200">{title}</h3>
-        <span className="ml-auto rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-300">
+        <Icon className="h-4 w-4 text-fg-muted" />
+        <h3 className="font-medium text-fg-muted">{title}</h3>
+        <span className="ml-auto rounded-full bg-surface px-2 py-0.5 text-xs text-fg-muted">
           {items.length}
         </span>
       </div>
@@ -162,7 +162,7 @@ const ExtractedItems: React.FC<ExtractedItemsProps> = ({
         {displayItems.map((item, index) => (
           <li
             key={index}
-            className="flex items-center gap-2 text-sm text-zinc-400"
+            className="flex items-center gap-2 text-sm text-fg-muted"
           >
             <CheckCircle2 className="h-3.5 w-3.5 text-success-400" />
             <span className="truncate">{item}</span>
@@ -170,7 +170,7 @@ const ExtractedItems: React.FC<ExtractedItemsProps> = ({
         ))}
       </ul>
       {remaining > 0 && (
-        <p className="mt-2 text-xs text-zinc-500">+{remaining} more</p>
+        <p className="mt-2 text-xs text-fg-muted">+{remaining} more</p>
       )}
     </motion.div>
   );
@@ -189,7 +189,7 @@ const NextSteps: React.FC<NextStepsProps> = ({ steps }) => {
 
   return (
     <motion.div variants={itemVariants} className="space-y-3">
-      <h3 className="mb-4 text-lg font-semibold text-zinc-100">
+      <h3 className="mb-4 text-lg font-semibold text-fg-muted">
         Continue Your Journey
       </h3>
       {steps.map((step) => {
@@ -202,20 +202,20 @@ const NextSteps: React.FC<NextStepsProps> = ({ steps }) => {
               'flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition-colors',
               step.primary
                 ? 'border-primary-500/50 bg-primary-500/10 hover:bg-primary-500/20'
-                : 'border-zinc-800 bg-zinc-900/50 hover:bg-zinc-900'
+                : 'border-border bg-surface/50 hover:bg-surface'
             )}
             onClick={() => navigate(step.route)}
           >
             <div
               className={cn(
                 'flex h-10 w-10 items-center justify-center rounded-lg',
-                step.primary ? 'bg-primary-500/20' : 'bg-zinc-800'
+                step.primary ? 'bg-primary-500/20' : 'bg-surface'
               )}
             >
               <Icon
                 className={cn(
                   'h-5 w-5',
-                  step.primary ? 'text-primary-400' : 'text-zinc-400'
+                  step.primary ? 'text-primary-400' : 'text-fg-muted'
                 )}
               />
             </div>
@@ -223,17 +223,17 @@ const NextSteps: React.FC<NextStepsProps> = ({ steps }) => {
               <h4
                 className={cn(
                   'font-medium',
-                  step.primary ? 'text-primary-300' : 'text-zinc-200'
+                  step.primary ? 'text-primary-300' : 'text-fg-muted'
                 )}
               >
                 {step.title}
               </h4>
-              <p className="text-sm text-zinc-500">{step.description}</p>
+              <p className="text-sm text-fg-muted">{step.description}</p>
             </div>
             <ArrowRight
               className={cn(
                 'h-5 w-5',
-                step.primary ? 'text-primary-400' : 'text-zinc-600'
+                step.primary ? 'text-primary-400' : 'text-fg-muted'
               )}
             />
           </motion.div>
@@ -306,25 +306,25 @@ const BootstrapCompletePage: React.FC = () => {
         icon: FileText,
         label: 'Requirements',
         value: 12,
-        color: 'bg-blue-500/20 text-blue-400',
+        color: 'bg-info-bg/20 text-info-color',
       },
       {
         icon: Layers,
         label: 'Features',
         value: session?.features?.length || 8,
-        color: 'bg-purple-500/20 text-purple-400',
+        color: 'bg-info-bg/20 text-info-color',
       },
       {
         icon: Code2,
         label: 'Tech Stack',
         value: session?.techStack?.length || 5,
-        color: 'bg-green-500/20 text-green-400',
+        color: 'bg-success-bg/20 text-success-color',
       },
       {
         icon: Database,
         label: 'Data Models',
         value: 4,
-        color: 'bg-amber-500/20 text-amber-400',
+        color: 'bg-warning-bg/20 text-warning-color',
       },
     ],
     [session]
@@ -394,7 +394,7 @@ const BootstrapCompletePage: React.FC = () => {
   const projectName = session?.projectName || 'Your Project';
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-surface">
       {/* Confetti */}
       <SimpleConfetti active={showConfetti} />
 
@@ -414,10 +414,10 @@ const BootstrapCompletePage: React.FC = () => {
               <CheckCircle2 className="h-10 w-10 text-white" />
             </motion.div>
 
-            <h1 className="text-3xl font-bold text-zinc-100">
+            <h1 className="text-3xl font-bold text-fg-muted">
               Project Bootstrapped! 🎉
             </h1>
-            <p className="mx-auto mt-2 max-w-lg text-zinc-400">
+            <p className="mx-auto mt-2 max-w-lg text-fg-muted">
               <span className="font-medium text-primary-400">{projectName}</span>{' '}
               has been successfully set up. AI has analyzed your requirements and
               created a comprehensive project foundation.
@@ -456,8 +456,8 @@ const BootstrapCompletePage: React.FC = () => {
                 <Sparkles className="h-5 w-5 text-primary-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-zinc-100">AI Analysis Summary</h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                <h3 className="font-semibold text-fg-muted">AI Analysis Summary</h3>
+                <p className="mt-2 text-sm leading-relaxed text-fg-muted">
                   Based on your requirements, I've identified this as a{' '}
                   <span className="text-primary-300">
                     full-stack web application
@@ -478,7 +478,7 @@ const BootstrapCompletePage: React.FC = () => {
           {/* Footer Actions */}
           <motion.div
             variants={itemVariants}
-            className="flex items-center justify-between border-t border-zinc-800 pt-6"
+            className="flex items-center justify-between border-t border-border pt-6"
           >
             <Button
               variant="ghost"

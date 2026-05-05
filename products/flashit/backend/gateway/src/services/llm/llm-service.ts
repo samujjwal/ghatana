@@ -4,6 +4,7 @@
  */
 
 import OpenAI from 'openai';
+import { assertAiEnabled, requireAiSecret } from '../../lib/ai-mode.js';
 
 export type LLMProvider = 'openai' | 'ollama' | 'anthropic';
 
@@ -45,6 +46,7 @@ export class LLMService {
     this.config = config;
 
     if (config.provider === 'openai' && config.openai) {
+      assertAiEnabled('LLM completions');
       this.openaiClient = new OpenAI({
         apiKey: config.openai.apiKey,
       });
@@ -148,6 +150,7 @@ export class LLMService {
    * Get the appropriate client based on provider
    */
   private getClient(): OpenAI {
+    assertAiEnabled('LLM provider access');
     if (this.config.provider === 'openai' && this.openaiClient) {
       return this.openaiClient;
     } else if (this.config.provider === 'ollama' && this.ollamaClient) {
@@ -198,7 +201,7 @@ export function getLLMService(): LLMService {
     const config: LLMConfig = {
       provider,
       openai: provider === 'openai' ? {
-        apiKey: process.env.OPENAI_API_KEY || '',
+        apiKey: requireAiSecret('OPENAI_API_KEY', 'LLM completions'),
         model: process.env.OPENAI_MODEL,
       } : undefined,
       ollama: provider === 'ollama' ? {

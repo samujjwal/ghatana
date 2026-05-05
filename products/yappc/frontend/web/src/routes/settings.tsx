@@ -155,7 +155,7 @@ export default function Component() {
                     Manage the supported workspace identity fields and destructive actions.
                 </p>
                 {workspaceIdMismatch && (
-                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100" role="alert">
+                    <div className="mt-3 flex items-center gap-2 rounded-lg border border-warning-border bg-warning-bg p-3 text-sm text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color" role="alert">
                         <AlertCircle className="h-4 w-4 shrink-0" />
                         <span>
                             You are editing a different workspace than your current context. Changes will apply to this workspace.

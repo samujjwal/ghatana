@@ -69,7 +69,7 @@ export class CanvasErrorBoundary extends Component<Props, State> {
             // Default error UI
             return (
                 <Box
-                    className="flex flex-col items-center justify-center h-full p-8 bg-white dark:bg-gray-900"
+                    className="flex flex-col items-center justify-center h-full p-8 bg-white dark:bg-surface"
                 >
                     <Typography variant="h4" color="error" gutterBottom>
                         ⚠️ Canvas Error
@@ -79,7 +79,7 @@ export class CanvasErrorBoundary extends Component<Props, State> {
                     </Typography>
                     {this.state.error && (
                         <Box
-                            className="p-4 mb-4 rounded text-sm overflow-auto bg-gray-100 dark:bg-gray-800 font-mono max-w-[600px]"
+                            className="p-4 mb-4 rounded text-sm overflow-auto bg-surface-muted dark:bg-surface font-mono max-w-[600px]"
                         >
                             <Typography variant="body2" color="error">
                                 {this.state.error.toString()}

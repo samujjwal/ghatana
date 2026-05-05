@@ -23,7 +23,7 @@ function AdminGate({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-2">
-          <p className="text-zinc-400 text-sm">
+          <p className="text-fg-muted text-sm">
             {reason === 'insufficient-role'
               ? 'You do not have permission to access this page.'
               : reason === 'unauthenticated'
@@ -42,7 +42,7 @@ export function Component() {
   return (
     <AdminGate>
       <Suspense fallback={<RouteLoadingSpinner />}>
-        <ABTestingDashboardPage className="min-h-screen bg-zinc-950" />
+        <ABTestingDashboardPage className="min-h-screen bg-surface" />
       </Suspense>
     </AdminGate>
   );

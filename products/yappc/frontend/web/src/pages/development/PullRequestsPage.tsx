@@ -28,19 +28,19 @@ const PullRequestsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<PRStatus>('open');
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
+    <div className="min-h-screen bg-surface text-white p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 rounded-xl bg-green-500/10">
-            <GitPullRequest className="w-6 h-6 text-green-400" />
+          <div className="p-3 rounded-xl bg-success-bg/10">
+            <GitPullRequest className="w-6 h-6 text-success-color" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Pull Requests</h1>
-            <p className="text-zinc-400">Review and merge code changes</p>
+            <p className="text-fg-muted">Review and merge code changes</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mb-6 border-b border-zinc-800 pb-3">
+        <div className="flex items-center gap-4 mb-6 border-b border-border pb-3">
           {tabs.map((tab) => (
             <button
               key={tab.status}
@@ -48,8 +48,8 @@ const PullRequestsPage: React.FC = () => {
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm transition-colors',
                 activeTab === tab.status
-                  ? 'bg-zinc-800 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-surface text-white'
+                  : 'text-fg-muted hover:text-white'
               )}
             >
               {tab.label}
@@ -58,11 +58,11 @@ const PullRequestsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <GitPullRequest className="w-12 h-12 text-zinc-600 mb-4" />
-          <h3 className="text-lg font-semibold text-zinc-300 mb-2">
+          <GitPullRequest className="w-12 h-12 text-fg-muted mb-4" />
+          <h3 className="text-lg font-semibold text-fg-muted mb-2">
             No {activeTab} pull requests
           </h3>
-          <p className="text-zinc-500 max-w-md">
+          <p className="text-fg-muted max-w-md">
             Pull requests will appear here once branches are pushed and reviews requested.
           </p>
         </div>

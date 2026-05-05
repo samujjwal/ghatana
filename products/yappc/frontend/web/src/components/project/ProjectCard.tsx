@@ -33,7 +33,7 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
                             variant="outlined"
                             className="h-[20px] text-[0.65rem]"
                         />
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                             {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : 'Recently'}
                         </Typography>
                     </div>

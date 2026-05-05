@@ -38,9 +38,9 @@ const SIZE_STYLES: Record<AILabelSize, string> = {
 };
 
 const VARIANT_STYLES: Record<AILabelVariant, string> = {
-  subtle: 'bg-purple-50/50 text-purple-600',
-  emphasis: 'bg-purple-100 text-purple-700',
-  border: 'bg-white border border-purple-200 text-purple-700',
+  subtle: 'bg-info-bg/50 text-info-color',
+  emphasis: 'bg-info-bg text-info-color',
+  border: 'bg-white border border-info-border text-info-color',
 };
 
 export const AILabelOverlay: React.FC<AILabelOverlayProps> = ({

@@ -79,7 +79,7 @@ export function AbstractionLevelNavigator({
     return (
         <Paper
             elevation={2}
-            className="p-3 rounded-lg bg-white dark:bg-gray-900 transition-all duration-200" style={{ opacity: isTransitioning ? 0.7 : 1 }}
+            className="p-3 rounded-lg bg-white dark:bg-surface transition-all duration-200" style={{ opacity: isTransitioning ? 0.7 : 1 }}
         >
             {/* Level Selector Tabs */}
             <Box className="flex items-center gap-2 mb-3">
@@ -151,7 +151,7 @@ export function AbstractionLevelNavigator({
             <Box className="flex items-center gap-2">
                 <Breadcrumbs
                     separator="›"
-                    className="[&_.MuiBreadcrumbs-separator]:mx-1 [&_.MuiBreadcrumbs-separator]:text-gray-500"
+                    className="[&_.MuiBreadcrumbs-separator]:mx-1 [&_.MuiBreadcrumbs-separator]:text-fg-muted"
                 >
                     {breadcrumbs.map((crumb, index) => {
                         const isActive = index === breadcrumbs.length - 1;
@@ -179,7 +179,7 @@ export function AbstractionLevelNavigator({
                 <Typography
                     as="span"
                     color="text.secondary"
-                    className="text-xs text-gray-500 ml-auto italic"
+                    className="text-xs text-fg-muted ml-auto italic"
                 >
                     {levelInfo?.description}
                 </Typography>
@@ -222,7 +222,7 @@ function CompactNavigator({
 }) {
     return (
         <Box
-            className="flex items-center gap-2 p-1 rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700" style={{ opacity: isTransitioning ? 0.7 : 1 }}
+            className="flex items-center gap-2 p-1 rounded bg-white dark:bg-surface border border-border dark:border-border" style={{ opacity: isTransitioning ? 0.7 : 1 }}
         >
             <Tooltip title="Go Back">
                 <span>
@@ -236,14 +236,14 @@ function CompactNavigator({
                 {breadcrumbs.slice(-3).map((crumb, i, arr) => (
                     <React.Fragment key={`${crumb.level}-${i}`}>
                         <Typography
-                            as="span" className="text-xs text-gray-500"
+                            as="span" className="text-xs text-fg-muted"
                             onClick={() => i < arr.length - 1 && onBreadcrumbClick(breadcrumbs.length - arr.length + i)}
                             style={{ cursor: i < arr.length - 1 ? 'pointer' : 'default', fontWeight: i === arr.length - 1 ? 600 : 400, color: i === arr.length - 1 ? 'primary.main' : 'text.secondary' }}
                         >
                             {ABSTRACTION_LEVELS.find(l => l.level === crumb.level)?.icon} {crumb.label}
                         </Typography>
                         {i < arr.length - 1 && (
-                            <Typography as="span" className="text-xs text-gray-500" color="text.disabled">›</Typography>
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.disabled">›</Typography>
                         )}
                     </React.Fragment>
                 ))}
@@ -289,7 +289,7 @@ function MiniNavigator({
 
     return (
         <Box
-            className="flex flex-col items-center gap-1 p-1 rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700" style={{ opacity: isTransitioning ? 0.7 : 1 }}
+            className="flex flex-col items-center gap-1 p-1 rounded bg-white dark:bg-surface border border-border dark:border-border" style={{ opacity: isTransitioning ? 0.7 : 1 }}
         >
             <Tooltip title="Zoom Out" placement="left">
                 <span>

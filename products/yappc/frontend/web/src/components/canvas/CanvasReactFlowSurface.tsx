@@ -157,7 +157,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
                 selectNodesOnDrag={false}
                 noDragClassName="nodrag"
                 noWheelClassName="nowheel"
-                className="dark:bg-gray-950"
+                className="dark:bg-surface"
                 style={{
                     opacity: interactionMode === 'sketch' ? 0.6 : 1,
                     transition: 'opacity 200ms ease',
@@ -185,7 +185,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: 12,
                         overflow: 'hidden',
                     }}
-                    className="bg-white dark:bg-gray-800"
+                    className="bg-white dark:bg-surface"
                     showInteractive={false}
                     aria-label="Zoom controls"
                 />
@@ -201,7 +201,7 @@ export const CanvasReactFlowSurface: React.FC<CanvasReactFlowSurfaceProps> = ({
                         return 'var(--color-muted, #e0e0e0)';
                     }}
                     maskColor={minimapMaskColor}
-                    className="dark:bg-gray-900/90"
+                    className="dark:bg-surface/90"
                     style={{
                         border: '1px solid rgba(0,0,0,0.05)', borderRadius: 16,
                         margin: 20, height: 120, width: 180,

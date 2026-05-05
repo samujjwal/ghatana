@@ -472,7 +472,7 @@ export const PersonaAdaptiveCanvas: React.FC<PersonaAdaptiveCanvasProps> = ({
       {/* Persona Indicator */}
       {showPersonaIndicator && (
         <Box
-          className="absolute flex items-center gap-2 px-4 py-2 rounded-lg top-[16px] right-[16px] z-[1000] bg-white dark:bg-gray-900 shadow border-[2px_solid]" style={{ borderColor: 'personaConfig.color' }} >
+          className="absolute flex items-center gap-2 px-4 py-2 rounded-lg top-[16px] right-[16px] z-[1000] bg-white dark:bg-surface shadow border-[2px_solid]" style={{ borderColor: 'personaConfig.color' }} >
           <Box component="span" className="flex items-center">
             {personaIconMap[primaryPersona]}
           </Box>
@@ -480,7 +480,7 @@ export const PersonaAdaptiveCanvas: React.FC<PersonaAdaptiveCanvasProps> = ({
             <Box className="font-semibold text-sm">
               {personaConfig.name}
             </Box>
-            <Box className="text-xs text-gray-500 dark:text-gray-400">
+            <Box className="text-xs text-fg-muted dark:text-fg-muted">
               {personaConfig.shortName}
             </Box>
           </Box>
@@ -489,7 +489,7 @@ export const PersonaAdaptiveCanvas: React.FC<PersonaAdaptiveCanvasProps> = ({
 
       {/* Persona-Specific Toolbar */}
       <Box
-        className="absolute flex flex-col gap-2 p-2 rounded-lg top-[80px] right-[16px] z-[999] bg-white dark:bg-gray-900 shadow"
+        className="absolute flex flex-col gap-2 p-2 rounded-lg top-[80px] right-[16px] z-[999] bg-white dark:bg-surface shadow"
       >
         {personaTools
           .filter((tool) => tool.category === 'primary')
@@ -502,7 +502,7 @@ export const PersonaAdaptiveCanvas: React.FC<PersonaAdaptiveCanvasProps> = ({
               <IconButton
                 onClick={tool.action}
                 size="small"
-                className="text-[20px] hover:bg-gray-100 hover:dark:bg-gray-800"
+                className="text-[20px] hover:bg-surface-muted hover:dark:bg-surface"
               >
                 {tool.icon}
               </IconButton>
@@ -520,7 +520,7 @@ export const PersonaAdaptiveCanvas: React.FC<PersonaAdaptiveCanvasProps> = ({
       {/* Persona Context Data (for debugging) */}
       {process.env.NODE_ENV === 'development' && (
         <Box
-          className="absolute p-2 rounded text-xs bottom-[16px] left-[16px] z-[999] bg-white dark:bg-gray-900 shadow-sm font-mono opacity-[0.7]"
+          className="absolute p-2 rounded text-xs bottom-[16px] left-[16px] z-[999] bg-white dark:bg-surface shadow-sm font-mono opacity-[0.7]"
         >
           <div>Persona: {primaryPersona}</div>
           <div>Tools: {personaTools.length}</div>

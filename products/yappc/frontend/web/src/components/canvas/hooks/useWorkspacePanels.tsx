@@ -136,7 +136,7 @@ export function useWorkspacePanels({
                             className="flex-1"
                         >Redo</Button>
                     </Box>
-                    <Typography as="p" className="text-xs text-gray-500">
+                    <Typography as="p" className="text-xs text-fg-muted">
                         {canUndo ? 'Changes available to undo.' : 'Nothing to undo.'}
                     </Typography>
                 </Box>

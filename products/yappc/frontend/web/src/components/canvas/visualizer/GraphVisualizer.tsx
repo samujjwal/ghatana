@@ -86,13 +86,13 @@ export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ nodes, edges, 
                 {generating ? (
                     <Stack alignItems="center" spacing={2}>
                         <CircularProgress size={24} />
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                             Analyzing architecture...
                         </Typography>
                     </Stack>
                 ) : (
                     <Box className="w-full">
-                        <Box className="p-4 rounded mb-4 text-xs overflow-auto bg-white dark:bg-gray-900 border border-solid border-gray-200 dark:border-gray-700 font-mono max-h-[200px] whitespace-pre">
+                        <Box className="p-4 rounded mb-4 text-xs overflow-auto bg-white dark:bg-surface border border-solid border-border dark:border-border font-mono max-h-[200px] whitespace-pre">
                             {mermaidCode}
                         </Box>
 
@@ -111,7 +111,7 @@ export const GraphVisualizer: React.FC<GraphVisualizerProps> = ({ nodes, edges, 
                 )}
             </Paper>
 
-            <Typography as="span" className="text-xs text-gray-500 mt-4 block" color="text.disabled">
+            <Typography as="span" className="text-xs text-fg-muted mt-4 block" color="text.disabled">
                 * Auto-generated from {nodes.length} nodes and {edges.length} relationships.
             </Typography>
         </Box>

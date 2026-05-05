@@ -196,7 +196,7 @@ export default function MobileCard({
                         <Box className="flex items-center gap-1 ml-2">
                             {favorite && (
                                 <Favorite
-                                    className="text-red-600 text-[1.2rem]"
+                                    className="text-destructive text-[1.2rem]"
                                 />
                             )}
                             {onMenuClick && (
@@ -208,7 +208,7 @@ export default function MobileCard({
                                         e.stopPropagation();
                                         onMenuClick(e as unknown);
                                     }}
-                                    className="p-1 text-gray-500 dark:text-gray-400"
+                                    className="p-1 text-fg-muted dark:text-fg-muted"
                                 >
                                     <MoreVert size={16} />
                                 </IconButton>
@@ -227,13 +227,13 @@ export default function MobileCard({
 
                         <Box className="flex items-center gap-1">
                             {getBuildStatusIcon(buildStatus)}
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 {buildStatus === 'building' ? 'Building...' : buildStatus}
                             </Typography>
                         </Box>
 
                         <Box className="flex items-center gap-1 ml-auto">
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 {formatRelativeTime(lastModified)}
                             </Typography>
                         </Box>
@@ -242,11 +242,11 @@ export default function MobileCard({
                     {/* Health progress bar */}
                     <Box className="mb-3">
                         <Box className="flex justify-between items-center mb-1">
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Health Score
                             </Typography>
                             <Typography
-                                as="span" className="text-xs text-gray-500 font-semibold" style={{ color: theme.palette[getHealthColor(health)].main }}
+                                as="span" className="text-xs text-fg-muted font-semibold" style={{ color: theme.palette[getHealthColor(health)].main }}
                             >
                                 {health}%
                             </Typography>
@@ -267,12 +267,12 @@ export default function MobileCard({
                     {/* Team avatars */}
                     {team.length > 0 && (
                         <Box className="flex items-center gap-2">
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Team:
                             </Typography>
                             <AvatarGroup
                                 max={4}
-                                className="[&_.MuiAvatar-root]:w-6 [&_.MuiAvatar-root]:h-6 [&_.MuiAvatar-root]:text-[0.7rem] [&_.MuiAvatar-root]:border [&_.MuiAvatar-root]:border-solid [&_.MuiAvatar-root]:border-white dark:[&_.MuiAvatar-root]:border-gray-900"
+                                className="[&_.MuiAvatar-root]:w-6 [&_.MuiAvatar-root]:h-6 [&_.MuiAvatar-root]:text-[0.7rem] [&_.MuiAvatar-root]:border [&_.MuiAvatar-root]:border-solid [&_.MuiAvatar-root]:border-white dark:[&_.MuiAvatar-root]:border-border"
                             >
                                 {team.map((member, index) => (
                                         <Avatar

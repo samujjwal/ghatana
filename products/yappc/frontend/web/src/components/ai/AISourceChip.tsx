@@ -61,7 +61,7 @@ const SOURCE_CONFIG = {
   RULE: {
     label: 'Rule',
     title: 'Deterministic rule — this result is 100% reproducible.',
-    bgClass: 'bg-slate-100 text-slate-700',
+    bgClass: 'bg-surface-muted text-fg',
     icon: '⚙',
   },
   MODEL: {

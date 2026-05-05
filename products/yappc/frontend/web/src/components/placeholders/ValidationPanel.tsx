@@ -40,20 +40,20 @@ const SEVERITY_CONFIG = {
   error: {
     label: 'Error',
     icon: XCircle,
-    badge: 'bg-red-500/15 text-red-400 border border-red-500/20',
-    row: 'border-l-2 border-red-500/50',
+    badge: 'bg-destructive-bg/15 text-destructive border border-destructive-border/20',
+    row: 'border-l-2 border-destructive-border/50',
   },
   warning: {
     label: 'Warning',
     icon: AlertTriangle,
-    badge: 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20',
-    row: 'border-l-2 border-yellow-500/50',
+    badge: 'bg-warning-bg/15 text-warning-color border border-warning-border/20',
+    row: 'border-l-2 border-warning-border/50',
   },
   info: {
     label: 'Info',
     icon: CheckCircle2,
-    badge: 'bg-blue-500/15 text-blue-400 border border-blue-500/20',
-    row: 'border-l-2 border-blue-500/50',
+    badge: 'bg-info-bg/15 text-info-color border border-info-border/20',
+    row: 'border-l-2 border-info-border/50',
   },
 } as const;
 
@@ -71,10 +71,10 @@ const IssueRow: React.FC<{
 
   return (
     <div
-      className={`flex items-start gap-3 p-3 bg-zinc-800/60 rounded-lg ${config.row}`}
+      className={`flex items-start gap-3 p-3 bg-surface/60 rounded-lg ${config.row}`}
     >
       {/* Icon */}
-      <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-zinc-400" />
+      <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-fg-muted" />
 
       {/* Content */}
       <div className="flex-1 min-w-0">
@@ -87,10 +87,10 @@ const IssueRow: React.FC<{
           </span>
         </div>
         {issue.title && issue.message !== issue.title && (
-          <p className="text-xs text-zinc-400 leading-relaxed">{issue.message}</p>
+          <p className="text-xs text-fg-muted leading-relaxed">{issue.message}</p>
         )}
         {issue.description && (
-          <p className="text-xs text-zinc-500 mt-1 leading-relaxed">{issue.description}</p>
+          <p className="text-xs text-fg-muted mt-1 leading-relaxed">{issue.description}</p>
         )}
       </div>
 
@@ -110,7 +110,7 @@ const IssueRow: React.FC<{
           <button
             onClick={() => onIgnore(issue.id)}
             title="Ignore this issue"
-            className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-zinc-700/60 text-zinc-400 border border-zinc-600/40 hover:bg-zinc-700 transition-colors"
+            className="flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-surface-muted/60 text-fg-muted border border-border/40 hover:bg-surface-muted transition-colors"
           >
             <X className="w-3 h-3" />
           </button>
@@ -135,25 +135,25 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
   const infos = issues.filter((i) => i.severity === 'info');
 
   return (
-    <div className={`bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col h-full ${className}`}>
+    <div className={`bg-surface rounded-lg border border-border flex flex-col h-full ${className}`}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-zinc-800 flex-shrink-0">
+      <div className="px-4 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">Validation</h3>
           {issues.length > 0 && (
             <div className="flex items-center gap-2">
               {errors.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/15 text-red-400">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-destructive-bg/15 text-destructive">
                   {errors.length} error{errors.length !== 1 ? 's' : ''}
                 </span>
               )}
               {warnings.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-yellow-500/15 text-yellow-400">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-warning-bg/15 text-warning-color">
                   {warnings.length} warning{warnings.length !== 1 ? 's' : ''}
                 </span>
               )}
               {infos.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-info-bg/15 text-info-color">
                   {infos.length} info
                 </span>
               )}
@@ -167,8 +167,8 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
         {issues.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center py-8">
             <CheckCircle2 className="w-8 h-8 text-emerald-400/60" />
-            <p className="text-sm font-medium text-zinc-400">No issues found</p>
-            <p className="text-xs text-zinc-600">All validations passed</p>
+            <p className="text-sm font-medium text-fg-muted">No issues found</p>
+            <p className="text-xs text-fg-muted">All validations passed</p>
           </div>
         ) : (
           issues.map((issue) => (

@@ -180,7 +180,7 @@ const dashboardSchema = z.object({
 function fhirPatientToProfile(raw: z.infer<typeof FhirPatientSchema>): PatientProfile {
   const firstName = raw.name?.[0]?.given?.join(' ') ?? '';
   const lastName = raw.name?.[0]?.family ?? '';
-  const name = raw.name?.[0]?.text ?? [firstName, lastName].filter(Boolean).join(' ') || 'Unknown';
+  const name = raw.name?.[0]?.text ?? ([firstName, lastName].filter(Boolean).join(' ') || 'Unknown');
   const bloodType = raw.extension?.find(e => e.url.includes('blood-type'))?.valueString ?? 'Unknown';
   const location = raw.address?.[0]?.city ?? 'Unknown';
   const emergencyContact = raw.telecom?.[0]?.value ?? '';

@@ -202,7 +202,7 @@ export function CanvasWelcomeDialog({
             {/* Close Button */}
             <IconButton
                 onClick={handleSkip}
-                className="absolute right-[8px] top-[8px] text-gray-500" aria-label="Close dialog"
+                className="absolute right-[8px] top-[8px] text-fg-muted" aria-label="Close dialog"
             >
                 <Close />
             </IconButton>
@@ -223,7 +223,7 @@ export function CanvasWelcomeDialog({
                             size="sm"
                             variant="outlined"
                         />
-                        <Typography className="text-xs text-gray-500" color="text.secondary">
+                        <Typography className="text-xs text-fg-muted" color="text.secondary">
                             ~{steps.length - activeStep} min remaining
                         </Typography>
                     </Stack>
@@ -244,7 +244,7 @@ export function CanvasWelcomeDialog({
                     <Stack spacing={3} alignItems="center" className="text-center">
                         {/* Icon Circle */}
                         <Box
-                            className="rounded-full flex items-center justify-center w-[80px] h-[80px] text-blue-600 text-[40px] bg-blue-50" >
+                            className="rounded-full flex items-center justify-center w-[80px] h-[80px] text-info-color text-[40px] bg-info-bg" >
                             {currentStep.visual || <StepIcon className="text-[40px]" />}
                         </Box>
 
@@ -272,10 +272,10 @@ export function CanvasWelcomeDialog({
                                     direction="row"
                                     spacing={1.5}
                                     alignItems="flex-start"
-                                    className="p-3 rounded-lg text-left bg-gray-50 dark:bg-gray-800"
+                                    className="p-3 rounded-lg text-left bg-surface-muted dark:bg-surface"
                                 >
                                     <CheckCircleOutline
-                                        className="mt-0.5 text-green-600 text-xl"
+                                        className="mt-0.5 text-success-color text-xl"
                                     />
                                     <Typography className="text-sm" color="text.primary">
                                         {tip}
@@ -313,7 +313,7 @@ export function CanvasWelcomeDialog({
                         <Button
                             variant="ghost"
                             onClick={handleSkip}
-                            className="text-gray-500 dark:text-gray-400"
+                            className="text-fg-muted dark:text-fg-muted"
                         >
                             Skip Tutorial
                         </Button>
@@ -340,7 +340,7 @@ export function CanvasWelcomeDialog({
 
                     {/* Keyboard Hint */}
                     <Typography
-                        className="mt-4 block text-center text-xs text-gray-500"
+                        className="mt-4 block text-center text-xs text-fg-muted"
                         color="text.tertiary"
                     >
                         Use arrow keys to navigate • Press Enter to continue

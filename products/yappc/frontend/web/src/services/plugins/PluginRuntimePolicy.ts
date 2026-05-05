@@ -472,6 +472,14 @@ export function createPluginRuntimeEnvironment(
     readonly telemetryEmitter?: (eventName: string, payload?: unknown) => void;
   }
 ): PluginRuntimeEnvironment {
+  // Mandatory validation gate — reject invalid policies before any runtime surface is created.
+  const validation = validatePluginRuntimePolicy(policy);
+  if (!validation.valid) {
+    throw new Error(
+      `Plugin runtime environment refused: invalid policy for '${policy.pluginId}'. ${validation.errors.join('; ')}`,
+    );
+  }
+
   const boundary =
     options?.boundary ??
     createPluginSandboxBoundary(policy.pluginId, policy.sandboxRequired ? 'basic' : 'none');

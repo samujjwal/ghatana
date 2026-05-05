@@ -93,6 +93,27 @@ pack:
     - observability.framework
     - security.framework
     - workflow.engine
+  kernelCapabilitiesConsumed:
+    - boundary-policy-evaluation
+    - audit-trail
+    - approval-workflow
+    - tenant-context
+  pluginsConsumed:
+    - plugin-audit-trail
+    - plugin-compliance
+    - plugin-ledger
+    - plugin-fraud-detection
+    - plugin-risk-management
+  bridgesConsumed:
+    - data-cloud-kernel-bridge
+  domainPacksProvided:
+    - finance-trading-boundary-policy
+    - finance-compliance-rule-pack
+  uiSurfaces: []
+  runtimeServices:
+    - launcher
+    - integration-testing
+  dataSensitivity: regulated-finance
 
   # Extensions provided by this pack
   extensions:

@@ -169,7 +169,7 @@ function ImageNodeComponent({ data, selected, id }: ImageNodeProps) {
                     {/* Empty state (drop zone) */}
                     {!src && !isLoading && !error && (
                         <Box
-                            className={`absolute flex flex-col items-center justify-center gap-2 p-4 inset-0 ${isDragging ? 'bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-500'}`}>
+                            className={`absolute flex flex-col items-center justify-center gap-2 p-4 inset-0 ${isDragging ? 'bg-info-bg text-info-color' : 'bg-surface-muted text-fg-muted'}`}>
                             <Box className="text-[2.5rem]">🖼️</Box>
                             <Typography variant="body2" textAlign="center">
                                 {isDragging ? 'Drop image here' : 'Click or drag image'}
@@ -201,7 +201,7 @@ function ImageNodeComponent({ data, selected, id }: ImageNodeProps) {
                 {/* Caption */}
                 {caption && src && (
                     <Box
-                        className="px-3 py-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 border-t"
+                        className="px-3 py-2 border-border dark:border-border bg-surface-muted dark:bg-surface border-t"
                     >
                         <Typography variant="caption" color="text.secondary">
                             {caption}

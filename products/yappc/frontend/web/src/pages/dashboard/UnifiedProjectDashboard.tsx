@@ -197,9 +197,9 @@ const UnifiedProjectDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen flex-col bg-surface-muted dark:bg-surface">
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <header className="sticky top-0 z-50 border-b border-border bg-white dark:border-border dark:bg-surface">
         <div className="flex h-16 items-center justify-between px-4 lg:px-6">
           {/* Left: Project Info & Breadcrumbs */}
           <div className="flex items-center gap-4">
@@ -213,17 +213,17 @@ const UnifiedProjectDashboard: React.FC = () => {
             </Button>
 
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              <h1 className="text-lg font-semibold text-fg dark:text-fg-muted">
                 {currentProject?.name || 'Project'}
               </h1>
               {breadcrumbs.length > 0 && (
-                <div className="hidden items-center gap-1 text-sm text-gray-500 md:flex">
+                <div className="hidden items-center gap-1 text-sm text-fg-muted md:flex">
                   {breadcrumbs.map((crumb) => (
                     <React.Fragment key={crumb.id}>
                       <ChevronRight className="h-4 w-4" />
                       <button
                         onClick={() => navigate(crumb.href)}
-                        className="hover:text-gray-900 dark:hover:text-gray-100"
+                        className="hover:text-fg dark:hover:text-fg-muted"
                       >
                         {crumb.label}
                       </button>
@@ -239,7 +239,7 @@ const UnifiedProjectDashboard: React.FC = () => {
             {/* Global Search */}
             <div className="hidden md:block">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
                 <Input
                   type="search"
                   placeholder="Search project..."
@@ -265,7 +265,7 @@ const UnifiedProjectDashboard: React.FC = () => {
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive-bg text-xs text-white">
                   {unreadCount}
                 </span>
               )}
@@ -274,7 +274,7 @@ const UnifiedProjectDashboard: React.FC = () => {
         </div>
 
         {/* Phase Tabs - Unified Navigation */}
-        <div className="border-t border-gray-200 dark:border-gray-800">
+        <div className="border-t border-border dark:border-border">
           <div className="flex items-center gap-1 overflow-x-auto px-4 lg:px-6">
             {PHASE_TABS.map((phase) => {
               const Icon = phase.icon;
@@ -287,22 +287,22 @@ const UnifiedProjectDashboard: React.FC = () => {
                   className={cn(
                     'group relative flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                     isActive
-                      ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-500'
-                      : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:text-gray-400 dark:hover:border-gray-700 dark:hover:text-gray-100'
+                      ? 'border-info-border text-info-color dark:border-info-border dark:text-info-color'
+                      : 'border-transparent text-fg-muted hover:border-border hover:text-fg dark:text-fg-muted dark:hover:border-border dark:hover:text-fg-muted'
                   )}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{phase.label}</span>
                   {phase.completionPercentage !== undefined && (
-                    <span className="ml-1 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-700 dark:text-gray-300">
+                    <span className="ml-1 rounded-full bg-surface-muted px-2 py-0.5 text-xs text-fg dark:bg-surface-muted dark:text-fg-muted">
                       {phase.completionPercentage}%
                     </span>
                   )}
 
                   {/* Tooltip */}
-                  <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 hidden -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg group-hover:block dark:bg-gray-800">
+                  <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 hidden -translate-x-1/2 rounded-lg bg-surface px-3 py-2 text-xs text-white shadow-lg group-hover:block dark:bg-surface">
                     {phase.description}
-                    <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-gray-900 dark:bg-gray-800" />
+                    <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-surface dark:bg-surface" />
                   </div>
                 </button>
               );
@@ -316,12 +316,12 @@ const UnifiedProjectDashboard: React.FC = () => {
         {/* Quick Actions Sidebar */}
         <aside
           className={cn(
-            'w-64 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950',
+            'w-64 border-r border-border bg-white dark:border-border dark:bg-surface',
             'hidden lg:block'
           )}
         >
           <div className="p-4">
-            <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="mb-4 text-sm font-semibold text-fg dark:text-fg-muted">
               Quick Actions
             </h2>
             <div className="space-y-1">
@@ -331,14 +331,14 @@ const UnifiedProjectDashboard: React.FC = () => {
                   <button
                     key={action.id}
                     onClick={() => handleQuickAction(action)}
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-fg transition-colors hover:bg-surface-muted dark:text-fg-muted dark:hover:bg-surface"
                   >
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4" />
                       <span>{action.label}</span>
                     </div>
                     {action.badge && (
-                      <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs text-white">
+                      <span className="rounded-full bg-destructive-bg px-2 py-0.5 text-xs text-white">
                         {action.badge}
                       </span>
                     )}
@@ -362,11 +362,11 @@ const UnifiedProjectDashboard: React.FC = () => {
               animate={{ width: 384, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="border-l border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+              className="border-l border-border bg-white dark:border-border dark:bg-surface"
             >
               <div className="flex h-full flex-col p-4">
                 <div className="mb-4 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <h2 className="text-sm font-semibold text-fg dark:text-fg-muted">
                     AI Assistant
                   </h2>
                   <Button

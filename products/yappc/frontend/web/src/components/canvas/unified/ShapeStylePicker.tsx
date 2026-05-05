@@ -55,7 +55,7 @@ const FILL_PRESETS = [
 export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: ShapeStylePickerProps) {
     if (selectedNodeIds.length === 0) {
         return (
-            <Box className="p-4 text-center text-gray-500 dark:text-gray-400">
+            <Box className="p-4 text-center text-fg-muted dark:text-fg-muted">
                 <Typography variant="body2">Select a shape to edit its style</Typography>
             </Box>
         );
@@ -66,7 +66,7 @@ export function ShapeStylePicker({ selectedNodeIds, nodes, onUpdateNode }: Shape
 
     if (shapeNodes.length === 0) {
         return (
-            <Box className="p-4 text-center text-gray-500 dark:text-gray-400">
+            <Box className="p-4 text-center text-fg-muted dark:text-fg-muted">
                 <Typography variant="body2">Select a shape to edit its style</Typography>
             </Box>
         );

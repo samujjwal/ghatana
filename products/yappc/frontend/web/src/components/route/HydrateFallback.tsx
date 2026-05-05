@@ -61,7 +61,7 @@ export const HydrateFallback: React.FC = () => {
 
           {/* Center icon */}
           <div
-            className="text-blue-600 opacity-[0.4]"
+            className="text-info-color opacity-[0.4]"
             style={{
               width: '40px',
               height: '40px',
@@ -75,10 +75,10 @@ export const HydrateFallback: React.FC = () => {
 
         {/* Loading text */}
         <div className="flex flex-col items-center gap-1">
-          <h1 className="font-semibold text-gray-900 dark:text-gray-100 tracking-wider text-xl">
+          <h1 className="font-semibold text-fg dark:text-fg-muted tracking-wider text-xl">
             Preparing Canvas
           </h1>
-          <p className="text-center text-sm text-gray-500 dark:text-gray-400 max-w-[300px] opacity-[0.8]">
+          <p className="text-center text-sm text-fg-muted dark:text-fg-muted max-w-[300px] opacity-[0.8]">
             Loading modules and initializing your workspace...
           </p>
         </div>
@@ -88,7 +88,7 @@ export const HydrateFallback: React.FC = () => {
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="h-[8px] w-[8px] rounded-full bg-blue-600"
+              className="h-[8px] w-[8px] rounded-full bg-primary"
               style={{
                 animation: 'bounce 1.4s infinite ease-in-out',
                 animationDelay: `${i * 0.16}s`,

@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { backgroundUploadService } from '../services/backgroundUploadService';
 import { offlineQueueService } from '../services/offlineQueue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFlashitMobileSettingsRoutes } from '../routeManifest';
 
 /**
  * Settings Screen
@@ -37,6 +38,7 @@ type UploadQuality = 'high' | 'medium' | 'low';
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const quickLinks = getFlashitMobileSettingsRoutes();
   const [backgroundUploadsEnabled, setBackgroundUploadsEnabled] = useState(false);
   const [wifiOnly, setWifiOnly] = useState(false);
   const [autoCompress, setAutoCompress] = useState(true);
@@ -331,15 +333,7 @@ export function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>More</Text>
 
-        {([
-          { screen: 'Search', icon: 'search-outline' as const, label: 'Search Moments' },
-          { screen: 'Analytics', icon: 'bar-chart-outline' as const, label: 'Analytics' },
-          { screen: 'Billing', icon: 'card-outline' as const, label: 'Billing & Subscription' },
-          { screen: 'Collaboration', icon: 'people-outline' as const, label: 'Collaboration' },
-          { screen: 'Reflection', icon: 'bulb-outline' as const, label: 'Reflection & Insights' },
-          { screen: 'MemoryExpansion', icon: 'extension-puzzle-outline' as const, label: 'Memory Expansion' },
-          { screen: 'NotificationSettings', icon: 'notifications-outline' as const, label: 'Notification Settings' },
-        ] as const).map(({ screen, icon, label }) => (
+        {quickLinks.map(({ screen, iconName, label }) => (
           <TouchableOpacity
             key={screen}
             style={styles.navRow}
@@ -348,7 +342,12 @@ export function SettingsScreen() {
             accessibilityRole="button"
             accessibilityLabel={`Navigate to ${label}`}
           >
-            <Ionicons name={icon} size={22} color="#333" style={styles.navIcon} />
+            <Ionicons
+              name={(iconName ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap}
+              size={22}
+              color="#333"
+              style={styles.navIcon}
+            />
             <Text style={styles.navLabel}>{label}</Text>
             <Ionicons name="chevron-forward-outline" size={20} color="#999" />
           </TouchableOpacity>

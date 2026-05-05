@@ -43,7 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body className="bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-gray-100 transition-colors duration-300" suppressHydrationWarning>
+      <body className="bg-surface-muted text-fg dark:bg-surface dark:text-fg-muted transition-colors duration-300" suppressHydrationWarning>
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -57,11 +57,11 @@ export function HydrateFallback() {
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-br from-gray-100 to-gray-200 font-sans">
       <div className="text-center">
-        <div className="inline-block w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4">
+        <div className="inline-block w-12 h-12 border-4 border-info-border/20 border-t-blue-500 rounded-full animate-spin mb-4">
           <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
         </div>
-        <h1 className="text-2xl font-semibold text-gray-800 m-0">YAPPC App Creator</h1>
-        <p className="text-gray-500 text-sm m-0 mt-2">Loading modules and initializing...</p>
+        <h1 className="text-2xl font-semibold text-fg m-0">YAPPC App Creator</h1>
+        <p className="text-fg-muted text-sm m-0 mt-2">Loading modules and initializing...</p>
       </div>
     </div>
   );

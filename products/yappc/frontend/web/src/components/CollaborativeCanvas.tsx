@@ -166,8 +166,8 @@ export const CollaborativeCanvas: React.FC<CollaborativeCanvasProps> = ({
   // Don't render if not authenticated
   if (!isAuthenticated || !currentUser) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-zinc-950">
-        <div className="text-zinc-400">
+      <div className="w-full h-full flex items-center justify-center bg-surface">
+        <div className="text-fg-muted">
           Please log in to access collaborative canvas
         </div>
       </div>

@@ -136,7 +136,7 @@ export function NavigationBreadcrumb({
 
                     {/* Workspace Menu */}
                     {workspaceMenuAnchor ? (
-                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-gray-900">
+                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[220px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-surface">
                         {workspaces.map((ws) => (
                             <MenuItem
                                 key={ws.id}
@@ -172,7 +172,7 @@ export function NavigationBreadcrumb({
 
                     {/* Project Menu */}
                     {projectMenuAnchor ? (
-                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[280px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-gray-900">
+                      <Box className="absolute left-0 top-full z-50 mt-2 min-w-[280px] rounded-md border border-divider bg-white p-1 shadow-lg dark:bg-surface">
                         {projects.length > 0 ? (
                             projects.map((proj) => (
                                 <MenuItem

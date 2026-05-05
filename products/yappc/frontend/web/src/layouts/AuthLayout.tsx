@@ -18,7 +18,7 @@ import { ROUTES } from '../router/paths';
 
 const AuthLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
+    <div className="min-h-screen bg-surface flex">
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Gradient Background */}
@@ -86,7 +86,7 @@ const AuthLayout: React.FC = () => {
                 Lightning Speed
               </span>
             </h1>
-            <p className="text-lg text-zinc-400 mb-8">
+            <p className="text-lg text-fg-muted mb-8">
               YAPPC is your AI-powered project partner. From ideation to deployment,
               we guide you through the entire software development lifecycle.
             </p>
@@ -116,7 +116,7 @@ const AuthLayout: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <span className="text-zinc-300">{feature}</span>
+                  <span className="text-fg-muted">{feature}</span>
                 </div>
               ))}
             </div>
@@ -125,7 +125,7 @@ const AuthLayout: React.FC = () => {
           {/* Testimonial */}
           <div className="max-w-md">
             <blockquote className="border-l-2 border-violet-500 pl-4">
-              <p className="text-zinc-400 italic mb-4">
+              <p className="text-fg-muted italic mb-4">
                 "YAPPC helped us ship our MVP in 2 weeks instead of 2 months.
                 The AI assistance is incredibly intuitive."
               </p>
@@ -133,7 +133,7 @@ const AuthLayout: React.FC = () => {
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />
                 <div>
                   <div className="text-sm font-medium text-white">Sarah Chen</div>
-                  <div className="text-xs text-zinc-500">CTO, TechStartup Inc.</div>
+                  <div className="text-xs text-fg-muted">CTO, TechStartup Inc.</div>
                 </div>
               </footer>
             </blockquote>
@@ -166,7 +166,7 @@ const AuthLayout: React.FC = () => {
           </motion.div>
 
           {/* Footer */}
-          <div className="mt-8 text-center text-sm text-zinc-500">
+          <div className="mt-8 text-center text-sm text-fg-muted">
             <p>
               By continuing, you agree to our{' '}
               <a href="/terms" className="text-violet-400 hover:underline">

@@ -543,6 +543,94 @@ class AepHttpServerHitlEscalationTest extends EventloopTestBase {
                 // assertThat(((Number) auditBody.get("count")).intValue()).isGreaterThan(0);
             }
         }
+
+        @Test
+        @DisplayName("queue handles mixed status items correctly during escalation scan")
+        void queueHandlesMixedStatusItemsDuringEscalation() throws Exception {
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            
+            // Add items with different statuses
+            queue.enqueue(buildItem("pending-1", "tenant-mixed", "skill-mixed", Instant.now().minusSeconds(3600)));
+            queue.enqueue(buildItem("pending-2", "tenant-mixed", "skill-mixed", Instant.now().minusSeconds(3600)));
+            
+            ReviewItem approvedItem = buildItem("approved-1", "tenant-mixed", "skill-mixed", Instant.now().minusSeconds(3600));
+            queue.enqueue(approvedItem);
+            queue.approve("approved-1", new com.ghatana.agent.learning.review.ReviewDecision(
+                "tester", "approved-in-test", Instant.now(), null));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            // Trigger auto-escalate - should only escalate pending items
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-mixed&thresholdSeconds=60&autoEscalate=true");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(2);
+            assertThat(body.get("count")).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("escalation respects tenant isolation")
+        void escalationRespectsTenantIsolation() throws Exception {
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            
+            // Add items for different tenants
+            queue.enqueue(buildItem("tenant-a-item", "tenant-a", "skill-a", Instant.now().minusSeconds(3600)));
+            queue.enqueue(buildItem("tenant-b-item", "tenant-b", "skill-b", Instant.now().minusSeconds(3600)));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            // Escalate only tenant-a items
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-a&thresholdSeconds=60&autoEscalate=true");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(1);
+
+            // Verify tenant-b item is still pending
+            HttpResponse<String> tenantBResp = get("/api/v1/hitl/pending?tenantId=tenant-b");
+            assertThat(tenantBResp.statusCode()).isEqualTo(200);
+            Map<?, ?> tenantBBody = mapper.readValue(tenantBResp.body(), Map.class);
+            assertThat(tenantBBody.get("count")).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("escalation handles empty queue gracefully")
+        void escalationHandlesEmptyQueue() throws Exception {
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            // Trigger auto-escalate on empty queue
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-empty&autoEscalate=true");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("count")).isEqualTo(0);
+            assertThat(body.get("autoEscalatedCount")).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("escalation policy parsing handles malformed configuration gracefully")
+        void escalationPolicyHandlesMalformedConfig() throws Exception {
+            System.setProperty("AEP_HITL_TIMEOUT_POLICIES", "malformed=invalid:policy:format");
+            InMemoryHumanReviewQueue queue = new InMemoryHumanReviewQueue(ReviewNotificationSpi.NOOP);
+            queue.enqueue(buildItem("review-malformed", "tenant-malformed", "skill-malformed", Instant.now().minusSeconds(3600)));
+
+            server = new AepHttpServer(engine, port, queue);
+            server.start();
+            waitForServerReady(port);
+
+            // Should fall back to default escalation behavior
+            HttpResponse<String> resp = get("/api/v1/hitl/pending?tenantId=tenant-malformed&autoEscalate=true");
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            // Should escalate (default behavior) rather than crash
+            assertThat(body.get("autoEscalatedCount")).isNotNull();
+        }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

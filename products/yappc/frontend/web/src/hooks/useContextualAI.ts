@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import type { ContextualSuggestion } from '../components/ai/ContextualSuggestions';
 import type { NextAction } from '../components/ai/NextBestAction';
 
@@ -47,93 +47,161 @@ export interface UseContextualAIResult {
 }
 
 // ============================================================================
-// Mock AI Service (to be replaced with real AI endpoint)
+// Phase inference
 // ============================================================================
 
-async function generateContextualSuggestions(
-  context: ContextualAIContext
-): Promise<ContextualSuggestion[]> {
-  // Mock implementation - replace with real AI service call
-  const suggestions: ContextualSuggestion[] = [];
+type SuggestionPhase =
+  | 'INTENT'
+  | 'SHAPE'
+  | 'VALIDATE'
+  | 'GENERATE'
+  | 'RUN'
+  | 'OBSERVE'
+  | 'LEARN'
+  | 'EVOLVE';
 
-  // Context-aware suggestions based on current path
-  if (context.currentPath?.includes('dashboard')) {
-    suggestions.push({
-      id: 'sugg-1',
-      type: 'action',
-      title: 'Review pending tasks',
-      description: 'You have 3 high-priority tasks awaiting review',
-      actionLabel: 'View Tasks',
-      confidence: 0.85,
-      priority: 'high',
-      context: 'Dashboard view with pending tasks',
-      onAction: () => console.log('Navigate to tasks'),
-    });
-  }
-
-  if (context.currentPath?.includes('canvas')) {
-    suggestions.push({
-      id: 'sugg-2',
-      type: 'info',
-      title: 'Consider adding a connection',
-      description: 'These nodes could benefit from a data flow connection',
-      actionLabel: 'Add Connection',
-      confidence: 0.72,
-      priority: 'medium',
-      context: 'Canvas with unconnected nodes',
-      onAction: () => console.log('Add connection'),
-    });
-  }
-
-  // Recent action-based suggestions
-  if (context.recentActions?.includes('create-project')) {
-    suggestions.push({
-      id: 'sugg-3',
-      type: 'success',
-      title: 'Project created successfully',
-      description: 'Consider adding team members to your new project',
-      actionLabel: 'Add Members',
-      confidence: 0.9,
-      priority: 'medium',
-      context: 'After project creation',
-      onAction: () => console.log('Add team members'),
-    });
-  }
-
-  return suggestions;
+function inferPhase(currentPath: string | undefined): SuggestionPhase {
+  if (!currentPath) return 'INTENT';
+  if (currentPath.includes('/shape')) return 'SHAPE';
+  if (currentPath.includes('/validate')) return 'VALIDATE';
+  if (currentPath.includes('/generate')) return 'GENERATE';
+  if (currentPath.includes('/run')) return 'RUN';
+  if (currentPath.includes('/observe')) return 'OBSERVE';
+  if (currentPath.includes('/learn')) return 'LEARN';
+  if (currentPath.includes('/evolve')) return 'EVOLVE';
+  return 'INTENT';
 }
 
-async function generateNextAction(
+// ============================================================================
+// API response types (mirrors openapi.ts Suggestion schema)
+// ============================================================================
+
+interface ApiSuggestion {
+  id?: string;
+  projectId?: string;
+  phase?: string;
+  type?: 'REQUIREMENT' | 'DESIGN' | 'TEST' | 'RISK' | 'ACTION';
+  text?: string;
+  generatedAt?: string;
+}
+
+interface SuggestionsApiResult {
+  suggestions: ContextualSuggestion[];
+  nextAction: NextAction | null;
+}
+
+// ============================================================================
+// Mapping helpers
+// ============================================================================
+
+function mapSuggestionType(type: ApiSuggestion['type']): ContextualSuggestion['type'] {
+  switch (type) {
+    case 'ACTION':
+    case 'DESIGN':
+      return 'action';
+    case 'RISK':
+    case 'TEST':
+      return 'warning';
+    default:
+      return 'info';
+  }
+}
+
+function mapSuggestionPriority(type: ApiSuggestion['type']): ContextualSuggestion['priority'] {
+  return type === 'RISK' || type === 'ACTION' ? 'high' : 'medium';
+}
+
+function extractTitle(text: string, maxLen = 80): string {
+  const dot = text.indexOf('.');
+  const candidate = dot > 0 && dot < maxLen ? text.slice(0, dot) : text.slice(0, maxLen);
+  return candidate.trim() || 'AI Suggestion';
+}
+
+function apiSuggestionToContextual(s: ApiSuggestion): ContextualSuggestion {
+  const text = s.text ?? '';
+  const dot = text.indexOf('.');
+  const title = extractTitle(text);
+  const description = dot > 0 ? text.slice(dot + 1).trim() : text;
+  return {
+    id: s.id ?? crypto.randomUUID(),
+    type: mapSuggestionType(s.type),
+    title,
+    description: description || text,
+    confidence: 0.75,
+    priority: mapSuggestionPriority(s.type),
+    context: s.phase ?? '',
+  };
+}
+
+function apiSuggestionToNextAction(s: ApiSuggestion): NextAction {
+  const text = s.text ?? '';
+  const dot = text.indexOf('.');
+  const title = extractTitle(text, 80);
+  const description = dot > 0 ? text.slice(dot + 1).trim() : text;
+  return {
+    id: s.id ?? crypto.randomUUID(),
+    title,
+    description: description || text,
+    type: 'recommended',
+    impact: 'medium',
+    onAction: () => { /* action execution delegated to the UI layer */ },
+    metadata: { phase: s.phase, generatedAt: s.generatedAt },
+  };
+}
+
+// ============================================================================
+// Real API calls
+// ============================================================================
+
+async function fetchAISuggestions(
+  projectId: string,
   context: ContextualAIContext
-): Promise<NextAction | null> {
-  // Mock implementation - replace with real AI service call
-  if (context.currentPath?.includes('dashboard')) {
-    return {
-      id: 'action-1',
-      title: 'Approve pending task',
-      description: 'Task "Implement authentication" is ready for approval',
-      type: 'immediate',
-      impact: 'high',
-      estimatedTime: '2 min',
-      onAction: () => console.log('Approve task'),
-      onDismiss: () => console.log('Dismiss'),
-    };
+): Promise<SuggestionsApiResult> {
+  const phase = inferPhase(context.currentPath);
+  const response = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/suggestions`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phase,
+        context: {
+          currentPath: context.currentPath,
+          currentAction: context.currentAction,
+          recentActions: context.recentActions,
+          ...context.metadata,
+        },
+      }),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`Suggestions API responded with ${response.status}`);
   }
+  const raw: unknown = await response.json();
+  const items: ApiSuggestion[] = Array.isArray(raw) ? (raw as ApiSuggestion[]) : [];
 
-  if (context.currentPath?.includes('canvas')) {
-    return {
-      id: 'action-2',
-      title: 'Validate canvas structure',
-      description: 'Run validation to ensure all connections are valid',
-      type: 'recommended',
-      impact: 'medium',
-      estimatedTime: '5 min',
-      onAction: () => console.log('Validate canvas'),
-      onDismiss: () => console.log('Dismiss'),
-    };
+  const suggestions = items
+    .filter((s) => s.type !== 'ACTION')
+    .map(apiSuggestionToContextual);
+
+  const actionItem = items.find((s) => s.type === 'ACTION');
+  const nextAction = actionItem != null ? apiSuggestionToNextAction(actionItem) : null;
+
+  return { suggestions, nextAction };
+}
+
+async function callDismissSuggestionApi(
+  projectId: string,
+  suggestionId: string
+): Promise<void> {
+  const response = await fetch(
+    `/api/v1/projects/${encodeURIComponent(projectId)}/suggestions/${encodeURIComponent(suggestionId)}`,
+    { method: 'DELETE' }
+  );
+  // 404 is acceptable — suggestion may have already been removed server-side
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`Dismiss API responded with ${response.status}`);
   }
-
-  return null;
 }
 
 // ============================================================================
@@ -145,34 +213,34 @@ export function useContextualAI({
   enabled = true,
   debounceMs = 500,
 }: UseContextualAIOptions): UseContextualAIResult {
-  const queryClient = useQueryClient();
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
   const [dismissedNextAction, setDismissedNextAction] = useState(false);
 
-  // Query for suggestions
+  const projectId = context.projectId;
+  const isQueryEnabled = enabled && !!projectId;
+
+  // Single query for both suggestions and next action
   const {
-    data: suggestions = [],
-    isLoading: isLoadingSuggestions,
-    error: suggestionsError,
-    refetch: refetchSuggestions,
+    data,
+    isLoading,
+    error,
+    refetch,
   } = useQuery({
-    queryKey: ['contextual-suggestions', context],
-    queryFn: () => generateContextualSuggestions(context),
-    enabled,
+    queryKey: ['ai-suggestions', projectId, context.currentPath, context.currentAction],
+    queryFn: () => fetchAISuggestions(projectId!, context),
+    enabled: isQueryEnabled,
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
-  // Query for next action
-  const {
-    data: nextAction,
-    isLoading: isLoadingNextAction,
-    error: nextActionError,
-    refetch: refetchNextAction,
-  } = useQuery({
-    queryKey: ['next-action', context],
-    queryFn: () => generateNextAction(context),
-    enabled,
-    staleTime: 1 * 60 * 1000, // 1 minute
+  const suggestions = data?.suggestions ?? [];
+  const nextAction = data?.nextAction ?? null;
+
+  // Mutation for server-side dismissal
+  const dismissMutation = useMutation({
+    mutationFn: ({ suggestionId }: { suggestionId: string }) =>
+      projectId != null
+        ? callDismissSuggestionApi(projectId, suggestionId)
+        : Promise.resolve(),
   });
 
   // Filter out dismissed suggestions
@@ -184,7 +252,8 @@ export function useContextualAI({
   // Dismiss suggestion
   const dismissSuggestion = useCallback((id: string) => {
     setDismissedSuggestions(prev => new Set(prev).add(id));
-  }, []);
+    dismissMutation.mutate({ suggestionId: id });
+  }, [dismissMutation]);
 
   // Dismiss next action
   const dismissNextActionHandler = useCallback(() => {
@@ -196,8 +265,8 @@ export function useContextualAI({
     const suggestion = suggestions.find(s => s.id === id);
     if (suggestion?.onAction) {
       suggestion.onAction();
-      dismissSuggestion(id);
     }
+    dismissSuggestion(id);
   }, [suggestions, dismissSuggestion]);
 
   // Accept next action
@@ -210,9 +279,8 @@ export function useContextualAI({
 
   // Refresh all
   const refresh = useCallback(() => {
-    refetchSuggestions();
-    refetchNextAction();
-  }, [refetchSuggestions, refetchNextAction]);
+    refetch();
+  }, [refetch]);
 
   // Auto-refresh on context change
   useEffect(() => {
@@ -228,8 +296,8 @@ export function useContextualAI({
   return {
     suggestions: filteredSuggestions,
     nextAction: dismissedNextAction ? null : (nextAction ?? null),
-    isLoading: isLoadingSuggestions || isLoadingNextAction,
-    error: suggestionsError || nextActionError,
+    isLoading,
+    error: error instanceof Error ? error : null,
     refresh,
     dismissSuggestion,
     dismissNextAction: dismissNextActionHandler,

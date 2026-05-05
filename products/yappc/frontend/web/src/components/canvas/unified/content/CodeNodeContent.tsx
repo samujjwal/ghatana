@@ -172,10 +172,10 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
     return (
         <Box className="relative w-full h-[200px]">
             {/* Code Preview */}
-            <Box className="w-full h-full rounded overflow-hidden border border-solid border-[#ccc] bg-white dark:bg-gray-900">
+            <Box className="w-full h-full rounded overflow-hidden border border-solid border-[#ccc] bg-white dark:bg-surface">
                 {/* Language Header */}
-                <Box className="px-4 py-2 flex items-center justify-between border-b border-solid border-b-[#ccc] bg-gray-100" >
-                    <Typography as="span" className="text-xs text-gray-500" className="font-bold font-mono">
+                <Box className="px-4 py-2 flex items-center justify-between border-b border-solid border-b-[#ccc] bg-surface-muted" >
+                    <Typography as="span" className="text-xs text-fg-muted" className="font-bold font-mono">
                         {language}
                     </Typography>
                     <Box className="flex gap-1">
@@ -209,7 +209,7 @@ export const CodeNodeContent: React.FC<CodeNodeContentProps> = ({
 
             {/* Edit Button */}
             {!readonly && (
-                <Box className="absolute rounded p-1 top-[8px] right-[8px] bg-white dark:bg-gray-900 shadow-sm">
+                <Box className="absolute rounded p-1 top-[8px] right-[8px] bg-white dark:bg-surface shadow-sm">
                     <Tooltip title="Edit">
                         <IconButton size="sm" onClick={handleEdit}>
                             <Edit size={16} />

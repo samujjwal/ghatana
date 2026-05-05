@@ -96,13 +96,13 @@ export function ShortcutHints({
 
   return (
     <div className={`${getPositionStyles(position)} z-40 ${className}`}>
-      <Card className="shadow-lg border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+      <Card className="shadow-lg border-2 border-info-border dark:border-info-border bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
         <CardContent className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <TipIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <Typography className="font-bold text-sm text-blue-900 dark:text-blue-100">
+              <TipIcon className="w-5 h-5 text-info-color dark:text-info-color" />
+              <Typography className="font-bold text-sm text-info-color dark:text-info-color">
                 Keyboard Shortcut Tips
               </Typography>
             </div>
@@ -112,7 +112,7 @@ export function ShortcutHints({
                   size="sm"
                   variant="text"
                   onClick={onDismiss}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-fg-muted hover:text-fg-muted"
                 >
                   <CloseIcon className="w-4 h-4" />
                 </Button>
@@ -130,20 +130,20 @@ export function ShortcutHints({
                 return (
                   <div
                     key={shortcutId}
-                    className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md"
+                    className="flex items-center justify-between p-2 bg-white dark:bg-surface rounded-md"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className="flex gap-1">
                         {shortcut.keys.map((key, idx) => (
                           <kbd
                             key={idx}
-                            className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600"
+                            className="px-2 py-1 text-xs font-mono bg-surface-muted dark:bg-surface-muted rounded border border-border dark:border-border"
                           >
                             {key}
                           </kbd>
                         ))}
                       </div>
-                      <Typography className="text-xs text-gray-600 dark:text-gray-400">
+                      <Typography className="text-xs text-fg-muted dark:text-fg-muted">
                         {shortcut.description}
                       </Typography>
                     </div>
@@ -166,20 +166,20 @@ export function ShortcutHints({
                 return (
                   <div
                     key={shortcutId}
-                    className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-md"
+                    className="flex items-center justify-between p-2 bg-white dark:bg-surface rounded-md"
                   >
                     <div className="flex items-center gap-3 flex-1">
                       <div className="flex gap-1">
                         {shortcut.keys.map((key, idx) => (
                           <kbd
                             key={idx}
-                            className="px-2 py-1 text-xs font-mono bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600"
+                            className="px-2 py-1 text-xs font-mono bg-surface-muted dark:bg-surface-muted rounded border border-border dark:border-border"
                           >
                             {key}
                           </kbd>
                         ))}
                       </div>
-                      <Typography className="text-xs text-gray-600 dark:text-gray-400">
+                      <Typography className="text-xs text-fg-muted dark:text-fg-muted">
                         {shortcut.description}
                       </Typography>
                     </div>
@@ -188,7 +188,7 @@ export function ShortcutHints({
                         size="sm"
                         variant="text"
                         onClick={() => handleLearn(shortcutId)}
-                        className="text-xs text-blue-600 dark:text-blue-400"
+                        className="text-xs text-info-color dark:text-info-color"
                       >
                         Got it
                       </Button>
@@ -196,7 +196,7 @@ export function ShortcutHints({
                         size="sm"
                         variant="text"
                         onClick={() => handleDismiss(shortcutId)}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-fg-muted hover:text-fg-muted"
                       >
                         <CloseIcon className="w-4 h-4" />
                       </Button>
@@ -213,7 +213,7 @@ export function ShortcutHints({
               size="sm"
               variant="text"
               onClick={() => setExpanded(!expanded)}
-              className="w-full mt-2 text-xs text-gray-500"
+              className="w-full mt-2 text-xs text-fg-muted"
             >
               {expanded ? 'Show less' : `Show ${unlearnedShortcuts.length - maxHints} more tips`}
             </Button>

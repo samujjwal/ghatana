@@ -147,10 +147,10 @@ export const ConfigDiff: React.FC<ConfigDiffProps> = ({
   const renderChange = (change: DiffChange) => {
     const color =
       change.type === 'added'
-        ? 'text-green-600'
+        ? 'text-success-color'
         : change.type === 'removed'
-        ? 'text-red-600'
-        : 'text-blue-600';
+        ? 'text-destructive'
+        : 'text-info-color';
 
     return (
       <Paper key={change.path} variant="outlined" className="p-3 mb-2">

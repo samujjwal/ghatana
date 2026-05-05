@@ -445,7 +445,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
           <Box className="flex h-full flex-1 overflow-hidden" style={{ contain: 'strict' }}>
             <Box className="min-w-0 flex-1 overflow-hidden">
               {data.pageDocument?.syncStatus === 'error' ? (
-                <Box className="m-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                <Box className="m-3 rounded-lg border border-destructive-border bg-destructive-bg p-3">
                   <Typography variant="caption" style={{ display: 'block', marginBottom: 8 }}>
                     Save conflict detected. The remote version is newer.
                   </Typography>
@@ -486,7 +486,7 @@ const PageDesignerNodeInner: React.FC<NodeProps<PageDesignerCanvasNode>> = ({
                 }}
               />
             </Box>
-            <Box className="w-[360px] border-l border-slate-200">
+            <Box className="w-[360px] border-l border-border">
               <LivePreviewPanel
                 document={builderDocument}
                 previewContext={

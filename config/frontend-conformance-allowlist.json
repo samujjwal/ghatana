@@ -1,0 +1,19 @@
+{
+  "hardcodedStyleFiles": [
+    "products/phr/apps/web/src/styles.css",
+    "products/data-cloud/ui/src/components/layout/PageLayout.tsx",
+    "products/yappc/frontend/web/src/components/layout/PageHeader.tsx",
+    "products/dcmaar/modules/desktop/src/components/common/PageHeader.tsx"
+  ],
+  "localLayoutPrimitiveFiles": [
+    "products/data-cloud/ui/src/components/layout/PageLayout.tsx",
+    "products/data-cloud/ui/src/components/layout/AppShell.tsx",
+    "products/phr/apps/web/src/layout/AppShell.tsx",
+    "products/yappc/frontend/web/src/components/layout/PageHeader.tsx",
+    "products/yappc/frontend/libs/yappc-ui/src/components/layout/AppShell.tsx",
+    "products/dcmaar/modules/desktop/src/components/common/PageHeader.tsx",
+    "products/software-org/client/web/src/components/layouts/page/PageLayout.tsx",
+    "products/software-org/client/web/src/components/layouts/page/PageHeader.tsx",
+    "products/tutorputor/apps/tutorputor-web/src/components/PageHeader.tsx"
+  ]
+}

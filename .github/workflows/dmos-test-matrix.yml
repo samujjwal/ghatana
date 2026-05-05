@@ -13,6 +13,7 @@ env:
   GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
   JAVA_VERSION: "21"
   NODE_VERSION: "20"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   # Backend unit tests
@@ -85,14 +86,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: products/digital-marketing/ui/package-lock.json
+          cache: 'pnpm'
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
       - name: Install dependencies
-        working-directory: products/digital-marketing/ui
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Run unit tests
-        working-directory: products/digital-marketing/ui
-        run: npm test -- --coverage --watchAll=false
+        run: pnpm --filter @dmos/ui test:coverage
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         if: always()
@@ -110,17 +110,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: products/digital-marketing/ui/package-lock.json
+          cache: 'pnpm'
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
       - name: Install dependencies
-        working-directory: products/digital-marketing/ui
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Install Playwright browsers
-        working-directory: products/digital-marketing/ui
-        run: npx playwright install --with-deps
+        run: pnpm --filter @dmos/ui exec playwright install --with-deps
       - name: Run Playwright tests
-        working-directory: products/digital-marketing/ui
-        run: npx playwright test
+        run: pnpm --filter @dmos/ui test:e2e
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
@@ -197,6 +195,18 @@ jobs:
     steps:
       - name: Check test results
         run: |
-          echo "All test suites completed. Check individual job results for details."
-          # This job will fail if any required job fails
-          # Required jobs can be configured in the 'needs' array with if: success()
+          declare -a RESULTS=(
+            "${{ needs.backend-unit.result }}"
+            "${{ needs.persistence-tests.result }}"
+            "${{ needs.ui-unit.result }}"
+            "${{ needs.e2e-playwright.result }}"
+            "${{ needs.contract-tests.result }}"
+            "${{ needs.integration-tests.result }}"
+          )
+          for result in "${RESULTS[@]}"; do
+            if [ "$result" != "success" ]; then
+              echo "::error::DMOS test gate failed because an upstream job finished with result '$result'."
+              exit 1
+            fi
+          done
+          echo "All DMOS required jobs passed."

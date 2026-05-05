@@ -49,15 +49,15 @@ export const KPICard: React.FC<KPICardProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div data-testid="kpi-skeleton" className="animate-pulse rounded-lg bg-gray-100 p-4">
-        <div className="h-4 w-24 rounded bg-gray-300 mb-2" />
-        <div className="h-8 w-16 rounded bg-gray-300" />
+      <div data-testid="kpi-skeleton" className="animate-pulse rounded-lg bg-surface-muted p-4">
+        <div className="h-4 w-24 rounded bg-surface-muted mb-2" />
+        <div className="h-8 w-16 rounded bg-surface-muted" />
       </div>
     );
   }
 
   const trendColor =
-    trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-500';
+    trend === 'up' ? 'text-success-color' : trend === 'down' ? 'text-destructive' : 'text-fg-muted';
 
   const formattedChange =
     changePercent !== undefined
@@ -74,9 +74,9 @@ export const KPICard: React.FC<KPICardProps> = ({
       tabIndex={onClick ? 0 : undefined}
     >
       {icon && (
-        <span data-testid={`kpi-icon-${icon}`} className="mb-2 block text-gray-400" />
+        <span data-testid={`kpi-icon-${icon}`} className="mb-2 block text-fg-muted" />
       )}
-      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-sm text-fg-muted">{label}</p>
       <p className="text-2xl font-bold">{formatValue(value)}</p>
       {trend !== 'neutral' && formattedChange && (
         <div className={trendColor}>

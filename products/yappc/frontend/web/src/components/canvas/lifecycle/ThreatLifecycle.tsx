@@ -106,10 +106,10 @@ const STATUS_LABEL: Record<ThreatDispositionStatus, string> = {
 };
 
 const STATUS_COLOR: Record<ThreatDispositionStatus, string> = {
-  IDENTIFIED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200',
+  IDENTIFIED: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
   MITIGATED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
-  ACCEPTED: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
-  TRANSFERRED: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200',
+  ACCEPTED: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+  TRANSFERRED: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
   AVOIDED: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
 };
 
@@ -123,9 +123,9 @@ const STATUS_ICON: Record<ThreatDispositionStatus, React.ReactElement> = {
 
 const SEVERITY_COLOR: Record<ThreatSeverity, string> = {
   LOW: 'bg-grey-100 text-grey-700',
-  MEDIUM: 'bg-amber-100 text-amber-800',
-  HIGH: 'bg-orange-100 text-orange-800',
-  CRITICAL: 'bg-red-100 text-red-800',
+  MEDIUM: 'bg-warning-bg text-warning-color',
+  HIGH: 'bg-warning-bg text-warning-color',
+  CRITICAL: 'bg-destructive-bg text-destructive',
 };
 
 const STRIDE_ABBREV: Record<ThreatStrideCategory, string> = {
@@ -259,7 +259,7 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
           <Chip
             label={STRIDE_ABBREV[threat.category]}
             size="sm"
-            className="bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200 font-mono text-xs"
+            className="bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color font-mono text-xs"
             title={threat.category}
           />
         </Box>
@@ -326,7 +326,7 @@ const ThreatRow: React.FC<ThreatRowProps> = ({ threat: initialThreat, onDispose,
       {/* Error */}
       {error && (
         <Box className="border-t border-divider px-3 py-2">
-          <Typography className="text-xs text-red-600 dark:text-red-400" role="alert">
+          <Typography className="text-xs text-destructive dark:text-destructive" role="alert">
             {error}
           </Typography>
         </Box>
@@ -390,7 +390,7 @@ export const ThreatLifecycle: React.FC<ThreatLifecycleProps> = ({
               <Chip
                 label={`${openCount} open`}
                 size="sm"
-                className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200"
+                className="bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive"
               />
             )}
             <Chip

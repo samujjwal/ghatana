@@ -166,7 +166,7 @@ export const RequirementList: React.FC<RequirementListProps> = ({
               key={req.id}
               variant="outlined"
               className={`p-3 cursor-pointer transition-colors ${
-                selectedId === req.id ? 'border-primary-500 bg-primary-50' : 'hover:bg-gray-50'
+                selectedId === req.id ? 'border-primary-500 bg-primary-50' : 'hover:bg-surface-muted'
               }`}
               onClick={() => handleSelect(req)}
               data-testid={`requirement-item-${req.id}`}

@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+
+import { existsSync, readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+
+const contracts = [
+  {
+    name: "DMOS operation context",
+    file: "products/digital-marketing/dm-core-contracts/src/main/java/com/ghatana/digitalmarketing/contracts/DmOperationContext.java",
+    required: [
+      "tenantId",
+      "principalId",
+      "correlationId",
+      "idempotencyKey",
+      "toBridgeContext()",
+    ],
+  },
+  {
+    name: "PHR appointment write flow",
+    file: "products/phr/src/main/java/com/ghatana/phr/kernel/service/AppointmentService.java",
+    required: [
+      "DataWriteRequest",
+      "PhrTraceContext.metadata(",
+      "audit(\"APPOINTMENT_CREATE\"",
+      "\"patientId\"",
+      "\"providerId\"",
+    ],
+  },
+  {
+    name: "Finance transaction mutation flow",
+    file: "products/finance/src/main/java/com/ghatana/finance/service/TransactionService.java",
+    required: [
+      "processedTransactions",
+      "\"tenant_id\"",
+      "FinanceTraceContext.metadata(",
+      "TransactionRateLimitExceededException",
+    ],
+  },
+  {
+    name: "Finance trace context contract",
+    file: "products/finance/src/main/java/com/ghatana/finance/service/FinanceTraceContext.java",
+    required: [
+      "\"correlation_id\"",
+      "\"trace_operation\"",
+    ],
+  },
+  {
+    name: "FlashIt moment write route",
+    file: "products/flashit/backend/gateway/src/routes/moments.ts",
+    required: [
+      "getUserIdFromRequest",
+      "sphereAccess.findFirst",
+      "prisma.auditEvent.create(",
+      "onRequest: [(app as any).authenticate]",
+      "logger.logBusinessEvent(",
+    ],
+  },
+];
+
+const violations = [];
+
+for (const contract of contracts) {
+  const filePath = path.join(repoRoot, contract.file);
+  if (!existsSync(filePath)) {
+    violations.push(`${contract.name}: missing file ${contract.file}`);
+    continue;
+  }
+
+  const content = readFileSync(filePath, "utf8");
+  const missing = contract.required.filter((token) => !content.includes(token));
+  if (missing.length > 0) {
+    violations.push(
+      `${contract.name}: missing required contract evidence ${missing.join(", ")} in ${contract.file}`,
+    );
+  }
+}
+
+if (violations.length > 0) {
+  console.error(`❌ Data-access contract check failed with ${violations.length} violation(s):\n`);
+  for (const violation of violations) {
+    console.error(`- ${violation}`);
+  }
+  process.exit(1);
+}
+
+console.log("✅ Data-access contract check passed.");

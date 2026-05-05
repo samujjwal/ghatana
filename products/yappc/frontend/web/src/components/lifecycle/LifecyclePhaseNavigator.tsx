@@ -152,14 +152,14 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
     let buttonClasses = 'relative flex flex-col items-center justify-center rounded-lg transition-all duration-200';
 
     if (isActive) {
-        buttonClasses += ' bg-blue-600 text-white shadow-lg scale-105';
+        buttonClasses += ' bg-primary text-white shadow-lg scale-105';
     } else if (isPast) {
-        buttonClasses += ' bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300';
+        buttonClasses += ' bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color';
     } else if (isAccessible) {
-        buttonClasses += ' bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer';
+        buttonClasses += ' bg-surface-muted text-fg dark:bg-surface dark:text-fg-muted hover:bg-surface-muted dark:hover:bg-surface-muted cursor-pointer';
     } else {
         // isFuture phases that aren't accessible yet
-        buttonClasses += ' bg-gray-50 text-gray-400 dark:bg-gray-900/50 dark:text-gray-600 opacity-50 cursor-not-allowed';
+        buttonClasses += ' bg-surface-muted text-fg-muted dark:bg-surface/50 dark:text-fg-muted opacity-50 cursor-not-allowed';
     }
 
     const sizeClasses = variant === 'compact' ? 'px-3 py-2 text-sm' : 'px-4 py-3 text-base';
@@ -178,7 +178,7 @@ const PhaseButton: React.FC<PhaseButtonProps> = ({
                 <span className="text-xs opacity-80 mt-1">{description}</span>
             )}
             {isActive && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-blue-600" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full border-2 border-info-border" />
             )}
         </button>
     );
@@ -195,8 +195,8 @@ interface PhaseConnectorProps {
 const PhaseConnector: React.FC<PhaseConnectorProps> = ({ isCompleted, orientation }) => {
     const baseClasses = 'flex-shrink-0 transition-colors duration-200';
     const colorClasses = isCompleted
-        ? 'bg-green-500 dark:bg-green-600'
-        : 'bg-gray-300 dark:bg-gray-700';
+        ? 'bg-success-bg dark:bg-success-bg'
+        : 'bg-surface-muted dark:bg-surface-muted';
 
     const sizeClasses = orientation === 'horizontal'
         ? 'w-8 h-0.5'

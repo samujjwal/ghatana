@@ -65,7 +65,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ config }) => {
             {validation.errors.map((error, idx) => (
               <ListItem key={idx}>
                 <ListItemIcon>
-                  <ErrorIcon size={16} className="text-red-500" />
+                  <ErrorIcon size={16} className="text-destructive" />
                 </ListItemIcon>
                 <ListItemText primary={error} />
               </ListItem>
@@ -83,7 +83,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ config }) => {
             {validation.warnings.map((warning, idx) => (
               <ListItem key={idx}>
                 <ListItemIcon>
-                  <InfoIcon size={16} className="text-yellow-500" />
+                  <InfoIcon size={16} className="text-warning-color" />
                 </ListItemIcon>
                 <ListItemText primary={warning} />
               </ListItem>
@@ -101,7 +101,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({ config }) => {
             {validation.info.map((info, idx) => (
               <ListItem key={idx}>
                 <ListItemIcon>
-                  <InfoIcon size={16} className="text-blue-500" />
+                  <InfoIcon size={16} className="text-info-color" />
                 </ListItemIcon>
                 <ListItemText primary={info} />
               </ListItem>

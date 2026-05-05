@@ -70,7 +70,7 @@ const ArticlePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -78,7 +78,7 @@ const ArticlePage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           {error instanceof Error ? error.message : 'Failed to load article'}
         </div>
       </div>
@@ -91,23 +91,23 @@ const ArticlePage: React.FC = () => {
   return (
     <div className="p-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-zinc-500 mb-6">
-        <Link to="/collaboration/articles" className="hover:text-zinc-300 transition-colors">Knowledge Base</Link>
+      <nav className="flex items-center gap-2 text-sm text-fg-muted mb-6">
+        <Link to="/collaboration/articles" className="hover:text-fg-muted transition-colors">Knowledge Base</Link>
         <span>/</span>
-        <span className="text-zinc-300 truncate max-w-xs">{article?.title ?? 'Article'}</span>
+        <span className="text-fg-muted truncate max-w-xs">{article?.title ?? 'Article'}</span>
       </nav>
 
       <div className="flex gap-8">
         {/* TOC sidebar */}
         <aside className="hidden lg:block w-56 shrink-0">
           <div className="sticky top-6">
-            <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">On This Page</h3>
+            <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">On This Page</h3>
             <nav className="space-y-1">
               {(article?.headings ?? []).map((h) => (
                 <a
                   key={h.id}
                   href={`#${h.id}`}
-                  className="block text-sm text-zinc-400 hover:text-zinc-200 transition-colors truncate"
+                  className="block text-sm text-fg-muted hover:text-fg-muted transition-colors truncate"
                   style={{ paddingLeft: `${(h.level - 1) * 12}px` }}
                 >
                   {h.text}
@@ -118,16 +118,16 @@ const ArticlePage: React.FC = () => {
             {/* Related articles in sidebar */}
             {(article?.relatedArticles ?? []).length > 0 && (
               <div className="mt-8">
-                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Related</h3>
+                <h3 className="text-xs font-semibold text-fg-muted uppercase tracking-wider mb-3">Related</h3>
                 <div className="space-y-2">
                   {article?.relatedArticles.map((ra) => (
                     <Link
                       key={ra.id}
                       to={`/collaboration/articles/${ra.id}`}
-                      className="block p-2 rounded-lg hover:bg-zinc-800/50 transition-colors"
+                      className="block p-2 rounded-lg hover:bg-surface/50 transition-colors"
                     >
-                      <p className="text-sm text-zinc-300 font-medium truncate">{ra.title}</p>
-                      <p className="text-xs text-zinc-500 truncate">{ra.summary}</p>
+                      <p className="text-sm text-fg-muted font-medium truncate">{ra.title}</p>
+                      <p className="text-xs text-fg-muted truncate">{ra.summary}</p>
                     </Link>
                   ))}
                 </div>
@@ -140,21 +140,21 @@ const ArticlePage: React.FC = () => {
         <article className="flex-1 min-w-0">
           {/* Header */}
           <header className="mb-8">
-            <h1 className="text-3xl font-bold text-zinc-100 mb-4">{article?.title}</h1>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-400">
+            <h1 className="text-3xl font-bold text-fg-muted mb-4">{article?.title}</h1>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-fg-muted">
               <div className="flex items-center gap-2">
                 <img
                   src={article?.author.avatarUrl}
                   alt={article?.author.name}
-                  className="w-6 h-6 rounded-full bg-zinc-800"
+                  className="w-6 h-6 rounded-full bg-surface"
                 />
                 <span>{article?.author.name}</span>
               </div>
-              <span className="text-zinc-600">·</span>
+              <span className="text-fg-muted">·</span>
               <span>Published {article?.createdAt ? formatDate(article.createdAt) : '—'}</span>
               {article?.updatedAt && article.updatedAt !== article.createdAt && (
                 <>
-                  <span className="text-zinc-600">·</span>
+                  <span className="text-fg-muted">·</span>
                   <span>Updated {formatDate(article.updatedAt)}</span>
                 </>
               )}
@@ -162,7 +162,7 @@ const ArticlePage: React.FC = () => {
             {(article?.tags ?? []).length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {article?.tags.map((tag) => (
-                  <span key={tag} className="px-2 py-0.5 text-xs font-medium rounded-full bg-zinc-800 text-zinc-400">
+                  <span key={tag} className="px-2 py-0.5 text-xs font-medium rounded-full bg-surface text-fg-muted">
                     {tag}
                   </span>
                 ))}
@@ -186,11 +186,11 @@ const ArticlePage: React.FC = () => {
 
               return (
                 <section key={section.id} id={section.id}>
-                  <HeadingTag className={`${headingSize} font-semibold text-zinc-200 mb-3`}>
+                  <HeadingTag className={`${headingSize} font-semibold text-fg-muted mb-3`}>
                     {section.heading}
                   </HeadingTag>
                   <div
-                    className="text-sm text-zinc-400 leading-relaxed whitespace-pre-wrap"
+                    className="text-sm text-fg-muted leading-relaxed whitespace-pre-wrap"
                   >
                     {section.content}
                   </div>
@@ -201,17 +201,17 @@ const ArticlePage: React.FC = () => {
 
           {/* Related articles (mobile) */}
           {(article?.relatedArticles ?? []).length > 0 && (
-            <div className="lg:hidden mt-12 pt-8 border-t border-zinc-800">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Related Articles</h3>
+            <div className="lg:hidden mt-12 pt-8 border-t border-border">
+              <h3 className="text-sm font-semibold text-fg-muted mb-4">Related Articles</h3>
               <div className="grid gap-3 sm:grid-cols-2">
                 {article?.relatedArticles.map((ra) => (
                   <Link
                     key={ra.id}
                     to={`/collaboration/articles/${ra.id}`}
-                    className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg hover:border-zinc-700 transition-colors"
+                    className="p-4 bg-surface border border-border rounded-lg hover:border-border transition-colors"
                   >
-                    <p className="text-sm text-zinc-200 font-medium">{ra.title}</p>
-                    <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{ra.summary}</p>
+                    <p className="text-sm text-fg-muted font-medium">{ra.title}</p>
+                    <p className="text-xs text-fg-muted mt-1 line-clamp-2">{ra.summary}</p>
                   </Link>
                 ))}
               </div>

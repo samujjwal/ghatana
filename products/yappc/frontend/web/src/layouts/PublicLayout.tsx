@@ -63,7 +63,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      <div className="bg-zinc-950/80 backdrop-blur-lg border-b border-zinc-800">
+      <div className="bg-surface/80 backdrop-blur-lg border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
@@ -88,7 +88,7 @@ const Header: React.FC = () => {
                   {item.path ? (
                     <NavLink
                       to={item.path}
-                      className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                      className="px-4 py-2 text-sm text-fg-muted hover:text-white transition-colors"
                     >
                       {item.label}
                     </NavLink>
@@ -96,7 +96,7 @@ const Header: React.FC = () => {
                     <button
                       className={cn(
                         'flex items-center gap-1 px-4 py-2 text-sm transition-colors',
-                        activeDropdown === item.label ? 'text-white' : 'text-zinc-400 hover:text-white'
+                        activeDropdown === item.label ? 'text-white' : 'text-fg-muted hover:text-white'
                       )}
                     >
                       {item.label}
@@ -112,17 +112,17 @@ const Header: React.FC = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute top-full left-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl overflow-hidden"
+                        className="absolute top-full left-0 mt-2 w-64 bg-surface border border-border rounded-xl shadow-xl overflow-hidden"
                       >
                         <div className="p-2">
                           {item.children.map((child) => (
                             <NavLink
                               key={child.path}
                               to={child.path}
-                              className="block p-3 rounded-lg hover:bg-zinc-800 transition-colors"
+                              className="block p-3 rounded-lg hover:bg-surface transition-colors"
                             >
                               <div className="text-sm font-medium text-white">{child.label}</div>
-                              <div className="text-xs text-zinc-500 mt-0.5">{child.description}</div>
+                              <div className="text-xs text-fg-muted mt-0.5">{child.description}</div>
                             </NavLink>
                           ))}
                         </div>
@@ -137,7 +137,7 @@ const Header: React.FC = () => {
             <div className="hidden md:flex items-center gap-3">
               <NavLink
                 to={ROUTES.SSO_CALLBACK}
-                className="px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+                className="px-4 py-2 text-sm text-fg-muted hover:text-white transition-colors"
               >
                 Log in
               </NavLink>
@@ -154,7 +154,7 @@ const Header: React.FC = () => {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 text-zinc-400 hover:text-white transition-colors"
+              className="md:hidden p-2 text-fg-muted hover:text-white transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -170,7 +170,7 @@ const Header: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-zinc-800 overflow-hidden"
+              className="md:hidden border-t border-border overflow-hidden"
             >
               <div className="px-4 py-4 space-y-4">
                 {navItems.map((item) => (
@@ -178,20 +178,20 @@ const Header: React.FC = () => {
                     {item.path ? (
                       <NavLink
                         to={item.path}
-                        className="block py-2 text-zinc-400 hover:text-white transition-colors"
+                        className="block py-2 text-fg-muted hover:text-white transition-colors"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         {item.label}
                       </NavLink>
                     ) : (
                       <div>
-                        <div className="py-2 text-zinc-300 font-medium">{item.label}</div>
+                        <div className="py-2 text-fg-muted font-medium">{item.label}</div>
                         <div className="pl-4 space-y-2">
                           {item.children?.map((child) => (
                             <NavLink
                               key={child.path}
                               to={child.path}
-                              className="block py-1 text-sm text-zinc-500 hover:text-white transition-colors"
+                              className="block py-1 text-sm text-fg-muted hover:text-white transition-colors"
                               onClick={() => setMobileMenuOpen(false)}
                             >
                               {child.label}
@@ -202,10 +202,10 @@ const Header: React.FC = () => {
                     )}
                   </div>
                 ))}
-                <div className="pt-4 border-t border-zinc-800 space-y-3">
+                <div className="pt-4 border-t border-border space-y-3">
                   <NavLink
                     to={ROUTES.SSO_CALLBACK}
-                    className="block w-full py-2 text-center text-zinc-400 hover:text-white transition-colors"
+                    className="block w-full py-2 text-center text-fg-muted hover:text-white transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Log in
@@ -263,7 +263,7 @@ const footerLinks = {
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-zinc-900 border-t border-zinc-800">
+    <footer className="bg-surface border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
           {/* Brand */}
@@ -274,7 +274,7 @@ const Footer: React.FC = () => {
               </div>
               <span className="text-lg font-bold text-white">YAPPC</span>
             </NavLink>
-            <p className="text-sm text-zinc-500 mb-4">
+            <p className="text-sm text-fg-muted mb-4">
               AI-powered project lifecycle management for modern teams.
             </p>
             <div className="flex items-center gap-3">
@@ -282,7 +282,7 @@ const Footer: React.FC = () => {
                 href="https://github.com/yappc"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg bg-surface text-fg-muted hover:text-white transition-colors"
               >
                 <GitBranch className="w-4 h-4" />
               </a>
@@ -290,7 +290,7 @@ const Footer: React.FC = () => {
                 href="https://twitter.com/yappc"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg bg-surface text-fg-muted hover:text-white transition-colors"
               >
                 <Globe className="w-4 h-4" />
               </a>
@@ -298,7 +298,7 @@ const Footer: React.FC = () => {
                 href="https://linkedin.com/company/yappc"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+                className="p-2 rounded-lg bg-surface text-fg-muted hover:text-white transition-colors"
               >
                 <GitBranch className="w-4 h-4" />
               </a>
@@ -314,7 +314,7 @@ const Footer: React.FC = () => {
                   <li key={link.path}>
                     <NavLink
                       to={link.path}
-                      className="text-sm text-zinc-500 hover:text-white transition-colors"
+                      className="text-sm text-fg-muted hover:text-white transition-colors"
                     >
                       {link.label}
                     </NavLink>
@@ -326,12 +326,12 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Bottom */}
-        <div className="mt-12 pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-zinc-500">
+        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-fg-muted">
             © {new Date().getFullYear()} YAPPC. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-zinc-600">Status: All systems operational</span>
+            <span className="text-xs text-fg-muted">Status: All systems operational</span>
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
           </div>
         </div>
@@ -346,7 +346,7 @@ const Footer: React.FC = () => {
 
 const PublicLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       {/* Header */}
       <Header />
 

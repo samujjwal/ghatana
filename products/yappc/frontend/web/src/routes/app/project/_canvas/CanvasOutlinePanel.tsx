@@ -60,7 +60,7 @@ export const CanvasOutlinePanel = memo(function CanvasOutlinePanel({
           <Box
             key={frame.id}
             onClick={() => selectNodes([frame.id])}
-            className={`p-2 cursor-pointer rounded mb-2 hover:bg-gray-100 hover:dark:bg-gray-800 ${selectedNodeIds.includes(frame.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+            className={`p-2 cursor-pointer rounded mb-2 hover:bg-surface-muted hover:dark:bg-surface ${selectedNodeIds.includes(frame.id) ? 'bg-info-bg dark:bg-info-bg/20' : ''}`}
           >
             {frame.data.title || 'Frame'}
           </Box>
@@ -93,7 +93,7 @@ export const CanvasOutlinePanel = memo(function CanvasOutlinePanel({
             <Box
               key={node.id}
               onClick={() => selectNodes([node.id])}
-              className={`mb-2 cursor-pointer rounded p-2 ${selectedNodeIds.includes(node.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+              className={`mb-2 cursor-pointer rounded p-2 ${selectedNodeIds.includes(node.id) ? 'bg-info-bg dark:bg-info-bg/20' : 'hover:bg-surface-muted dark:hover:bg-surface'}`}
             >
               <Typography variant="body2" className="truncate">
                 {node.data.label ||

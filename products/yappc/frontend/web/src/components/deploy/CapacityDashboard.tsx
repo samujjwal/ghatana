@@ -34,11 +34,11 @@ function formatCurrency(value: number): string {
 function actionTone(action: CapacityAction): string {
   switch (action) {
     case 'SCALE_UP':
-      return 'bg-blue-100 text-blue-700';
+      return 'bg-info-bg text-info-color';
     case 'SCALE_DOWN':
       return 'bg-emerald-100 text-emerald-700';
     case 'RIGHTSIZE':
-      return 'bg-amber-100 text-amber-700';
+      return 'bg-warning-bg text-warning-color';
     default:
       return 'bg-grey-100 text-text-secondary';
   }
@@ -114,7 +114,7 @@ export function CapacityDashboard({ recommendation }: CapacityDashboardProps) {
             </div>
             <div className="flex items-center justify-between rounded-lg bg-bg-default px-3 py-2">
               <span>Delta</span>
-              <span className={`font-semibold ${costDelta <= 0 ? 'text-success-color' : 'text-amber-700'}`}>
+              <span className={`font-semibold ${costDelta <= 0 ? 'text-success-color' : 'text-warning-color'}`}>
                 {costDelta <= 0 ? '' : '+'}
                 {formatCurrency(costDelta)}
               </span>

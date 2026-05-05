@@ -66,16 +66,16 @@ export function InfrastructurePanel({ context, onInsertNode }: RailPanelProps) {
     switch (type) {
       case 'compute':
         return (
-          <DataUsageOutlined className="text-blue-600 text-lg" />
+          <DataUsageOutlined className="text-info-color text-lg" />
         );
       case 'storage':
         return <StorageOutlined className="text-sky-600 text-lg" />;
       case 'database':
-        return <StorageOutlined className="text-green-600 text-lg" />;
+        return <StorageOutlined className="text-success-color text-lg" />;
       case 'network':
-        return <CloudOutlined className="text-amber-600 text-lg" />;
+        return <CloudOutlined className="text-warning-color text-lg" />;
       case 'security':
-        return <SecurityOutlined className="text-red-600 text-lg" />;
+        return <SecurityOutlined className="text-destructive text-lg" />;
       default:
         return <CloudOutlined className="text-lg" />;
     }

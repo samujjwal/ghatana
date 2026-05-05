@@ -1,5 +1,9 @@
+import com.ghatana.buildlogic.ProductPackValidationExtension
+import org.gradle.api.tasks.compile.JavaCompile
+
 plugins {
     id("java-module")
+    id("product-pack-validation")
 }
 
 description = "Finance product - Core trading and risk management platform"
@@ -11,7 +15,6 @@ tasks.withType<JavaCompile> {
 dependencies {
     api(project(":platform-kernel:kernel-core"))
     api(project(":platform-kernel:kernel-plugin"))
-    api(project(":platform-kernel:kernel-testing"))
     api(project(":platform-plugins:plugin-ledger"))
     api(project(":platform-plugins:plugin-fraud-detection"))
     api(project(":platform-plugins:plugin-compliance"))
@@ -52,6 +55,7 @@ dependencies {
     implementation(libs.micrometer.core)
     implementation(libs.bundles.database.core)
     testImplementation(project(":platform:java:testing"))
+    testImplementation(project(":platform-kernel:kernel-testing"))
     testImplementation(libs.bundles.testing.containers)
 }
 
@@ -73,65 +77,21 @@ tasks.register<Test>("checkApiContractConformance") {
     }
 }
 
-// =============================================================================
-// Phase 3.3: Pack schema validation gates
-// =============================================================================
-
-tasks.register("validateDomainPackManifest") {
-    description = "Validates the Finance domain-pack-manifest.yaml for required fields and schema correctness."
-    group = "verification"
-    val manifestFile = layout.projectDirectory.file("domain-pack-manifest.yaml").asFile
-    doLast {
-        require(manifestFile.exists()) { "domain-pack-manifest.yaml is missing from product root" }
-        val content = manifestFile.readText()
-        val requiredFields = listOf("pack:", "id:", "version:", "capabilities:", "domain:")
-        val missing = requiredFields.filter { field -> !content.contains(field) }
-        if (missing.isNotEmpty()) {
-            throw GradleException("Finance domain-pack-manifest.yaml is missing required fields: $missing")
-        }
-        logger.lifecycle("Finance domain-pack-manifest.yaml validation passed.")
-    }
-}
-
-tasks.register("validatePolicyPack") {
-    description = "Validates that Finance boundary policy store class compiles and its rules are non-empty."
-    group = "verification"
-    dependsOn(tasks.named("compileJava"))
-    
-    val classesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
-    
-    doLast {
-        val classFile = classesDir.walkTopDown()
-            .firstOrNull { it.name == "FinanceBoundaryPolicyStore.class" }
-        requireNotNull(classFile) {
-            "Finance policy pack class not found: com.ghatana.finance.kernel.policy.FinanceBoundaryPolicyStore"
-        }
-        logger.lifecycle("Finance policy pack validation passed: ${classFile.name}")
-    }
-}
-
-tasks.register("validateComplianceRulePack") {
-    description = "Validates that Finance compliance rule pack compiles."
-    group = "verification"
-    dependsOn(tasks.named("compileJava"))
-    
-    val classesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
-    
-    doLast {
-        require(classesDir.exists()) { "Classes directory does not exist: $classesDir" }
-        val classFile = classesDir.walkTopDown()
-            .firstOrNull { it.name == "FinanceComplianceRulePack.class" }
-        requireNotNull(classFile) {
-            "Finance compliance rule pack class not found: com.ghatana.finance.kernel.policy.FinanceComplianceRulePack"
-        }
-        logger.lifecycle("Finance compliance rule pack validation passed: ${classFile.name}")
-    }
-}
-
-tasks.named("check") {
-    dependsOn(
-        "validateDomainPackManifest",
-        "validatePolicyPack",
-        "validateComplianceRulePack"
+configure<ProductPackValidationExtension> {
+    productName.set("Finance")
+    manifestFile.set(layout.projectDirectory.file("domain-pack-manifest.yaml"))
+    requiredManifestFields.set(
+        listOf(
+            "pack:", "id:", "version:", "capabilities:", "domain:",
+            "kernelCapabilitiesConsumed:", "pluginsConsumed:", "bridgesConsumed:",
+            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:"
+        )
     )
+    policyPackTestPatterns.set(
+        listOf(
+            "com.ghatana.finance.kernel.FinancePackContractTest",
+            "com.ghatana.finance.kernel.FinanceKernelBoundaryContractTest"
+        )
+    )
+    complianceClassFileName.set("FinanceComplianceRulePack.class")
 }

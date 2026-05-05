@@ -3,6 +3,7 @@
 > **Document:** `docs/architecture/PRODUCT_KERNEL_CAPABILITY_MAP.md`
 > **Audience:** Platform architects, product engineers, kernel contributors
 > **Purpose:** Decision guide mapping product-categories to the kernel support matrix — which plugins, bridge extensions, and contracts apply.
+> **Canonical ownership matrix:** [KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md](./KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md)
 
 ---
 
@@ -12,8 +13,9 @@ Ghatana products fall into three primary categories, each with distinct kernel i
 
 | Category | Products | Defining Characteristics |
 |----------|----------|--------------------------|
-| **Regulated Healthcare** | PHR | Patient data, FHIR interop, consent management, HIPAA/Nepal-2081 compliance |
-| **Regulated Finance** | Finance | Trade processing, risk management, billing ledger, SOX/regulatory reporting |
+| **Regulated Healthcare** | PHR | Patient data, FHIR interop, consent management, regulated-health compliance |
+| **Regulated Finance** | Finance | Trade processing, risk management, billing ledger, regulated-finance reporting |
+| **Customer Growth** | Digital Marketing, FlashIt | Campaigns, audience/contact safety, moments/reflection journeys, approval-controlled outbound actions |
 | **Agent / Runtime** | AEP, YAPPC | AI agent deployment, event streaming, code generation, autonomous pipelines |
 | **Data Infrastructure** | Data-Cloud | Multi-tier storage, schema management, event log, tenant isolation |
 

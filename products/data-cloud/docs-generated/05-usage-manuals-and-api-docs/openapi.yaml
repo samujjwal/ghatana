@@ -3396,6 +3396,19 @@ paths:
                 additionalProperties:
                   type: string
 
+  /api/v1/capabilities/schema:
+    get:
+      summary: Get the runtime capability registry schema
+      operationId: apiV1CapabilitiesSchemaGet
+      tags: [capabilities]
+      responses:
+        "200":
+          description: Capability registry schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeformObject"
+
   /api/v1/context:
     get:
       summary: Get all tenant context entries

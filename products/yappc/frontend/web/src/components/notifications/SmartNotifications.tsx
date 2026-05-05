@@ -74,17 +74,17 @@ function NotificationItem({ notification, onDismiss, onMarkRead, onAction }: Not
   const getTypeColor = (type: NotificationType): string => {
     switch (type) {
       case 'success':
-        return 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20';
+        return 'border-success-border dark:border-success-border bg-success-bg dark:bg-success-bg/20';
       case 'warning':
-        return 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20';
+        return 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/20';
       case 'error':
-        return 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
+        return 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/20';
       case 'task':
-        return 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20';
+        return 'border-info-border dark:border-info-border bg-info-bg dark:bg-info-bg/20';
       case 'mention':
-        return 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20';
+        return 'border-info-border dark:border-info-border bg-info-bg dark:bg-info-bg/20';
       default:
-        return 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800';
+        return 'border-border dark:border-border bg-surface-muted dark:bg-surface';
     }
   };
 
@@ -92,7 +92,7 @@ function NotificationItem({ notification, onDismiss, onMarkRead, onAction }: Not
     <Card className={`mb-2 ${getTypeColor(notification.type)} ${!notification.read ? 'border-l-4' : ''}`}>
       <CardContent className="p-3">
         <div className="flex items-start gap-3">
-          <div className={`mt-0.5 ${notification.type === 'error' ? 'text-red-600 dark:text-red-400' : notification.type === 'warning' ? 'text-orange-600 dark:text-orange-400' : notification.type === 'success' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>
+          <div className={`mt-0.5 ${notification.type === 'error' ? 'text-destructive dark:text-destructive' : notification.type === 'warning' ? 'text-warning-color dark:text-warning-color' : notification.type === 'success' ? 'text-success-color dark:text-success-color' : 'text-info-color dark:text-info-color'}`}>
             <NotificationIcon type={notification.type} />
           </div>
           <div className="flex-1 min-w-0">
@@ -102,12 +102,12 @@ function NotificationItem({ notification, onDismiss, onMarkRead, onAction }: Not
                 size="sm"
                 variant="text"
                 onClick={onDismiss}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon className="w-4 h-4" />
               </Button>
             </div>
-            <Typography className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+            <Typography className="text-sm text-fg dark:text-fg-muted mb-2">
               {notification.message}
             </Typography>
             {notification.actions && notification.actions.length > 0 && (
@@ -151,17 +151,17 @@ function ConsolidatedNotificationItem({
   const getTypeColor = (type: NotificationType): string => {
     switch (type) {
       case 'success':
-        return 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20';
+        return 'border-success-border dark:border-success-border bg-success-bg dark:bg-success-bg/20';
       case 'warning':
-        return 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20';
+        return 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/20';
       case 'error':
-        return 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
+        return 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/20';
       case 'task':
-        return 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20';
+        return 'border-info-border dark:border-info-border bg-info-bg dark:bg-info-bg/20';
       case 'mention':
-        return 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20';
+        return 'border-info-border dark:border-info-border bg-info-bg dark:bg-info-bg/20';
       default:
-        return 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800';
+        return 'border-border dark:border-border bg-surface-muted dark:bg-surface';
     }
   };
 
@@ -176,14 +176,14 @@ function ConsolidatedNotificationItem({
             <div className="flex items-start justify-between mb-1">
               <Typography className="font-medium text-sm">{consolidated.title}</Typography>
               <div className="flex items-center gap-1">
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {consolidated.count}
                 </span>
                 <Button
                   size="sm"
                   variant="text"
                   onClick={onDismiss}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-fg-muted hover:text-fg-muted"
                 >
                   <CloseIcon className="w-4 h-4" />
                 </Button>
@@ -193,14 +193,14 @@ function ConsolidatedNotificationItem({
               size="sm"
               variant="text"
               onClick={onExpand}
-              className="text-xs text-gray-500"
+              className="text-xs text-fg-muted"
             >
               {isExpanded ? 'Show less' : 'Show all'}
             </Button>
             {isExpanded && (
               <div className="mt-2 space-y-2">
                 {consolidated.notifications.map(notification => (
-                  <div key={notification.id} className="text-xs text-gray-600 dark:text-gray-400 p-2 bg-white dark:bg-gray-800 rounded">
+                  <div key={notification.id} className="text-xs text-fg-muted dark:text-fg-muted p-2 bg-white dark:bg-surface rounded">
                     {notification.title}
                   </div>
                 ))}
@@ -267,7 +267,7 @@ export function SmartNotifications({
         >
           <BellIcon className="w-6 h-6" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-destructive-bg text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -302,7 +302,7 @@ export function SmartNotifications({
             </div>
 
             {visibleNotifications.length === 0 ? (
-              <Typography className="text-sm text-gray-500 text-center py-4">
+              <Typography className="text-sm text-fg-muted text-center py-4">
                 No notifications
               </Typography>
             ) : (
@@ -317,7 +317,7 @@ export function SmartNotifications({
                   />
                 ))}
                 {consolidated.length > maxVisible && (
-                  <Typography className="text-xs text-gray-500 text-center py-2">
+                  <Typography className="text-xs text-fg-muted text-center py-2">
                     +{consolidated.length - maxVisible} more
                   </Typography>
                 )}
@@ -326,7 +326,7 @@ export function SmartNotifications({
 
             {/* Preferences */}
             {showPreferences && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-4 pt-4 border-t border-border dark:border-border">
                 <Typography className="text-sm font-medium mb-2">Preferences</Typography>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">

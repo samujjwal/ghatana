@@ -49,11 +49,11 @@ export interface ApprovalInboxProps {
 }
 
 const STATUS_STYLES: Record<ApprovalDecisionStatus, string> = {
-  PENDING: 'bg-amber-100 text-amber-800',
+  PENDING: 'bg-warning-bg text-warning-color',
   APPROVED: 'bg-emerald-100 text-emerald-800',
-  REJECTED: 'bg-red-100 text-red-800',
-  CHANGES_REQUESTED: 'bg-blue-100 text-blue-800',
-  EXPIRED: 'bg-gray-200 text-gray-700',
+  REJECTED: 'bg-destructive-bg text-destructive',
+  CHANGES_REQUESTED: 'bg-info-bg text-info-color',
+  EXPIRED: 'bg-surface-muted text-fg',
 };
 
 const formatTime = (isoTimestamp: string): string => {
@@ -86,7 +86,7 @@ export const ApprovalInbox: React.FC<ApprovalInboxProps> = ({
       {approvals.length === 0 && (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-gray-600">
+            <Typography className="text-sm text-fg-muted">
               No approval requests yet.
             </Typography>
           </CardContent>
@@ -100,7 +100,7 @@ export const ApprovalInbox: React.FC<ApprovalInboxProps> = ({
         return (
           <Card
             key={approval.id}
-            className={isSelected ? 'border-2 border-blue-500' : ''}
+            className={isSelected ? 'border-2 border-info-border' : ''}
           >
             <CardContent className="space-y-3 p-4">
               <Box className="flex items-center justify-between gap-2">
@@ -112,19 +112,19 @@ export const ApprovalInbox: React.FC<ApprovalInboxProps> = ({
                 />
               </Box>
 
-              <Typography className="text-xs text-gray-500">
+              <Typography className="text-xs text-fg-muted">
                 Requester: {approval.requesterId}
               </Typography>
-              <Typography className="text-xs text-gray-500">
+              <Typography className="text-xs text-fg-muted">
                 Created: {formatTime(approval.createdAt)}
               </Typography>
               {approval.requirementId && (
-                <Typography className="text-xs text-gray-500">
+                <Typography className="text-xs text-fg-muted">
                   Requirement: {approval.requirementId}
                 </Typography>
               )}
               {approval.decisionReason && (
-                <Typography className="text-sm text-gray-700">
+                <Typography className="text-sm text-fg">
                   Reason: {approval.decisionReason}
                 </Typography>
               )}

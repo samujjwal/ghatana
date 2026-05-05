@@ -347,7 +347,7 @@ export const ComponentDiagramCanvas = () => {
                                     Props:
                                 </Typography>
                                 {selectedComp.props.map(prop => (
-                                    <Typography key={prop} variant="caption" display="block" className="text-gray-500 dark:text-gray-400 font-mono">
+                                    <Typography key={prop} variant="caption" display="block" className="text-fg-muted dark:text-fg-muted font-mono">
                                         • {prop}
                                     </Typography>
                                 ))}
@@ -360,7 +360,7 @@ export const ComponentDiagramCanvas = () => {
                                     Exports:
                                 </Typography>
                                 {selectedComp.exports.map(exp => (
-                                    <Typography key={exp} variant="caption" display="block" className="text-gray-500 dark:text-gray-400 font-mono">
+                                    <Typography key={exp} variant="caption" display="block" className="text-fg-muted dark:text-fg-muted font-mono">
                                         • {exp}
                                     </Typography>
                                 ))}
@@ -373,7 +373,7 @@ export const ComponentDiagramCanvas = () => {
                                     Dependencies ({selectedComp.dependencies.length}):
                                 </Typography>
                                 {selectedComp.dependencies.map(dep => (
-                                    <Typography key={dep} variant="caption" display="block" className="text-blue-600 font-mono">
+                                    <Typography key={dep} variant="caption" display="block" className="text-info-color font-mono">
                                         → {dep}
                                     </Typography>
                                 ))}

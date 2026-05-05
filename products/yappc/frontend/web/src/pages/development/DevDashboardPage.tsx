@@ -74,20 +74,20 @@ const StatCard: React.FC<StatCardProps> = ({
   const content = (
     <div
       className={cn(
-        'p-6 rounded-xl bg-zinc-900 border border-zinc-800',
-        'hover:border-zinc-700 transition-colors',
+        'p-6 rounded-xl bg-surface border border-border',
+        'hover:border-border transition-colors',
         href && 'cursor-pointer'
       )}
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400">{icon}</div>
+        <div className="p-2 rounded-lg bg-surface text-fg-muted">{icon}</div>
         {change !== undefined && (
           <div
             className={cn(
               'flex items-center gap-1 text-sm',
               trend === 'up' && 'text-emerald-400',
-              trend === 'down' && 'text-red-400',
-              trend === 'neutral' && 'text-zinc-400'
+              trend === 'down' && 'text-destructive',
+              trend === 'neutral' && 'text-fg-muted'
             )}
           >
             {trend === 'up' && <TrendingUp className="w-4 h-4" />}
@@ -98,8 +98,8 @@ const StatCard: React.FC<StatCardProps> = ({
         )}
       </div>
       <div className="text-3xl font-bold text-white mb-1">{value}</div>
-      <div className="text-sm text-zinc-400">{title}</div>
-      {changeLabel && <div className="text-xs text-zinc-500 mt-1">{changeLabel}</div>}
+      <div className="text-sm text-fg-muted">{title}</div>
+      {changeLabel && <div className="text-xs text-fg-muted mt-1">{changeLabel}</div>}
     </div>
   );
 
@@ -120,11 +120,11 @@ const ActivityFeed: React.FC<{ items: ActivityItem[] }> = ({ items }) => {
   };
 
   const typeColors = {
-    commit: 'text-cyan-400',
+    commit: 'text-info-color',
     pr: 'text-violet-400',
     story: 'text-emerald-400',
-    deploy: 'text-amber-400',
-    comment: 'text-zinc-400',
+    deploy: 'text-warning-color',
+    comment: 'text-fg-muted',
   };
 
   return (
@@ -135,11 +135,11 @@ const ActivityFeed: React.FC<{ items: ActivityItem[] }> = ({ items }) => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.05 }}
-          className="flex items-start gap-4 p-3 rounded-lg hover:bg-zinc-800/50 transition-colors"
+          className="flex items-start gap-4 p-3 rounded-lg hover:bg-surface/50 transition-colors"
         >
           <div
             className={cn(
-              'p-2 rounded-lg bg-zinc-800',
+              'p-2 rounded-lg bg-surface',
               typeColors[item.type]
             )}
           >
@@ -147,7 +147,7 @@ const ActivityFeed: React.FC<{ items: ActivityItem[] }> = ({ items }) => {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-white truncate">{item.title}</p>
-            <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
+            <div className="flex items-center gap-2 text-xs text-fg-muted mt-1">
               <span>{item.user.name}</span>
               <span>•</span>
               <span>{item.time}</span>
@@ -200,7 +200,7 @@ const SprintBurndownChart: React.FC<{
 
   if (totalPoints === 0 || dayCount === 0) {
     return (
-      <div className="h-32 flex items-center justify-center text-xs text-zinc-600">
+      <div className="h-32 flex items-center justify-center text-xs text-fg-muted">
         No sprint data available
       </div>
     );
@@ -282,14 +282,14 @@ const SprintBurndownChart: React.FC<{
       </svg>
 
       {/* X-axis labels */}
-      <div className="flex justify-between text-[10px] text-zinc-600 mt-1 px-0.5">
+      <div className="flex justify-between text-[10px] text-fg-muted mt-1 px-0.5">
         {tickDays.map((d) => (
           <span key={d}>Day {d}</span>
         ))}
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-2 text-[10px] text-zinc-500">
+      <div className="flex items-center gap-4 mt-2 text-[10px] text-fg-muted">
         <div className="flex items-center gap-1">
           <svg width="16" height="4" viewBox="0 0 16 4" aria-hidden="true">
             <line x1="0" y1="2" x2="16" y2="2" stroke="#6b7280" strokeWidth="1.5" strokeDasharray="3,2" />
@@ -379,14 +379,14 @@ const DevDashboardPage: React.FC = () => {
       description: '3 awaiting review',
       icon: <GitPullRequest className="w-5 h-5" />,
       href: ROUTES.development.prs(projectId || ''),
-      color: 'bg-cyan-500/10 text-cyan-400',
+      color: 'bg-info-bg/10 text-info-color',
     },
     {
       label: 'Deployments',
       description: 'Staging ready',
       icon: <Rocket className="w-5 h-5" />,
       href: ROUTES.development.deployments(projectId || ''),
-      color: 'bg-amber-500/10 text-amber-400',
+      color: 'bg-warning-bg/10 text-warning-color',
     },
     {
       label: 'Feature Flags',
@@ -402,7 +402,7 @@ const DevDashboardPage: React.FC = () => {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white mb-2">Development</h1>
-        <p className="text-zinc-400">
+        <p className="text-fg-muted">
           {activeSprint?.name || 'No active sprint'} • {activeSprint?.daysRemaining || 0} days
           remaining
         </p>
@@ -443,28 +443,28 @@ const DevDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Links */}
         <div className="lg:col-span-1">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Quick Access</h2>
             <div className="space-y-3">
               {quickLinks.map((link) => (
                 <NavLink
                   key={link.label}
                   to={link.href}
-                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-zinc-800 transition-colors group"
+                  className="flex items-center gap-4 p-3 rounded-lg hover:bg-surface transition-colors group"
                 >
                   <div className={cn('p-2 rounded-lg', link.color)}>{link.icon}</div>
                   <div className="flex-1">
                     <div className="text-sm font-medium text-white">{link.label}</div>
-                    <div className="text-xs text-zinc-500">{link.description}</div>
+                    <div className="text-xs text-fg-muted">{link.description}</div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-fg-muted group-hover:text-fg-muted transition-colors" />
                 </NavLink>
               ))}
             </div>
           </div>
 
           {/* Sprint Burndown Mini */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-6">
+          <div className="bg-surface border border-border rounded-xl p-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Sprint Burndown</h2>
               <NavLink
@@ -507,7 +507,7 @@ const DevDashboardPage: React.FC = () => {
 
         {/* Recent Activity */}
         <div className="lg:col-span-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
               <button className="text-sm text-violet-400 hover:text-violet-300">
@@ -518,12 +518,12 @@ const DevDashboardPage: React.FC = () => {
           </div>
 
           {/* Team Activity */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-6">
+          <div className="bg-surface border border-border rounded-xl p-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Team Activity</h2>
               <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-zinc-500" />
-                <span className="text-sm text-zinc-400">5 active now</span>
+                <Users className="w-4 h-4 text-fg-muted" />
+                <span className="text-sm text-fg-muted">5 active now</span>
               </div>
             </div>
 
@@ -542,22 +542,22 @@ const DevDashboardPage: React.FC = () => {
                     'bg-gradient-to-br text-white text-sm font-medium',
                     member.color,
                     i > 0 && '-ml-2',
-                    'border-2 border-zinc-900'
+                    'border-2 border-border'
                   )}
                   title={member.name}
                 >
                   {member.name.charAt(0)}
                 </div>
               ))}
-              <span className="ml-2 text-sm text-zinc-500">All working on Sprint 12</span>
+              <span className="ml-2 text-sm text-fg-muted">All working on Sprint 12</span>
             </div>
           </div>
 
           {/* Upcoming */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mt-6">
+          <div className="bg-surface border border-border rounded-xl p-6 mt-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Upcoming</h2>
-              <Calendar className="w-4 h-4 text-zinc-500" />
+              <Calendar className="w-4 h-4 text-fg-muted" />
             </div>
 
             <div className="space-y-3">
@@ -568,17 +568,17 @@ const DevDashboardPage: React.FC = () => {
               ].map((event) => (
                 <div
                   key={event.label}
-                  className="flex items-center justify-between p-3 rounded-lg bg-zinc-800/50"
+                  className="flex items-center justify-between p-3 rounded-lg bg-surface/50"
                 >
                   <div>
                     <div className="text-sm font-medium text-white">{event.label}</div>
-                    <div className="text-xs text-zinc-500">{event.time}</div>
+                    <div className="text-xs text-fg-muted">{event.time}</div>
                   </div>
                   <span
                     className={cn(
                       'px-2 py-1 rounded text-xs font-medium',
                       event.type === 'meeting' && 'bg-violet-500/20 text-violet-400',
-                      event.type === 'review' && 'bg-cyan-500/20 text-cyan-400',
+                      event.type === 'review' && 'bg-info-bg/20 text-info-color',
                       event.type === 'release' && 'bg-emerald-500/20 text-emerald-400'
                     )}
                   >

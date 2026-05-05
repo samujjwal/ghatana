@@ -93,11 +93,11 @@ function getStatusPanelClassName(
     case 'ready':
       return 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-100';
     case 'blocked':
-      return 'border-red-200 bg-red-50 text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100';
+      return 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive';
     case 'review':
-      return 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-100';
+      return 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color';
     default:
-      return 'border-slate-200 bg-slate-50 text-slate-900 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-100';
+      return 'border-border bg-surface-muted text-fg dark:border-border dark:bg-surface/60 dark:text-fg-muted';
   }
 }
 
@@ -172,7 +172,7 @@ export default function ProjectIndexRoute() {
   if (!projectQuery.data) {
     return (
       <div className="p-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+        <div className="rounded-xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive">
           Unable to load the project overview.
         </div>
       </div>
@@ -305,7 +305,7 @@ export default function ProjectIndexRoute() {
                   >
                     {phasePreviewQuery.data?.blockers.slice(0, 3).map((blocker) => (
                       <li key={blocker} className="flex items-start gap-2">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-500" />
+                        <AlertTriangle className="mt-0.5 h-4 w-4 text-warning-color" />
                         <span>{blocker}</span>
                       </li>
                     ))}
@@ -358,7 +358,7 @@ export default function ProjectIndexRoute() {
               <div className="h-16 rounded-xl bg-surface-muted animate-pulse" />
             </div>
           ) : activityQuery.isError ? (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+            <div className="mt-4 rounded-xl border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive">
               {activityQuery.error instanceof Error
                 ? activityQuery.error.message
                 : 'Failed to load project activity.'}

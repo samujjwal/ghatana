@@ -1,7 +1,8 @@
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render } from '@/test-utils/test-utils';
 
 const { mockNavigate, mockGetNextPhase } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -59,7 +60,7 @@ function renderRoute(node: React.ReactNode) {
     },
   });
 
-  return render(<QueryClientProvider client={queryClient}>{node}</QueryClientProvider>);
+  return render(node, { queryClient });
 }
 
 describe('phase cockpit routes', () => {
@@ -133,7 +134,7 @@ describe('phase cockpit routes', () => {
     expect(screen.queryByTestId('project-overview-stub')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Advanced details' }));
-    expect(await screen.findByTestId('project-overview-stub')).toBeInTheDocument();
+    expect(await screen.findByTestId('intent-advanced-panel')).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId('define-requirements'));
     expect(mockNavigate).toHaveBeenCalledWith('/p/proj-42/intent?drawer=idea');

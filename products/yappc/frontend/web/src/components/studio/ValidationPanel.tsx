@@ -35,10 +35,10 @@ export interface ValidationPanelProps {
 
 function SeverityIcon({ severity }: { severity: ValidationSeverity }) {
   const config = {
-    error: { icon: '❌', color: 'text-red-500' },
-    warning: { icon: '⚠️', color: 'text-yellow-500' },
-    info: { icon: 'ℹ️', color: 'text-blue-500' },
-    success: { icon: '✅', color: 'text-green-500' },
+    error: { icon: '❌', color: 'text-destructive' },
+    warning: { icon: '⚠️', color: 'text-warning-color' },
+    info: { icon: 'ℹ️', color: 'text-info-color' },
+    success: { icon: '✅', color: 'text-success-color' },
   };
 
   const { icon, color } = config[severity];
@@ -55,8 +55,8 @@ function ValidationIssueItem({
   return (
     <div
       className={cn(
-        'p-3 border-b border-gray-200 dark:border-gray-800 cursor-pointer',
-        'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors'
+        'p-3 border-b border-border dark:border-border cursor-pointer',
+        'hover:bg-surface-muted dark:hover:bg-surface/50 transition-colors'
       )}
       onClick={() => onClick?.(issue)}
     >
@@ -64,22 +64,22 @@ function ValidationIssueItem({
         <SeverityIcon severity={issue.severity} />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+            <span className="text-xs font-medium text-fg-muted dark:text-fg-muted uppercase">
               {issue.type}
             </span>
             {issue.file && (
-              <span className="text-xs text-gray-400 dark:text-gray-600 truncate">
+              <span className="text-xs text-fg-muted dark:text-fg-muted truncate">
                 {issue.file}
                 {issue.line && `:${issue.line}`}
                 {issue.column && `:${issue.column}`}
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-900 dark:text-gray-100 mb-1">
+          <p className="text-sm text-fg dark:text-fg-muted mb-1">
             {issue.message}
           </p>
           {issue.suggestion && (
-            <p className="text-xs text-blue-600 dark:text-blue-400 italic">
+            <p className="text-xs text-info-color dark:text-info-color italic">
               💡 {issue.suggestion}
             </p>
           )}
@@ -121,39 +121,39 @@ export function ValidationPanel({
   return (
     <div
       className={cn(
-        'flex flex-col h-full bg-white dark:bg-gray-900',
+        'flex flex-col h-full bg-white dark:bg-surface',
         className
       )}
     >
       {/* Header */}
-      <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3">
+      <div className="h-10 border-b border-border dark:border-border flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-sm font-semibold text-fg dark:text-fg-muted">
             Validation
           </h3>
           <div className="flex items-center gap-2 text-xs">
             {stats.errors > 0 && (
-              <span className="text-red-500">{stats.errors} errors</span>
+              <span className="text-destructive">{stats.errors} errors</span>
             )}
             {stats.warnings > 0 && (
-              <span className="text-yellow-500">{stats.warnings} warnings</span>
+              <span className="text-warning-color">{stats.warnings} warnings</span>
             )}
             {stats.success > 0 && (
-              <span className="text-green-500">{stats.success} passed</span>
+              <span className="text-success-color">{stats.success} passed</span>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={onRunTests}
-            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-2 py-1 text-xs bg-info-bg text-white rounded hover:bg-primary"
           >
             Run Tests
           </button>
           {(stats.errors > 0 || stats.warnings > 0) && (
             <button
               onClick={onFixAll}
-              className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+              className="px-2 py-1 text-xs bg-success-bg text-white rounded hover:bg-success-bg"
             >
               Fix All
             </button>
@@ -165,7 +165,7 @@ export function ValidationPanel({
       <div className="flex-1 overflow-auto">
         {issues.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 dark:text-gray-400">
+            <div className="text-center text-fg-muted dark:text-fg-muted">
               <span className="text-4xl mb-2">✅</span>
               <p className="text-sm">No issues found</p>
             </div>
@@ -175,7 +175,7 @@ export function ValidationPanel({
             {/* TypeScript Issues */}
             {groupedIssues.typescript.length > 0 && (
               <div>
-                <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <div className="px-3 py-2 bg-surface-muted dark:bg-surface text-xs font-semibold text-fg dark:text-fg-muted">
                   TypeScript ({groupedIssues.typescript.length})
                 </div>
                 {groupedIssues.typescript.map((issue) => (
@@ -191,7 +191,7 @@ export function ValidationPanel({
             {/* ESLint Issues */}
             {groupedIssues.eslint.length > 0 && (
               <div>
-                <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <div className="px-3 py-2 bg-surface-muted dark:bg-surface text-xs font-semibold text-fg dark:text-fg-muted">
                   ESLint ({groupedIssues.eslint.length})
                 </div>
                 {groupedIssues.eslint.map((issue) => (
@@ -207,7 +207,7 @@ export function ValidationPanel({
             {/* Test Results */}
             {groupedIssues.test.length > 0 && (
               <div>
-                <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                <div className="px-3 py-2 bg-surface-muted dark:bg-surface text-xs font-semibold text-fg dark:text-fg-muted">
                   Tests ({groupedIssues.test.length})
                 </div>
                 {groupedIssues.test.map((issue) => (
@@ -223,8 +223,8 @@ export function ValidationPanel({
             {/* AI Suggestions */}
             {groupedIssues.ai.length > 0 && (
               <div>
-                <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  AI Suggestions ({groupedIssues.ai.length})
+                <div className="px-3 py-2 bg-surface-muted dark:bg-surface text-xs font-semibold text-fg dark:text-fg-muted">
+                  Suggestions ({groupedIssues.ai.length})
                 </div>
                 {groupedIssues.ai.map((issue) => (
                   <ValidationIssueItem

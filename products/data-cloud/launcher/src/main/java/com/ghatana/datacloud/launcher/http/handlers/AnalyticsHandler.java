@@ -490,12 +490,18 @@ public class AnalyticsHandler {
      * ({@code GET /api/v1/capabilities}) will expose {@code analytics.cancellation.configured=false}
      * so that UI clients can disable the cancel action before reaching this endpoint.
      *
+     * <p>When cancellation is supported, this endpoint delegates to the
+     * {@link AnalyticsQueryEngine#cancelQuery} method which uses the distributed
+     * query tracker to signal cancellation across all nodes.</p>
+     *
      * @param request HTTP request
-     * @return 200 if cancellation succeeds (future), or 501 when not supported
+     * @return 200 if cancellation succeeds, 404 if query not found, 403 if tenant mismatch, or 501 when not supported
      */
     public Promise<HttpResponse> handleAnalyticsCancelQuery(HttpRequest request) {
         String queryId = request.getPathParameter("queryId");
+        String tenantId = http.requireTenantIdOrFail(request);
         String traceId = http.resolveCorrelationId(request);
+
         if (!cancellationSupported) {
             // DC-P1-001: Capability-consistent 501 — capability registry advertises analytics.cancellation.configured=false
             log.info("[DC-9] cancel query rejected queryId={} traceId={} — analytics.cancellation capability is not configured in this deployment",
@@ -505,11 +511,45 @@ public class AnalyticsHandler {
                 "Check the analytics.cancellation entry at GET /api/v1/capabilities for current support status.",
                 traceId));
         }
-        // Future path: cancellationSupported=true requires a distributed query tracker
-        log.info("[DC-9] cancel query requested queryId={} traceId={}", queryId, traceId);
-        return Promise.of(http.errorResponse(501,
-            "Analytics query cancellation is not yet implemented for this deployment.",
-            traceId));
+
+        if (analyticsEngine == null) {
+            log.warn("[DC-9] cancel query failed queryId={} traceId={} — analytics engine not available",
+                queryId, traceId);
+            return Promise.of(http.errorResponse(503, "Analytics engine not available in this deployment", traceId));
+        }
+
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required", traceId));
+        }
+
+        log.info("[DC-9] cancel query requested queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
+
+        // DC-P1-001: Use the distributed query tracker to cancel the query
+        return analyticsEngine.cancelQuery(queryId, tenantId)
+            .then(result -> {
+                if (result.success()) {
+                    log.info("[DC-9] cancel query succeeded queryId={} tenantId={} traceId={}", queryId, tenantId, traceId);
+                    Map<String, Object> response = Map.of(
+                        "queryId", queryId,
+                        "status", "CANCELLED",
+                        "message", result.message(),
+                        "cancelledAt", result.cancelledAt().toString()
+                    );
+                    return Promise.of(http.jsonResponse(200, response, traceId));
+                } else {
+                    log.warn("[DC-9] cancel query failed queryId={} tenantId={} traceId={} reason={}",
+                        queryId, tenantId, traceId, result.message());
+                    if (result.message().contains("unauthorized")) {
+                        return Promise.of(http.errorResponse(403, result.message(), traceId));
+                    }
+                    return Promise.of(http.errorResponse(404, result.message(), traceId));
+                }
+            })
+            .whenException(exception -> {
+                log.error("[DC-9] cancel query error queryId={} tenantId={} traceId={}",
+                    queryId, tenantId, traceId, exception);
+                return Promise.of(http.errorResponse(500, "Internal error during query cancellation", traceId));
+            });
     }
 
     private ReportExecutionCapability reportExecutor() {

@@ -16,7 +16,10 @@ rm -rf node_modules/.prisma
 mkdir -p generated/prisma
 
 echo "2. Running prisma generate..."
-export DATABASE_URL="${DATABASE_URL:-postgresql://ghatana:ghatana123@localhost:5433/flashit_dev}"
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "❌ DATABASE_URL must be set before running this script"
+  exit 1
+fi
 export NODE_ENV=development
 
 # Use absolute paths

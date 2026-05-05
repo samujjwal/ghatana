@@ -158,14 +158,14 @@ export function RealtimeStageNavigation({
   // Render connection status indicator
   const renderConnectionStatus = () => (
     <div className="flex items-center space-x-2 mb-2">
-      <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-      <span className="text-sm text-gray-600">
+      <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-success-bg' : 'bg-destructive-bg'}`} />
+      <span className="text-sm text-fg-muted">
         {isConnected ? 'Connected' : 'Disconnected'}
       </span>
       {!isConnected && (
         <button
           onClick={handleRefresh}
-          className="text-xs text-blue-600 hover:text-blue-800 underline"
+          className="text-xs text-info-color hover:text-info-color underline"
         >
           Reconnect
         </button>
@@ -178,12 +178,12 @@ export function RealtimeStageNavigation({
     if (!localError) return null;
     
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+      <div className="bg-destructive-bg border border-destructive-border rounded-md p-3 mb-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm text-red-600">{localError}</p>
+          <p className="text-sm text-destructive">{localError}</p>
           <button
             onClick={() => setLocalError(null)}
-            className="text-red-400 hover:text-red-600"
+            className="text-destructive hover:text-destructive"
           >
             ×
           </button>
@@ -197,7 +197,7 @@ export function RealtimeStageNavigation({
     if (!lastUpdate) return null;
     
     return (
-      <div className="text-xs text-gray-500 mb-2">
+      <div className="text-xs text-fg-muted mb-2">
         Last update: {new Date(lastUpdate.timestamp).toLocaleTimeString()} - {lastUpdate.type}
       </div>
     );

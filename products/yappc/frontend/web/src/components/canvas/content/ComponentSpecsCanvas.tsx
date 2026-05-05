@@ -420,7 +420,7 @@ export const ComponentSpecsCanvas = () => {
                                                 )}
                                                 <Typography
                                                     variant="caption"
-                                                    className="text-xs font-mono text-gray-500 dark:text-gray-400"
+                                                    className="text-xs font-mono text-fg-muted dark:text-fg-muted"
                                                 >
                                                     {prop.type}
                                                 </Typography>
@@ -431,7 +431,7 @@ export const ComponentSpecsCanvas = () => {
                                             {prop.default && (
                                                 <Typography
                                                     variant="caption"
-                                                    className="block font-mono text-blue-600 text-[0.7rem]"
+                                                    className="block font-mono text-info-color text-[0.7rem]"
                                                 >
                                                     Default: {prop.default}
                                                 </Typography>

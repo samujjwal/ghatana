@@ -217,7 +217,7 @@ const ConfigFileItem = ({
                             </Box>
                             <Typography
                                 variant="body2"
-                                className="text-blue-600 font-mono mb-1"
+                                className="text-info-color font-mono mb-1"
                             >
                                 {variable.value}
                             </Typography>
@@ -275,7 +275,7 @@ export const ConfigBrowserCanvas = () => {
             }}
         >
             <Box
-                className="h-full w-full flex flex-col bg-white dark:bg-gray-900"
+                className="h-full w-full flex flex-col bg-white dark:bg-surface"
             >
                 {/* Header */}
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-[rgba(0,_0,_0,_0.02)]">
@@ -296,7 +296,7 @@ export const ConfigBrowserCanvas = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
-                            startAdornment: <Search className="text-gray-500 dark:text-gray-400 mr-2" />,
+                            startAdornment: <Search className="text-fg-muted dark:text-fg-muted mr-2" />,
                         }}
                         className="mb-2"
                     />

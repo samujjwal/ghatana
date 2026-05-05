@@ -65,10 +65,10 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
     <div className="relative w-full max-w-xl">
       {/* Search input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-fg-muted" />
         <input
           type="text"
-          className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-10 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Search dashboards, incidents, vulnerabilities..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -77,7 +77,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
         />
         {query && (
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-muted"
             onClick={() => {
               setQuery('');
               setResults([]);
@@ -99,7 +99,7 @@ export function SearchBar({ tenantId }: { tenantId: string }) {
           />
 
           {/* Results */}
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-border z-50 max-h-96 overflow-y-auto">
             {results.map((result, index) => (
               <SearchResultItem
                 key={result.id}
@@ -140,7 +140,7 @@ function SearchResultItem({
     <div
       className={cn(
         'px-4 py-3 cursor-pointer transition-colors',
-        isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+        isSelected ? 'bg-info-bg' : 'hover:bg-surface-muted'
       )}
       onClick={onClick}
       onMouseEnter={onMouseEnter}
@@ -157,11 +157,11 @@ function SearchResultItem({
             <span className={cn('px-2 py-0.5 text-xs font-medium rounded', typeConfig.badgeColor)}>
               {result.type}
             </span>
-            <span className="text-sm font-medium text-gray-900 truncate">
+            <span className="text-sm font-medium text-fg truncate">
               {result.title}
             </span>
           </div>
-          <p className="text-sm text-gray-600 line-clamp-1">
+          <p className="text-sm text-fg-muted line-clamp-1">
             {result.description}
           </p>
         </div>
@@ -192,8 +192,8 @@ function getEntityTypeConfig(type: string) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
-      color: 'text-blue-600',
-      badgeColor: 'bg-blue-100 text-blue-800',
+      color: 'text-info-color',
+      badgeColor: 'bg-info-bg text-info-color',
     },
     INCIDENT: {
       icon: (
@@ -201,8 +201,8 @@ function getEntityTypeConfig(type: string) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       ),
-      color: 'text-red-600',
-      badgeColor: 'bg-red-100 text-red-800',
+      color: 'text-destructive',
+      badgeColor: 'bg-destructive-bg text-destructive',
     },
     VULNERABILITY: {
       icon: (
@@ -210,8 +210,8 @@ function getEntityTypeConfig(type: string) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       ),
-      color: 'text-orange-600',
-      badgeColor: 'bg-orange-100 text-orange-800',
+      color: 'text-warning-color',
+      badgeColor: 'bg-warning-bg text-warning-color',
     },
     PIPELINE: {
       icon: (
@@ -219,8 +219,8 @@ function getEntityTypeConfig(type: string) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
         </svg>
       ),
-      color: 'text-green-600',
-      badgeColor: 'bg-green-100 text-green-800',
+      color: 'text-success-color',
+      badgeColor: 'bg-success-bg text-success-color',
     },
     RESOURCE: {
       icon: (
@@ -228,8 +228,8 @@ function getEntityTypeConfig(type: string) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
         </svg>
       ),
-      color: 'text-purple-600',
-      badgeColor: 'bg-purple-100 text-purple-800',
+      color: 'text-info-color',
+      badgeColor: 'bg-info-bg text-info-color',
     },
   };
 

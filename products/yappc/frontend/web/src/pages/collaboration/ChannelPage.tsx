@@ -107,7 +107,7 @@ const ChannelPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -115,7 +115,7 @@ const ChannelPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           {error instanceof Error ? error.message : 'Failed to load channel'}
         </div>
       </div>
@@ -140,22 +140,22 @@ const ChannelPage: React.FC = () => {
   return (
     <div className="flex flex-col h-full max-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-950 shrink-0">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-surface shrink-0">
         <div className="flex items-center gap-3">
-          <span className="text-zinc-500 text-lg font-bold">#</span>
+          <span className="text-fg-muted text-lg font-bold">#</span>
           <div>
-            <h1 className="text-lg font-semibold text-zinc-100">{channel?.name ?? 'Channel'}</h1>
+            <h1 className="text-lg font-semibold text-fg-muted">{channel?.name ?? 'Channel'}</h1>
             {channel?.topic && (
-              <p className="text-xs text-zinc-500 truncate max-w-md">{channel.topic}</p>
+              <p className="text-xs text-fg-muted truncate max-w-md">{channel.topic}</p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-sm text-zinc-400">
-            <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+          <div className="flex items-center gap-1.5 text-sm text-fg-muted">
+            <span className="inline-block w-2 h-2 rounded-full bg-success-bg" />
             <span>{onlineCount} online</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+          <div className="flex items-center gap-1.5 text-sm text-fg-muted">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -167,7 +167,7 @@ const ChannelPage: React.FC = () => {
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-1">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+          <div className="flex flex-col items-center justify-center py-20 text-fg-muted">
             <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
@@ -177,26 +177,26 @@ const ChannelPage: React.FC = () => {
           groupedMessages.map((group) => (
             <div key={group.date}>
               <div className="flex items-center gap-3 my-4">
-                <div className="flex-1 h-px bg-zinc-800" />
-                <span className="text-xs text-zinc-500 font-medium">{group.date}</span>
-                <div className="flex-1 h-px bg-zinc-800" />
+                <div className="flex-1 h-px bg-surface" />
+                <span className="text-xs text-fg-muted font-medium">{group.date}</span>
+                <div className="flex-1 h-px bg-surface" />
               </div>
               {group.items.map((msg) => (
-                <div key={msg.id} className="flex gap-3 py-1.5 px-2 rounded-lg hover:bg-zinc-900/50 group">
+                <div key={msg.id} className="flex gap-3 py-1.5 px-2 rounded-lg hover:bg-surface/50 group">
                   <img
                     src={msg.avatarUrl}
                     alt={msg.userName}
-                    className="w-9 h-9 rounded-full mt-0.5 shrink-0 bg-zinc-800"
+                    className="w-9 h-9 rounded-full mt-0.5 shrink-0 bg-surface"
                   />
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-semibold text-zinc-200">{msg.userName}</span>
-                      <span className="text-xs text-zinc-600">{formatTime(msg.timestamp)}</span>
+                      <span className="text-sm font-semibold text-fg-muted">{msg.userName}</span>
+                      <span className="text-xs text-fg-muted">{formatTime(msg.timestamp)}</span>
                       {msg.edited && (
-                        <span className="text-xs text-zinc-600 italic">(edited)</span>
+                        <span className="text-xs text-fg-muted italic">(edited)</span>
                       )}
                     </div>
-                    <p className="text-sm text-zinc-300 whitespace-pre-wrap break-words">{msg.content}</p>
+                    <p className="text-sm text-fg-muted whitespace-pre-wrap break-words">{msg.content}</p>
                   </div>
                 </div>
               ))}
@@ -207,10 +207,10 @@ const ChannelPage: React.FC = () => {
       </div>
 
       {/* Compose */}
-      <div className="px-6 py-3 border-t border-zinc-800 bg-zinc-950 shrink-0">
-        <div className="flex items-end gap-3 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2">
+      <div className="px-6 py-3 border-t border-border bg-surface shrink-0">
+        <div className="flex items-end gap-3 bg-surface border border-border rounded-lg px-4 py-2">
           <textarea
-            className="flex-1 bg-transparent text-sm text-zinc-200 placeholder-zinc-500 resize-none outline-none max-h-32"
+            className="flex-1 bg-transparent text-sm text-fg-muted placeholder-zinc-500 resize-none outline-none max-h-32"
             rows={1}
             placeholder={`Message #${channel?.name ?? 'channel'}...`}
             value={draft}
@@ -220,7 +220,7 @@ const ChannelPage: React.FC = () => {
           <button
             onClick={handleSend}
             disabled={!draft.trim() || sendMessage.isPending}
-            className="px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 bg-primary text-white text-sm font-medium rounded-md hover:bg-info-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {sendMessage.isPending ? 'Sending…' : 'Send'}
           </button>

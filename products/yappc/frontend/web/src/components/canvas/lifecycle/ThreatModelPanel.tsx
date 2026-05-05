@@ -35,9 +35,9 @@ const STRIDE_LABELS: Record<StrideCategory, { label: string; abbrev: string }> =
 
 const SEVERITY_COLORS: Record<Severity, string> = {
     low: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
-    medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-    critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    medium: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    high: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    critical: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
 
 const defaultData: ThreatModelPayload = {
@@ -482,9 +482,9 @@ export const ThreatModelPanel: React.FC<ThreatModelPanelProps> = ({
                                                 value={mit.status}
                                                 onChange={(e) => updateMitigation(idx, { status: e.target.value as 'planned' | 'implemented' | 'verified' })}
                                                 className={`px-2 py-1 text-xs rounded ${mit.status === 'verified'
-                                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                                                        ? 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color'
                                                         : mit.status === 'implemented'
-                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+                                                            ? 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color'
                                                             : 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300'
                                                     }`}
                                             >

@@ -167,7 +167,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                     <IconButton
                         onClick={handleOpenColorPicker}
                         size="sm"
-                        className="w-[40px] h-[40px] border-[2px] border-solid border-gray-200 dark:border-gray-700 hover:opacity-[0.8]"
+                        className="w-[40px] h-[40px] border-[2px] border-solid border-border dark:border-border hover:opacity-[0.8]"
                         style={{ backgroundColor: color }}
                         aria-label="color picker"
                     >
@@ -176,7 +176,7 @@ export const SketchToolbar: React.FC<SketchToolbarProps> = ({ className = '' }) 
                 </Tooltip>
 
                 {colorPickerAnchor && (
-                    <Box className="absolute bottom-full mb-2 grid grid-cols-5 gap-1 rounded border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <Box className="absolute bottom-full mb-2 grid grid-cols-5 gap-1 rounded border border-border bg-white p-2 shadow-lg dark:border-border dark:bg-surface">
                         {commonColors.map((presetColor) => (
                             <IconButton
                                 key={presetColor}

@@ -254,7 +254,7 @@ describe('Breadcrumbs', () => {
       render(<Breadcrumbs />);
 
       const firstBreadcrumb = screen.getByText('Projects');
-      expect(firstBreadcrumb).toHaveClass('hover:text-gray-900');
+      expect(firstBreadcrumb).toHaveClass('hover:text-fg');
     });
   });
 

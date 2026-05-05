@@ -28,15 +28,15 @@ const INITIAL_MEMBERS: TeamMember[] = [
 ];
 
 const ROLE_BADGES: Record<Role, string> = {
-  admin: 'bg-purple-100 text-purple-700',
-  developer: 'bg-blue-100 text-blue-700',
-  viewer: 'bg-gray-100 text-gray-700',
+  admin: 'bg-info-bg text-info-color',
+  developer: 'bg-info-bg text-info-color',
+  viewer: 'bg-surface-muted text-fg',
 };
 
 const STATUS_BADGES: Record<InviteStatus, { label: string; className: string }> = {
-  accepted: { label: 'Active', className: 'bg-green-100 text-green-700' },
-  pending: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700' },
-  expired: { label: 'Expired', className: 'bg-red-100 text-red-700' },
+  accepted: { label: 'Active', className: 'bg-success-bg text-success-color' },
+  pending: { label: 'Pending', className: 'bg-warning-bg text-warning-color' },
+  expired: { label: 'Expired', className: 'bg-destructive-bg text-destructive' },
 };
 
 // ============================================================================
@@ -83,18 +83,18 @@ const TeamInvitePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-surface-muted p-6">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">Team Invitations</h1>
-        <p className="mb-8 text-gray-600">Invite teammates to collaborate on your project.</p>
+        <h1 className="mb-2 text-3xl font-bold text-fg">Team Invitations</h1>
+        <p className="mb-8 text-fg-muted">Invite teammates to collaborate on your project.</p>
 
         {/* Invite Form */}
         <div className="mb-8 rounded-lg border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Send Invitations</h2>
+            <h2 className="text-lg font-semibold text-fg">Send Invitations</h2>
             <button
               onClick={() => setBulkMode(!bulkMode)}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-info-color hover:underline"
             >
               {bulkMode ? 'Single invite' : 'Bulk invite'}
             </button>
@@ -107,7 +107,7 @@ const TeamInvitePage: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setBulkEmails(e.target.value)}
                 rows={4}
                 placeholder="Enter emails separated by commas or newlines..."
-                className="w-full rounded-lg border px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
               <div className="flex items-center gap-3">
                 <select
@@ -119,7 +119,7 @@ const TeamInvitePage: React.FC = () => {
                   <option value="admin">Admin</option>
                   <option value="viewer">Viewer</option>
                 </select>
-                <button onClick={bulkInvite} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                <button onClick={bulkInvite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                   Send Invites
                 </button>
               </div>
@@ -132,7 +132,7 @@ const TeamInvitePage: React.FC = () => {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 placeholder="teammate@company.com"
                 onKeyDown={(e) => e.key === 'Enter' && invite()}
-                className="flex-1 rounded-lg border px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-lg border px-4 py-2 text-sm focus:border-info-border focus:outline-none"
               />
               <select
                 value={role}
@@ -143,7 +143,7 @@ const TeamInvitePage: React.FC = () => {
                 <option value="admin">Admin</option>
                 <option value="viewer">Viewer</option>
               </select>
-              <button onClick={invite} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              <button onClick={invite} className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg">
                 Invite
               </button>
             </div>
@@ -153,19 +153,19 @@ const TeamInvitePage: React.FC = () => {
         {/* Team List */}
         <div className="rounded-lg border bg-white shadow-sm">
           <div className="border-b px-5 py-3">
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-fg">
               Team Members ({members.length})
             </h2>
           </div>
           <div className="divide-y">
             {members.map((m) => (
               <div key={m.id} className="flex items-center gap-4 px-5 py-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-sm font-bold text-gray-600">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-muted text-sm font-bold text-fg-muted">
                   {m.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900">{m.name}</p>
-                  <p className="text-xs text-gray-500">{m.email}</p>
+                  <p className="font-medium text-fg">{m.name}</p>
+                  <p className="text-xs text-fg-muted">{m.email}</p>
                 </div>
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${ROLE_BADGES[m.role]}`}>
                   {m.role}
@@ -175,7 +175,7 @@ const TeamInvitePage: React.FC = () => {
                 </span>
                 <button
                   onClick={() => remove(m.id)}
-                  className="text-gray-400 hover:text-red-500"
+                  className="text-fg-muted hover:text-destructive"
                   title="Remove member"
                 >
                   ✕
@@ -186,12 +186,12 @@ const TeamInvitePage: React.FC = () => {
         </div>
 
         {/* Summary */}
-        <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
+        <div className="mt-6 flex items-center justify-between text-sm text-fg-muted">
           <span>
             {members.filter((m) => m.status === 'accepted').length} active ·{' '}
             {members.filter((m) => m.status === 'pending').length} pending
           </span>
-          <button className="rounded-md bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          <button className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-info-bg">
             Continue to Setup →
           </button>
         </div>

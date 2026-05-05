@@ -101,7 +101,7 @@ export const DependencyEdge: React.FC<EdgeProps<DependencyCanvasEdge>> = ({
                             <Box>
                                 <Box className="font-bold mb-1">{config.label}</Box>
                                 {data?.label && <Box>{data.label}</Box>}
-                                {isBlocked && <Box className="mt-1 text-red-400" >⚠️ Blocking</Box>}
+                                {isBlocked && <Box className="mt-1 text-destructive" >⚠️ Blocking</Box>}
                             </Box>
                         }
                     >
@@ -109,7 +109,7 @@ export const DependencyEdge: React.FC<EdgeProps<DependencyCanvasEdge>> = ({
                             icon={config.icon}
                             label={data?.label || config.label}
                             size="sm"
-                            className="bg-white dark:bg-gray-900 border text-[0.7rem] h-[24px] cursor-pointer transition-all duration-200 hover:text-white" style={{ borderColor: edgeColor, color: edgeColor }}
+                            className="bg-white dark:bg-surface border text-[0.7rem] h-[24px] cursor-pointer transition-all duration-200 hover:text-white" style={{ borderColor: edgeColor, color: edgeColor }}
                         />
                     </Tooltip>
                 </Box>

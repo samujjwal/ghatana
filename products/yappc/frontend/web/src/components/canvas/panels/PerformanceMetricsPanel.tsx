@@ -19,9 +19,9 @@ export const PerformanceMetricsPanel: React.FC<{ nodeCount: number }> = ({ nodeC
     const metrics = usePerformanceMetrics(nodeCount);
     return (
         <Box className="p-4 font-mono">
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">FPS: {metrics.fps}</Typography>
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">Nodes: {metrics.nodeCount}</Typography>
-            <Typography as="span" className="text-xs text-gray-500 dark:text-gray-400 block">Render: {metrics.renderTimeMs}ms</Typography>
+            <Typography as="span" className="text-xs text-fg-muted dark:text-fg-muted block">FPS: {metrics.fps}</Typography>
+            <Typography as="span" className="text-xs text-fg-muted dark:text-fg-muted block">Nodes: {metrics.nodeCount}</Typography>
+            <Typography as="span" className="text-xs text-fg-muted dark:text-fg-muted block">Render: {metrics.renderTimeMs}ms</Typography>
         </Box>
     );
 };

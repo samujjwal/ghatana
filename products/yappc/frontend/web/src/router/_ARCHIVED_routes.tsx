@@ -239,10 +239,10 @@ const UnauthorizedPage = lazy(() => import('../pages/errors/UnauthorizedPage'));
 // =============================================================================
 
 const PageLoader: React.FC = () => (
-  <div className="flex items-center justify-center h-screen bg-zinc-950">
+  <div className="flex items-center justify-center h-screen bg-surface">
     <div className="flex flex-col items-center gap-4">
       <div className="w-12 h-12 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-      <p className="text-sm text-zinc-400">Loading...</p>
+      <p className="text-sm text-fg-muted">Loading...</p>
     </div>
   </div>
 );

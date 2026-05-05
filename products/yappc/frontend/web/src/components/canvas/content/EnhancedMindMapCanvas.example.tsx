@@ -304,7 +304,7 @@ export const EnhancedMindMapCanvas = () => {
 
                 {/* Node Details Panel */}
                 {selectedNode && (
-                    <Box className="p-4 bg-white dark:bg-gray-900" style={{ borderTop: '1px solid rgba(0, 0, 0, 0.12)' }} >
+                    <Box className="p-4 bg-white dark:bg-surface" style={{ borderTop: '1px solid rgba(0, 0, 0, 0.12)' }} >
                         <Typography variant="subtitle2" gutterBottom>
                             Selected: {nodes.find(n => n.id === selectedNode)?.label}
                         </Typography>

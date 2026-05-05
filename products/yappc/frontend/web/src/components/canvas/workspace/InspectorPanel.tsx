@@ -76,7 +76,7 @@ const renderWithMentions = (text: string) => {
                 <Box
                     component="span"
                     key={index}
-                    className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-white rounded-sm font-medium" >
+                    className="px-1 py-0.5 bg-info-bg dark:bg-info-bg/30 text-white rounded-sm font-medium" >
                     {part}
                 </Box>
             );
@@ -232,7 +232,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             <Box className="h-full flex flex-col">
                 {/* Header */}
                 <Box
-                    className="p-4 flex items-center justify-between border-gray-200 dark:border-gray-700 border-b" >
+                    className="p-4 flex items-center justify-between border-border dark:border-border border-b" >
                     <Box className="flex items-center gap-2">
                         <Typography className="text-2xl">{icon}</Typography>
                         <Typography as="h6" noWrap className="max-w-[250px]">
@@ -245,7 +245,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 </Box>
 
                 {/* Metadata */}
-                <Box className="p-4 bg-gray-100 dark:bg-gray-800">
+                <Box className="p-4 bg-surface-muted dark:bg-surface">
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                         <StatusBadge status={artifact.status} size="sm" />
                         {artifact.persona && <PersonaBadge persona={artifact.persona} size="sm" />}
@@ -272,7 +272,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 </Box>
 
                 {/* Tabs */}
-                <Box className="border-gray-200 dark:border-gray-700 border-b" >
+                <Box className="border-border dark:border-border border-b" >
                     <Tabs value={activeTab} onChange={(_, newValue) => setActiveTab(newValue)}>
                         <Tab label="Details" icon={<EditIcon size={16} />} iconPosition="start" />
                         <Tab
@@ -357,7 +357,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                         {artifact.blockers.map((blocker) => (
                                             <ListItem
                                                 key={blocker.id}
-                                                className="rounded mb-2 bg-red-100 dark:bg-red-900/30 text-white"
+                                                className="rounded mb-2 bg-destructive-bg dark:bg-destructive-bg/30 text-white"
                                             >
                                                 <ListItemIcon>
                                                     <WarningIcon className="text-white" />
@@ -365,7 +365,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                                 <ListItemText
                                                     primary={blocker.description}
                                                     secondary={
-                                                        <Typography as="span" className="text-xs text-gray-500" className="text-white">
+                                                        <Typography as="span" className="text-xs text-fg-muted" className="text-white">
                                                             {blocker.severity.toUpperCase()}
                                                         </Typography>
                                                     }
@@ -427,18 +427,18 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 </Typography>
                                 <Stack spacing={1}>
                                     <Box className="flex justify-between">
-                                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                             Created
                                         </Typography>
-                                        <Typography as="span" className="text-xs text-gray-500">
+                                        <Typography as="span" className="text-xs text-fg-muted">
                                             {artifact.createdAt.toLocaleDateString()} by {artifact.createdBy || 'Unknown'}
                                         </Typography>
                                     </Box>
                                     <Box className="flex justify-between">
-                                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                             Updated
                                         </Typography>
-                                        <Typography as="span" className="text-xs text-gray-500">
+                                        <Typography as="span" className="text-xs text-fg-muted">
                                             {artifact.updatedAt.toLocaleDateString()}
                                         </Typography>
                                     </Box>
@@ -452,14 +452,14 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         <Stack spacing={2}>
                             {artifact.comments && artifact.comments.length > 0 ? (
                                 artifact.comments.map((comment) => (
-                                    <Paper key={comment.id} variant="flat" className="p-4 border border-gray-200 dark:border-gray-700">
+                                    <Paper key={comment.id} variant="flat" className="p-4 border border-border dark:border-border">
                                         <Box className="flex gap-2 mb-2">
                                             <Avatar className="w-[32px] h-[32px]">
                                                 {comment.author.charAt(0).toUpperCase()}
                                             </Avatar>
                                             <Box className="flex-1">
                                                 <Typography as="p" className="text-sm font-medium">{comment.author}</Typography>
-                                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                                     {comment.createdAt.toLocaleString()}
                                                 </Typography>
                                             </Box>

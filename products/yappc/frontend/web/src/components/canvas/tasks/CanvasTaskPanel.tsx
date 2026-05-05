@@ -211,7 +211,7 @@ export function CanvasTaskPanel({
 
                 {/* Pending Count Badge */}
                 {phaseTasks.filter(t => t.status === 'pending').length > 0 && (
-                    <div className="mt-2 px-1.5 py-0.5 text-[10px] font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-full">
+                    <div className="mt-2 px-1.5 py-0.5 text-[10px] font-medium bg-warning-bg dark:bg-warning-bg/30 text-warning-color dark:text-warning-color rounded-full">
                         {phaseTasks.filter(t => t.status === 'pending').length}
                     </div>
                 )}
@@ -391,7 +391,7 @@ function TaskItem({ task, onClick }: TaskItemProps) {
 
                             {/* Automation */}
                             {task.automationLevel === 'automated' && (
-                                <span className="flex items-center gap-0.5 text-[10px] text-purple-500">
+                                <span className="flex items-center gap-0.5 text-[10px] text-info-color">
                                     <AutoAwesome className="w-3 h-3" />
                                     auto
                                 </span>
@@ -410,7 +410,7 @@ function TaskItem({ task, onClick }: TaskItemProps) {
                         {task.status === 'in-progress' && task.progress > 0 && task.progress < 100 && (
                             <div className="mt-1.5 h-1 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
                                 <div
-                                    className="h-full bg-blue-500 rounded-full"
+                                    className="h-full bg-info-bg rounded-full"
                                     style={{ width: `${task.progress}%` }}
                                 />
                             </div>
@@ -442,11 +442,11 @@ function getStatusIcon(status: TaskStatus) {
 function getStatusColor(status: TaskStatus): string {
     switch (status) {
         case 'completed':
-            return 'text-green-500';
+            return 'text-success-color';
         case 'in-progress':
-            return 'text-blue-500';
+            return 'text-info-color';
         case 'blocked':
-            return 'text-red-500';
+            return 'text-destructive';
         default:
             return 'text-grey-400';
     }
@@ -455,11 +455,11 @@ function getStatusColor(status: TaskStatus): string {
 function getPriorityColor(priority: string): string {
     switch (priority) {
         case 'critical':
-            return 'text-red-600';
+            return 'text-destructive';
         case 'high':
-            return 'text-orange-500';
+            return 'text-warning-color';
         case 'medium':
-            return 'text-yellow-500';
+            return 'text-warning-color';
         default:
             return 'text-grey-400';
     }

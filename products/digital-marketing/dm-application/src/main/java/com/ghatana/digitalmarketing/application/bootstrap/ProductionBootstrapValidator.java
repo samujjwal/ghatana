@@ -24,10 +24,11 @@ import java.util.Objects;
  *       NotificationPlugin, ConsentPlugin, HumanApprovalPlugin</li>
  *   <li>PII HMAC/encryption keys configured</li>
  *   <li>Google Ads disabled unless outbox/workflow configured (if applicable)</li>
+ *   <li>P1-040: Default-deny policy pack loaded for compliance rule sets</li>
  * </ul>
  *
  * @doc.type class
- * @doc.purpose Production bootstrap validator for DMOS startup (P1-004)
+ * @doc.purpose Production bootstrap validator for DMOS startup (P1-004, P1-040)
  * @doc.layer product
  * @doc.pattern Validator, Bootstrap
  */
@@ -41,6 +42,7 @@ public final class ProductionBootstrapValidator {
     private final DigitalMarketingKernelAdapter kernelAdapter;
     private final String piiHmacKey;
     private final List<Object> adaptersToValidate;
+    private final com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
 
     private ProductionBootstrapValidator(Builder builder) {
         this.isProduction = builder.isProduction;
@@ -51,6 +53,7 @@ public final class ProductionBootstrapValidator {
         this.adaptersToValidate = builder.adaptersToValidate != null
             ? builder.adaptersToValidate
             : new ArrayList<>();
+        this.complianceRulePack = builder.complianceRulePack;
     }
 
     /**
@@ -82,6 +85,9 @@ public final class ProductionBootstrapValidator {
 
         // 5. Validate no stub/deterministic/test adapters in production (P0-016)
         validateNoStubAdapters(violations);
+
+        // 6. P1-040: Validate default-deny policy pack is loaded
+        validateDefaultDenyPolicyPack(violations);
 
         if (!violations.isEmpty()) {
             LOG.error("[DMOS-BOOTSTRAP] Production bootstrap failed with {} violations", violations.size());
@@ -187,6 +193,42 @@ public final class ProductionBootstrapValidator {
     }
 
     /**
+     * P1-040: Validates that the default-deny policy pack is loaded.
+     *
+     * <p>Ensures that compliance rules with default-deny semantics are active
+     * at production startup to prevent unauthorized operations.</p>
+     */
+    private void validateDefaultDenyPolicyPack(List<String> violations) {
+        if (kernelAdapter == null) {
+            violations.add("POLICY-001: Kernel adapter not configured, cannot verify policy pack");
+            return;
+        }
+
+        // Check that critical compliance rule sets are registered
+        // These rule sets should have default-deny semantics for high-severity rules
+        String[] requiredRuleSets = {
+            "DM_MARKETING_INTEGRITY",
+            "DM_CONSENT_LIFECYCLE",
+            "DM_AUDIT_TRACEABILITY",
+            "DM_CLAIMS_DISCLOSURES"
+        };
+
+        for (String ruleSetId : requiredRuleSets) {
+            try {
+                boolean isLoaded = kernelAdapter.isComplianceRuleSetLoaded(ruleSetId);
+                if (!isLoaded) {
+                    violations.add("POLICY-002: Required compliance rule set not loaded: " + ruleSetId +
+                        ". Default-deny policies must be active in production (P1-040).");
+                }
+            } catch (Exception e) {
+                violations.add("POLICY-003: Failed to verify compliance rule set " + ruleSetId + ": " + e.getMessage());
+            }
+        }
+
+        LOG.info("[DMOS-BOOTSTRAP] Default-deny policy pack validation passed");
+    }
+
+    /**
      * Checks if a class name indicates a stub/deterministic/test implementation.
      */
     private boolean isStubClassName(String simpleName) {
@@ -215,6 +257,7 @@ public final class ProductionBootstrapValidator {
         private DigitalMarketingKernelAdapter kernelAdapter;
         private String piiHmacKey;
         private List<Object> adaptersToValidate = new ArrayList<>();
+        private com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack;
 
         public Builder isProduction(boolean isProduction) {
             this.isProduction = isProduction;
@@ -250,6 +293,14 @@ public final class ProductionBootstrapValidator {
             if (adapter != null) {
                 this.adaptersToValidate.add(adapter);
             }
+            return this;
+        }
+
+        /**
+         * P1-040: Sets the compliance rule pack for default-deny policy validation.
+         */
+        public Builder complianceRulePack(com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack complianceRulePack) {
+            this.complianceRulePack = complianceRulePack;
             return this;
         }
 

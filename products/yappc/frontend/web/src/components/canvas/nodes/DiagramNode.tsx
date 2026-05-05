@@ -48,11 +48,11 @@ const DiagramNodeInner = ({ data, selected }: NodeProps<DiagramCanvasNode>) => {
                 role="group"
                 aria-label={`Diagram: ${data.label || 'System Architecture Diagram'}`}
                 aria-selected={selected}
-                className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border-2 w-full h-full ${
-                    selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 dark:border-gray-700'
+                className={`bg-white dark:bg-surface rounded-xl shadow-lg border-2 w-full h-full ${
+                    selected ? 'border-info-border ring-2 ring-blue-200' : 'border-border dark:border-border'
                 }`}
             >
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-semibold p-3 border-b border-gray-100 dark:border-gray-700 drag-handle cursor-grab active:cursor-grabbing flex justify-between items-center bg-gray-50 dark:bg-gray-800 rounded-t-xl nodrag">
+                <div className="text-sm text-fg-muted dark:text-fg-muted font-semibold p-3 border-b border-border dark:border-border drag-handle cursor-grab active:cursor-grabbing flex justify-between items-center bg-surface-muted dark:bg-surface rounded-t-xl nodrag">
                     <span>{data.label || 'System Architecture Diagram'}</span>
                 </div>
                 <CanvasContentWrapper className="p-4 relative">

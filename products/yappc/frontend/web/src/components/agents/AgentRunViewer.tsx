@@ -35,11 +35,11 @@ export interface AgentRunViewerProps {
 }
 
 const STATUS_CLASSNAME: Record<AgentRunStatus, string> = {
-  QUEUED: 'bg-slate-100 text-slate-700',
-  RUNNING: 'bg-blue-100 text-blue-700',
+  QUEUED: 'bg-surface-muted text-fg',
+  RUNNING: 'bg-info-bg text-info-color',
   SUCCEEDED: 'bg-emerald-100 text-emerald-700',
-  FAILED: 'bg-red-100 text-red-700',
-  CANCELLED: 'bg-gray-200 text-gray-700',
+  FAILED: 'bg-destructive-bg text-destructive',
+  CANCELLED: 'bg-surface-muted text-fg',
 };
 
 const STATUS_ICON: Record<AgentRunStatus, React.ReactNode> = {
@@ -73,7 +73,7 @@ export const AgentRunViewer: React.FC<AgentRunViewerProps> = ({
     <Box className={`space-y-3 ${className}`}>
       <Box className="flex items-center justify-between">
         <Typography className="text-lg font-semibold">Agent Run Viewer</Typography>
-        <Typography className="text-sm text-gray-500">
+        <Typography className="text-sm text-fg-muted">
           {runningCount} running · {failedCount} failed
         </Typography>
       </Box>
@@ -81,7 +81,7 @@ export const AgentRunViewer: React.FC<AgentRunViewerProps> = ({
       {runs.length === 0 && (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-gray-600">No agent runs available.</Typography>
+            <Typography className="text-sm text-fg-muted">No agent runs available.</Typography>
           </CardContent>
         </Card>
       )}
@@ -99,20 +99,20 @@ export const AgentRunViewer: React.FC<AgentRunViewerProps> = ({
               />
             </Box>
 
-            <Typography className="text-xs text-gray-500">Stage: {run.stage}</Typography>
-            <Typography className="text-xs text-gray-500">Created: {formatTimestamp(run.createdAt)}</Typography>
-            <Typography className="text-xs text-gray-500">Started: {formatTimestamp(run.startedAt)}</Typography>
-            <Typography className="text-xs text-gray-500">Completed: {formatTimestamp(run.completedAt)}</Typography>
-            <Typography className="text-xs text-gray-500">Retries: {run.retryCount}</Typography>
+            <Typography className="text-xs text-fg-muted">Stage: {run.stage}</Typography>
+            <Typography className="text-xs text-fg-muted">Created: {formatTimestamp(run.createdAt)}</Typography>
+            <Typography className="text-xs text-fg-muted">Started: {formatTimestamp(run.startedAt)}</Typography>
+            <Typography className="text-xs text-fg-muted">Completed: {formatTimestamp(run.completedAt)}</Typography>
+            <Typography className="text-xs text-fg-muted">Retries: {run.retryCount}</Typography>
 
             {run.errorMessage && (
-              <Typography className="text-sm text-red-700">Error: {run.errorMessage}</Typography>
+              <Typography className="text-sm text-destructive">Error: {run.errorMessage}</Typography>
             )}
 
             {/* AEP run lineage — shown for SUCCEEDED and FAILED runs (C-Y4 / F-Y009) */}
             {(run.status === 'SUCCEEDED' || run.status === 'FAILED') && (
               <Box className="mt-2 border-t pt-2">
-                <Typography className="mb-1 text-xs font-medium text-gray-500">
+                <Typography className="mb-1 text-xs font-medium text-fg-muted">
                   AEP run lineage
                 </Typography>
                 <RunLineage runId={run.id} fetchLineage={fetchAepRunLineage} />

@@ -7,28 +7,51 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { currentUserAtom } from '../store/atoms';
 import { useLogout } from '../hooks/use-api';
-import { Home, PlusCircle, FileText, Layers, LogOut, Search, BarChart3, Brain, Settings } from 'lucide-react';
+import {
+  Home,
+  PlusCircle,
+  FileText,
+  Layers,
+  LogOut,
+  Search,
+  BarChart3,
+  Brain,
+  Settings,
+  Sparkles,
+  Users,
+  Languages,
+  type LucideIcon,
+} from 'lucide-react';
 import SkipLink from './SkipLink';
+import { getFlashitNavigationRoutes } from '../routeManifest';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
+const iconRegistry: Readonly<Record<string, LucideIcon>> = {
+  home: Home,
+  'plus-circle': PlusCircle,
+  'file-text': FileText,
+  layers: Layers,
+  search: Search,
+  'bar-chart-3': BarChart3,
+  brain: Brain,
+  settings: Settings,
+  sparkles: Sparkles,
+  users: Users,
+  languages: Languages,
+};
+
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const currentUser = useAtomValue(currentUserAtom);
   const logout = useLogout();
-
-  const navItems = [
-    { path: '/', label: 'Dashboard', icon: Home },
-    { path: '/capture', label: 'Capture', icon: PlusCircle },
-    { path: '/moments', label: 'Moments', icon: FileText },
-    { path: '/spheres', label: 'Spheres', icon: Layers },
-    { path: '/search', label: 'Search', icon: Search },
-    { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { path: '/reflection', label: 'Reflection', icon: Brain },
-    { path: '/settings', label: 'Settings', icon: Settings },
-  ];
+  const navItems = getFlashitNavigationRoutes('member').map((route) => ({
+    path: route.path,
+    label: route.label,
+    icon: iconRegistry[route.iconName ?? 'home'] ?? Home,
+  }));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -129,5 +152,4 @@ export default function Layout({ children }: LayoutProps) {
     </div>
   );
 }
-
 

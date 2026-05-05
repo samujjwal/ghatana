@@ -3,9 +3,13 @@ package com.ghatana.datacloud.analytics;
 import com.ghatana.datacloud.entity.Entity;
 import com.ghatana.datacloud.entity.storage.QuerySpec;
 import com.ghatana.datacloud.entity.storage.StorageConnector;
+import com.ghatana.platform.observability.MetricsCollector;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.activej.promise.Promise;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Scope;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Table;
@@ -19,6 +23,7 @@ import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.time.Instant;
 import java.util.*;
@@ -64,12 +69,15 @@ public class AnalyticsQueryEngine implements AutoCloseable {
     private final Cache<String, QueryResult> resultCache;
     private final StorageConnector storageConnector;
     private final ExecutorService blockingExecutor;
+    private final DistributedQueryTracker queryTracker;
+    private final AnalyticsMetrics metrics;
+    private final Tracer tracer;
 
     /**
      * Create engine without storage connector (legacy/testing mode).
      */
     public AnalyticsQueryEngine() {
-        this(null);
+        this(null, null, null, null);
     }
 
     /**
@@ -78,6 +86,29 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      * @param storageConnector storage connector for data access (nullable for testing)
      */
     public AnalyticsQueryEngine(StorageConnector storageConnector) {
+        this(storageConnector, null, null, null);
+    }
+
+    /**
+     * Create engine with storage connector and distributed query tracker.
+     *
+     * @param storageConnector storage connector for data access (nullable for testing)
+     * @param queryTracker distributed query tracker for cancellation (nullable for single-process)
+     */
+    public AnalyticsQueryEngine(StorageConnector storageConnector, DistributedQueryTracker queryTracker) {
+        this(storageConnector, queryTracker, null, null);
+    }
+
+    /**
+     * Create engine with full observability support.
+     *
+     * @param storageConnector storage connector for data access (nullable for testing)
+     * @param queryTracker distributed query tracker for cancellation (nullable for single-process)
+     * @param metricsCollector metrics collector for observability (nullable for no-op)
+     * @param tracer OpenTelemetry tracer for distributed tracing (nullable for no-op)
+     */
+    public AnalyticsQueryEngine(StorageConnector storageConnector, DistributedQueryTracker queryTracker,
+                                MetricsCollector metricsCollector, Tracer tracer) {
         // H6: Use Caffeine-backed ConcurrentMap for queries/plans — no coarse synchronized lock.
         this.queries = Caffeine.newBuilder().maximumSize(MAX_CACHE_ENTRIES)
                 .<String, AnalyticsQuery>build().asMap();
@@ -89,6 +120,17 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                 .expireAfterWrite(5, TimeUnit.MINUTES)
                 .build();
         this.storageConnector = storageConnector;
+        // Use platform metrics collector or no-op if not provided
+        MetricsCollector effectiveMetrics = metricsCollector != null ? metricsCollector : MetricsCollector.create();
+        Tracer effectiveTracer = tracer != null ? tracer : io.opentelemetry.api.OpenTelemetry.noop().getTracer("analytics-engine");
+        // Create tracker with observability if not provided
+        if (queryTracker != null) {
+            this.queryTracker = queryTracker;
+        } else {
+            this.queryTracker = new InMemoryQueryTracker(effectiveMetrics, effectiveTracer);
+        }
+        this.metrics = new AnalyticsMetrics(effectiveMetrics);
+        this.tracer = effectiveTracer;
         // Bounded thread pool prevents OOM under concurrent analytics burst
         this.blockingExecutor = Executors.newFixedThreadPool(MAX_ANALYTICS_THREADS, r -> {
             Thread t = new Thread(r, "analytics-query-worker");
@@ -111,41 +153,118 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         Objects.requireNonNull(queryText, "queryText cannot be null");
 
         String queryId = UUID.randomUUID().toString();
+        Instant submittedAt = Instant.now();
+        long submissionStart = System.currentTimeMillis();
+
+        // Set up MDC for structured logging
+        MDC.put("tenantId", tenantId);
+        MDC.put("queryId", queryId);
+        MDC.put("queryType", "unknown");
 
         AnalyticsQuery query = AnalyticsQuery.builder()
             .id(queryId)
             .tenantId(tenantId)
             .queryText(queryText)
             .parameters(new HashMap<>(parameters))
-            .submittedAt(Instant.now())
+            .submittedAt(submittedAt)
             .status("SUBMITTED")
             .build();
 
         queries.put(queryId, query);
 
-        logger.debug("Query submitted: {} (tenant: {})", queryId, tenantId);
+        // Create distributed tracing span
+        Span span = tracer.spanBuilder("analytics.query.submit")
+            .setAttribute("tenant_id", tenantId)
+            .setAttribute("query_id", queryId)
+            .setAttribute("query_text", queryText.substring(0, Math.min(200, queryText.length())))
+            .startSpan();
+        try (Scope scope = span.makeCurrent()) {
+            logger.info("Query submitted: tenantId={}, queryId={}, queryText={}", tenantId, queryId, queryText);
+        }
+
+        // Register query with distributed tracker for cancellation support
+        Promise<Void> registration = queryTracker.registerQuery(queryId, tenantId, queryText, submittedAt);
 
         // Plan generation can invoke SQL parsing multiple times; keep it off the event loop.
-        return Promise.ofBlocking(blockingExecutor, () -> generateQueryPlan(query))
+        return registration.then(() -> Promise.ofBlocking(blockingExecutor, () -> generateQueryPlan(query)))
             .then(plan -> {
                 queryPlans.put(queryId, plan);
-                return executeQuery(query, plan)
+                MDC.put("queryType", plan.getQueryType().name());
+                metrics.recordQuerySubmitted(plan.getQueryType().name(), tenantId, queryId);
+                metrics.recordEstimatedCost(plan.getQueryType().name(), tenantId, plan.getEstimatedCost());
+                long submissionDuration = System.currentTimeMillis() - submissionStart;
+                metrics.recordSubmissionDuration(plan.getQueryType().name(), tenantId, submissionDuration);
+                span.addEvent("query_planned", 
+                    io.opentelemetry.api.common.Attributes.of(
+                        "query_type", plan.getQueryType().name(),
+                        "estimated_cost", plan.getEstimatedCost(),
+                        "data_sources", plan.getDataSources().toString()));
+                return executeQuery(query, plan, span)
                     .then(result -> {
                         query.setStatus("COMPLETED");
                         query.setCompletedAt(Instant.now());
                         resultCache.put(queryId, result);
-                        logger.debug("Query completed: {}", queryId);
+                        logger.info("Query completed: queryId={}, rowCount={}, durationMs={}", 
+                            queryId, result.getRowCount(), result.getExecutionTimeMs());
+                        metrics.recordQueryCompleted(plan.getQueryType().name(), tenantId, result.getRowCount());
+                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
                         return Promise.of(result);
                     });
             })
             .whenComplete((result, exception) -> {
-                if (exception != null) {
-                    query.setStatus("FAILED");
-                    query.setCompletedAt(Instant.now());
+                String finalStatus = exception != null ? "FAILED" : "COMPLETED";
+                // If the query was already marked as CANCELLED by the cancellation check, preserve that status
+                if ("CANCELLED".equals(query.getStatus())) {
+                    finalStatus = "CANCELLED";
+                    metrics.recordQueryCancelled(MDC.get("queryType"), tenantId);
+                    span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Query cancelled");
+                } else if (exception != null) {
                     query.setError(exception.getMessage());
-                    logger.error("Query failed: {}", queryId, exception);
+                    logger.error("Query failed: queryId={}, error={}", queryId, exception.getMessage(), exception);
+                    metrics.recordQueryFailed(MDC.get("queryType"), tenantId, exception instanceof Exception ? (Exception) exception : new RuntimeException(exception));
+                    span.recordException(exception);
+                    span.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, exception.getMessage());
+                } else {
+                    metrics.recordQueryCompleted(MDC.get("queryType"), tenantId, result != null ? result.getRowCount() : 0);
                 }
+                query.setStatus(finalStatus);
+                query.setCompletedAt(Instant.now());
+                // Cleanup tracker on completion
+                queryTracker.markComplete(queryId, finalStatus).whenComplete((v, e) -> {
+                    if (e != null) {
+                        logger.warn("Failed to mark query complete in tracker: queryId={}", queryId, e);
+                    }
+                });
+                // Clear MDC
+                MDC.remove("tenantId");
+                MDC.remove("queryId");
+                MDC.remove("queryType");
+                span.end();
             });
+    }
+
+    /**
+     * Cancels a running query by ID.
+     *
+     * @param queryId unique query identifier
+     * @param tenantId tenant identifier for authorization
+     * @return promise of cancellation result
+     */
+    public Promise<DistributedQueryTracker.CancellationResult> cancelQuery(String queryId, String tenantId) {
+        Objects.requireNonNull(queryId, "queryId cannot be null");
+        Objects.requireNonNull(tenantId, "tenantId cannot be null");
+        return queryTracker.cancelQuery(queryId, tenantId);
+    }
+
+    /**
+     * Checks whether a query has been cancelled.
+     *
+     * @param queryId unique query identifier
+     * @return promise of cancellation status
+     */
+    public Promise<Boolean> isQueryCancelled(String queryId) {
+        Objects.requireNonNull(queryId, "queryId cannot be null");
+        return queryTracker.isCancelled(queryId);
     }
 
     /**
@@ -193,19 +312,39 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query
      * @param plan query plan with data source routing
+     * @param parentSpan distributed tracing span
      * @return promise of query result
      */
-    private Promise<QueryResult> executeQuery(AnalyticsQuery query, QueryPlan plan) {
+    private Promise<QueryResult> executeQuery(AnalyticsQuery query, QueryPlan plan, Span parentSpan) {
         long startTime = System.currentTimeMillis();
 
         query.setStatus("RUNNING");
+
+        // Create execution span
+        Span executionSpan = tracer.spanBuilder("analytics.query.execute")
+            .setParent(parentSpan)
+            .setAttribute("query_type", plan.getQueryType().name())
+            .setAttribute("data_sources", plan.getDataSources().toString())
+            .startSpan();
 
         // Extract pagination parameters
         int offset = extractOffset(query.getQueryText(), query.getParameters());
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
-        // Execute query against real data sources
-        return executeQueryAgainstDataSources(query, plan)
+        // Check for cancellation before starting execution
+        return isQueryCancelled(query.getId())
+            .then(cancelled -> {
+                if (cancelled) {
+                    query.setStatus("CANCELLED");
+                    query.setCompletedAt(Instant.now());
+                    query.setError("Query cancelled by user");
+                    logger.warn("Query cancelled before execution: queryId={}", query.getId());
+                    executionSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Query cancelled");
+                    executionSpan.end();
+                    throw new QueryCancelledException("Query cancelled by user");
+                }
+                return executeQueryAgainstDataSources(query, plan, executionSpan);
+            })
             .then(rows -> {
                 long duration = System.currentTimeMillis() - startTime;
 
@@ -228,7 +367,20 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                     .totalRows(rows.size())
                     .build();
 
+                metrics.recordExecutionDuration(plan.getQueryType().name(), query.getTenantId(), 
+                    plan.getDataSources().isEmpty() ? "unknown" : plan.getDataSources().get(0), duration);
+                executionSpan.setAttribute("row_count", result.getRowCount());
+                executionSpan.setAttribute("duration_ms", duration);
+                executionSpan.end();
+
                 return Promise.of(result);
+            })
+            .whenComplete((result, exception) -> {
+                if (exception != null && !(exception instanceof QueryCancelledException)) {
+                    executionSpan.recordException(exception);
+                    executionSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, exception.getMessage());
+                    executionSpan.end();
+                }
             });
     }
 
@@ -246,21 +398,26 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query
      * @param plan query plan
+     * @param executionSpan distributed tracing span
      * @return promise of result rows
      */
     private Promise<List<Map<String, Object>>> executeQueryAgainstDataSources(
-            AnalyticsQuery query, QueryPlan plan) {
+            AnalyticsQuery query, QueryPlan plan, Span executionSpan) {
 
         if (storageConnector == null) {
-            logger.warn("No StorageConnector configured; returning empty results for query: {}", query.getId());
+            logger.warn("No StorageConnector configured; returning empty results for query: queryId={}", query.getId());
+            executionSpan.addEvent("no_storage_connector");
             return Promise.of(List.of());
         }
 
+        metrics.recordQueryExecuted(plan.getQueryType().name(), query.getTenantId(), 
+            plan.getDataSources().isEmpty() ? "unknown" : plan.getDataSources().get(0));
+
         return switch (plan.getQueryType()) {
-            case SELECT -> executeSelect(query, plan);
-            case AGGREGATE -> executeAggregate(query, plan);
-            case TIMESERIES -> executeTimeSeries(query, plan);
-            case JOIN -> executeJoin(query, plan);
+            case SELECT -> executeSelect(query, plan, executionSpan);
+            case AGGREGATE -> executeAggregate(query, plan, executionSpan);
+            case TIMESERIES -> executeTimeSeries(query, plan, executionSpan);
+            case JOIN -> executeJoin(query, plan, executionSpan);
         };
     }
 
@@ -269,13 +426,20 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query with SQL text and parameters
      * @param plan query plan with extracted data sources
+     * @param executionSpan distributed tracing span
      * @return promise of result rows
      */
-    private Promise<List<Map<String, Object>>> executeSelect(AnalyticsQuery query, QueryPlan plan) {
+    private Promise<List<Map<String, Object>>> executeSelect(AnalyticsQuery query, QueryPlan plan, Span executionSpan) {
         String tenantId = query.getTenantId();
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
+
+        Span selectSpan = tracer.spanBuilder("analytics.query.select")
+            .setParent(executionSpan)
+            .setAttribute("collection", collectionName)
+            .setAttribute("limit", limit)
+            .startSpan();
 
         QuerySpec spec = QuerySpec.builder()
                 .filter(filterExpr)
@@ -286,9 +450,21 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
         // Use collection-name overload to avoid UUID-to-name roundtrip
         return storageConnector.query(tenantId, collectionName, spec)
-                .map(qr -> qr.entities().stream()
+                .map(qr -> {
+                    int rowCount = qr.entities().size();
+                    selectSpan.setAttribute("row_count", rowCount);
+                    selectSpan.end();
+                    return qr.entities().stream()
                         .map(this::entityToRow)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList());
+                })
+                .whenComplete((result, exception) -> {
+                    if (exception != null) {
+                        selectSpan.recordException(exception);
+                        selectSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+                        selectSpan.end();
+                    }
+                });
     }
 
     /**
@@ -299,14 +475,21 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query
      * @param plan query plan
+     * @param executionSpan distributed tracing span
      * @return promise of aggregated result rows
      */
-    private Promise<List<Map<String, Object>>> executeAggregate(AnalyticsQuery query, QueryPlan plan) {
+    private Promise<List<Map<String, Object>>> executeAggregate(AnalyticsQuery query, QueryPlan plan, Span executionSpan) {
         String tenantId = query.getTenantId();
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
         String groupByField = extractGroupByField(query.getQueryText());
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
+
+        Span aggregateSpan = tracer.spanBuilder("analytics.query.aggregate")
+            .setParent(executionSpan)
+            .setAttribute("collection", collectionName)
+            .setAttribute("group_by_field", groupByField != null ? groupByField : "none")
+            .startSpan();
 
         logger.debug("Executing AGGREGATE: collection={}, groupBy={}", collectionName, groupByField);
 
@@ -319,16 +502,19 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         return storageConnector.query(tenantId, collectionName, spec)
                 .map(qr -> {
                     List<Entity> entities = qr.entities();
+                    aggregateSpan.setAttribute("input_rows", entities.size());
                     if (groupByField == null) {
                         Map<String, Object> row = new LinkedHashMap<>();
                         row.put("count", (long) entities.size());
+                        aggregateSpan.setAttribute("output_rows", 1);
+                        aggregateSpan.end();
                         return List.of(row);
                     }
                     Map<String, List<Entity>> grouped = entities.stream()
                             .filter(e -> e.getData() != null && e.getData().containsKey(groupByField))
                             .collect(Collectors.groupingBy(
                                     e -> String.valueOf(e.getData().get(groupByField))));
-                    return grouped.entrySet().stream()
+                    List<Map<String, Object>> result = grouped.entrySet().stream()
                             .map(entry -> {
                                 Map<String, Object> row = new LinkedHashMap<>();
                                 row.put(groupByField, entry.getKey());
@@ -336,6 +522,17 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                                 return row;
                             })
                             .collect(Collectors.toList());
+                    aggregateSpan.setAttribute("output_rows", result.size());
+                    aggregateSpan.setAttribute("group_count", grouped.size());
+                    aggregateSpan.end();
+                    return result;
+                })
+                .whenComplete((result, exception) -> {
+                    if (exception != null) {
+                        aggregateSpan.recordException(exception);
+                        aggregateSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+                        aggregateSpan.end();
+                    }
                 });
     }
 
@@ -344,13 +541,19 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query
      * @param plan query plan
+     * @param executionSpan distributed tracing span
      * @return promise of time-windowed result rows
      */
-    private Promise<List<Map<String, Object>>> executeTimeSeries(AnalyticsQuery query, QueryPlan plan) {
+    private Promise<List<Map<String, Object>>> executeTimeSeries(AnalyticsQuery query, QueryPlan plan, Span executionSpan) {
         String tenantId = query.getTenantId();
         String collectionName = extractPrimaryCollection(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
+
+        Span timeseriesSpan = tracer.spanBuilder("analytics.query.timeseries")
+            .setParent(executionSpan)
+            .setAttribute("collection", collectionName)
+            .startSpan();
 
         // Extract time window from query parameters or text
         Instant windowStart = query.getParameters() != null && query.getParameters().containsKey("timeWindowStart")
@@ -359,6 +562,9 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         Instant windowEnd = query.getParameters() != null && query.getParameters().containsKey("timeWindowEnd")
                 ? Instant.parse(query.getParameters().get("timeWindowEnd").toString())
                 : Instant.now();
+
+        timeseriesSpan.setAttribute("window_start", windowStart.toString());
+        timeseriesSpan.setAttribute("window_end", windowEnd.toString());
 
         QuerySpec spec = QuerySpec.builder()
                 .filter(filterExpr)
@@ -370,9 +576,21 @@ public class AnalyticsQueryEngine implements AutoCloseable {
                 collectionName, windowStart, windowEnd);
 
         return storageConnector.query(tenantId, collectionName, spec)
-                .map(qr -> qr.entities().stream()
+                .map(qr -> {
+                    int rowCount = qr.entities().size();
+                    timeseriesSpan.setAttribute("row_count", rowCount);
+                    timeseriesSpan.end();
+                    return qr.entities().stream()
                         .map(this::entityToRow)
-                        .collect(Collectors.toList()));
+                        .collect(Collectors.toList());
+                })
+                .whenComplete((result, exception) -> {
+                    if (exception != null) {
+                        timeseriesSpan.recordException(exception);
+                        timeseriesSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+                        timeseriesSpan.end();
+                    }
+                });
     }
 
     /**
@@ -383,15 +601,24 @@ public class AnalyticsQueryEngine implements AutoCloseable {
      *
      * @param query analytics query
      * @param plan query plan with multiple data sources
+     * @param executionSpan distributed tracing span
      * @return promise of joined result rows
      */
-    private Promise<List<Map<String, Object>>> executeJoin(AnalyticsQuery query, QueryPlan plan) {
+    private Promise<List<Map<String, Object>>> executeJoin(AnalyticsQuery query, QueryPlan plan, Span executionSpan) {
         String tenantId = query.getTenantId();
         List<String> collections = extractJoinCollections(query.getQueryText());
         int limit = resolveQueryLimit(query.getQueryText(), query.getParameters());
 
+        Span joinSpan = tracer.spanBuilder("analytics.query.join")
+            .setParent(executionSpan)
+            .setAttribute("collections", collections.toString())
+            .setAttribute("limit", limit)
+            .startSpan();
+
         if (collections.size() < 2) {
-            logger.warn("JOIN query requires at least 2 collections, found: {}", collections.size());
+            logger.warn("JOIN query requires at least 2 collections, found: collections={}", collections.size());
+            joinSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Insufficient collections");
+            joinSpan.end();
             return Promise.of(List.of());
         }
 
@@ -399,6 +626,10 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         String rightCollection = collections.get(1);
         String joinKey = extractJoinKey(query.getQueryText());
         String filterExpr = extractWhereClause(query.getQueryText());
+
+        joinSpan.setAttribute("left_collection", leftCollection);
+        joinSpan.setAttribute("right_collection", rightCollection);
+        joinSpan.setAttribute("join_key", joinKey);
 
         logger.debug("Executing JOIN: left={}, right={}, key={}", leftCollection, rightCollection, joinKey);
 
@@ -412,15 +643,23 @@ public class AnalyticsQueryEngine implements AutoCloseable {
         return leftPromise.combine(rightPromise, (leftEntities, rightEntities) -> {
             // DC3-M2: Guard against OOM from massive in-memory joins
             if (leftEntities.size() > MAX_JOIN_SIDE_SIZE) {
+                joinSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Left side too large");
+                joinSpan.end();
                 throw new IllegalStateException(
                     "JOIN aborted: left side " + leftEntities.size() + " rows exceeds MAX_JOIN_SIDE_SIZE=" +
                     MAX_JOIN_SIDE_SIZE + ". Use push-down via ClickHouse/Trino for large joins.");
             }
             if (rightEntities.size() > MAX_JOIN_SIDE_SIZE) {
+                joinSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR, "Right side too large");
+                joinSpan.end();
                 throw new IllegalStateException(
                     "JOIN aborted: right side " + rightEntities.size() + " rows exceeds MAX_JOIN_SIDE_SIZE=" +
                     MAX_JOIN_SIDE_SIZE + ". Use push-down via ClickHouse/Trino for large joins.");
             }
+            
+            joinSpan.setAttribute("left_rows", leftEntities.size());
+            joinSpan.setAttribute("right_rows", rightEntities.size());
+            
             // Build hash index on right side
             Map<String, List<Map<String, Object>>> rightIndex = new HashMap<>();
             for (Entity re : rightEntities) {
@@ -449,7 +688,17 @@ public class AnalyticsQueryEngine implements AutoCloseable {
 
             logger.debug("JOIN produced {} rows from {}x{} inputs",
                     joined.size(), leftEntities.size(), rightEntities.size());
+            
+            joinSpan.setAttribute("joined_rows", joined.size());
+            joinSpan.end();
             return joined;
+        })
+        .whenComplete((result, exception) -> {
+            if (exception != null) {
+                joinSpan.recordException(exception);
+                joinSpan.setStatus(io.opentelemetry.api.trace.StatusCode.ERROR);
+                joinSpan.end();
+            }
         });
     }
 

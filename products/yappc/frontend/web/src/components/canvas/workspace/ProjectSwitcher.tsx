@@ -113,7 +113,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
 
             <DialogContent className="p-0">
                 {/* Search Header */}
-                <Box className="p-4 pb-4 border-b border-solid border-gray-200 dark:border-gray-700">
+                <Box className="p-4 pb-4 border-b border-solid border-border dark:border-border">
                     <TextField
                         fullWidth
                         placeholder="Search projects..."
@@ -146,7 +146,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
                                 key={project.id}
                                 selected={project.id === currentProjectId}
                                 onClick={() => handleSelectProject(project.id)}
-                                className="py-3 px-6 border-blue-600 hover:bg-gray-100 hover:dark:bg-gray-800" style={{ borderLeft: project.id === currentProjectId ? '3px solid' : '3px solid transparent' }}
+                                className="py-3 px-6 border-info-border hover:bg-surface-muted hover:dark:bg-surface" style={{ borderLeft: project.id === currentProjectId ? '3px solid' : '3px solid transparent' }}
                             >
                                 <ListItemIcon className="min-w-[40px]">
                                     {project.id === currentProjectId ? (
@@ -175,7 +175,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
                                         </Box>
                                     }
                                     secondary={
-                                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                             Last edited {project.lastEdited}
                                         </Typography>
                                     }
@@ -192,7 +192,7 @@ export const ProjectSwitcher: React.FC<ProjectSwitcherProps> = ({
                 <Divider />
 
                 {/* Footer Actions */}
-                <Box className="p-4 bg-gray-50 dark:bg-gray-950">
+                <Box className="p-4 bg-surface-muted dark:bg-surface">
                     <Button
                         fullWidth
                         variant="solid"

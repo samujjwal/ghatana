@@ -11,6 +11,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/context/AuthContext';
+import { dmosRouteManifest, isRouteAllowedForRoles } from '@/routeManifest';
 
 vi.mock('@/lib/feature-flags', () => ({
   isFeatureEnabled: () => false,
@@ -58,6 +59,23 @@ function renderRoute(
 }
 
 describe('Route contracts', () => {
+  it('exposes role/persona/tier metadata for every manifest route', () => {
+    dmosRouteManifest.forEach((route) => {
+      expect(route.path).toBeTruthy();
+      expect(route.label).toBeTruthy();
+      expect(route.minimumRole).toBeTruthy();
+      expect(route.personas?.length ?? 0).toBeGreaterThan(0);
+      expect(route.tiers?.length ?? 0).toBeGreaterThan(0);
+    });
+  });
+
+  it('rejects budget route access for viewer-only roles', () => {
+    const budgetRoute = dmosRouteManifest.find((route) => route.path.includes('/budget'));
+    expect(budgetRoute).toBeDefined();
+    expect(isRouteAllowedForRoles(budgetRoute!, ['viewer'])).toBe(false);
+    expect(isRouteAllowedForRoles(budgetRoute!, ['marketing-director'])).toBe(true);
+  });
+
   it('renders login page at /login', async () => {
     const { LoginPage } = await import('@/pages/LoginPage');
     renderRoute('/login', <Routes><Route path="/login" element={<LoginPage />} /></Routes>);

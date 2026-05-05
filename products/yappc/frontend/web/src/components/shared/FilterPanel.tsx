@@ -153,7 +153,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                                 e.stopPropagation();
                                 onClear();
                             }}
-                            className="flex items-center gap-1 px-2 py-1 text-xs text-error-color hover:bg-red-50 rounded transition-colors"
+                            className="flex items-center gap-1 px-2 py-1 text-xs text-error-color hover:bg-destructive-bg rounded transition-colors"
                         >
                             <Clear className="w-3 h-3" />
                             Clear

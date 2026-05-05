@@ -28,6 +28,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"],
       "@ghatana/flashit-shared": ["../../libs/ts/shared/src/index.ts"]
     }
   },

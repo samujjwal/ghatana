@@ -30,10 +30,10 @@ const INITIAL_STEPS: SetupStep[] = [
 ];
 
 const STATUS_STYLES: Record<StepStatus, { icon: string; color: string }> = {
-  pending: { icon: '⏳', color: 'text-gray-400' },
-  running: { icon: '🔄', color: 'text-blue-600' },
-  completed: { icon: '✅', color: 'text-green-600' },
-  failed: { icon: '❌', color: 'text-red-600' },
+  pending: { icon: '⏳', color: 'text-fg-muted' },
+  running: { icon: '🔄', color: 'text-info-color' },
+  completed: { icon: '✅', color: 'text-success-color' },
+  failed: { icon: '❌', color: 'text-destructive' },
 };
 
 // ============================================================================
@@ -84,22 +84,22 @@ const SetupProgressPage: React.FC = () => {
   const overallProgress = Math.round((completedCount / steps.length) * 100);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-surface-muted p-6">
       <div className="mx-auto max-w-3xl">
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">Setup Progress</h1>
-        <p className="mb-6 text-gray-600">Your project is being configured.</p>
+        <h1 className="mb-2 text-3xl font-bold text-fg">Setup Progress</h1>
+        <p className="mb-6 text-fg-muted">Your project is being configured.</p>
 
         {/* Overall Progress */}
         <div className="mb-8 rounded-lg border bg-white p-5 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-fg">
               {completedCount}/{steps.length} steps completed
             </span>
-            <span className="text-sm font-bold text-blue-600">{overallProgress}%</span>
+            <span className="text-sm font-bold text-info-color">{overallProgress}%</span>
           </div>
-          <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+          <div className="h-3 overflow-hidden rounded-full bg-surface-muted">
             <div
-              className="h-full rounded-full bg-blue-600 transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${overallProgress}%` }}
             />
           </div>
@@ -121,27 +121,27 @@ const SetupProgressPage: React.FC = () => {
                     <span className="text-xl">{style.icon}</span>
                     {idx < steps.length - 1 && (
                       <div className={`mt-1 h-4 w-0.5 ${
-                        step.status === 'completed' ? 'bg-green-300' : 'bg-gray-200'
+                        step.status === 'completed' ? 'bg-success-bg' : 'bg-surface-muted'
                       }`} />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`font-semibold ${style.color}`}>{step.label}</p>
-                    <p className="text-sm text-gray-500">{step.description}</p>
+                    <p className="text-sm text-fg-muted">{step.description}</p>
                   </div>
                   {step.duration && (
-                    <span className="text-xs text-gray-400">{step.duration}</span>
+                    <span className="text-xs text-fg-muted">{step.duration}</span>
                   )}
                   {step.status === 'running' && (
-                    <span className="text-xs font-medium text-blue-600">{step.progress}%</span>
+                    <span className="text-xs font-medium text-info-color">{step.progress}%</span>
                   )}
                 </button>
 
                 {/* Progress bar for running step */}
                 {step.status === 'running' && (
-                  <div className="mx-4 mb-2 h-1.5 overflow-hidden rounded-full bg-gray-200">
+                  <div className="mx-4 mb-2 h-1.5 overflow-hidden rounded-full bg-surface-muted">
                     <div
-                      className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                      className="h-full rounded-full bg-info-bg transition-all duration-300"
                       style={{ width: `${step.progress}%` }}
                     />
                   </div>
@@ -149,7 +149,7 @@ const SetupProgressPage: React.FC = () => {
 
                 {/* Expandable log */}
                 {isExpanded && step.logs.length > 0 && (
-                  <div className="mx-4 mb-4 rounded bg-gray-900 p-3 font-mono text-xs text-green-400">
+                  <div className="mx-4 mb-4 rounded bg-surface p-3 font-mono text-xs text-success-color">
                     {step.logs.map((log, li) => (
                       <div key={li}>$ {log}</div>
                     ))}

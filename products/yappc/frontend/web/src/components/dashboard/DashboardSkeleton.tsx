@@ -24,7 +24,7 @@ export function DashboardSkeleton() {
                     </div>
                     <Paper variant="outlined" className="rounded-lg overflow-hidden">
                         {[1, 2, 3].map((i) => (
-                            <Box key={i} className="p-4 border-gray-200 dark:border-gray-700" style={{ borderBottom: i < 3 ? 1 : 0 }}>
+                            <Box key={i} className="p-4 border-border dark:border-border" style={{ borderBottom: i < 3 ? 1 : 0 }}>
                                 <div className="flex justify-between mb-2">
                                     <Skeleton className="h-6 w-3/4" />
                                     <Skeleton className="h-6 w-8" />

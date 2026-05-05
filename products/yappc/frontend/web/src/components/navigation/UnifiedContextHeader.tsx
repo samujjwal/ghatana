@@ -353,7 +353,7 @@ export function UnifiedContextHeader({
             {userMenuAnchor ? (
               <Box
                 id="user-menu"
-                className="absolute right-4 top-full z-50 mt-2 min-w-[240px] rounded-md border border-divider bg-white shadow-lg dark:bg-gray-900"
+                className="absolute right-4 top-full z-50 mt-2 min-w-[240px] rounded-md border border-divider bg-white shadow-lg dark:bg-surface"
               >
               {/* User Info */}
               <div className="px-4 py-3 border-b border-border-subtle">

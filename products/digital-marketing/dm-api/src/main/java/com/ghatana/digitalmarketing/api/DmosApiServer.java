@@ -528,7 +528,7 @@ public final class DmosApiServer extends Launcher {
         LOG.info("DmosHttpContextFactory instantiated with productionMode={}", productionMode);
 
         WorkspaceService workspaceService = get(WorkspaceService.class);
-        register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop));
+        register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop, httpContextFactory));
 
         CampaignService campaignService = get(CampaignService.class);
         register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop, metrics, telemetry, httpContextFactory));
@@ -546,7 +546,7 @@ public final class DmosApiServer extends Launcher {
         register(DmosBudgetRecommendationServlet.class, new DmosBudgetRecommendationServlet(budgetService, eventloop, metrics, telemetry, httpContextFactory));
 
         WebsiteAuditService websiteAuditService = get(WebsiteAuditService.class);
-        register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop));
+        register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop, httpContextFactory));
 
         LOG.info("Core servlets wired - additional servlets pending");
     }

@@ -63,8 +63,8 @@ const StatusBadge: React.FC<{ status: 'healthy' | 'degraded' | 'down' }> = ({
 }) => {
   const config = {
     healthy: { label: 'Healthy', color: 'bg-emerald-500', textColor: 'text-emerald-400' },
-    degraded: { label: 'Degraded', color: 'bg-amber-500', textColor: 'text-amber-400' },
-    down: { label: 'Down', color: 'bg-red-500', textColor: 'text-red-400' },
+    degraded: { label: 'Degraded', color: 'bg-warning-bg', textColor: 'text-warning-color' },
+    down: { label: 'Down', color: 'bg-destructive-bg', textColor: 'text-destructive' },
   };
 
   const { label, color, textColor } = config[status];
@@ -78,15 +78,15 @@ const StatusBadge: React.FC<{ status: 'healthy' | 'degraded' | 'down' }> = ({
 };
 
 const ServiceCard: React.FC<{ service: ServiceStatus }> = ({ service }) => (
-  <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-colors">
+  <div className="p-4 rounded-xl bg-surface border border-border hover:border-border transition-colors">
     <div className="flex items-start justify-between mb-3">
       <div className="flex items-center gap-3">
         <div
           className={cn(
             'p-2 rounded-lg',
             service.status === 'healthy' && 'bg-emerald-500/10 text-emerald-400',
-            service.status === 'degraded' && 'bg-amber-500/10 text-amber-400',
-            service.status === 'down' && 'bg-red-500/10 text-red-400'
+            service.status === 'degraded' && 'bg-warning-bg/10 text-warning-color',
+            service.status === 'down' && 'bg-destructive-bg/10 text-destructive'
           )}
         >
           <Server className="w-4 h-4" />
@@ -99,15 +99,15 @@ const ServiceCard: React.FC<{ service: ServiceStatus }> = ({ service }) => (
     </div>
     <div className="grid grid-cols-3 gap-2 text-xs">
       <div>
-        <div className="text-zinc-500">Latency</div>
+        <div className="text-fg-muted">Latency</div>
         <div className="text-white font-medium">{service.latency}ms</div>
       </div>
       <div>
-        <div className="text-zinc-500">Uptime</div>
+        <div className="text-fg-muted">Uptime</div>
         <div className="text-white font-medium">{service.uptime}%</div>
       </div>
       <div>
-        <div className="text-zinc-500">Req/s</div>
+        <div className="text-fg-muted">Req/s</div>
         <div className="text-white font-medium">{service.requests}</div>
       </div>
     </div>
@@ -115,15 +115,15 @@ const ServiceCard: React.FC<{ service: ServiceStatus }> = ({ service }) => (
 );
 
 const MetricTile: React.FC<MetricCard> = ({ label, value, change, trend, icon }) => (
-  <div className="p-6 rounded-xl bg-zinc-900 border border-zinc-800">
+  <div className="p-6 rounded-xl bg-surface border border-border">
     <div className="flex items-start justify-between mb-4">
-      <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400">{icon}</div>
+      <div className="p-2 rounded-lg bg-surface text-fg-muted">{icon}</div>
       <div
         className={cn(
           'flex items-center gap-1 text-sm',
           trend === 'up' && 'text-emerald-400',
-          trend === 'down' && 'text-red-400',
-          trend === 'neutral' && 'text-zinc-400'
+          trend === 'down' && 'text-destructive',
+          trend === 'neutral' && 'text-fg-muted'
         )}
       >
         {trend === 'up' && <TrendingUp className="w-4 h-4" />}
@@ -133,7 +133,7 @@ const MetricTile: React.FC<MetricCard> = ({ label, value, change, trend, icon })
       </div>
     </div>
     <div className="text-3xl font-bold text-white mb-1">{value}</div>
-    <div className="text-sm text-zinc-400">{label}</div>
+    <div className="text-sm text-fg-muted">{label}</div>
   </div>
 );
 
@@ -197,21 +197,21 @@ const OpsDashboardPage: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Operations</h1>
-          <p className="text-zinc-400">Monitor system health and incidents</p>
+          <p className="text-fg-muted">Monitor system health and incidents</p>
         </div>
         <div className="flex items-center gap-3">
           <NavLink
             to={ROUTES.operations.alerts(projectId || '')}
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg',
-              'bg-zinc-800 border border-zinc-700 text-zinc-300',
-              'hover:border-zinc-600 transition-colors'
+              'bg-surface border border-border text-fg-muted',
+              'hover:border-border transition-colors'
             )}
           >
             <Bell className="w-4 h-4" />
             Alerts
             {activeAlertsList.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-xs">
+              <span className="px-2 py-0.5 rounded-full bg-destructive-bg text-white text-xs">
                 {activeAlertsList.length}
               </span>
             )}
@@ -221,7 +221,7 @@ const OpsDashboardPage: React.FC = () => {
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-lg font-medium',
               activeIncidentsList.length > 0
-                ? 'bg-red-500 text-white hover:bg-red-600'
+                ? 'bg-destructive-bg text-white hover:bg-destructive-bg'
                 : 'bg-violet-500 text-white hover:bg-violet-600',
               'transition-colors'
             )}
@@ -239,19 +239,19 @@ const OpsDashboardPage: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           className={cn(
             'mb-6 p-4 rounded-xl border',
-            'bg-red-500/10 border-red-500/30'
+            'bg-destructive-bg/10 border-destructive-border/30'
           )}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 rounded-lg bg-red-500/20">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="p-2 rounded-lg bg-destructive-bg/20">
+                <AlertTriangle className="w-5 h-5 text-destructive" />
               </div>
               <div>
                 <div className="font-medium text-white">
                   {activeIncidentsList[0].title}
                 </div>
-                <div className="text-sm text-zinc-400">
+                <div className="text-sm text-fg-muted">
                   Severity: {activeIncidentsList[0].severity} • Started{' '}
                   {activeIncidentsList[0].startedAt || 'recently'}
                 </div>
@@ -259,7 +259,7 @@ const OpsDashboardPage: React.FC = () => {
             </div>
             <NavLink
               to={ROUTES.operations.incidents(projectId || '', activeIncidentsList[0].id)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive-bg text-white hover:bg-destructive-bg transition-colors"
             >
               View Incident
               <ArrowRight className="w-4 h-4" />
@@ -299,7 +299,7 @@ const OpsDashboardPage: React.FC = () => {
         {/* Quick Links & Recent Incidents */}
         <div className="space-y-6">
           {/* Quick Links */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Quick Access</h2>
             <div className="space-y-2">
               {[
@@ -332,22 +332,22 @@ const OpsDashboardPage: React.FC = () => {
                 <NavLink
                   key={link.label}
                   to={link.href}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors group"
                 >
-                  <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400 group-hover:text-violet-400 transition-colors">
+                  <div className="p-2 rounded-lg bg-surface text-fg-muted group-hover:text-violet-400 transition-colors">
                     {link.icon}
                   </div>
-                  <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
+                  <span className="text-sm text-fg-muted group-hover:text-white transition-colors">
                     {link.label}
                   </span>
-                  <ArrowRight className="w-4 h-4 ml-auto text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                  <ArrowRight className="w-4 h-4 ml-auto text-fg-muted group-hover:text-fg-muted transition-colors" />
                 </NavLink>
               ))}
             </div>
           </div>
 
           {/* Recent Incidents */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-white">Recent Incidents</h2>
               <NavLink
@@ -362,7 +362,7 @@ const OpsDashboardPage: React.FC = () => {
                 <NavLink
                   key={incident.id}
                   to={ROUTES.operations.incidents(projectId || '', incident.id)}
-                  className="block p-3 rounded-lg hover:bg-zinc-800 transition-colors"
+                  className="block p-3 rounded-lg hover:bg-surface transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -371,15 +371,15 @@ const OpsDashboardPage: React.FC = () => {
                         incident.status === 'resolved'
                           ? 'bg-emerald-500'
                           : incident.severity === 'critical'
-                          ? 'bg-red-500'
-                          : 'bg-amber-500'
+                          ? 'bg-destructive-bg'
+                          : 'bg-warning-bg'
                       )}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-white truncate">
                         {incident.title}
                       </div>
-                      <div className="text-xs text-zinc-500 mt-1">
+                      <div className="text-xs text-fg-muted mt-1">
                         {incident.status} • {incident.startedAt}
                       </div>
                     </div>
@@ -389,14 +389,14 @@ const OpsDashboardPage: React.FC = () => {
               {incidents.length === 0 && (
                 <div className="text-center py-6">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
-                  <p className="text-sm text-zinc-400">No recent incidents</p>
+                  <p className="text-sm text-fg-muted">No recent incidents</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* System Resources */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">System Resources</h2>
             <div className="space-y-4">
               {[
@@ -406,20 +406,20 @@ const OpsDashboardPage: React.FC = () => {
               ].map((resource) => (
                 <div key={resource.label}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2 text-sm text-zinc-400">
+                    <div className="flex items-center gap-2 text-sm text-fg-muted">
                       {resource.icon}
                       {resource.label}
                     </div>
                     <span className="text-sm font-medium text-white">{resource.value}%</span>
                   </div>
-                  <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-surface rounded-full overflow-hidden">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all',
                         resource.value > 80
-                          ? 'bg-red-500'
+                          ? 'bg-destructive-bg'
                           : resource.value > 60
-                          ? 'bg-amber-500'
+                          ? 'bg-warning-bg'
                           : 'bg-emerald-500'
                       )}
                       style={{ width: `${resource.value}%` }}

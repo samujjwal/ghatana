@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Comprehensive test suite for Flashit application",
   "private": true,
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "./run-dev.sh",
     "dev:start": "./run-dev.sh start",
@@ -15,10 +16,16 @@
     "dev:api": "cd apps/web-api && tsx watch src/server.ts",
     "dev:web": "cd apps/web && vite --port 2901 --host",
     "dev:mobile": "cd apps/mobile && expo start --port 2902",
+    "lint": "pnpm --dir client/web lint && pnpm --dir backend/gateway lint",
+    "type-check": "pnpm --dir client/web type-check && pnpm --dir backend/gateway exec tsc --noEmit",
+    "build": "pnpm --dir client/web build && pnpm --dir backend/gateway build",
     "test": "node scripts/test-runner.js all",
+    "test:contract": "pnpm --dir backend/gateway exec vitest run src/__tests__/api.integration.test.ts",
     "test:unit": "node scripts/test-runner.js unit",
     "test:integration": "node scripts/test-runner.js integration",
     "test:e2e": "node scripts/test-runner.js e2e",
+    "test:e2e:a11y": "pnpm --dir client/web exec playwright test --grep @a11y",
+    "validate:local-runtime": "node scripts/validate-local-compose.mjs",
     "test:performance": "node scripts/test-runner.js performance",
     "test:watch": "node scripts/test-runner.js all --watch",
     "test:coverage": "node scripts/test-runner.js all --coverage",
@@ -40,14 +47,14 @@
     "clean:test-cache": "rm -rf .jest-cache coverage test-reports",
     "lint:tests": "eslint tests/ --ext .ts",
     "format:tests": "prettier --write tests/**/*.ts",
-    "validate:tests": "npm run lint:tests && npm run format:tests",
+    "validate:tests": "pnpm run lint:tests && pnpm run format:tests",
     "report:open": "open test-reports/test-report.html",
     "report:coverage": "open coverage/lcov-report/index.html",
     "benchmark": "node scripts/benchmark-runner.js",
     "stress-test": "node scripts/stress-test-runner.js",
-    "pre-commit-tests": "npm run test:unit && npm run test:integration",
-    "pre-push-tests": "npm run test:ci",
-    "quality-gate": "npm run validate:tests && npm run test:coverage && npm run security-check",
+    "pre-commit-tests": "pnpm run test:unit && pnpm run test:integration",
+    "pre-push-tests": "pnpm run test:ci",
+    "quality-gate": "pnpm run validate:tests && pnpm run test:coverage && pnpm run security-check",
     "demo:seed": "cd scripts/demo-data && pnpm install && pnpm seed",
     "demo:seed:small": "cd scripts/demo-data && pnpm install && pnpm seed:small",
     "demo:seed:medium": "cd scripts/demo-data && pnpm install && pnpm seed:medium",
@@ -63,14 +70,14 @@
     "demo:export:csv": "cd scripts/demo-data && pnpm install && pnpm export:csv",
     "demo:export:sql": "cd scripts/demo-data && pnpm install && pnpm export:sql",
     "demo:test-cycle": "cd scripts/demo-data && pnpm install && pnpm test:data",
-    "security-check": "npm audit --audit-level moderate",
+    "security-check": "pnpm audit --audit-level moderate",
     "dependency-check": "npx npm-check-updates",
     "test:health": "node scripts/health-check.js",
     "health": "node scripts/health-check.js",
     "health:quick": "node scripts/health-check.js --quick",
     "audit:security": "tsx scripts/security-audit.ts",
     "audit:accessibility": "tsx scripts/accessibility-audit.ts",
-    "audit:all": "npm run audit:security && npm run audit:accessibility"
+    "audit:all": "pnpm run audit:security && pnpm run audit:accessibility"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -95,8 +102,8 @@
     "sharp": "^0.34.5"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
   },
   "keywords": [
     "testing",
@@ -107,15 +114,15 @@
     "e2e-tests",
     "flashit"
   ],
-  "author": "Flashit Team",
+  "author": "Ghatana FlashIt Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/flashit/flashit.git",
+    "url": "git+https://github.com/samujjwal/ghatana.git",
     "directory": "products/flashit"
   },
   "bugs": {
-    "url": "https://github.com/flashit/flashit/issues"
+    "url": "https://github.com/samujjwal/ghatana/issues"
   },
-  "homepage": "https://github.com/flashit/flashit#readme"
+  "homepage": "https://github.com/samujjwal/ghatana/tree/main/products/flashit#readme"
 }

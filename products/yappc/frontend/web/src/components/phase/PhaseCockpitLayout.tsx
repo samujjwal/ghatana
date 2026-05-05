@@ -86,11 +86,11 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
       {/* Phase Header */}
       <header className="mb-6" data-testid="phase-purpose">
         <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-semibold text-fg dark:text-fg-muted">
             {phaseName}
           </h1>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-fg-muted dark:text-fg-muted">
           {phaseDescription}
         </p>
       </header>
@@ -145,7 +145,7 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
 
       {governanceTrace && (
         <section
-          className="mb-6 border-t border-gray-200 dark:border-gray-700 pt-6"
+          className="mb-6 border-t border-border dark:border-border pt-6"
           data-testid="governance-trace-panel"
         >
           <Button
@@ -169,7 +169,7 @@ export const PhaseCockpitLayout: React.FC<PhaseCockpitLayoutProps> = ({
 
       {advancedTools && (
         <section
-          className="border-t border-gray-200 dark:border-gray-700 pt-6"
+          className="border-t border-border dark:border-border pt-6"
           data-testid="advanced-tools-panel"
         >
           <Button

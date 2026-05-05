@@ -253,7 +253,7 @@ export function CreateWorkspaceDialog({
 
                     {submitError && (
                         <p
-                            className="text-sm text-red-600 dark:text-red-400"
+                            className="text-sm text-destructive dark:text-destructive"
                             data-testid="create-workspace-error"
                         >
                             {submitError}

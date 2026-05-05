@@ -40,15 +40,15 @@ const iconMap = {
 };
 
 const colorMap = {
-  error: 'text-red-500',
-  warning: 'text-yellow-500',
-  info: 'text-blue-500',
+  error: 'text-destructive',
+  warning: 'text-warning-color',
+  info: 'text-info-color',
 };
 
 const bgColorMap = {
-  error: 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800',
-  warning: 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800',
-  info: 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800',
+  error: 'bg-destructive-bg dark:bg-destructive-bg/20 border-destructive-border dark:border-destructive-border',
+  warning: 'bg-warning-bg dark:bg-warning-bg/20 border-warning-border dark:border-warning-border',
+  info: 'bg-info-bg dark:bg-info-bg/20 border-info-border dark:border-info-border',
 };
 
 const sizeClasses = {

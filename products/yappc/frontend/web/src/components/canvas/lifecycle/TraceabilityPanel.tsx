@@ -35,19 +35,19 @@ export interface TraceabilityPanelProps {
 type ViewMode = 'graph' | 'matrix';
 
 const PHASE_COLORS: Record<LifecyclePhase, string> = {
-    [LifecyclePhase.INTENT]: 'bg-blue-100 border-blue-300 dark:bg-blue-900/30 dark:border-blue-700',
-    [LifecyclePhase.SHAPE]: 'bg-purple-100 border-purple-300 dark:bg-purple-900/30 dark:border-purple-700',
-    [LifecyclePhase.VALIDATE]: 'bg-yellow-100 border-yellow-300 dark:bg-yellow-900/30 dark:border-yellow-700',
-    [LifecyclePhase.GENERATE]: 'bg-green-100 border-green-300 dark:bg-green-900/30 dark:border-green-700',
-    [LifecyclePhase.RUN]: 'bg-orange-100 border-orange-300 dark:bg-orange-900/30 dark:border-orange-700',
-    [LifecyclePhase.OBSERVE]: 'bg-red-100 border-red-300 dark:bg-red-900/30 dark:border-red-700',
-    [LifecyclePhase.IMPROVE]: 'bg-pink-100 border-pink-300 dark:bg-pink-900/30 dark:border-pink-700',
+    [LifecyclePhase.INTENT]: 'bg-info-bg border-info-border dark:bg-info-bg/30 dark:border-info-border',
+    [LifecyclePhase.SHAPE]: 'bg-info-bg border-info-border dark:bg-info-bg/30 dark:border-info-border',
+    [LifecyclePhase.VALIDATE]: 'bg-warning-bg border-warning-border dark:bg-warning-bg/30 dark:border-warning-border',
+    [LifecyclePhase.GENERATE]: 'bg-success-bg border-success-border dark:bg-success-bg/30 dark:border-success-border',
+    [LifecyclePhase.RUN]: 'bg-warning-bg border-warning-border dark:bg-warning-bg/30 dark:border-warning-border',
+    [LifecyclePhase.OBSERVE]: 'bg-destructive-bg border-destructive-border dark:bg-destructive-bg/30 dark:border-destructive-border',
+    [LifecyclePhase.IMPROVE]: 'bg-info-bg border-info-border dark:bg-info-bg/30 dark:border-info-border',
 };
 
 const STATUS_INDICATORS: Record<string, { label: string; className: string }> = {
     missing: { label: 'M', className: 'bg-grey-200 text-grey-700 dark:bg-grey-700 dark:text-grey-200' },
-    draft: { label: 'D', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-200' },
-    complete: { label: 'C', className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200' },
+    draft: { label: 'D', className: 'bg-warning-bg text-warning-color dark:bg-warning-bg/40 dark:text-warning-color' },
+    complete: { label: 'C', className: 'bg-success-bg text-success-color dark:bg-success-bg/40 dark:text-success-color' },
 };
 
 /**
@@ -152,7 +152,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-divider">
                 <div className="flex items-center gap-2">
-                    <AccountTree className="w-5 h-5 text-indigo-600" />
+                    <AccountTree className="w-5 h-5 text-info-color" />
                     <div>
                         <h3 className="font-semibold text-text-primary">Traceability</h3>
                         <p className="text-xs text-text-secondary">Artifact dependencies & coverage</p>
@@ -379,7 +379,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                 className={`p-2 text-center border border-divider ${row.id === artifact.id
                                                         ? 'bg-grey-200 dark:bg-grey-700'
                                                         : linked
-                                                            ? 'bg-green-100 dark:bg-green-900/30 cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50'
+                                                            ? 'bg-success-bg dark:bg-success-bg/30 cursor-pointer hover:bg-success-bg dark:hover:bg-success-bg/50'
                                                             : 'cursor-pointer hover:bg-grey-100 dark:hover:bg-grey-800'
                                                     }`}
                                                 onClick={() => {
@@ -395,7 +395,7 @@ export const TraceabilityPanel: React.FC<TraceabilityPanelProps> = ({
                                                 {row.id === artifact.id ? (
                                                     <span className="text-grey-400">—</span>
                                                 ) : linked ? (
-                                                    <Link className="w-4 h-4 text-green-600 mx-auto" />
+                                                    <Link className="w-4 h-4 text-success-color mx-auto" />
                                                 ) : (
                                                     <span className="text-grey-300 dark:text-grey-600">·</span>
                                                 )}

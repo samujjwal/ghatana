@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link DigitalMarketingBoundaryPolicyStore}.
@@ -39,7 +40,13 @@ class DigitalMarketingBoundaryPolicyStoreTest {
     @DisplayName("loadRules() never returns null")
     void shouldNeverReturnNull() {
         assertThat(store.loadRules(BoundaryPolicyLoadContext.global())).isNotNull();
-        assertThat(store.loadRules(BoundaryPolicyLoadContext.of("tenant-1", "EU"))).isNotNull();
+    }
+
+    @Test
+    @DisplayName("unsupported tenant override fails closed")
+    void shouldFailClosedForUnsupportedTenantOverride() {
+        assertThatThrownBy(() -> store.loadRules(BoundaryPolicyLoadContext.of("tenant-1", "EU")))
+            .hasMessageContaining("unsupported");
     }
 
     @Test
@@ -134,6 +141,7 @@ class DigitalMarketingBoundaryPolicyStoreTest {
         assertThat(last.getResourcePattern()).isEqualTo("**");
         assertThat(last.getActions()).contains("*");
         assertThat(last.getEffect()).isEqualTo(Effect.DENY);
+        assertThat(last.isRequiresAudit()).isTrue();
     }
 
     @Test

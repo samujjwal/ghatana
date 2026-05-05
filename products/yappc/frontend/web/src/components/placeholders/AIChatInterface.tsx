@@ -10,8 +10,10 @@
  * @doc.pattern UI Component
  */
 
-import React, { useRef, useEffect } from 'react';
 import { Bot, User, Send, Loader2, Sparkles } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+
+import { Button } from '@ghatana/design-system';
 
 // =============================================================================
 // Types
@@ -44,13 +46,13 @@ const MessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
       {/* Avatar */}
       <div
         className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center ${
-          isUser ? 'bg-violet-500' : 'bg-zinc-700'
+          isUser ? 'bg-info-bg text-info-color' : 'bg-surface-muted text-fg-muted'
         }`}
       >
         {isUser ? (
           <User className="w-4 h-4 text-white" />
         ) : (
-          <Bot className="w-4 h-4 text-zinc-300" />
+          <Bot className="w-4 h-4 text-fg-muted" />
         )}
       </div>
 
@@ -58,17 +60,13 @@ const MessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
       <div
         className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap break-words ${
           isUser
-            ? 'bg-violet-500 text-white rounded-tr-sm'
-            : 'bg-zinc-800 text-zinc-200 rounded-tl-sm'
+            ? 'bg-info-bg text-info-color rounded-tr-sm'
+            : 'bg-surface-raised text-fg rounded-tl-sm'
         }`}
       >
         {message.content}
         {message.timestamp && (
-          <div
-            className={`text-[10px] mt-1 ${
-              isUser ? 'text-violet-200' : 'text-zinc-500'
-            }`}
-          >
+          <div className="text-[10px] mt-1 text-fg-muted">
             {message.timestamp.toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -86,13 +84,13 @@ const MessageBubble: React.FC<{ message: ChatMessage }> = ({ message }) => {
 
 const ThinkingIndicator: React.FC = () => (
   <div className="flex gap-3">
-    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-zinc-700 flex items-center justify-center">
-      <Bot className="w-4 h-4 text-zinc-300" />
+    <div className="flex-shrink-0 w-7 h-7 rounded-full bg-surface-muted flex items-center justify-center">
+      <Bot className="w-4 h-4 text-fg-muted" />
     </div>
-    <div className="px-4 py-3 bg-zinc-800 rounded-2xl rounded-tl-sm flex items-center gap-1.5">
-      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:0ms]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:150ms]" />
-      <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-bounce [animation-delay:300ms]" />
+    <div className="px-4 py-3 bg-surface rounded-2xl rounded-tl-sm flex items-center gap-1.5">
+      <span className="w-1.5 h-1.5 rounded-full bg-surface-muted animate-bounce [animation-delay:0ms]" />
+      <span className="w-1.5 h-1.5 rounded-full bg-surface-muted animate-bounce [animation-delay:150ms]" />
+      <span className="w-1.5 h-1.5 rounded-full bg-surface-muted animate-bounce [animation-delay:300ms]" />
     </div>
   </div>
 );
@@ -103,12 +101,12 @@ const ThinkingIndicator: React.FC = () => (
 
 const EmptyState: React.FC = () => (
   <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-6">
-    <div className="w-12 h-12 rounded-full bg-violet-500/10 flex items-center justify-center">
-      <Sparkles className="w-6 h-6 text-violet-400" />
+    <div className="w-12 h-12 rounded-full bg-info-bg flex items-center justify-center">
+      <Sparkles className="w-6 h-6 text-info-color" />
     </div>
     <div>
-      <p className="text-sm font-medium text-zinc-300">AI Assistant</p>
-      <p className="text-xs text-zinc-500 mt-1">
+      <p className="text-sm font-medium text-fg-muted">AI Assistant</p>
+      <p className="text-xs text-fg-muted mt-1">
         Ask me to help design, validate, or explain your project architecture.
       </p>
     </div>
@@ -162,20 +160,20 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
 
   return (
     <div
-      className={`flex flex-col h-full bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden ${className}`}
+      className={`flex flex-col h-full bg-surface border border-border rounded-lg overflow-hidden ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800 flex-shrink-0">
-        <div className="w-7 h-7 rounded-full bg-violet-500/20 flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-violet-400" />
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border flex-shrink-0">
+        <div className="w-7 h-7 rounded-full bg-info-bg flex items-center justify-center">
+          <Sparkles className="w-4 h-4 text-info-color" />
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
-          <p className="text-[10px] text-zinc-500">Powered by YAPPC Agent</p>
+          <h3 className="text-sm font-semibold text-fg">Assistant</h3>
+          <p className="text-[10px] text-fg-muted">Powered by YAPPC Agent</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span className="text-[10px] text-zinc-500">Ready</span>
+          <span className="text-[10px] text-fg-muted">Ready</span>
         </div>
       </div>
 
@@ -195,31 +193,32 @@ export const AIChatInterface: React.FC<AIChatInterfaceProps> = ({
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 p-3 border-t border-zinc-800">
-        <div className="flex items-end gap-2 bg-zinc-800 rounded-xl px-3 py-2 border border-zinc-700 focus-within:border-violet-500 transition-colors">
+      <div className="flex-shrink-0 p-3 border-t border-border">
+        <div className="flex items-end gap-2 bg-surface rounded-xl px-3 py-2 border border-border focus-within:border-violet-500 transition-colors">
           <textarea
             ref={textareaRef}
             rows={1}
             value={input}
             onChange={handleTextareaChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask the AI assistant… (Shift+Enter for new line)"
-            className="flex-1 bg-transparent text-sm text-white placeholder-zinc-500 focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
+            placeholder="Ask the assistant… (Shift+Enter for new line)"
+            className="flex-1 bg-transparent text-sm text-fg placeholder-fg-muted focus:outline-none resize-none min-h-[24px] max-h-[120px] leading-6"
           />
-          <button
+          <Button
             onClick={handleSend}
             disabled={!input.trim() || isLoading}
             aria-label="Send message"
-            className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-500 text-white flex items-center justify-center hover:bg-violet-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            variant="primary"
+            className="flex-shrink-0 h-8 min-w-8 px-2"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <Send className="w-4 h-4" />
             )}
-          </button>
+          </Button>
         </div>
-        <p className="text-[10px] text-zinc-600 mt-1.5 px-1">
+        <p className="text-[10px] text-fg-muted mt-1.5 px-1">
           Shift+Enter for new line · Enter to send
         </p>
       </div>

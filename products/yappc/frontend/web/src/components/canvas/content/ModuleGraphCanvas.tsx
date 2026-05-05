@@ -204,7 +204,7 @@ const ModuleNode = ({
                 className="font-semibold text-center text-[0.7rem]" >
                 {module.name}
             </Typography>
-            <Typography variant="caption" className="text-gray-500 dark:text-gray-400 text-[0.6rem]">
+            <Typography variant="caption" className="text-fg-muted dark:text-fg-muted text-[0.6rem]">
                 {module.exports}
             </Typography>
         </Paper>
@@ -453,7 +453,7 @@ export const ModuleGraphCanvas = () => {
                                         key={imp}
                                         variant="caption"
                                         display="block"
-                                        className="text-blue-600 font-mono"
+                                        className="text-info-color font-mono"
                                     >
                                         → {imp}
                                     </Typography>

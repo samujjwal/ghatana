@@ -78,9 +78,9 @@ export function UnifiedTopBar({ projectId, onExportImport, onMindMapLayout, mode
 
     return (
         <Box
-            className="flex items-center px-4 gap-4 h-[56px] border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-b" >
+            className="flex items-center px-4 gap-4 h-[56px] border-border dark:border-border bg-white dark:bg-surface border-b" >
             {/* Logo */}
-            <Typography variant="h6" className="font-bold text-blue-600">
+            <Typography variant="h6" className="font-bold text-info-color">
                 YAPPC
             </Typography>
 
@@ -157,7 +157,7 @@ export function UnifiedTopBar({ projectId, onExportImport, onMindMapLayout, mode
             </Button>
 
             {/* User Avatar */}
-            <Avatar className="w-[32px] h-[32px] bg-blue-600">
+            <Avatar className="w-[32px] h-[32px] bg-primary">
                 U
             </Avatar>
 

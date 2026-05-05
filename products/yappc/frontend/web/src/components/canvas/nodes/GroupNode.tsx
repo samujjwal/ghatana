@@ -141,7 +141,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
                     {isEditing ? (
                         <input
                             ref={inputRef}
-                            className="nodrag nopan text-xs font-semibold bg-transparent border-b border-indigo-400 outline-none text-gray-700 dark:text-gray-200 min-w-[60px]"
+                            className="nodrag nopan text-xs font-semibold bg-transparent border-b border-info-border outline-none text-fg dark:text-fg-muted min-w-[60px]"
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             onBlur={handleLabelBlur}
@@ -150,7 +150,7 @@ export function GroupNode({ data, selected }: NodeProps<GroupCanvasNode>) {
                         />
                     ) : (
                         <span
-                            className="text-xs font-semibold text-gray-500 dark:text-gray-400 select-none cursor-text"
+                            className="text-xs font-semibold text-fg-muted dark:text-fg-muted select-none cursor-text"
                             title="Double-click to rename"
                             tabIndex={0}
                             role="button"

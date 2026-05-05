@@ -37,6 +37,12 @@ export interface ResidualIsland {
   filePath?: string;
   /** Review notes */
   reviewNotes?: string;
+  /** Optional provenance source label */
+  provenanceSource?: string;
+  /** Optional round-trip fidelity score from 0-1 */
+  roundTripFidelity?: number;
+  /** Whether this residual blocks generation/release */
+  blocking?: boolean;
 }
 
 export interface ResidualIslandReviewPanelProps {
@@ -66,17 +72,17 @@ export interface ResidualIslandReviewPanelProps {
 function getSeverityColor(severity: ResidualIslandSeverity): string {
   switch (severity) {
     case 'critical':
-      return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700';
+      return 'bg-destructive-bg text-destructive border-destructive-border dark:bg-destructive-bg/30 dark:text-destructive dark:border-destructive-border';
     case 'high':
-      return 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700';
+      return 'bg-warning-bg text-warning-color border-warning-border dark:bg-warning-bg/30 dark:text-warning-color dark:border-warning-border';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-700';
+      return 'bg-warning-bg text-warning-color border-warning-border dark:bg-warning-bg/30 dark:text-warning-color dark:border-warning-border';
     case 'low':
-      return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700';
+      return 'bg-info-bg text-info-color border-info-border dark:bg-info-bg/30 dark:text-info-color dark:border-info-border';
     case 'info':
-      return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600';
+      return 'bg-surface-muted text-fg border-border dark:bg-surface dark:text-fg-muted dark:border-border';
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-300';
+      return 'bg-surface-muted text-fg border-border';
   }
 }
 
@@ -132,13 +138,20 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
     return acc;
   }, new Map());
 
+  const blockingCount = islands.filter((island) => island.blocking || island.requiredAction === 'block').length;
+
   return (
     <Card className={className} variant="outlined">
       <CardContent className="p-0">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+      <div className="p-4 border-b border-border dark:border-border">
+        <h3 className="text-lg font-semibold text-fg dark:text-fg-muted">
           Residual Islands Review
         </h3>
+        <p className="mt-1 text-sm text-fg-muted dark:text-fg-muted">
+          {blockingCount > 0
+            ? `${blockingCount} blocking residual ${blockingCount === 1 ? 'requires' : 'require'} resolution before generate or release.`
+            : 'No blocking residuals. Review advisory residuals for quality and governance confidence.'}
+        </p>
         <div className="mt-2 flex flex-wrap gap-2">
           {Array.from(severityCount.entries()).map(([severity, count]) => (
             <span
@@ -151,17 +164,17 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
         </div>
       </div>
 
-      <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
+      <div className="divide-y divide-border dark:divide-border max-h-[600px] overflow-y-auto">
         {filteredIslands.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+          <div className="p-8 text-center text-fg-muted dark:text-fg-muted">
             No residual islands to review
           </div>
         ) : (
           filteredIslands.map(island => (
             <div
               key={island.id}
-              className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                selectedIsland === island.id ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+              className={`p-4 hover:bg-surface-muted dark:hover:bg-surface transition-colors ${
+                selectedIsland === island.id ? 'bg-info-bg dark:bg-info-bg/20' : ''
               }`}
             >
               <div className="flex items-start justify-between">
@@ -170,19 +183,40 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getSeverityColor(island.severity)}`}>
                       {island.severity}
                     </span>
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                    <span
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        island.blocking || island.requiredAction === 'block'
+                          ? 'bg-destructive-bg text-destructive border border-destructive-border'
+                          : 'bg-info-bg text-info-color border border-info-border'
+                      }`}
+                    >
+                      {island.blocking || island.requiredAction === 'block' ? 'blocking' : 'advisory'}
+                    </span>
+                    <span className="text-sm font-medium text-fg dark:text-fg-muted">
                       {island.type}
                     </span>
-                    <span className="text-gray-500">•</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-fg-muted">•</span>
+                    <span className="text-sm text-fg-muted dark:text-fg-muted">
                       {getActionIcon(island.requiredAction)} {island.requiredAction}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  <p className="text-sm text-fg dark:text-fg-muted mb-2">
                     {island.description}
                   </p>
+                  <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                    {typeof island.roundTripFidelity === 'number' ? (
+                      <span className="rounded border border-info-border bg-info-bg px-2 py-1 text-info-color">
+                        Fidelity: {Math.round(island.roundTripFidelity * 100)}%
+                      </span>
+                    ) : null}
+                    {island.provenanceSource ? (
+                      <span className="rounded border border-border bg-surface-muted px-2 py-1 text-fg-muted">
+                        Provenance: {island.provenanceSource}
+                      </span>
+                    ) : null}
+                  </div>
                   {island.filePath && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-fg-muted dark:text-fg-muted">
                       {island.filePath}:{island.lineNumber}
                     </p>
                   )}
@@ -217,14 +251,14 @@ export const ResidualIslandReviewPanel: React.FC<ResidualIslandReviewPanelProps>
 
               {showCode && !compact && (
                 <div className="mt-3">
-                  <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs overflow-x-auto">
+                  <pre className="bg-surface-muted dark:bg-surface p-3 rounded text-xs overflow-x-auto">
                     <code>{island.code}</code>
                   </pre>
                 </div>
               )}
 
               {selectedIsland === island.id && (
-                <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3">
+                <div className="mt-3 border-t border-border dark:border-border pt-3">
                   <Alert severity="info" variant="outlined" title="Review notes" className="mb-3">
                     Record why this residual should be accepted, rejected, or sent for follow-up review.
                   </Alert>

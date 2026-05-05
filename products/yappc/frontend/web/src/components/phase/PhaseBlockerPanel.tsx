@@ -34,10 +34,10 @@ export interface PhaseBlockerPanelProps {
  * Severity color mapping
  */
 const SEVERITY_COLORS: Record<Blocker['severity'], string> = {
-  critical: 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
-  high: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300',
-  medium: 'bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-800 dark:text-yellow-300',
-  low: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
+  critical: 'bg-destructive-bg border-destructive-border text-destructive dark:bg-destructive-bg/20 dark:border-destructive-border dark:text-destructive',
+  high: 'bg-warning-bg border-warning-border text-warning-color dark:bg-warning-bg/20 dark:border-warning-border dark:text-warning-color',
+  medium: 'bg-warning-bg border-warning-border text-warning-color dark:bg-warning-bg/20 dark:border-warning-border dark:text-warning-color',
+  low: 'bg-info-bg border-info-border text-info-color dark:bg-info-bg/20 dark:border-info-border dark:text-info-color',
 };
 
 /**
@@ -56,8 +56,8 @@ export const PhaseBlockerPanel: React.FC<PhaseBlockerPanelProps> = ({
   if (blockers.length === 0) {
     return (
       <div className={`phase-blocker-panel ${className}`}>
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
-          <p className="text-green-700 dark:text-green-300 text-sm font-medium">
+        <div className="bg-success-bg dark:bg-success-bg/20 border border-success-border dark:border-success-border rounded-lg p-4 text-center">
+          <p className="text-success-color dark:text-success-color text-sm font-medium">
             ✓ No blockers - ready to proceed
           </p>
         </div>
@@ -67,7 +67,7 @@ export const PhaseBlockerPanel: React.FC<PhaseBlockerPanelProps> = ({
 
   return (
     <div className={`phase-blocker-panel ${className}`}>
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+      <h3 className="text-sm font-medium text-fg dark:text-fg-muted mb-3">
         Blockers ({blockers.length})
       </h3>
       <div className="space-y-3">

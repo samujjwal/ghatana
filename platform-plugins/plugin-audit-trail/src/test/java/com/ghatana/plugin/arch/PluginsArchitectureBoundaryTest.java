@@ -19,6 +19,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
  *   <li>ARCH-010: no plugin imports from any product package.</li>
  *   <li>ARCH-011 through ARCH-017: no plugin implementation imports from any other
  *       plugin's implementation package — plugins must be independently loadable.</li>
+ *   <li>P1-041: no product-specific business logic in platform plugins.</li>
  * </ul>
  *
  * <p>The canonical plugin packages are:</p>
@@ -197,6 +198,47 @@ class PluginsArchitectureBoundaryTest {
                 .as("ARCH-017: risk management plugin must be independently loadable — " +
                     "it must not depend on compliance, consent, fraud, approval, or ledger plugin implementations")
                 .allowEmptyShould(true);
+
+        rule.check(pluginClasses);
+    }
+
+    // ── P1-041: plugins must not contain product-specific logic ──────────────────
+
+    @Test
+    @DisplayName("P1-041: platform-plugins must not reference product-specific domain classes")
+    void pluginsMustNotContainProductSpecificLogic() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin..")
+                .should().dependOnClassesThat().resideInAPackage("com.ghatana.digitalmarketing..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.phr..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.finance..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.yappc..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.aep..")
+                .orShould().dependOnClassesThat().resideInAPackage("com.ghatana.datacloud..")
+                .as("P1-041: platform-plugins must not contain product-specific logic — " +
+                    "plugins are product-agnostic shared infrastructure");
+
+        rule.check(pluginClasses);
+    }
+
+    @Test
+    @DisplayName("P1-041: plugins must not contain product-specific business logic patterns")
+    void pluginsMustNotContainProductBusinessLogic() {
+        // Check for product-specific naming patterns in plugin code
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("com.ghatana.plugin..")
+                .should().haveSimpleNameMatching(".*Marketing.*")
+                .orShould().haveSimpleNameMatching(".*Campaign.*")
+                .orShould().haveSimpleNameMatching(".*Strategy.*")
+                .orShould().haveSimpleNameMatching(".*Budget.*")
+                .orShould().haveSimpleNameMatching(".*Lead.*")
+                .orShould().haveSimpleNameMatching(".*Patient.*")
+                .orShould().haveSimpleNameMatching(".*Health.*")
+                .orShould().haveSimpleNameMatching(".*Finance.*")
+                .orShould().haveSimpleNameMatching(".*Yappc.*")
+                .orShould().haveSimpleNameMatching(".*Agent.*")
+                .as("P1-041: platform-plugins must not contain product-specific business logic — " +
+                    "plugins should have generic, reusable names");
 
         rule.check(pluginClasses);
     }

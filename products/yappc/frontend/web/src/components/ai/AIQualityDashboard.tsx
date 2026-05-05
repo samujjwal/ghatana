@@ -47,7 +47,7 @@ interface MetricCardProps {
 const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, subtext, trend }) => (
   <Card>
     <CardContent className="p-4">
-      <Box className="flex items-center gap-2 mb-2 text-gray-500">
+      <Box className="flex items-center gap-2 mb-2 text-fg-muted">
         {icon}
         <Typography className="text-xs font-medium uppercase tracking-wide">{label}</Typography>
       </Box>
@@ -56,7 +56,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, subtext, tr
         {trend && (
           <Box
             className={`text-xs ${
-              trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-gray-400'
+              trend === 'up' ? 'text-success-color' : trend === 'down' ? 'text-destructive' : 'text-fg-muted'
             }`}
           >
             {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
@@ -64,7 +64,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, label, value, subtext, tr
         )}
       </Box>
       {subtext && (
-        <Typography className="text-xs text-gray-500 mt-1">{subtext}</Typography>
+        <Typography className="text-xs text-fg-muted mt-1">{subtext}</Typography>
       )}
     </CardContent>
   </Card>
@@ -96,17 +96,17 @@ const ProviderHealthCard: React.FC<ProviderHealthCardProps> = ({
         <Box className="flex items-center justify-between">
           <Box className="flex items-center gap-2">
             {healthy ? (
-              <CheckCircle className="w-4 h-4 text-green-600" />
+              <CheckCircle className="w-4 h-4 text-success-color" />
             ) : (
-              <XCircle className="w-4 h-4 text-red-600" />
+              <XCircle className="w-4 h-4 text-destructive" />
             )}
             <Typography className="font-medium text-sm">{providerNames[provider]}</Typography>
           </Box>
           <Box className="text-right">
-            <Typography className={`text-sm font-medium ${healthy ? 'text-green-600' : 'text-red-600'}`}>
+            <Typography className={`text-sm font-medium ${healthy ? 'text-success-color' : 'text-destructive'}`}>
               {Math.round(score * 100)}%
             </Typography>
-            <Typography className="text-xs text-gray-500">{requestCount} reqs</Typography>
+            <Typography className="text-xs text-fg-muted">{requestCount} reqs</Typography>
           </Box>
         </Box>
       </CardContent>
@@ -123,7 +123,7 @@ const ErrorBreakdown: React.FC<ErrorBreakdownProps> = ({ breakdown }) => {
 
   if (entries.length === 0) {
     return (
-      <Typography className="text-sm text-gray-500 text-center py-4">
+      <Typography className="text-sm text-fg-muted text-center py-4">
         No errors in the last 24 hours
       </Typography>
     );
@@ -134,7 +134,7 @@ const ErrorBreakdown: React.FC<ErrorBreakdownProps> = ({ breakdown }) => {
       {entries.map(([code, count]) => (
         <Box key={code} className="flex items-center justify-between py-1">
           <Box className="flex items-center gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+            <AlertTriangle className="w-3.5 h-3.5 text-warning-color" />
             <Typography className="text-sm">{code}</Typography>
           </Box>
           <Typography className="text-sm font-medium">{count}</Typography>
@@ -156,11 +156,11 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
       <Box className={`space-y-4 ${className}`}>
         <Box className="flex items-center justify-between">
           <Box className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-blue-600" />
+            <Activity className="w-5 h-5 text-info-color" />
             <Typography className="font-semibold text-lg">AI Quality</Typography>
           </Box>
         </Box>
-        <Typography className="text-sm text-gray-500 text-center py-8">
+        <Typography className="text-sm text-fg-muted text-center py-8">
           No AI quality data available yet. Metrics will appear after AI requests are made.
         </Typography>
       </Box>
@@ -174,7 +174,7 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-blue-600" />
+          <Activity className="w-5 h-5 text-info-color" />
           <Typography className="font-semibold text-lg">AI Quality</Typography>
         </Box>
         <Button size="sm" variant="text" onClick={resetMetrics}>
@@ -215,7 +215,7 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
 
       {/* Provider Health */}
       <Box>
-        <Typography className="text-xs font-medium text-gray-500 mb-2">
+        <Typography className="text-xs font-medium text-fg-muted mb-2">
           Provider Health (Last Hour)
         </Typography>
         <Card>
@@ -240,7 +240,7 @@ export const AIQualityDashboard: React.FC<AIQualityDashboardProps> = ({ classNam
       {/* Error Breakdown */}
       {summary.failedRequests > 0 && (
         <Box>
-          <Typography className="text-xs font-medium text-gray-500 mb-2">
+          <Typography className="text-xs font-medium text-fg-muted mb-2">
             Error Breakdown (Last 24 Hours)
           </Typography>
           <Card>

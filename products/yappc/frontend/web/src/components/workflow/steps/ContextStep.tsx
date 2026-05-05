@@ -275,7 +275,7 @@ export function ContextStep() {
                                     <React.Fragment key={ref.id}>
                                         <ListItem className="px-0">
                                             <ListItemIcon className="min-w-[40px]">
-                                                <RefIcon className="text-gray-500" />
+                                                <RefIcon className="text-fg-muted" />
                                             </ListItemIcon>
                                             <ListItemText
                                                 primary={ref.name}

@@ -748,7 +748,7 @@ function UnifiedCanvasInner() {
 
               {/* Shortcut hint */}
               <Box
-                className="absolute left-[16px] bottom-[16px] px-3 py-1.5 bg-white dark:bg-gray-900 border border-solid border-gray-200 dark:border-gray-700 rounded-md text-xs text-gray-500 dark:text-gray-400 shadow-sm transition-all duration-300" style={{ opacity: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 1 : 0, transform: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 'translateY(0)' : 'translateY(6px)', pointerEvents: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 'auto' : 'none' }}
+                className="absolute left-[16px] bottom-[16px] px-3 py-1.5 bg-white dark:bg-surface border border-solid border-border dark:border-border rounded-md text-xs text-fg-muted dark:text-fg-muted shadow-sm transition-all duration-300" style={{ opacity: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 1 : 0, transform: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 'translateY(0)' : 'translateY(6px)', pointerEvents: calmMode && showShortcutHint && canvas.nodes.length === 0 ? 'auto' : 'none' }}
               >
                 Press <strong>?</strong> for shortcuts
               </Box>

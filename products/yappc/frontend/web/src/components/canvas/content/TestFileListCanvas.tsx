@@ -106,11 +106,11 @@ const MOCK_TEST_FILES: TestFile[] = [
 const getStatusIcon = (status: TestFile['status']) => {
     switch (status) {
         case 'passed':
-            return <CheckCircle size={16} className="text-green-600" />;
+            return <CheckCircle size={16} className="text-success-color" />;
         case 'failed':
-            return <Error size={16} className="text-red-600" />;
+            return <Error size={16} className="text-destructive" />;
         case 'skipped':
-            return <Warning size={16} className="text-amber-600" />;
+            return <Warning size={16} className="text-warning-color" />;
         case 'running':
             return <HourglassEmpty size={16} className="text-sky-600" />;
     }
@@ -145,7 +145,7 @@ const TestFileItem = ({
     return (
         <Box
             onClick={() => onClick(file.path)}
-            className="p-4 mb-2 rounded border border-solid border-[rgba(0, 0, 0, 0.12)] cursor-pointer transition-all duration-200 hover:bg-[rgba(0,_0,_0,_0.02)] hover:border-blue-600"
+            className="p-4 mb-2 rounded border border-solid border-[rgba(0, 0, 0, 0.12)] cursor-pointer transition-all duration-200 hover:bg-[rgba(0,_0,_0,_0.02)] hover:border-info-border"
         >
             <Box className="flex items-center mb-2">
                 {getStatusIcon(file.status)}
@@ -255,7 +255,7 @@ export const TestFileListCanvas = () => {
             }}
         >
             <Box
-                className="h-full w-full flex flex-col bg-white dark:bg-gray-900"
+                className="h-full w-full flex flex-col bg-white dark:bg-surface"
             >
                 {/* Header with stats */}
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)] bg-[rgba(0,_0,_0,_0.02)]">
@@ -287,7 +287,7 @@ export const TestFileListCanvas = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
-                            startAdornment: <Search className="text-gray-500 dark:text-gray-400 mr-2" />,
+                            startAdornment: <Search className="text-fg-muted dark:text-fg-muted mr-2" />,
                         }}
                         className="mb-2"
                     />

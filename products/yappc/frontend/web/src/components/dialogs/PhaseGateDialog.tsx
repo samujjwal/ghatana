@@ -71,8 +71,8 @@ function ReadinessScore({ score }: { score: number }): React.ReactElement {
     score >= 80
       ? 'text-emerald-600 dark:text-emerald-400'
       : score >= 50
-        ? 'text-amber-600 dark:text-amber-400'
-        : 'text-red-600 dark:text-red-400';
+        ? 'text-warning-color dark:text-warning-color'
+        : 'text-destructive dark:text-destructive';
 
   return (
     <Box className="flex items-center gap-2">
@@ -131,7 +131,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
           {/* Header */}
           <Box className="flex items-start justify-between border-b border-divider px-5 py-4">
             <Box className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              <Lock className="h-5 w-5 text-warning-color" aria-hidden="true" />
               <Box>
                 <Typography
                   id="phase-gate-title"
@@ -167,7 +167,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
             ) : (
               <>
                 <Box className="flex items-center gap-1.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" />
+                  <AlertTriangle className="h-4 w-4 text-warning-color" aria-hidden="true" />
                   <Typography className="text-sm font-medium">
                     {missingArtifacts.length} artifact
                     {missingArtifacts.length !== 1 ? 's' : ''} required
@@ -180,10 +180,10 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                   {missingArtifacts.map((kind) => (
                     <Box
                       key={kind}
-                      className="flex items-center gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 px-3 py-2"
+                      className="flex items-center gap-2 rounded-md border border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/20 px-3 py-2"
                     >
                       <ChevronRight
-                        className="h-3.5 w-3.5 shrink-0 text-amber-600"
+                        className="h-3.5 w-3.5 shrink-0 text-warning-color"
                         aria-hidden="true"
                       />
                       <Typography className="text-sm capitalize">
@@ -192,7 +192,7 @@ export const PhaseGateDialog: React.FC<PhaseGateDialogProps> = ({
                       <Chip
                         label="Required"
                         size="sm"
-                        className="ml-auto bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 text-xs"
+                        className="ml-auto bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color text-xs"
                       />
                     </Box>
                   ))}

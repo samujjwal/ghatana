@@ -33,7 +33,7 @@ export function CanvasCollaborationBanner({ projectId }: CanvasCollaborationBann
     <div className="absolute right-4 top-4 z-20 rounded-xl border border-divider bg-bg-paper/95 px-4 py-3 shadow-lg backdrop-blur"
       data-testid="canvas-collaboration-banner">
       <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-        <span className={`h-2.5 w-2.5 rounded-full ${collaboration.isConnected ? 'bg-green-500' : 'bg-amber-500'}`}
+        <span className={`h-2.5 w-2.5 rounded-full ${collaboration.isConnected ? 'bg-success-bg' : 'bg-warning-bg'}`}
           data-testid="canvas-collaboration-status-dot" />
         <span>{collaboration.isConnected ? 'Live collaboration connected' : 'Collaboration standby'}</span>
       </div>

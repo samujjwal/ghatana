@@ -138,7 +138,7 @@ export function ExecuteStep() {
                         <Typography className="text-sm font-medium">
                             Execution Progress
                         </Typography>
-                        <Typography className="text-sm text-gray-500" color="text.secondary">
+                        <Typography className="text-sm text-fg-muted" color="text.secondary">
                             {completedChanges} / {totalChanges} changes completed
                         </Typography>
                     </Box>
@@ -216,7 +216,7 @@ export function ExecuteStep() {
                                 <React.Fragment key={change.id}>
                                     <ListItem className="px-0 items-start flex-wrap">
                                         <ListItemIcon className="mt-2 min-w-[40px]">
-                                            <ChangeIcon className="text-gray-500" />
+                                            <ChangeIcon className="text-fg-muted" />
                                         </ListItemIcon>
                                         <ListItemText
                                             primary={
@@ -234,7 +234,7 @@ export function ExecuteStep() {
                                             }
                                             secondary={
                                                 change.path && (
-                                                    <Typography className="font-mono text-xs text-gray-500" color="text.secondary">
+                                                    <Typography className="font-mono text-xs text-fg-muted" color="text.secondary">
                                                         {change.path}
                                                     </Typography>
                                                 )

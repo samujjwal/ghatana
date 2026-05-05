@@ -139,11 +139,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (variant === 'minimal') {
       return (
         <Box className="flex min-h-[200px] flex-col items-center justify-center p-3 text-center">
-          <BugReportIcon className="mb-4 text-5xl text-red-600" />
+          <BugReportIcon className="mb-4 text-5xl text-destructive" />
           <Typography gutterBottom className="text-lg font-semibold">
             Something went wrong
           </Typography>
-          <Typography className="mb-4 text-sm text-gray-500" color="text.secondary">
+          <Typography className="mb-4 text-sm text-fg-muted" color="text.secondary">
             {customMessage || 'An unexpected error occurred. Please try again.'}
           </Typography>
           {enableReset && (
@@ -172,10 +172,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           </Typography>
 
           <Box className="mb-4">
-            <Typography className="text-sm text-gray-500" color="text.secondary">
+            <Typography className="text-sm text-fg-muted" color="text.secondary">
               Error ID: <code>{errorId}</code>
             </Typography>
-            <Typography className="text-sm text-gray-500" color="text.secondary">
+            <Typography className="text-sm text-fg-muted" color="text.secondary">
               Time: {new Date().toLocaleString()}
             </Typography>
           </Box>
@@ -185,7 +185,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <Typography className="text-sm font-medium" gutterBottom>
                 Error Message:
               </Typography>
-              <Paper className="p-4 bg-gray-100 dark:bg-gray-800">
+              <Paper className="p-4 bg-surface-muted dark:bg-surface">
                 <Typography component="pre" className="text-sm">
                   {error.message}
                 </Typography>
@@ -196,7 +196,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   <Typography className="mt-4 text-sm font-medium" gutterBottom>
                     Stack Trace:
                   </Typography>
-                  <Paper className="p-4 overflow-auto bg-gray-100 dark:bg-gray-800 max-h-[200px]">
+                  <Paper className="p-4 overflow-auto bg-surface-muted dark:bg-surface max-h-[200px]">
                     <Typography component="pre" className="text-xs">
                       {error.stack}
                     </Typography>
@@ -209,7 +209,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                   <Typography className="mt-4 text-sm font-medium" gutterBottom>
                     Component Stack:
                   </Typography>
-                  <Paper className="p-4 overflow-auto bg-gray-100 dark:bg-gray-800 max-h-[200px]">
+                  <Paper className="p-4 overflow-auto bg-surface-muted dark:bg-surface max-h-[200px]">
                     <Typography component="pre" className="text-xs">
                       {errorInfo.componentStack}
                     </Typography>
@@ -258,11 +258,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Default variant
     return (
       <Box className="flex min-h-[400px] flex-col items-center justify-center p-3 text-center">
-        <BugReportIcon className="mb-6 text-[64px] text-red-600" />
+        <BugReportIcon className="mb-6 text-[64px] text-destructive" />
         <Typography gutterBottom className="text-2xl font-semibold">
           Oops! Something went wrong
         </Typography>
-        <Typography color="text.secondary" className="mb-6 max-w-[600px] text-gray-500">
+        <Typography color="text.secondary" className="mb-6 max-w-[600px] text-fg-muted">
           {customMessage || 
             'We encountered an unexpected error. Our team has been notified and is working to fix this issue.'}
         </Typography>
@@ -293,7 +293,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <Typography gutterBottom className="text-lg font-semibold">
               Development Details
             </Typography>
-            <Paper className="p-4 bg-gray-100 dark:bg-gray-800">
+            <Paper className="p-4 bg-surface-muted dark:bg-surface">
               <Typography component="pre" className="text-sm">
                 Error ID: {errorId}
                 {error && `\n\nError: ${error.message}`}

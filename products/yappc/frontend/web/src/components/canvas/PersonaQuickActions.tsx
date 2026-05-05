@@ -81,7 +81,7 @@ export const PersonaQuickActions: React.FC<PersonaQuickActionsProps> = ({
             {/* Persona header */}
             <Box
               onClick={() => togglePersonaExpand(persona.personaId)}
-              className="flex items-center gap-2 cursor-pointer py-1 px-2 rounded hover:bg-gray-100"
+              className="flex items-center gap-2 cursor-pointer py-1 px-2 rounded hover:bg-surface-muted"
             >
               <Typography variant="body2" className="text-base">
                 {persona.personaIcon}
@@ -103,7 +103,7 @@ export const PersonaQuickActions: React.FC<PersonaQuickActionsProps> = ({
               
               {!persona.isVirtual && (
                 <Tooltip title="You">
-                  <HumanIcon className="text-gray-500 dark:text-gray-400 text-base" />
+                  <HumanIcon className="text-fg-muted dark:text-fg-muted text-base" />
                 </Tooltip>
               )}
             </Box>

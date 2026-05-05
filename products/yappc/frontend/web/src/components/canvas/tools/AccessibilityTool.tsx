@@ -163,11 +163,11 @@ const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({ issues, context
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'error':
-        return <ErrorIcon className="text-red-600" size={16} />;
+        return <ErrorIcon className="text-destructive" size={16} />;
       case 'warning':
-        return <WarningIcon className="text-amber-600" size={16} />;
+        return <WarningIcon className="text-warning-color" size={16} />;
       default:
-        return <CheckIcon className="text-blue-600" size={16} />;
+        return <CheckIcon className="text-info-color" size={16} />;
     }
   };
 
@@ -208,14 +208,14 @@ const AccessibilityPanel: React.FC<AccessibilityPanelProps> = ({ issues, context
           {issues.map((issue) => (
             <ListItem
               key={issue.id}
-              className={`mb-2 rounded border border-gray-200 dark:border-gray-700 flex-col items-start ${selectedIssue === issue.id ? 'bg-gray-100' : 'bg-white dark:bg-gray-900'}`}
+              className={`mb-2 rounded border border-border dark:border-border flex-col items-start ${selectedIssue === issue.id ? 'bg-surface-muted' : 'bg-white dark:bg-surface'}`}
               onClick={() => setSelectedIssue(issue.id)}
             >
               <Box className="flex items-start w-full">
                 <Box className="mr-2 mt-1">{getSeverityIcon(issue.severity)}</Box>
                 <ListItemText
                   primary={<Typography className="text-sm font-medium">{issue.message}</Typography>}
-                  secondary={issue.suggestion ? <Typography className="text-xs text-gray-600">{issue.suggestion}</Typography> : undefined}
+                  secondary={issue.suggestion ? <Typography className="text-xs text-fg-muted">{issue.suggestion}</Typography> : undefined}
                 />
               </Box>
               {issue.elementId && (

@@ -4,8 +4,11 @@ import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyRule.Effect;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,6 +40,16 @@ import java.util.Set;
  */
 public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicyStore {
 
+    private static final String PACK_VERSION = "1.0.0";
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+        ProductBoundaryPolicyValidationProfile.builder()
+            .productName("Digital Marketing")
+            .rulePrefix("DM-BP-")
+            .defaultDenyRuleId("DM-BP-999")
+            .targetScopePrefix("digital-marketing.")
+            .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+            .build();
+
     /** Source scope pattern used on all DMOS rules — matches any caller within the dm scope. */
     private static final String DM_SOURCE_SCOPE = "digital-marketing.*";
 
@@ -58,7 +71,13 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
      */
     @Override
     public List<BoundaryPolicyRule> loadRules(BoundaryPolicyLoadContext context) {
-        return RULES;
+        if (!"default".equals(context.getTenantId()) || !"GLOBAL".equalsIgnoreCase(context.getRegion())) {
+            throw new BoundaryPolicyStoreException(
+                "Digital Marketing boundary policy overrides are unsupported. "
+                    + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
+                    + context);
+        }
+        return ProductBoundaryPolicyPackValidator.validate(RULES, VALIDATION_PROFILE);
     }
 
     // -----------------------------------------------------------------------
@@ -90,6 +109,7 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(false)
             .effect(Effect.ALLOW)
+            .metadata(Map.of("packVersion", PACK_VERSION, "ruleCategory", "workspaces"))
             .build();
     }
 
@@ -104,6 +124,7 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(true)
             .requiresAudit(true)
             .effect(Effect.ALLOW)
+            .metadata(Map.of("packVersion", PACK_VERSION, "ruleCategory", "contacts"))
             .build();
     }
 
@@ -118,6 +139,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "contacts",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -132,6 +157,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(true)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "audiences",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -146,6 +175,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "campaigns",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -160,6 +193,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "budgets",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -174,6 +211,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "content",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -188,6 +229,10 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .requiresConsent(false)
             .requiresAudit(true)
             .effect(Effect.REQUIRE_APPROVAL)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "connectors",
+                "approvalPolicy", "human-approval"))
             .build();
     }
 
@@ -200,8 +245,12 @@ public final class DigitalMarketingBoundaryPolicyStore implements BoundaryPolicy
             .resourcePattern("**")
             .actions(Set.of("*"))
             .requiresConsent(false)
-            .requiresAudit(false)
+            .requiresAudit(true)
             .effect(Effect.DENY)
+            .metadata(Map.of(
+                "packVersion", PACK_VERSION,
+                "ruleCategory", "default-deny",
+                "denialReason", "no-matching-allow-rule"))
             .build();
     }
 }

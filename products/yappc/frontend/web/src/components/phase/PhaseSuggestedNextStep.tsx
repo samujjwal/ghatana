@@ -35,9 +35,9 @@ export interface PhaseSuggestedNextStepProps {
  * Step type badge colors
  */
 const STEP_TYPE_COLORS: Record<SuggestedStep['type'], string> = {
-  automation: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  manual: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  review: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+  automation: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+  manual: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+  review: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
 };
 
 /**
@@ -60,7 +60,7 @@ export const PhaseSuggestedNextStep: React.FC<PhaseSuggestedNextStepProps> = ({
 
   return (
     <div className={`phase-suggested-next-step ${className}`}>
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+        <h3 className="text-sm font-medium text-fg dark:text-fg-muted mb-3">
           Suggested Actions ({steps.length})
         </h3>
         <div className="space-y-3">
@@ -70,7 +70,7 @@ export const PhaseSuggestedNextStep: React.FC<PhaseSuggestedNextStepProps> = ({
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                      <h4 className="font-medium text-fg dark:text-fg-muted">
                         {step.title}
                       </h4>
                       <Chip
@@ -79,11 +79,11 @@ export const PhaseSuggestedNextStep: React.FC<PhaseSuggestedNextStepProps> = ({
                         className={STEP_TYPE_COLORS[step.type]}
                       />
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <p className="text-sm text-fg-muted dark:text-fg-muted mb-3">
                       {step.description}
                     </p>
                     {step.estimatedTime && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mb-3">
+                      <p className="text-xs text-fg-muted dark:text-fg-muted mb-3">
                         Est. {step.estimatedTime}
                       </p>
                     )}

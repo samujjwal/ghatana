@@ -76,13 +76,13 @@ export const PhaseProgressPill: React.FC<PhaseProgressPillProps> = ({
     const getStatusIcon = (status: GateCriterion['status']) => {
         switch (status) {
             case 'complete':
-                return <CheckCircle className="text-green-600" />;
+                return <CheckCircle className="text-success-color" />;
             case 'blocked':
-                return <Warning className="text-red-600" />;
+                return <Warning className="text-destructive" />;
             case 'in-progress':
                 return <Pending className="text-sky-600" />;
             case 'failed':
-                return <Warning className="text-red-600" />;
+                return <Warning className="text-destructive" />;
         }
     };
 
@@ -92,7 +92,7 @@ export const PhaseProgressPill: React.FC<PhaseProgressPillProps> = ({
                 variant="outlined"
                 onClick={handleClick}
                 endIcon={<ExpandMore />}
-                className="rounded-[64px] px-6 py-2 bg-white dark:bg-gray-900 hover:bg-gray-100" style={{ borderColor: hasBlocking ? 'error.main' : 'divider' }}
+                className="rounded-[64px] px-6 py-2 bg-white dark:bg-surface hover:bg-surface-muted" style={{ borderColor: hasBlocking ? 'error.main' : 'divider' }}
             >
                 <Box className="flex items-center gap-3">
                     <span style={{ fontSize: '1.2em' }}>{currentMeta.icon}</span>
@@ -106,8 +106,8 @@ export const PhaseProgressPill: React.FC<PhaseProgressPillProps> = ({
                     />
                     {nextMeta && (
                         <>
-                            <ArrowForward className="text-gray-500 dark:text-gray-400 text-base" />
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <ArrowForward className="text-fg-muted dark:text-fg-muted text-base" />
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 {nextMeta.name}
                             </Typography>
                         </>
@@ -150,7 +150,7 @@ export const PhaseProgressPill: React.FC<PhaseProgressPillProps> = ({
                         {gateCriteria.map((criterion) => (
                             <ListItem
                                 key={criterion.id}
-                                className="border border-gray-200 dark:border-gray-700 rounded mb-2" style={{ backgroundColor: criterion.status === 'blocked'
+                                className="border border-border dark:border-border rounded mb-2" style={{ backgroundColor: criterion.status === 'blocked'
                                             ? 'error.light'
                                             : criterion.status === 'complete'
                                                 ? 'success.light'
@@ -162,13 +162,13 @@ export const PhaseProgressPill: React.FC<PhaseProgressPillProps> = ({
                                     secondary={
                                         <>
                                             {criterion.progress && (
-                                                <Typography as="span" className="text-xs text-gray-500" display="block">
+                                                <Typography as="span" className="text-xs text-fg-muted" display="block">
                                                     {criterion.progress.current}/{criterion.progress.total} completed
                                                 </Typography>
                                             )}
                                             {criterion.status === 'blocked' && criterion.personas && (
                                                 <Typography
-                                                    as="span" className="text-xs text-gray-500"
+                                                    as="span" className="text-xs text-fg-muted"
                                                     display="block"
                                                     tone="danger"
                                                     className="mt-1"

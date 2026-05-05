@@ -180,9 +180,9 @@ const MemberRow: React.FC<MemberRowProps> = ({
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                         badgeContent={
                             isActive ? (
-                                <ActiveIcon className="w-[12px] h-[12px] text-green-600" />
+                                <ActiveIcon className="w-[12px] h-[12px] text-success-color" />
                             ) : (
-                                <InactiveIcon className="w-[12px] h-[12px] text-gray-400 dark:text-gray-600" />
+                                <InactiveIcon className="w-[12px] h-[12px] text-fg-muted dark:text-fg-muted" />
                             )
                         }
                     >
@@ -194,7 +194,7 @@ const MemberRow: React.FC<MemberRowProps> = ({
                         <Typography as="p" className="text-sm" fontWeight="medium">
                             {member.userId}
                         </Typography>
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                             {member.email}
                         </Typography>
                     </Box>
@@ -220,7 +220,7 @@ const MemberRow: React.FC<MemberRowProps> = ({
                 </Box>
             </TableCell>
             <TableCell>
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     {new Date(member.joinedAt).toLocaleDateString()}
                 </Typography>
             </TableCell>
@@ -538,7 +538,7 @@ const PermissionMatrix: React.FC = () => {
                                 <TableRow>
                                     <TableCell
                                         colSpan={5}
-                                        className="font-bold capitalize bg-gray-100 dark:bg-gray-800"
+                                        className="font-bold capitalize bg-surface-muted dark:bg-surface"
                                     >
                                         {resource}
                                     </TableCell>
@@ -551,9 +551,9 @@ const PermissionMatrix: React.FC = () => {
                                         {roles.map((role) => (
                                             <TableCell key={role} align="center">
                                                 {hasPermission(role, perm) ? (
-                                                    <ActiveIcon className="text-green-600 text-lg" />
+                                                    <ActiveIcon className="text-success-color text-lg" />
                                                 ) : (
-                                                    <InactiveIcon className="text-gray-400 dark:text-gray-600 text-lg" />
+                                                    <InactiveIcon className="text-fg-muted dark:text-fg-muted text-lg" />
                                                 )}
                                             </TableCell>
                                         ))}
@@ -713,10 +713,10 @@ export const WorkspaceAdminDashboard: React.FC<WorkspaceAdminDashboardProps> = (
     return (
         <Box className="h-full flex flex-col">
             {/* Header */}
-            <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="p-4 border-border dark:border-border border-b" >
                 <Box className="flex items-center justify-between">
                     <Box className="flex items-center gap-4">
-                        <AdminIcon className="text-blue-600 text-[32px]" />
+                        <AdminIcon className="text-info-color text-[32px]" />
                         <Box>
                             <Typography as="h5">{workspace.name}</Typography>
                             <Typography as="p" className="text-sm" color="text.secondary">
@@ -757,7 +757,7 @@ export const WorkspaceAdminDashboard: React.FC<WorkspaceAdminDashboardProps> = (
             <Tabs
                 value={activeTab}
                 onChange={(_, v) => setActiveTab(v)}
-                className="px-4 border-gray-200 dark:border-gray-700 border-b" >
+                className="px-4 border-border dark:border-border border-b" >
                 <Tab
                     label={`Members (${members.length})`}
                     value="members"

@@ -11,6 +11,7 @@
 import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma.js';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
+import { requireAiSecret } from '../../lib/ai-mode.js';
 
 // ============================================================================
 // Types & Interfaces
@@ -97,10 +98,7 @@ export class VisualSearchService {
    */
   private static getOpenAI(): OpenAI {
     if (!this.openai) {
-      const apiKey = process.env.OPENAI_API_KEY;
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY not configured');
-      }
+      const apiKey = requireAiSecret('OPENAI_API_KEY', 'visual search');
       this.openai = new OpenAI({ apiKey });
     }
     return this.openai;

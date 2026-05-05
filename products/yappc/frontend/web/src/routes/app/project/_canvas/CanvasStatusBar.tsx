@@ -52,7 +52,7 @@ export function CanvasStatusBar({
 }: CanvasStatusBarProps) {
   return (
     <Box
-      className="flex justify-between items-center px-4 bg-white dark:bg-gray-900 border-t border-solid text-xs text-gray-500 dark:text-gray-400 overflow-hidden transition-all duration-300" style={{ paddingTop: calmMode ? 0 : 4, paddingBottom: calmMode ? 0 : 4, borderColor: calmMode ? 'transparent' : 'rgba(0,0,0,0.12)', maxHeight: calmMode ? 0 : 40, opacity: calmMode ? 0 : 1, pointerEvents: calmMode ? 'none' : 'auto' }}
+      className="flex justify-between items-center px-4 bg-white dark:bg-surface border-t border-solid text-xs text-fg-muted dark:text-fg-muted overflow-hidden transition-all duration-300" style={{ paddingTop: calmMode ? 0 : 4, paddingBottom: calmMode ? 0 : 4, borderColor: calmMode ? 'transparent' : 'rgba(0,0,0,0.12)', maxHeight: calmMode ? 0 : 40, opacity: calmMode ? 0 : 1, pointerEvents: calmMode ? 'none' : 'auto' }}
     >
       <Box className="flex gap-4">
         {activeTool === 'draw' ? (

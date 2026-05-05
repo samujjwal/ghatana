@@ -1,0 +1,203 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "DMOS API",
+    "description": "Digital Marketing Orchestration System API",
+    "version": "1.0.0"
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [{"bearerAuth": []}],
+  "paths": {
+    "/v1/workspaces/{workspaceId}/campaigns": {
+      "get": {
+        "summary": "List campaigns",
+        "description": "Paginated list of campaigns",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      },
+      "post": {
+        "summary": "Create campaign",
+        "description": "Create a new campaign",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}": {
+      "get": {
+        "summary": "Get campaign",
+        "description": "Retrieve a specific campaign",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/launch": {
+      "post": {
+        "summary": "Launch campaign",
+        "description": "Launch a campaign",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/campaigns/{id}/pause": {
+      "post": {
+        "summary": "Pause campaign",
+        "description": "Pause a running campaign",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/strategies": {
+      "get": {
+        "summary": "List strategies",
+        "description": "List marketing strategies",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      },
+      "post": {
+        "summary": "Generate strategy",
+        "description": "Generate AI-powered strategy",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/budgets": {
+      "get": {
+        "summary": "List budgets",
+        "description": "List budget recommendations",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      },
+      "post": {
+        "summary": "Generate budget",
+        "description": "Generate AI-powered budget",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/approvals": {
+      "get": {
+        "summary": "List approvals",
+        "description": "List pending approvals",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces/{workspaceId}/ai-actions": {
+      "get": {
+        "summary": "List AI actions",
+        "description": "List AI-generated actions",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/v1/workspaces": {
+      "get": {
+        "summary": "List workspaces",
+        "description": "List accessible workspaces",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "401": {"description": "Unauthorized"},
+          "403": {"description": "Forbidden"},
+          "404": {"description": "Not Found"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Check API health status",
+        "responses": {
+          "200": {"description": "Success"},
+          "503": {"description": "Service Unavailable"}
+        }
+      }
+    },
+    "/public/intake": {
+      "post": {
+        "summary": "Public intake",
+        "description": "Submit public intake questionnaire",
+        "responses": {
+          "200": {"description": "Success"},
+          "400": {"description": "Bad Request"},
+          "500": {"description": "Internal Server Error"}
+        }
+      }
+    }
+  }
+}

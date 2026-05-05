@@ -194,7 +194,7 @@ export function PersonaSwitcher({
 
               {/* Virtual/AI badge */}
               {isVirtual && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-medium flex items-center gap-0.5">
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-info-bg dark:bg-info-bg/40 text-info-color dark:text-info-color font-medium flex items-center gap-0.5">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
@@ -208,12 +208,12 @@ export function PersonaSwitcher({
 
       {/* Virtual Personas Info */}
       {virtualPersonas.length > 0 && (
-        <div className="px-3 py-2 border-t border-divider bg-purple-50/50 dark:bg-purple-900/10">
+        <div className="px-3 py-2 border-t border-divider bg-info-bg/50 dark:bg-info-bg/10">
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-info-color mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="text-xs text-purple-700 dark:text-purple-300">
+            <p className="text-xs text-info-color dark:text-info-color">
               <strong>{virtualPersonas.length} AI Agent{virtualPersonas.length > 1 ? 's' : ''}</strong> will handle
               {' '}{virtualPersonas.map(p => PERSONA_DEFINITIONS[p].shortName).join(', ')} tasks automatically.
             </p>
@@ -285,7 +285,7 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
           {primaryDef.icon}
         </div>
         {virtualPersonas.length > 0 && (
-          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-500 text-white text-[10px] flex items-center justify-center font-bold">
+          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-info-bg text-white text-[10px] flex items-center justify-center font-bold">
             {virtualPersonas.length}
           </div>
         )}
@@ -320,7 +320,7 @@ export function PersonaSwitcherCompact({ className = '' }: { className?: string 
           </div>
           {virtualPersonas.length > 0 && (
             <>
-              <div className="text-xs font-medium text-purple-600 dark:text-purple-400 mt-2 mb-1">AI Agents</div>
+              <div className="text-xs font-medium text-info-color dark:text-info-color mt-2 mb-1">AI Agents</div>
               <div className="space-y-1">
                 {virtualPersonas.map((id) => (
                   <div key={id} className="flex items-center gap-1.5 text-xs text-text-secondary">

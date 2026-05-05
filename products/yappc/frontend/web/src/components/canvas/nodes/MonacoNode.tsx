@@ -118,7 +118,7 @@ function NativeCodeEditor({ value, onChange, readOnly }: NativeCodeEditorProps) 
 
     return (
         <textarea
-            className="w-full h-full resize-none bg-gray-950 text-green-300 font-mono text-sm p-3 outline-none border-none leading-relaxed"
+            className="w-full h-full resize-none bg-surface text-success-color font-mono text-sm p-3 outline-none border-none leading-relaxed"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -176,13 +176,13 @@ export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
 
             {/* Drag handle — MUST be outside CanvasContentWrapper */}
             <div
-                className="flex items-center justify-between px-3 py-1.5 bg-gray-900 border-b border-gray-700 rounded-t-md cursor-grab active:cursor-grabbing select-none"
+                className="flex items-center justify-between px-3 py-1.5 bg-surface border-b border-border rounded-t-md cursor-grab active:cursor-grabbing select-none"
                 style={{ minWidth: 200 }}
             >
-                <span className="text-gray-200 text-xs font-mono font-semibold truncate">{title}</span>
+                <span className="text-fg-muted text-xs font-mono font-semibold truncate">{title}</span>
                 {!readOnly && (
                     <select
-                        className="nodrag nopan text-xs bg-gray-800 text-gray-300 border border-gray-600 rounded px-1 py-0.5 ml-2"
+                        className="nodrag nopan text-xs bg-surface text-fg-muted border border-border rounded px-1 py-0.5 ml-2"
                         value={language}
                         onChange={(e) => {
                             // Surface language change to parent via a synthetic data update
@@ -203,13 +203,13 @@ export function MonacoNode({ data, selected }: NodeProps<MonacoCanvasNode>) {
             <CanvasContentWrapper className="rounded-b-md overflow-hidden min-h-[120px]">
                 {zoom < MIN_ZOOM_THRESHOLD ? (
                     /* Zoom-out placeholder — avoids rendering expensive editor DOM */
-                    <div className="flex items-center justify-center w-full h-full bg-gray-950 text-gray-500 text-xs font-mono select-none">
+                    <div className="flex items-center justify-center w-full h-full bg-surface text-fg-muted text-xs font-mono select-none">
                         <span>{title} — zoom in to edit</span>
                     </div>
                 ) : LazyMonaco ? (
                     <Suspense
                         fallback={
-                            <div className="flex items-center justify-center w-full h-full bg-gray-950 text-gray-500 text-xs">
+                            <div className="flex items-center justify-center w-full h-full bg-surface text-fg-muted text-xs">
                                 Loading editor…
                             </div>
                         }

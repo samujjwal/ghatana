@@ -334,7 +334,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                 disabled={disabled}
                 endIcon={<KeyboardArrowDown />}
                 size="sm"
-                className="normal-case font-medium text-gray-500 dark:text-gray-400 rounded-lg px-3 hover:bg-gray-100"
+                className="normal-case font-medium text-fg-muted dark:text-fg-muted rounded-lg px-3 hover:bg-surface-muted"
             >
                 <Box className="flex items-center gap-1.5">
                     {selectedOption?.icon}
@@ -360,7 +360,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                 anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
             >
                 <Box className="px-4 py-2">
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary" fontWeight={600}>
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" fontWeight={600}>
                         SELECT CONTENT TYPE
                     </Typography>
                 </Box>
@@ -369,8 +369,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                 {Object.entries(groupedTypes).map(([category, types], catIndex) => (
                     <React.Fragment key={category}>
                         {catIndex > 0 && <Divider />}
-                        <Box className="px-4 py-1.5 bg-gray-100 dark:bg-gray-800">
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary" fontWeight={600}>
+                        <Box className="px-4 py-1.5 bg-surface-muted dark:bg-surface">
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" fontWeight={600}>
                                 {CATEGORY_LABELS[category]}
                             </Typography>
                         </Box>
@@ -379,7 +379,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({
                                 key={type.id}
                                 onClick={() => handleSelect(type.id)}
                                 selected={type.id === selectedType}
-                                className="py-2 bg-blue-100 dark:bg-blue-900/30 bg-blue-100 dark:bg-blue-900/30"
+                                className="py-2 bg-info-bg dark:bg-info-bg/30 bg-info-bg dark:bg-info-bg/30"
                             >
                                 <ListItemIcon className="min-w-[36px]">
                                     {type.icon}

@@ -54,6 +54,15 @@ jobs:
             echo "✅ docs/README.md exists"
           fi
         shell: bash
+
+      - name: Validate product documentation taxonomy
+        run: node scripts/check-product-doc-taxonomy.mjs
+
+      - name: Validate Digital Marketing root docs are redirect stubs
+        run: node scripts/check-digital-marketing-root-docs.mjs
+
+      - name: Validate FlashIt canonical docs include boundary content
+        run: node scripts/check-flashit-doc-content.mjs
       
       - name: Check for duplicate active trackers
         run: |
@@ -156,4 +165,3 @@ jobs:
           fi
         shell: bash
         continue-on-error: true
-

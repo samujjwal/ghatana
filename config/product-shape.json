@@ -1,0 +1,35 @@
+{
+  "products": {
+    "phr": {
+      "ui": true,
+      "uiMode": "web",
+      "clientPackages": [
+        "products/phr/apps/web/package.json"
+      ]
+    },
+    "digital-marketing": {
+      "ui": true,
+      "uiMode": "web",
+      "clientPackages": [
+        "products/digital-marketing/ui/package.json"
+      ]
+    },
+    "flashit": {
+      "ui": true,
+      "uiMode": "multi-surface",
+      "clientPackages": [
+        "products/flashit/client/web/package.json",
+        "products/flashit/client/mobile/package.json"
+      ]
+    },
+    "finance": {
+      "ui": false,
+      "uiMode": "backend-only",
+      "clientPackages": [],
+      "backendOnlyDeclaration": {
+        "file": "products/finance/README.md",
+        "mustContain": "backend-only"
+      }
+    }
+  }
+}

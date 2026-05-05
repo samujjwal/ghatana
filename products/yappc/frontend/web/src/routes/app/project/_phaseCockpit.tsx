@@ -1,96 +1,27 @@
-import { useQuery } from '@tanstack/react-query';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 
-import type { Blocker } from '../../../components/phase/PhaseBlockerPanel';
 import { PhaseBlockerPanel } from '../../../components/phase/PhaseBlockerPanel';
 import { PhaseCockpitLayout } from '../../../components/phase/PhaseCockpitLayout';
-import type { EvidenceItem } from '../../../components/phase/PhaseEvidencePanel';
 import { PhaseEvidencePanel } from '../../../components/phase/PhaseEvidencePanel';
-import type { GovernanceRecord } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhaseGovernanceTrace } from '../../../components/phase/PhaseGovernanceTrace';
 import { PhasePrimaryActionCard } from '../../../components/phase/PhasePrimaryActionCard';
-import type { SuggestedStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import { PhaseSuggestedNextStep } from '../../../components/phase/PhaseSuggestedNextStep';
 import {
-  buildPhaseBlockers,
-  buildPhaseEvidence,
-  buildPhaseGovernanceRecords,
-  buildPhaseSuggestedSteps,
-  fetchPhaseTransitionPreview,
   formatTimestamp,
-  getPhaseCockpitConfig,
-  isLifecyclePhase,
-  parseJsonResponse,
-  parseProjectResponse,
+  usePhaseCockpitData,
 } from '../../../services/phase';
 import type {
-  LifecyclePhase,
   MountedPhase,
-  PhaseActivityEvent,
-  PhaseActivityResponse,
-  PhaseProjectSnapshot,
-  PhaseTransitionPreviewSnapshot,
 } from '../../../services/phase';
 import { PhaseStatusPanels } from './PhaseStatusPanels';
 import { PhaseEmbeddedSurface } from './PhaseEmbeddedSurface';
-
-function asTypedList<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
 
 
 function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState<string | null>(null);
-  const config = getPhaseCockpitConfig(phase);
-
-  const projectQuery = useQuery<PhaseProjectSnapshot>({
-    queryKey: ['project', projectId],
-    queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load the ${config.name.toLowerCase()} cockpit.`);
-      }
-
-      return parseProjectResponse(
-        response,
-        `${config.name.toLowerCase()} cockpit`,
-      );
-    },
-    enabled: Boolean(projectId),
-  });
-
-  const activityQuery = useQuery<PhaseActivityResponse>({
-    queryKey: ['project-activity', projectId],
-    queryFn: async () => {
-      const response = await fetch(`/api/projects/${projectId}/activity`);
-      if (!response.ok) {
-        throw new Error('Failed to load recent project activity.');
-      }
-
-      return parseJsonResponse<PhaseActivityResponse>(response, 'project activity');
-    },
-    enabled: Boolean(projectId),
-  });
-
-  const projectPhase = projectQuery.data?.lifecyclePhase;
-  const lifecyclePhase =
-    projectPhase && isLifecyclePhase(projectPhase) ? projectPhase : null;
-
-  const previewQuery = useQuery<PhaseTransitionPreviewSnapshot>({
-    queryKey: ['project-phase-preview', projectId, projectPhase],
-    queryFn: () => {
-      if (!projectId || !lifecyclePhase) {
-        throw new Error('Missing lifecycle phase context.');
-      }
-
-      return fetchPhaseTransitionPreview(lifecyclePhase, projectId);
-    },
-    enabled: Boolean(projectId && lifecyclePhase),
-    retry: false,
-  });
 
   const scrollToSupportingSurface = useCallback(() => {
     document.getElementById(`${phase}-supporting-surface`)?.scrollIntoView({
@@ -98,6 +29,21 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
       block: 'start',
     });
   }, [phase]);
+
+  const {
+    config,
+    projectQuery,
+    activity,
+    preview,
+    blockers,
+    evidence,
+    governance,
+    suggestions,
+  } = usePhaseCockpitData({
+    phase,
+    projectId,
+    onSuggestionAction: scrollToSupportingSurface,
+  });
 
   const handlePrimaryAction = () => {
     if (phase === 'intent' && projectId) {
@@ -115,25 +61,6 @@ function PhaseCockpitRoute({ phase }: { phase: MountedPhase }) {
   };
 
   const project = projectQuery.data;
-  const activity = useMemo<PhaseActivityEvent[]>(
-    () => activityQuery.data?.activity ?? [],
-    [activityQuery.data],
-  );
-  const preview = previewQuery.data ?? null;
-
-  const blockers = useMemo<Blocker[]>(
-    () => (project ? asTypedList<Blocker>(buildPhaseBlockers(phase, project, preview)) : []),
-    [phase, project, preview],
-  );
-  const evidence = useMemo<EvidenceItem[]>(
-    () => (project ? asTypedList<EvidenceItem>(buildPhaseEvidence(phase, project, activity, preview)) : []),
-    [activity, phase, preview, project],
-  );
-  const governance = useMemo<GovernanceRecord[]>(() => asTypedList<GovernanceRecord>(buildPhaseGovernanceRecords(activity)), [activity]);
-  const suggestions = useMemo<SuggestedStep[]>(
-    () => (project ? asTypedList<SuggestedStep>(buildPhaseSuggestedSteps(phase, project, scrollToSupportingSurface)) : []),
-    [phase, project, scrollToSupportingSurface],
-  );
 
   if (projectQuery.isLoading || !project) {
     return (

@@ -349,7 +349,7 @@ export const ModeLevelEmptyState: React.FC<{
             <Stack spacing={3} alignItems="center" className="text-center max-w-[400px]">
                 {/* Icon */}
                 <Box
-                    className="w-[80px] h-[80px] rounded-full flex items-center justify-center bg-gray-100" >
+                    className="w-[80px] h-[80px] rounded-full flex items-center justify-center bg-surface-muted" >
                     {state.icon}
                 </Box>
 
@@ -368,7 +368,7 @@ export const ModeLevelEmptyState: React.FC<{
                     {state.tools.map((tool) => (
                         <Box
                             key={tool}
-                            className="px-4 py-1 rounded text-xs bg-gray-200" >
+                            className="px-4 py-1 rounded text-xs bg-surface-muted" >
                             {tool}
                         </Box>
                     ))}
@@ -378,7 +378,7 @@ export const ModeLevelEmptyState: React.FC<{
                 {onAskAI && (
                     <Box
                         onClick={onAskAI}
-                        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white cursor-pointer transition-all duration-200 translate-y-[-1px] bg-blue-800" >
+                        className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white cursor-pointer transition-all duration-200 translate-y-[-1px] bg-info-bg" >
                         <AutoAwesome className="text-xl" />
                         <Typography variant="body2" fontWeight={500}>
                             {state.aiSuggestion}
@@ -390,7 +390,7 @@ export const ModeLevelEmptyState: React.FC<{
                 {onGetStarted && (
                     <Box
                         onClick={onGetStarted}
-                        className="px-6 py-2 rounded-lg border border-solid border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-200 hover:border-blue-600"
+                        className="px-6 py-2 rounded-lg border border-solid border-border dark:border-border cursor-pointer transition-all duration-200 hover:border-info-border"
                     >
                         <Typography variant="body2">Get Started</Typography>
                     </Box>

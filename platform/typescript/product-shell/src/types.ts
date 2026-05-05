@@ -56,6 +56,28 @@ export interface ProductRouteCapability {
   readonly lifecycle?: RouteLifecycle;
   /** Whether the route appears in navigation for the current role. */
   readonly discoverable?: boolean;
+  /** Optional persona visibility metadata returned by backend entitlement APIs. */
+  readonly personas?: readonly string[];
+  /** Optional commercial/feature tier metadata returned by backend entitlement APIs. */
+  readonly tiers?: readonly string[];
+  /** Optional product content cards or actions associated with this route. */
+  readonly actions?: readonly string[];
+}
+
+/**
+ * Backend-provided route/content entitlement contract.
+ *
+ * Products can hydrate `ProductShellConfig.routes` from this shape instead of
+ * hardcoding frontend navigation decisions.
+ */
+export interface ProductRouteEntitlement {
+  readonly product: string;
+  readonly principalId: string;
+  readonly tenantId: string;
+  readonly role: string;
+  readonly persona?: string;
+  readonly tier?: string;
+  readonly routes: readonly ProductRouteCapability[];
 }
 
 // ---------------------------------------------------------------------------

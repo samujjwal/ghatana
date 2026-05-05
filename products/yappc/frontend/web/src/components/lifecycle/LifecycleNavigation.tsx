@@ -126,7 +126,7 @@ function DesktopSidebar({ open, onClose }: DesktopSidebarProps) {
                                                 {item.label}
                                             </Typography>
                                             {item.description && (
-                                                <Typography className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                                <Typography className="truncate text-xs text-fg-muted dark:text-fg-muted">
                                                     {item.description}
                                                 </Typography>
                                             )}
@@ -157,13 +157,13 @@ function MobileBottomNav() {
     const mobileItems = NAV_ITEMS.slice(0, 5);
 
     return (
-        <Box className="fixed bottom-[0px] left-[0px] right-[0px] z-[1100] flex border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <Box className="fixed bottom-[0px] left-[0px] right-[0px] z-[1100] flex border-t border-border bg-white dark:border-border dark:bg-surface">
             {mobileItems.map((item) => (
                 <button
                     key={item.id}
                   type="button"
                   onClick={() => navigate(item.path)}
-                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${item === mobileItems[activeIndex] ? 'text-blue-600' : 'text-gray-600 dark:text-gray-300'}`}
+                  className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${item === mobileItems[activeIndex] ? 'text-info-color' : 'text-fg-muted dark:text-fg-muted'}`}
                 >
                     {item.icon}
                     <span>{item.label}</span>

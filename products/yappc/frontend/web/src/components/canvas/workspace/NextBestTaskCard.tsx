@@ -142,11 +142,11 @@ export const NextBestTaskCard: React.FC<NextBestTaskProps> = ({
         >
             {/* Draggable Header */}
             <Box
-                className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 select-none active:cursor-grabbing border-b" style={{ cursor: isDragging ? 'grabbing' : 'grab', pointerEvents: isDragging ? 'auto' : 'auto' }} onMouseDown={handleDragStart}
+                className="flex items-center justify-between px-4 py-2 bg-surface-muted dark:bg-surface border-border dark:border-border select-none active:cursor-grabbing border-b" style={{ cursor: isDragging ? 'grabbing' : 'grab', pointerEvents: isDragging ? 'auto' : 'auto' }} onMouseDown={handleDragStart}
             >
                 <Box className="flex items-center gap-1">
-                    <DragIndicator className="text-gray-500 dark:text-gray-400 text-base" />
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary" fontWeight="medium">
+                    <DragIndicator className="text-fg-muted dark:text-fg-muted text-base" />
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" fontWeight="medium">
                         Next Best Task
                     </Typography>
                 </Box>
@@ -193,9 +193,9 @@ export const NextBestTaskCard: React.FC<NextBestTaskProps> = ({
                 )}
 
                 {/* Impact/Why */}
-                <Box className="flex items-center gap-1 mb-2 p-2 rounded bg-gray-100 dark:bg-gray-800">
-                    <TrendingUp className="text-blue-600 text-base" />
-                    <Typography as="span" className="text-xs text-gray-500" fontWeight="medium">
+                <Box className="flex items-center gap-1 mb-2 p-2 rounded bg-surface-muted dark:bg-surface">
+                    <TrendingUp className="text-info-color text-base" />
+                    <Typography as="span" className="text-xs text-fg-muted" fontWeight="medium">
                         Why: {impact}
                     </Typography>
                 </Box>
@@ -205,8 +205,8 @@ export const NextBestTaskCard: React.FC<NextBestTaskProps> = ({
                     {/* Time Estimate */}
                     {estimatedMinutes && (
                         <Box className="flex items-center gap-1">
-                            <Schedule className="text-gray-500 dark:text-gray-400 text-base" />
-                            <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Schedule className="text-fg-muted dark:text-fg-muted text-base" />
+                            <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                 {formatDuration(estimatedMinutes)}
                             </Typography>
                         </Box>
@@ -215,8 +215,8 @@ export const NextBestTaskCard: React.FC<NextBestTaskProps> = ({
                     {/* Blocks Count */}
                     {blocksCount && blocksCount > 0 && (
                         <Box className="flex items-center gap-1">
-                            <Block className="text-red-600 text-base" />
-                            <Typography as="span" className="text-xs text-gray-500" color="error.main" fontWeight="medium">
+                            <Block className="text-destructive text-base" />
+                            <Typography as="span" className="text-xs text-fg-muted" color="error.main" fontWeight="medium">
                                 Blocks {blocksCount} {blocksCount === 1 ? 'task' : 'tasks'}
                             </Typography>
                         </Box>
@@ -226,7 +226,7 @@ export const NextBestTaskCard: React.FC<NextBestTaskProps> = ({
                 {/* Collaborators Needed */}
                 {collaborators.length > 0 && (
                     <Box className="mt-3">
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" display="block" className="mb-1">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" display="block" className="mb-1">
                             Needs:
                         </Typography>
                         <AvatarGroup max={4} className="justify-start">

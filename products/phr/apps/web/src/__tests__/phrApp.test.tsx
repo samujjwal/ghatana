@@ -2,6 +2,9 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { ThemeProvider } from '@ghatana/theme';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { PhrAccessProvider } from '../auth/PhrAccessContext';
+import { phrRouteManifest } from '../routeManifest';
+import { AppShell } from '../layout/AppShell';
 import { DashboardPage } from '../pages/DashboardPage';
 import { RecordDetailPage } from '../pages/RecordDetailPage';
 
@@ -33,4 +36,25 @@ describe('PHR web app', () => {
     expect(screen.getByText('FHIR resource rendering')).toBeInTheDocument();
     expect(screen.getByText(/resourceType/)).toBeInTheDocument();
   });
-});
+
+  it('hides clinician-only emergency route for patient persona in shell navigation', () => {
+    render(
+      <ThemeProvider>
+        <PhrAccessProvider>
+          <MemoryRouter>
+            <AppShell />
+          </MemoryRouter>
+        </PhrAccessProvider>
+      </ThemeProvider>,
+    );
+
+    expect(screen.queryByText('Emergency')).not.toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+  });
+
+  it('defines emergency workflow as clinician-scoped in route metadata', () => {
+    const emergencyRoute = phrRouteManifest.find((route) => route.path === '/emergency');
+    expect(emergencyRoute?.minimumRole).toBe('clinician');
+    expect(emergencyRoute?.emergencyAction).toBe(true);
+  });
+}); 

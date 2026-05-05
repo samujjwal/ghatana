@@ -27,16 +27,16 @@ type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked';
 
 const MILESTONE_STATUS_COLORS: Record<MilestoneStatus, string> = {
     planned: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
-    in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    delayed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    in_progress: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    completed: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+    delayed: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
 
 const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
     todo: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
-    in_progress: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    done: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    blocked: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    in_progress: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    done: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+    blocked: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
 
 const defaultData: DeliveryPlanPayload = {
@@ -217,7 +217,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-divider">
                 <div className="flex items-center gap-2">
-                    <Flag className="w-5 h-5 text-green-600" />
+                    <Flag className="w-5 h-5 text-success-color" />
                     <div>
                         <h3 className="font-semibold text-text-primary">Delivery Plan</h3>
                         <p className="text-xs text-text-secondary">
@@ -233,7 +233,7 @@ export const DeliveryPlanEditor: React.FC<DeliveryPlanEditorProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Generating...' : 'AI Assist'}
+                            {isAILoading ? 'Generating...' : 'Assist'}
                         </button>
                     )}
                     <button

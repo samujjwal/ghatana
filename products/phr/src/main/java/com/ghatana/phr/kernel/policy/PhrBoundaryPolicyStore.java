@@ -7,6 +7,8 @@ package com.ghatana.phr.kernel.policy;
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,14 @@ import java.util.Set;
 public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
 
     private static final String PACK_VERSION = "1.0.0";
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+            ProductBoundaryPolicyValidationProfile.builder()
+                    .productName("PHR")
+                    .rulePrefix("PHR-BP-")
+                    .defaultDenyRuleId("PHR-BP-999")
+                    .targetScopePrefix("phr.")
+                    .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+                    .build();
 
     /**
      * Immutable list of all PHR boundary rules, evaluated in declaration order.
@@ -105,9 +115,9 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
                             "denialReason", "external-export-not-permitted"))
                     .build(),
 
-            // PHR-BP-005: Default deny — any unmatched cross-scope access is denied.
+            // PHR-BP-999: Default deny — any unmatched cross-scope access is denied.
             BoundaryPolicyRule.builder()
-                    .ruleId("PHR-BP-005")
+                    .ruleId("PHR-BP-999")
                     .sourceScopePattern("**")
                     .targetScopePattern("phr.*")
                     .resourcePattern("**")
@@ -123,8 +133,12 @@ public final class PhrBoundaryPolicyStore implements BoundaryPolicyStore {
 
     @Override
     public List<BoundaryPolicyRule> loadRules(BoundaryPolicyLoadContext context) {
-        // Rules are static and version-pinned. Tenant/region overrides are not yet
-        // supported in PHR v1 — all tenants receive the same rule set.
-        return PHR_RULES;
+        if (!"default".equals(context.getTenantId()) || !"GLOBAL".equalsIgnoreCase(context.getRegion())) {
+            throw new BoundaryPolicyStoreException(
+                    "PHR boundary policy overrides are unsupported. "
+                            + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
+                            + context);
+        }
+        return ProductBoundaryPolicyPackValidator.validate(PHR_RULES, VALIDATION_PROFILE);
     }
 }

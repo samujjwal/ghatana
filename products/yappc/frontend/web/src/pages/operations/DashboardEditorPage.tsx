@@ -164,7 +164,7 @@ const DashboardEditorPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -172,7 +172,7 @@ const DashboardEditorPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           {error instanceof Error ? error.message : 'Failed to load dashboard'}
         </div>
       </div>
@@ -186,20 +186,20 @@ const DashboardEditorPage: React.FC = () => {
       {/* Header bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex-1 min-w-0 max-w-md">
-          <label htmlFor="dashboard-name" className="block text-xs font-medium text-zinc-500 mb-1">Dashboard Name</label>
+          <label htmlFor="dashboard-name" className="block text-xs font-medium text-fg-muted mb-1">Dashboard Name</label>
           <input
             id="dashboard-name"
             type="text"
             value={name}
             onChange={(e) => { setName(e.target.value); setHasChanges(true); }}
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-blue-500 transition-colors"
+            className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 outline-none focus:border-info-border transition-colors"
             placeholder="Dashboard name…"
           />
         </div>
         <div className="flex gap-2 shrink-0">
           <button
             onClick={addWidget}
-            className="px-4 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:bg-zinc-700 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2 bg-surface border border-border text-fg-muted text-sm font-medium rounded-lg hover:bg-surface-muted transition-colors flex items-center gap-1.5"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -209,14 +209,14 @@ const DashboardEditorPage: React.FC = () => {
           <button
             onClick={handleDiscard}
             disabled={!hasChanges}
-            className="px-4 py-2 border border-zinc-700 text-zinc-300 text-sm font-medium rounded-lg hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 border border-border text-fg-muted text-sm font-medium rounded-lg hover:bg-surface disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Discard
           </button>
           <button
             onClick={() => saveMutation.mutate()}
             disabled={!hasChanges || saveMutation.isPending}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-info-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {saveMutation.isPending ? 'Saving…' : 'Save'}
           </button>
@@ -224,7 +224,7 @@ const DashboardEditorPage: React.FC = () => {
       </div>
 
       {hasChanges && (
-        <div className="flex items-center gap-2 text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2 text-xs text-warning-color bg-warning-bg/10 border border-warning-border/20 rounded-lg px-3 py-2">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -234,14 +234,14 @@ const DashboardEditorPage: React.FC = () => {
 
       {/* Widget grid */}
       {widgets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-zinc-800 rounded-lg">
-          <svg className="w-12 h-12 text-zinc-700 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col items-center justify-center py-20 border-2 border-dashed border-border rounded-lg">
+          <svg className="w-12 h-12 text-fg mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 16a1 1 0 011-1h4a1 1 0 011 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-3zM14 13a1 1 0 011-1h4a1 1 0 011 1v6a1 1 0 01-1 1h-4a1 1 0 01-1-1v-6z" />
           </svg>
-          <p className="text-sm text-zinc-500 mb-3">No widgets yet</p>
+          <p className="text-sm text-fg-muted mb-3">No widgets yet</p>
           <button
             onClick={addWidget}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition-colors"
+            className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-info-bg transition-colors"
           >
             Add Your First Widget
           </button>
@@ -258,10 +258,10 @@ const DashboardEditorPage: React.FC = () => {
               onDragStart={() => handleDragStart(widget.id)}
               onDragOver={(e) => handleDragOver(e, widget.id)}
               onDrop={() => handleDrop(widget.id)}
-              className={`bg-zinc-900 border rounded-lg p-4 transition-all ${
+              className={`bg-surface border rounded-lg p-4 transition-all ${
                 draggingId === widget.id
-                  ? 'border-blue-500 opacity-50'
-                  : 'border-zinc-800 hover:border-zinc-700'
+                  ? 'border-info-border opacity-50'
+                  : 'border-border hover:border-border'
               }`}
               style={{
                 gridColumn: `span ${Math.min(widget.width, GRID_COLS)}`,
@@ -270,14 +270,14 @@ const DashboardEditorPage: React.FC = () => {
               {/* Drag handle & actions */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing">
-                  <svg className="w-4 h-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-fg-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
                   </svg>
                   <span className="text-lg" role="img" aria-label={widget.type}>{WIDGET_ICONS[widget.type]}</span>
                 </div>
                 <button
                   onClick={() => removeWidget(widget.id)}
-                  className="text-zinc-600 hover:text-red-400 transition-colors"
+                  className="text-fg-muted hover:text-destructive transition-colors"
                   aria-label="Remove widget"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -291,14 +291,14 @@ const DashboardEditorPage: React.FC = () => {
                 type="text"
                 value={widget.title}
                 onChange={(e) => updateWidgetTitle(widget.id, e.target.value)}
-                className="w-full bg-transparent text-sm font-medium text-zinc-200 outline-none border-b border-transparent focus:border-zinc-600 mb-2 pb-1"
+                className="w-full bg-transparent text-sm font-medium text-fg-muted outline-none border-b border-transparent focus:border-border mb-2 pb-1"
               />
 
               {/* Widget type selector */}
               <select
                 value={widget.type}
                 onChange={(e) => updateWidgetType(widget.id, e.target.value as WidgetType)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-400 outline-none"
+                className="w-full bg-surface border border-border rounded px-2 py-1 text-xs text-fg-muted outline-none"
               >
                 {widgetTypes.map((t) => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
@@ -306,8 +306,8 @@ const DashboardEditorPage: React.FC = () => {
               </select>
 
               {/* Placeholder content */}
-              <div className="mt-3 h-24 bg-zinc-950 rounded border border-zinc-800 flex items-center justify-center">
-                <span className="text-xs text-zinc-600">Widget preview</span>
+              <div className="mt-3 h-24 bg-surface rounded border border-border flex items-center justify-center">
+                <span className="text-xs text-fg-muted">Widget preview</span>
               </div>
             </div>
           ))}

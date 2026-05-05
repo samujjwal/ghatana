@@ -51,6 +51,7 @@ class ArchitectureChecker {
     try {
       await this.checkPackageNaming();
       await this.checkDependencyPolicy();
+      await this.checkGradleDependencyDirection();
       await this.checkBannedLibraries();
       await this.checkDeprecatedPackages();
       await this.checkDuplicatePackageNames();
@@ -184,6 +185,52 @@ class ArchitectureChecker {
     }
 
     console.log(`   Checked for ${banned.length} banned libraries\n`);
+  }
+
+  async checkGradleDependencyDirection() {
+    console.log('🏗️  Checking Gradle dependency direction...');
+
+    const buildFiles = [];
+    this.walkDirectory(process.cwd(), buildFiles, 6);
+    const gradleFiles = buildFiles.filter((file) => file.endsWith('build.gradle.kts'));
+
+    for (const gradleFile of gradleFiles) {
+      const relativeFile = path.relative(process.cwd(), gradleFile);
+      const content = fs.readFileSync(gradleFile, 'utf-8');
+      const currentProduct = this.getProductFromPath(relativeFile);
+      const projectDependencies = [...content.matchAll(/project\("(:[^"]+)"\)/g)].map((match) => match[1]);
+
+      for (const dependency of projectDependencies) {
+        if (relativeFile.startsWith('platform-kernel/') && dependency.startsWith(':products:')) {
+          this.addViolation(
+            'KERNEL_TO_PRODUCT_DEP',
+            `Kernel module must not depend on product module ${dependency}`,
+            relativeFile
+          );
+        }
+
+        if (relativeFile.startsWith('platform-plugins/') && dependency.startsWith(':products:')) {
+          this.addViolation(
+            'PLUGIN_TO_PRODUCT_DEP',
+            `Platform plugin must not depend on product module ${dependency}`,
+            relativeFile
+          );
+        }
+
+        if (currentProduct && dependency.startsWith(':products:')) {
+          const depProduct = dependency.split(':')[2];
+          if (depProduct && depProduct !== currentProduct) {
+            this.addViolation(
+              'PRODUCT_TO_PRODUCT_GRADLE_DEP',
+              `Product ${currentProduct} must not depend directly on product ${depProduct} (${dependency})`,
+              relativeFile
+            );
+          }
+        }
+      }
+    }
+
+    console.log(`   Checked ${gradleFiles.length} Gradle build files\n`);
   }
 
   async checkDeprecatedPackages() {

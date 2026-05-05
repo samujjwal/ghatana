@@ -92,7 +92,7 @@ function PhaseItem({ phase, isActive, isAccessible, isPast, onClick }: PhaseItem
         if (isActive) {
             classes += ` bg-gradient-to-r ${colorGradient} text-white shadow-md font-semibold`;
         } else if (isPast) {
-            classes += ' bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30';
+            classes += ' bg-success-bg dark:bg-success-bg/20 text-success-color dark:text-success-color hover:bg-success-bg dark:hover:bg-success-bg/30';
         } else if (isAccessible) {
             classes += ' bg-grey-50 dark:bg-grey-800 text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-700';
         } else {

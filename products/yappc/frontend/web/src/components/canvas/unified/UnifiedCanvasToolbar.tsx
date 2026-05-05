@@ -109,7 +109,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
         >
             {/* Content Creation Buttons */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="text-xs text-gray-500" className="font-bold mb-2 text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="text-xs text-fg-muted" className="font-bold mb-2 text-fg-muted dark:text-fg-muted">
                     ADD CONTENT
                 </Typography>
 
@@ -117,7 +117,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     <Tooltip title="Add Sketch" placement="right">
                         <IconButton
                             onClick={handleAddSketch}
-                            className="text-white bg-purple-600" >
+                            className="text-white bg-info-bg" >
                             <Brush />
                         </IconButton>
                     </Tooltip>
@@ -125,7 +125,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     <Tooltip title="Add Diagram" placement="right">
                         <IconButton
                             onClick={handleAddDiagram}
-                            className="bg-green-600 text-white hover:bg-green-800"
+                            className="bg-success-bg text-white hover:bg-success-bg"
                         >
                             <AccountTree />
                         </IconButton>
@@ -134,7 +134,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     <Tooltip title="Add Code" placement="right">
                         <IconButton
                             onClick={handleAddCode}
-                            className="bg-amber-600 text-gray-900 hover:bg-amber-800"
+                            className="bg-warning-bg text-fg hover:bg-warning-bg"
                         >
                             <Code />
                         </IconButton>
@@ -143,7 +143,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
                     <Tooltip title="Add Artifact" placement="right">
                         <IconButton
                             onClick={handleAddArtifact}
-                            className="bg-blue-600 text-white hover:bg-blue-800"
+                            className="bg-primary text-white hover:bg-info-bg"
                         >
                             <Description />
                         </IconButton>
@@ -153,7 +153,7 @@ export const UnifiedCanvasToolbar: React.FC<UnifiedCanvasToolbarProps> = ({
 
             {/* Zoom Controls */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="text-xs text-gray-500" className="font-bold mb-2 text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="text-xs text-fg-muted" className="font-bold mb-2 text-fg-muted dark:text-fg-muted">
                     VIEW
                 </Typography>
 

@@ -124,13 +124,13 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
       case 'completed':
         return 'bg-emerald-500/10 border-emerald-500 text-emerald-400';
       case 'in-progress':
-        return 'bg-blue-500/10 border-blue-500 text-blue-400';
+        return 'bg-info-bg/10 border-info-border text-info-color';
       case 'pending':
-        return 'bg-zinc-800 border-zinc-700 text-zinc-400';
+        return 'bg-surface border-border text-fg-muted';
       case 'skipped':
-        return 'bg-zinc-800 border-zinc-700 text-zinc-500';
+        return 'bg-surface border-border text-fg-muted';
       default:
-        return 'bg-zinc-800 border-zinc-700 text-zinc-400';
+        return 'bg-surface border-border text-fg-muted';
     }
   };
 
@@ -142,10 +142,10 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
       <div className="p-6 space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100 mb-2">
+          <h1 className="text-2xl font-bold text-fg-muted mb-2">
             Welcome to YAPPC
           </h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-fg-muted">
             Let's get you started with your first project in just a few steps.
           </p>
         </div>
@@ -167,14 +167,14 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
                   'w-full flex items-center gap-4 p-4 rounded-xl border transition-all text-left',
                   getStepStatusColor(step.status),
                   !isClickable && 'opacity-50 cursor-not-allowed',
-                  isClickable && 'hover:border-zinc-600'
+                  isClickable && 'hover:border-border'
                 )}
               >
                 <div className={cn(
                   'flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center',
                   step.status === 'completed' ? 'bg-emerald-500/20' :
-                  step.status === 'in-progress' ? 'bg-blue-500/20' :
-                  'bg-zinc-700'
+                  step.status === 'in-progress' ? 'bg-info-bg/20' :
+                  'bg-surface-muted'
                 )}>
                   {step.status === 'completed' ? (
                     <Check className="w-5 h-5" />
@@ -186,7 +186,7 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold">{step.title}</h3>
                     {step.status === 'in-progress' && (
-                      <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                      <span className="text-xs bg-info-bg/20 text-info-color px-2 py-0.5 rounded">
                         Current
                       </span>
                     )}
@@ -202,33 +202,33 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
         </div>
 
         {/* Current Step Content */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+        <div className="bg-surface border border-border rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+            <div className="w-12 h-12 rounded-lg bg-info-bg/20 flex items-center justify-center text-info-color">
               <CurrentIcon className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-zinc-100">{currentStepData.title}</h2>
-              <p className="text-sm text-zinc-400">{currentStepData.description}</p>
+              <h2 className="text-lg font-semibold text-fg-muted">{currentStepData.title}</h2>
+              <p className="text-sm text-fg-muted">{currentStepData.description}</p>
             </div>
           </div>
 
           {/* Step-specific content would go here */}
-          <div className="bg-zinc-800 rounded-lg p-4 text-sm text-zinc-400">
+          <div className="bg-surface rounded-lg p-4 text-sm text-fg-muted">
             {currentStepData.id === 'intent' && (
               <div>
                 <p className="mb-3">Describe what you want to build in a few sentences.</p>
                 <textarea
                   placeholder="e.g., I want to build a task management app with team collaboration features..."
-                  className="w-full h-32 bg-zinc-900 border border-zinc-700 rounded-lg p-3 text-zinc-300 placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                  className="w-full h-32 bg-surface border border-border rounded-lg p-3 text-fg-muted placeholder-zinc-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
                 />
               </div>
             )}
             {currentStepData.id === 'ai-assist' && (
               <div className="space-y-3">
                 <p>AI is analyzing your intent and generating requirements...</p>
-                <div className="flex items-center gap-2 text-blue-400">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500" />
+                <div className="flex items-center gap-2 text-info-color">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-info-border" />
                   <span>Processing</span>
                 </div>
               </div>
@@ -237,13 +237,13 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
               <div>
                 <p className="mb-3">Review the generated requirements and architecture:</p>
                 <div className="space-y-2">
-                  <div className="p-3 bg-zinc-900 rounded border border-zinc-700">
-                    <div className="font-medium text-zinc-300 mb-1">Requirements</div>
-                    <div className="text-xs text-zinc-400">User authentication, task CRUD, team management</div>
+                  <div className="p-3 bg-surface rounded border border-border">
+                    <div className="font-medium text-fg-muted mb-1">Requirements</div>
+                    <div className="text-xs text-fg-muted">User authentication, task CRUD, team management</div>
                   </div>
-                  <div className="p-3 bg-zinc-900 rounded border border-zinc-700">
-                    <div className="font-medium text-zinc-300 mb-1">Architecture</div>
-                    <div className="text-xs text-zinc-400">React + Node.js + PostgreSQL</div>
+                  <div className="p-3 bg-surface rounded border border-border">
+                    <div className="font-medium text-fg-muted mb-1">Architecture</div>
+                    <div className="text-xs text-fg-muted">React + Node.js + PostgreSQL</div>
                   </div>
                 </div>
               </div>
@@ -269,17 +269,17 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
             type="button"
             onClick={handleBack}
             disabled={currentStep === 0}
-            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-surface hover:bg-surface-muted text-fg-muted text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Back
           </button>
-          <div className="text-sm text-zinc-500">
+          <div className="text-sm text-fg-muted">
             Step {currentStep + 1} of {steps.length}
           </div>
           <button
             type="button"
             onClick={handleNext}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+            className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors"
           >
             {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
           </button>
@@ -289,13 +289,13 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
       {/* Completion Dialog */}
       {showCompletionDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <h2 className="text-lg font-semibold text-zinc-100">Onboarding Complete!</h2>
+          <div className="bg-surface border border-border rounded-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-semibold text-fg-muted">Onboarding Complete!</h2>
               <button
                 type="button"
                 onClick={() => setShowCompletionDialog(false)}
-                className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                className="p-1 rounded hover:bg-surface text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon className="w-5 h-5" />
               </button>
@@ -306,15 +306,15 @@ export function EndToEndOnboarding({ className }: EndToEndOnboardingProps) {
                   <Check className="w-8 h-8" />
                 </div>
               </div>
-              <p className="text-center text-sm text-zinc-300">
+              <p className="text-center text-sm text-fg-muted">
                 Congratulations! You've completed the onboarding journey. Your project is ready and you can now start using YAPPC.
               </p>
             </div>
-            <div className="flex justify-end p-4 border-t border-zinc-800">
+            <div className="flex justify-end p-4 border-t border-border">
               <button
                 type="button"
                 onClick={handleComplete}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors"
               >
                 Go to Dashboard
               </button>

@@ -57,7 +57,7 @@ function AIAssistantTab({ projectId }: { projectId: string }) {
     if (!insights || insights.length === 0) {
         return (
             <Box className="p-6 text-center">
-                <AIIcon className="mb-4 text-5xl text-gray-400 dark:text-gray-600" />
+                <AIIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography className="text-sm" color="text.secondary">
                     No AI insights available yet
                 </Typography>
@@ -70,7 +70,7 @@ function AIAssistantTab({ projectId }: { projectId: string }) {
             {insights.map((insight) => (
                 <Box
                     key={insight.id}
-                    className="mb-4 p-4 rounded border-blue-600 bg-blue-50 border-l-[3px]" >
+                    className="mb-4 p-4 rounded border-info-border bg-info-bg border-l-[3px]" >
                     <Typography className="text-sm font-medium" fontWeight={600} gutterBottom>
                         {insight.title}
                     </Typography>
@@ -79,7 +79,7 @@ function AIAssistantTab({ projectId }: { projectId: string }) {
                             {insight.description}
                         </Typography>
                     )}
-                    <Typography className="text-xs text-gray-500" color="text.secondary">
+                    <Typography className="text-xs text-fg-muted" color="text.secondary">
                         {new Date(insight.timestamp).toLocaleString()}
                     </Typography>
                 </Box>
@@ -116,7 +116,7 @@ function ArtifactsTab({ projectId }: { projectId: string }) {
     if (artifacts.length === 0) {
         return (
             <Box className="p-6 text-center">
-                <FolderIcon className="mb-4 text-5xl text-gray-400 dark:text-gray-600" />
+                <FolderIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography className="text-sm" color="text.secondary">
                     No artifacts yet
                 </Typography>
@@ -129,7 +129,7 @@ function ArtifactsTab({ projectId }: { projectId: string }) {
             {artifacts.map((artifact) => (
                 <Box
                     key={artifact.id}
-                    className="mb-4 p-4 rounded border border-gray-200 dark:border-gray-700 hover:bg-gray-100 hover:dark:bg-gray-800 hover:cursor-pointer"
+                    className="mb-4 p-4 rounded border border-border dark:border-border hover:bg-surface-muted hover:dark:bg-surface hover:cursor-pointer"
                 >
                     <Box className="flex justify-between mb-2" style={{ alignItems: 'start' }} >
                         <Typography className="text-sm font-medium" fontWeight={600}>
@@ -147,7 +147,7 @@ function ArtifactsTab({ projectId }: { projectId: string }) {
                             />
                         )}
                     </Box>
-                    <Typography className="text-xs text-gray-500" color="text.secondary">
+                    <Typography className="text-xs text-fg-muted" color="text.secondary">
                         {new Date(artifact.timestamp).toLocaleString()}
                     </Typography>
                 </Box>
@@ -182,7 +182,7 @@ function AuditTab({ projectId, flowStage, phase }: { projectId: string; flowStag
     if (!auditEvents || auditEvents.length === 0) {
         return (
             <Box className="p-6 text-center">
-                <SecurityIcon className="mb-4 text-5xl text-gray-400 dark:text-gray-600" />
+                <SecurityIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography className="text-sm" color="text.secondary">
                     No audit events yet
                 </Typography>
@@ -195,10 +195,10 @@ function AuditTab({ projectId, flowStage, phase }: { projectId: string; flowStag
             {auditEvents.map((event) => (
                 <Box
                     key={event.id}
-                    className="mb-3 pb-3 border-gray-200 dark:border-gray-700 border-b" >
+                    className="mb-3 pb-3 border-border dark:border-border border-b" >
                     <Box className="flex items-center mb-1">
                         <Chip label={event.type} size="sm" className="mr-2" />
-                        <Typography className="text-xs text-gray-500" color="text.secondary">
+                        <Typography className="text-xs text-fg-muted" color="text.secondary">
                             {new Date(event.timestamp).toLocaleString()}
                         </Typography>
                     </Box>
@@ -248,7 +248,7 @@ export function ContextDrawer({ open = true, onToggle, flowStage, phase }: Conte
             <Box className="flex flex-col h-full">
                 {/* Header with close button */}
                 <Box
-                    className="flex items-center justify-between p-4 border-gray-200 dark:border-gray-700 border-b" >
+                    className="flex items-center justify-between p-4 border-border dark:border-border border-b" >
                     <Typography variant="h6" fontWeight={600}>
                         Context
                     </Typography>
@@ -260,7 +260,7 @@ export function ContextDrawer({ open = true, onToggle, flowStage, phase }: Conte
                 </Box>
 
                 {/* Tab Navigation */}
-                <Box className="border-gray-200 dark:border-gray-700 border-b" >
+                <Box className="border-border dark:border-border border-b" >
                     <TabNavigation
                         items={tabs}
                         activeTab={activeTab}

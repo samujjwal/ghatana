@@ -29,7 +29,7 @@ describe('AdaptiveUI', () => {
     render(<AdaptiveUI />);
     expect(screen.getByText(/Switch to/)).toBeDefined();
     expect(screen.getAllByText(/navigation/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/AI assistance/)).toBeDefined();
+    expect(screen.getByText(/Assistant level/)).toBeDefined();
   });
 
   it('should call onApplyLayout when Apply clicked', () => {

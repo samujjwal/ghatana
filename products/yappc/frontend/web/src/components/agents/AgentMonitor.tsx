@@ -80,11 +80,11 @@ interface AgentStatusBadgeProps {
 
 const AgentStatusBadge: React.FC<AgentStatusBadgeProps> = ({ status }) => {
   const config: Record<AgentStatus, { icon: ReactNode; color: string; label: string }> = {
-    idle: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-gray-500', label: 'Idle' },
-    running: { icon: <Activity className="w-3.5 h-3.5" />, color: 'text-blue-600', label: 'Running' },
-    completed: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-green-600', label: 'Done' },
-    failed: { icon: <XCircle className="w-3.5 h-3.5" />, color: 'text-red-600', label: 'Failed' },
-    waiting: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-orange-500', label: 'Waiting' },
+    idle: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-fg-muted', label: 'Idle' },
+    running: { icon: <Activity className="w-3.5 h-3.5" />, color: 'text-info-color', label: 'Running' },
+    completed: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-success-color', label: 'Done' },
+    failed: { icon: <XCircle className="w-3.5 h-3.5" />, color: 'text-destructive', label: 'Failed' },
+    waiting: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-warning-color', label: 'Waiting' },
   };
 
   const { icon, color, label } = config[status];
@@ -113,27 +113,27 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onRetry, onStop }) => {
       <CardContent className="p-3">
         <Box className="flex items-start justify-between mb-2">
           <Box className="flex items-center gap-2">
-            <Bot className="w-4 h-4 text-purple-600" />
+            <Bot className="w-4 h-4 text-info-color" />
             <Typography className="font-medium text-sm">{agent.name}</Typography>
           </Box>
           <AgentStatusBadge status={agent.status} />
         </Box>
 
         {agent.currentTask && (
-          <Typography className="text-xs text-gray-500 mb-2 truncate">
+          <Typography className="text-xs text-fg-muted mb-2 truncate">
             {agent.currentTask}
           </Typography>
         )}
 
-        <Box className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
+        <Box className="w-full bg-surface-muted dark:bg-surface-muted rounded-full h-1.5 mb-2">
           <Box
-            className="bg-purple-600 h-1.5 rounded-full transition-all"
+            className="bg-info-bg h-1.5 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </Box>
 
         <Box className="flex items-center justify-between">
-          <Typography className="text-xs text-gray-500">
+          <Typography className="text-xs text-fg-muted">
             {agent.completedTasks}/{agent.totalTasks} tasks · {Math.round(agent.confidence * 100)}% conf
           </Typography>
           <Box className="flex gap-1">
@@ -150,7 +150,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onRetry, onStop }) => {
           </Box>
         </Box>
 
-        <Box className="flex gap-3 mt-2 text-xs text-gray-400">
+        <Box className="flex gap-3 mt-2 text-xs text-fg-muted">
           <span>{agent.metrics.avgResponseTime}ms avg</span>
           <span>{Math.round(agent.metrics.successRate * 100)}% success</span>
           <span>{agent.metrics.tokensUsed} tokens</span>
@@ -168,9 +168,9 @@ interface ConflictCardProps {
 
 const ConflictCard: React.FC<ConflictCardProps> = ({ conflict, agentNames, onResolve }) => {
   const severityColor: Record<string, string> = {
-    low: 'border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20',
-    medium: 'border-orange-300 bg-orange-50 dark:bg-orange-900/20',
-    high: 'border-red-300 bg-red-50 dark:bg-red-900/20',
+    low: 'border-warning-border bg-warning-bg dark:bg-warning-bg/20',
+    medium: 'border-warning-border bg-warning-bg dark:bg-warning-bg/20',
+    high: 'border-destructive-border bg-destructive-bg dark:bg-destructive-bg/20',
   };
 
   return (
@@ -179,13 +179,13 @@ const ConflictCard: React.FC<ConflictCardProps> = ({ conflict, agentNames, onRes
         <Box className="flex items-start justify-between">
           <Box>
             <Box className="flex items-center gap-1 mb-1">
-              <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+              <AlertTriangle className="w-3.5 h-3.5 text-warning-color" />
               <Typography className="text-xs font-medium">
                 {agentNames.get(conflict.agentIds[0]) ?? conflict.agentIds[0]} ↔{' '}
                 {agentNames.get(conflict.agentIds[1]) ?? conflict.agentIds[1]}
               </Typography>
             </Box>
-            <Typography className="text-xs text-gray-600 dark:text-gray-400">
+            <Typography className="text-xs text-fg-muted dark:text-fg-muted">
               {conflict.description}
             </Typography>
           </Box>
@@ -223,18 +223,18 @@ export const AgentMonitor: React.FC<AgentMonitorProps> = ({
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-purple-600" />
+          <Zap className="w-5 h-5 text-info-color" />
           <Typography className="font-semibold">Agent Orchestration</Typography>
         </Box>
-        <Typography className="text-sm text-gray-500">
+        <Typography className="text-sm text-fg-muted">
           {runningAgents} active · {failedAgents > 0 ? `${failedAgents} failed · ` : ''}{Math.round(overallProgress)}%
         </Typography>
       </Box>
 
       {/* Overall Progress */}
-      <Box className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+      <Box className="w-full bg-surface-muted dark:bg-surface-muted rounded-full h-2">
         <Box
-          className="bg-purple-600 h-2 rounded-full transition-all"
+          className="bg-info-bg h-2 rounded-full transition-all"
           style={{ width: `${overallProgress}%` }}
         />
       </Box>
@@ -242,7 +242,7 @@ export const AgentMonitor: React.FC<AgentMonitorProps> = ({
       {/* Conflicts */}
       {activeConflicts.length > 0 && (
         <Box>
-          <Typography className="text-xs font-medium text-gray-500 mb-2">
+          <Typography className="text-xs font-medium text-fg-muted mb-2">
             Conflicts ({activeConflicts.length})
           </Typography>
           {activeConflicts.map((conflict) => (
@@ -258,7 +258,7 @@ export const AgentMonitor: React.FC<AgentMonitorProps> = ({
 
       {/* Agents */}
       <Box>
-        <Typography className="text-xs font-medium text-gray-500 mb-2">
+        <Typography className="text-xs font-medium text-fg-muted mb-2">
           Agents ({agents.length})
         </Typography>
         {agents.map((agent) => (

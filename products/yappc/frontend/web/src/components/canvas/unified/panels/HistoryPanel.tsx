@@ -116,7 +116,7 @@ export function HistoryPanel({ context }: RailPanelProps) {
             <Box key={entry.id}>
               <ListItem
                 disablePadding
-                className={idx === currentIndex ? 'bg-gray-100 dark:bg-gray-800' : 'bg-transparent'}
+                className={idx === currentIndex ? 'bg-surface-muted dark:bg-surface' : 'bg-transparent'}
                 style={{ opacity: idx > currentIndex ? 0.5 : 1 }}
               >
                 <ListItemButton onClick={() => handleGoToState(idx)}>

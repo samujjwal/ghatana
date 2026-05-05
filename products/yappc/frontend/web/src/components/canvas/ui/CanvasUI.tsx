@@ -91,7 +91,7 @@ export const CanvasInfoPanel: React.FC<CanvasInfoPanelProps> = ({
             className="absolute rounded bottom-[16px] right-[16px] w-[300px] shadow z-10" >
             <Box
                 onClick={onToggle}
-                className="p-2 border-gray-200 dark:border-gray-700 flex justify-between items-center" style={{ borderBottom: open ? 1 : 0, cursor: onToggle ? 'pointer' : 'default' }}
+                className="p-2 border-border dark:border-border flex justify-between items-center" style={{ borderBottom: open ? 1 : 0, cursor: onToggle ? 'pointer' : 'default' }}
             >
                 <Typography variant="subtitle2" fontWeight="bold">
                     {title}
@@ -139,7 +139,7 @@ export const PerformanceInfoPanel: React.FC<PerformanceInfoPanelProps> = ({
         >
             <Box
                 onClick={onToggle}
-                className="p-2 cursor-pointer flex justify-between items-center border-gray-200 dark:border-gray-700 border-b" >
+                className="p-2 cursor-pointer flex justify-between items-center border-border dark:border-border border-b" >
                 <Typography variant="subtitle2" fontWeight="bold">
                     Performance
                 </Typography>
@@ -246,10 +246,10 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
                     {/* Use Template Card */}
                     <Box
                         onClick={onUseTemplate}
-                        className="flex-1 p-6 border-[2px_solid] border-blue-600 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-gray-900 hover:shadow-md"
+                        className="flex-1 p-6 border-[2px_solid] border-info-border rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-surface hover:shadow-md"
                     >
                         <Box
-                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] bg-blue-100 mx-auto"
+                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] bg-info-bg mx-auto"
                         >
                             <Description size={32} />
                         </Box>
@@ -264,10 +264,10 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
                     {/* Start from Blank Card */}
                     <Box
                         onClick={onStartBlank}
-                        className="flex-1 p-6 border-[2px_solid] border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-gray-900 hover:shadow-md"
+                        className="flex-1 p-6 border-[2px_solid] border-border dark:border-border rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-surface hover:shadow-md"
                     >
                         <Box
-                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] mx-auto bg-gray-200" >
+                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] mx-auto bg-surface-muted" >
                             <Edit size={32} />
                         </Box>
                         <Typography variant="h6" gutterBottom>
@@ -281,10 +281,10 @@ export const EmptyCanvasState: React.FC<EmptyCanvasStateProps> = ({
                     {/* AI Assistant Card */}
                     <Box
                         onClick={onAskAI}
-                        className="flex-1 p-6 border-[2px_solid] border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-gray-900 hover:shadow-md"
+                        className="flex-1 p-6 border-[2px_solid] border-border dark:border-border rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-surface hover:shadow-md"
                     >
                         <Box
-                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] mx-auto bg-purple-400" >
+                            className="rounded-full flex items-center justify-center mb-4 w-[48px] h-[48px] mx-auto bg-info-bg" >
                             <AutoAwesome size={32} />
                         </Box>
                         <Typography variant="h6" gutterBottom>

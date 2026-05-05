@@ -1,0 +1,17 @@
+packId: flashit-boundary-policy
+version: 1.0.0
+owner: flashit
+defaultDenyRuleId: FLASHIT-BP-999
+rules:
+  - ruleId: FLASHIT-BP-001
+    resource: moments/**
+    actions: [read]
+    effect: ALLOW
+  - ruleId: FLASHIT-BP-002
+    resource: moments/**
+    actions: [write, delete, export]
+    effect: REQUIRE_APPROVAL
+  - ruleId: FLASHIT-BP-999
+    resource: "**"
+    actions: ["*"]
+    effect: DENY

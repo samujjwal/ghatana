@@ -72,8 +72,8 @@ interface ToggleProps {
 const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }) => (
   <div className="flex items-center justify-between py-3">
     <div>
-      <p className="text-sm font-medium text-zinc-200">{label}</p>
-      {description && <p className="text-xs text-zinc-500 mt-0.5">{description}</p>}
+      <p className="text-sm font-medium text-fg-muted">{label}</p>
+      {description && <p className="text-xs text-fg-muted mt-0.5">{description}</p>}
     </div>
     <button
       type="button"
@@ -81,7 +81,7 @@ const Toggle: React.FC<ToggleProps> = ({ enabled, onChange, label, description }
       aria-checked={enabled}
       onClick={() => onChange(!enabled)}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${
-        enabled ? 'bg-blue-600' : 'bg-zinc-700'
+        enabled ? 'bg-primary' : 'bg-surface-muted'
       }`}
     >
       <span
@@ -157,7 +157,7 @@ const ProfilePage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           Failed to load profile: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       </div>
@@ -167,7 +167,7 @@ const ProfilePage: React.FC = () => {
   if (isLoading || !merged) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -175,25 +175,25 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="p-6 max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Profile Settings</h1>
-        <p className="text-sm text-zinc-400 mt-1">Manage your account details and preferences</p>
+        <h1 className="text-2xl font-bold text-fg-muted">Profile Settings</h1>
+        <p className="text-sm text-fg-muted mt-1">Manage your account details and preferences</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Avatar & Identity */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-5">
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Account</h2>
+        <section className="bg-surface border border-border rounded-xl p-6 space-y-5">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Account</h2>
 
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 rounded-full bg-blue-600/20 flex items-center justify-center text-2xl font-bold text-blue-400 shrink-0">
+            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-info-color shrink-0">
               {merged.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium text-zinc-200">{merged.name}</p>
-              <p className="text-xs text-zinc-500">{merged.role}</p>
+              <p className="text-sm font-medium text-fg-muted">{merged.name}</p>
+              <p className="text-xs text-fg-muted">{merged.role}</p>
               <button
                 type="button"
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-xs text-info-color hover:text-info-color transition-colors"
               >
                 Change avatar
               </button>
@@ -202,49 +202,49 @@ const ProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="block">
-              <span className="text-xs font-medium text-zinc-400">Full Name</span>
+              <span className="text-xs font-medium text-fg-muted">Full Name</span>
               <input
                 type="text"
                 value={merged.name}
                 onChange={(e) => handleFieldChange('name', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-zinc-400">Email</span>
+              <span className="text-xs font-medium text-fg-muted">Email</span>
               <input
                 type="email"
                 value={merged.email}
                 onChange={(e) => handleFieldChange('email', e.target.value)}
-                className="mt-1 block w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+                className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
               />
             </label>
           </div>
 
           <label className="block">
-            <span className="text-xs font-medium text-zinc-400">Bio</span>
+            <span className="text-xs font-medium text-fg-muted">Bio</span>
             <textarea
               value={merged.bio}
               onChange={(e) => handleFieldChange('bio', e.target.value)}
               rows={3}
-              className="mt-1 block w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
             />
           </label>
 
           <label className="block">
-            <span className="text-xs font-medium text-zinc-400">Timezone</span>
+            <span className="text-xs font-medium text-fg-muted">Timezone</span>
             <input
               type="text"
               value={merged.timezone}
               onChange={(e) => handleFieldChange('timezone', e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+              className="mt-1 block w-full px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
             />
           </label>
         </section>
 
         {/* Theme */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider">Appearance</h2>
+        <section className="bg-surface border border-border rounded-xl p-6 space-y-4">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider">Appearance</h2>
           <div className="flex gap-3">
             {(['dark', 'light', 'system'] as ThemePreference[]).map((t) => (
               <button
@@ -253,8 +253,8 @@ const ProfilePage: React.FC = () => {
                 onClick={() => setFormData((prev) => ({ ...prev, theme: t }))}
                 className={`flex-1 px-4 py-3 rounded-lg border text-sm font-medium capitalize transition-colors ${
                   merged.theme === t
-                    ? 'border-blue-500 bg-blue-600/10 text-blue-400'
-                    : 'border-zinc-800 bg-zinc-800/50 text-zinc-400 hover:text-zinc-200'
+                    ? 'border-info-border bg-primary/10 text-info-color'
+                    : 'border-border bg-surface/50 text-fg-muted hover:text-fg-muted'
                 }`}
               >
                 {t}
@@ -264,8 +264,8 @@ const ProfilePage: React.FC = () => {
         </section>
 
         {/* Notifications */}
-        <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-1">
-          <h2 className="text-sm font-semibold text-zinc-300 uppercase tracking-wider mb-3">Notifications</h2>
+        <section className="bg-surface border border-border rounded-xl p-6 space-y-1">
+          <h2 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-3">Notifications</h2>
           <Toggle
             label="Email notifications"
             description="Receive project updates via email"
@@ -298,7 +298,7 @@ const ProfilePage: React.FC = () => {
             <p className="text-sm text-emerald-400">{saveMessage}</p>
           )}
           {mutation.error && (
-            <p className="text-sm text-red-400">
+            <p className="text-sm text-destructive">
               {mutation.error instanceof Error ? mutation.error.message : 'Save failed'}
             </p>
           )}
@@ -306,14 +306,14 @@ const ProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={() => setFormData({})}
-              className="px-4 py-2 text-sm font-medium text-zinc-400 hover:text-zinc-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-fg-muted hover:text-fg-muted transition-colors"
             >
               Reset
             </button>
             <button
               type="submit"
               disabled={mutation.isPending || Object.keys(formData).length === 0}
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              className="px-5 py-2 bg-primary hover:bg-info-bg disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
             >
               {mutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>

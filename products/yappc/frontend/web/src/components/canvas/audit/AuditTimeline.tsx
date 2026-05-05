@@ -38,7 +38,7 @@ const EVENT_ICONS: Record<AuditEvent['type'], React.ReactNode> = {
     ARTIFACT_DELETED: <Delete size={16} />,
     TASK_COMPLETED: <CheckCircle size={16} />,
     VERSION_CREATED: <History size={16} />,
-    COMMENT_ADDED: <span className="text-xs text-gray-500">💬</span>,
+    COMMENT_ADDED: <span className="text-xs text-fg-muted">💬</span>,
     SYSTEM_ALERT: <BugReport size={16} />,
 };
 
@@ -75,7 +75,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
     if (events.length === 0) {
         return (
             <Box className="p-8 text-center opacity-[0.6]">
-                <History className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                <History className="mb-2 text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography className="text-sm" color="text.secondary">No activity recorded yet.</Typography>
             </Box>
         );
@@ -95,7 +95,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
                 >
                     {/* Icon Circle */}
                     <Box
-                        className="absolute flex items-center justify-center rounded-full left-[0px] top-[0px] w-[32px] h-[32px] border border-solid border-gray-200 dark:border-gray-700 z-[1]" >
+                        className="absolute flex items-center justify-center rounded-full left-[0px] top-[0px] w-[32px] h-[32px] border border-solid border-border dark:border-border z-[1]" >
                         {EVENT_ICONS[event.type]}
                     </Box>
 
@@ -105,7 +105,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
                             <Typography className="text-sm font-medium leading-tight" fontWeight="700">
                                 {event.title}
                             </Typography>
-                            <Typography className="ml-2 whitespace-nowrap text-xs text-gray-500" color="text.disabled">
+                            <Typography className="ml-2 whitespace-nowrap text-xs text-fg-muted" color="text.disabled">
                                 {formatRelativeTime(event.timestamp)}
                             </Typography>
                         </Box>
@@ -121,7 +121,7 @@ export const AuditTimeline: React.FC<AuditTimelineProps> = ({ events, loading })
                             >
                                 <Person className="text-[10px]" />
                             </Avatar>
-                            <Typography className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-fg-muted" color="text.secondary">
                                 {event.user.name} • {event.user.role}
                             </Typography>
                         </Box>

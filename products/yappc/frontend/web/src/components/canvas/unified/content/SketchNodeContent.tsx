@@ -150,7 +150,7 @@ export const SketchNodeContent: React.FC<SketchNodeContentProps> = ({
 
             {/* Toolbar */}
             {!readonly && (
-                <Box className="absolute flex gap-1 rounded p-1 top-[8px] right-[8px] bg-white dark:bg-gray-900 shadow-sm">
+                <Box className="absolute flex gap-1 rounded p-1 top-[8px] right-[8px] bg-white dark:bg-surface shadow-sm">
                     <Tooltip title="Clear">
                         <IconButton size="sm" onClick={handleClear}>
                             <Clear size={16} />
@@ -174,7 +174,7 @@ export const SketchNodeContent: React.FC<SketchNodeContentProps> = ({
 
             {/* Read-only indicator */}
             {readonly && (
-                <Box className="absolute rounded p-1 top-[8px] right-[8px] bg-white dark:bg-gray-900 shadow-sm opacity-[0.7]">
+                <Box className="absolute rounded p-1 top-[8px] right-[8px] bg-white dark:bg-surface shadow-sm opacity-[0.7]">
                     <Edit size={16} color="action" />
                 </Box>
             )}

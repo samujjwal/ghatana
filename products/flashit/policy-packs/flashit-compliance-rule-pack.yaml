@@ -1,0 +1,10 @@
+packId: flashit-compliance-rule-pack
+version: 1.0.0
+owner: flashit
+ruleSets:
+  - id: FLASHIT_MOMENT_PRIVACY
+    rules:
+      - ruleId: FLASHIT-CR-001
+        severity: HIGH
+      - ruleId: FLASHIT-CR-002
+        severity: HIGH

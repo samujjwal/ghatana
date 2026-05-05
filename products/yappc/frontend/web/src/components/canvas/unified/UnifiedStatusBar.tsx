@@ -47,14 +47,14 @@ export function UnifiedStatusBar({
 
     return (
         <Box
-            className="flex items-center px-4 gap-6 h-[32px] border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-t" >
+            className="flex items-center px-4 gap-6 h-[32px] border-border dark:border-border bg-white dark:bg-surface border-t" >
             {/* Phase Progress */}
             <Typography variant="caption" className="flex items-center gap-1">
                 <ListAlt size={16} />
                 {phaseProgress}
             </Typography>
 
-            <Box className="w-[1px] h-[16px] bg-gray-200" />
+            <Box className="w-[1px] h-[16px] bg-surface-muted" />
 
             {/* Tech Stack */}
             <Typography variant="caption" className="flex items-center gap-1">
@@ -62,7 +62,7 @@ export function UnifiedStatusBar({
                 {techStack.join(', ')}
             </Typography>
 
-            <Box className="w-[1px] h-[16px] bg-gray-200" />
+            <Box className="w-[1px] h-[16px] bg-surface-muted" />
 
             {/* Collaborators */}
             <Typography variant="caption" className="flex items-center gap-1">
@@ -97,7 +97,7 @@ export function UnifiedStatusBar({
                 {saveStatus === 'saved' ? 'Saved' : saveStatus === 'saving' ? 'Saving...' : 'Unsaved'}
             </Typography>
 
-            <Box className="w-[1px] h-[16px] bg-gray-200" />
+            <Box className="w-[1px] h-[16px] bg-surface-muted" />
 
             {/* Zoom Level */}
             <Typography variant="caption">

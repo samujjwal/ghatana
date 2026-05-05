@@ -151,7 +151,7 @@ export function PlanStep() {
                     <Typography className="text-lg font-medium" gutterBottom fontWeight={600}>
                         Execution Plan
                     </Typography>
-                    <Typography className="mb-4 text-sm text-gray-500" color="text.secondary">
+                    <Typography className="mb-4 text-sm text-fg-muted" color="text.secondary">
                         Break down the work into ordered tasks.
                     </Typography>
 
@@ -190,7 +190,7 @@ export function PlanStep() {
                                 <React.Fragment key={task.id}>
                                     <ListItem className="px-0">
                                         <ListItemIcon className="min-w-[32px]">
-                                            <DragIcon className="cursor-grab text-gray-500" />
+                                            <DragIcon className="cursor-grab text-fg-muted" />
                                         </ListItemIcon>
                                         <Chip
                                             label={index + 1}
@@ -224,7 +224,7 @@ export function PlanStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <WarningIcon className="text-amber-600" />
+                        <WarningIcon className="text-warning-color" />
                         <Typography className="text-lg font-medium" fontWeight={600}>
                             Risk Assessment
                         </Typography>
@@ -343,7 +343,7 @@ export function PlanStep() {
                         </AccordionSummary>
                         <AccordionDetails>
                             <textarea
-                                className="min-h-[96px] w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 text-sm outline-none dark:border-gray-700"
+                                className="min-h-[96px] w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none dark:border-border"
                                 placeholder="Describe the rollback strategy if something goes wrong..."
                                 value={riskAssessment.rollbackPlan ?? ''}
                                 onChange={(e) => handleRiskChange('rollbackPlan', e.target.value)}

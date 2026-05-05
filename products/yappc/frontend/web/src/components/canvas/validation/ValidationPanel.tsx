@@ -326,7 +326,7 @@ export const ValidationPanel: React.FC<ValidationPanelProps> = ({
     return (
         <Paper className="h-full flex flex-col">
             {/* Header */}
-            <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="p-4 border-border dark:border-border border-b" >
                 <Typography variant="h6">Validation Report</Typography>
                 <Typography variant="caption" color="text.secondary">
                     Phase: {validationReport.phase} | {new Date(validationReport.timestamp).toLocaleString()}

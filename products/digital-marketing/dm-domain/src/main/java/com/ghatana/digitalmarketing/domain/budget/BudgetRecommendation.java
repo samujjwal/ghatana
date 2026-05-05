@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.domain.budget;
 
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.ai.AiProvenance;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ import java.util.Objects;
  *
  * <p>Instances are immutable; state-changing methods return new instances.</p>
  *
+ * <p>P1-029: Includes AI provenance tracking for model attribution and reproducibility.</p>
+ *
  * @doc.type class
  * @doc.purpose Budget recommendation aggregate with approval workflow for F1-014
  * @doc.layer product
@@ -40,6 +43,7 @@ public final class BudgetRecommendation {
     private final String rationale;
     private final String assumptions;
     private final String modelVersion;
+    private final AiProvenance aiProvenance;
     private final BudgetRecommendationStatus status;
     private final Instant generatedAt;
     private final String generatedBy;
@@ -57,6 +61,7 @@ public final class BudgetRecommendation {
         this.rationale         = Objects.requireNonNull(b.rationale,         "rationale must not be null");
         this.assumptions       = Objects.requireNonNull(b.assumptions,       "assumptions must not be null");
         this.modelVersion      = Objects.requireNonNull(b.modelVersion,      "modelVersion must not be null");
+        this.aiProvenance      = b.aiProvenance;
         this.status            = Objects.requireNonNull(b.status,            "status must not be null");
         this.generatedAt       = Objects.requireNonNull(b.generatedAt,       "generatedAt must not be null");
         this.generatedBy       = Objects.requireNonNull(b.generatedBy,       "generatedBy must not be null");
@@ -112,6 +117,9 @@ public final class BudgetRecommendation {
 
     /** Returns the generator model version. Never null or blank. */
     public String getModelVersion() { return modelVersion; }
+
+    /** P1-029: Returns the AI provenance record. May be null for legacy data. */
+    public AiProvenance getAiProvenance() { return aiProvenance; }
 
     /** Returns the current approval status. Never null. */
     public BudgetRecommendationStatus getStatus() { return status; }
@@ -193,6 +201,7 @@ public final class BudgetRecommendation {
             .rationale(rationale)
             .assumptions(assumptions)
             .modelVersion(modelVersion)
+            .aiProvenance(aiProvenance)
             .status(status)
             .generatedAt(generatedAt)
             .generatedBy(generatedBy)
@@ -230,6 +239,7 @@ public final class BudgetRecommendation {
         private String rationale;
         private String assumptions = "";
         private String modelVersion;
+        private AiProvenance aiProvenance;
         private BudgetRecommendationStatus status;
         private Instant generatedAt;
         private String generatedBy;
@@ -249,6 +259,7 @@ public final class BudgetRecommendation {
         public Builder rationale(String r) { this.rationale = r; return this; }
         public Builder assumptions(String a) { this.assumptions = a; return this; }
         public Builder modelVersion(String v) { this.modelVersion = v; return this; }
+        public Builder aiProvenance(AiProvenance a) { this.aiProvenance = a; return this; }
         public Builder status(BudgetRecommendationStatus s) { this.status = s; return this; }
         public Builder generatedAt(Instant t) { this.generatedAt = t; return this; }
         public Builder generatedBy(String b) { this.generatedBy = b; return this; }

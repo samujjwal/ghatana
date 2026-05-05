@@ -19,7 +19,7 @@ export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
         <Box className="mt-8 max-w-[600px] mx-auto">
             <Paper
                 elevation={3}
-                className="flex items-center w-full rounded-xl border border-solid border-gray-200 dark:border-gray-700 p-[2px 4px]"
+                className="flex items-center w-full rounded-xl border border-solid border-border dark:border-border p-[2px 4px]"
             >
                 <IconButton className="p-[10px]" aria-label="magic">
                     <AutoAwesomeIcon />
@@ -43,7 +43,7 @@ export function IdeaInput({ value, onChange, onSubmit }: IdeaInputProps) {
             </Paper>
 
             <Box className="mt-6 flex gap-2 flex-wrap justify-center">
-                <Typography as="span" className="text-xs text-gray-500 w-full mb-2" color="text.secondary">Try starting with:</Typography>
+                <Typography as="span" className="text-xs text-fg-muted w-full mb-2" color="text.secondary">Try starting with:</Typography>
                 <Chip label="E-commerce Dashboard" onClick={() => { }} clickable size="sm" variant="outlined" />
                 <Chip label="SaaS Landing Page" onClick={() => { }} clickable size="sm" variant="outlined" />
                 <Chip label="Internal Tool" onClick={() => { }} clickable size="sm" variant="outlined" />

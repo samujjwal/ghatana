@@ -92,9 +92,9 @@ const STATUS_LABEL: Record<AdrLifecycleStatus, string> = {
 
 const STATUS_COLOR: Record<AdrLifecycleStatus, string> = {
   DRAFT: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-200',
-  IN_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+  IN_REVIEW: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
   ACCEPTED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200',
-  SUPERSEDED: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 line-through',
+  SUPERSEDED: 'bg-surface-muted text-fg-muted dark:bg-surface dark:text-fg-muted line-through',
 };
 
 const STATUS_ICON: Record<AdrLifecycleStatus, React.ReactElement> = {
@@ -337,7 +337,7 @@ export const AdrLifecycle: React.FC<AdrLifecycleProps> = ({
 
         {/* Error */}
         {error && (
-          <Typography className="text-xs text-red-600 dark:text-red-400" role="alert">
+          <Typography className="text-xs text-destructive dark:text-destructive" role="alert">
             {error}
           </Typography>
         )}

@@ -773,7 +773,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         {/* Residual islands notice */}
         {importResiduals.length > 0 && (
           <Box
-            className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3"
+            className="mt-4 rounded-lg border border-warning-border bg-warning-bg p-3"
             data-testid="page-designer-residuals"
           >
             <Typography variant="caption" style={{ fontWeight: 600, display: 'block', marginBottom: 4 }}>
@@ -818,7 +818,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
         {validation.errors.length > 0 || validation.warnings.length > 0 ? (
           <Paper
             elevation={1}
-            className="mb-4 flex items-start gap-3 border border-amber-300 bg-amber-50 p-3"
+            className="mb-4 flex items-start gap-3 border border-warning-border bg-warning-bg p-3"
           >
             <AlertTriangle size={16} />
             <Box>
@@ -873,7 +873,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
               style={{ border: '2px dashed var(--border-subtle, #d1d5db)' }}
             >
               <Stack alignItems="center" spacing={2}>
-                <AddIcon className="text-5xl text-gray-500 dark:text-gray-400" />
+                <AddIcon className="text-5xl text-fg-muted dark:text-fg-muted" />
                 <Typography variant="h6" color="text.secondary">
                   Drag components from the registry to start designing
                 </Typography>
@@ -927,12 +927,12 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
       {/* AI Governance panel — shown when there are pending AI actions */}
       {pendingAIActions.length > 0 && (
         <Box
-          className="absolute bottom-4 right-4 z-20 w-80 rounded-xl border border-indigo-200 bg-white shadow-lg"
+          className="absolute bottom-4 right-4 z-20 w-80 rounded-xl border border-info-border bg-white shadow-lg"
           data-testid="governance-panel"
           role="region"
           aria-label="Governance review panel"
         >
-          <Box className="flex items-center justify-between px-4 py-3 border-b border-indigo-100">
+          <Box className="flex items-center justify-between px-4 py-3 border-b border-info-border">
             <Typography variant="body2" style={{ fontWeight: 600 }}>
               Suggested improvements — review required ({pendingAIActions.length})
             </Typography>
@@ -941,7 +941,7 @@ export const PageDesigner: React.FC<PageDesignerProps> = ({
             {pendingAIActions.map((action) => (
               <Box
                 key={action.actionId}
-                className="rounded-lg border border-gray-100 bg-gray-50 p-2"
+                className="rounded-lg border border-border bg-surface-muted p-2"
                 data-testid={`ai-action-${action.actionId}`}
               >
                 <Typography variant="caption" style={{ display: 'block', fontWeight: 600 }}>

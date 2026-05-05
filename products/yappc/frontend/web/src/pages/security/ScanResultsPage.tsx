@@ -37,27 +37,27 @@ interface ScanResult {
 }
 
 const SEVERITY_BADGE: Record<Severity, string> = {
-  critical: 'bg-red-900/30 text-red-400 border-red-800',
-  high: 'bg-orange-900/30 text-orange-400 border-orange-800',
-  medium: 'bg-yellow-900/30 text-yellow-400 border-yellow-800',
-  low: 'bg-blue-900/30 text-blue-400 border-blue-800',
-  info: 'bg-zinc-800 text-zinc-400 border-zinc-700',
+  critical: 'bg-destructive-bg/30 text-destructive border-destructive-border',
+  high: 'bg-warning-bg/30 text-warning-color border-warning-border',
+  medium: 'bg-warning-bg/30 text-warning-color border-warning-border',
+  low: 'bg-info-bg/30 text-info-color border-info-border',
+  info: 'bg-surface text-fg-muted border-border',
 };
 
 const SEVERITY_DOT: Record<Severity, string> = {
-  critical: 'bg-red-500',
-  high: 'bg-orange-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-blue-500',
-  info: 'bg-zinc-500',
+  critical: 'bg-destructive-bg',
+  high: 'bg-warning-bg',
+  medium: 'bg-warning-bg',
+  low: 'bg-info-bg',
+  info: 'bg-surface-muted',
 };
 
 const SUMMARY_CARD: Record<Severity, { bg: string; text: string; label: string }> = {
-  critical: { bg: 'bg-red-950/50 border-red-900/50', text: 'text-red-400', label: 'Critical' },
-  high: { bg: 'bg-orange-950/50 border-orange-900/50', text: 'text-orange-400', label: 'High' },
-  medium: { bg: 'bg-yellow-950/50 border-yellow-900/50', text: 'text-yellow-400', label: 'Medium' },
-  low: { bg: 'bg-blue-950/50 border-blue-900/50', text: 'text-blue-400', label: 'Low' },
-  info: { bg: 'bg-zinc-900 border-zinc-800', text: 'text-zinc-400', label: 'Info' },
+  critical: { bg: 'bg-destructive-bg/50 border-destructive-border/50', text: 'text-destructive', label: 'Critical' },
+  high: { bg: 'bg-warning-bg/50 border-warning-border/50', text: 'text-warning-color', label: 'High' },
+  medium: { bg: 'bg-warning-bg/50 border-warning-border/50', text: 'text-warning-color', label: 'Medium' },
+  low: { bg: 'bg-info-bg/50 border-info-border/50', text: 'text-info-color', label: 'Low' },
+  info: { bg: 'bg-surface border-border', text: 'text-fg-muted', label: 'Info' },
 };
 
 /**
@@ -88,7 +88,7 @@ const ScanResultsPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ const ScanResultsPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           {error instanceof Error ? error.message : 'Failed to load scan results'}
         </div>
       </div>
@@ -115,19 +115,19 @@ const ScanResultsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/security/scans" className="text-zinc-400 hover:text-zinc-200 transition-colors">
+          <Link to="/security/scans" className="text-fg-muted hover:text-fg-muted transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100">{scan?.name ?? 'Scan Results'}</h1>
-            <p className="text-sm text-zinc-400 mt-1">
-              {scan?.scanner ?? 'Scanner'} &middot; Branch: <span className="font-mono text-zinc-300">{scan?.branch ?? '—'}</span> &middot; {scan?.completedAt ? new Date(scan.completedAt).toLocaleString() : '—'}
+            <h1 className="text-2xl font-bold text-fg-muted">{scan?.name ?? 'Scan Results'}</h1>
+            <p className="text-sm text-fg-muted mt-1">
+              {scan?.scanner ?? 'Scanner'} &middot; Branch: <span className="font-mono text-fg-muted">{scan?.branch ?? '—'}</span> &middot; {scan?.completedAt ? new Date(scan.completedAt).toLocaleString() : '—'}
             </p>
           </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-sm font-medium rounded-lg transition-colors">Export</button>
-          <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">Re-scan</button>
+          <button className="px-4 py-2 border border-border text-fg-muted hover:bg-surface text-sm font-medium rounded-lg transition-colors">Export</button>
+          <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">Re-scan</button>
         </div>
       </div>
 
@@ -144,27 +144,27 @@ const ScanResultsPage: React.FC = () => {
               }`}
             >
               <p className={`text-3xl font-bold ${card.text}`}>{summary[sev]}</p>
-              <p className="text-xs text-zinc-500 mt-1 uppercase tracking-wide">{card.label}</p>
+              <p className="text-xs text-fg-muted mt-1 uppercase tracking-wide">{card.label}</p>
             </button>
           );
         })}
       </div>
 
       {/* Total bar */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between">
-        <span className="text-sm text-zinc-400">Total findings: <span className="text-zinc-200 font-semibold">{totalFindings}</span></span>
+      <div className="bg-surface border border-border rounded-lg p-4 flex items-center justify-between">
+        <span className="text-sm text-fg-muted">Total findings: <span className="text-fg-muted font-semibold">{totalFindings}</span></span>
         {severityFilter !== 'all' && (
-          <button onClick={() => setSeverityFilter('all')} className="text-xs text-blue-400 hover:text-blue-300">
+          <button onClick={() => setSeverityFilter('all')} className="text-xs text-info-color hover:text-info-color">
             Clear filter
           </button>
         )}
       </div>
 
       {/* Findings Table */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+      <div className="bg-surface border border-border rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-800 text-xs uppercase tracking-wide text-zinc-500">
+            <tr className="border-b border-border text-xs uppercase tracking-wide text-fg-muted">
               <th className="text-left px-5 py-3 font-medium">Severity</th>
               <th className="text-left px-5 py-3 font-medium">Finding</th>
               <th className="text-left px-5 py-3 font-medium">Category</th>
@@ -174,10 +174,10 @@ const ScanResultsPage: React.FC = () => {
           </thead>
           <tbody className="divide-y divide-zinc-800">
             {filteredFindings.length === 0 ? (
-              <tr><td colSpan={5} className="px-5 py-8 text-center text-zinc-500 text-sm">No findings{severityFilter !== 'all' ? ` for ${severityFilter} severity` : ''}.</td></tr>
+              <tr><td colSpan={5} className="px-5 py-8 text-center text-fg-muted text-sm">No findings{severityFilter !== 'all' ? ` for ${severityFilter} severity` : ''}.</td></tr>
             ) : (
               filteredFindings.map((f) => (
-                <tr key={f.id} className="hover:bg-zinc-800/50 transition-colors">
+                <tr key={f.id} className="hover:bg-surface/50 transition-colors">
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full border ${SEVERITY_BADGE[f.severity]}`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_DOT[f.severity]}`} />
@@ -185,14 +185,14 @@ const ScanResultsPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-5 py-3">
-                    <p className="text-sm text-zinc-200 font-medium">{f.title}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5 line-clamp-1">{f.description}</p>
+                    <p className="text-sm text-fg-muted font-medium">{f.title}</p>
+                    <p className="text-xs text-fg-muted mt-0.5 line-clamp-1">{f.description}</p>
                   </td>
-                  <td className="px-5 py-3 text-sm text-zinc-400">{f.category}</td>
-                  <td className="px-5 py-3 text-sm font-mono text-zinc-400">
-                    {f.file}<span className="text-zinc-600">:{f.line}</span>
+                  <td className="px-5 py-3 text-sm text-fg-muted">{f.category}</td>
+                  <td className="px-5 py-3 text-sm font-mono text-fg-muted">
+                    {f.file}<span className="text-fg-muted">:{f.line}</span>
                   </td>
-                  <td className="px-5 py-3 text-xs font-mono text-zinc-500">{f.ruleId}</td>
+                  <td className="px-5 py-3 text-xs font-mono text-fg-muted">{f.ruleId}</td>
                 </tr>
               ))
             )}

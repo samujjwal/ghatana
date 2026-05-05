@@ -76,17 +76,17 @@ const STATUS_CONFIG: Record<ValidationCheck['status'], { icon: React.ReactNode; 
     },
     passed: {
         icon: <CheckCircle className="w-4 h-4" />,
-        color: 'text-green-500',
+        color: 'text-success-color',
         label: 'Passed',
     },
     failed: {
         icon: <Cancel className="w-4 h-4" />,
-        color: 'text-red-500',
+        color: 'text-destructive',
         label: 'Failed',
     },
     warning: {
         icon: <Warning className="w-4 h-4" />,
-        color: 'text-yellow-500',
+        color: 'text-warning-color',
         label: 'Warning',
     },
     skipped: {
@@ -212,7 +212,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Analyzing...' : 'AI Assist'}
+                            {isAILoading ? 'Analyzing...' : 'Assist'}
                         </button>
                     )}
                     <button
@@ -242,15 +242,15 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                     <div className="text-xs text-text-secondary">Total</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-2xl font-bold text-green-500">{summary.passed}</div>
+                    <div className="text-2xl font-bold text-success-color">{summary.passed}</div>
                     <div className="text-xs text-text-secondary">Passed</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-2xl font-bold text-red-500">{summary.failed}</div>
+                    <div className="text-2xl font-bold text-destructive">{summary.failed}</div>
                     <div className="text-xs text-text-secondary">Failed</div>
                 </div>
                 <div className="text-center">
-                    <div className="text-2xl font-bold text-yellow-500">{summary.warnings}</div>
+                    <div className="text-2xl font-bold text-warning-color">{summary.warnings}</div>
                     <div className="text-xs text-text-secondary">Warnings</div>
                 </div>
                 <div className="text-center">
@@ -284,7 +284,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {categoryFailed > 0 && (
-                                        <span className="px-2 py-0.5 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300 rounded">
+                                        <span className="px-2 py-0.5 text-xs bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive rounded">
                                             {categoryFailed} failed
                                         </span>
                                     )}
@@ -301,9 +301,9 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                         <div
                                             key={check.id}
                                             className={`px-4 py-3 flex items-start gap-3 ${check.status === 'failed'
-                                                    ? 'bg-red-50/50 dark:bg-red-900/10'
+                                                    ? 'bg-destructive-bg/50 dark:bg-destructive-bg/10'
                                                     : check.status === 'warning'
-                                                        ? 'bg-yellow-50/50 dark:bg-yellow-900/10'
+                                                        ? 'bg-warning-bg/50 dark:bg-warning-bg/10'
                                                         : ''
                                                 }`}
                                         >
@@ -339,7 +339,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                                                     {check.autoFix && check.status === 'failed' && onAutoFix && (
                                                         <button
                                                             onClick={() => onAutoFix(check.id)}
-                                                            className="text-xs text-green-600 hover:text-green-700"
+                                                            className="text-xs text-success-color hover:text-success-color"
                                                         >
                                                             <AutoAwesome className="w-3 h-3 inline mr-1" />
                                                             Auto-fix
@@ -359,7 +359,7 @@ export const ValidationSummaryPanel: React.FC<ValidationSummaryPanelProps> = ({
                 {aiSuggestions && (
                     <div className="p-4 border border-primary-200 dark:border-primary-800 rounded-lg bg-primary-50 dark:bg-primary-900/20 space-y-3">
                         <h4 className="font-medium text-text-primary flex items-center gap-2">
-                            <AutoAwesome className="w-4 h-4 text-primary-600" /> AI Analysis
+                            <AutoAwesome className="w-4 h-4 text-primary-600" /> Analysis
                         </h4>
                         {aiSuggestions.prioritizedFixes.length > 0 && (
                             <div>

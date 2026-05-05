@@ -250,7 +250,7 @@ export const GenericCanvas = <TItem extends BaseItem>({
 
                 {/* Sidebar */}
                 {SidebarRenderer && sidebarOpen && selectedItem && (
-                    <Box className="shrink-0 w-[320px] border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-l" >
+                    <Box className="shrink-0 w-[320px] border-border dark:border-border bg-white dark:bg-surface border-l" >
                         <SidebarRenderer
                             selectedItem={selectedItem}
                             onItemUpdate={handleItemUpdate}

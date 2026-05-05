@@ -39,16 +39,16 @@ function FileIcon({
   status?: string;
 }) {
   const statusColors = {
-    modified: 'text-yellow-500',
-    added: 'text-green-500',
-    deleted: 'text-red-500',
-    clean: 'text-gray-500',
+    modified: 'text-warning-color',
+    added: 'text-success-color',
+    deleted: 'text-destructive',
+    clean: 'text-fg-muted',
   };
 
   const icon = type === 'directory' ? '📁' : '📄';
   const color = status
     ? statusColors[status as keyof typeof statusColors]
-    : 'text-gray-500';
+    : 'text-fg-muted';
 
   return <span className={cn('text-sm', color)}>{icon}</span>;
 }
@@ -73,8 +73,8 @@ function FileTreeNode({
     <div>
       <div
         className={cn(
-          'flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded',
-          isSelected && 'bg-blue-100 dark:bg-blue-900/30'
+          'flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-surface-muted dark:hover:bg-surface rounded',
+          isSelected && 'bg-info-bg dark:bg-info-bg/30'
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
         onClick={() => {
@@ -86,16 +86,16 @@ function FileTreeNode({
         }}
       >
         {hasChildren && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-fg-muted">
             {node.isOpen ? '▼' : '▶'}
           </span>
         )}
         <FileIcon type={node.type} status={node.status} />
-        <span className="text-sm text-gray-900 dark:text-gray-100 flex-1">
+        <span className="text-sm text-fg dark:text-fg-muted flex-1">
           {node.name}
         </span>
         {node.status === 'modified' && (
-          <span className="text-xs text-yellow-600 dark:text-yellow-400">
+          <span className="text-xs text-warning-color dark:text-warning-color">
             ●
           </span>
         )}
@@ -154,22 +154,22 @@ export function FileTreePanel({
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Header */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+      <div className="p-3 border-b border-border dark:border-border">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-sm font-semibold text-fg dark:text-fg-muted">
             Files
           </h3>
           <div className="flex items-center gap-1">
             <button
               onClick={() => onFileCreate?.('/', 'file')}
-              className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded"
+              className="p-1 text-fg-muted hover:text-fg dark:hover:text-fg-muted rounded"
               title="New File"
             >
               <span className="text-xs">📄+</span>
             </button>
             <button
               onClick={() => onFileCreate?.('/', 'directory')}
-              className="p-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded"
+              className="p-1 text-fg-muted hover:text-fg dark:hover:text-fg-muted rounded"
               title="New Folder"
             >
               <span className="text-xs">📁+</span>

@@ -105,14 +105,14 @@ const DEFAULT_MONITORING_LINKS: MonitoringLink[] = [
 
 const STATUS_ICON: Record<HealthStatus, React.ReactNode> = {
   healthy: <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />,
-  degraded: <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" />,
-  down: <AlertTriangle className="h-4 w-4 text-red-600" aria-hidden="true" />,
+  degraded: <AlertTriangle className="h-4 w-4 text-warning-color" aria-hidden="true" />,
+  down: <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden="true" />,
 };
 
 const STATUS_CHIP_CLASS: Record<HealthStatus, string> = {
   healthy: 'bg-emerald-50 text-emerald-700',
-  degraded: 'bg-amber-50 text-amber-700',
-  down: 'bg-red-50 text-red-700',
+  degraded: 'bg-warning-bg text-warning-color',
+  down: 'bg-destructive-bg text-destructive',
 };
 
 const STATUS_LABEL: Record<HealthStatus, string> = {
@@ -138,14 +138,14 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric }) => (
   <Card
     className={cn(
       'border transition-shadow hover:shadow-md',
-      metric.status === 'down' && 'border-red-200',
-      metric.status === 'degraded' && 'border-amber-200'
+      metric.status === 'down' && 'border-destructive-border',
+      metric.status === 'degraded' && 'border-warning-border'
     )}
     data-testid={`metric-card-${metric.id}`}
   >
     <CardContent className="space-y-3 p-4">
       <Box className="flex items-center justify-between">
-        <Typography className="text-sm font-medium text-gray-600">
+        <Typography className="text-sm font-medium text-fg-muted">
           {metric.label}
         </Typography>
         <Box className="flex items-center gap-1">
@@ -163,12 +163,12 @@ const MetricCard: React.FC<MetricCardProps> = ({ metric }) => (
       </Typography>
 
       {metric.previousValue && (
-        <Typography className="text-xs text-gray-400">
+        <Typography className="text-xs text-fg-muted">
           Previous: {metric.previousValue}
         </Typography>
       )}
 
-      <Box className="flex items-center gap-1 text-xs text-gray-400">
+      <Box className="flex items-center gap-1 text-xs text-fg-muted">
         <Clock className="h-3 w-3" />
         <span>Refreshed {formatTimestamp(metric.refreshedAt)}</span>
       </Box>
@@ -199,7 +199,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-gray-700" aria-hidden="true" />
+          <Activity className="h-5 w-5 text-fg" aria-hidden="true" />
           <Typography className="text-xl font-semibold">System Health</Typography>
           <Box className="flex items-center gap-1">
             {STATUS_ICON[overallStatus]}
@@ -216,7 +216,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
             onClick={onRefresh}
             disabled={isLoading}
             aria-label="Refresh metrics"
-            className="flex items-center gap-1 rounded-md border border-gray-200 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            className="flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-muted disabled:opacity-50"
           >
             <Zap className="h-3 w-3" />
             Refresh
@@ -228,7 +228,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
       {error && (
         <Box
           role="alert"
-          className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+          className="rounded-md border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive"
         >
           <Box className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 flex-shrink-0" />
@@ -243,8 +243,8 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
           {Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-4">
-                <Box className="mb-2 h-4 w-24 rounded bg-gray-200" />
-                <Box className="h-8 w-16 rounded bg-gray-200" />
+                <Box className="mb-2 h-4 w-24 rounded bg-surface-muted" />
+                <Box className="h-8 w-16 rounded bg-surface-muted" />
               </CardContent>
             </Card>
           ))}
@@ -266,9 +266,9 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
 
       {/* Empty state */}
       {!isLoading && !error && metrics.length === 0 && (
-        <Box className="rounded-md border border-gray-200 p-8 text-center">
-          <Activity className="mx-auto mb-2 h-8 w-8 text-gray-300" />
-          <Typography className="text-sm text-gray-500">
+        <Box className="rounded-md border border-border p-8 text-center">
+          <Activity className="mx-auto mb-2 h-8 w-8 text-fg-muted" />
+          <Typography className="text-sm text-fg-muted">
             No metrics available. Check that the metrics endpoint is reachable.
           </Typography>
         </Box>
@@ -276,7 +276,7 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
 
       {/* Monitoring stack links */}
       <Box className="space-y-3">
-        <Typography className="text-sm font-medium text-gray-700">
+        <Typography className="text-sm font-medium text-fg">
           Monitoring Stack
         </Typography>
         <Box className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -287,15 +287,15 @@ export const ObservabilityDashboard: React.FC<ObservabilityDashboardProps> = ({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Open ${link.label}`}
-              className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm text-fg hover:border-info-border hover:bg-info-bg hover:text-info-color transition-colors"
             >
               <Box>
                 <Typography className="font-medium">{link.label}</Typography>
-                <Typography className="text-xs text-gray-400">
+                <Typography className="text-xs text-fg-muted">
                   {link.description}
                 </Typography>
               </Box>
-              <ExternalLink className="h-3 w-3 flex-shrink-0 text-gray-400" aria-hidden="true" />
+              <ExternalLink className="h-3 w-3 flex-shrink-0 text-fg-muted" aria-hidden="true" />
             </a>
           ))}
         </Box>

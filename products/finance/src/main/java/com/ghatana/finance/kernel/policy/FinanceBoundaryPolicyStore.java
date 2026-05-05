@@ -7,6 +7,8 @@ package com.ghatana.finance.kernel.policy;
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,14 @@ import java.util.Set;
 public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
 
     private static final String PACK_VERSION = "1.0.0";
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+            ProductBoundaryPolicyValidationProfile.builder()
+                    .productName("Finance")
+                    .rulePrefix("FIN-BP-")
+                    .defaultDenyRuleId("FIN-BP-999")
+                    .targetScopePrefix("finance.")
+                    .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+                    .build();
 
     /**
      * Immutable list of Finance boundary rules, evaluated in declaration order.
@@ -121,12 +131,12 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .metadata(Map.of("packVersion", PACK_VERSION, "ruleCategory", "risk-data"))
                     .build(),
 
-            // FIN-BP-006: Default deny — any unmatched cross-scope access is denied.
+            // FIN-BP-999: Default deny — any unmatched cross-scope access is denied.
             BoundaryPolicyRule.builder()
-                    .ruleId("FIN-BP-006")
+                    .ruleId("FIN-BP-999")
                     .sourceScopePattern("**")
                     .targetScopePattern("finance.*")
-                    .resourcePattern("*")
+                    .resourcePattern("**")
                     .actions("*")
                     .classificationCondition("*")
                     .requiresConsent(false)
@@ -139,8 +149,12 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
 
     @Override
     public List<BoundaryPolicyRule> loadRules(BoundaryPolicyLoadContext context) {
-        // Rules are static and version-pinned. Tenant/region overrides are not yet
-        // supported in Finance v1 — all tenants receive the same rule set.
-        return FINANCE_RULES;
+        if (!"default".equals(context.getTenantId()) || !"GLOBAL".equalsIgnoreCase(context.getRegion())) {
+            throw new BoundaryPolicyStoreException(
+                    "Finance boundary policy overrides are unsupported. "
+                            + "Only tenantId=default and region=GLOBAL are allowed; failing closed for "
+                            + context);
+        }
+        return ProductBoundaryPolicyPackValidator.validate(FINANCE_RULES, VALIDATION_PROFILE);
     }
 }

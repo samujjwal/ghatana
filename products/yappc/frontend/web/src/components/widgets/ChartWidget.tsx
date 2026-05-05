@@ -57,13 +57,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({
   colors = DEFAULT_COLORS,
 }) => {
   if (isLoading) {
-    return <div data-testid="chart-skeleton" className="animate-pulse rounded-lg bg-gray-100" style={{ height }} />;
+    return <div data-testid="chart-skeleton" className="animate-pulse rounded-lg bg-surface-muted" style={{ height }} />;
   }
 
   if (!data || data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border p-6" style={{ height }}>
-        <p className="text-sm text-gray-500">No data available</p>
+        <p className="text-sm text-fg-muted">No data available</p>
       </div>
     );
   }

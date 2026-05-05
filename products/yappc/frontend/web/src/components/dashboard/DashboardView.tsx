@@ -74,9 +74,9 @@ export function DashboardView({
                         </Typography>
                     </div>
                     <Stack direction="row" alignItems="center" spacing={1} className="mt-4 md:mt-0">
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">VIEWING AS</Typography>
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">VIEWING AS</Typography>
                         <Chip
-                            avatar={<Avatar className="bg-indigo-600">P</Avatar>}
+                            avatar={<Avatar className="bg-info-bg">P</Avatar>}
                             label="Product Manager"
                             onClick={() => { }}
                             variant="outlined"
@@ -88,7 +88,7 @@ export function DashboardView({
                 <Paper
                     variant="outlined"
                     onClick={onSearchClick}
-                    className="flex items-center w-full max-w-[700px] rounded-lg border border-solid border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900"
+                    className="flex items-center w-full max-w-[700px] rounded-lg border border-solid border-border bg-white p-4 dark:border-border dark:bg-surface"
                     style={{
                         cursor: onSearchClick ? 'pointer' : 'default',
                         transition: 'box-shadow 0.2s',
@@ -124,7 +124,7 @@ export function DashboardView({
                 <Grid item xs={12} lg={6}>
                     <Card
                         variant="outlined"
-                        className="border-[2px_solid] border-blue-600 h-full rounded-lg relative overflow-hidden before:absolute before:top-[0px] before:left-[0px] before:right-[0px] before:h-[4px]" >
+                        className="border-[2px_solid] border-info-border h-full rounded-lg relative overflow-hidden before:absolute before:top-[0px] before:left-[0px] before:right-[0px] before:h-[4px]" >
                         <CardContent className="p-6">
                             <Box className="flex items-center gap-2" mb={3}>
                                 <Box
@@ -183,7 +183,7 @@ export function DashboardView({
                         <CardContent>
                             <Box className="flex justify-between items-center" mb={3}>
                                 <Box className="flex items-center gap-1">
-                                    <Folder className="text-gray-500 dark:text-gray-400" />
+                                    <Folder className="text-fg-muted dark:text-fg-muted" />
                                     <Typography as="p" className="text-lg font-medium" fontWeight="bold">
                                         Projects
                                     </Typography>
@@ -200,7 +200,7 @@ export function DashboardView({
                             <div className="space-y-2">
                                 {recentProjects.length === 0 ? (
                                     <div className="text-center py-8">
-                                        <Folder className="mb-4 text-5xl text-gray-500 dark:text-gray-400 opacity-[0.3]" />
+                                        <Folder className="mb-4 text-5xl text-fg-muted dark:text-fg-muted opacity-[0.3]" />
                                         <Typography as="p" className="text-sm" color="text.secondary" gutterBottom>
                                             No projects yet.
                                         </Typography>
@@ -238,7 +238,7 @@ export function DashboardView({
                         <CardContent>
                             <Box className="flex justify-between items-center" mb={3}>
                                 <Box className="flex items-center gap-1">
-                                    <AccountTree className="text-gray-500 dark:text-gray-400" />
+                                    <AccountTree className="text-fg-muted dark:text-fg-muted" />
                                     <Typography as="p" className="text-lg font-medium" fontWeight="bold">
                                         Workflows
                                     </Typography>
@@ -255,7 +255,7 @@ export function DashboardView({
                             <div className="space-y-2">
                                 {recentWorkflows.length === 0 ? (
                                     <div className="text-center py-8">
-                                        <AccountTree className="mb-4 text-5xl text-gray-500 dark:text-gray-400 opacity-[0.3]" />
+                                        <AccountTree className="mb-4 text-5xl text-fg-muted dark:text-fg-muted opacity-[0.3]" />
                                         <Typography as="p" className="text-sm" color="text.secondary" gutterBottom>
                                             No workflows yet.
                                         </Typography>

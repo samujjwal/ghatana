@@ -82,11 +82,11 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
 
   return (
     <div
-      className={`rounded-lg border border-red-200 bg-red-50 p-6 ${className ?? ''}`}
+      className={`rounded-lg border border-destructive-border bg-destructive-bg p-6 ${className ?? ''}`}
       aria-label="Delete my data"
     >
-      <h3 className="text-base font-semibold text-red-700">Delete my data</h3>
-      <p className="mt-1 text-sm text-red-600">
+      <h3 className="text-base font-semibold text-destructive">Delete my data</h3>
+      <p className="mt-1 text-sm text-destructive">
         Permanently deletes your conversation memory, AI-assist history, and cached
         prompt responses. This action cannot be undone. Your workspace projects and
         files are not affected.
@@ -96,7 +96,7 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
         <button
           type="button"
           onClick={handleRequestDelete}
-          className="mt-4 rounded-md border border-red-600 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+          className="mt-4 rounded-md border border-destructive-border bg-white px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive-bg focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           Request data deletion
         </button>
@@ -104,7 +104,7 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
 
       {stage === 'confirm' && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm font-medium text-red-700">
+          <p className="text-sm font-medium text-destructive">
             Are you sure? This will permanently erase your conversation history and
             AI memory. This cannot be undone.
           </p>
@@ -112,7 +112,7 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
             <button
               type="button"
               onClick={handleConfirm}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="rounded-md bg-destructive-bg px-4 py-2 text-sm font-medium text-white hover:bg-destructive-bg focus:outline-none focus:ring-2 focus:ring-red-500"
             >
               Yes, delete my data
             </button>
@@ -128,13 +128,13 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
       )}
 
       {stage === 'submitting' && (
-        <p className="mt-4 text-sm text-red-600" role="status" aria-live="polite">
+        <p className="mt-4 text-sm text-destructive" role="status" aria-live="polite">
           Submitting deletion request…
         </p>
       )}
 
       {stage === 'requested' && (
-        <div className="mt-4 rounded-md border border-green-200 bg-green-50 p-4 text-sm text-green-700" role="alert">
+        <div className="mt-4 rounded-md border border-success-border bg-success-bg p-4 text-sm text-success-color" role="alert">
           <p className="font-medium">Deletion request submitted.</p>
           <p className="mt-1">
             Your data will be purged within 30 days in accordance with GDPR Art. 17.
@@ -145,7 +145,7 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
               href={statusUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 inline-block text-green-700 underline hover:no-underline"
+              className="mt-2 inline-block text-success-color underline hover:no-underline"
             >
               Check deletion status
             </a>
@@ -154,13 +154,13 @@ const DeleteMyDataSection: React.FC<DeleteMyDataSectionProps> = ({ className }) 
       )}
 
       {stage === 'error' && (
-        <div className="mt-4 rounded-md border border-red-300 bg-red-100 p-4 text-sm text-red-700" role="alert">
+        <div className="mt-4 rounded-md border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive" role="alert">
           <p className="font-medium">Request failed.</p>
           <p className="mt-1">{error?.message ?? 'An unexpected error occurred. Please try again.'}</p>
           <button
             type="button"
             onClick={handleRetry}
-            className="mt-2 rounded-md border border-red-500 bg-white px-3 py-1 text-sm text-red-700 hover:bg-red-50"
+            className="mt-2 rounded-md border border-destructive-border bg-white px-3 py-1 text-sm text-destructive hover:bg-destructive-bg"
           >
             Try again
           </button>

@@ -186,7 +186,7 @@ const DropZone: React.FC<DropZoneProps> = ({ onFilesDropped, disabled }) => {
         'relative rounded-lg border-2 border-dashed p-8 text-center transition-all duration-200',
         isDragging
           ? 'border-primary-500 bg-primary-500/10'
-          : 'border-zinc-700 hover:border-zinc-600',
+          : 'border-border hover:border-border',
         disabled && 'cursor-not-allowed opacity-50'
       )}
     >
@@ -204,22 +204,22 @@ const DropZone: React.FC<DropZoneProps> = ({ onFilesDropped, disabled }) => {
         <div
           className={cn(
             'rounded-full p-4 transition-colors',
-            isDragging ? 'bg-primary-500/20' : 'bg-zinc-800'
+            isDragging ? 'bg-primary-500/20' : 'bg-surface'
           )}
         >
           <Upload
             className={cn(
               'h-8 w-8 transition-colors',
-              isDragging ? 'text-primary-400' : 'text-zinc-400'
+              isDragging ? 'text-primary-400' : 'text-fg-muted'
             )}
           />
         </div>
 
         <div>
-          <p className="text-lg font-medium text-zinc-100">
+          <p className="text-lg font-medium text-fg-muted">
             Drop files here or click to upload
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-fg-muted">
             PRD, specs, wireframes, or any project documentation
           </p>
         </div>
@@ -230,7 +230,7 @@ const DropZone: React.FC<DropZoneProps> = ({ onFilesDropped, disabled }) => {
             return (
               <span
                 key={key}
-                className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800/50 px-3 py-1 text-xs text-zinc-300"
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface/50 px-3 py-1 text-xs text-fg-muted"
               >
                 <Icon className="h-3 w-3" />
                 {config.label}
@@ -239,7 +239,7 @@ const DropZone: React.FC<DropZoneProps> = ({ onFilesDropped, disabled }) => {
           })}
         </div>
 
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-fg-muted">
           Max {MAX_FILES} files, {formatFileSize(MAX_FILE_SIZE)} each
         </p>
       </div>
@@ -263,9 +263,9 @@ const FileCard: React.FC<FileCardProps> = ({ file, onRemove, onRetry }) => {
   const Icon = config?.icon || File;
 
   const statusColors: Record<FileStatus, string> = {
-    pending: 'text-zinc-400',
-    uploading: 'text-blue-400',
-    processing: 'text-purple-400',
+    pending: 'text-fg-muted',
+    uploading: 'text-info-color',
+    processing: 'text-info-color',
     ready: 'text-success-400',
     error: 'text-error-400',
   };
@@ -289,14 +289,14 @@ const FileCard: React.FC<FileCardProps> = ({ file, onRemove, onRetry }) => {
           ? 'border-error-500/30 bg-error-500/5'
           : file.status === 'ready'
             ? 'border-success-500/30 bg-success-500/5'
-            : 'border-zinc-800 bg-zinc-900'
+            : 'border-border bg-surface'
       )}
     >
       {/* File Icon */}
       <div
         className={cn(
           'flex h-12 w-12 items-center justify-center rounded-lg',
-          file.status === 'ready' ? 'bg-success-500/10' : 'bg-zinc-800'
+          file.status === 'ready' ? 'bg-success-500/10' : 'bg-surface'
         )}
       >
         {file.status === 'uploading' || file.status === 'processing' ? (
@@ -306,15 +306,15 @@ const FileCard: React.FC<FileCardProps> = ({ file, onRemove, onRetry }) => {
         ) : file.status === 'error' ? (
           <AlertCircle className="h-6 w-6 text-error-400" />
         ) : (
-          <Icon className="h-6 w-6 text-zinc-400" />
+          <Icon className="h-6 w-6 text-fg-muted" />
         )}
       </div>
 
       {/* File Info */}
       <div className="flex-1 overflow-hidden">
-        <p className="truncate font-medium text-zinc-100">{file.name}</p>
+        <p className="truncate font-medium text-fg-muted">{file.name}</p>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-zinc-500">{formatFileSize(file.size)}</span>
+          <span className="text-fg-muted">{formatFileSize(file.size)}</span>
           <span className={statusColors[file.status]}>{statusLabels[file.status]}</span>
         </div>
         {(file.status === 'uploading' || file.status === 'processing') && (
@@ -343,7 +343,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, onRemove, onRetry }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-zinc-400 hover:text-error-400"
+            className="h-8 w-8 p-0 text-fg-muted hover:text-error-400"
             onClick={() => onRemove(file.id)}
           >
             <X className="h-4 w-4" />
@@ -523,7 +523,7 @@ const UploadDocsPage: React.FC = () => {
   const canContinue = readyCount > 0 && processingCount === 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-surface p-6">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-8">
@@ -535,10 +535,10 @@ const UploadDocsPage: React.FC = () => {
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold text-zinc-100">
+          <h1 className="text-2xl font-bold text-fg-muted">
             Upload Project Documents
           </h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-fg-muted">
             Upload existing PRDs, specs, or wireframes. Our AI will extract
             requirements to jumpstart your project.
           </p>
@@ -554,7 +554,7 @@ const UploadDocsPage: React.FC = () => {
         {files.length > 0 && (
           <div className="mt-6">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-100">
+              <h2 className="text-lg font-semibold text-fg-muted">
                 Uploaded Files ({files.length})
               </h2>
               {readyCount > 0 && (
@@ -590,10 +590,10 @@ const UploadDocsPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <Sparkles className="h-5 w-5 flex-shrink-0 text-primary-400" />
               <div>
-                <p className="font-medium text-zinc-100">
+                <p className="font-medium text-fg-muted">
                   AI will extract from your documents:
                 </p>
-                <ul className="mt-2 space-y-1 text-sm text-zinc-400">
+                <ul className="mt-2 space-y-1 text-sm text-fg-muted">
                   <li>• Project goals and objectives</li>
                   <li>• Features and user requirements</li>
                   <li>• Technical specifications</li>

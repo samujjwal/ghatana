@@ -13,48 +13,66 @@ import io.activej.http.HttpResponse;
 import io.activej.promise.Promise;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Map;
-import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * P1-AEP-3: AEP Gateway integration test suite
- * 
- * Tests verify full gateway security and routing:
- * - JWT authentication (valid/invalid tokens, missing auth, expired tokens)
- * - CORS (allowed origins, preflight OPTIONS, credentials)
- * - Tenant isolation (tenant mismatch, cross-tenant rejection)
- * - Correlation ID propagation (X-Correlation-ID header, MDC propagation)
- * - SSE (Server-Sent Events) - if applicable
- * - WebSocket (WS) - if applicable
- * - Backend failure scenarios (502/503/504 with correlation)
- * 
+ * AEP Gateway Integration Tests (JWT, CORS, Tenant Isolation)
+ *
+ * <p>Tests verify full gateway security and routing:</p>
+ * <ul>
+ *   <li>JWT authentication (valid/invalid tokens, missing auth, expired tokens)</li>
+ *   <li>CORS (allowed origins, preflight OPTIONS, credentials)</li>
+ *   <li>Tenant isolation (tenant mismatch, cross-tenant rejection)</li>
+ *   <li>Correlation ID propagation (X-Correlation-ID header, MDC propagation)</li>
+ * </ul>
+ *
  * @doc.type class
  * @doc.purpose Comprehensive gateway security and routing integration tests
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
+@DisplayName("AEP Gateway Integration Tests")
+@Tag("production")
 class AepGatewayIntegrationTest {
 
     private AepEngine engine;
-    private static final String TEST_JWT_SECRET = "test-secret-key-for-integration-tests-only";
-    private static final String TEST_TENANT_ID = "test-tenant-123";
+    private HttpClient httpClient;
+    private int port;
+    private static final String TEST_JWT_SECRET = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    private static final String TEST_TENANT_A = "aep-tenant-a";
+    private static final String TEST_TENANT_B = "aep-tenant-b";
+    private static final String ALLOWED_ORIGIN = "http://localhost:5173";
+    private static final String DISALLOWED_ORIGIN = "http://malicious-site.com";
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         // Set up test environment with JWT secret
         System.setProperty("AEP_JWT_SECRET", TEST_JWT_SECRET);
         System.setProperty("AEP_ENV", "test");
+        System.setProperty("AEP_CORS_ORIGINS", ALLOWED_ORIGIN);
         
-        engine = Aep.create(Aep.AepConfig.defaults());
+        port = findFreePort();
+        httpClient = HttpClient.newBuilder().build();
+        
+        engine = Aep.create(Aep.AepConfig.defaults().withPort(port));
+        engine.start();
+        waitForServerReady(port);
     }
 
     @AfterEach
@@ -64,248 +82,298 @@ class AepGatewayIntegrationTest {
         }
         System.clearProperty("AEP_JWT_SECRET");
         System.clearProperty("AEP_ENV");
+        System.clearProperty("AEP_CORS_ORIGINS");
     }
 
     // ==================== JWT Authentication Tests ====================
 
     @Test
-    void validJwtTokenAllowsAccess() {
-        String validToken = generateValidJwtToken(TEST_TENANT_ID);
+    @DisplayName("Valid JWT token allows access to protected endpoints")
+    void validJwtTokenAllowsAccess() throws Exception {
+        String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        // With valid JWT, request should succeed
-        assertDoesNotThrow(() -> {
-            // This test documents expected behavior: valid JWT allows access
-            // Actual implementation would make HTTP request with Authorization header
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + validToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Should return 200 or 404 (endpoint exists but data not found), not 401
+        assertThat(response.statusCode()).isNotEqualTo(401);
     }
 
     @Test
-    void invalidJwtTokenRejected() {
+    @DisplayName("Invalid JWT token is rejected with 401")
+    void invalidJwtTokenRejected() throws Exception {
         String invalidToken = "invalid.jwt.token";
         
-        // With invalid JWT, request should be rejected with 401
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Invalid JWT token rejected with 401 Unauthorized. " +
-                "Gateway should validate JWT signature and claims.");
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + invalidToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void missingJwtTokenRejectedForProtectedEndpoints() {
-        // Requests without JWT token to protected endpoints should be rejected
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Missing JWT token rejected with 401 for protected endpoints. " +
-                "Public endpoints (health, ready, metrics) should bypass auth.");
-        });
+    @DisplayName("Missing JWT token is rejected for protected endpoints")
+    void missingJwtTokenRejectedForProtectedEndpoints() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            // No Authorization header
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void expiredJwtTokenRejected() {
+    @DisplayName("Expired JWT token is rejected with 401")
+    void expiredJwtTokenRejected() throws Exception {
         String expiredToken = generateExpiredJwtToken();
         
-        // Expired JWT should be rejected
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Expired JWT token rejected with 401. " +
-                "Gateway should validate token expiration (exp claim).");
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + expiredToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isEqualTo(401);
     }
 
     @Test
-    void jwtWithWrongTenantRejected() {
-        String tokenWithWrongTenant = generateValidJwtToken("different-tenant-456");
+    @DisplayName("JWT with wrong tenant is rejected with 403")
+    void jwtWithWrongTenantRejected() throws Exception {
+        String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
-        // JWT with tenant mismatch should be rejected
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: JWT with wrong tenant ID rejected with 403. " +
-                "Gateway should enforce tenant isolation from JWT claims.");
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + tokenForTenantA)
+            .header("X-Tenant-Id", TEST_TENANT_B) // Different tenant in header
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Should return 403 for tenant mismatch
+        assertThat(response.statusCode()).isIn(403, 401);
     }
 
     // ==================== CORS Tests ====================
 
     @Test
-    void corsPreflightOptionsHandled() {
-        // OPTIONS preflight request should return CORS headers
-        assertDoesNotThrow(() -> {
-            // This test documents expected behavior:
-            // - Response includes Access-Control-Allow-Origin
-            // - Response includes Access-Control-Allow-Methods
-            // - Response includes Access-Control-Allow-Headers
-            // - Response includes Access-Control-Allow-Credentials: true
-        });
+    @DisplayName("CORS preflight OPTIONS request returns proper headers")
+    void corsPreflightOptionsHandled() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+            .header("Origin", ALLOWED_ORIGIN)
+            .header("Access-Control-Request-Method", "GET")
+            .header("Access-Control-Request-Headers", "Authorization")
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isIn(200, 204);
+        assertThat(response.headers().map())
+            .containsKey("access-control-allow-origin")
+            .containsKey("access-control-allow-methods")
+            .containsKey("access-control-allow-headers");
     }
 
     @Test
-    void corsAllowsConfiguredOrigin() {
-        String allowedOrigin = "http://localhost:5173";
+    @DisplayName("CORS allows configured origin")
+    void corsAllowsConfiguredOrigin() throws Exception {
+        String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        // Requests from allowed origin should get CORS headers
-        assertDoesNotThrow(() -> {
-            // Expected: Access-Control-Allow-Origin header matches request origin
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Origin", ALLOWED_ORIGIN)
+            .header("Authorization", "Bearer " + validToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.headers().map())
+            .containsKey("access-control-allow-origin");
+        assertThat(response.headers().firstValue("access-control-allow-origin").orElse(""))
+            .isEqualTo(ALLOWED_ORIGIN);
     }
 
     @Test
-    void corsRejectsDisallowedOrigin() {
-        String disallowedOrigin = "http://malicious-site.com";
+    @DisplayName("CORS rejects disallowed origin")
+    void corsRejectsDisallowedOrigin() throws Exception {
+        String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        // Requests from disallowed origin should not get CORS headers
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Disallowed origin rejected or CORS headers not returned. " +
-                "Gateway should enforce CORS origin whitelist.");
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Origin", DISALLOWED_ORIGIN)
+            .header("Authorization", "Bearer " + validToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Should either not have CORS headers or reject the request
+        assertThat(response.headers().map().getOrDefault("access-control-allow-origin", List.of()))
+            .doesNotContain(DISALLOWED_ORIGIN);
     }
 
     // ==================== Tenant Isolation Tests ====================
 
     @Test
-    void tenantMismatchRejected() {
-        String tokenForTenantA = generateValidJwtToken("tenant-a");
+    @DisplayName("Tenant mismatch is rejected with 403")
+    void tenantMismatchRejected() throws Exception {
+        String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
-        // Request to tenant-b endpoint with tenant-a token should be rejected
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Tenant mismatch rejected with 403 Forbidden. " +
-                "Gateway should enforce tenant isolation at routing layer.");
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + tokenForTenantA)
+            .header("X-Tenant-Id", TEST_TENANT_B) // Different tenant
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(response.statusCode()).isIn(403, 401);
     }
 
     @Test
-    void crossTenantDataAccessPrevented() {
-        String tokenForTenantA = generateValidJwtToken("tenant-a");
+    @DisplayName("Cross-tenant data access is prevented")
+    void crossTenantDataAccessPrevented() throws Exception {
+        String tokenForTenantA = generateValidJwtToken(TEST_TENANT_A);
         
-        // Tenant A should not access tenant B's data
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: Cross-tenant data access prevented. " +
-                "Gateway should validate tenant ID in JWT against resource ownership.");
-        });
+        // Create a resource in tenant A
+        HttpRequest createRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .POST(HttpRequest.BodyPublishers.ofString("{\"name\":\"test-pipeline\"}"))
+            .header("Authorization", "Bearer " + tokenForTenantA)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .header("Content-Type", "application/json")
+            .build();
+
+        httpClient.send(createRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Try to access with tenant B token
+        String tokenForTenantB = generateValidJwtToken(TEST_TENANT_B);
+        HttpRequest readRequest = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + tokenForTenantB)
+            .header("X-Tenant-Id", TEST_TENANT_B)
+            .build();
+
+        HttpResponse<String> readResponse = httpClient.send(readRequest, HttpResponse.BodyHandlers.ofString());
+
+        // Tenant B should not see tenant A's resources
+        assertThat(readResponse.statusCode()).isIn(200, 404);
+        if (readResponse.statusCode() == 200) {
+            // Verify the response doesn't contain tenant A's data
+            assertThat(readResponse.body()).doesNotContain("test-pipeline");
+        }
     }
 
     // ==================== Correlation ID Tests ====================
 
     @Test
-    void correlationIdPropagatedFromRequest() {
-        String correlationId = UUID.randomUUID().toString();
+    @DisplayName("Correlation ID is propagated from request header")
+    void correlationIdPropagatedFromRequest() throws Exception {
+        String correlationId = java.util.UUID.randomUUID().toString();
+        String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        // X-Correlation-ID header should be propagated through request chain
-        assertDoesNotThrow(() -> {
-            // Expected: Correlation ID present in logs, metrics, and downstream calls
-        });
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("X-Correlation-Id", correlationId)
+            .header("Authorization", "Bearer " + validToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        // Response should include the correlation ID
+        assertThat(response.headers().firstValue("X-Correlation-Id"))
+            .isPresent()
+            .hasValue(correlationId);
     }
 
     @Test
-    void correlationIdGeneratedWhenMissing() {
-        // When X-Correlation-ID header is missing, gateway should generate one
-        assertDoesNotThrow(() -> {
-            // Expected: New correlation ID generated and propagated
-        });
-    }
-
-    @Test
-    void correlationIdPresentInErrorResponse() {
-        String correlationId = UUID.randomUUID().toString();
+    @DisplayName("Correlation ID is generated when missing from request")
+    void correlationIdGeneratedWhenMissing() throws Exception {
+        String validToken = generateValidJwtToken(TEST_TENANT_A);
         
-        // Even error responses should include correlation ID for diagnosability
-        assertDoesNotThrow(() -> {
-            // Expected: Error response body includes correlation ID
-        });
-    }
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("Authorization", "Bearer " + validToken)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            // No X-Correlation-Id header
+            .build();
 
-    // ==================== SSE Tests ====================
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-    @Test
-    void sseConnectionRequiresAuthentication() {
-        // SSE connections should require valid JWT authentication
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: SSE connection rejected without valid JWT. " +
-                "Gateway should enforce auth on SSE upgrade requests.");
-        });
+        // Response should include a generated correlation ID
+        assertThat(response.headers().firstValue("X-Correlation-Id"))
+            .isPresent();
     }
 
     @Test
-    void sseConnectionIncludesTenantContext() {
-        String validToken = generateValidJwtToken(TEST_TENANT_ID);
+    @DisplayName("Correlation ID is present in error responses")
+    void correlationIdPresentInErrorResponse() throws Exception {
+        String correlationId = java.util.UUID.randomUUID().toString();
         
-        // SSE connections should include tenant context from JWT
-        assertDoesNotThrow(() -> {
-            // Expected: SSE events scoped to tenant from JWT
-        });
-    }
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:" + port + "/api/v1/pipelines"))
+            .GET()
+            .header("X-Correlation-Id", correlationId)
+            .header("X-Tenant-Id", TEST_TENANT_A)
+            // No Authorization header - will trigger 401 error
+            .build();
 
-    // ==================== WebSocket Tests ====================
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-    @Test
-    void wsConnectionRequiresAuthentication() {
-        // WebSocket connections should require valid JWT authentication
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: WebSocket upgrade rejected without valid JWT. " +
-                "Gateway should enforce auth on WS upgrade requests.");
-        });
-    }
-
-    @Test
-    void wsConnectionIncludesTenantContext() {
-        String validToken = generateValidJwtToken(TEST_TENANT_ID);
-        
-        // WebSocket connections should include tenant context from JWT
-        assertDoesNotThrow(() -> {
-            // Expected: WS messages scoped to tenant from JWT
-        });
-    }
-
-    @Test
-    void wsConnectionTenantMismatchRejected() {
-        String tokenForTenantA = generateValidJwtToken("tenant-a");
-        
-        // WebSocket connection with tenant mismatch should be rejected
-        assertThrows(Exception.class, () -> {
-            throw new Exception(
-                "Expected: WebSocket connection rejected for tenant mismatch. " +
-                "Gateway should validate tenant ID on WS upgrade.");
-        });
-    }
-
-    // ==================== Backend Failure Tests ====================
-
-    @Test
-    void backendFailureReturns502WithCorrelation() {
-        String correlationId = UUID.randomUUID().toString();
-        
-        // When backend is unavailable, gateway should return 502 with correlation ID
-        assertDoesNotThrow(() -> {
-            // Expected: 502 Bad Gateway response includes correlation ID
-        });
-    }
-
-    @Test
-    void backendTimeoutReturns504WithCorrelation() {
-        String correlationId = UUID.randomUUID().toString();
-        
-        // When backend times out, gateway should return 504 with correlation ID
-        assertDoesNotThrow(() -> {
-            // Expected: 504 Gateway Timeout response includes correlation ID
-        });
-    }
-
-    @Test
-    void backendErrorReturns503WithCorrelation() {
-        String correlationId = UUID.randomUUID().toString();
-        
-        // When backend returns error, gateway should return 503 with correlation ID
-        assertDoesNotThrow(() -> {
-            // Expected: 503 Service Unavailable response includes correlation ID
-        });
+        assertThat(response.statusCode()).isEqualTo(401);
+        assertThat(response.headers().firstValue("X-Correlation-Id"))
+            .isPresent()
+            .hasValue(correlationId);
     }
 
     // ==================== Helper Methods ====================
+
+    private static int findFreePort() throws java.io.IOException {
+        try (ServerSocket ss = new ServerSocket(0)) {
+            return ss.getLocalPort();
+        }
+    }
+
+    private static void waitForServerReady(int port) throws Exception {
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                new java.net.Socket("127.0.0.1", port).close();
+                return;
+            } catch (java.io.IOException ignored) {
+                Thread.sleep(100);
+            }
+        }
+        throw new IllegalStateException("Server did not start within 10 seconds on port " + port);
+    }
 
     private String generateValidJwtToken(String tenantId) {
         try {
@@ -346,7 +414,7 @@ class AepGatewayIntegrationTest {
             String payload = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(String.format(
                     "{\"sub\":\"user\",\"tenantId\":\"%s\",\"iat\":%d,\"exp\":%d}",
-                    TEST_TENANT_ID, past - 7200, past
+                    TEST_TENANT_A, past - 7200, past
                 ).getBytes(StandardCharsets.UTF_8));
             
             // JWT signature

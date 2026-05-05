@@ -132,10 +132,10 @@ export function UnifiedRightPanel({
     return (
         <Paper
             elevation={3}
-            className="h-full flex flex-col w-[320px] border-gray-200 dark:border-gray-700 border-l" >
+            className="h-full flex flex-col w-[320px] border-border dark:border-border border-l" >
             {/* Header */}
             <Box
-                className="flex items-center p-2 border-gray-200 dark:border-gray-700 border-b" >
+                className="flex items-center p-2 border-border dark:border-border border-b" >
                 <Typography component="p" className="grow pl-2 text-lg font-medium">
                     Assistant
                 </Typography>
@@ -149,7 +149,7 @@ export function UnifiedRightPanel({
                 value={tabValue}
                 onChange={(_, v) => setTabValue(v)}
                 variant="underline"
-                className="border-gray-200 dark:border-gray-700 border-b" >
+                className="border-border dark:border-border border-b" >
                 <Tab label={`Guide (${incompleteGuidance})`} />
                 <Tab label={`AI (${suggestionCount})`} />
                 <Tab label={`Validate (${errorCount})`} />
@@ -212,7 +212,7 @@ function GuidancePanel({
 
     return (
         <Box>
-            <Typography component="span" className="mb-4 block text-xs text-gray-500" color="text.secondary">
+            <Typography component="span" className="mb-4 block text-xs text-fg-muted" color="text.secondary">
                 {items.filter(i => !i.completed).length} tips for {currentPhase} phase
             </Typography>
 
@@ -225,14 +225,14 @@ function GuidancePanel({
                     {items.map(item => (
                         <Box key={item.id}>
                             <ListItem
-                                className="px-2 py-1 rounded cursor-pointer hover:bg-gray-100" style={{ backgroundColor: item.completed ? 'action.selected' : 'transparent' }}
+                                className="px-2 py-1 rounded cursor-pointer hover:bg-surface-muted" style={{ backgroundColor: item.completed ? 'action.selected' : 'transparent' }}
                                 onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
                             >
                                 <ListItemIcon className="min-w-[32px]">
                                     {item.completed ? (
-                                        <CheckCircle size={16} className="text-green-600" />
+                                        <CheckCircle size={16} className="text-success-color" />
                                     ) : (
-                                        <Lightbulb size={16} className="text-blue-600" />
+                                        <Lightbulb size={16} className="text-info-color" />
                                     )}
                                 </ListItemIcon>
                                 <ListItemText
@@ -242,7 +242,7 @@ function GuidancePanel({
                             </ListItem>
                             <Collapse in={expandedId === item.id}>
                                 <Box className="pl-10 pr-2 pb-2">
-                                    <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                                    <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                         {item.description}
                                     </Typography>
                                     {!item.completed && onComplete && (
@@ -275,11 +275,11 @@ function SuggestionsPanel({
     const getIcon = (type: Suggestion['type']) => {
         switch (type) {
             case 'improvement':
-                return <AutoAwesome size={16} className="text-blue-600" />;
+                return <AutoAwesome size={16} className="text-info-color" />;
             case 'warning':
-                return <Warning size={16} className="text-amber-600" />;
+                return <Warning size={16} className="text-warning-color" />;
             case 'info':
-                return <Info size={16} className="text-cyan-600" />;
+                return <Info size={16} className="text-info-color" />;
         }
     };
 
@@ -294,7 +294,7 @@ function SuggestionsPanel({
                     {suggestions.map(suggestion => (
                         <ListItem
                             key={suggestion.id}
-                            className="px-2 py-2 mb-2 rounded flex-col items-start bg-gray-100" >
+                            className="px-2 py-2 mb-2 rounded flex-col items-start bg-surface-muted" >
                             <Box className="flex items-start w-full gap-2">
                                 {getIcon(suggestion.type)}
                                 <Typography component="p" className="grow text-sm">
@@ -338,11 +338,11 @@ function ValidationPanel({
     const getIcon = (severity: ValidationIssue['severity']) => {
         switch (severity) {
             case 'error':
-                return <ErrorIcon size={16} className="text-red-600" />;
+                return <ErrorIcon size={16} className="text-destructive" />;
             case 'warning':
-                return <Warning size={16} className="text-amber-600" />;
+                return <Warning size={16} className="text-warning-color" />;
             case 'info':
-                return <Info size={16} className="text-cyan-600" />;
+                return <Info size={16} className="text-info-color" />;
         }
     };
 
@@ -357,7 +357,7 @@ function ValidationPanel({
                     <Typography variant="h3" fontWeight={700} color={score >= 80 ? 'success.main' : score >= 50 ? 'warning.main' : 'error.main'}>
                         {score}
                     </Typography>
-                    <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                         Validation Score
                     </Typography>
                 </Box>
@@ -401,13 +401,13 @@ function ValidationPanel({
                     {issues.map(issue => (
                         <ListItem
                             key={issue.id}
-                            className="px-2 py-2 mb-2 rounded flex-col items-start bg-gray-100" >
+                            className="px-2 py-2 mb-2 rounded flex-col items-start bg-surface-muted" >
                             <Box className="flex items-start w-full gap-2">
                                 {getIcon(issue.severity)}
                                 <Box className="grow">
                                     <Typography component="p" className="text-sm">{issue.message}</Typography>
                                     {issue.location && (
-                                        <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                                        <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                             {issue.location}
                                         </Typography>
                                     )}
@@ -464,7 +464,7 @@ function GenerationPanel({
                         </Box>
                         <LinearProgress variant="determinate" value={status.progress} />
                         {status.currentFile && (
-                            <Typography component="span" className="mt-1 block text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="mt-1 block text-xs text-fg-muted" color="text.secondary">
                                 {status.currentFile}
                             </Typography>
                         )}
@@ -501,12 +501,12 @@ function GenerationPanel({
                             className="px-2 py-1 rounded"
                         >
                             <ListItemIcon className="min-w-[28px]">
-                                {file.status === 'complete' && <CheckCircle size={16} className="text-green-600" />}
+                                {file.status === 'complete' && <CheckCircle size={16} className="text-success-color" />}
                                 {file.status === 'generating' && (
                                     <CircularProgress />
                                 )}
                                 {file.status === 'pending' && <Code size={16} color="disabled" />}
-                                {file.status === 'error' && <ErrorIcon size={16} className="text-red-600" />}
+                                {file.status === 'error' && <ErrorIcon size={16} className="text-destructive" />}
                             </ListItemIcon>
                             <ListItemText
                                 primary={<Typography variant="body2">{file.name}</Typography>}

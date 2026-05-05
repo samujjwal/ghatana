@@ -2,6 +2,7 @@
 
 > **Status**: Enforced by `checkPluginPurity` Gradle tasks on platform-plugins modules.
 > **Last Updated**: 2026-05-03
+> **Related boundary gate**: `checkKernelProductBoundary` on `platform-kernel/**` and `platform-plugins/**`
 
 ## 1. What Is Plugin Purity?
 
@@ -29,6 +30,8 @@ capable of serving any product through the pack-driven model.
 ## 3. Plugin Architecture: Pack-Driven Design
 
 Plugins are **generic engines**; products supply **rule packs**.
+
+See [KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md](./KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md) for the canonical owner of platform versus product capabilities.
 
 ```
 plugin-compliance  ← generic CompliancePlugin SPI

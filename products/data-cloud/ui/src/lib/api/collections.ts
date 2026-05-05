@@ -126,7 +126,7 @@ export interface CollectionQueryParams {
     search?: string;
     status?: Collection['status'];
     schemaType?: Collection['schemaType'];
-    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'entityCount';
+    sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'entityCount' | 'qualityScore';
     sortOrder?: 'asc' | 'desc';
 }
 
@@ -144,8 +144,15 @@ export const collectionsApi = {
     list: async (params?: CollectionQueryParams): Promise<PaginatedResponse<Collection>> => {
         const limit = params?.pageSize ?? 50;
         const offset = ((params?.page ?? 1) - 1) * limit;
+        const queryParams: Record<string, unknown> = { limit, offset };
+        if (params?.search) queryParams.search = params.search;
+        if (params?.status) queryParams.status = params.status;
+        if (params?.schemaType) queryParams.schemaType = params.schemaType;
+        if (params?.sortBy) queryParams.sortBy = params.sortBy;
+        if (params?.sortOrder) queryParams.sortOrder = params.sortOrder;
+        
         const rawResponse = await apiClient.get<BackendEntityListResponse>('/entities/dc_collections', {
-            params: { limit, offset, ...(params?.search ? { search: params.search } : {}) },
+            params: queryParams,
         });
         const raw = CollectionEntityListResponseSchema.parse(rawResponse);
         const items = (raw.entities ?? []).map(entityToCollection);

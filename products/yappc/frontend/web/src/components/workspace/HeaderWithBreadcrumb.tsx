@@ -56,8 +56,8 @@ export function HeaderWithBreadcrumb({
                     <span className={`
             px-2 py-0.5 text-xs font-medium rounded-full whitespace-nowrap
             ${navContext.projectIsOwned
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            ? 'bg-success-bg dark:bg-success-bg/30 text-success-color dark:text-success-color'
+                            : 'bg-warning-bg dark:bg-warning-bg/30 text-warning-color dark:text-warning-color'
                         }
           `}>
                         {navContext.projectIsOwned ? 'Owner' : 'Read-only'}

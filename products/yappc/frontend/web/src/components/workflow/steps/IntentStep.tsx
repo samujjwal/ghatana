@@ -169,7 +169,7 @@ export function IntentStep() {
                                     <MenuItem
                                         key={`cat-${category}`}
                                         disabled
-                                        className="font-bold bg-gray-100 dark:bg-gray-800 [&.Mui-disabled]:opacity-100"
+                                        className="font-bold bg-surface-muted dark:bg-surface [&.Mui-disabled]:opacity-100"
                                     >
                                         {CATEGORY_LABELS[category as WorkflowCategory]}
                                     </MenuItem>,
@@ -177,7 +177,7 @@ export function IntentStep() {
                                         <MenuItem key={type.value} value={type.value} className="pl-8">
                                             <Box>
                                                 <Typography component="p" className="text-sm">{type.label}</Typography>
-                                                <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                                                <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                                     {type.description}
                                                 </Typography>
                                             </Box>
@@ -199,7 +199,7 @@ export function IntentStep() {
                             Clearly describe what you want to achieve. Be specific and actionable.
                         </Typography>
                         <textarea
-                            className="min-h-[112px] w-full rounded border border-gray-300 p-3 text-sm"
+                            className="min-h-[112px] w-full rounded border border-border p-3 text-sm"
                             placeholder="Example: Implement user authentication with OAuth 2.0 to allow users to sign in with their Google or GitHub accounts..."
                             value={currentData.goalStatement ?? ''}
                             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleChange('goalStatement', e.target.value)}

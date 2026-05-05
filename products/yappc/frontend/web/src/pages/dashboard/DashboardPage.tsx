@@ -132,7 +132,7 @@ const DashboardPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-white mb-2">
             {getGreeting()}, {currentUser?.name?.split(' ')[0] || 'there'}!
           </h1>
-          <p className="text-zinc-400">Here's what's happening across your projects</p>
+          <p className="text-fg-muted">Here's what's happening across your projects</p>
         </div>
         <NavLink
           to={ROUTES.TEMPLATES}
@@ -154,15 +154,15 @@ const DashboardPage: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="p-6 rounded-xl bg-zinc-900 border border-zinc-800"
+            className="p-6 rounded-xl bg-surface border border-border"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400">{stat.icon}</div>
+              <div className="p-2 rounded-lg bg-surface text-fg-muted">{stat.icon}</div>
               {stat.trend && (
                 <span
                   className={cn(
                     'text-xs font-medium',
-                    stat.trend === 'up' ? 'text-emerald-400' : 'text-cyan-400'
+                    stat.trend === 'up' ? 'text-emerald-400' : 'text-info-color'
                   )}
                 >
                   {stat.change}
@@ -170,7 +170,7 @@ const DashboardPage: React.FC = () => {
               )}
             </div>
             <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-            <div className="text-sm text-zinc-400">{stat.label}</div>
+            <div className="text-sm text-fg-muted">{stat.label}</div>
           </motion.div>
         ))}
       </div>
@@ -179,8 +179,8 @@ const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Projects List */}
         <div className="lg:col-span-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl">
-            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
+          <div className="bg-surface border border-border rounded-xl">
+            <div className="flex items-center justify-between p-6 border-b border-border">
               <h2 className="text-lg font-semibold text-white">Your Projects</h2>
               <NavLink
                 to={ROUTES.PROJECTS}
@@ -195,7 +195,7 @@ const DashboardPage: React.FC = () => {
                 <NavLink
                   key={project.id}
                   to={ROUTES.project(project.id)}
-                  className="flex items-center gap-4 p-4 hover:bg-zinc-800/50 transition-colors"
+                  className="flex items-center gap-4 p-4 hover:bg-surface/50 transition-colors"
                 >
                   <div
                     className={cn(
@@ -215,14 +215,14 @@ const DashboardPage: React.FC = () => {
                         className={cn(
                           'px-2 py-0.5 rounded text-xs font-medium capitalize',
                           project.status === 'active' && 'bg-emerald-500/20 text-emerald-400',
-                          project.status === 'paused' && 'bg-amber-500/20 text-amber-400',
-                          project.status === 'archived' && 'bg-zinc-500/20 text-zinc-400'
+                          project.status === 'paused' && 'bg-warning-bg/20 text-warning-color',
+                          project.status === 'archived' && 'bg-surface-muted/20 text-fg-muted'
                         )}
                       >
                         {project.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-zinc-500 mt-1">
+                    <div className="flex items-center gap-4 text-sm text-fg-muted mt-1">
                       <span>{project.phase}</span>
                       <span>•</span>
                       <span>{project.lastActivity}</span>
@@ -232,10 +232,10 @@ const DashboardPage: React.FC = () => {
                     {/* Progress */}
                     <div className="w-24">
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-zinc-500">Progress</span>
+                        <span className="text-fg-muted">Progress</span>
                         <span className="text-white">{project.progress}%</span>
                       </div>
-                      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-surface rounded-full overflow-hidden">
                         <div
                           className="h-full bg-violet-500 rounded-full"
                           style={{ width: `${project.progress}%` }}
@@ -247,14 +247,14 @@ const DashboardPage: React.FC = () => {
                       {project.team?.slice(0, 3).map((member, i) => (
                         <div
                           key={i}
-                          className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 border-2 border-zinc-900 flex items-center justify-center text-white text-xs font-medium"
+                          className="w-8 h-8 rounded-full bg-gradient-to-br from-zinc-600 to-zinc-700 border-2 border-border flex items-center justify-center text-white text-xs font-medium"
                           title={member.name}
                         >
                           {member.name.charAt(0)}
                         </div>
                       ))}
                       {project.team?.length > 3 && (
-                        <div className="w-8 h-8 rounded-full bg-zinc-700 border-2 border-zinc-900 flex items-center justify-center text-zinc-400 text-xs">
+                        <div className="w-8 h-8 rounded-full bg-surface-muted border-2 border-border flex items-center justify-center text-fg-muted text-xs">
                           +{project.team.length - 3}
                         </div>
                       )}
@@ -266,7 +266,7 @@ const DashboardPage: React.FC = () => {
                 <div className="p-12 text-center">
                   <Sparkles className="w-12 h-12 text-violet-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-white mb-2">No projects yet</h3>
-                  <p className="text-zinc-400 mb-6">
+                  <p className="text-fg-muted mb-6">
                     Start your first project and let AI guide you through the process
                   </p>
                   <NavLink
@@ -288,7 +288,7 @@ const DashboardPage: React.FC = () => {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Recent Activity */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Recent Activity</h2>
             <div className="space-y-4">
               {recentActivity.map((item) => (
@@ -298,15 +298,15 @@ const DashboardPage: React.FC = () => {
                       'p-1.5 rounded',
                       item.type === 'deploy' && 'bg-emerald-500/20 text-emerald-400',
                       item.type === 'pr' && 'bg-violet-500/20 text-violet-400',
-                      item.type === 'story' && 'bg-cyan-500/20 text-cyan-400',
-                      item.type === 'comment' && 'bg-amber-500/20 text-amber-400'
+                      item.type === 'story' && 'bg-info-bg/20 text-info-color',
+                      item.type === 'comment' && 'bg-warning-bg/20 text-warning-color'
                     )}
                   >
                     <Activity className="w-3 h-3" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-white truncate">{item.message}</p>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-fg-muted mt-0.5">
                       <span>{item.project}</span>
                       <span>•</span>
                       <span>{item.time}</span>
@@ -318,7 +318,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+          <div className="bg-surface border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
             <div className="space-y-2">
               {[
@@ -330,15 +330,15 @@ const DashboardPage: React.FC = () => {
                 <NavLink
                   key={action.label}
                   to={action.href}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-zinc-800 transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface transition-colors group"
                 >
-                  <div className="p-2 rounded-lg bg-zinc-800 text-zinc-400 group-hover:text-violet-400 transition-colors">
+                  <div className="p-2 rounded-lg bg-surface text-fg-muted group-hover:text-violet-400 transition-colors">
                     {action.icon}
                   </div>
-                  <span className="text-sm text-zinc-300 group-hover:text-white transition-colors">
+                  <span className="text-sm text-fg-muted group-hover:text-white transition-colors">
                     {action.label}
                   </span>
-                  <ArrowRight className="w-4 h-4 ml-auto text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                  <ArrowRight className="w-4 h-4 ml-auto text-fg-muted group-hover:text-fg-muted transition-colors" />
                 </NavLink>
               ))}
             </div>
@@ -352,7 +352,7 @@ const DashboardPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="font-medium text-white mb-1">AI Assistant Tip</h3>
-                <p className="text-sm text-zinc-400">
+                <p className="text-sm text-fg-muted">
                   Try describing your project idea in natural language. The AI will help
                   you design the architecture and set up infrastructure automatically.
                 </p>

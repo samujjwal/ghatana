@@ -243,7 +243,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
                     </Tooltip>
                 </Stack>
             }
-            className="mb-2 border-blue-600 border-l-[3px]" >
+            className="mb-2 border-info-border border-l-[3px]" >
             <ListItemIcon>{getArtifactIcon(artifact.type)}</ListItemIcon>
             <ListItemText
                 primary={artifact.path}
@@ -289,7 +289,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
         if (!generationResult) {
             return (
                 <Box className="py-4 text-center">
-                    <CodeIcon className="mb-4 text-[64px] text-gray-500 dark:text-gray-400" />
+                    <CodeIcon className="mb-4 text-[64px] text-fg-muted dark:text-fg-muted" />
                     <Typography variant="body1" color="text.secondary">
                         Configure options and click "Generate Code" to get started
                     </Typography>
@@ -372,7 +372,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
 
                 {generationResult.artifacts.length === 0 && (
                     <Box className="py-4 text-center">
-                        <WarningIcon className="mb-4 text-5xl text-amber-600" />
+                        <WarningIcon className="mb-4 text-5xl text-warning-color" />
                         <Typography color="text.secondary">
                             No artifacts generated
                         </Typography>
@@ -388,7 +388,7 @@ export const CodeGenerationPanel: React.FC<CodeGenerationPanelProps> = ({
     return (
         <Paper className="h-full flex flex-col">
             {/* Header */}
-            <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="p-4 border-border dark:border-border border-b" >
                 <Typography variant="h6">Code Generation</Typography>
                 <Typography variant="caption" color="text.secondary">
                     Generate production-ready code from your canvas design

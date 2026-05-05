@@ -56,31 +56,31 @@ function getVariantClasses(variant: ButtonVariant, tone: ButtonTone): string {
 
   if (variant === 'link') {
     return isDanger
-      ? 'text-red-600 hover:text-red-700 underline-offset-4 hover:underline'
-      : 'text-blue-600 hover:text-blue-700 underline-offset-4 hover:underline';
+      ? 'text-destructive hover:text-destructive underline-offset-4 hover:underline'
+      : 'text-info-color hover:text-info-color underline-offset-4 hover:underline';
   }
 
   if (variant === 'text' || variant === 'ghost') {
     return isDanger
-      ? 'bg-transparent text-red-600 hover:bg-red-50'
-      : 'bg-transparent text-slate-700 hover:bg-slate-100';
+      ? 'bg-transparent text-destructive hover:bg-destructive-bg'
+      : 'bg-transparent text-fg hover:bg-surface-muted';
   }
 
   if (variant === 'outlined' || variant === 'outline') {
     return isDanger
-      ? 'border border-red-300 bg-white text-red-700 hover:bg-red-50'
-      : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50';
+      ? 'border border-destructive-border bg-white text-destructive hover:bg-destructive-bg'
+      : 'border border-border bg-white text-fg hover:bg-surface-muted';
   }
 
   if (variant === 'soft') {
     return isDanger
-      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-      : 'bg-slate-100 text-slate-800 hover:bg-slate-200';
+      ? 'bg-destructive-bg text-destructive hover:bg-destructive-bg'
+      : 'bg-surface-muted text-fg hover:bg-surface-muted';
   }
 
   return isDanger
-    ? 'bg-red-600 text-white hover:bg-red-700'
-    : 'bg-blue-600 text-white hover:bg-blue-700';
+    ? 'bg-destructive-bg text-white hover:bg-destructive-bg'
+    : 'bg-primary text-white hover:bg-info-bg';
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

@@ -26,7 +26,7 @@ interface PanelDockProps {
 export const PanelDock: React.FC<PanelDockProps> = ({ panels, onToggle }) => {
     return (
         <Box
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1300] flex gap-1 bg-white dark:bg-gray-900 rounded-xl shadow-lg px-2 py-1.5 border border-gray-200 dark:border-gray-700"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1300] flex gap-1 bg-white dark:bg-surface rounded-xl shadow-lg px-2 py-1.5 border border-border dark:border-border"
             role="toolbar"
             aria-label="Panel controls"
         >
@@ -42,8 +42,8 @@ export const PanelDock: React.FC<PanelDockProps> = ({ panels, onToggle }) => {
                             aria-pressed={panel.isOpen}
                             className={`w-[44px] h-[44px] rounded-lg transition-all duration-200 ${
                                 panel.isOpen
-                                    ? 'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
-                                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                                    ? 'bg-info-bg dark:bg-info-bg/20 text-info-color dark:text-info-color'
+                                    : 'text-fg-muted hover:bg-surface-muted dark:hover:bg-surface'
                             }`}
                         >
                             {panel.icon}
@@ -51,7 +51,7 @@ export const PanelDock: React.FC<PanelDockProps> = ({ panels, onToggle }) => {
                         {/* Active Indicator Dot */}
                         {panel.isOpen && (
                             <Box
-                                className="absolute rounded-full bottom-[-2px] left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-500" />
+                                className="absolute rounded-full bottom-[-2px] left-1/2 -translate-x-1/2 w-1 h-1 bg-info-bg" />
                         )}
                     </Box>
                 </Tooltip>

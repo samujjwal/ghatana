@@ -1,9 +1,11 @@
-plugins {
-    id("java-module")
-}
-
+import com.ghatana.buildlogic.ProductPackValidationExtension
 import groovy.json.JsonSlurper
 import java.nio.file.Files
+
+plugins {
+    id("java-module")
+    id("product-pack-validation")
+}
 
 apply(from = "../gradle/dmos-quality-gates.gradle.kts")
 
@@ -33,9 +35,41 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
-tasks.register("validateDomainPackManifest") {
+configure<ProductPackValidationExtension> {
+    productName.set("Digital Marketing")
+    manifestFile.set(layout.projectDirectory.file("domain-pack.json"))
+    requiredManifestFields.set(
+        listOf(
+            "\"productCode\"",
+            "\"rulePrefix\"",
+            "\"boundaryPolicyStoreClass\"",
+            "\"pluginBindingsClass\"",
+            "\"kernelCapabilitiesConsumed\"",
+            "\"pluginsConsumed\"",
+            "\"bridgesConsumed\"",
+            "\"domainPacksProvided\"",
+            "\"uiSurfaces\"",
+            "\"runtimeServices\"",
+            "\"dataSensitivity\"",
+            "\"complianceRuleSets\""
+        )
+    )
+    policyPackTestPatterns.set(
+        listOf(
+            "com.ghatana.digitalmarketing.pack.DigitalMarketingPackContractTest",
+            "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStoreTest",
+            "com.ghatana.digitalmarketing.pack.DigitalMarketingKernelBoundaryContractTest"
+        )
+    )
+    complianceSourceFile.set(
+        layout.projectDirectory.file("src/main/java/com/ghatana/digitalmarketing/pack/DigitalMarketingComplianceRulePack.java")
+    )
+    complianceRulePrefix.set("DM-")
+}
+
+tasks.register("validateDmosDomainPackBindings") {
     group = "verification"
-    description = "Validates DMOS domain-pack manifest fields and DM prefix constraints."
+    description = "Validates DMOS product-specific manifest bindings and prefix constraints."
     val manifestFile = layout.projectDirectory.file("domain-pack.json").asFile
 
     inputs.file(manifestFile)
@@ -56,16 +90,14 @@ tasks.register("validateDomainPackManifest") {
         val rulePrefix = requiredString("rulePrefix")
         val boundaryPolicyStoreClass = requiredString("boundaryPolicyStoreClass")
         val pluginBindingsClass = requiredString("pluginBindingsClass")
+        val kernelCapabilitiesConsumed = (root["kernelCapabilitiesConsumed"] as? List<*>)?.filterIsInstance<String>().orEmpty()
+        val pluginsConsumed = (root["pluginsConsumed"] as? List<*>)?.filterIsInstance<String>().orEmpty()
         val complianceRuleSets = (root["complianceRuleSets"] as? List<*>)
             ?.mapNotNull { (it as? String)?.trim() }
             .orEmpty()
 
-        check(productCode == "DM") {
-            "domain-pack.json: productCode must be 'DM'"
-        }
-        check(rulePrefix == "DM-") {
-            "domain-pack.json: rulePrefix must be 'DM-'"
-        }
+        check(productCode == "DM") { "domain-pack.json: productCode must be 'DM'" }
+        check(rulePrefix == "DM-") { "domain-pack.json: rulePrefix must be 'DM-'" }
         check(boundaryPolicyStoreClass == "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore") {
             "domain-pack.json: boundaryPolicyStoreClass must reference DigitalMarketingBoundaryPolicyStore"
         }
@@ -75,68 +107,14 @@ tasks.register("validateDomainPackManifest") {
         check(complianceRuleSets.isNotEmpty()) {
             "domain-pack.json: complianceRuleSets must contain at least one rule set"
         }
+        check(kernelCapabilitiesConsumed.isNotEmpty()) {
+            "domain-pack.json: kernelCapabilitiesConsumed must contain at least one capability"
+        }
+        check(pluginsConsumed.isNotEmpty()) {
+            "domain-pack.json: pluginsConsumed must contain at least one plugin"
+        }
         check(complianceRuleSets.none { it.startsWith("PHR-") || it.startsWith("FIN-") }) {
             "domain-pack.json: complianceRuleSets must not contain PHR-/FIN- prefixes"
-        }
-    }
-}
-
-tasks.register("validatePolicyPack") {
-    group = "verification"
-    description = "Validates DMOS boundary policy default-deny and DM-BP rule prefix conventions."
-    val boundaryPolicyStoreSource = layout.projectDirectory
-        .file("src/main/java/com/ghatana/digitalmarketing/pack/DigitalMarketingBoundaryPolicyStore.java")
-        .asFile
-
-    inputs.file(boundaryPolicyStoreSource)
-
-    doLast {
-        val text = boundaryPolicyStoreSource.readText()
-
-        check("DM-BP-999" in text) {
-            "DigitalMarketingBoundaryPolicyStore must include DM-BP-999 default-deny rule"
-        }
-        check(".resourcePattern(\"**\")" in text && ".effect(Effect.DENY)" in text) {
-            "DigitalMarketingBoundaryPolicyStore must include default-deny rule over ** with Effect.DENY"
-        }
-
-        val ruleIds = Regex("\\\"(DM-BP-[0-9]{3})\\\"")
-            .findAll(text)
-            .map { it.groupValues[1] }
-            .toList()
-        check(ruleIds.isNotEmpty()) {
-            "No DM-BP-* rule IDs found in DigitalMarketingBoundaryPolicyStore"
-        }
-        check(ruleIds.distinct().size == ruleIds.size) {
-            "Duplicate DM-BP-* rule IDs found in DigitalMarketingBoundaryPolicyStore"
-        }
-    }
-}
-
-tasks.register("validateComplianceRulePack") {
-    group = "verification"
-    description = "Validates DMOS compliance rule ID uniqueness and DM- prefix conformance."
-    val complianceRulePackSource = layout.projectDirectory
-        .file("src/main/java/com/ghatana/digitalmarketing/pack/DigitalMarketingComplianceRulePack.java")
-        .asFile
-
-    inputs.file(complianceRulePackSource)
-
-    doLast {
-        val text = complianceRulePackSource.readText()
-        val ruleIds = Regex("new\\s+ComplianceRule\\(\\s*\"([^\"]+)\"")
-            .findAll(text)
-            .map { it.groupValues[1] }
-            .toList()
-
-        check(ruleIds.isNotEmpty()) {
-            "No ComplianceRule IDs found in DigitalMarketingComplianceRulePack"
-        }
-        check(ruleIds.all { it.startsWith("DM-") }) {
-            "All ComplianceRule IDs must start with DM-"
-        }
-        check(ruleIds.distinct().size == ruleIds.size) {
-            "Duplicate ComplianceRule IDs found in DigitalMarketingComplianceRulePack"
         }
     }
 }
@@ -173,9 +151,7 @@ tasks.register("validateReferenceConsumerHygiene") {
 
 tasks.named("check") {
     dependsOn(
-        "validateDomainPackManifest",
-        "validatePolicyPack",
-        "validateComplianceRulePack",
+        "validateDmosDomainPackBindings",
         "validateReferenceConsumerHygiene"
     )
 }

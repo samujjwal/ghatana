@@ -152,7 +152,7 @@ export function CanvasManager({
       id="canvas-drop-zone"
       data-testid="canvas-drop-zone"
       ref={containerRef}
-      className="flex-1 h-full relative overflow-hidden bg-gray-50 dark:bg-gray-950"
+      className="flex-1 h-full relative overflow-hidden bg-surface-muted dark:bg-surface"
     >
       <Box
         data-testid="react-flow-wrapper"

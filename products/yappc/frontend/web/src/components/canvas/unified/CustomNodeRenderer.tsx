@@ -57,7 +57,7 @@ const CustomNodeComponent = ({ data, selected, id, isConnecting }: NodeProps<Cus
         >
             {/* Node Header */}
             <Box
-                className="px-3 py-2 flex items-center gap-2 border-gray-200 dark:border-gray-700" >
+                className="px-3 py-2 flex items-center gap-2 border-border dark:border-border" >
                 <Typography variant="body2">{style.icon}</Typography>
                 <Typography
                     variant="body2"
@@ -69,7 +69,7 @@ const CustomNodeComponent = ({ data, selected, id, isConnecting }: NodeProps<Cus
                 </Typography>
                 {isContainer && children.length > 0 && (
                     <Box
-                        className="px-1.5 py-0.5 font-semibold bg-gray-200 dark:bg-gray-700 rounded-sm text-[10px]"
+                        className="px-1.5 py-0.5 font-semibold bg-surface-muted dark:bg-surface-muted rounded-sm text-[10px]"
                     >
                         {children.length}
                     </Box>
@@ -78,7 +78,7 @@ const CustomNodeComponent = ({ data, selected, id, isConnecting }: NodeProps<Cus
 
             {/* Node Content */}
             <Box
-                className="flex-1 p-3 flex items-center justify-center text-gray-500 dark:text-gray-400"
+                className="flex-1 p-3 flex items-center justify-center text-fg-muted dark:text-fg-muted"
             >
                 {isContainer && children.length > 0 ? (
                     <Typography variant="caption">
@@ -113,30 +113,30 @@ const CustomNodeComponent = ({ data, selected, id, isConnecting }: NodeProps<Cus
             {selected && (
                 <Box className="pointer-events-none">
                     <Box
-                        className="absolute rounded-full top-[-4px] left-[-4px] w-[8px] h-[8px] bg-blue-600 border" style={{ borderColor: 'white', cursor: 'nw-resize' }}
+                        className="absolute rounded-full top-[-4px] left-[-4px] w-[8px] h-[8px] bg-primary border" style={{ borderColor: 'white', cursor: 'nw-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full top-[-4px] right-[-4px] w-[8px] h-[8px] bg-blue-600 border" style={{ borderColor: 'white', cursor: 'ne-resize' }}
+                        className="absolute rounded-full top-[-4px] right-[-4px] w-[8px] h-[8px] bg-primary border" style={{ borderColor: 'white', cursor: 'ne-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full bottom-[-4px] left-[-4px] w-[8px] h-[8px] bg-blue-600 border" style={{ borderColor: 'white', cursor: 'sw-resize' }}
+                        className="absolute rounded-full bottom-[-4px] left-[-4px] w-[8px] h-[8px] bg-primary border" style={{ borderColor: 'white', cursor: 'sw-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full bottom-[-4px] right-[-4px] w-[8px] h-[8px] bg-blue-600 border" style={{ borderColor: 'white', cursor: 'se-resize' }}
+                        className="absolute rounded-full bottom-[-4px] right-[-4px] w-[8px] h-[8px] bg-primary border" style={{ borderColor: 'white', cursor: 'se-resize' }}
                     />
 
                     {/* Edge Handles */}
                     <Box
-                        className="absolute rounded-full top-[-4px] left-[50%] w-[8px] h-[8px] bg-blue-600 border" style={{ transform: 'translateX(-50%)', borderColor: 'white', cursor: 'n-resize' }}
+                        className="absolute rounded-full top-[-4px] left-[50%] w-[8px] h-[8px] bg-primary border" style={{ transform: 'translateX(-50%)', borderColor: 'white', cursor: 'n-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full bottom-[-4px] left-[50%] w-[8px] h-[8px] bg-blue-600 border" style={{ transform: 'translateX(-50%)', borderColor: 'white', cursor: 's-resize' }}
+                        className="absolute rounded-full bottom-[-4px] left-[50%] w-[8px] h-[8px] bg-primary border" style={{ transform: 'translateX(-50%)', borderColor: 'white', cursor: 's-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full left-[-4px] top-[50%] w-[8px] h-[8px] bg-blue-600 border" style={{ transform: 'translateY(-50%)', borderColor: 'white', cursor: 'w-resize' }}
+                        className="absolute rounded-full left-[-4px] top-[50%] w-[8px] h-[8px] bg-primary border" style={{ transform: 'translateY(-50%)', borderColor: 'white', cursor: 'w-resize' }}
                     />
                     <Box
-                        className="absolute rounded-full right-[-4px] top-[50%] w-[8px] h-[8px] bg-blue-600 border" style={{ transform: 'translateY(-50%)', borderColor: 'white', cursor: 'e-resize' }}
+                        className="absolute rounded-full right-[-4px] top-[50%] w-[8px] h-[8px] bg-primary border" style={{ transform: 'translateY(-50%)', borderColor: 'white', cursor: 'e-resize' }}
                     />
                 </Box>
             )}

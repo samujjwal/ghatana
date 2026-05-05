@@ -171,7 +171,7 @@ function ConnectorNodeComponent({ data, selected }: ConnectorNodeProps) {
             {/* Label */}
             {label && (
                 <Box
-                    className="absolute px-2 py-0.5 text-xs whitespace-nowrap top-[50%] left-[50%] bg-white dark:bg-gray-900 rounded-sm text-gray-500 dark:text-gray-400" >
+                    className="absolute px-2 py-0.5 text-xs whitespace-nowrap top-[50%] left-[50%] bg-white dark:bg-surface rounded-sm text-fg-muted dark:text-fg-muted" >
                     {label}
                 </Box>
             )}

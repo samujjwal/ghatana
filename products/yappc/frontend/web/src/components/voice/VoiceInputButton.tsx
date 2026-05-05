@@ -66,7 +66,7 @@ export function VoiceInputButton({
           rounded-full flex items-center justify-center
           transition-all duration-200
           ${isListening 
-            ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' 
+            ? 'bg-destructive-bg text-white shadow-lg shadow-red-500/30' 
             : 'bg-grey-100 dark:bg-grey-800 text-text-secondary hover:bg-grey-200 dark:hover:bg-grey-700'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
@@ -93,8 +93,8 @@ export function VoiceInputButton({
         {/* Listening Animation */}
         {isListening && (
           <>
-            <span className="absolute inset-0 rounded-full animate-ping bg-red-400 opacity-75" />
-            <span className="absolute inset-0 rounded-full animate-pulse bg-red-500 opacity-50" />
+            <span className="absolute inset-0 rounded-full animate-ping bg-destructive-bg opacity-75" />
+            <span className="absolute inset-0 rounded-full animate-pulse bg-destructive-bg opacity-50" />
           </>
         )}
       </button>

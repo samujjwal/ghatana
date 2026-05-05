@@ -27,31 +27,31 @@ interface ActivityFeedResponse {
 // ============================================================================
 
 const ACTIVITY_CONFIG: Record<ActivityType, { icon: string; color: string; label: string }> = {
-  commit: { icon: '⬤', color: 'text-green-400', label: 'Commits' },
-  pr: { icon: '⬤', color: 'text-purple-400', label: 'Pull Requests' },
-  deployment: { icon: '⬤', color: 'text-blue-400', label: 'Deployments' },
-  comment: { icon: '⬤', color: 'text-yellow-400', label: 'Comments' },
+  commit: { icon: '⬤', color: 'text-success-color', label: 'Commits' },
+  pr: { icon: '⬤', color: 'text-info-color', label: 'Pull Requests' },
+  deployment: { icon: '⬤', color: 'text-info-color', label: 'Deployments' },
+  comment: { icon: '⬤', color: 'text-warning-color', label: 'Comments' },
 };
 
 const ACTIVITY_ICONS: Record<ActivityType, React.ReactNode> = {
   commit: (
-    <svg className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-5 w-5 text-success-color" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <circle cx="12" cy="12" r="4" />
       <path d="M12 2v6m0 8v6" />
     </svg>
   ),
   pr: (
-    <svg className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-5 w-5 text-info-color" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path d="M6 3v12m0 0a3 3 0 103 3m-3-3a3 3 0 10-3 3m12-12a3 3 0 10-3-3m3 3v9a3 3 0 01-3 3H9" />
     </svg>
   ),
   deployment: (
-    <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-5 w-5 text-info-color" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path d="M5 12h14M12 5l7 7-7 7" />
     </svg>
   ),
   comment: (
-    <svg className="h-5 w-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className="h-5 w-5 text-warning-color" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   ),
@@ -118,8 +118,8 @@ const ActivityFeedPage: React.FC = () => {
     <div className="mx-auto max-w-4xl px-6 py-8 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Activity Feed</h1>
-        <p className="mt-1 text-sm text-zinc-400">Recent team activity across the workspace</p>
+        <h1 className="text-2xl font-bold text-fg-muted">Activity Feed</h1>
+        <p className="mt-1 text-sm text-fg-muted">Recent team activity across the workspace</p>
       </div>
 
       {/* Filter Bar */}
@@ -128,8 +128,8 @@ const ActivityFeedPage: React.FC = () => {
           onClick={() => setFilter('all')}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
             filter === 'all'
-              ? 'bg-zinc-100 text-zinc-900'
-              : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+              ? 'bg-surface-muted text-fg'
+              : 'bg-surface text-fg-muted hover:text-fg-muted'
           }`}
         >
           All
@@ -140,8 +140,8 @@ const ActivityFeedPage: React.FC = () => {
             onClick={() => setFilter(type)}
             className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               filter === type
-                ? 'bg-zinc-100 text-zinc-900'
-                : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                ? 'bg-surface-muted text-fg'
+                : 'bg-surface text-fg-muted hover:text-fg-muted'
             }`}
           >
             <span className={`inline-block h-2 w-2 rounded-full ${ACTIVITY_CONFIG[type].color.replace('text-', 'bg-')}`} />
@@ -153,39 +153,39 @@ const ActivityFeedPage: React.FC = () => {
       {/* Content */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
         </div>
       ) : error ? (
-        <div className="rounded-lg border border-red-800 bg-red-900/20 p-4">
-          <p className="text-sm text-red-400">Failed to load activity feed. Please try again later.</p>
+        <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
+          <p className="text-sm text-destructive">Failed to load activity feed. Please try again later.</p>
         </div>
       ) : activities.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-12 text-center">
-          <p className="text-sm text-zinc-500">No activities found{filter !== 'all' ? ` for "${ACTIVITY_CONFIG[filter].label}"` : ''}.</p>
+        <div className="bg-surface border border-border rounded-lg p-12 text-center">
+          <p className="text-sm text-fg-muted">No activities found{filter !== 'all' ? ` for "${ACTIVITY_CONFIG[filter].label}"` : ''}.</p>
         </div>
       ) : (
         <div className="relative">
           {/* Timeline line */}
-          <div className="absolute left-5 top-0 bottom-0 w-px bg-zinc-800" />
+          <div className="absolute left-5 top-0 bottom-0 w-px bg-surface" />
 
           <div className="space-y-1">
             {activities.map((activity) => (
-              <div key={activity.id} className="relative flex items-start gap-4 rounded-lg p-3 hover:bg-zinc-900/60 transition-colors">
+              <div key={activity.id} className="relative flex items-start gap-4 rounded-lg p-3 hover:bg-surface/60 transition-colors">
                 {/* Icon */}
-                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700">
+                <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface border border-border">
                   {ACTIVITY_ICONS[activity.type]}
                 </div>
 
                 {/* Content */}
                 <div className="min-w-0 flex-1 pt-0.5">
-                  <p className="text-sm text-zinc-200">
-                    <span className="font-medium text-zinc-100">{activity.user.name}</span>{' '}
+                  <p className="text-sm text-fg-muted">
+                    <span className="font-medium text-fg-muted">{activity.user.name}</span>{' '}
                     {activity.action}
                     {activity.target && (
-                      <span className="font-medium text-blue-400"> {activity.target}</span>
+                      <span className="font-medium text-info-color"> {activity.target}</span>
                     )}
                   </p>
-                  <p className="mt-0.5 text-xs text-zinc-500">{formatRelativeTime(activity.timestamp)}</p>
+                  <p className="mt-0.5 text-xs text-fg-muted">{formatRelativeTime(activity.timestamp)}</p>
                 </div>
               </div>
             ))}

@@ -29,7 +29,7 @@ function ErrorPage(): React.ReactElement {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -37,14 +37,14 @@ function ErrorPage(): React.ReactElement {
       >
         {/* Error Icon */}
         <div className="mb-8">
-          <div className="w-24 h-24 rounded-full bg-red-500/10 flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-12 h-12 text-red-400" />
+          <div className="w-24 h-24 rounded-full bg-destructive-bg/10 flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-12 h-12 text-destructive" />
           </div>
         </div>
 
         {/* Message */}
         <h1 className="text-2xl font-bold text-white mb-4">Something Went Wrong</h1>
-        <p className="text-zinc-400 mb-8">
+        <p className="text-fg-muted mb-8">
           An unexpected error occurred. Our team has been notified and is working on a fix.
         </p>
 
@@ -53,7 +53,7 @@ function ErrorPage(): React.ReactElement {
           <div className="mb-8 text-left">
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors w-full justify-center"
+              className="flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors w-full justify-center"
             >
               {showDetails ? (
                 <ChevronUp className="w-4 h-4" />
@@ -68,10 +68,10 @@ function ErrorPage(): React.ReactElement {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-4 p-4 rounded-lg bg-zinc-900 border border-zinc-800"
+                className="mt-4 p-4 rounded-lg bg-surface border border-border"
               >
                 <div className="flex items-start justify-between mb-2">
-                  <span className="text-xs text-zinc-500 uppercase tracking-wider">
+                  <span className="text-xs text-fg-muted uppercase tracking-wider">
                     Error Message
                   </span>
                   <button
@@ -82,14 +82,14 @@ function ErrorPage(): React.ReactElement {
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
-                <p className="text-sm text-red-400 font-mono mb-4">{error.message}</p>
+                <p className="text-sm text-destructive font-mono mb-4">{error.message}</p>
 
                 {error.stack && (
                   <>
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider">
+                    <span className="text-xs text-fg-muted uppercase tracking-wider">
                       Stack Trace
                     </span>
-                    <pre className="mt-2 text-xs text-zinc-500 overflow-x-auto max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
+                    <pre className="mt-2 text-xs text-fg-muted overflow-x-auto max-h-40 overflow-y-auto font-mono whitespace-pre-wrap">
                       {error.stack}
                     </pre>
                   </>
@@ -115,7 +115,7 @@ function ErrorPage(): React.ReactElement {
             to={ROUTES.DASHBOARD}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
-              'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors'
+              'bg-surface text-fg-muted hover:bg-surface-muted transition-colors'
             )}
           >
             <Home className="w-4 h-4" />
@@ -124,7 +124,7 @@ function ErrorPage(): React.ReactElement {
         </div>
 
         {/* Support */}
-        <div className="mt-8 text-sm text-zinc-500">
+        <div className="mt-8 text-sm text-fg-muted">
           <p>
             If this problem persists, please{' '}
             <a href="/support" className="text-violet-400 hover:underline">

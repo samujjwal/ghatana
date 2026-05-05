@@ -358,12 +358,12 @@ export function ShapeLibrary({
 
             {/* Category Tabs */}
             <Box
-                className="flex gap-1 p-2 border-gray-200 dark:border-gray-700 border-b" >
+                className="flex gap-1 p-2 border-border dark:border-border border-b" >
                 {categories.map(cat => (
                     <Box
                         key={cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`flex-1 px-2 py-1 text-center cursor-pointer rounded-sm text-xs ${selectedCategory === cat.id ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-900 dark:text-white'}`} style={{ fontWeight: selectedCategory === cat.id ? 600 : 400 }}
+                        className={`flex-1 px-2 py-1 text-center cursor-pointer rounded-sm text-xs ${selectedCategory === cat.id ? 'bg-primary text-white' : 'bg-transparent text-fg dark:text-white'}`} style={{ fontWeight: selectedCategory === cat.id ? 600 : 400 }}
                     >
                         {cat.icon} {cat.name}
                     </Box>
@@ -395,7 +395,7 @@ export function ShapeLibrary({
                                 onDragEnd={handleDragEnd}
                                 onClick={() => handleClick(shape)}
                                 onDoubleClick={() => handleDoubleClick(shape)}
-                                className={`p-4 border-[2px] rounded flex flex-col items-center gap-1 cursor-grab transition-all duration-150 active:cursor-grabbing ${isSelected ? 'border-blue-600 bg-blue-100' : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-950'}`} style={{ opacity: isDragging ? 0.5 : 1 }}
+                                className={`p-4 border-[2px] rounded flex flex-col items-center gap-1 cursor-grab transition-all duration-150 active:cursor-grabbing ${isSelected ? 'border-info-border bg-info-bg' : 'border-border dark:border-border bg-surface-muted dark:bg-surface'}`} style={{ opacity: isDragging ? 0.5 : 1 }}
                             >
                                 <Box className="text-[2rem]" style={{ filter: isSelected ? 'drop-shadow(0 0 2px rgba(25, 118, 210, 0.5))' : 'none' }}>
                                     {shape.icon}
@@ -414,7 +414,7 @@ export function ShapeLibrary({
             </Box>
 
             {/* Usage hint at bottom */}
-            <Box className="p-3 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 border-t" >
+            <Box className="p-3 border-border dark:border-border bg-surface-muted dark:bg-surface border-t" >
                 <Typography variant="caption" color="text.secondary" className="block text-center text-[0.7rem]">
                     💡 <strong>Click</strong> to draw mode • <strong>Double-click</strong> to insert • <strong>Drag</strong> to place
                 </Typography>

@@ -260,7 +260,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
                           </div>
                         )}
                         {action.disabled && action.disabledReason && (
-                          <div className="text-xs text-red-500 mt-1">
+                          <div className="text-xs text-destructive mt-1">
                             {action.disabledReason}
                           </div>
                         )}
@@ -292,7 +292,7 @@ export const ActionDiscoveryPalette: React.FC<ActionDiscoveryPaletteProps> = ({
         {showConfirmation && pendingAction && (
           <div
             data-testid="dangerous-action-confirmation"
-            className="absolute inset-0 bg-white flex flex-col items-center justify-center p-6"
+            className="absolute inset-0 bg-surface-raised flex flex-col items-center justify-center p-6"
           >
             <Alert
               severity="warning"

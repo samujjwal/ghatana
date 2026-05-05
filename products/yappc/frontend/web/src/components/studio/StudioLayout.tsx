@@ -108,17 +108,17 @@ export function StudioLayout({
     <div
       data-testid="studio-layout"
       aria-label="Studio Mode Layout"
-      className={cn('fixed inset-0 bg-white dark:bg-gray-900 z-40', isCompact && 'studio-layout--compact', className)}
+      className={cn('fixed inset-0 bg-white dark:bg-surface z-40', isCompact && 'studio-layout--compact', className)}
     >
       {/* Screen reader announcer */}
       <div data-testid="studio-announcer" aria-live="polite" className="sr-only" />
       {/* Header */}
-      <div className="h-12 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4">
+      <div className="h-12 border-b border-border dark:border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-sm font-medium text-fg dark:text-fg-muted">
             Studio Mode
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-500">
+          <span className="text-xs text-fg-muted dark:text-fg-muted">
             ⌘⇧S to toggle
           </span>
         </div>
@@ -127,7 +127,7 @@ export function StudioLayout({
           aria-label="Close Studio Mode"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter') { toggleStudioMode(); onClose?.(); } }}
-          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
         >
           ✕
         </button>
@@ -139,7 +139,7 @@ export function StudioLayout({
         <div
           data-testid="studio-file-tree"
           aria-label="File tree panel"
-          className="border-r border-gray-200 dark:border-gray-800 overflow-auto"
+          className="border-r border-border dark:border-border overflow-auto"
           style={{ width: `${leftPanelWidth}px` }}
         >
           {fileTree}
@@ -148,8 +148,8 @@ export function StudioLayout({
         {/* Left Resize Handle */}
         <div
           className={cn(
-            'w-1 cursor-col-resize hover:bg-blue-500 transition-colors',
-            isResizingLeft && 'bg-blue-500'
+            'w-1 cursor-col-resize hover:bg-info-bg transition-colors',
+            isResizingLeft && 'bg-info-bg'
           )}
           data-testid="resize-handle"
           onMouseDown={() => setIsResizingLeft(true)}
@@ -170,8 +170,8 @@ export function StudioLayout({
           {/* Bottom Resize Handle */}
           <div
             className={cn(
-              'h-1 cursor-row-resize hover:bg-blue-500 transition-colors',
-              isResizingBottom && 'bg-blue-500'
+              'h-1 cursor-row-resize hover:bg-info-bg transition-colors',
+              isResizingBottom && 'bg-info-bg'
             )}
             data-testid="resize-handle"
             onMouseDown={() => setIsResizingBottom(true)}
@@ -179,14 +179,14 @@ export function StudioLayout({
 
           {/* Bottom Panels */}
           <div
-            className="flex border-t border-gray-200 dark:border-gray-800"
+            className="flex border-t border-border dark:border-border"
             style={{ height: `${bottomPanelHeight}px` }}
           >
             {/* Live Preview */}
             <div
               data-testid="studio-live-preview"
               aria-label="Live preview panel"
-              className="flex-1 border-r border-gray-200 dark:border-gray-800 overflow-auto"
+              className="flex-1 border-r border-border dark:border-border overflow-auto"
             >
               {livePreview}
             </div>

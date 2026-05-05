@@ -21,19 +21,19 @@ export interface DeploymentPanelProps {
 
 function riskTone(score: number): string {
   if (score >= 7) {
-    return 'text-red-700 bg-red-100';
+    return 'text-destructive bg-destructive-bg';
   }
   if (score >= 4) {
-    return 'text-amber-700 bg-amber-100';
+    return 'text-warning-color bg-warning-bg';
   }
-  return 'text-green-700 bg-green-100';
+  return 'text-success-color bg-success-bg';
 }
 
 export function DeploymentPanel({ plan }: DeploymentPanelProps) {
   return (
     <section className="flex h-full flex-col bg-bg-default" data-testid="deployment-panel">
       <div className="border-b border-divider bg-bg-paper px-4 py-3">
-        <h2 className="text-lg font-semibold text-text-primary">AI deployment strategy</h2>
+        <h2 className="text-lg font-semibold text-text-primary">Deployment strategy</h2>
         <p className="text-sm text-text-secondary">
           Deployment guidance derived from lifecycle readiness and rollout risk.
         </p>
@@ -99,17 +99,17 @@ export function DeploymentPanel({ plan }: DeploymentPanelProps) {
 
         <article className="rounded-xl border border-divider bg-bg-paper p-4 lg:col-span-2">
           <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-            <Siren className="h-4 w-4 text-amber-600" />
+            <Siren className="h-4 w-4 text-warning-color" />
             Release blockers
           </div>
           <ul className="mt-4 space-y-2 text-sm text-text-secondary">
             {plan.blockers.length === 0 ? (
-              <li className="rounded-lg bg-green-50 px-3 py-2 text-green-700">
+              <li className="rounded-lg bg-success-bg px-3 py-2 text-success-color">
                 No blockers currently prevent rollout.
               </li>
             ) : (
               plan.blockers.map((blocker) => (
-                <li key={blocker} className="rounded-lg bg-amber-50 px-3 py-2 text-amber-800">
+                <li key={blocker} className="rounded-lg bg-warning-bg px-3 py-2 text-warning-color">
                   {blocker}
                 </li>
               ))

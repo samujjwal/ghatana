@@ -106,10 +106,10 @@ const STATUS_LABEL: Record<ExportStatus, string> = {
 };
 
 const STATUS_COLOR: Record<ExportStatus, string> = {
-  PENDING: 'bg-slate-100 text-slate-700',
-  PROCESSING: 'bg-blue-100 text-blue-700',
+  PENDING: 'bg-surface-muted text-fg',
+  PROCESSING: 'bg-info-bg text-info-color',
   READY: 'bg-emerald-100 text-emerald-700',
-  FAILED: 'bg-red-100 text-red-700',
+  FAILED: 'bg-destructive-bg text-destructive',
 };
 
 function formatTimestamp(iso: string): string {
@@ -197,7 +197,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
           {/* Format selection */}
           <Box className="space-y-2">
-            <Typography className="text-sm font-medium text-gray-700">
+            <Typography className="text-sm font-medium text-fg">
               Format
             </Typography>
             <Box className="grid grid-cols-2 gap-2">
@@ -210,8 +210,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                   className={cn(
                     'flex items-start gap-2 rounded-md border p-3 text-left text-sm transition-colors',
                     selectedFormat === opt.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-info-border bg-info-bg text-info-color'
+                      : 'border-border hover:border-border hover:bg-surface-muted'
                   )}
                 >
                   <span className="mt-0.5">{opt.icon}</span>
@@ -219,7 +219,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     <Typography className="font-medium leading-tight">
                       {opt.label}
                     </Typography>
-                    <Typography className="text-xs text-gray-500 leading-tight">
+                    <Typography className="text-xs text-fg-muted leading-tight">
                       {opt.description}
                     </Typography>
                   </Box>
@@ -230,7 +230,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
           {/* Content toggles */}
           <Box className="space-y-2">
-            <Typography className="text-sm font-medium text-gray-700">
+            <Typography className="text-sm font-medium text-fg">
               Include
             </Typography>
             <Box className="flex flex-wrap gap-2">
@@ -249,8 +249,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                   className={cn(
                     'rounded-full border px-3 py-1 text-sm transition-colors',
                     item.value
-                      ? 'border-blue-500 bg-blue-100 text-blue-700'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      ? 'border-info-border bg-info-bg text-info-color'
+                      : 'border-border text-fg-muted hover:border-border'
                   )}
                 >
                   {item.label}
@@ -261,14 +261,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
 
           {/* Error state */}
           {error && (
-            <Box className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <Box className="rounded-md bg-destructive-bg p-3 text-sm text-destructive">
               {error}
             </Box>
           )}
 
           {/* Latest export result */}
           {latestExport && (
-            <Box className="rounded-md border border-gray-200 p-3 space-y-2">
+            <Box className="rounded-md border border-border p-3 space-y-2">
               <Box className="flex items-center justify-between">
                 <Typography className="text-sm font-medium">
                   Export {latestExport.format}
@@ -280,7 +280,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                 />
               </Box>
               {latestExport.status === 'PROCESSING' && (
-                <Box className="flex items-center gap-2 text-sm text-blue-600">
+                <Box className="flex items-center gap-2 text-sm text-info-color">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   <span>Generating your export…</span>
                 </Box>
@@ -299,7 +299,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                 </Box>
               )}
               {latestExport.status === 'FAILED' && (
-                <Typography className="text-sm text-red-600">
+                <Typography className="text-sm text-destructive">
                   {latestExport.errorMessage ?? 'Export failed. Try again.'}
                 </Typography>
               )}
@@ -309,18 +309,18 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
           {/* Past exports */}
           {pastExports.length > 0 && !latestExport && (
             <Box className="space-y-2">
-              <Typography className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <Typography className="text-xs font-medium text-fg-muted uppercase tracking-wide">
                 Previous Exports
               </Typography>
               <Box className="space-y-1 max-h-40 overflow-y-auto">
                 {pastExports.map((exp) => (
                   <Box
                     key={exp.id}
-                    className="flex items-center justify-between rounded border border-gray-100 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded border border-border px-3 py-2 text-sm"
                   >
                     <Box className="flex items-center gap-2">
                       <Typography className="font-medium">{exp.format}</Typography>
-                      <Typography className="text-xs text-gray-400">
+                      <Typography className="text-xs text-fg-muted">
                         {formatTimestamp(exp.createdAt)}
                       </Typography>
                     </Box>

@@ -53,7 +53,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
     >
       {/* Header */}
       <Box
-        className="p-4 flex justify-between items-center border-gray-200 dark:border-gray-700 border-b" >
+        className="p-4 flex justify-between items-center border-border dark:border-border border-b" >
         <Typography variant="h6" className="text-base font-semibold">
           Layers
         </Typography>
@@ -68,7 +68,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
 
       {/* Add Layer Form */}
       {isAdding && (
-        <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+        <Box className="p-4 border-border dark:border-border border-b" >
           <Stack spacing={1}>
             <TextField
               size="small"
@@ -111,7 +111,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
       <Box className="flex-1 overflow-y-auto">
         {layers.length === 0 ? (
           <Box
-            className="p-6 text-center text-gray-500 dark:text-gray-400"
+            className="p-6 text-center text-fg-muted dark:text-fg-muted"
           >
             <Typography variant="body2">No layers yet</Typography>
             <Typography variant="caption">
@@ -123,7 +123,7 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
             {layers.map((layer) => (
               <ListItem
                 key={layer.id}
-                className="border-gray-200 dark:border-gray-700 border-b" >
+                className="border-border dark:border-border border-b" >
                 <IconButton size="small" className="cursor-grab mr-2">
                   <DragIcon size={16} />
                 </IconButton>

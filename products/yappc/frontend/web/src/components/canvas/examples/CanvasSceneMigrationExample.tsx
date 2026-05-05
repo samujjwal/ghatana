@@ -107,7 +107,7 @@ const LegacyCanvasScene: React.FC<LegacyCanvasSceneProps> = ({
         <Paper className="h-full flex flex-col">
             <Toolbar variant="dense">
                 <Typography variant="h6">Legacy Canvas Scene</Typography>
-                <Typography variant="body2" className="ml-4 text-gray-500 dark:text-gray-400">
+                <Typography variant="body2" className="ml-4 text-fg-muted dark:text-fg-muted">
                     {nodes.length} nodes, {selectedNodes.length} selected
                 </Typography>
             </Toolbar>
@@ -237,7 +237,7 @@ const SceneCanvasView: React.FC<{ items: SceneNode[]; onItemSelect: (id: string)
             <Box
                 key={node.id}
                 onClick={() => onItemSelect(node.id)}
-                className="absolute border-[2px_solid] cursor-pointer flex items-center justify-center shadow-sm hover:border-blue-600" style={{ left: node.position.x, top: node.position.y, width: node.data.style?.width || 100, height: node.data.style?.height || 60, backgroundColor: node.data.style?.backgroundColor || '#fff', borderColor: node.data.style?.borderColor || '#ddd', borderRadius: node.data.style?.borderRadius || 4 }}
+                className="absolute border-[2px_solid] cursor-pointer flex items-center justify-center shadow-sm hover:border-info-border" style={{ left: node.position.x, top: node.position.y, width: node.data.style?.width || 100, height: node.data.style?.height || 60, backgroundColor: node.data.style?.backgroundColor || '#fff', borderColor: node.data.style?.borderColor || '#ddd', borderRadius: node.data.style?.borderRadius || 4 }}
             >
                 <Typography variant="body2">{node.data.label}</Typography>
             </Box>
@@ -255,7 +255,7 @@ const SceneListView: React.FC<{ items: SceneNode[]; onItemSelect: (id: string) =
             <Box
                 key={node.id}
                 onClick={() => onItemSelect(node.id)}
-                className="p-4 mb-2 border border-gray-200 dark:border-gray-700 rounded cursor-pointer hover:bg-gray-100"
+                className="p-4 mb-2 border border-border dark:border-border rounded cursor-pointer hover:bg-surface-muted"
             >
                 <Typography variant="body1">{node.data.label}</Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -313,9 +313,9 @@ const SceneGridPlugin: React.FC = () => (
 const SceneRulersPlugin: React.FC = () => (
     <>
         {/* Horizontal ruler */}
-        <Box className="absolute top-[0px] left-[0px] right-[0px] h-[20px] bg-[#f0f0f0] border-gray-200 dark:border-gray-700 border-b" />
+        <Box className="absolute top-[0px] left-[0px] right-[0px] h-[20px] bg-[#f0f0f0] border-border dark:border-border border-b" />
         {/* Vertical ruler */}
-        <Box className="absolute top-[0px] left-[0px] bottom-[0px] w-[20px] bg-[#f0f0f0] border-r border-gray-200 dark:border-gray-700" />
+        <Box className="absolute top-[0px] left-[0px] bottom-[0px] w-[20px] bg-[#f0f0f0] border-r border-border dark:border-border" />
     </>
 );
 
@@ -357,8 +357,8 @@ const CanvasSceneMigrationDemo: React.FC = () => {
     return (
         <Box className="h-screen flex">
             {/* Legacy implementation */}
-            <Box className="flex-1 border-r border-gray-200 dark:border-gray-700">
-                <Typography variant="h6" className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="flex-1 border-r border-border dark:border-border">
+                <Typography variant="h6" className="p-4 border-border dark:border-border border-b" >
                     Legacy CanvasScene (Before Migration)
                 </Typography>
                 <LegacyCanvasScene
@@ -371,7 +371,7 @@ const CanvasSceneMigrationDemo: React.FC = () => {
 
             {/* Migrated implementation */}
             <Box className="flex-1">
-                <Typography variant="h6" className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+                <Typography variant="h6" className="p-4 border-border dark:border-border border-b" >
                     Migrated CanvasScene (Phase 2)
                 </Typography>
                 <MigratedCanvasScene

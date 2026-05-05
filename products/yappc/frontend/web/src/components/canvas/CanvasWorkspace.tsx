@@ -620,7 +620,7 @@ export const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             {/* Skip-to-content link for keyboard users */}
             <a
                 href="#canvas-surface"
-                className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-white focus:dark:bg-gray-900 focus:rounded focus:shadow-lg"
+                className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-white focus:dark:bg-surface focus:rounded focus:shadow-lg"
             >
                 Skip to canvas
             </a>

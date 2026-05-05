@@ -70,7 +70,7 @@ export const CanvasEmptyState = ({
         >
             {/* Icon */}
             <Box
-                className="mb-6 text-gray-500 dark:text-gray-400 opacity-[0.6] text-[64px]" style={{ animation: showAiSparkle ? 'pulse 2s ease-in-out infinite' : 'none' }}
+                className="mb-6 text-fg-muted dark:text-fg-muted opacity-[0.6] text-[64px]" style={{ animation: showAiSparkle ? 'pulse 2s ease-in-out infinite' : 'none' }}
             >
                 {icon || <AutoAwesome className="text-[64px]" />}
             </Box>
@@ -78,7 +78,7 @@ export const CanvasEmptyState = ({
             {/* Message */}
             <Typography
                 variant="h5"
-                className="font-semibold mb-2 text-gray-900 dark:text-gray-100"
+                className="font-semibold mb-2 text-fg dark:text-fg-muted"
             >
                 {message}
             </Typography>
@@ -87,7 +87,7 @@ export const CanvasEmptyState = ({
             {description && (
                 <Typography
                     variant="body1"
-                    className="text-gray-500 dark:text-gray-400 max-w-[480px] mb-6"
+                    className="text-fg-muted dark:text-fg-muted max-w-[480px] mb-6"
                 >
                     {description}
                 </Typography>
@@ -126,7 +126,7 @@ export const CanvasEmptyState = ({
                     <Stack spacing={1} alignItems="flex-start">
                         <Typography
                             variant="caption"
-                            className="font-semibold flex items-center gap-1 text-blue-600"
+                            className="font-semibold flex items-center gap-1 text-info-color"
                         >
                             <AutoAwesome className="text-base" />
                             AI Suggestions
@@ -136,7 +136,7 @@ export const CanvasEmptyState = ({
                                 key={index}
                                 variant="text"
                                 size="small"
-                                className="normal-case justify-start text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:bg-[rgba(99,_102,_241,_0.08)]"
+                                className="normal-case justify-start text-fg-muted dark:text-fg-muted hover:text-info-color hover:bg-[rgba(99,_102,_241,_0.08)]"
                             >
                                 {suggestion}
                             </Button>

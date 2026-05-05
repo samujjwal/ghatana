@@ -52,10 +52,10 @@ interface StatusBadgeProps {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const config: Record<IntegrationStatus, { icon: ReactNode; color: string; label: string }> = {
-    connected: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-green-600', label: 'Connected' },
-    disconnected: { icon: <XCircle className="w-3.5 h-3.5" />, color: 'text-gray-500', label: 'Disconnected' },
-    error: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'text-red-600', label: 'Error' },
-    pending: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-orange-500', label: 'Pending' },
+    connected: { icon: <CheckCircle className="w-3.5 h-3.5" />, color: 'text-success-color', label: 'Connected' },
+    disconnected: { icon: <XCircle className="w-3.5 h-3.5" />, color: 'text-fg-muted', label: 'Disconnected' },
+    error: { icon: <AlertTriangle className="w-3.5 h-3.5" />, color: 'text-destructive', label: 'Error' },
+    pending: { icon: <Clock className="w-3.5 h-3.5" />, color: 'text-warning-color', label: 'Pending' },
   };
 
   const { icon, color, label } = config[status];
@@ -93,10 +93,10 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
     <CardContent className="p-3">
       <Box className="flex items-start justify-between mb-2">
         <Box className="flex items-center gap-2">
-          <Plug className="w-4 h-4 text-indigo-600" />
+          <Plug className="w-4 h-4 text-info-color" />
           <Box>
             <Typography className="font-medium text-sm">{integration.name}</Typography>
-            <Typography className="text-xs text-gray-500">
+            <Typography className="text-xs text-fg-muted">
               {categoryLabels[integration.category]}
             </Typography>
           </Box>
@@ -104,12 +104,12 @@ const IntegrationCard: React.FC<IntegrationCardProps> = ({
         <StatusBadge status={integration.status} />
       </Box>
 
-      <Typography className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+      <Typography className="text-xs text-fg-muted dark:text-fg-muted mb-3">
         {integration.description}
       </Typography>
 
       {integration.lastSyncAt && (
-        <Typography className="text-xs text-gray-400 mb-2">
+        <Typography className="text-xs text-fg-muted mb-2">
           Last sync {new Date(integration.lastSyncAt).toLocaleString()}
         </Typography>
       )}
@@ -156,11 +156,11 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <Plug className="w-5 h-5 text-indigo-600" />
+          <Plug className="w-5 h-5 text-info-color" />
           <Typography className="font-semibold">Integrations</Typography>
         </Box>
         <Box className="flex items-center gap-2">
-          <Typography className="text-sm text-gray-500">
+          <Typography className="text-sm text-fg-muted">
             {connected}/{integrations.length} connected
           </Typography>
           {onRefresh && (
@@ -173,7 +173,7 @@ export const IntegrationHub: React.FC<IntegrationHubProps> = ({
 
       {/* Integration List */}
       {integrations.length === 0 ? (
-        <Typography className="text-sm text-gray-500 text-center py-8">
+        <Typography className="text-sm text-fg-muted text-center py-8">
           No integrations configured yet.
         </Typography>
       ) : (

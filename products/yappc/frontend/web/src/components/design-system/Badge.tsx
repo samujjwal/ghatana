@@ -39,20 +39,20 @@ export interface BadgeProps {
 
 const variantStyles: Record<BadgeVariant, string> = {
     success: cn(
-        'bg-green-50 text-green-700 border-green-200',
-        'dark:bg-green-900/30 dark:text-green-400 dark:border-green-800'
+        'bg-success-bg text-success-color border-success-border',
+        'dark:bg-success-bg/30 dark:text-success-color dark:border-success-border'
     ),
     warning: cn(
-        'bg-yellow-50 text-yellow-700 border-yellow-200',
-        'dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'
+        'bg-warning-bg text-warning-color border-warning-border',
+        'dark:bg-warning-bg/30 dark:text-warning-color dark:border-warning-border'
     ),
     error: cn(
-        'bg-red-50 text-red-700 border-red-200',
-        'dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
+        'bg-destructive-bg text-destructive border-destructive-border',
+        'dark:bg-destructive-bg/30 dark:text-destructive dark:border-destructive-border'
     ),
     info: cn(
-        'bg-blue-50 text-blue-700 border-blue-200',
-        'dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800'
+        'bg-info-bg text-info-color border-info-border',
+        'dark:bg-info-bg/30 dark:text-info-color dark:border-info-border'
     ),
     neutral: cn(
         'bg-grey-100 text-grey-700 border-grey-200',
@@ -122,10 +122,10 @@ export function Badge({
                         'rounded-full',
                         dotSizeStyles[size],
                         // Match background to text color
-                        variant === 'success' && 'bg-green-500',
-                        variant === 'warning' && 'bg-yellow-500',
-                        variant === 'error' && 'bg-red-500',
-                        variant === 'info' && 'bg-blue-500',
+                        variant === 'success' && 'bg-success-bg',
+                        variant === 'warning' && 'bg-warning-bg',
+                        variant === 'error' && 'bg-destructive-bg',
+                        variant === 'info' && 'bg-info-bg',
                         variant === 'neutral' && 'bg-grey-500',
                         variant === 'primary' && 'bg-primary-500'
                     )}

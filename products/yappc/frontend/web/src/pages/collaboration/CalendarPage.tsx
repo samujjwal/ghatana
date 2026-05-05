@@ -26,10 +26,10 @@ interface CalendarResponse {
 // ============================================================================
 
 const EVENT_COLORS: Record<EventType, string> = {
-  meeting: 'bg-blue-400',
-  deadline: 'bg-red-400',
-  release: 'bg-green-400',
-  review: 'bg-purple-400',
+  meeting: 'bg-info-bg',
+  deadline: 'bg-destructive-bg',
+  release: 'bg-success-bg',
+  review: 'bg-info-bg',
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
@@ -160,31 +160,31 @@ const CalendarPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Calendar</h1>
-        <p className="mt-1 text-sm text-zinc-400">Team events, deadlines, and milestones</p>
+        <h1 className="text-2xl font-bold text-fg-muted">Calendar</h1>
+        <p className="mt-1 text-sm text-fg-muted">Team events, deadlines, and milestones</p>
       </div>
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
         </div>
       ) : error ? (
-        <div className="rounded-lg border border-red-800 bg-red-900/20 p-4">
-          <p className="text-sm text-red-400">Failed to load calendar. Please try again later.</p>
+        <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
+          <p className="text-sm text-destructive">Failed to load calendar. Please try again later.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Calendar Grid */}
-          <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+          <div className="lg:col-span-2 bg-surface border border-border rounded-lg p-5">
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-4">
-              <button onClick={goToPrev} className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+              <button onClick={goToPrev} className="p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M15 19l-7-7 7-7" /></svg>
               </button>
-              <h2 className="text-lg font-semibold text-zinc-100">
+              <h2 className="text-lg font-semibold text-fg-muted">
                 {MONTHS[currentMonth]} {currentYear}
               </h2>
-              <button onClick={goToNext} className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+              <button onClick={goToNext} className="p-1.5 rounded-lg text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M9 5l7 7-7 7" /></svg>
               </button>
             </div>
@@ -192,7 +192,7 @@ const CalendarPage: React.FC = () => {
             {/* Day Headers */}
             <div className="grid grid-cols-7 mb-1">
               {DAYS.map((d) => (
-                <div key={d} className="py-2 text-center text-xs font-medium text-zinc-500 uppercase">
+                <div key={d} className="py-2 text-center text-xs font-medium text-fg-muted uppercase">
                   {d}
                 </div>
               ))}
@@ -206,15 +206,15 @@ const CalendarPage: React.FC = () => {
                 return (
                   <div
                     key={idx}
-                    className={`relative min-h-[72px] border border-zinc-800/50 p-1.5 ${
+                    className={`relative min-h-[72px] border border-border/50 p-1.5 ${
                       cell.isCurrentMonth ? '' : 'opacity-30'
-                    } ${isToday ? 'bg-zinc-800/60' : 'hover:bg-zinc-800/30'} transition-colors`}
+                    } ${isToday ? 'bg-surface/60' : 'hover:bg-surface/30'} transition-colors`}
                   >
                     <span
                       className={`text-xs ${
                         isToday
-                          ? 'inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white font-bold'
-                          : 'text-zinc-400'
+                          ? 'inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white font-bold'
+                          : 'text-fg-muted'
                       }`}
                     >
                       {cell.day}
@@ -223,11 +223,11 @@ const CalendarPage: React.FC = () => {
                       {dayEvents.slice(0, 3).map((ev) => (
                         <div key={ev.id} className="flex items-center gap-1">
                           <span className={`inline-block h-1.5 w-1.5 rounded-full ${EVENT_COLORS[ev.type]}`} />
-                          <span className="text-[10px] text-zinc-400 truncate">{ev.title}</span>
+                          <span className="text-[10px] text-fg-muted truncate">{ev.title}</span>
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
-                        <span className="text-[10px] text-zinc-500">+{dayEvents.length - 3} more</span>
+                        <span className="text-[10px] text-fg-muted">+{dayEvents.length - 3} more</span>
                       )}
                     </div>
                   </div>
@@ -240,30 +240,30 @@ const CalendarPage: React.FC = () => {
               {(Object.keys(EVENT_COLORS) as EventType[]).map((type) => (
                 <div key={type} className="flex items-center gap-1.5">
                   <span className={`inline-block h-2.5 w-2.5 rounded-full ${EVENT_COLORS[type]}`} />
-                  <span className="text-xs text-zinc-400">{EVENT_LABELS[type]}</span>
+                  <span className="text-xs text-fg-muted">{EVENT_LABELS[type]}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Upcoming Events Sidebar */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-            <h3 className="text-sm font-semibold text-zinc-100 uppercase tracking-wider mb-4">
+          <div className="bg-surface border border-border rounded-lg p-5">
+            <h3 className="text-sm font-semibold text-fg-muted uppercase tracking-wider mb-4">
               Upcoming Events
             </h3>
             {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-zinc-500">No upcoming events.</p>
+              <p className="text-sm text-fg-muted">No upcoming events.</p>
             ) : (
               <div className="space-y-3">
                 {upcomingEvents.map((ev) => (
                   <div
                     key={ev.id}
-                    className="flex gap-3 rounded-lg p-2.5 hover:bg-zinc-800/50 transition-colors"
+                    className="flex gap-3 rounded-lg p-2.5 hover:bg-surface/50 transition-colors"
                   >
                     <div className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${EVENT_COLORS[ev.type]}`} />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-200 truncate">{ev.title}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-sm font-medium text-fg-muted truncate">{ev.title}</p>
+                      <p className="text-xs text-fg-muted">
                         {new Date(ev.date).toLocaleDateString('en-US', {
                           weekday: 'short',
                           month: 'short',
@@ -272,7 +272,7 @@ const CalendarPage: React.FC = () => {
                         {ev.time ? ` at ${ev.time}` : ''}
                       </p>
                       {ev.description && (
-                        <p className="mt-0.5 text-xs text-zinc-500 truncate">{ev.description}</p>
+                        <p className="mt-0.5 text-xs text-fg-muted truncate">{ev.description}</p>
                       )}
                     </div>
                   </div>

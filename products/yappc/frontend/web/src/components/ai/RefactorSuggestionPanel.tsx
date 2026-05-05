@@ -62,7 +62,7 @@ function DiffViewer({ result }: DiffViewerProps) {
   return (
     <div className="rounded-md border border-divider bg-bg-default" data-testid="diff-viewer">
       {result.warnings.length > 0 && (
-        <div className="flex items-start gap-2 border-b border-divider bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div className="flex items-start gap-2 border-b border-divider bg-warning-bg px-3 py-2 text-xs text-warning-color">
           <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" />
           <ul className="space-y-0.5">
             {result.warnings.map((w) => (

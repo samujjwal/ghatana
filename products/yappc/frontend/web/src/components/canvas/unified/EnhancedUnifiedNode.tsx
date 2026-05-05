@@ -215,7 +215,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                         }}
                     />
                     <Box className="flex gap-2 justify-between items-center">
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                             Press Ctrl+S to save, Esc to cancel
                         </Typography>
                         <Box className="flex gap-2">
@@ -236,7 +236,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
             case 'sketch':
                 return (
                     <Box
-                        className="rounded-lg flex items-center justify-center relative h-[140px] text-gray-500 dark:text-gray-400"
+                        className="rounded-lg flex items-center justify-center relative h-[140px] text-fg-muted dark:text-fg-muted"
                         style={{
                             border: '2px dashed #ccc',
                             background:
@@ -247,7 +247,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                     >
                         <Box className="text-center">
                             <Typography as="p" className="text-sm" fontWeight="medium">Sketch Canvas</Typography>
-                            <Typography as="span" className="text-xs text-gray-500">Press E to edit</Typography>
+                            <Typography as="span" className="text-xs text-fg-muted">Press E to edit</Typography>
                         </Box>
                     </Box>
                 );
@@ -255,7 +255,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
             case 'diagram':
                 return (
                     <Box className="rounded-lg p-3 overflow-hidden relative h-[140px] border border-solid border-[#ccc] bg-[#fafafa]">
-                        <Box className="absolute px-2 py-0.5 rounded text-[10px] font-bold top-[4px] right-[4px] bg-green-600 text-white">
+                        <Box className="absolute px-2 py-0.5 rounded text-[10px] font-bold top-[4px] right-[4px] bg-success-bg text-white">
                             Mermaid
                         </Box>
                         <pre style={{
@@ -276,13 +276,13 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                 return (
                     <Box className="rounded-lg overflow-hidden flex flex-col h-[140px] border border-solid border-[#ccc]">
                         <Box className="px-3 py-1.5 flex justify-between items-center bg-[#1e1e1e] text-[#d4d4d4] border-b border-solid border-b-[#ccc]">
-                            <Typography as="span" className="text-xs text-gray-500 font-mono text-[#569cd6]">
+                            <Typography as="span" className="text-xs text-fg-muted font-mono text-[#569cd6]">
                                 {data.content?.language || 'javascript'}
                             </Typography>
                             <Box className="flex gap-2">
-                                <Typography as="span" className="text-xs text-gray-500 text-[#608b4e]">●</Typography>
-                                <Typography as="span" className="text-xs text-gray-500 text-[#dcdcaa]">●</Typography>
-                                <Typography as="span" className="text-xs text-gray-500 text-[#569cd6]">●</Typography>
+                                <Typography as="span" className="text-xs text-fg-muted text-[#608b4e]">●</Typography>
+                                <Typography as="span" className="text-xs text-fg-muted text-[#dcdcaa]">●</Typography>
+                                <Typography as="span" className="text-xs text-fg-muted text-[#569cd6]">●</Typography>
                             </Box>
                         </Box>
                         <Box className="p-3 overflow-auto h-[calc(100% - 32px)] bg-[#1e1e1e] text-[#d4d4d4]">
@@ -306,7 +306,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                         <Typography as="p" className="text-sm mb-3 font-medium" >
                             {data.title}
                         </Typography>
-                        <Typography as="span" className="text-xs text-gray-500 mb-3 block" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted mb-3 block" color="text.secondary">
                             {data.content?.description || 'No description'}
                         </Typography>
                         {data.tags && data.tags.length > 0 && (
@@ -340,7 +340,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                                 {data.title}
                             </Typography>
                             {data.lastModified && (
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="flex items-center gap-1">
+                                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" className="flex items-center gap-1">
                                     <Schedule size={undefined} />
                                     {new Date(data.lastModified).toLocaleDateString()}
                                 </Typography>
@@ -362,7 +362,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                                     </Avatar>
                                 ))}
                                 {data.collaborators.length > 3 && (
-                                    <Avatar className="text-[10px] w-[24px] h-[24px] bg-gray-500" >
+                                    <Avatar className="text-[10px] w-[24px] h-[24px] bg-surface-muted" >
                                         +{data.collaborators.length - 3}
                                     </Avatar>
                                 )}
@@ -391,7 +391,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                             </IconButton>
                         </Tooltip>
 
-                        <DragIndicator className="ml-1 text-base text-gray-500 dark:text-gray-400" />
+                        <DragIndicator className="ml-1 text-base text-fg-muted dark:text-fg-muted" />
                     </Box>
                 </NodeHeader>
 
@@ -426,7 +426,7 @@ export const EnhancedUnifiedNode: React.FC<NodeProps<EnhancedUnifiedNodeData>> =
                         <Share size={16} className="mr-2" />
                         Share
                     </MenuItem>
-                    <MenuItem onClick={handleDelete} className="text-red-600">
+                    <MenuItem onClick={handleDelete} className="text-destructive">
                         <Delete size={16} className="mr-2" />
                         Delete
                     </MenuItem>

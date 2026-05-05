@@ -64,8 +64,8 @@ const QUICK_LINKS: QuickLink[] = [
 
 const STATUS_COLORS: Record<TeamMember['status'], string> = {
   online: 'bg-emerald-400',
-  away: 'bg-amber-400',
-  offline: 'bg-zinc-600',
+  away: 'bg-warning-bg',
+  offline: 'bg-surface-muted',
 };
 
 // ============================================================================
@@ -88,7 +88,7 @@ const TeamHubPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           Failed to load team hub: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       </div>
@@ -98,7 +98,7 @@ const TeamHubPage: React.FC = () => {
   if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -109,8 +109,8 @@ const TeamHubPage: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-zinc-100">Team Hub</h1>
-        <p className="text-sm text-zinc-400 mt-1">
+        <h1 className="text-2xl font-bold text-fg-muted">Team Hub</h1>
+        <p className="text-sm text-fg-muted mt-1">
           {data.name} &middot; {data.members.length} members &middot;{' '}
           <span className="text-emerald-400">{onlineCount} online</span>
         </p>
@@ -122,37 +122,37 @@ const TeamHubPage: React.FC = () => {
           <Link
             key={link.label}
             to={link.href}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 hover:border-zinc-700 transition-colors group"
+            className="bg-surface border border-border rounded-xl p-4 hover:border-border transition-colors group"
           >
             <span className="text-2xl">{link.icon}</span>
-            <h3 className="text-sm font-semibold text-zinc-200 mt-2 group-hover:text-blue-400 transition-colors">
+            <h3 className="text-sm font-semibold text-fg-muted mt-2 group-hover:text-info-color transition-colors">
               {link.label}
             </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">{link.description}</p>
+            <p className="text-xs text-fg-muted mt-0.5">{link.description}</p>
           </Link>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Members */}
-        <div className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-zinc-200">Members</h2>
+        <div className="lg:col-span-1 bg-surface border border-border rounded-xl">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="text-sm font-semibold text-fg-muted">Members</h2>
           </div>
           <div className="divide-y divide-zinc-800 max-h-[420px] overflow-y-auto">
             {data.members.map((member) => (
-              <div key={member.id} className="flex items-center gap-3 px-5 py-3 hover:bg-zinc-800/40 transition-colors">
+              <div key={member.id} className="flex items-center gap-3 px-5 py-3 hover:bg-surface/40 transition-colors">
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-medium text-zinc-300">
+                  <div className="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center text-xs font-medium text-fg-muted">
                     {member.name.split(' ').map((n) => n[0]).join('')}
                   </div>
                   <span
-                    className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-900 ${STATUS_COLORS[member.status]}`}
+                    className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-border ${STATUS_COLORS[member.status]}`}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-200 truncate">{member.name}</p>
-                  <p className="text-xs text-zinc-500 truncate">{member.role}</p>
+                  <p className="text-sm font-medium text-fg-muted truncate">{member.name}</p>
+                  <p className="text-xs text-fg-muted truncate">{member.role}</p>
                 </div>
               </div>
             ))}
@@ -160,27 +160,27 @@ const TeamHubPage: React.FC = () => {
         </div>
 
         {/* Activity Feed */}
-        <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl">
-          <div className="px-5 py-4 border-b border-zinc-800">
-            <h2 className="text-sm font-semibold text-zinc-200">Recent Activity</h2>
+        <div className="lg:col-span-2 bg-surface border border-border rounded-xl">
+          <div className="px-5 py-4 border-b border-border">
+            <h2 className="text-sm font-semibold text-fg-muted">Recent Activity</h2>
           </div>
           <div className="divide-y divide-zinc-800 max-h-[420px] overflow-y-auto">
             {data.activity.length === 0 ? (
-              <div className="px-5 py-12 text-center text-zinc-500">No recent activity</div>
+              <div className="px-5 py-12 text-center text-fg-muted">No recent activity</div>
             ) : (
               data.activity.map((item) => (
-                <div key={item.id} className="px-5 py-3 hover:bg-zinc-800/40 transition-colors">
+                <div key={item.id} className="px-5 py-3 hover:bg-surface/40 transition-colors">
                   <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-zinc-400 shrink-0 mt-0.5">
+                    <div className="w-7 h-7 rounded-full bg-surface flex items-center justify-center text-xs text-fg-muted shrink-0 mt-0.5">
                       {item.user.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-zinc-300">
-                        <span className="font-medium text-zinc-100">{item.user}</span>{' '}
+                      <p className="text-sm text-fg-muted">
+                        <span className="font-medium text-fg-muted">{item.user}</span>{' '}
                         {item.action}{' '}
-                        <span className="font-medium text-zinc-200">{item.target}</span>
+                        <span className="font-medium text-fg-muted">{item.target}</span>
                       </p>
-                      <p className="text-xs text-zinc-500 mt-0.5">{item.timestamp}</p>
+                      <p className="text-xs text-fg-muted mt-0.5">{item.timestamp}</p>
                     </div>
                   </div>
                 </div>

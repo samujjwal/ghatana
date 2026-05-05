@@ -69,8 +69,9 @@ class WorkflowExecutionRealProviderIntegrationTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        // Initialize real DataCloudClient (using in-memory storage for testing)
-        client = new InMemoryDataCloudClient();
+        // DC-P1-003: Use durable DataCloudClient with H2 file-backed storage for real persistence
+        client = new DurableDataCloudClient();
+        client.open().getResult();
         
         // Initialize plugin manager with real workflow plugin
         pluginManager = new DataCloudRuntimePluginManager();
@@ -98,7 +99,14 @@ class WorkflowExecutionRealProviderIntegrationTest {
             server.stop();
         }
         if (pluginManager != null) {
-            pluginManager.close();
+            pluginManager.shutdown();
+        }
+        if (client != null) {
+            try {
+                client.close().getResult();
+            } catch (Exception e) {
+                System.out.println("Error closing durable client: " + e.getMessage());
+            }
         }
     }
 
@@ -422,6 +430,95 @@ class WorkflowExecutionRealProviderIntegrationTest {
             Thread.sleep(50);
         }
         throw new IllegalStateException("Workflow execution capability did not initialize within 10 seconds");
+    }
+
+    /**
+     * DC-P1-003, DC-P1-004: Test restart-persistence with real provider.
+     * This test verifies that workflow execution state persists across server restarts
+     * using the durable H2-backed storage.
+     */
+    @Test
+    @DisplayName("Restart-persistence: workflow state survives server restart")
+    void restartPersistenceWorkflowStateSurvivesServerRestart() throws Exception {
+        // Execute workflow and capture execution ID
+        HttpResponse<String> executeResp = post(
+            "/api/v1/pipelines/" + PIPELINE_ID + "/execute",
+            Map.of("testParam", "restartTestValue")
+        );
+        assertThat(executeResp.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        String executionId = (String) executeBody.get("executionId");
+        assertThat(executionId).isNotNull();
+
+        // Verify workflow is running
+        HttpResponse<String> statusResp = get("/api/v1/workflow-executions/" + executionId);
+        assertThat(statusResp.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> statusBody = mapper.readValue(statusResp.body(), Map.class);
+        assertThat(statusBody.get("status")).isIn("RUNNING", "COMPLETED");
+
+        // Stop server
+        server.stop();
+        
+        // Restart server with same durable storage
+        server = new DataCloudHttpServer(client, port)
+            .withPluginManager(pluginManager)
+            .withDeploymentMode("local");
+        server.start();
+        waitForServerReady(port);
+        waitForWorkflowCapability();
+
+        // Verify execution state persisted across restart
+        HttpResponse<String> statusAfterRestart = get("/api/v1/workflow-executions/" + executionId);
+        assertThat(statusAfterRestart.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> statusAfterRestartBody = mapper.readValue(statusAfterRestart.body(), Map.class);
+        assertThat(statusAfterRestartBody.get("executionId")).isEqualTo(executionId);
+        assertThat(statusAfterRestartBody.get("pipelineId")).isEqualTo(PIPELINE_ID);
+    }
+
+    @Test
+    @DisplayName("Real provider persists workflow checkpoints across restarts")
+    void realProviderPersistsWorkflowCheckpointsAcrossRestarts() throws Exception {
+        // Execute workflow with checkpointing
+        HttpResponse<String> executeResp = post(
+            "/api/v1/pipelines/" + PIPELINE_ID + "/execute",
+            Map.of("enableCheckpoint", "true")
+        );
+        assertThat(executeResp.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> executeBody = mapper.readValue(executeResp.body(), Map.class);
+        String executionId = (String) executeBody.get("executionId");
+
+        // Wait for checkpoint to be created
+        Thread.sleep(1000);
+
+        // Retrieve checkpoint before restart
+        HttpResponse<String> checkpointResp = get("/api/v1/workflow-executions/" + executionId + "/checkpoints");
+        assertThat(checkpointResp.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> checkpointBody = mapper.readValue(checkpointResp.body(), Map.class);
+        List<Map<String, Object>> checkpoints = (List<Map<String, Object>>) checkpointBody.get("checkpoints");
+        int checkpointCountBefore = checkpoints != null ? checkpoints.size() : 0;
+
+        // Stop and restart server
+        server.stop();
+        server = new DataCloudHttpServer(client, port)
+            .withPluginManager(pluginManager)
+            .withDeploymentMode("local");
+        server.start();
+        waitForServerReady(port);
+
+        // Verify checkpoints persisted
+        HttpResponse<String> checkpointAfterRestart = get("/api/v1/workflow-executions/" + executionId + "/checkpoints");
+        assertThat(checkpointAfterRestart.statusCode()).isEqualTo(200);
+        
+        Map<String, Object> checkpointAfterBody = mapper.readValue(checkpointAfterRestart.body(), Map.class);
+        List<Map<String, Object>> checkpointsAfter = (List<Map<String, Object>>) checkpointAfterBody.get("checkpoints");
+        int checkpointCountAfter = checkpointsAfter != null ? checkpointsAfter.size() : 0;
+        
+        assertThat(checkpointCountAfter).isEqualTo(checkpointCountBefore);
     }
 
     /**

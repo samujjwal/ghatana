@@ -15,9 +15,9 @@ export interface InsightPanelProps {
 
 const severityStyles: Record<InsightStreamItem['severity'], { badge: string; icon: typeof Info }> = {
   info: { badge: 'bg-sky-100 text-sky-700', icon: Info },
-  warning: { badge: 'bg-amber-100 text-amber-700', icon: CircleAlert },
+  warning: { badge: 'bg-warning-bg text-warning-color', icon: CircleAlert },
   error: { badge: 'bg-rose-100 text-rose-700', icon: CircleAlert },
-  critical: { badge: 'bg-red-100 text-red-700', icon: CircleAlert },
+  critical: { badge: 'bg-destructive-bg text-destructive', icon: CircleAlert },
 };
 
 function formatCategory(category: InsightStreamItem['category']): string {

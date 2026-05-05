@@ -227,7 +227,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
                 {/* Suggestions List */}
                 {suggestions.length === 0 ? (
                     <Box className="text-center py-8">
-                        <AIIcon className="mb-4 text-5xl text-gray-400 dark:text-gray-600" />
+                        <AIIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                         <Typography variant="body2" color="text.secondary">
                             No suggestions at the moment
                         </Typography>
@@ -249,7 +249,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
                         </Box>
 
                         {/* Actions */}
-                        <Box className="mt-4 pt-4 border-gray-200 dark:border-gray-700 border-t" >
+                        <Box className="mt-4 pt-4 border-border dark:border-border border-t" >
                             <Button
                                 fullWidth
                                 variant="outlined"

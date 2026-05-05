@@ -68,11 +68,11 @@ export function AIPanel({ context, selectedNodeIds = [] }: RailPanelProps) {
   const getSuggestionIcon = (type: string) => {
     switch (type) {
       case 'pattern-match':
-        return <TrendingUp className="text-blue-600 text-lg" />;
+        return <TrendingUp className="text-info-color text-lg" />;
       case 'improvement':
-        return <Lightbulb className="text-amber-600 text-lg" />;
+        return <Lightbulb className="text-warning-color text-lg" />;
       case 'optimization':
-        return <AutoAwesome className="text-green-600 text-lg" />;
+        return <AutoAwesome className="text-success-color text-lg" />;
       default:
         return <Lightbulb className="text-lg" />;
     }

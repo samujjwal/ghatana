@@ -105,13 +105,13 @@ Services started:
 - MinIO: `localhost:9002` (API) / `9003` (console)
 - MailHog: `localhost:8025` (web UI)
 - Prometheus: `localhost:9090`
-- Grafana: `localhost:3001` (admin/admin)
+- Grafana: `localhost:3001` (credentials come from `GF_SECURITY_ADMIN_PASSWORD`)
 
 ### 2. Configure Environment
 
 ```bash
 cp .env.example .env.development
-# Edit .env.development — set OPENAI_API_KEY for AI features
+# Edit .env.development — set required local secrets and OPENAI_API_KEY for AI features
 ```
 
 ### 3. Run Database Migrations

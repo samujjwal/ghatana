@@ -61,15 +61,15 @@ const getSuggestionIcon = (type: NavigationSuggestion['type']) => {
 const getSuggestionColor = (type: NavigationSuggestion['type']) => {
   switch (type) {
     case 'frequent':
-      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      return 'text-info-color dark:text-info-color bg-info-bg dark:bg-info-bg/20';
     case 'recent':
-      return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20';
+      return 'text-info-color dark:text-info-color bg-info-bg dark:bg-info-bg/20';
     case 'recommended':
-      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20';
+      return 'text-success-color dark:text-success-color bg-success-bg dark:bg-success-bg/20';
     case 'ai-suggested':
-      return 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20';
+      return 'text-warning-color dark:text-warning-color bg-warning-bg dark:bg-warning-bg/20';
     default:
-      return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20';
+      return 'text-fg-muted dark:text-fg-muted bg-surface-muted dark:bg-surface/20';
   }
 };
 
@@ -132,7 +132,7 @@ export function SmartNavigation({
     <div className={`space-y-2 ${className}`}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-3">
-        <NavigationIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <NavigationIcon className="w-5 h-5 text-info-color dark:text-info-color" />
         <Typography className="font-bold text-sm">
           Quick Navigation
         </Typography>
@@ -173,7 +173,7 @@ export function SmartNavigation({
                 </div>
 
                 {suggestion.description && (
-                  <Typography className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                  <Typography className="text-xs text-fg-muted dark:text-fg-muted line-clamp-2">
                     {suggestion.description}
                   </Typography>
                 )}
@@ -181,13 +181,13 @@ export function SmartNavigation({
                 {/* Score */}
                 {showScore && suggestion.score !== undefined && (
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-500"
+                        className="h-full bg-info-bg"
                         style={{ width: `${suggestion.score * 100}%` }}
                       />
                     </div>
-                    <Typography className="text-xs text-gray-500">
+                    <Typography className="text-xs text-fg-muted">
                       {Math.round(suggestion.score * 100)}%
                     </Typography>
                   </div>
@@ -199,7 +199,7 @@ export function SmartNavigation({
                 size="sm"
                 variant="text"
                 onClick={() => handleDismiss(suggestion.id)}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                className="flex-shrink-0 text-fg-muted hover:text-fg-muted"
               >
                 ×
               </Button>

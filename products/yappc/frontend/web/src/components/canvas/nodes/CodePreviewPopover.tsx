@@ -62,7 +62,7 @@ function getRelationshipIcon(relationship: CodeRelationshipType): React.ReactEle
 function CodePreview({ code, language }: { code: string; language?: string }) {
     return (
         <Paper
-            className="p-4 text-sm overflow-auto max-h-[200px] bg-gray-900 text-gray-100" >
+            className="p-4 text-sm overflow-auto max-h-[200px] bg-surface text-fg-muted" >
             <pre style={{ margin: 0, fontFamily: '"Fira Code' }}>
                 <code>{code}</code>
             </pre>
@@ -113,7 +113,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
             <Paper className="flex h-full max-h-[500px] flex-col overflow-hidden shadow-xl">
                 {/* Header */}
                 <Box
-                    className="p-4 flex items-center justify-between border-gray-200 dark:border-gray-700 border-b" >
+                    className="p-4 flex items-center justify-between border-border dark:border-border border-b" >
                     <Typography as="h6">Linked Code</Typography>
                     <IconButton size="sm" onClick={onClose} aria-label="Close">
                         <CloseIcon />
@@ -141,7 +141,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                     <Box className="flex flex-1 overflow-hidden">
                         {/* Association List */}
                         <ul
-                            className="overflow-auto w-[200px] border-r border-gray-200 dark:border-gray-700 list-none m-0 p-0"
+                            className="overflow-auto w-[200px] border-r border-border dark:border-border list-none m-0 p-0"
                         >
                             {associations.map((assoc) => (
                                 <ListItemButton
@@ -178,7 +178,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
                             {selectedAssociation && (
                                 <>
                                     {/* Code Details */}
-                                    <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+                                    <Box className="p-4 border-border dark:border-border border-b" >
                                         <Typography as="p" className="text-lg font-medium" gutterBottom>
                                             {selectedAssociation.codeArtifact?.title}
                                         </Typography>
@@ -219,7 +219,7 @@ export const CodePreviewPopover: React.FC<CodePreviewPopoverProps> = ({
 
                                     {/* Actions */}
                                     <Box
-                                        className="p-4 flex gap-2 justify-between border-gray-200 dark:border-gray-700 border-t" >
+                                        className="p-4 flex gap-2 justify-between border-border dark:border-border border-t" >
                                         <Box className="flex gap-2">
                                             {onOpenCode && (
                                                 <Button

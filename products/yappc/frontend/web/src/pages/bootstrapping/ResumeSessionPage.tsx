@@ -62,10 +62,10 @@ const PHASE_CONFIG: Record<
   string,
   { label: string; color: string; step: number }
 > = {
-  enter: { label: 'Enter', color: 'text-blue-400', step: 1 },
-  explore: { label: 'Explore', color: 'text-purple-400', step: 2 },
-  refine: { label: 'Refine', color: 'text-orange-400', step: 3 },
-  validate: { label: 'Validate', color: 'text-cyan-400', step: 4 },
+  enter: { label: 'Enter', color: 'text-info-color', step: 1 },
+  explore: { label: 'Explore', color: 'text-info-color', step: 2 },
+  refine: { label: 'Refine', color: 'text-warning-color', step: 3 },
+  validate: { label: 'Validate', color: 'text-info-color', step: 4 },
   complete: { label: 'Complete', color: 'text-success-400', step: 5 },
 };
 
@@ -102,22 +102,22 @@ const SessionCard: React.FC<SessionCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className={cn(
-        'group relative rounded-lg border bg-zinc-900 transition-all duration-200',
+        'group relative rounded-lg border bg-surface transition-all duration-200',
         isExpired
           ? 'border-error-500/30 opacity-60'
           : isExpiring
             ? 'border-warning-500/30'
-            : 'border-zinc-800 hover:border-zinc-700'
+            : 'border-border hover:border-border'
       )}
     >
       <div className="p-5">
         {/* Header */}
         <div className="mb-4 flex items-start justify-between">
           <div className="flex-1">
-            <h3 className="mb-1 text-lg font-semibold text-zinc-100">
+            <h3 className="mb-1 text-lg font-semibold text-fg-muted">
               {session.projectName}
             </h3>
-            <p className="text-sm text-zinc-400 line-clamp-2">
+            <p className="text-sm text-fg-muted line-clamp-2">
               {session.description || 'No description provided'}
             </p>
           </div>
@@ -162,7 +162,7 @@ const SessionCard: React.FC<SessionCardProps> = ({
             <span className={cn('font-medium', phaseConfig.color)}>
               Phase: {phaseConfig.label} ({phaseConfig.step}/5)
             </span>
-            <span className="text-zinc-400">{session.progress}% complete</span>
+            <span className="text-fg-muted">{session.progress}% complete</span>
           </div>
           <Progress value={session.progress} className="h-2" />
         </div>
@@ -170,28 +170,28 @@ const SessionCard: React.FC<SessionCardProps> = ({
         {/* Stats Row */}
         <div className="mb-4 grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-lg font-semibold text-zinc-100">
+            <div className="text-lg font-semibold text-fg-muted">
               {session.featuresIdentified || 0}
             </div>
-            <div className="text-xs text-zinc-500">Features</div>
+            <div className="text-xs text-fg-muted">Features</div>
           </div>
           <div>
-            <div className="text-lg font-semibold text-zinc-100">
+            <div className="text-lg font-semibold text-fg-muted">
               {session.questionsAnswered}/{session.totalQuestions}
             </div>
-            <div className="text-xs text-zinc-500">Questions</div>
+            <div className="text-xs text-fg-muted">Questions</div>
           </div>
           <div>
-            <div className="text-lg font-semibold text-zinc-100">
+            <div className="text-lg font-semibold text-fg-muted">
               {session.confidenceScore}%
             </div>
-            <div className="text-xs text-zinc-500">Confidence</div>
+            <div className="text-xs text-fg-muted">Confidence</div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
-          <div className="flex items-center gap-3 text-xs text-zinc-500">
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <div className="flex items-center gap-3 text-xs text-fg-muted">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               Updated {formatDistanceToNow(new Date(session.updatedAt))} ago
@@ -243,13 +243,13 @@ const SessionCard: React.FC<SessionCardProps> = ({
 
 const EmptyState: React.FC<{ onCreateNew: () => void }> = ({ onCreateNew }) => (
   <div className="flex flex-col items-center justify-center py-16 text-center">
-    <div className="mb-4 rounded-full bg-zinc-800 p-4">
-      <Archive className="h-8 w-8 text-zinc-400" />
+    <div className="mb-4 rounded-full bg-surface p-4">
+      <Archive className="h-8 w-8 text-fg-muted" />
     </div>
-    <h3 className="mb-2 text-lg font-semibold text-zinc-100">
+    <h3 className="mb-2 text-lg font-semibold text-fg-muted">
       No saved sessions
     </h3>
-    <p className="mb-6 max-w-md text-sm text-zinc-400">
+    <p className="mb-6 max-w-md text-sm text-fg-muted">
       You don't have any bootstrapping sessions in progress. Start a new project
       to begin defining your application with AI assistance.
     </p>
@@ -380,15 +380,15 @@ const ResumeSessionPage: React.FC = () => {
   const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6">
+    <div className="min-h-screen bg-surface p-6">
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-zinc-100">
+            <h1 className="text-2xl font-bold text-fg-muted">
               Resume Bootstrapping
             </h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-fg-muted">
               Continue where you left off or start a new project
             </p>
           </div>
@@ -402,7 +402,7 @@ const ResumeSessionPage: React.FC = () => {
         {sessionCount > 0 && (
           <div className="mb-6 flex flex-wrap items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
               <Input
                 placeholder="Search sessions..."
                 value={searchQuery}
@@ -464,11 +464,11 @@ const ResumeSessionPage: React.FC = () => {
           </div>
         ) : searchQuery || filterBy !== 'all' ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Search className="mb-4 h-12 w-12 text-zinc-600" />
-            <h3 className="mb-2 text-lg font-semibold text-zinc-100">
+            <Search className="mb-4 h-12 w-12 text-fg-muted" />
+            <h3 className="mb-2 text-lg font-semibold text-fg-muted">
               No matching sessions
             </h3>
-            <p className="text-sm text-zinc-400">
+            <p className="text-sm text-fg-muted">
               Try adjusting your search or filter criteria
             </p>
           </div>
@@ -492,7 +492,7 @@ const ResumeSessionPage: React.FC = () => {
             </>
           }
         >
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-fg-muted">
             This action cannot be undone. All progress and canvas data for
             this session will be permanently deleted.
           </p>

@@ -273,7 +273,7 @@ export function UnifiedLeftPanel({
           <IconButton
             size="sm"
             onClick={() => handleCollapseChange(true)}
-            className="p-1 rounded-md hover:bg-gray-100"
+            className="p-1 rounded-md hover:bg-surface-muted"
           >
             <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
@@ -288,7 +288,7 @@ export function UnifiedLeftPanel({
           value={activeTab}
           onChange={handleTabChange}
           variant="underline"
-          className="min-h-[36px] h-full rounded-lg border border-solid border-blue-600 min-w-0 px-3 py-1 text-blue-600" >
+          className="min-h-[36px] h-full rounded-lg border border-solid border-info-border min-w-0 px-3 py-1 text-info-color" >
           <Tab
             value="tasks"
             icon={<Assignment className="text-base" />}
@@ -380,12 +380,12 @@ export function UnifiedLeftPanel({
                 { id: 'v1', version: '1.0', timestamp: '1 day ago', label: 'Initial Layout', author: 'Alice Chen' },
                 { id: 'v2', version: '1.1', timestamp: '1 hour ago', label: 'Auth Added', author: 'Bob Smith' },
               ].map((snapshot) => (
-                <Box key={snapshot.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+                <Box key={snapshot.id} className="rounded-lg border border-border p-3 dark:border-border">
                   <Box className="flex items-center justify-between gap-2">
                     <Typography className="text-sm font-medium">{snapshot.label}</Typography>
-                    <Typography className="text-xs text-gray-500">v{snapshot.version}</Typography>
+                    <Typography className="text-xs text-fg-muted">v{snapshot.version}</Typography>
                   </Box>
-                  <Typography className="mt-1 text-xs text-gray-500" color="text.secondary">
+                  <Typography className="mt-1 text-xs text-fg-muted" color="text.secondary">
                     {snapshot.author} · {snapshot.timestamp}
                   </Typography>
                 </Box>

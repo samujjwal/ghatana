@@ -38,10 +38,10 @@ interface BacklogItem {
 }
 
 const priorityColors: Record<Priority, string> = {
-  critical: 'text-red-400 bg-red-500/10',
-  high: 'text-orange-400 bg-orange-500/10',
-  medium: 'text-yellow-400 bg-yellow-500/10',
-  low: 'text-zinc-400 bg-zinc-500/10',
+  critical: 'text-destructive bg-destructive-bg/10',
+  high: 'text-warning-color bg-warning-bg/10',
+  medium: 'text-warning-color bg-warning-bg/10',
+  low: 'text-fg-muted bg-surface-muted/10',
 };
 
 const BacklogPage: React.FC = () => {
@@ -50,17 +50,17 @@ const BacklogPage: React.FC = () => {
   const [items] = useState<BacklogItem[]>([]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
+    <div className="min-h-screen bg-surface text-white p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-blue-500/10">
-              <ListTodo className="w-6 h-6 text-blue-400" />
+            <div className="p-3 rounded-xl bg-info-bg/10">
+              <ListTodo className="w-6 h-6 text-info-color" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">Backlog</h1>
-              <p className="text-zinc-400">
+              <p className="text-fg-muted">
                 {items.length} items · Prioritize and estimate work
               </p>
             </div>
@@ -74,19 +74,19 @@ const BacklogPage: React.FC = () => {
         {/* Toolbar */}
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fg-muted" />
             <input
               type="text"
               placeholder="Search backlog..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
+              className="w-full pl-10 pr-4 py-2 rounded-lg bg-surface border border-border text-sm text-white placeholder-zinc-500 focus:border-violet-500 focus:outline-none"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-400 hover:text-white hover:border-zinc-700">
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white hover:border-border">
             <Filter className="w-4 h-4" /> Filter
           </button>
-          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm text-zinc-400 hover:text-white hover:border-zinc-700">
+          <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg-muted hover:text-white hover:border-border">
             <ArrowUpDown className="w-4 h-4" /> Sort
           </button>
         </div>
@@ -94,11 +94,11 @@ const BacklogPage: React.FC = () => {
         {/* Empty State */}
         {items.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ListTodo className="w-12 h-12 text-zinc-600 mb-4" />
-            <h3 className="text-lg font-semibold text-zinc-300 mb-2">
+            <ListTodo className="w-12 h-12 text-fg-muted mb-4" />
+            <h3 className="text-lg font-semibold text-fg-muted mb-2">
               No backlog items yet
             </h3>
-            <p className="text-zinc-500 max-w-md mb-6">
+            <p className="text-fg-muted max-w-md mb-6">
               Start by adding stories, bugs, or tasks to your product backlog.
               Items can be prioritized and moved into sprints.
             </p>

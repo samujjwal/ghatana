@@ -5,8 +5,11 @@
 package com.ghatana.finance.kernel;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyRule.Effect;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import com.ghatana.finance.kernel.policy.FinanceBoundaryPolicyStore;
 import com.ghatana.finance.kernel.policy.FinanceComplianceRulePack;
@@ -16,8 +19,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Phase 3.4 product-side contract tests for Finance packs.
@@ -41,6 +46,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("Finance Pack Contract Tests")
 class FinancePackContractTest {
 
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+            ProductBoundaryPolicyValidationProfile.builder()
+                    .productName("Finance")
+                    .rulePrefix("FIN-BP-")
+                    .defaultDenyRuleId("FIN-BP-999")
+                    .targetScopePrefix("finance.")
+                    .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+                    .build();
+
     // -------------------------------------------------------------------------
     // BoundaryPolicyStore contract
     // -------------------------------------------------------------------------
@@ -50,8 +64,7 @@ class FinancePackContractTest {
     class BoundaryPolicyStoreTests {
 
         private final FinanceBoundaryPolicyStore store = new FinanceBoundaryPolicyStore();
-        private final BoundaryPolicyLoadContext anyContext =
-                BoundaryPolicyLoadContext.of("tenant-1", "region-1");
+        private final BoundaryPolicyLoadContext anyContext = BoundaryPolicyLoadContext.global();
 
         @Test
         @DisplayName("loadRules() returns a non-empty rule list")
@@ -64,6 +77,7 @@ class FinancePackContractTest {
         @DisplayName("all rules have non-blank ruleId and non-empty actions")
         void allRulesWellFormed() {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
+            ProductBoundaryPolicyPackValidator.validate(rules, VALIDATION_PROFILE);
             for (BoundaryPolicyRule rule : rules) {
                 assertThat(rule.getRuleId())
                         .as("ruleId must not be blank")
@@ -121,6 +135,28 @@ class FinancePackContractTest {
             assertThat(exportRule.getEffect())
                     .as("position export must be DENY")
                     .isEqualTo(Effect.DENY);
+        }
+
+        @Test
+        @DisplayName("transaction writes require approval and audit")
+        void transactionWritesRequireApprovalAndAudit() {
+            BoundaryPolicyRule writeRule = store.loadRules(anyContext).stream()
+                    .filter(r -> r.getResourcePattern().startsWith("transactions")
+                            && r.getActions().contains("write"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No transaction write rule found"));
+
+            assertThat(writeRule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
+            assertThat(writeRule.isRequiresAudit()).isTrue();
+            assertThat(writeRule.getMetadata()).containsEntry("approvalPolicy", "four-eyes");
+        }
+
+        @Test
+        @DisplayName("unsupported tenant or region override fails closed")
+        void unsupportedTenantOrRegionOverrideFailsClosed() {
+            assertThatThrownBy(() -> store.loadRules(BoundaryPolicyLoadContext.of("tenant-emea", "EU")))
+                    .isInstanceOf(BoundaryPolicyStore.BoundaryPolicyStoreException.class)
+                    .hasMessageContaining("unsupported");
         }
     }
 

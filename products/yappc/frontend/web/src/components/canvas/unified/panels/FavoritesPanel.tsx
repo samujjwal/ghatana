@@ -134,7 +134,7 @@ export function FavoritesPanel({ onInsertNode }: RailPanelProps) {
                 >
                   <ListItemButton onClick={() => handleAddToCanvas(favorite)}>
                     <ListItemIcon className="min-w-[28px]">
-                      <Star className="text-amber-600 text-lg" />
+                      <Star className="text-warning-color text-lg" />
                     </ListItemIcon>
                     <Box className="flex-1">
                       <Typography variant="body2">{favorite.name}</Typography>

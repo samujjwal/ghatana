@@ -68,7 +68,7 @@ function getSeverityColor(severity: IncidentSeverity): string {
         case 'high':
             return 'bg-warning-color text-white';
         case 'medium':
-            return 'bg-blue-500 text-white';
+            return 'bg-info-bg text-white';
         case 'low':
             return 'bg-grey-400 text-white';
     }
@@ -79,7 +79,7 @@ function getStatusColor(status: IncidentStatus): string {
         case 'resolved':
             return 'text-success-color';
         case 'mitigated':
-            return 'text-blue-600';
+            return 'text-info-color';
         case 'investigating':
             return 'text-warning-color';
         case 'open':

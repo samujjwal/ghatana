@@ -124,9 +124,9 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const statusColors: Record<string, string> = {
-    online: 'bg-green-500',
-    away: 'bg-yellow-500',
-    offline: 'bg-zinc-500',
+    online: 'bg-success-bg',
+    away: 'bg-warning-bg',
+    offline: 'bg-surface-muted',
   };
 
   const roleLabels: Record<string, string> = {
@@ -138,7 +138,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
   return (
     <motion.div
       variants={itemVariants}
-      className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3"
+      className="flex items-center gap-3 rounded-lg border border-border bg-surface/50 p-3"
     >
       <div className="relative">
         <Avatar
@@ -148,7 +148,7 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
         />
         <span
           className={cn(
-            'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-zinc-900',
+            'absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-border',
             statusColors[collaborator.status]
           )}
         />
@@ -156,16 +156,16 @@ const CollaboratorCard: React.FC<CollaboratorCardProps> = ({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="font-medium text-zinc-200 truncate">{collaborator.name}</p>
+          <p className="font-medium text-fg-muted truncate">{collaborator.name}</p>
           {collaborator.role === 'owner' && (
-            <Crown className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+            <Crown className="h-4 w-4 text-warning-color flex-shrink-0" />
           )}
         </div>
-        <p className="text-sm text-zinc-500 truncate">{collaborator.email}</p>
+        <p className="text-sm text-fg-muted truncate">{collaborator.email}</p>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
+        <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-fg-muted">
           {roleLabels[collaborator.role]}
         </span>
 
@@ -222,22 +222,22 @@ const PendingInviteCard: React.FC<PendingInviteCardProps> = ({
   return (
     <motion.div
       variants={itemVariants}
-      className="flex items-center gap-3 rounded-lg border border-zinc-800/50 bg-zinc-900/30 p-3"
+      className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface/30 p-3"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
-        <Mail className="h-5 w-5 text-zinc-400" />
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface">
+        <Mail className="h-5 w-5 text-fg-muted" />
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="font-medium text-zinc-300 truncate">{invite.email}</p>
-        <p className="text-sm text-zinc-500">
+        <p className="font-medium text-fg-muted truncate">{invite.email}</p>
+        <p className="text-sm text-fg-muted">
           Invited as {invite.role === 'editor' ? 'Editor' : 'Viewer'} •{' '}
           {new Date(invite.sentAt).toLocaleDateString()}
         </p>
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-xs text-yellow-400">
+        <span className="rounded-full bg-warning-bg/10 px-2 py-0.5 text-xs text-warning-color">
           Pending
         </span>
         <Menu
@@ -303,8 +303,8 @@ const CommentThread: React.FC<CommentThreadProps> = ({
       className={cn(
         'rounded-lg border p-3',
         comment.resolved
-          ? 'border-zinc-800/50 bg-zinc-900/30'
-          : 'border-zinc-800 bg-zinc-900/50'
+          ? 'border-border/50 bg-surface/30'
+          : 'border-border bg-surface/50'
       )}
     >
       <div className="flex items-start gap-3">
@@ -315,21 +315,21 @@ const CommentThread: React.FC<CommentThreadProps> = ({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-zinc-200">{comment.userName}</span>
-            <span className="text-xs text-zinc-500">
+            <span className="font-medium text-fg-muted">{comment.userName}</span>
+            <span className="text-xs text-fg-muted">
               {new Date(comment.createdAt).toLocaleString()}
             </span>
             {comment.resolved && (
-              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-400">
+              <span className="rounded-full bg-success-bg/10 px-2 py-0.5 text-xs text-success-color">
                 Resolved
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-zinc-300">{comment.content}</p>
+          <p className="mt-1 text-sm text-fg-muted">{comment.content}</p>
 
           {/* Replies */}
           {comment.replies.length > 0 && (
-            <div className="mt-3 space-y-2 border-l-2 border-zinc-700 pl-3">
+            <div className="mt-3 space-y-2 border-l-2 border-border pl-3">
               {comment.replies.map((reply) => (
                 <div key={reply.id} className="flex items-start gap-2">
                   <Avatar
@@ -339,14 +339,14 @@ const CommentThread: React.FC<CommentThreadProps> = ({
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-zinc-300">
+                      <span className="text-sm font-medium text-fg-muted">
                         {reply.userName}
                       </span>
-                      <span className="text-xs text-zinc-500">
+                      <span className="text-xs text-fg-muted">
                         {new Date(reply.createdAt).toLocaleString()}
                       </span>
                     </div>
-                    <p className="text-sm text-zinc-400">{reply.content}</p>
+                    <p className="text-sm text-fg-muted">{reply.content}</p>
                   </div>
                 </div>
               ))}
@@ -544,9 +544,9 @@ const BootstrapCollaboratePage: React.FC = () => {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950">
+    <div className="flex min-h-screen flex-col bg-surface">
       {/* Header */}
-      <header className="border-b border-zinc-800 bg-zinc-900/50">
+      <header className="border-b border-border bg-surface/50">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-4">
             <Button
@@ -561,10 +561,10 @@ const BootstrapCollaboratePage: React.FC = () => {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Session
             </Button>
-            <div className="h-6 w-px bg-zinc-700" />
+            <div className="h-6 w-px bg-surface-muted" />
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-violet-400" />
-              <h1 className="text-lg font-semibold text-zinc-100">
+              <h1 className="text-lg font-semibold text-fg-muted">
                 Collaborate
               </h1>
             </div>
@@ -579,7 +579,7 @@ const BootstrapCollaboratePage: React.FC = () => {
               >
                 {linkCopied ? (
                   <>
-                    <Check className="mr-2 h-4 w-4 text-green-400" />
+                    <Check className="mr-2 h-4 w-4 text-success-color" />
                     Copied!
                   </>
                 ) : (
@@ -607,19 +607,19 @@ const BootstrapCollaboratePage: React.FC = () => {
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-4xl">
           {/* Tabs */}
-          <div className="mb-6 flex items-center gap-4 border-b border-zinc-800">
+          <div className="mb-6 flex items-center gap-4 border-b border-border">
             <button
               onClick={() => setActiveTab('people')}
               className={cn(
                 'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === 'people'
                   ? 'border-violet-500 text-violet-400'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-300'
+                  : 'border-transparent text-fg-muted hover:text-fg-muted'
               )}
             >
               <Users className="h-4 w-4" />
               People
-              <span className="ml-1 rounded-full bg-zinc-800 px-2 py-0.5 text-xs">
+              <span className="ml-1 rounded-full bg-surface px-2 py-0.5 text-xs">
                 {collaborators.length + pendingInvites.length}
               </span>
             </button>
@@ -629,7 +629,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                 'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === 'comments'
                   ? 'border-violet-500 text-violet-400'
-                  : 'border-transparent text-zinc-400 hover:text-zinc-300'
+                  : 'border-transparent text-fg-muted hover:text-fg-muted'
               )}
             >
               <MessageSquare className="h-4 w-4" />
@@ -654,7 +654,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                 {/* Search */}
                 <div className="mb-6">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
                     <Input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
@@ -666,7 +666,7 @@ const BootstrapCollaboratePage: React.FC = () => {
 
                 {/* Active Collaborators */}
                 <section className="mb-8">
-                  <h2 className="mb-4 text-sm font-medium text-zinc-400">
+                  <h2 className="mb-4 text-sm font-medium text-fg-muted">
                     Active Collaborators ({filteredCollaborators.length})
                   </h2>
                   <div className="space-y-3">
@@ -685,7 +685,7 @@ const BootstrapCollaboratePage: React.FC = () => {
                 {/* Pending Invites */}
                 {pendingInvites.length > 0 && (
                   <section>
-                    <h2 className="mb-4 text-sm font-medium text-zinc-400">
+                    <h2 className="mb-4 text-sm font-medium text-fg-muted">
                       Pending Invites ({pendingInvites.length})
                     </h2>
                     <div className="space-y-3">
@@ -711,11 +711,11 @@ const BootstrapCollaboratePage: React.FC = () => {
               >
                 {comments.length === 0 ? (
                   <div className="py-12 text-center">
-                    <MessageSquare className="mx-auto h-12 w-12 text-zinc-700" />
-                    <h3 className="mt-4 text-lg font-medium text-zinc-300">
+                    <MessageSquare className="mx-auto h-12 w-12 text-fg" />
+                    <h3 className="mt-4 text-lg font-medium text-fg-muted">
                       No comments yet
                     </h3>
-                    <p className="mt-2 text-zinc-500">
+                    <p className="mt-2 text-fg-muted">
                       Comments added to canvas nodes will appear here.
                     </p>
                   </div>
@@ -763,7 +763,7 @@ const BootstrapCollaboratePage: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
+            <label className="mb-2 block text-sm font-medium text-fg-muted">
               Email Address
             </label>
             <Input
@@ -775,7 +775,7 @@ const BootstrapCollaboratePage: React.FC = () => {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">
+            <label className="mb-2 block text-sm font-medium text-fg-muted">
               Permission
             </label>
             <div className="flex gap-3">
@@ -785,14 +785,14 @@ const BootstrapCollaboratePage: React.FC = () => {
                   'flex-1 rounded-lg border p-3 text-left transition-colors',
                   inviteRole === 'editor'
                     ? 'border-violet-500 bg-violet-500/10'
-                    : 'border-zinc-700 hover:border-zinc-600'
+                    : 'border-border hover:border-border'
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Edit3 className="h-4 w-4 text-violet-400" />
-                  <span className="font-medium text-zinc-200">Editor</span>
+                  <span className="font-medium text-fg-muted">Editor</span>
                 </div>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-fg-muted">
                   Can edit canvas and add comments
                 </p>
               </button>
@@ -802,14 +802,14 @@ const BootstrapCollaboratePage: React.FC = () => {
                   'flex-1 rounded-lg border p-3 text-left transition-colors',
                   inviteRole === 'viewer'
                     ? 'border-violet-500 bg-violet-500/10'
-                    : 'border-zinc-700 hover:border-zinc-600'
+                    : 'border-border hover:border-border'
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Eye className="h-4 w-4 text-violet-400" />
-                  <span className="font-medium text-zinc-200">Viewer</span>
+                  <span className="font-medium text-fg-muted">Viewer</span>
                 </div>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-fg-muted">
                   Can view and add comments only
                 </p>
               </button>

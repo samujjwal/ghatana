@@ -48,20 +48,20 @@ const COLUMNS: Array<{
   {
     id: 'todo',
     label: 'To Do',
-    dotColor: 'bg-zinc-400',
-    headerColor: 'text-zinc-400',
+    dotColor: 'bg-surface-muted',
+    headerColor: 'text-fg-muted',
   },
   {
     id: 'in-progress',
     label: 'In Progress',
-    dotColor: 'bg-blue-400',
-    headerColor: 'text-blue-400',
+    dotColor: 'bg-info-bg',
+    headerColor: 'text-info-color',
   },
   {
     id: 'review',
     label: 'In Review',
-    dotColor: 'bg-yellow-400',
-    headerColor: 'text-yellow-400',
+    dotColor: 'bg-warning-bg',
+    headerColor: 'text-warning-color',
   },
   {
     id: 'done',
@@ -72,10 +72,10 @@ const COLUMNS: Array<{
 ];
 
 const PRIORITY_STYLES: Record<string, string> = {
-  critical: 'bg-red-500/20 text-red-400',
-  high: 'bg-orange-500/20 text-orange-400',
-  medium: 'bg-yellow-500/20 text-yellow-400',
-  low: 'bg-blue-500/20 text-blue-400',
+  critical: 'bg-destructive-bg/20 text-destructive',
+  high: 'bg-warning-bg/20 text-warning-color',
+  medium: 'bg-warning-bg/20 text-warning-color',
+  low: 'bg-info-bg/20 text-info-color',
 };
 
 // =============================================================================
@@ -108,12 +108,12 @@ const StoryCard: React.FC<{
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
-      className="group p-3 bg-zinc-800 rounded-lg border border-zinc-700 hover:border-violet-500/70 cursor-pointer transition-all hover:shadow-lg hover:shadow-violet-500/5"
+      className="group p-3 bg-surface rounded-lg border border-border hover:border-violet-500/70 cursor-pointer transition-all hover:shadow-lg hover:shadow-violet-500/5"
     >
       {/* Type + Priority badges */}
       <div className="flex items-center gap-1.5 mb-2 flex-wrap">
         {story.type && (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-700 text-zinc-400 uppercase tracking-wide">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-surface-muted text-fg-muted uppercase tracking-wide">
             {story.type}
           </span>
         )}
@@ -130,19 +130,19 @@ const StoryCard: React.FC<{
       </p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-[10px] text-zinc-500">
+      <div className="flex items-center justify-between text-[10px] text-fg-muted">
         <div className="flex items-center gap-1.5 flex-wrap">
           {story.labels?.map((label) => (
             <span
               key={label}
-              className="px-1.5 py-0.5 rounded bg-zinc-700/60 text-zinc-400"
+              className="px-1.5 py-0.5 rounded bg-surface-muted/60 text-fg-muted"
             >
               {label}
             </span>
           ))}
         </div>
         {pts > 0 && (
-          <span className="font-semibold text-zinc-400">
+          <span className="font-semibold text-fg-muted">
             {pts} {pts === 1 ? 'pt' : 'pts'}
           </span>
         )}
@@ -204,20 +204,20 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
   });
 
   return (
-    <div className={`flex flex-col h-full bg-zinc-950 ${className}`}>
+    <div className={`flex flex-col h-full bg-surface ${className}`}>
       {/* Sprint header */}
       {activeSprint && (
-        <div className="px-6 py-3 border-b border-zinc-800 flex-shrink-0">
+        <div className="px-6 py-3 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-3">
             <Circle className="w-2.5 h-2.5 fill-emerald-400 text-emerald-400" />
             <span className="text-sm font-semibold text-white">
               {activeSprint.name}
             </span>
-            <span className="text-xs text-zinc-500">
+            <span className="text-xs text-fg-muted">
               {activeSprint.startDate} – {activeSprint.endDate}
             </span>
             {activeSprint.daysRemaining !== undefined && (
-              <span className="ml-auto text-xs text-zinc-500">
+              <span className="ml-auto text-xs text-fg-muted">
                 {activeSprint.daysRemaining}d remaining
               </span>
             )}
@@ -236,16 +236,16 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
             return (
               <div
                 key={col.id}
-                className="flex flex-col w-72 bg-zinc-900/60 rounded-xl border border-zinc-800"
+                className="flex flex-col w-72 bg-surface/60 rounded-xl border border-border"
               >
                 {/* Column header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 flex-shrink-0">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dotColor}`} />
                     <span className={`text-xs font-semibold uppercase tracking-wide ${col.headerColor}`}>
                       {col.label}
                     </span>
-                    <span className="text-[10px] font-medium text-zinc-600 bg-zinc-800 rounded-full px-1.5 py-0.5">
+                    <span className="text-[10px] font-medium text-fg-muted bg-surface rounded-full px-1.5 py-0.5">
                       {colStories.length}
                     </span>
                   </div>
@@ -253,7 +253,7 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
                     <button
                       onClick={() => onCreateStory(col.id)}
                       title={`Add story to ${col.label}`}
-                      className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+                      className="w-5 h-5 rounded flex items-center justify-center text-fg-muted hover:text-fg-muted hover:bg-surface transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" />
                     </button>
@@ -263,7 +263,7 @@ export const SprintBoard: React.FC<SprintBoardProps> = ({
                 {/* Story cards */}
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                   {colStories.length === 0 ? (
-                    <div className="h-16 flex items-center justify-center text-xs text-zinc-600 border-2 border-dashed border-zinc-800 rounded-lg">
+                    <div className="h-16 flex items-center justify-center text-xs text-fg-muted border-2 border-dashed border-border rounded-lg">
                       No stories
                     </div>
                   ) : (

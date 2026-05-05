@@ -23,7 +23,7 @@ jobs:
             fail-fast: false
             matrix:
                 product:
-                    - { name: flashit, path: products/flashit/apps/web-api, pm: npm }
+                    - { name: flashit, path: products/flashit/backend/gateway, pm: pnpm }
                     - { name: dcmaar, path: products/dcmaar, pm: pnpm }
                     - { name: yappc, path: products/yappc, pm: pnpm }
 
@@ -38,7 +38,7 @@ jobs:
 
             - name: Install pnpm
               if: matrix.product.pm == 'pnpm'
-              run: npm install -g pnpm@8
+              run: corepack enable && corepack prepare pnpm@10.33.0 --activate
 
             - name: Install dependencies (npm)
               if: matrix.product.pm == 'npm'
@@ -60,22 +60,16 @@ jobs:
               run: pnpm audit --audit-level=moderate --json > npm-audit.json || true
               working-directory: ${{ matrix.product.path }}
 
-            - name: Upload audit results
-              uses: actions/upload-artifact@v4
-              with:
-                  name: npm-audit-${{ matrix.product.name }}
-                  path: ${{ matrix.product.path }}/npm-audit.json
+    default-credential-scan:
+        name: Secret and Default Credential Policy Scan
+        runs-on: ubuntu-latest
 
-            - name: Check for critical vulnerabilities (npm)
-              if: matrix.product.pm == 'npm'
-              run: |
-                  if npm audit --audit-level=critical; then
-                    echo "No critical vulnerabilities found"
-                  else
-                    echo "Critical vulnerabilities detected!"
-                    exit 1
-                  fi
-              working-directory: ${{ matrix.product.path }}
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Run repository secret/default credential scanner
+              run: bash scripts/security-audit.sh
 
     dependency-scan-gradle:
         name: Gradle Dependency Vulnerability Scan
@@ -247,7 +241,7 @@ jobs:
 
             - name: Build Docker image
               run: |
-                  docker build -t flashit-web-api:test -f products/flashit/apps/web-api/Dockerfile products/flashit/apps/web-api
+                  docker build -t flashit-web-api:test -f products/flashit/backend/gateway/Dockerfile products/flashit/backend/gateway
 
             - name: Run Trivy vulnerability scanner
               uses: aquasecurity/trivy-action@master

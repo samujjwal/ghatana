@@ -11,6 +11,11 @@ export { getAllPhaseCockpitConfig, getPhaseCockpitConfig } from './PhaseCockpitC
 export { buildPhaseEvidence, buildPhaseGovernanceRecords } from './PhaseEvidenceBuilder';
 export { rankNextActions } from './NextActionRankingService';
 export { buildPhaseSuggestedSteps } from './PhaseSuggestionBuilder';
+export { usePhaseCockpitData } from './usePhaseCockpitData';
+export type {
+  UsePhaseCockpitDataParams,
+  UsePhaseCockpitDataResult,
+} from './usePhaseCockpitData';
 export type {
   MountedPhase,
   PhaseActivityEvent,

@@ -391,7 +391,7 @@ export const GhostNodes: React.FC<GhostNodesProps> = ({
 
                 {/* Phase Indicator */}
                 <Box
-                    className="mt-8 flex items-center gap-2 text-gray-500 dark:text-gray-400"
+                    className="mt-8 flex items-center gap-2 text-fg-muted dark:text-fg-muted"
                     style={{ animation: `${fadeIn} 0.5s ease-out 0.2s both` }}
                 >
                     {PHASE_ICONS[currentPhase]}

@@ -143,10 +143,10 @@ export const SimpleUnifiedNode: React.FC<NodeProps<SimpleUnifiedNodeData>> = ({
         switch (data.contentType) {
             case 'sketch':
                 return (
-                    <Box className="rounded flex items-center justify-center h-[120px] text-gray-500 dark:text-gray-400" style={{ border: '1px dashed #ccc' }} >
+                    <Box className="rounded flex items-center justify-center h-[120px] text-fg-muted dark:text-fg-muted" style={{ border: '1px dashed #ccc' }} >
                         <Box className="text-center">
                             <Typography as="p" className="text-sm">Sketch Canvas</Typography>
-                            <Typography as="span" className="text-xs text-gray-500">Click edit to draw</Typography>
+                            <Typography as="span" className="text-xs text-fg-muted">Click edit to draw</Typography>
                         </Box>
                     </Box>
                 );
@@ -169,8 +169,8 @@ export const SimpleUnifiedNode: React.FC<NodeProps<SimpleUnifiedNodeData>> = ({
             case 'code':
                 return (
                     <Box className="rounded overflow-hidden h-[120px] border border-solid border-[#ccc]">
-                        <Box className="px-2 py-1 border-b border-solid border-b-[#ccc] bg-gray-100" >
-                            <Typography as="span" className="text-xs text-gray-500 font-mono">
+                        <Box className="px-2 py-1 border-b border-solid border-b-[#ccc] bg-surface-muted" >
+                            <Typography as="span" className="text-xs text-fg-muted font-mono">
                                 {data.content?.language || 'javascript'}
                             </Typography>
                         </Box>
@@ -195,7 +195,7 @@ export const SimpleUnifiedNode: React.FC<NodeProps<SimpleUnifiedNodeData>> = ({
                         <Typography as="p" className="text-sm" className="mb-2">
                             {data.title}
                         </Typography>
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                             {data.content?.description || 'No description'}
                         </Typography>
                     </Box>
@@ -232,7 +232,7 @@ export const SimpleUnifiedNode: React.FC<NodeProps<SimpleUnifiedNodeData>> = ({
                                 <Delete size={16} />
                             </IconButton>
                         </Tooltip>
-                        <DragIndicator className="ml-2 text-base text-gray-500 dark:text-gray-400" />
+                        <DragIndicator className="ml-2 text-base text-fg-muted dark:text-fg-muted" />
                     </Box>
                 </NodeHeader>
 

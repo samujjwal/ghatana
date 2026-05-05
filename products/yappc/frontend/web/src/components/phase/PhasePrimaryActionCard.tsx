@@ -92,16 +92,16 @@ export const PhasePrimaryActionCard: React.FC<PhasePrimaryActionCardProps> = ({
             </div>
           )}
           <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h2 className="text-xl font-semibold text-fg dark:text-fg-muted mb-2">
               {title}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-fg-muted dark:text-fg-muted">
               {description}
             </p>
           </div>
           {confidence !== undefined && confidence < 1.0 && (
             <div className="flex-shrink-0 space-y-2">
-              <div className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-fg-muted dark:text-fg-muted">
                 Confidence
               </div>
               <Chip
@@ -137,7 +137,7 @@ export const PhasePrimaryActionCard: React.FC<PhasePrimaryActionCardProps> = ({
         </div>
 
         {disabled && disabledReason && (
-          <p id="disabled-reason" className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+          <p id="disabled-reason" className="mt-3 text-sm text-fg-muted dark:text-fg-muted">
             {disabledReason}
           </p>
         )}

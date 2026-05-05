@@ -47,7 +47,7 @@ export const RequirementLifecycleBoard: React.FC<RequirementLifecycleBoardProps>
           </Box>
 
           {requirements.length === 0 && (
-            <Typography className="text-sm text-gray-500">No requirements submitted yet.</Typography>
+            <Typography className="text-sm text-fg-muted">No requirements submitted yet.</Typography>
           )}
 
           <Box className="space-y-2">
@@ -58,12 +58,12 @@ export const RequirementLifecycleBoard: React.FC<RequirementLifecycleBoardProps>
                 onClick={() => setSelectedRequirementId(requirement.id)}
                 className={`w-full rounded border px-3 py-2 text-left transition-colors ${
                   requirement.id === selectedRequirementId
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:bg-gray-50'
+                    ? 'border-info-border bg-info-bg'
+                    : 'border-border hover:bg-surface-muted'
                 }`}
               >
                 <Typography className="text-sm font-medium">{requirement.title}</Typography>
-                <Typography className="text-xs text-gray-500">{requirement.status}</Typography>
+                <Typography className="text-xs text-fg-muted">{requirement.status}</Typography>
               </button>
             ))}
           </Box>
@@ -75,7 +75,7 @@ export const RequirementLifecycleBoard: React.FC<RequirementLifecycleBoardProps>
       ) : (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-gray-500">Select a requirement to view details.</Typography>
+            <Typography className="text-sm text-fg-muted">Select a requirement to view details.</Typography>
           </CardContent>
         </Card>
       )}

@@ -270,7 +270,7 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         'group relative cursor-pointer rounded-xl border p-5 transition-all duration-200',
         isSelected
           ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500'
-          : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700 hover:bg-zinc-900'
+          : 'border-border bg-surface/50 hover:border-border hover:bg-surface'
       )}
     >
       {/* Selection Indicator */}
@@ -289,19 +289,19 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         <div
           className={cn(
             'flex h-12 w-12 items-center justify-center rounded-lg',
-            isSelected ? 'bg-primary-500/20' : 'bg-zinc-800 group-hover:bg-zinc-700'
+            isSelected ? 'bg-primary-500/20' : 'bg-surface group-hover:bg-surface-muted'
           )}
         >
           <Icon
             className={cn(
               'h-6 w-6',
-              isSelected ? 'text-primary-400' : 'text-zinc-400'
+              isSelected ? 'text-primary-400' : 'text-fg-muted'
             )}
           />
         </div>
         <div className="flex-1 overflow-hidden">
-          <h3 className="font-semibold text-zinc-100">{template.name}</h3>
-          <p className="mt-1 line-clamp-2 text-sm text-zinc-400">
+          <h3 className="font-semibold text-fg-muted">{template.name}</h3>
+          <p className="mt-1 line-clamp-2 text-sm text-fg-muted">
             {template.description}
           </p>
         </div>
@@ -312,27 +312,27 @@ const TemplateCard: React.FC<TemplateCardProps> = ({
         {template.techStack.slice(0, 4).map((tech) => (
           <span
             key={tech}
-            className="rounded-md border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-xs text-zinc-300"
+            className="rounded-md border border-border bg-surface/50 px-2 py-0.5 text-xs text-fg-muted"
           >
             {tech}
           </span>
         ))}
         {template.techStack.length > 4 && (
-          <span className="rounded-md border border-zinc-700 bg-zinc-800/50 px-2 py-0.5 text-xs text-zinc-300">
+          <span className="rounded-md border border-border bg-surface/50 px-2 py-0.5 text-xs text-fg-muted">
             +{template.techStack.length - 4}
           </span>
         )}
       </div>
 
       {/* Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-4">
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
+      <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+        <div className="flex items-center gap-3 text-xs text-fg-muted">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {template.estimatedTime}
           </span>
           <span className="flex items-center gap-1">
-            <Star className="h-3 w-3 fill-current text-amber-400" />
+            <Star className="h-3 w-3 fill-current text-warning-color" />
             {template.popularity}%
           </span>
         </div>
@@ -366,7 +366,7 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, onUse }) => {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
-      className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-6"
+      className="rounded-xl border border-border bg-surface/50 p-6"
     >
       {/* Header */}
       <div className="flex items-start gap-4">
@@ -374,44 +374,44 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, onUse }) => {
           <Icon className="h-7 w-7 text-primary-400" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-zinc-100">{template.name}</h2>
-          <p className="mt-1 text-sm text-zinc-400">{template.description}</p>
+          <h2 className="text-xl font-bold text-fg-muted">{template.name}</h2>
+          <p className="mt-1 text-sm text-fg-muted">{template.description}</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="mt-6 grid grid-cols-3 gap-4">
-        <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-          <Clock className="mx-auto h-5 w-5 text-zinc-400" />
-          <p className="mt-1 text-sm font-medium text-zinc-100">
+        <div className="rounded-lg bg-surface/50 p-3 text-center">
+          <Clock className="mx-auto h-5 w-5 text-fg-muted" />
+          <p className="mt-1 text-sm font-medium text-fg-muted">
             {template.estimatedTime}
           </p>
-          <p className="text-xs text-zinc-500">Est. Time</p>
+          <p className="text-xs text-fg-muted">Est. Time</p>
         </div>
-        <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-          <Star className="mx-auto h-5 w-5 text-amber-400" />
-          <p className="mt-1 text-sm font-medium text-zinc-100">
+        <div className="rounded-lg bg-surface/50 p-3 text-center">
+          <Star className="mx-auto h-5 w-5 text-warning-color" />
+          <p className="mt-1 text-sm font-medium text-fg-muted">
             {template.popularity}%
           </p>
-          <p className="text-xs text-zinc-500">Popularity</p>
+          <p className="text-xs text-fg-muted">Popularity</p>
         </div>
-        <div className="rounded-lg bg-zinc-800/50 p-3 text-center">
-          <Zap className="mx-auto h-5 w-5 text-zinc-400" />
-          <p className="mt-1 text-sm font-medium capitalize text-zinc-100">
+        <div className="rounded-lg bg-surface/50 p-3 text-center">
+          <Zap className="mx-auto h-5 w-5 text-fg-muted" />
+          <p className="mt-1 text-sm font-medium capitalize text-fg-muted">
             {template.complexity}
           </p>
-          <p className="text-xs text-zinc-500">Complexity</p>
+          <p className="text-xs text-fg-muted">Complexity</p>
         </div>
       </div>
 
       {/* Tech Stack */}
       <div className="mt-6">
-        <h3 className="mb-3 text-sm font-medium text-zinc-300">Tech Stack</h3>
+        <h3 className="mb-3 text-sm font-medium text-fg-muted">Tech Stack</h3>
         <div className="flex flex-wrap gap-2">
           {template.techStack.map((tech) => (
             <span
               key={tech}
-              className="inline-flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800/50 px-2.5 py-1 text-sm text-zinc-300"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface/50 px-2.5 py-1 text-sm text-fg-muted"
             >
               <Code2 className="h-3 w-3" />
               {tech}
@@ -422,14 +422,14 @@ const TemplateDetail: React.FC<TemplateDetailProps> = ({ template, onUse }) => {
 
       {/* Features */}
       <div className="mt-6">
-        <h3 className="mb-3 text-sm font-medium text-zinc-300">
+        <h3 className="mb-3 text-sm font-medium text-fg-muted">
           Included Features
         </h3>
         <div className="space-y-2">
           {template.features.map((feature) => (
             <div key={feature} className="flex items-center gap-2 text-sm">
               <CheckCircle2 className="h-4 w-4 text-success-400" />
-              <span className="text-zinc-300">{feature}</span>
+              <span className="text-fg-muted">{feature}</span>
             </div>
           ))}
         </div>
@@ -509,7 +509,7 @@ const TemplateSelectionPage: React.FC = () => {
   }, [selectedTemplate, setSelectedTemplate, navigate]);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-surface">
       <div className="flex h-screen">
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
@@ -523,10 +523,10 @@ const TemplateSelectionPage: React.FC = () => {
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold text-zinc-100">
+            <h1 className="text-2xl font-bold text-fg-muted">
               Choose a Template
             </h1>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-fg-muted">
               Start with a pre-configured template to accelerate your development.
             </p>
           </div>
@@ -534,7 +534,7 @@ const TemplateSelectionPage: React.FC = () => {
           {/* Search & Filters */}
           <div className="mb-6 flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
               <Input
                 placeholder="Search templates..."
                 value={searchQuery}
@@ -587,11 +587,11 @@ const TemplateSelectionPage: React.FC = () => {
           {/* Empty State */}
           {filteredTemplates.length === 0 && (
             <div className="py-12 text-center">
-              <FileCode2 className="mx-auto h-12 w-12 text-zinc-700" />
-              <h3 className="mt-4 text-lg font-medium text-zinc-300">
+              <FileCode2 className="mx-auto h-12 w-12 text-fg" />
+              <h3 className="mt-4 text-lg font-medium text-fg-muted">
                 No templates found
               </h3>
-              <p className="mt-1 text-sm text-zinc-500">
+              <p className="mt-1 text-sm text-fg-muted">
                 Try adjusting your search or filter criteria.
               </p>
               <Button
@@ -609,7 +609,7 @@ const TemplateSelectionPage: React.FC = () => {
         </div>
 
         {/* Detail Panel */}
-        <div className="hidden w-96 border-l border-zinc-800 bg-zinc-900/30 p-6 lg:block">
+        <div className="hidden w-96 border-l border-border bg-surface/30 p-6 lg:block">
           <AnimatePresence mode="wait">
             {selectedTemplate ? (
               <TemplateDetail
@@ -624,13 +624,13 @@ const TemplateSelectionPage: React.FC = () => {
                 exit={{ opacity: 0 }}
                 className="flex h-full flex-col items-center justify-center text-center"
               >
-                <div className="rounded-full bg-zinc-800 p-4">
-                  <Layers className="h-8 w-8 text-zinc-600" />
+                <div className="rounded-full bg-surface p-4">
+                  <Layers className="h-8 w-8 text-fg-muted" />
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-zinc-400">
+                <h3 className="mt-4 text-lg font-medium text-fg-muted">
                   Select a template
                 </h3>
-                <p className="mt-1 text-sm text-zinc-500">
+                <p className="mt-1 text-sm text-fg-muted">
                   Click on a template to see details and get started.
                 </p>
               </motion.div>

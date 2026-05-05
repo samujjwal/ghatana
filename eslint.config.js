@@ -29,6 +29,11 @@ module.exports = [
       "gradlew.bat",
       "platform/typescript/**",
       "products/yappc/config/agents/event-schemas/**",
+      // TypeScript files under products/yappc/frontend are handled by their own
+      // eslint.config.mjs which registers @typescript-eslint/parser. Excluding
+      // them here prevents the root CJS config (no TS parser) from issuing
+      // spurious "Unexpected token interface/type/enum" parse errors in VS Code.
+      "products/yappc/frontend/**",
     ],
   },
   {

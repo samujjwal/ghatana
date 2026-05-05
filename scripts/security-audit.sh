@@ -35,12 +35,17 @@ report_success() {
     echo -e "${GREEN}✅ PASS:${NC} $1"
 }
 
-echo "1. Checking for hardcoded secrets..."
-# Check for common secret patterns
-if grep -r "password.*=.*['\"][^'\"]\{8,\}['\"]" --include="*.ts" --include="*.tsx" --include="*.js" products/flashit/backend 2>/dev/null | grep -v "node_modules" | grep -v "\.env\." | head -5; then
-    report_warning "Potential hardcoded password found in Flashit backend"
+echo "1. Checking for hardcoded secrets and placeholder credentials..."
+if ! node scripts/check-secret-default-credentials.mjs; then
+    report_error "Secret/default credential policy violations detected"
 else
-    report_success "No obvious hardcoded passwords found"
+    report_success "Secret/default credential policy check passed"
+fi
+
+if ! node scripts/check-local-dev-port-allocations.mjs; then
+    report_error "Local development port allocation conflicts detected"
+else
+    report_success "Local development port allocation policy check passed"
 fi
 
 # Check for API keys
@@ -109,8 +114,14 @@ fi
 echo ""
 echo "7. Running npm audit..."
 cd products/flashit
-if npm audit --audit-level=moderate 2>/dev/null | grep -q "vulnerabilities"; then
-    VULNS=$(npm audit --json 2>/dev/null | grep -o '"vulnerabilities":[0-9]*' | cut -d: -f2 || echo "0")
+if ! node scripts/validate-local-compose.mjs; then
+    report_error "FlashIt local compose validation failed"
+else
+    report_success "FlashIt local compose validation passed"
+fi
+
+if pnpm audit --audit-level=moderate 2>/dev/null | grep -q "vulnerabilities"; then
+    VULNS=$(pnpm audit --json 2>/dev/null | grep -o '"vulnerabilities":[0-9]*' | cut -d: -f2 || echo "0")
     if [ "$VULNS" -gt 0 ]; then
         report_warning "$VULNS vulnerabilities found (run npm audit fix)"
     else

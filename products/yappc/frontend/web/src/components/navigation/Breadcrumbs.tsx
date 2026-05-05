@@ -74,7 +74,7 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
           aria-label="Home"
           type="button"
           onClick={handleHomeClick}
-          className="hover:text-gray-900"
+          className="hover:text-fg"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +119,7 @@ export function Breadcrumbs({ showHome = false, maxItems, className }: Breadcrum
             key={itemKey}
             type="button"
             onClick={() => handleItemClick(item.href)}
-            className="hover:text-gray-900"
+            className="hover:text-fg"
           >
             {item.label}
           </button>

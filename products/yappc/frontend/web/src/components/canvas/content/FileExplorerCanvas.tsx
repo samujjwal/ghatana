@@ -145,7 +145,7 @@ const FileTreeItem = ({
                 {node.type === 'folder' ? (
                     expanded ? <FolderOpen size={16} className="mr-2 text-[#FFA726]" /> : <Folder size={16} className="mr-2 text-[#FFA726]" />
                 ) : (
-                    <Box className="flex items-center mr-2 ml-6 text-gray-500 dark:text-gray-400">
+                    <Box className="flex items-center mr-2 ml-6 text-fg-muted dark:text-fg-muted">
                         {getFileIcon(node.extension)}
                     </Box>
                 )}
@@ -206,7 +206,7 @@ export const FileExplorerCanvas = () => {
             }}
         >
             <Box
-                className="h-full w-full flex flex-col bg-white dark:bg-gray-900"
+                className="h-full w-full flex flex-col bg-white dark:bg-surface"
             >
                 {/* Search bar */}
                 <Box className="p-4 border-b border-solid border-b-[rgba(0,_0,_0,_0.12)]">
@@ -217,7 +217,7 @@ export const FileExplorerCanvas = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         InputProps={{
-                            startAdornment: <Search className="text-gray-500 dark:text-gray-400 mr-2" />,
+                            startAdornment: <Search className="text-fg-muted dark:text-fg-muted mr-2" />,
                         }}
                     />
                 </Box>

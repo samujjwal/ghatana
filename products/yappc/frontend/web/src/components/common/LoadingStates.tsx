@@ -32,15 +32,15 @@ export function LoadingSpinner({ message, size = 'md', fullScreen = false, class
   };
 
   const containerClass = fullScreen 
-    ? 'fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50'
+    ? 'fixed inset-0 flex items-center justify-center bg-white/80 dark:bg-surface/80 backdrop-blur-sm z-50'
     : 'flex items-center justify-center';
 
   return (
     <div className={`${containerClass} ${className}`}>
       <div className="flex flex-col items-center gap-3">
-        <Loader2 className={`${sizeClasses[size]} animate-spin text-blue-600`} />
+        <Loader2 className={`${sizeClasses[size]} animate-spin text-info-color`} />
         {message && (
-          <Typography className="text-sm text-gray-600 dark:text-gray-400">
+          <Typography className="text-sm text-fg-muted dark:text-fg-muted">
             {message}
           </Typography>
         )}
@@ -63,7 +63,7 @@ export function SkeletonLoader({ count = 3, className = '' }: SkeletonLoaderProp
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"
+          className="h-4 bg-surface-muted dark:bg-surface-muted rounded animate-pulse"
           style={{ animationDelay: `${i * 0.1}s` }}
         />
       ))}
@@ -80,10 +80,10 @@ interface CardSkeletonProps {
  */
 export function CardSkeleton({ className = '' }: CardSkeletonProps) {
   return (
-    <div className={`p-4 border border-gray-200 dark:border-gray-700 rounded-lg ${className}`}>
-      <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-3 w-3/4" />
-      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2 w-1/2" />
-      <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse w-1/3" />
+    <div className={`p-4 border border-border dark:border-border rounded-lg ${className}`}>
+      <div className="h-5 bg-surface-muted dark:bg-surface-muted rounded animate-pulse mb-3 w-3/4" />
+      <div className="h-3 bg-surface-muted dark:bg-surface-muted rounded animate-pulse mb-2 w-1/2" />
+      <div className="h-3 bg-surface-muted dark:bg-surface-muted rounded animate-pulse w-1/3" />
     </div>
   );
 }
@@ -104,7 +104,7 @@ export function TableSkeleton({ rows = 5, columns = 4, className = '' }: TableSk
         {Array.from({ length: columns }).map((_, i) => (
           <div
             key={`header-${i}`}
-            className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-1"
+            className="h-4 bg-surface-muted dark:bg-surface-muted rounded animate-pulse flex-1"
           />
         ))}
       </div>
@@ -113,7 +113,7 @@ export function TableSkeleton({ rows = 5, columns = 4, className = '' }: TableSk
           {Array.from({ length: columns }).map((_, colIndex) => (
             <div
               key={`cell-${rowIndex}-${colIndex}`}
-              className="h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse flex-1"
+              className="h-3 bg-surface-muted dark:bg-surface-muted rounded animate-pulse flex-1"
               style={{ animationDelay: `${(rowIndex * columns + colIndex) * 0.05}s` }}
             />
           ))}
@@ -137,17 +137,17 @@ export function ProgressLoading({ progress = 0, message, className = '' }: Progr
     <div className={`w-full ${className}`}>
       <div className="flex items-center justify-between mb-2">
         {message && (
-          <Typography className="text-sm text-gray-600 dark:text-gray-400">
+          <Typography className="text-sm text-fg-muted dark:text-fg-muted">
             {message}
           </Typography>
         )}
-        <Typography className="text-sm font-medium text-gray-600 dark:text-gray-400">
+        <Typography className="text-sm font-medium text-fg-muted dark:text-fg-muted">
           {Math.round(progress)}%
         </Typography>
       </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+      <div className="w-full bg-surface-muted dark:bg-surface-muted rounded-full h-2">
         <div
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+          className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
         />
       </div>
@@ -166,8 +166,8 @@ interface InlineLoadingProps {
 export function InlineLoading({ message = 'Loading...', className = '' }: InlineLoadingProps) {
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-      <span className="text-sm text-gray-600 dark:text-gray-400">{message}</span>
+      <Loader2 className="w-4 h-4 animate-spin text-info-color" />
+      <span className="text-sm text-fg-muted dark:text-fg-muted">{message}</span>
     </span>
   );
 }
@@ -183,11 +183,11 @@ interface FullPageLoadingProps {
  */
 export function FullPageLoading({ message = 'Loading...', logo, className = '' }: FullPageLoadingProps) {
   return (
-    <div className={`fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-gray-900 ${className}`}>
+    <div className={`fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-surface ${className}`}>
       <div className="flex flex-col items-center gap-6">
         {logo && <div className="mb-4">{logo}</div>}
-        <Loader2 className="w-16 h-16 animate-spin text-blue-600" />
-        <Typography className="text-lg text-gray-600 dark:text-gray-400">
+        <Loader2 className="w-16 h-16 animate-spin text-info-color" />
+        <Typography className="text-lg text-fg-muted dark:text-fg-muted">
           {message}
         </Typography>
       </div>

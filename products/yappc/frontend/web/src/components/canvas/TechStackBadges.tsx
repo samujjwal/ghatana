@@ -169,7 +169,7 @@ function TechBadge({
             {tech.version && (
                 <Typography
                     component="span"
-                    as="span" className="text-xs text-gray-500"
+                    as="span" className="text-xs text-fg-muted"
                     className="ml-1 opacity-[0.7]"
                 >
                     v{tech.version}
@@ -182,10 +182,10 @@ function TechBadge({
         <Tooltip
             title={
                 <Box>
-                    <Typography as="span" className="text-xs text-gray-500" display="block">
+                    <Typography as="span" className="text-xs text-fg-muted" display="block">
                         {categoryInfo.label} • {Math.round(tech.confidence * 100)}% confidence
                     </Typography>
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         Source: {tech.source}
                     </Typography>
                 </Box>
@@ -226,7 +226,7 @@ function InlineBadges({
             {technologies.length > 4 && (
                 <Tooltip title={`${technologies.length - 4} more technologies`} enterDelay={TIMING.tooltipDelay}>
                     <Typography
-                        as="span" className="text-xs text-gray-500 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-blue-600"
+                        as="span" className="text-xs text-fg-muted cursor-pointer text-fg-muted dark:text-fg-muted hover:text-info-color"
                         onClick={onExpand}
                     >
                         +{technologies.length - 4}
@@ -256,8 +256,8 @@ function CategorizedBadges({
             {nonEmptyCategories.map(catInfo => (
                 <Box key={catInfo.category}>
                     <Typography
-                        as="span" className="text-xs text-gray-500"
-                        className="flex items-center gap-1 mb-1 font-semibold text-gray-500 dark:text-gray-400"
+                        as="span" className="text-xs text-fg-muted"
+                        className="flex items-center gap-1 mb-1 font-semibold text-fg-muted dark:text-fg-muted"
                     >
                         <span>{catInfo.icon}</span>
                         {catInfo.label}
@@ -351,7 +351,7 @@ function AddTechMenu({
 
             {technologies.length > 15 && (
                 <MenuItem disabled>
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         +{technologies.length - 15} more...
                     </Typography>
                 </MenuItem>
@@ -393,7 +393,7 @@ export function TechStackPill({
                             <span key={t.id}>{t.icon}</span>
                         ))}
                         {technologies.length > 3 && (
-                            <Typography as="span" className="text-xs text-gray-500 ml-1">
+                            <Typography as="span" className="text-xs text-fg-muted ml-1">
                                 +{technologies.length - 3}
                             </Typography>
                         )}

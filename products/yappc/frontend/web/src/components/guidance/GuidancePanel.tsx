@@ -111,8 +111,8 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
             className={`
                 flex items-start gap-3 p-3 rounded-lg transition-all duration-200
                 ${isCompleted
-                    ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
-                    : 'bg-white dark:bg-grey-800 border border-grey-200 dark:border-grey-700 hover:border-blue-300 dark:hover:border-blue-700'}
+                    ? 'bg-success-bg dark:bg-success-bg/20 border border-success-border dark:border-success-border'
+                    : 'bg-white dark:bg-grey-800 border border-grey-200 dark:border-grey-700 hover:border-info-border dark:hover:border-info-border'}
             `}
         >
             {/* Completion Toggle */}
@@ -122,8 +122,8 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
                 className={`
                     flex-shrink-0 w-5 h-5 mt-0.5 rounded-full transition-colors
                     ${isCompleted
-                        ? 'text-green-500 dark:text-green-400'
-                        : 'text-grey-400 dark:text-grey-500 hover:text-blue-500 dark:hover:text-blue-400'}
+                        ? 'text-success-color dark:text-success-color'
+                        : 'text-grey-400 dark:text-grey-500 hover:text-info-color dark:hover:text-info-color'}
                 `}
                 aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
             >
@@ -151,15 +151,15 @@ const GuidanceStepItem: React.FC<GuidanceStepItemProps> = ({
  */
 const TipItem: React.FC<TipItemProps> = ({ tip, onDismiss }) => {
     return (
-        <div className="relative flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-            <TipIcon className="flex-shrink-0 w-4 h-4 text-amber-500 mt-0.5" />
-            <p className="flex-1 text-xs text-amber-800 dark:text-amber-200 pr-6">
+        <div className="relative flex items-start gap-2 p-3 bg-warning-bg dark:bg-warning-bg/20 rounded-lg border border-warning-border dark:border-warning-border">
+            <TipIcon className="flex-shrink-0 w-4 h-4 text-warning-color mt-0.5" />
+            <p className="flex-1 text-xs text-warning-color dark:text-warning-color pr-6">
                 {tip}
             </p>
             <button
                 type="button"
                 onClick={onDismiss}
-                className="absolute top-2 right-2 p-0.5 text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 rounded"
+                className="absolute top-2 right-2 p-0.5 text-warning-color hover:text-warning-color dark:hover:text-warning-color rounded"
                 aria-label="Dismiss tip"
             >
                 <CloseIcon className="w-3.5 h-3.5" />
@@ -302,7 +302,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
                 <div className="mt-4 flex flex-col items-center gap-1">
                     <div className="w-2 h-16 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
                         <div
-                            className="w-full bg-blue-500 rounded-full transition-all duration-500"
+                            className="w-full bg-info-bg rounded-full transition-all duration-500"
                             style={{ height: `${(completedCount / totalSteps) * 100}%` }}
                         />
                     </div>
@@ -310,9 +310,9 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
                 </div>
 
                 {/* AI Assistant Quick Access */}
-                <Tooltip title="AI Assistant" placement={position === 'left' ? 'right' : 'left'}>
+                <Tooltip title="Assistant" placement={position === 'left' ? 'right' : 'left'}>
                     <IconButton className="mt-4" size="sm">
-                        <AiIcon className="text-blue-500" />
+                        <AiIcon className="text-info-color" />
                     </IconButton>
                 </Tooltip>
             </div>
@@ -333,7 +333,7 @@ export const GuidancePanel: React.FC<GuidancePanelProps> = ({
             {/* Header */}
             <header className="flex items-center justify-between p-4 border-b border-grey-200 dark:border-grey-800">
                 <div className="flex items-center gap-2">
-                    <HelpIcon className="w-5 h-5 text-blue-500" />
+                    <HelpIcon className="w-5 h-5 text-info-color" />
                     <h2 className="text-sm font-semibold text-grey-900 dark:text-grey-100">
                         Guidance
                     </h2>

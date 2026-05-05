@@ -14,6 +14,8 @@ Products integrate with the kernel through three mechanisms:
 Products must **never import kernel implementation classes** directly. Only kernel-owned
 public interfaces and ports are part of the stable API surface.
 
+The canonical ownership map lives in [KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md](./KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md).
+
 ## 2. Domain Pack Model
 
 ### 2.1 BoundaryPolicyStore
@@ -176,6 +178,55 @@ public class ProductXKernelAdapterImpl
 
 ## 5. Context Propagation
 
+Every product entrypoint must preserve the same platform context contract from API edge
+to repository, workflow, and bridge boundaries.
+
+### 5.1 Shared Data-Access Contract
+
+Every product-owned mutation or sensitive query must carry:
+
+| Field | Required for | Notes |
+|---|---|---|
+| `tenantId` | all reads and writes | Multi-tenant isolation must fail closed |
+| `principalId` | all reads and writes | Used for authorization and audit attribution |
+| `correlationId` | all reads and writes | Required for distributed tracing and diagnostics |
+| `idempotencyKey` | writes | Required for at-most-once mutation semantics |
+| `auditClassification` | sensitive reads and writes | Product chooses classification values; platform enforces presence |
+| `dataOwnerScope` | all reads and writes | User/patient/account/workspace scope must be explicit |
+
+The repository-level CI gate `check:data-access-contract` verifies that each audited
+product exposes these fields through its canonical entrypoint or operation-context
+implementation.
+
+### 5.2 Observability Conformance
+
+Every product API or bridge flow must:
+
+- emit a trace or correlation identifier,
+- use tenant-safe structured logging,
+- register metrics/tracing bootstrap at the product entrypoint, and
+- emit audit events for sensitive operations.
+
+The repository-level CI gate `check:observability-conformance` validates these
+requirements against the canonical API/bootstrap entrypoints for PHR, Finance,
+Digital Marketing, and FlashIt.
+
+### 5.3 In-Memory Policy Store Guardrail
+
+`InMemoryBoundaryPolicyStore` is limited to kernel tests, examples, and local-only
+bootstrap scenarios. Product main sources and launchers must not wire it into
+runtime composition. CI enforces this via `check:inmemory-policy-store-usage`.
+
+### 5.4 Route Entitlement Contract
+
+Every product UI surface must expose a canonical route manifest that is owned by
+the product but shaped by the Kernel shell contract. The manifest must declare
+`path`, `label`, `minimumRole`, `personas`, `tiers`, and route/action metadata
+that can be returned from backend entitlement APIs. Frontend navigation and
+direct URL access must be derived from that manifest rather than hardcoded link
+arrays in product-local shells. CI enforces this via
+`check:route-entitlement-contracts`.
+
 ---
 
 ## 6. Reference Consumers
@@ -217,7 +268,7 @@ BridgeContext ctx = BridgeContext.builder()
     .build();
 ```
 
-## 6. Testing Products
+## 7. Testing Products
 
 ### Pack contract tests (required)
 
@@ -237,14 +288,16 @@ Bridge integration tests must cover:
 - Transient failure with retry (bounded retries, degraded health, then unhealthy)
 - Timeout path (if the adapter supports configurable timeouts)
 
-## 7. Definition of Done for Product Packs
+## 8. Definition of Done for Product Packs
 
 - [ ] `BoundaryPolicyStore` implemented with default-deny as last rule
+- [ ] Ownership declared in the Kernel/Product Responsibility Matrix
 - [ ] `ComplianceRulePack` classes with prefixed rule IDs
 - [ ] Validation Gradle tasks added and wired to `check`
 - [ ] `*PackContractTest` written and passing
 - [ ] No kernel implementation classes extended directly
 - [ ] Pack classes use only kernel public interfaces (`BoundaryPolicyStore`, `BoundaryPolicyRule`, etc.)
+- [ ] Manifest declares `kernelCapabilitiesConsumed`, `pluginsConsumed`, `bridgesConsumed`, `domainPacksProvided`, `uiSurfaces`, `runtimeServices`, and `dataSensitivity`
 
 ---
 

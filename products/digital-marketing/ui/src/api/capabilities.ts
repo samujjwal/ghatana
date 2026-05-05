@@ -1,0 +1,96 @@
+/**
+ * P1-016: Backend Capability API client.
+ *
+ * Fetches runtime capabilities from the backend to determine
+ * feature and route availability without requiring rebuilds.
+ *
+ * P1-037: Extended to include content generation capabilities.
+ *
+ * @doc.type api
+ * @doc.purpose Backend capability API client for runtime feature gating
+ * @doc.layer frontend
+ */
+
+import { apiRequest } from '@/lib/http-client';
+
+/**
+ * P1-037: Standard capability keys for DMOS features.
+ */
+export const CapabilityKeys = {
+  // Core features
+  CAMPAIGNS: 'dmos.campaigns',
+  STRATEGY: 'dmos.strategy',
+  BUDGET: 'dmos.budget',
+  APPROVALS: 'dmos.approvals',
+  AI_ACTIONS: 'dmos.ai_actions',
+
+  // P1-037: Content generation backend-only capabilities
+  AD_COPY_GENERATION: 'dmos.ad_copy_generation',
+  LANDING_PAGE_GENERATION: 'dmos.landing_page_generation',
+  EMAIL_DRAFT_GENERATION: 'dmos.email_draft_generation',
+  SOW_GENERATION: 'dmos.sow_generation',
+} as const;
+
+export type CapabilityKey = typeof CapabilityKeys[keyof typeof CapabilityKeys];
+
+export interface Capability {
+  key: string;
+  enabled: boolean;
+  description?: string;
+  requiresRole?: string;
+  tier?: string;
+}
+
+export interface WorkspaceCapabilities {
+  workspaceId: string;
+  capabilities: Capability[];
+  lastUpdated: string;
+}
+
+/**
+ * Fetches all capabilities for a workspace from the backend.
+ */
+export async function getWorkspaceCapabilities(
+  workspaceId: string,
+): Promise<WorkspaceCapabilities> {
+  return apiRequest<WorkspaceCapabilities>(
+    `/v1/workspaces/${encodeURIComponent(workspaceId)}/capabilities`,
+  );
+}
+
+/**
+ * Checks if a specific capability is enabled for the workspace.
+ */
+export async function isCapabilityEnabled(
+  workspaceId: string,
+  capabilityKey: string,
+): Promise<boolean> {
+  try {
+    const capabilities = await getWorkspaceCapabilities(workspaceId);
+    const capability = capabilities.capabilities.find((c) => c.key === capabilityKey);
+    return capability?.enabled ?? false;
+  } catch (error) {
+    // Fail closed: if we can't determine capability status, assume disabled
+    console.error(`Failed to check capability ${capabilityKey}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Checks if a route action is permitted based on backend capabilities.
+ */
+export async function isRouteActionPermitted(
+  workspaceId: string,
+  action: string,
+): Promise<boolean> {
+  try {
+    const capabilities = await getWorkspaceCapabilities(workspaceId);
+    // Check if any capability grants this action
+    return capabilities.capabilities.some(
+      (c) => c.enabled && c.key.includes(action.toLowerCase()),
+    );
+  } catch (error) {
+    console.error(`Failed to check action permission ${action}:`, error);
+    return false;
+  }
+}

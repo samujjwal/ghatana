@@ -197,7 +197,7 @@ export function VerifyStep() {
                                     </ListItemIcon>
                                     <ListItemText
                                         primary={
-                                            <Typography className={item.checked ? 'text-gray-500 line-through' : ''}>
+                                            <Typography className={item.checked ? 'text-fg-muted line-through' : ''}>
                                                 {item.label}
                                             </Typography>
                                         }

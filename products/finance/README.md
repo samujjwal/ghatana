@@ -2,6 +2,8 @@
 
 Finance is the product boundary for financial operations in Ghatana. It owns order and ledger workflows, risk and compliance capabilities, onboarding flows, and regulator-facing surfaces while reusing shared platform modules for runtime, persistence, observability, and security.
 
+Finance is currently a backend-only product surface in this monorepo. There is no Finance UI/client package registered in the workspace until a shell-aligned product surface is introduced under the Kernel route and design-system contracts.
+
 ## Scope
 
 - Order management, execution, and lifecycle workflows

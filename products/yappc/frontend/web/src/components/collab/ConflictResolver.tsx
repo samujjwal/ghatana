@@ -93,20 +93,20 @@ function OperationCard({ title, source, conflict, onChoose, disabled }: Operatio
   return (
     <section
       aria-label={title}
-      className="rounded-2xl border border-zinc-700 bg-zinc-950/60 p-4 shadow-sm"
+      className="rounded-2xl border border-border bg-surface/60 p-4 shadow-sm"
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-info-color">
             {title}
           </p>
-          <h3 className="mt-1 text-base font-semibold text-zinc-50">
+          <h3 className="mt-1 text-base font-semibold text-fg-muted">
             {operation.type} on {operation.targetId}
           </h3>
         </div>
         <button
           type="button"
-          className="rounded-full border border-teal-400/50 px-3 py-1 text-sm font-medium text-teal-200 transition hover:border-teal-300 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-info-border/50 px-3 py-1 text-sm font-medium text-info-color transition hover:border-info-border hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => onChoose(source)}
           disabled={disabled}
         >
@@ -114,24 +114,24 @@ function OperationCard({ title, source, conflict, onChoose, disabled }: Operatio
         </button>
       </div>
 
-      <dl className="grid gap-2 text-sm text-zinc-300 sm:grid-cols-2">
+      <dl className="grid gap-2 text-sm text-fg-muted sm:grid-cols-2">
         <div>
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Replica</dt>
+          <dt className="text-xs uppercase tracking-wide text-fg-muted">Replica</dt>
           <dd>{operation.replicaId}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Timestamp</dt>
+          <dt className="text-xs uppercase tracking-wide text-fg-muted">Timestamp</dt>
           <dd>{formatTimestamp(operation.timestamp)}</dd>
         </div>
         <div className="sm:col-span-2">
-          <dt className="text-xs uppercase tracking-wide text-zinc-500">Vector clock</dt>
+          <dt className="text-xs uppercase tracking-wide text-fg-muted">Vector clock</dt>
           <dd>{formatVectorClock(conflict, source)}</dd>
         </div>
       </dl>
 
       <div className="mt-4">
-        <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">Payload</p>
-        <pre className="overflow-x-auto rounded-xl bg-zinc-900/80 p-3 text-xs leading-6 text-zinc-200">
+        <p className="mb-2 text-xs uppercase tracking-wide text-fg-muted">Payload</p>
+        <pre className="overflow-x-auto rounded-xl bg-surface/80 p-3 text-xs leading-6 text-fg-muted">
           {formatJson(operation.data)}
         </pre>
       </div>
@@ -188,45 +188,45 @@ export function ConflictResolver({
     <section
       aria-label="Manual conflict resolution"
       className={[
-        'rounded-[28px] border border-zinc-800 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.12),_transparent_35%),linear-gradient(180deg,_rgba(9,9,11,0.98),_rgba(24,24,27,0.98))] p-6 text-zinc-100 shadow-2xl shadow-zinc-950/40',
+        'rounded-[28px] border border-border bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.12),_transparent_35%),linear-gradient(180deg,_rgba(9,9,11,0.98),_rgba(24,24,27,0.98))] p-6 text-fg-muted shadow-2xl shadow-zinc-950/40',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
       data-testid="conflict-resolver"
     >
-      <div className="flex flex-col gap-3 border-b border-zinc-800 pb-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-3 border-b border-border pb-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-300">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-warning-color">
             User intervention required
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Resolve {conflict.type}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-300">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-fg-muted">
             Two concurrent operations touched {conflict.targetId}. Pick the version that should win,
             or compose a merged payload and submit that to the collaboration service.
           </p>
         </div>
-        <div className="rounded-2xl border border-amber-400/25 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+        <div className="rounded-2xl border border-warning-border/25 bg-warning-bg/10 px-4 py-3 text-sm text-warning-color">
           <div className="font-medium">Severity: {conflict.severity}</div>
-          <div className="mt-1 text-amber-50/80">Conflict ID: {conflict.id}</div>
+          <div className="mt-1 text-warning-color/80">Conflict ID: {conflict.id}</div>
         </div>
       </div>
 
       {suggestedResolutions.length > 0 ? (
-        <div className="mt-5 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-zinc-400">
+        <div className="mt-5 rounded-2xl border border-border bg-surface/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-fg-muted">
             Engine suggestions
           </p>
           <ul className="mt-3 grid gap-3 lg:grid-cols-2">
             {suggestedResolutions.map((suggestion) => (
-              <li key={suggestion.id} className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-3">
+              <li key={suggestion.id} className="rounded-xl border border-border bg-surface/70 p-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-white">{suggestion.strategy}</span>
-                  <span className="rounded-full bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+                  <span className="rounded-full bg-surface px-2 py-1 text-xs text-fg-muted">
                     {(suggestion.confidence * 100).toFixed(0)}% confidence
                   </span>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-zinc-300">{suggestion.description}</p>
+                <p className="mt-2 text-sm leading-6 text-fg-muted">{suggestion.description}</p>
               </li>
             ))}
           </ul>
@@ -250,20 +250,20 @@ export function ConflictResolver({
         />
       </div>
 
-      <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+      <div className="mt-6 rounded-2xl border border-border bg-surface/60 p-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-info-color">
               Manual merge
             </p>
             <h3 className="mt-1 text-lg font-semibold text-white">Compose the final payload</h3>
           </div>
-          <p className="text-sm text-zinc-400">Submit valid JSON to send the resolved state upstream.</p>
+          <p className="text-sm text-fg-muted">Submit valid JSON to send the resolved state upstream.</p>
         </div>
 
         <div className="mt-4 grid gap-4">
           <div>
-            <label htmlFor={mergeInputId} className="mb-2 block text-sm font-medium text-zinc-200">
+            <label htmlFor={mergeInputId} className="mb-2 block text-sm font-medium text-fg-muted">
               Merged payload
             </label>
             <textarea
@@ -271,7 +271,7 @@ export function ConflictResolver({
               value={mergeValue}
               onChange={(event) => setMergeValue(event.target.value)}
               spellCheck={false}
-              className="min-h-56 w-full rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 py-3 font-mono text-sm leading-6 text-zinc-100 outline-none transition focus:border-cyan-400"
+              className="min-h-56 w-full rounded-2xl border border-border bg-surface/90 px-4 py-3 font-mono text-sm leading-6 text-fg-muted outline-none transition focus:border-info-border"
               aria-invalid={mergeState.error ? 'true' : 'false'}
             />
             {mergeState.error ? (
@@ -284,14 +284,14 @@ export function ConflictResolver({
           </div>
 
           <div>
-            <label htmlFor={notesInputId} className="mb-2 block text-sm font-medium text-zinc-200">
+            <label htmlFor={notesInputId} className="mb-2 block text-sm font-medium text-fg-muted">
               Resolution notes
             </label>
             <textarea
               id={notesInputId}
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              className="min-h-24 w-full rounded-2xl border border-zinc-800 bg-zinc-900/90 px-4 py-3 text-sm leading-6 text-zinc-100 outline-none transition focus:border-cyan-400"
+              className="min-h-24 w-full rounded-2xl border border-border bg-surface/90 px-4 py-3 text-sm leading-6 text-fg-muted outline-none transition focus:border-info-border"
               placeholder="Explain why this resolution should be applied."
             />
           </div>
@@ -302,7 +302,7 @@ export function ConflictResolver({
         {onCancel ? (
           <button
             type="button"
-            className="rounded-full border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition hover:border-zinc-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-fg-muted transition hover:border-border hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
             onClick={onCancel}
             disabled={isResolving}
           >
@@ -311,7 +311,7 @@ export function ConflictResolver({
         ) : null}
         <button
           type="button"
-          className="rounded-full bg-cyan-400 px-5 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-300"
+          className="rounded-full bg-info-bg px-5 py-2 text-sm font-semibold text-fg transition hover:bg-info-bg disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-fg-muted"
           onClick={handleManualMerge}
           disabled={isResolving || mergeState.parsed === undefined}
         >

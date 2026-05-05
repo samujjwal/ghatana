@@ -71,10 +71,10 @@ const ALL_PHASES: LifecyclePhase[] = [
 function ProgressBar({ value, className }: { value: number; className?: string }) {
   return (
     <div
-      className={cn('h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden', className)}
+      className={cn('h-2 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden', className)}
     >
       <div
-        className="h-full bg-blue-500 transition-all duration-300 ease-out"
+        className="h-full bg-info-bg transition-all duration-300 ease-out"
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
@@ -114,8 +114,8 @@ export function AIStatusBar({
       data-testid="ai-status-bar"
       aria-label="AI Status and next actions"
       className={cn(
-        'fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-gray-900',
-        'border-t border-gray-200 dark:border-gray-800',
+        'fixed bottom-0 left-0 right-0 h-12 bg-white dark:bg-surface',
+        'border-t border-border dark:border-border',
         'flex items-center px-4 gap-4 z-50',
         'shadow-lg',
         className
@@ -143,7 +143,7 @@ export function AIStatusBar({
 
       {/* Phase Progress */}
       <div className="relative flex items-center gap-2 min-w-[200px]">
-        <span className="text-sm text-gray-600 dark:text-gray-400">Current Phase: {currentPhase}</span>
+        <span className="text-sm text-fg-muted dark:text-fg-muted">Current Phase: {currentPhase}</span>
         <button
           className="sr-only"
           onClick={() => setShowPhaseSelector((v) => !v)}
@@ -153,21 +153,21 @@ export function AIStatusBar({
           {currentPhase}
         </button>
         <ProgressBar value={phaseProgress} className="w-24" />
-        <span className="text-sm text-gray-600 dark:text-gray-400">
+        <span className="text-sm text-fg-muted dark:text-fg-muted">
           {Math.round(phaseProgress)}%
         </span>
         {showPhaseSelector && (
           <ul
             data-testid="phase-selector"
             role="listbox"
-            className="absolute bottom-full left-0 mb-1 bg-white border border-gray-200 rounded shadow-lg z-10"
+            className="absolute bottom-full left-0 mb-1 bg-white border border-border rounded shadow-lg z-10"
           >
             {ALL_PHASES.map((phase) => (
               <li
                 key={phase}
                 role="option"
                 aria-selected={phase === currentPhase}
-                className="px-4 py-1.5 text-sm cursor-pointer hover:bg-gray-100"
+                className="px-4 py-1.5 text-sm cursor-pointer hover:bg-surface-muted"
                 onClick={() => handlePhaseSelect(phase)}
               >
                 {phase}
@@ -181,7 +181,7 @@ export function AIStatusBar({
       {nextBestAction ? (
         <div className="ml-auto flex items-center gap-3">
           <span
-            className="text-sm font-medium text-gray-900 dark:text-gray-100 cursor-pointer"
+            className="text-sm font-medium text-fg dark:text-fg-muted cursor-pointer"
             tabIndex={0}
             role="button"
             onClick={nextBestAction.action}
@@ -193,7 +193,7 @@ export function AIStatusBar({
           </span>
         </div>
       ) : (
-        <span className="ml-auto text-sm text-gray-500 dark:text-gray-500">
+        <span className="ml-auto text-sm text-fg-muted dark:text-fg-muted">
           No suggestions available
         </span>
       )}

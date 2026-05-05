@@ -60,22 +60,22 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
   const getRiskColor = (risk: 'low' | 'medium' | 'high'): string => {
     switch (risk) {
       case 'low':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-success-color dark:text-success-color';
       case 'medium':
-        return 'text-orange-600 dark:text-orange-400';
+        return 'text-warning-color dark:text-warning-color';
       case 'high':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-destructive dark:text-destructive';
     }
   };
 
   const getRiskBgColor = (risk: 'low' | 'medium' | 'high'): string => {
     switch (risk) {
       case 'low':
-        return 'bg-green-100 dark:bg-green-900/20';
+        return 'bg-success-bg dark:bg-success-bg/20';
       case 'medium':
-        return 'bg-orange-100 dark:bg-orange-900/20';
+        return 'bg-warning-bg dark:bg-warning-bg/20';
       case 'high':
-        return 'bg-red-100 dark:bg-red-900/20';
+        return 'bg-destructive-bg dark:bg-destructive-bg/20';
     }
   };
 
@@ -84,7 +84,7 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <TeamIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          <TeamIcon className="w-6 h-6 text-info-color dark:text-info-color" />
           <Typography className="font-semibold text-lg">Resource Planner</Typography>
         </div>
         <Button size="sm" onClick={handleAutoAllocate} disabled={isLoading}>
@@ -98,7 +98,7 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <ChartIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <ChartIcon className="w-5 h-5 text-info-color dark:text-info-color" />
                 <Typography className="font-semibold">Capacity Overview</Typography>
               </div>
               <Button size="sm" variant="text" onClick={() => setShowCapacityPlan(false)}>
@@ -108,19 +108,19 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <Box>
-                <Typography className="text-xs text-gray-500">Total Capacity</Typography>
+                <Typography className="text-xs text-fg-muted">Total Capacity</Typography>
                 <Typography className="font-semibold">{capacityPlan.totalCapacity}h</Typography>
               </Box>
               <Box>
-                <Typography className="text-xs text-gray-500">Allocated</Typography>
+                <Typography className="text-xs text-fg-muted">Allocated</Typography>
                 <Typography className="font-semibold">{capacityPlan.allocated}h</Typography>
               </Box>
               <Box>
-                <Typography className="text-xs text-gray-500">Available</Typography>
+                <Typography className="text-xs text-fg-muted">Available</Typography>
                 <Typography className="font-semibold">{capacityPlan.available}h</Typography>
               </Box>
               <Box>
-                <Typography className="text-xs text-gray-500">Utilization</Typography>
+                <Typography className="text-xs text-fg-muted">Utilization</Typography>
                 <Typography className="font-semibold">{(capacityPlan.utilizationRate * 100).toFixed(0)}%</Typography>
               </Box>
             </div>
@@ -148,7 +148,7 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
               <div className="mt-4 space-y-2">
                 <Typography className="text-sm font-medium">Recommendations</Typography>
                 {capacityPlan.recommendations.map((rec, idx) => (
-                  <Typography key={idx} className="text-xs text-gray-600 dark:text-gray-400">
+                  <Typography key={idx} className="text-xs text-fg-muted dark:text-fg-muted">
                     • {rec}
                   </Typography>
                 ))}
@@ -168,7 +168,7 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
-            <UserIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <UserIcon className="w-5 h-5 text-info-color dark:text-info-color" />
             <Typography className="font-semibold">Team Utilization</Typography>
             <Chip size="sm" label={`Avg: ${(averageUtilization * 100).toFixed(0)}%`} />
           </div>
@@ -178,7 +178,7 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
               <div key={member.id} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Typography className="text-sm font-medium">{member.name}</Typography>
-                  <Typography className="text-xs text-gray-500">{member.currentWorkload}%</Typography>
+                  <Typography className="text-xs text-fg-muted">{member.currentWorkload}%</Typography>
                 </div>
                 <Progress value={member.currentWorkload} />
               </div>
@@ -186,16 +186,16 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
           </div>
 
           {overloadedMembers.length > 0 && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-              <Typography className="text-sm font-medium text-red-600 dark:text-red-400">
+            <div className="mt-4 p-3 bg-destructive-bg dark:bg-destructive-bg/20 rounded-lg">
+              <Typography className="text-sm font-medium text-destructive dark:text-destructive">
                 Overloaded: {overloadedMembers.length} member{overloadedMembers.length !== 1 ? 's' : ''}
               </Typography>
             </div>
           )}
 
           {underutilizedMembers.length > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Typography className="text-sm font-medium text-blue-600 dark:text-blue-400">
+            <div className="mt-4 p-3 bg-info-bg dark:bg-info-bg/20 rounded-lg">
+              <Typography className="text-sm font-medium text-info-color dark:text-info-color">
                 Underutilized: {underutilizedMembers.length} member{underutilizedMembers.length !== 1 ? 's' : ''}
               </Typography>
             </div>
@@ -207,12 +207,12 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 mb-4">
-            <TeamIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <TeamIcon className="w-5 h-5 text-info-color dark:text-info-color" />
             <Typography className="font-semibold">Task Allocations</Typography>
           </div>
 
           {allocations.length === 0 ? (
-            <Typography className="text-sm text-gray-500">No allocations yet. Click "Auto-Allocate" to generate suggestions.</Typography>
+            <Typography className="text-sm text-fg-muted">No allocations yet. Click "Auto-Allocate" to generate suggestions.</Typography>
           ) : (
             <div className="space-y-3">
               {allocations.map(allocation => {
@@ -223,14 +223,14 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
                   <div
                     key={allocation.taskId}
                     className={`p-3 border rounded-lg ${
-                      selectedTaskId === allocation.taskId ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'
+                      selectedTaskId === allocation.taskId ? 'border-info-border bg-info-bg dark:bg-info-bg/20' : 'border-border dark:border-border'
                     }`}
                     onClick={() => setSelectedTaskId(allocation.taskId)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
                         <Typography className="font-medium text-sm">{task.title}</Typography>
-                        <Typography className="text-xs text-gray-500">
+                        <Typography className="text-xs text-fg-muted">
                           {task.estimatedHours}h • {task.priority}
                         </Typography>
                       </div>
@@ -238,11 +238,11 @@ export function ResourcePlanner({ tasks, teamMembers, onAssignment, className = 
                     </div>
 
                     <div className="flex items-center gap-2 mb-2">
-                      <UserIcon className="w-4 h-4 text-gray-400" />
+                      <UserIcon className="w-4 h-4 text-fg-muted" />
                       <Typography className="text-sm">{getMemberName(allocation.assignedMemberId)}</Typography>
                     </div>
 
-                    <Typography className="text-xs text-gray-500">{allocation.reasoning}</Typography>
+                    <Typography className="text-xs text-fg-muted">{allocation.reasoning}</Typography>
 
                     {onAssignment && (
                       <CardActions className="p-0 mt-2">

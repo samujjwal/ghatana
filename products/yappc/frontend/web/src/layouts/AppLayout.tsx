@@ -104,13 +104,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-full bg-zinc-900 border-r border-zinc-800',
+        'fixed left-0 top-0 h-full bg-surface border-r border-border',
         'flex flex-col transition-all duration-300 z-40',
         collapsed ? 'w-16' : 'w-64'
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-zinc-800">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-border">
         {!collapsed && (
           <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">
             YAPPC
@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         )}
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
       {/* Active Project */}
       {activeProject && (
-        <div className={cn('px-3 py-4 border-b border-zinc-800', collapsed && 'px-2')}>
+        <div className={cn('px-3 py-4 border-b border-border', collapsed && 'px-2')}>
           <NavLink
             to={ROUTES.project(activeProject.id)}
             className={cn(
@@ -148,7 +148,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 <div className="text-sm font-medium text-white truncate">
                   {activeProject.name}
                 </div>
-                <div className="text-xs text-zinc-400 truncate">{activeProject.status}</div>
+                <div className="text-xs text-fg-muted truncate">{activeProject.status}</div>
               </div>
             )}
           </NavLink>
@@ -164,7 +164,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                'text-zinc-400 hover:text-white hover:bg-zinc-800',
+                'text-fg-muted hover:text-white hover:bg-surface',
                 isActive && 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
                 collapsed && 'justify-center px-2'
               )
@@ -186,7 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           className={({ isActive }) =>
             cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-              'text-zinc-400 hover:text-white hover:bg-zinc-800',
+              'text-fg-muted hover:text-white hover:bg-surface',
               isActive && 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
               collapsed && 'justify-center px-2'
             )
@@ -195,7 +195,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           <div className="relative">
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive-bg rounded-full text-white text-[10px] flex items-center justify-center">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -205,7 +205,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       </nav>
 
       {/* Bottom Navigation */}
-      <div className="border-t border-zinc-800 py-4 px-3 space-y-1">
+      <div className="border-t border-border py-4 px-3 space-y-1">
         {bottomNavItems.map((item) => (
           <NavLink
             key={item.path}
@@ -213,7 +213,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
             className={({ isActive }) =>
               cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                'text-zinc-400 hover:text-white hover:bg-zinc-800',
+                'text-fg-muted hover:text-white hover:bg-surface',
                 isActive && 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
                 collapsed && 'justify-center px-2'
               )
@@ -231,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
           <div
             className={cn(
               'flex items-center gap-3 p-2 rounded-lg',
-              'bg-zinc-800/50 border border-zinc-700/50',
+              'bg-surface/50 border border-border/50',
               collapsed && 'justify-center'
             )}
           >
@@ -243,7 +243,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                 <div className="text-sm font-medium text-white truncate">
                   {currentUser.name}
                 </div>
-                <div className="text-xs text-zinc-400 truncate">{currentUser.email}</div>
+                <div className="text-xs text-fg-muted truncate">{currentUser.email}</div>
               </div>
             )}
           </div>
@@ -274,8 +274,8 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
   return (
     <header
       className={cn(
-        'fixed top-0 right-0 h-16 bg-zinc-900/80 backdrop-blur-lg',
-        'border-b border-zinc-800 flex items-center justify-between px-6 z-30',
+        'fixed top-0 right-0 h-16 bg-surface/80 backdrop-blur-lg',
+        'border-b border-border flex items-center justify-between px-6 z-30',
         'transition-all duration-300',
         sidebarCollapsed ? 'left-16' : 'left-64'
       )}
@@ -286,14 +286,14 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
           onClick={() => setSearchOpen(true)}
           className={cn(
             'flex items-center gap-3 px-4 py-2 rounded-lg',
-            'bg-zinc-800 border border-zinc-700 text-zinc-400',
-            'hover:border-zinc-600 hover:text-zinc-300 transition-colors',
+            'bg-surface border border-border text-fg-muted',
+            'hover:border-border hover:text-fg-muted transition-colors',
             'min-w-[240px]'
           )}
         >
           <Search className="w-4 h-4" />
           <span className="text-sm">Search...</span>
-          <div className="ml-auto flex items-center gap-1 text-xs text-zinc-500">
+          <div className="ml-auto flex items-center gap-1 text-xs text-fg-muted">
             <Command className="w-3 h-3" />
             <span>K</span>
           </div>
@@ -318,7 +318,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? (
@@ -330,7 +330,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
 
         {/* Help */}
         <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
           aria-label="Help"
         >
           <HelpCircle className="w-5 h-5" />
@@ -338,7 +338,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
 
         {/* Feedback */}
         <button
-          className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+          className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
           aria-label="Send feedback"
         >
           <MessageSquare className="w-5 h-5" />
@@ -359,21 +359,21 @@ const Header: React.FC<HeaderProps> = ({ sidebarCollapsed }) => {
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              className="w-full max-w-2xl bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl"
+              className="w-full max-w-2xl bg-surface border border-border rounded-xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800">
-                <Search className="w-5 h-5 text-zinc-400" />
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+                <Search className="w-5 h-5 text-fg-muted" />
                 <input
                   type="text"
                   placeholder="Search projects, stories, incidents..."
                   className="flex-1 bg-transparent text-white placeholder-zinc-500 outline-none text-lg"
                   autoFocus
                 />
-                <kbd className="px-2 py-1 bg-zinc-800 rounded text-xs text-zinc-400">ESC</kbd>
+                <kbd className="px-2 py-1 bg-surface rounded text-xs text-fg-muted">ESC</kbd>
               </div>
               <div className="p-4">
-                <p className="text-sm text-zinc-500">Start typing to search...</p>
+                <p className="text-sm text-fg-muted">Start typing to search...</p>
               </div>
             </motion.div>
           </motion.div>
@@ -400,7 +400,7 @@ const AppLayout: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-surface">
       {/* Sidebar */}
       <Sidebar collapsed={collapsed} onToggle={handleToggleSidebar} />
 

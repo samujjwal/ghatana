@@ -50,7 +50,7 @@ export function PerformanceMetrics({
     return (
         <Paper
             elevation={3}
-            className="absolute p-4 rounded-lg top-[16px] right-[16px] z-[1000] min-w-[280px] bg-white dark:bg-gray-900"
+            className="absolute p-4 rounded-lg top-[16px] right-[16px] z-[1000] min-w-[280px] bg-white dark:bg-surface"
         >
             <Stack spacing={1.5}>
                 {/* Header */}
@@ -126,7 +126,7 @@ export function PerformanceMetrics({
 
                     {/* Performance Status */}
                     <Box
-                        className={`mt-2 p-2 rounded ${fps >= 55 ? 'bg-green-100' : fps >= 45 ? 'bg-yellow-100' : 'bg-red-100'}`}
+                        className={`mt-2 p-2 rounded ${fps >= 55 ? 'bg-success-bg' : fps >= 45 ? 'bg-warning-bg' : 'bg-destructive-bg'}`}
                     >
                         <Typography
                             variant="caption"

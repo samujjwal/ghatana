@@ -166,8 +166,8 @@ export function LayersPanel({
     <Box className="flex flex-col h-full">
       {/* Search & Stats */}
       <Box className="p-4 pb-2">
-        <Box className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-          <Search size={16} className="text-gray-500" />
+        <Box className="flex items-center gap-2 rounded-md border border-border bg-white px-3 py-2 dark:border-border dark:bg-surface">
+          <Search size={16} className="text-fg-muted" />
           <input
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
@@ -204,7 +204,7 @@ export function LayersPanel({
             {/* Group Header */}
             <Box
               onClick={() => handleToggleExpand(type)}
-              className="flex items-center gap-2 p-2 cursor-pointer rounded hover:bg-gray-100 hover:dark:bg-gray-800"
+              className="flex items-center gap-2 p-2 cursor-pointer rounded hover:bg-surface-muted hover:dark:bg-surface"
             >
               <Box className="text-[0.8rem]">
                 {expandedGroups.has(type) ? '▼' : '▶'}
@@ -228,7 +228,7 @@ export function LayersPanel({
                       key={layer.id}
                       onMouseEnter={() => setHoveredNode(layer.id)}
                       onMouseLeave={() => setHoveredNode(null)}
-                      className={`rounded mb-1 border border-solid ${isSelected ? 'bg-gray-100 dark:bg-gray-800 border-blue-600' : 'bg-transparent border-transparent'}`}
+                      className={`rounded mb-1 border border-solid ${isSelected ? 'bg-surface-muted dark:bg-surface border-info-border' : 'bg-transparent border-transparent'}`}
                     >
                       <ListItemIcon className="min-w-[32px]">
                         <Box className="text-base">
@@ -286,7 +286,7 @@ export function LayersPanel({
       </Box>
 
       {/* Quick Actions */}
-      <Box className="p-4 pt-2 border-gray-200 dark:border-gray-700 border-t" >
+      <Box className="p-4 pt-2 border-border dark:border-border border-t" >
         <Box className="flex gap-2">
           <IconButton
             size="small"

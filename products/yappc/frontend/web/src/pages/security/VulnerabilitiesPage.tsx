@@ -20,15 +20,15 @@ const VulnerabilitiesPage: React.FC = () => {
   const [severity, setSeverity] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
+    <div className="min-h-screen bg-surface text-white p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
-          <div className="p-3 rounded-xl bg-red-500/10">
-            <ShieldAlert className="w-6 h-6 text-red-400" />
+          <div className="p-3 rounded-xl bg-destructive-bg/10">
+            <ShieldAlert className="w-6 h-6 text-destructive" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Vulnerabilities</h1>
-            <p className="text-zinc-400">Security vulnerabilities across your codebase</p>
+            <p className="text-fg-muted">Security vulnerabilities across your codebase</p>
           </div>
         </div>
 
@@ -39,7 +39,7 @@ const VulnerabilitiesPage: React.FC = () => {
               onClick={() => setSeverity(s)}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-sm capitalize transition-colors',
-                severity === s ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                severity === s ? 'bg-surface text-white' : 'text-fg-muted hover:text-white'
               )}
             >
               {s}
@@ -48,9 +48,9 @@ const VulnerabilitiesPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ShieldAlert className="w-12 h-12 text-zinc-600 mb-4" />
-          <h3 className="text-lg font-semibold text-zinc-300 mb-2">No vulnerabilities found</h3>
-          <p className="text-zinc-500 max-w-md">
+          <ShieldAlert className="w-12 h-12 text-fg-muted mb-4" />
+          <h3 className="text-lg font-semibold text-fg-muted mb-2">No vulnerabilities found</h3>
+          <p className="text-fg-muted max-w-md">
             Run a security scan to discover vulnerabilities in your dependencies and code.
           </p>
         </div>

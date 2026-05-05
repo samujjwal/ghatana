@@ -120,7 +120,7 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                 elevation={3}
                 style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)' }}
                 className={[
-                    'p-3 flex gap-4 items-center z-[1000] bg-white/95 dark:bg-gray-900/95',
+                    'p-3 flex gap-4 items-center z-[1000] bg-white/95 dark:bg-surface/95',
                     className ?? '',
                 ].join(' ').trim()}
                 data-testid="diagram-toolbar"
@@ -236,7 +236,7 @@ export const DiagramToolbar: React.FC<DiagramToolbarProps> = ({ className }) => 
                         value={editBuffer}
                         onChange={(e) => setEditBuffer(e.target.value)}
                         placeholder="Enter Mermaid diagram code..."
-                        className="w-full font-mono text-sm border border-gray-300 rounded p-2 resize-y"
+                        className="w-full font-mono text-sm border border-border rounded p-2 resize-y"
                     />
                 </DialogContent>
                 <DialogActions>

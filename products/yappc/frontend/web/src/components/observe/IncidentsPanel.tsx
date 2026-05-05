@@ -46,18 +46,18 @@ export interface IncidentsPanelProps {
 }
 
 const SEVERITY_CONFIG: Record<string, { color: string; bg: string; label: string }> = {
-    critical: { color: 'text-red-600', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Critical' },
-    high: { color: 'text-orange-600', bg: 'bg-orange-100 dark:bg-orange-900/30', label: 'High' },
-    medium: { color: 'text-yellow-600', bg: 'bg-yellow-100 dark:bg-yellow-900/30', label: 'Medium' },
-    low: { color: 'text-blue-600', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Low' },
+    critical: { color: 'text-destructive', bg: 'bg-destructive-bg dark:bg-destructive-bg/30', label: 'Critical' },
+    high: { color: 'text-warning-color', bg: 'bg-warning-bg dark:bg-warning-bg/30', label: 'High' },
+    medium: { color: 'text-warning-color', bg: 'bg-warning-bg dark:bg-warning-bg/30', label: 'Medium' },
+    low: { color: 'text-info-color', bg: 'bg-info-bg dark:bg-info-bg/30', label: 'Low' },
 };
 
 const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
-    open: { icon: <Warning className="w-4 h-4" />, color: 'text-red-500', label: 'Open' },
-    investigating: { icon: <Warning className="w-4 h-4" />, color: 'text-orange-500', label: 'Investigating' },
-    identified: { icon: <Warning className="w-4 h-4" />, color: 'text-yellow-500', label: 'Identified' },
-    monitoring: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-blue-500', label: 'Monitoring' },
-    resolved: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-green-500', label: 'Resolved' },
+    open: { icon: <Warning className="w-4 h-4" />, color: 'text-destructive', label: 'Open' },
+    investigating: { icon: <Warning className="w-4 h-4" />, color: 'text-warning-color', label: 'Investigating' },
+    identified: { icon: <Warning className="w-4 h-4" />, color: 'text-warning-color', label: 'Identified' },
+    monitoring: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-info-color', label: 'Monitoring' },
+    resolved: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-success-color', label: 'Resolved' },
 };
 
 const EVENT_ICONS: Record<string, React.ReactNode> = {
@@ -124,18 +124,18 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                 <div className="flex items-center gap-3">
                     <div
                         className={`p-2 rounded-lg ${criticalCount > 0
-                                ? 'bg-red-100 dark:bg-red-900/30'
+                                ? 'bg-destructive-bg dark:bg-destructive-bg/30'
                                 : openCount > 0
-                                    ? 'bg-yellow-100 dark:bg-yellow-900/30'
-                                    : 'bg-green-100 dark:bg-green-900/30'
+                                    ? 'bg-warning-bg dark:bg-warning-bg/30'
+                                    : 'bg-success-bg dark:bg-success-bg/30'
                             }`}
                     >
                         <Warning
                             className={`w-5 h-5 ${criticalCount > 0
-                                    ? 'text-red-600'
+                                    ? 'text-destructive'
                                     : openCount > 0
-                                        ? 'text-yellow-600'
-                                        : 'text-green-600'
+                                        ? 'text-warning-color'
+                                        : 'text-success-color'
                                 }`}
                         />
                     </div>
@@ -143,7 +143,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                         <h3 className="font-semibold text-text-primary">Incidents</h3>
                         <p className="text-xs text-text-secondary">
                             {openCount} open
-                            {criticalCount > 0 && <span className="text-red-500"> • {criticalCount} critical</span>}
+                            {criticalCount > 0 && <span className="text-destructive"> • {criticalCount} critical</span>}
                         </p>
                     </div>
                 </div>
@@ -170,7 +170,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
                         {f === 'open' && openCount > 0 && (
-                            <span className="ml-1 px-1.5 bg-red-500 text-white rounded-full text-xs">
+                            <span className="ml-1 px-1.5 bg-destructive-bg text-white rounded-full text-xs">
                                 {openCount}
                             </span>
                         )}
@@ -182,7 +182,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
             <div className="flex-1 overflow-auto p-4">
                 {filteredIncidents.length === 0 ? (
                     <div className="text-center py-8 text-text-secondary">
-                        <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50 text-green-500" />
+                        <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-50 text-success-color" />
                         <p className="text-sm">No incidents to show</p>
                     </div>
                 ) : (
@@ -191,7 +191,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                             <div
                                 key={incident.id}
                                 className={`border rounded-lg overflow-hidden ${incident.severity === 'critical' && incident.status !== 'resolved'
-                                        ? 'border-red-200 dark:border-red-800'
+                                        ? 'border-destructive-border dark:border-destructive-border'
                                         : 'border-divider'
                                     }`}
                             >
@@ -277,7 +277,7 @@ export const IncidentsPanel: React.FC<IncidentsPanelProps> = ({
                                                             className={`px-2 py-1 text-xs rounded transition-colors ${incident.status === status
                                                                     ? 'bg-grey-200 dark:bg-grey-700 text-text-secondary'
                                                                     : status === 'resolved'
-                                                                        ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-300'
+                                                                        ? 'bg-success-bg text-success-color hover:bg-success-bg dark:bg-success-bg/30 dark:text-success-color'
                                                                         : 'bg-grey-100 text-text-primary hover:bg-grey-200 dark:bg-grey-800 dark:hover:bg-grey-700'
                                                                 }`}
                                                         >

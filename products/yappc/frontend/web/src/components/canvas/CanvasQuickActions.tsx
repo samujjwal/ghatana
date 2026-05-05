@@ -124,7 +124,7 @@ export const CanvasQuickActions: React.FC<CanvasQuickActionsProps> = ({
         onOpen={() => setOpen(true)}
         open={open}
         direction="up"
-        className="[&_.MuiSpeedDial-fab]:bg-blue-600 [&_.MuiSpeedDial-fab:hover]:bg-blue-800 [&_.MuiSpeedDial-fab]:shadow-lg"
+        className="[&_.MuiSpeedDial-fab]:bg-primary [&_.MuiSpeedDial-fab:hover]:bg-info-bg [&_.MuiSpeedDial-fab]:shadow-lg"
       >
         {actions.map((action) => (
           <SpeedDialAction

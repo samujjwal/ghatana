@@ -18,6 +18,8 @@ interface Shortcut {
   category: string;
 }
 
+const CANVAS_MODES_CATEGORY = 'Canvas Modes';
+
 const SHORTCUTS: Shortcut[] = [
   // General
   { keys: ['⌘', 'K'], description: 'Open command palette', category: 'General' },
@@ -43,13 +45,13 @@ const SHORTCUTS: Shortcut[] = [
   { keys: ['⌘', '-'], description: 'Zoom out', category: 'Canvas' },
   
   // Canvas Modes
-  { keys: ['1'], description: 'Select mode', category: 'Canvas Modes' },
-  { keys: ['2'], description: 'Sketch mode', category: 'Canvas Modes' },
-  { keys: ['3'], description: 'Component mode', category: 'Canvas Modes' },
-  { keys: ['4'], description: 'Flow mode', category: 'Canvas Modes' },
-  { keys: ['5'], description: 'Data mode', category: 'Canvas Modes' },
-  { keys: ['6'], description: 'API mode', category: 'Canvas Modes' },
-  { keys: ['7'], description: 'Page mode', category: 'Canvas Modes' },
+  { keys: ['1'], description: 'Select mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['2'], description: 'Sketch mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['3'], description: 'Component mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['4'], description: 'Flow mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['5'], description: 'Data mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['6'], description: 'API mode', category: CANVAS_MODES_CATEGORY },
+  { keys: ['7'], description: 'Page mode', category: CANVAS_MODES_CATEGORY },
   
   // Sketch Tools
   { keys: ['V'], description: 'Select tool', category: 'Sketch' },
@@ -60,7 +62,7 @@ const SHORTCUTS: Shortcut[] = [
   
   // Panels
   { keys: ['⌘', 'B'], description: 'Toggle sidebar', category: 'Panels' },
-  { keys: ['⌘', 'J'], description: 'Toggle AI panel', category: 'Panels' },
+  { keys: ['⌘', 'J'], description: 'Toggle assistant panel', category: 'Panels' },
   { keys: ['⌘', 'E'], description: 'Toggle validation panel', category: 'Panels' },
   { keys: ['⌘', 'G'], description: 'Toggle guidance panel', category: 'Panels' },
 ];

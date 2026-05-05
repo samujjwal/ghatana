@@ -112,9 +112,9 @@ export default function Component() {
         return (
             <div className="p-6">
                 <div className="animate-pulse space-y-4">
-                    <div className="h-8 w-48 rounded bg-zinc-800" />
-                    <div className="h-4 w-72 rounded bg-zinc-800" />
-                    <div className="h-48 rounded-lg bg-zinc-800" />
+                    <div className="h-8 w-48 rounded bg-surface" />
+                    <div className="h-4 w-72 rounded bg-surface" />
+                    <div className="h-48 rounded-lg bg-surface" />
                 </div>
             </div>
         );
@@ -123,8 +123,8 @@ export default function Component() {
     return (
         <div className="p-6" data-testid="project-settings">
             <div className="mb-6">
-                <h1 className="text-2xl font-semibold text-zinc-100" data-testid="project-settings-heading">Project Settings</h1>
-                <p className="mt-1 text-sm text-zinc-400">Manage the project fields that are backed by the current API contract.</p>
+                <h1 className="text-2xl font-semibold text-fg-muted" data-testid="project-settings-heading">Project Settings</h1>
+                <p className="mt-1 text-sm text-fg-muted">Manage the project fields that are backed by the current API contract.</p>
                 {(saveSettingsMutation.isPending || hasUnsavedChanges || saveStatus) && (
                     <div className="mt-3">
                         <SaveSyncStatusBadge
@@ -140,12 +140,12 @@ export default function Component() {
                 )}
             </div>
 
-            <div className="mb-6 rounded-lg border border-amber-700/40 bg-amber-950/30 p-4 text-sm text-amber-100">
+            <div className="mb-6 rounded-lg border border-warning-border/40 bg-warning-bg/30 p-4 text-sm text-warning-color">
                 <div className="flex items-start gap-3">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning-color" />
                     <div>
                         <p className="font-medium">Advanced capabilities unavailable</p>
-                        <p className="mt-1 text-amber-100/80">
+                        <p className="mt-1 text-warning-color/80">
                             Team access management, API tokens, and audit feeds remain hidden until their backing APIs are restored.
                         </p>
                     </div>
@@ -247,7 +247,7 @@ export default function Component() {
                     </div>
 
                     {saveSettingsMutation.isError && (
-                        <p className="text-sm text-red-400" role="alert">
+                        <p className="text-sm text-destructive" role="alert">
                             {saveSettingsMutation.error instanceof Error
                                 ? saveSettingsMutation.error.message
                                 : 'Failed to save project settings.'}

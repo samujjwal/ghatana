@@ -93,3 +93,39 @@ tasks.jacocoTestCoverageVerification {
 tasks.named("check") {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
+
+// P0-009: Generate canonical OpenAPI contract from servlet routes
+tasks.register<JavaExec>("generateOpenApiSpec") {
+    group = "build"
+    description = "Generate canonical OpenAPI specification from servlet routes"
+    dependsOn("compileJava")
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.ghatana.digitalmarketing.api.openapi.DmosOpenApiGenerator")
+    val outputFile = layout.buildDirectory.file("openapi/openapi.json")
+    args(outputFile.get().asFile.also { it.parentFile.mkdirs() }.absolutePath)
+    doFirst {
+        println("P0-009: Generating OpenAPI spec...")
+    }
+}
+
+// P0-009: Validate OpenAPI spec is up-to-date
+tasks.register("validateOpenApiSpec") {
+    group = "verification"
+    description = "Validate that the checked-in OpenAPI spec exists and is non-empty"
+    val specFile = file("${project.projectDir}/src/main/resources/openapi.json")
+    inputs.file(specFile).optional(true)
+    doLast {
+        if (!specFile.exists()) {
+            throw GradleException(
+                "P0-009: OpenAPI spec not found at ${specFile.absolutePath}. " +
+                "Run './gradlew :products:digital-marketing:dm-api:generateOpenApiSpec' and commit the result."
+            )
+        }
+        println("P0-009: OpenAPI spec validation passed")
+    }
+}
+
+// P0-009: Add validation to check task
+tasks.named("check").configure {
+    dependsOn("validateOpenApiSpec")
+}

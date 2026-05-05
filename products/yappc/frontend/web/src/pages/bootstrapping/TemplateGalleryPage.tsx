@@ -79,12 +79,12 @@ const TemplateGalleryPage: React.FC = () => {
   }, [templates, category, search, sortBy]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-surface-muted p-6">
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Template Gallery</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-fg">Template Gallery</h1>
+          <p className="mt-2 text-fg-muted">
             Choose a project template to bootstrap your application.
           </p>
         </div>
@@ -92,13 +92,13 @@ const TemplateGalleryPage: React.FC = () => {
         {/* Search & Sort */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted">🔍</span>
             <input
               type="text"
               placeholder="Search templates..."
               value={search}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
-              className="w-full rounded-lg border bg-white py-2 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border bg-white py-2 pl-10 pr-4 text-sm focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
           <select
@@ -121,8 +121,8 @@ const TemplateGalleryPage: React.FC = () => {
               onClick={() => setCategory(cat.key)}
               className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                 category === cat.key
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-fg hover:bg-surface-muted'
               }`}
             >
               <span>{cat.icon}</span>
@@ -136,31 +136,31 @@ const TemplateGalleryPage: React.FC = () => {
           {filtered.map((template) => (
             <div
               key={template.id}
-              className="group rounded-lg border bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+              className="group rounded-lg border bg-white p-5 shadow-sm transition hover:border-info-border hover:shadow-md"
             >
               <div className="mb-3 flex items-start justify-between">
                 <span className="text-3xl">{template.icon}</span>
-                <span className="flex items-center gap-1 text-sm text-gray-500">
+                <span className="flex items-center gap-1 text-sm text-fg-muted">
                   ⭐ {template.stars}
                 </span>
               </div>
-              <h3 className="mb-1 text-lg font-semibold text-gray-900">{template.name}</h3>
-              <p className="mb-3 text-sm text-gray-600">{template.description}</p>
-              <div className="mb-4 flex items-center gap-2 text-xs text-gray-500">
-                <span className="rounded bg-gray-100 px-2 py-0.5">{template.language}</span>
-                <span className="rounded bg-gray-100 px-2 py-0.5">{template.framework}</span>
+              <h3 className="mb-1 text-lg font-semibold text-fg">{template.name}</h3>
+              <p className="mb-3 text-sm text-fg-muted">{template.description}</p>
+              <div className="mb-4 flex items-center gap-2 text-xs text-fg-muted">
+                <span className="rounded bg-surface-muted px-2 py-0.5">{template.language}</span>
+                <span className="rounded bg-surface-muted px-2 py-0.5">{template.framework}</span>
               </div>
               <div className="mb-4 flex flex-wrap gap-1">
                 {template.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700"
+                    className="rounded-full bg-info-bg px-2 py-0.5 text-xs text-info-color"
                   >
                     {tag}
                   </span>
                 ))}
               </div>
-              <button className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 hover:bg-blue-700">
+              <button className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 hover:bg-info-bg">
                 Use Template
               </button>
             </div>
@@ -168,11 +168,11 @@ const TemplateGalleryPage: React.FC = () => {
         </div>
 
         {filtered.length === 0 && (
-          <div className="py-16 text-center text-gray-500">
+          <div className="py-16 text-center text-fg-muted">
             <p className="text-lg">No templates match your search.</p>
             <button
               onClick={() => { setSearch(''); setCategory('all'); }}
-              className="mt-2 text-blue-600 hover:underline"
+              className="mt-2 text-info-color hover:underline"
             >
               Clear filters
             </button>

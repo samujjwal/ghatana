@@ -13,7 +13,7 @@ import { ROUTES } from '../../router/paths';
 
 function UnauthorizedPage(): React.ReactElement {
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -21,25 +21,25 @@ function UnauthorizedPage(): React.ReactElement {
       >
         {/* Icon */}
         <div className="mb-8">
-          <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto">
-            <ShieldOff className="w-12 h-12 text-amber-400" />
+          <div className="w-24 h-24 rounded-full bg-warning-bg/10 flex items-center justify-center mx-auto">
+            <ShieldOff className="w-12 h-12 text-warning-color" />
           </div>
         </div>
 
         {/* Message */}
         <h1 className="text-2xl font-bold text-white mb-4">Access Denied</h1>
-        <p className="text-zinc-400 mb-8">
+        <p className="text-fg-muted mb-8">
           You don't have permission to access this page. If you believe this is a mistake, please
           contact your administrator.
         </p>
 
         {/* Info Box */}
-        <div className="p-4 rounded-lg bg-zinc-900 border border-zinc-800 mb-8 text-left">
+        <div className="p-4 rounded-lg bg-surface border border-border mb-8 text-left">
           <div className="flex items-start gap-3">
-            <Lock className="w-5 h-5 text-zinc-500 mt-0.5" />
+            <Lock className="w-5 h-5 text-fg-muted mt-0.5" />
             <div>
               <div className="text-sm font-medium text-white">Why am I seeing this?</div>
-              <ul className="mt-2 text-sm text-zinc-400 space-y-1">
+              <ul className="mt-2 text-sm text-fg-muted space-y-1">
                 <li>• Your role may not have access to this feature</li>
                 <li>• The resource may require elevated permissions</li>
                 <li>• Your session may have expired</li>
@@ -64,7 +64,7 @@ function UnauthorizedPage(): React.ReactElement {
             onClick={() => window.history.back()}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
-              'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors'
+              'bg-surface text-fg-muted hover:bg-surface-muted transition-colors'
             )}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -76,7 +76,7 @@ function UnauthorizedPage(): React.ReactElement {
         <div className="mt-8">
           <a
             href="mailto:admin@example.com"
-            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors"
           >
             <Mail className="w-4 h-4" />
             Contact Administrator

@@ -13,7 +13,7 @@ import { ROUTES } from '../../router/paths';
 
 function NotFoundPage(): React.ReactElement {
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -33,7 +33,7 @@ function NotFoundPage(): React.ReactElement {
 
         {/* Message */}
         <h1 className="text-2xl font-bold text-white mb-4">Page Not Found</h1>
-        <p className="text-zinc-400 mb-8">
+        <p className="text-fg-muted mb-8">
           The page you're looking for doesn't exist or has been moved. Let's get you back on track.
         </p>
 
@@ -53,7 +53,7 @@ function NotFoundPage(): React.ReactElement {
             onClick={() => window.history.back()}
             className={cn(
               'flex items-center gap-2 px-6 py-3 rounded-lg font-medium',
-              'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors'
+              'bg-surface text-fg-muted hover:bg-surface-muted transition-colors'
             )}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -65,7 +65,7 @@ function NotFoundPage(): React.ReactElement {
         <div className="mt-8">
           <a
             href="/help"
-            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg-muted transition-colors"
           >
             <HelpCircle className="w-4 h-4" />
             Need help? Contact support

@@ -14,6 +14,7 @@ import Redis from 'ioredis';
 import OpenAI from 'openai';
 import { prisma } from '../../lib/prisma.js';
 import { withRetry, circuitBreakers, withTimeout } from '../../lib/resilience.js';
+import { requireAiSecret, isAiDisabled } from '../../lib/ai-mode.js';
 
 // Types
 export interface SimilarMoment {
@@ -51,7 +52,7 @@ let openaiClient: OpenAI | null = null;
 const getOpenAIClient = () => {
   if (!openaiClient) {
     openaiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: requireAiSecret('OPENAI_API_KEY', 'vector embeddings'),
     });
   }
   return openaiClient;
@@ -211,6 +212,9 @@ export class VectorEmbeddingService {
     text: string,
     modelName: string = DEFAULT_MODEL
   ): Promise<EmbeddingResult> {
+    if (isAiDisabled()) {
+      throw new Error('FlashIt AI is disabled by feature flag. Vector embeddings are unavailable.');
+    }
     const startTime = Date.now();
     const openai = getOpenAIClient();
     

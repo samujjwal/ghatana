@@ -104,7 +104,7 @@ export const AINotificationToast: React.FC<AINotificationToastProps> = ({
                             <Stack direction="row" alignItems="flex-start" justifyContent="space-between">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <Box
-                                        className="flex items-center justify-center rounded-full w-[32px] h-[32px] bg-blue-600" style={{ animation: 'pulse 2s ease-in-out infinite' }} >
+                                        className="flex items-center justify-center rounded-full w-[32px] h-[32px] bg-primary" style={{ animation: 'pulse 2s ease-in-out infinite' }} >
                                         <AutoAwesome className="text-lg text-white" />
                                     </Box>
                                     <Typography variant="subtitle2" fontWeight="bold">

@@ -15,17 +15,17 @@ const DEFAULT_LABELS: SaveSyncStatusLabels = {
 function getStatusClassName(status: SaveSyncStatusContract): string {
   switch (status) {
     case 'syncing':
-      return 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200';
+      return 'border-info-border bg-info-bg text-info-color dark:border-info-border/60 dark:bg-info-bg/40 dark:text-info-color';
     case 'remote-saved':
       return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200';
     case 'remote-failed':
-      return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200';
+      return 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive';
     case 'stale':
-      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
+      return 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color';
     case 'conflict':
-      return 'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/40 dark:text-purple-200';
+      return 'border-info-border bg-info-bg text-info-color dark:border-info-border/60 dark:bg-info-bg/40 dark:text-info-color';
     default:
-      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
+      return 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color';
   }
 }
 

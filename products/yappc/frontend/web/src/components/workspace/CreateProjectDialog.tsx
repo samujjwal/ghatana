@@ -225,7 +225,7 @@ export function CreateProjectDialog({
                     {submitError && (
                         <div
                             role="alert"
-                            className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                            className="rounded-lg border border-destructive-border bg-destructive-bg px-4 py-3 text-sm text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive"
                         >
                             {submitError}
                         </div>
@@ -328,7 +328,7 @@ export function CreateProjectDialog({
                             required
                         />
                         {duplicateProject && (
-                            <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-300">
+                            <p className="mt-1.5 text-xs text-warning-color dark:text-warning-color">
                                 A project named {duplicateProject.name} already exists in this workspace.
                             </p>
                         )}

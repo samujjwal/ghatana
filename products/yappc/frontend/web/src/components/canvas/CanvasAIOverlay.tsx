@@ -89,7 +89,7 @@ export function CanvasAIOverlay({
           size="sm"
           onClick={handleToggleCollapse}
           startIcon={<AIIcon className="w-4 h-4" />}
-          className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg"
+          className="bg-primary hover:bg-info-bg text-white shadow-lg"
         >
           AI Suggestions
           <Chip
@@ -104,12 +104,12 @@ export function CanvasAIOverlay({
 
   return (
     <div className={`fixed ${getPositionStyles(position)} z-40 w-80 max-h-[80vh] overflow-y-auto ${className}`}>
-      <Card className="shadow-xl border-2 border-blue-200 dark:border-blue-800">
+      <Card className="shadow-xl border-2 border-info-border dark:border-info-border">
         <CardContent className="p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <AIIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <AIIcon className="w-5 h-5 text-info-color dark:text-info-color" />
               <Typography className="font-bold text-sm">
                 AI Assistant
               </Typography>
@@ -119,7 +119,7 @@ export function CanvasAIOverlay({
                 size="sm"
                 variant="text"
                 onClick={handleToggleCollapse}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-fg-muted hover:text-fg-muted"
               >
                 <CollapseIcon className="w-4 h-4" />
               </Button>
@@ -127,7 +127,7 @@ export function CanvasAIOverlay({
                 size="sm"
                 variant="text"
                 onClick={handleToggleCollapse}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-fg-muted hover:text-fg-muted"
               >
                 <CloseIcon className="w-4 h-4" />
               </Button>
@@ -147,7 +147,7 @@ export function CanvasAIOverlay({
                 size="sm"
                 variant="text"
                 onClick={handleDismissNextAction}
-                className="w-full mt-2 text-xs text-gray-500"
+                className="w-full mt-2 text-xs text-fg-muted"
               >
                 Dismiss
               </Button>

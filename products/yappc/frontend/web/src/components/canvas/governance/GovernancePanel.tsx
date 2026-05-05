@@ -92,7 +92,7 @@ export const GovernancePanel: React.FC = () => {
                                     className="py-3"
                                 >
                                     <ListItemAvatar>
-                                        <Avatar className={`w-[32px] h-[32px] text-[0.8rem] ${member.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}>
+                                        <Avatar className={`w-[32px] h-[32px] text-[0.8rem] ${member.status === 'online' ? 'bg-success-bg' : 'bg-surface-muted'}`}>
                                             {member.name.charAt(0)}
                                         </Avatar>
                                     </ListItemAvatar>
@@ -153,7 +153,7 @@ export const GovernancePanel: React.FC = () => {
                     {isExporting && (
                         <Box className="mt-4">
                             <LinearProgress className="rounded h-[2px]" />
-                            <Typography className="mt-2 block text-center text-xs text-gray-500" color="text.secondary">
+                            <Typography className="mt-2 block text-center text-xs text-fg-muted" color="text.secondary">
                                 Generating specification documents...
                             </Typography>
                         </Box>
@@ -177,18 +177,18 @@ export const GovernancePanel: React.FC = () => {
                                 <Typography className="text-sm font-medium" fontWeight="700">
                                     {deploy.environment}
                                 </Typography>
-                                <Typography className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-fg-muted" color="text.secondary">
                                     {deploy.version}
                                 </Typography>
                             </Box>
 
                             <Box className="flex items-center gap-2 mb-3">
                                 {deploy.status === 'deployed' ? (
-                                    <CloudDone className="text-base text-green-600" />
+                                    <CloudDone className="text-base text-success-color" />
                                 ) : (
-                                    <ErrorOutline className="text-base text-amber-600" />
+                                    <ErrorOutline className="text-base text-warning-color" />
                                 )}
-                                <Typography className="capitalize text-xs text-gray-500">
+                                <Typography className="capitalize text-xs text-fg-muted">
                                     {deploy.status.replace('-', ' ')}
                                 </Typography>
                             </Box>

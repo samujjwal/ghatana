@@ -53,19 +53,19 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgCo
         bgColor: 'bg-grey-100 dark:bg-grey-800',
     },
     running: {
-        icon: <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />,
-        color: 'text-blue-500',
-        bgColor: 'bg-blue-100 dark:bg-blue-900/30',
+        icon: <div className="w-4 h-4 border-2 border-info-border border-t-transparent rounded-full animate-spin" />,
+        color: 'text-info-color',
+        bgColor: 'bg-info-bg dark:bg-info-bg/30',
     },
     success: {
         icon: <CheckCircle className="w-4 h-4" />,
-        color: 'text-green-500',
-        bgColor: 'bg-green-100 dark:bg-green-900/30',
+        color: 'text-success-color',
+        bgColor: 'bg-success-bg dark:bg-success-bg/30',
     },
     failed: {
         icon: <Cancel className="w-4 h-4" />,
-        color: 'text-red-500',
-        bgColor: 'bg-red-100 dark:bg-red-900/30',
+        color: 'text-destructive',
+        bgColor: 'bg-destructive-bg dark:bg-destructive-bg/30',
     },
     skipped: {
         icon: <span className="w-4 h-4 text-grey-400 text-center text-sm">—</span>,
@@ -74,8 +74,8 @@ const STATUS_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgCo
     },
     cancelled: {
         icon: <Cancel className="w-4 h-4" />,
-        color: 'text-orange-500',
-        bgColor: 'bg-orange-100 dark:bg-orange-900/30',
+        color: 'text-warning-color',
+        bgColor: 'bg-warning-bg dark:bg-warning-bg/30',
     },
 };
 
@@ -165,7 +165,7 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                     {build.status === 'running' && onCancel && (
                         <button
                             onClick={onCancel}
-                            className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-sm text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/20 rounded-lg transition-colors"
                         >
                             Cancel
                         </button>
@@ -199,10 +199,10 @@ export const BuildProgressTracker: React.FC<BuildProgressTrackerProps> = ({
                 <div className="h-2 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
                     <div
                         className={`h-full transition-all duration-500 ${build.status === 'failed'
-                                ? 'bg-red-500'
+                                ? 'bg-destructive-bg'
                                 : build.status === 'success'
-                                    ? 'bg-green-500'
-                                    : 'bg-blue-500'
+                                    ? 'bg-success-bg'
+                                    : 'bg-info-bg'
                             }`}
                         style={{ width: `${progress}%` }}
                     />

@@ -50,8 +50,8 @@ const RELEASE_TYPE_INFO: Record<ReleaseType, { label: string; description: strin
 
 const ENVIRONMENT_COLORS: Record<EnvironmentType, string> = {
     development: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
-    staging: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    production: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    staging: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    production: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
 };
 
 const defaultData: ReleaseStrategyPayload = {
@@ -235,7 +235,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-divider">
                 <div className="flex items-center gap-2">
-                    <RocketLaunch className="w-5 h-5 text-orange-600" />
+                    <RocketLaunch className="w-5 h-5 text-warning-color" />
                     <div>
                         <h3 className="font-semibold text-text-primary">Release Strategy</h3>
                         <p className="text-xs text-text-secondary">
@@ -251,7 +251,7 @@ export const ReleaseStrategyConfigurator: React.FC<ReleaseStrategyConfiguratorPr
                             className="flex items-center gap-1 px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         >
                             <AutoAwesome className="w-4 h-4" />
-                            {isAILoading ? 'Generating...' : 'AI Assist'}
+                            {isAILoading ? 'Generating...' : 'Assist'}
                         </button>
                     )}
                     <button

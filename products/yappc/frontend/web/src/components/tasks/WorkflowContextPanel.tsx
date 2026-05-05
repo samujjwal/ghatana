@@ -167,7 +167,7 @@ export function WorkflowContextPanel({
         <Box className="flex flex-col h-full">
             {/* Header */}
             <Box
-                className="p-4 flex items-center border-gray-200 dark:border-gray-700 border-b" >
+                className="p-4 flex items-center border-border dark:border-border border-b" >
                 <Typography as="h6" className="flex-1">
                     Workflow Context
                 </Typography>
@@ -179,9 +179,9 @@ export function WorkflowContextPanel({
             </Box>
 
             {/* Progress Summary */}
-            <Box className="p-4 bg-gray-100 dark:bg-gray-800">
+            <Box className="p-4 bg-surface-muted dark:bg-surface">
                 <Box className="flex items-center mb-2">
-                    <ProgressIcon className="mr-2 text-blue-600" />
+                    <ProgressIcon className="mr-2 text-info-color" />
                     <Typography as="p" className="text-sm font-medium">Progress</Typography>
                     <Chip
                         label={`${progress.percentage}%`}
@@ -195,7 +195,7 @@ export function WorkflowContextPanel({
                     value={progress.percentage}
                     className="rounded h-[8px]"
                 />
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-1 block">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" className="mt-1 block">
                     {progress.completed} of {progress.total} tasks completed
                 </Typography>
             </Box>
@@ -205,7 +205,7 @@ export function WorkflowContextPanel({
                 value={tabValue}
                 onChange={(_, value) => setTabValue(value)}
                 variant="fullWidth"
-                className="border-gray-200 dark:border-gray-700 border-b" >
+                className="border-border dark:border-border border-b" >
                 <Tab
                     icon={<Badge badgeContent={completedTasks.length} tone="success"><TasksIcon /></Badge>}
                     iconPosition="start"
@@ -232,16 +232,16 @@ export function WorkflowContextPanel({
 
             {/* Footer */}
             <Box
-                className="p-4 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 border-t" >
+                className="p-4 border-border dark:border-border bg-white dark:bg-surface border-t" >
                 <Box className="flex items-center gap-2">
                     <TimeIcon size={16} color="action" />
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         Started {new Date(workflow.createdAt).toLocaleDateString()}
                     </Typography>
                 </Box>
                 <Box className="flex items-center gap-2 mt-1">
                     <PersonIcon size={16} color="action" />
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         Current phase: {workflow.phases[workflow.currentPhaseIndex]?.name || 'N/A'}
                     </Typography>
                 </Box>

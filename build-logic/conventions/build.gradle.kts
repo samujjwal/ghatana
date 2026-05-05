@@ -61,5 +61,9 @@ gradlePlugin {
             id = "integration-test-profile"
             implementationClass = "com.ghatana.buildlogic.IntegrationTestProfileConventionPlugin"
         }
+        create("productPackValidation") {
+            id = "product-pack-validation"
+            implementationClass = "com.ghatana.buildlogic.ProductPackValidationConventionPlugin"
+        }
     }
 }

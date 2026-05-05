@@ -476,7 +476,7 @@ export const MindMapCanvas = () => {
                         </Typography>
 
                         {selectedNodeData.notes && (
-                            <Typography variant="body2" className="text-[0.85rem] mb-2 text-gray-500 dark:text-gray-400">
+                            <Typography variant="body2" className="text-[0.85rem] mb-2 text-fg-muted dark:text-fg-muted">
                                 {selectedNodeData.notes}
                             </Typography>
                         )}

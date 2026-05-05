@@ -13,7 +13,9 @@
     "noEmit": true,
     "types": ["node", "react", "react-native"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ghatana/product-shell": ["../../../../platform/typescript/product-shell/src/index.ts"],
+      "@ghatana/tokens": ["../../../../platform/typescript/tokens/src/index.ts"]
     }
   },
   "include": ["src", "App.tsx"],

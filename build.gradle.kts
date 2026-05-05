@@ -8,6 +8,7 @@
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.plugins.quality.PmdExtension
 import org.gradle.api.Project
+import java.io.File
 
 plugins {
     `java-platform`
@@ -222,6 +223,30 @@ fun detectArchitectureCycles(edges: List<ArchitectureDependencyEdge>): List<List
     return cycles.toList()
 }
 
+val kernelBoundaryBannedPatterns = listOf(
+    "\\bPHR\\b",
+    "\\bFinance\\b",
+    "DigitalMarketing",
+    "\\bDMOS\\b",
+    "FlashIt",
+    "HIPAA",
+    "SOX",
+    "patient\\.records",
+    "trade\\.records",
+    "campaigns/",
+    "subject-records/",
+)
+
+fun shouldSkipKernelBoundaryFile(file: File): Boolean {
+    val normalizedPath = file.path.replace(File.separatorChar, '/').lowercase()
+    return normalizedPath.contains("/example")
+        || normalizedPath.contains("/examples/")
+        || normalizedPath.contains("/fixture")
+        || normalizedPath.contains("/fixtures/")
+        || normalizedPath.contains("/test-fixtures/")
+        || normalizedPath.endsWith(".md")
+}
+
 subprojects {
     // Prevent clean/build races in parallel multi-project execution.
     // Running `clean build` can otherwise delete a project's build directory
@@ -284,6 +309,43 @@ subprojects {
             notCompatibleWithConfigurationCache(
                 "Spotless task file-tree serialization currently conflicts with symlink-heavy node_modules trees"
             )
+        }
+    }
+
+    if (path.startsWith(":platform-kernel:") || path.startsWith(":platform-plugins:")) {
+        tasks.register("checkKernelProductBoundary") {
+            group = "verification"
+            description = "Fails when product-specific identifiers leak into kernel or platform-plugin production sources."
+
+            doLast {
+                val mainDir = layout.projectDirectory.dir("src/main").asFile
+                if (!mainDir.exists()) {
+                    return@doLast
+                }
+
+                val violations = mutableListOf<String>()
+                mainDir.walkTopDown()
+                    .filter { it.isFile && !shouldSkipKernelBoundaryFile(it) }
+                    .forEach { file ->
+                        val content = file.readText()
+                        kernelBoundaryBannedPatterns.forEach { bannedPattern ->
+                            if (Regex(bannedPattern).containsMatchIn(content)) {
+                                violations += "${file.relativeTo(projectDir)} contains product-specific term '$bannedPattern'"
+                            }
+                        }
+                    }
+
+                if (violations.isNotEmpty()) {
+                    throw GradleException(
+                        "Kernel/product boundary violations found in $path:\n" +
+                            violations.joinToString("\n") { "  $it" }
+                    )
+                }
+            }
+        }
+
+        tasks.matching { it.name == "check" }.configureEach {
+            dependsOn("checkKernelProductBoundary")
         }
     }
 }

@@ -166,9 +166,9 @@ const BootstrapSessionPage: React.FC = () => {
   }, [session, canvasState, validation, sessionId]);
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-zinc-950">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-surface">
       {/* Top Bar */}
-      <div className="h-14 border-b border-zinc-800 flex items-center justify-between px-4 bg-zinc-900/50">
+      <div className="h-14 border-b border-border flex items-center justify-between px-4 bg-surface/50">
         {/* Left: Phase Progress */}
         <div className="flex items-center gap-4">
           {phases.map((phase, index) => (
@@ -180,7 +180,7 @@ const BootstrapSessionPage: React.FC = () => {
                     ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
                     : phases.findIndex((p) => p.id === sessionState.phase) > index
                       ? 'text-emerald-400'
-                      : 'text-zinc-500'
+                      : 'text-fg-muted'
                 )}
               >
                 <span>{phase.icon}</span>
@@ -192,7 +192,7 @@ const BootstrapSessionPage: React.FC = () => {
                     'w-8 h-0.5 rounded',
                     phases.findIndex((p) => p.id === sessionState.phase) > index
                       ? 'bg-emerald-500'
-                      : 'bg-zinc-700'
+                      : 'bg-surface-muted'
                   )}
                 />
               )}
@@ -201,7 +201,7 @@ const BootstrapSessionPage: React.FC = () => {
         </div>
 
         {/* Center: View Mode Toggle */}
-        <div className="flex items-center gap-1 p-1 bg-zinc-800 rounded-lg">
+        <div className="flex items-center gap-1 p-1 bg-surface rounded-lg">
           {[
             { id: 'split', icon: <PanelLeft className="w-4 h-4" />, label: 'Split' },
             { id: 'chat', icon: <Code2 className="w-4 h-4" />, label: 'Chat' },
@@ -215,7 +215,7 @@ const BootstrapSessionPage: React.FC = () => {
                 'flex items-center gap-2 px-3 py-1.5 rounded text-sm transition-colors',
                 viewMode === view.id
                   ? 'bg-violet-500 text-white'
-                  : 'text-zinc-400 hover:text-white'
+                  : 'text-fg-muted hover:text-white'
               )}
               title={view.label}
             >
@@ -229,19 +229,19 @@ const BootstrapSessionPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handleExport}
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Export Configuration"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Share"
           >
             <Share2 className="w-4 h-4" />
           </button>
           <button
-            className="p-2 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors"
+            className="p-2 rounded-lg hover:bg-surface text-fg-muted hover:text-white transition-colors"
             title="Reset Session"
           >
             <RotateCcw className="w-4 h-4" />
@@ -275,7 +275,7 @@ const BootstrapSessionPage: React.FC = () => {
               }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="h-full border-r border-zinc-800 overflow-hidden"
+              className="h-full border-r border-border overflow-hidden"
             >
               <AIChatInterface
                 messages={[]}
@@ -338,8 +338,8 @@ const BootstrapSessionPage: React.FC = () => {
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="h-8 border-t border-zinc-800 flex items-center justify-between px-4 bg-zinc-900/50">
-        <div className="flex items-center gap-4 text-xs text-zinc-500">
+      <div className="h-8 border-t border-border flex items-center justify-between px-4 bg-surface/50">
+        <div className="flex items-center gap-4 text-xs text-fg-muted">
           <span>
             Session: {sessionId || 'New'}
           </span>
@@ -355,7 +355,7 @@ const BootstrapSessionPage: React.FC = () => {
           </span>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-zinc-500">
+        <div className="flex items-center gap-4 text-xs text-fg-muted">
           <span>
             Nodes: {canvasState?.nodes?.length || 0}
           </span>

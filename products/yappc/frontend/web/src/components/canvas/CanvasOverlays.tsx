@@ -214,13 +214,13 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
         {/* Right-click context menu for nodes */}
         {nodeContextMenu && (
             <Box
-                className="absolute z-50 min-w-[180px] rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+                className="absolute z-50 min-w-[180px] rounded-lg border border-border bg-white p-2 shadow-lg dark:border-border dark:bg-surface"
                 style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
                 role="menu"
             >
                 <button
                     type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
                     onClick={() => {
                         setIsInspectorOpen(true);
                         setNodeContextMenu(null);
@@ -230,7 +230,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 </button>
                 <button
                     type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm hover:bg-surface-muted dark:hover:bg-surface"
                     onClick={() => {
                         handlers.handleCopyNodes?.();
                         handlers.handlePasteNodes?.();
@@ -242,7 +242,7 @@ export const CanvasOverlays: React.FC<CanvasOverlaysProps> = ({
                 </button>
                 <button
                     type="button"
-                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-red-500 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-800"
+                    className="flex w-full items-center rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-surface-muted dark:text-destructive dark:hover:bg-surface"
                     onClick={() => {
                         setSelectedNodes([nodeContextMenu.nodeId]);
                         handlers.handleDeleteSelected();

@@ -28,7 +28,10 @@ echo ""
 
 # Step 3: Set environment
 echo "3. Setting environment..."
-export DATABASE_URL="${DATABASE_URL:-postgresql://ghatana:ghatana123@localhost:5433/flashit_dev}"
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "   ❌ DATABASE_URL must be set before running this script"
+  exit 1
+fi
 export NODE_ENV=development
 echo "   ✅ DATABASE_URL set"
 echo ""
@@ -43,7 +46,7 @@ echo ""
 # Step 5: Reinstall node_modules
 echo "5. Reinstalling dependencies..."
 rm -rf node_modules
-npm install
+pnpm install
 echo "   ✅ Dependencies installed"
 echo ""
 
@@ -72,4 +75,4 @@ fi
 echo ""
 echo "✅ Prisma client successfully generated!"
 echo ""
-echo "Ready to start: npm run dev"
+echo "Ready to start: pnpm run dev"

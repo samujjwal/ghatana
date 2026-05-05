@@ -5,8 +5,11 @@
 package com.ghatana.phr.kernel;
 
 import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyStore;
 import com.ghatana.kernel.policy.BoundaryPolicyRule;
 import com.ghatana.kernel.policy.BoundaryPolicyRule.Effect;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 import com.ghatana.plugin.compliance.CompliancePlugin;
 import com.ghatana.phr.kernel.policy.PhrBoundaryPolicyStore;
 import com.ghatana.phr.kernel.policy.PhrComplianceRulePack;
@@ -15,8 +18,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Phase 3.4 product-side contract tests for PHR packs.
@@ -40,6 +45,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("PHR Pack Contract Tests")
 class PhrPackContractTest {
 
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+            ProductBoundaryPolicyValidationProfile.builder()
+                    .productName("PHR")
+                    .rulePrefix("PHR-BP-")
+                    .defaultDenyRuleId("PHR-BP-999")
+                    .targetScopePrefix("phr.")
+                    .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+                    .build();
+
     // -------------------------------------------------------------------------
     // BoundaryPolicyStore contract
     // -------------------------------------------------------------------------
@@ -49,8 +63,7 @@ class PhrPackContractTest {
     class BoundaryPolicyStoreTests {
 
         private final PhrBoundaryPolicyStore store = new PhrBoundaryPolicyStore();
-        private final BoundaryPolicyLoadContext anyContext =
-                BoundaryPolicyLoadContext.of("tenant-1", "region-1");
+        private final BoundaryPolicyLoadContext anyContext = BoundaryPolicyLoadContext.global();
 
         @Test
         @DisplayName("loadRules() returns a non-empty rule list")
@@ -63,6 +76,7 @@ class PhrPackContractTest {
         @DisplayName("all rules have non-blank ruleId and non-empty actions")
         void allRulesWellFormed() {
             List<BoundaryPolicyRule> rules = store.loadRules(anyContext);
+            ProductBoundaryPolicyPackValidator.validate(rules, VALIDATION_PROFILE);
             for (BoundaryPolicyRule rule : rules) {
                 assertThat(rule.getRuleId())
                         .as("ruleId must not be blank")
@@ -123,6 +137,28 @@ class PhrPackContractTest {
             assertThat(exportRule.getEffect())
                     .as("clinical document export must be DENY")
                     .isEqualTo(Effect.DENY);
+        }
+
+        @Test
+        @DisplayName("subject-record writes require approval and audit")
+        void subjectRecordWritesRequireApprovalAndAudit() {
+            BoundaryPolicyRule writeRule = store.loadRules(anyContext).stream()
+                    .filter(r -> r.getResourcePattern().startsWith("subject-records")
+                            && r.getActions().contains("write"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("No subject-record write rule found"));
+
+            assertThat(writeRule.getEffect()).isEqualTo(Effect.REQUIRE_APPROVAL);
+            assertThat(writeRule.isRequiresAudit()).isTrue();
+            assertThat(writeRule.isRequiresConsent()).isTrue();
+        }
+
+        @Test
+        @DisplayName("unsupported tenant or region override fails closed")
+        void unsupportedTenantOrRegionOverrideFailsClosed() {
+            assertThatThrownBy(() -> store.loadRules(BoundaryPolicyLoadContext.of("tenant-eu", "EU")))
+                    .isInstanceOf(BoundaryPolicyStore.BoundaryPolicyStoreException.class)
+                    .hasMessageContaining("unsupported");
         }
     }
 

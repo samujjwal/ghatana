@@ -74,6 +74,28 @@ pack:
     - security.framework
     - audit.immutable-trail
     - tenant.isolation
+  kernelCapabilitiesConsumed:
+    - boundary-policy-evaluation
+    - audit-trail
+    - consent-enforcement
+    - tenant-context
+  pluginsConsumed:
+    - plugin-audit-trail
+    - plugin-compliance
+    - plugin-consent
+    - plugin-human-approval
+  bridgesConsumed:
+    - data-cloud-kernel-bridge
+  domainPacksProvided:
+    - phr-healthcare-boundary-policy
+    - phr-compliance-rule-pack
+  uiSurfaces:
+    - web
+    - mobile
+  runtimeServices:
+    - launcher
+    - fhir-server
+  dataSensitivity: regulated-health
 
   # Extensions provided by this pack
   extensions:

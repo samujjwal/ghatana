@@ -84,22 +84,22 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
   const getReadinessIcon = () => {
     switch (readiness.level) {
       case 'ready':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-success-color" />;
       case 'not-ready':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
+        return <Clock className="w-5 h-5 text-warning-color" />;
       case 'blocked':
-        return <AlertTriangle className="w-5 h-5 text-red-500" />;
+        return <AlertTriangle className="w-5 h-5 text-destructive" />;
     }
   };
 
   const getReadinessColor = () => {
     switch (readiness.level) {
       case 'ready':
-        return 'text-green-600 bg-green-50 border-green-200';
+        return 'text-success-color bg-success-bg border-success-border';
       case 'not-ready':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+        return 'text-warning-color bg-warning-bg border-warning-border';
       case 'blocked':
-        return 'text-red-600 bg-red-50 border-red-200';
+        return 'text-destructive bg-destructive-bg border-destructive-border';
     }
   };
 
@@ -109,11 +109,11 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div
           data-testid="current-phase"
-          className="bg-white border border-gray-200 rounded-lg p-4"
+          className="bg-white border border-border rounded-lg p-4"
         >
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Current Phase</h3>
-          <div className="text-lg font-semibold text-gray-900">{currentPhase.name}</div>
-          <p className="text-sm text-gray-600 mt-1">{currentPhase.description}</p>
+          <h3 className="text-sm font-medium text-fg-muted mb-2">Current Phase</h3>
+          <div className="text-lg font-semibold text-fg">{currentPhase.name}</div>
+          <p className="text-sm text-fg-muted mt-1">{currentPhase.description}</p>
         </div>
 
         <div
@@ -129,7 +129,7 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
             <p className="text-sm mt-1">Blocker: {readiness.blocker}</p>
           )}
           {readiness.evidence && (
-            <p className="text-sm mt-1 text-gray-600">Evidence: {readiness.evidence}</p>
+            <p className="text-sm mt-1 text-fg-muted">Evidence: {readiness.evidence}</p>
           )}
         </div>
       </div>
@@ -162,9 +162,9 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {/* Recent Backed Activity */}
       <div
         data-testid="recent-activity"
-        className="bg-white border border-gray-200 rounded-lg p-4"
+        className="bg-white border border-border rounded-lg p-4"
       >
-        <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-medium text-fg-muted mb-3 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           Recent Backed Activity
         </h3>
@@ -174,17 +174,17 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
               <div key={activity.id} className="flex items-start gap-3 text-sm">
                 <ProvenanceBadge type={activity.type} size="sm" />
                 <div className="flex-1">
-                  <span className="text-gray-900">{activity.description}</span>
-                  <span className="text-gray-500 ml-2">{activity.timestamp}</span>
+                  <span className="text-fg">{activity.description}</span>
+                  <span className="text-fg-muted ml-2">{activity.timestamp}</span>
                   {activity.actor && (
-                    <span className="text-gray-500 ml-2">by {activity.actor}</span>
+                    <span className="text-fg-muted ml-2">by {activity.actor}</span>
                   )}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No recent backed activity</p>
+          <p className="text-sm text-fg-muted">No recent backed activity</p>
         )}
       </div>
 
@@ -192,17 +192,17 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {suggestedImprovement && (
         <div
           data-testid="suggested-improvement"
-          className="bg-orange-50 border border-orange-200 rounded-lg p-4"
+          className="bg-warning-bg border border-warning-border rounded-lg p-4"
         >
-          <h3 className="text-sm font-medium text-orange-900 mb-2 flex items-center gap-2">
+          <h3 className="text-sm font-medium text-warning-color mb-2 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Suggested Improvement
           </h3>
-          <div className="text-base font-medium text-orange-900 mb-1">
+          <div className="text-base font-medium text-warning-color mb-1">
             {suggestedImprovement.title}
           </div>
-          <p className="text-sm text-orange-700 mb-2">{suggestedImprovement.description}</p>
-          <div className="flex items-center gap-4 text-xs text-orange-600">
+          <p className="text-sm text-warning-color mb-2">{suggestedImprovement.description}</p>
+          <div className="flex items-center gap-4 text-xs text-warning-color">
             <span>Confidence: {Math.round(suggestedImprovement.confidence * 100)}%</span>
             <span>Source: {suggestedImprovement.source}</span>
           </div>
@@ -213,11 +213,11 @@ export const CommandCenter: React.FC<CommandCenterProps> = ({
       {governanceTraceUrl && (
         <div
           data-testid="governance-trace"
-          className="bg-gray-50 border border-gray-200 rounded-lg p-4"
+          className="bg-surface-muted border border-border rounded-lg p-4"
         >
           <a
             href={governanceTraceUrl}
-            className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            className="flex items-center gap-2 text-sm font-medium text-fg hover:text-fg"
           >
             <Link className="w-4 h-4" />
             View Governance Trace

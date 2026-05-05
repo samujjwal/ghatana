@@ -130,9 +130,9 @@ export const AccessibilityChecker: React.FC<AccessibilityCheckerProps> = ({ conf
           {issues.map((issue, idx) => (
             <ListItem key={idx} className="mb-2">
               <ListItemIcon>
-                {issue.severity === 'error' && <WarningIcon size={20} className="text-red-500" />}
-                {issue.severity === 'warning' && <WarningIcon size={20} className="text-yellow-500" />}
-                {issue.severity === 'info' && <CheckIcon size={20} className="text-blue-500" />}
+                {issue.severity === 'error' && <WarningIcon size={20} className="text-destructive" />}
+                {issue.severity === 'warning' && <WarningIcon size={20} className="text-warning-color" />}
+                {issue.severity === 'info' && <CheckIcon size={20} className="text-info-color" />}
               </ListItemIcon>
               <ListItemText
                 primary={

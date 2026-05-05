@@ -34,7 +34,7 @@ export const GenericListView = <TItem extends BaseItem>({
                         button
                         selected={selectedItems.includes(item.id)}
                         onClick={() => onItemSelect(item.id)}
-                        className="mb-2 rounded border border-gray-200 dark:border-gray-700"
+                        className="mb-2 rounded border border-border dark:border-border"
                     >
                         <Box className="flex-1">
                             <Typography variant="subtitle1">
@@ -174,9 +174,9 @@ export const GenericTableView = <TItem extends BaseItem>({
                 Items Table ({items.length})
             </Typography>
 
-            <Box className="rounded overflow-hidden border border-gray-200 dark:border-gray-700">
+            <Box className="rounded overflow-hidden border border-border dark:border-border">
                 {/* Header */}
-                <Box className="flex bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-b" >
+                <Box className="flex bg-surface-muted dark:bg-surface border-border dark:border-border border-b" >
                     {columns.map(column => (
                         <Box
                             key={column}
@@ -191,7 +191,7 @@ export const GenericTableView = <TItem extends BaseItem>({
                 {items.map((item, index) => (
                     <Box
                         key={item.id}
-                        className={`flex cursor-pointer border-gray-200 dark:border-gray-700 hover:bg-gray-100 hover:dark:bg-gray-800 border-b ${selectedItems.includes(item.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-white dark:bg-gray-900'}`}
+                        className={`flex cursor-pointer border-border dark:border-border hover:bg-surface-muted hover:dark:bg-surface border-b ${selectedItems.includes(item.id) ? 'bg-info-bg dark:bg-info-bg/20' : 'bg-white dark:bg-surface'}`}
                         onClick={() => onItemSelect(item.id)}
                     >
                         {columns.map(column => (
@@ -220,7 +220,7 @@ export const GenericCanvasView = <TItem extends BaseItem>({
 }: ViewModeProps<TItem>) => {
 
     return (
-        <Box className="relative h-full overflow-auto bg-gray-50 dark:bg-gray-800" >
+        <Box className="relative h-full overflow-auto bg-surface-muted dark:bg-surface" >
             {items.map(item => (
                 <Box
                     key={item.id}
@@ -260,7 +260,7 @@ export const GenericCanvasView = <TItem extends BaseItem>({
 
             {items.length === 0 && (
                 <Box
-                    className="absolute text-center top-[50%] left-[50%] text-gray-500 dark:text-gray-400" >
+                    className="absolute text-center top-[50%] left-[50%] text-fg-muted dark:text-fg-muted" >
                     <Typography variant="h6" gutterBottom>
                         Canvas is empty
                     </Typography>

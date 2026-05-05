@@ -14,7 +14,7 @@ export function ProgressBar({
   const color = getProgressColor(percentage);
 
   return (
-    <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${height}`}>
+    <div className={`w-full bg-surface-muted rounded-full overflow-hidden ${height}`}>
       <div
         className={`h-full rounded-full transition-all duration-500 ${color}`}
         style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
@@ -27,7 +27,7 @@ export function ProgressBar({
  * Get progress bar color.
  */
 function getProgressColor(percentage: number): string {
-  if (percentage >= 90) return 'bg-green-600';
-  if (percentage >= 70) return 'bg-yellow-500';
-  return 'bg-red-600';
+  if (percentage >= 90) return 'bg-success-bg';
+  if (percentage >= 70) return 'bg-warning-bg';
+  return 'bg-destructive-bg';
 }

@@ -368,7 +368,7 @@ export function CategoryContextPanel({
 
     return (
         <Paper
-            className="border border-solid border-gray-200 dark:border-gray-700" style={{ borderLeft: `4px solid ${config.color}`, backgroundColor: alpha(config.color, 0.05), color: config.color }}
+            className="border border-solid border-border dark:border-border" style={{ borderLeft: `4px solid ${config.color}`, backgroundColor: alpha(config.color, 0.05), color: config.color }}
         >
             {/* Header */}
             <Box
@@ -403,22 +403,22 @@ export function CategoryContextPanel({
                                 component="p"
                                 className="mb-2 flex items-center gap-2 text-sm font-medium"
                             >
-                                <InfoIcon size={16} className="text-blue-600" />
+                                <InfoIcon size={16} className="text-info-color" />
                                 Focus for {currentStep} Step
                             </Typography>
-                            <Typography component="p" className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                            <Typography component="p" className="mb-4 text-sm text-fg-muted dark:text-fg-muted">
                                 {stepGuidance.focus}
                             </Typography>
 
                             {/* Checkpoints */}
-                            <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
+                            <Typography component="span" className="mb-2 block text-xs font-semibold text-fg-muted">
                                 Checkpoints
                             </Typography>
                             <List className="py-0 mb-4">
                                 {stepGuidance.checkpoints.map((checkpoint, idx) => (
                                     <ListItem key={idx} className="py-0.5 px-0">
                                         <ListItemIcon className="min-w-[28px]">
-                                            <CheckIcon size={16} className="text-green-600" />
+                                            <CheckIcon size={16} className="text-success-color" />
                                         </ListItemIcon>
                                         <ListItemText primary={<Typography variant="body2">{checkpoint}</Typography>} />
                                     </ListItem>
@@ -426,14 +426,14 @@ export function CategoryContextPanel({
                             </List>
 
                             {/* Anti-patterns */}
-                            <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
+                            <Typography component="span" className="mb-2 block text-xs font-semibold text-fg-muted">
                                 Anti-patterns to Avoid
                             </Typography>
                             <List className="py-0">
                                 {stepGuidance.antiPatterns.map((antiPattern, idx) => (
                                     <ListItem key={idx} className="py-0.5 px-0">
                                         <ListItemIcon className="min-w-[28px]">
-                                            <WarningIcon size={16} className="text-amber-600" />
+                                            <WarningIcon size={16} className="text-warning-color" />
                                         </ListItemIcon>
                                         <ListItemText primary={<Typography variant="body2">{antiPattern}</Typography>} />
                                     </ListItem>
@@ -443,7 +443,7 @@ export function CategoryContextPanel({
                             {/* Tools */}
                             {stepGuidance.tools && stepGuidance.tools.length > 0 && (
                                 <Box className="mt-4">
-                                    <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
+                                    <Typography component="span" className="mb-2 block text-xs font-semibold text-fg-muted">
                                         Recommended Tools
                                     </Typography>
                                     <Box className="flex gap-1 flex-wrap">
@@ -463,7 +463,7 @@ export function CategoryContextPanel({
 
                     {/* Key Metrics */}
                     <Box className="mb-4">
-                        <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
+                        <Typography component="span" className="mb-2 block text-xs font-semibold text-fg-muted">
                             Key Metrics
                         </Typography>
                         <Box className="flex gap-1 flex-wrap">
@@ -480,7 +480,7 @@ export function CategoryContextPanel({
 
                     {/* Typical Agents */}
                     <Box>
-                        <Typography component="span" className="mb-2 block text-xs font-semibold text-gray-500">
+                        <Typography component="span" className="mb-2 block text-xs font-semibold text-fg-muted">
                             Active Agents
                         </Typography>
                         <Box className="flex gap-1 flex-wrap">

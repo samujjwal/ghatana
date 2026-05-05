@@ -380,6 +380,210 @@ class PageArtifactValidatorTest {
         assertThat(result.errors()).anyMatch(error -> error.contains("documentId does not match document documentId"));
     }
 
+    @Test
+    @DisplayName("unsupported action binding type fails validation")
+    void validate_unsupportedActionBindingTypeFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Button",
+                                        "props", Map.of(
+                                                "actionBinding", Map.of(
+                                                        "type", "DROP_DATABASE",
+                                                        "target", "admin"
+                                                )
+                                        ),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unsupported action binding type"));
+    }
+
+    @Test
+    @DisplayName("data binding missing required fields fails validation")
+    void validate_dataBindingMissingFieldsFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Text",
+                                        "props", Map.of(
+                                                "text", "Summary",
+                                                "dataBinding", Map.of("source", "dataset")
+                                        ),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("missing required field 'path'"));
+    }
+
+    @Test
+    @DisplayName("builder metadata classification mismatch fails validation")
+    void validate_builderMetadataClassificationMismatchFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of(),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        ),
+                        "metadata", Map.of("dataClassification", "PUBLIC")
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("dataClassification does not match"));
+    }
+
+    @Test
+    @DisplayName("Image node with javascript: src scheme fails validation")
+    void validate_imageSrcJavascriptSchemeFails() {
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Image",
+                                        "props", Map.of("src", "javascript:alert(1)", "alt", "img"),
+                                        "slots", Map.of()
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unsafe src scheme"));
+    }
+
+    @Test
+    @DisplayName("non-Image node with unsafe src scheme is also rejected")
+    void validate_nonImageContractWithUnsafeSrcSchemeFails() {
+        // A hypothetical Video or Embed contract that exposes 'src' must be covered by
+        // the generalized scheme check — not only Image.
+        PageArtifactDocument document = sampleDocument(
+                "manual",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of("src", "data:text/html,<script>evil()</script>"),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                List.of()
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("unsafe src scheme"));
+    }
+
+    @Test
+    @DisplayName("node dataClassification lower than document classification fails validation")
+    void validate_nodeUnderDeclaredClassificationFails() {
+        // Document is RESTRICTED; a node prop declaring PUBLIC would under-declare sensitivity.
+        PageArtifactDocument document = new PageArtifactDocument(
+                "artifact-1",
+                "doc-1",
+                "Sensitive Page",
+                "user-1",
+                Instant.parse("2026-01-01T00:00:00Z"),
+                Instant.parse("2026-01-01T00:00:00Z"),
+                "SYNCED",
+                "TRUSTED",
+                "RESTRICTED",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of("dataClassification", "PUBLIC"),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                new PageArtifactDocument.ValidationSummary(true, 0, 0),
+                List.of(),
+                "manual",
+                0,
+                0.95
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.errors()).anyMatch(error -> error.contains("under-declare sensitivity"));
+    }
+
+    @Test
+    @DisplayName("node dataClassification matching or exceeding document classification passes")
+    void validate_nodeMatchingClassificationPasses() {
+        PageArtifactDocument document = new PageArtifactDocument(
+                "artifact-1",
+                "doc-1",
+                "Sensitive Page",
+                "user-1",
+                Instant.parse("2026-01-01T00:00:00Z"),
+                Instant.parse("2026-01-01T00:00:00Z"),
+                "SYNCED",
+                "TRUSTED",
+                "INTERNAL",
+                Map.of(
+                        "rootNodes", List.of("root"),
+                        "nodes", Map.of(
+                                "root", Map.of(
+                                        "contractName", "Box",
+                                        "props", Map.of("dataClassification", "CONFIDENTIAL"),
+                                        "slots", Map.of("default", List.of())
+                                )
+                        )
+                ),
+                new PageArtifactDocument.ValidationSummary(true, 0, 0),
+                List.of(),
+                "manual",
+                0,
+                0.95
+        );
+
+        PageArtifactValidator.ValidationResult result = PageArtifactValidator.validate(document);
+
+        // Should not produce the under-declaration error
+        assertThat(result.errors()).noneMatch(error -> error.contains("under-declare sensitivity"));
+    }
+
     private static PageArtifactDocument sampleDocument(
             String source,
             Map<String, Object> builderDocument,

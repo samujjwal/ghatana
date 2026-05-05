@@ -190,7 +190,7 @@ export function AuditTrail({
         <Box className="flex flex-col h-full">
             {/* Toolbar */}
             <Box
-                className="p-4 flex items-center gap-4 flex-wrap border-gray-200 dark:border-gray-700 border-b" >
+                className="p-4 flex items-center gap-4 flex-wrap border-border dark:border-border border-b" >
                 {/* Search */}
                 <TextField
                     size="small"
@@ -275,11 +275,11 @@ export function AuditTrail({
 
             {/* Stats Bar */}
             <Box
-                className="px-4 py-2 flex gap-4 bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-b" >
-                <Typography className="text-sm text-gray-500" color="text.secondary">
+                className="px-4 py-2 flex gap-4 bg-surface-muted dark:bg-surface border-border dark:border-border border-b" >
+                <Typography className="text-sm text-fg-muted" color="text.secondary">
                     {filteredEvents.length} events
                 </Typography>
-                <Box className="w-px self-stretch bg-gray-300 dark:bg-gray-600" />
+                <Box className="w-px self-stretch bg-surface-muted dark:bg-surface-muted" />
                 {Object.entries(
                     filteredEvents.reduce((acc, e) => {
                         acc[e.severity] = (acc[e.severity] || 0) + 1;
@@ -304,7 +304,7 @@ export function AuditTrail({
                     </Box>
                 ) : filteredEvents.length === 0 ? (
                     <Box className="text-center py-8">
-                        <Typography className="text-gray-500" color="text.secondary">No events found</Typography>
+                        <Typography className="text-fg-muted" color="text.secondary">No events found</Typography>
                     </Box>
                 ) : (
                     Object.entries(groupedEvents).map(([date, dateEvents]) => (
@@ -320,7 +320,7 @@ export function AuditTrail({
                                     <div key={event.id} className="relative flex gap-4 pb-4">
                                         {/* Opposite content (time) */}
                                         <div className="absolute -left-8 w-20 flex-shrink-0 py-1.5 text-right">
-                                            <Typography className="text-xs text-gray-500" color="text.secondary">
+                                            <Typography className="text-xs text-fg-muted" color="text.secondary">
                                                 {new Date(event.timestamp).toLocaleTimeString()}
                                             </Typography>
                                         </div>
@@ -331,7 +331,7 @@ export function AuditTrail({
                                                 style={{ backgroundColor: CATEGORY_COLORS[event.category] }}
                                             />
                                             {index < dateEvents.length - 1 && (
-                                                <div className="w-0.5 flex-1 bg-gray-300 dark:bg-gray-600 mt-1" />
+                                                <div className="w-0.5 flex-1 bg-surface-muted dark:bg-surface-muted mt-1" />
                                             )}
                                         </div>
                                         {/* Content */}
@@ -365,7 +365,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
     const severityConfig = SEVERITY_CONFIG[event.severity];
 
     return (
-        <Card variant="outlined" className="bg-white dark:bg-gray-900">
+        <Card variant="outlined" className="bg-white dark:bg-surface">
             <CardContent className="p-3 last:pb-3">
                 {/* Header */}
                 <Box className="flex items-start gap-2">
@@ -403,7 +403,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                 {/* Actor */}
                 <Box className="flex items-center gap-1 mt-2">
                     {ACTOR_ICONS[event.actor.type]}
-                    <Typography className="text-xs text-gray-500" color="text.secondary">
+                    <Typography className="text-xs text-fg-muted" color="text.secondary">
                         {event.actor.name || event.actor.id}
                     </Typography>
                 </Box>
@@ -413,7 +413,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                     <Divider className="my-2" />
                     <Box className="grid gap-2 grid-cols-2">
                         <Box>
-                            <Typography className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-fg-muted" color="text.secondary">
                                 Event ID
                             </Typography>
                             <Typography className="text-xs font-mono">
@@ -421,7 +421,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-fg-muted" color="text.secondary">
                                 Target
                             </Typography>
                             <Typography className="text-sm">
@@ -430,7 +430,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                         </Box>
                         {event.workflowId && (
                             <Box>
-                                <Typography className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-fg-muted" color="text.secondary">
                                     Workflow ID
                                 </Typography>
                                 <Typography className="text-xs font-mono">
@@ -440,7 +440,7 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                         )}
                         {event.taskId && (
                             <Box>
-                                <Typography className="text-xs text-gray-500" color="text.secondary">
+                                <Typography className="text-xs text-fg-muted" color="text.secondary">
                                     Task ID
                                 </Typography>
                                 <Typography className="text-xs font-mono">
@@ -451,10 +451,10 @@ function EventCard({ event, expanded = false, onToggle }: EventCardProps) {
                     </Box>
                     {event.metadata && Object.keys(event.metadata).length > 0 && (
                         <Box className="mt-2">
-                            <Typography className="text-xs text-gray-500" color="text.secondary">
+                            <Typography className="text-xs text-fg-muted" color="text.secondary">
                                 Metadata
                             </Typography>
-                            <pre className="p-2 rounded overflow-auto text-[0.7rem] bg-gray-100 dark:bg-gray-800 max-h-[100px]">
+                            <pre className="p-2 rounded overflow-auto text-[0.7rem] bg-surface-muted dark:bg-surface max-h-[100px]">
                                 {JSON.stringify(event.metadata, null, 2)}
                             </pre>
                         </Box>

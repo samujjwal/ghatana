@@ -75,16 +75,16 @@ export const PhaseAdvancedDisclosure: React.FC<PhaseAdvancedDisclosureProps> = (
               e.preventDefault();
               toggleSection(section.id);
             }}
-            className="group border border-gray-200 dark:border-gray-700 rounded-lg mb-3 last:mb-0"
+            className="group border border-border dark:border-border rounded-lg mb-3 last:mb-0"
           >
-            <summary className="flex items-center justify-between p-4 cursor-pointer list-none hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors">
+            <summary className="flex items-center justify-between p-4 cursor-pointer list-none hover:bg-surface-muted dark:hover:bg-surface/30 transition-colors">
               <div className="flex items-center gap-3">
                 {section.icon && (
                   <span className="text-lg" aria-hidden="true">
                     {section.icon}
                   </span>
                 )}
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                <h4 className="font-medium text-fg dark:text-fg-muted">
                   {section.title}
                 </h4>
               </div>
@@ -95,7 +95,7 @@ export const PhaseAdvancedDisclosure: React.FC<PhaseAdvancedDisclosureProps> = (
                 ▼
               </span>
             </summary>
-            <div className="p-4 pt-0 border-t border-gray-200 dark:border-gray-700 mt-0">
+            <div className="p-4 pt-0 border-t border-border dark:border-border mt-0">
               {section.content}
             </div>
           </details>

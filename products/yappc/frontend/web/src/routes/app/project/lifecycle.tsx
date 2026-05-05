@@ -135,11 +135,11 @@ const AuditTimelineClient = React.lazy(async () => {
 const getAnomalySeverityBadgeClass = function (severity = '') {
     switch (String(severity).toUpperCase()) {
         case 'CRITICAL':
-            return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200';
+            return 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive';
         case 'WARNING':
-            return 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200';
+            return 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color';
         default:
-            return 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-200';
+            return 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted';
     }
 };
 
@@ -648,7 +648,7 @@ export default function Component() {
                                     'span',
                                     {
                                         className:
-                                            'rounded-full bg-amber-100 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+                                            'rounded-full bg-warning-bg px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
                                     },
                                     recommendation.priority
                                 )
@@ -1040,7 +1040,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-red-50 text-sm font-semibold text-red-600 dark:bg-red-900/30 dark:text-red-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-destructive-bg text-sm font-semibold text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
                                 },
                                 'AL'
                             ),
@@ -1108,7 +1108,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 text-sm font-semibold text-amber-600 dark:bg-amber-900/30 dark:text-amber-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-warning-bg text-sm font-semibold text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
                                 },
                                 'NX'
                             ),
@@ -1142,7 +1142,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-cyan-50 text-sm font-semibold text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-info-bg text-sm font-semibold text-info-color dark:bg-info-bg/30 dark:text-info-color',
                                 },
                                 'DS'
                             ),
@@ -1180,7 +1180,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-info-bg text-sm font-semibold text-info-color dark:bg-info-bg/30 dark:text-info-color',
                                 },
                                 'RQ'
                             ),
@@ -1333,7 +1333,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-sm font-semibold text-fg dark:bg-surface dark:text-fg-muted',
                                 },
                                 'AR'
                             ),
@@ -1376,7 +1376,7 @@ export default function Component() {
                                 'div',
                                 {
                                     className:
-                                        'flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-sm font-semibold text-orange-600 dark:bg-orange-900/30 dark:text-orange-300',
+                                        'flex h-10 w-10 items-center justify-center rounded-full bg-warning-bg text-sm font-semibold text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
                                 },
                                 'AT'
                             ),

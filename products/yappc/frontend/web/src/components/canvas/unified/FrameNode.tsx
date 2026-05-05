@@ -166,7 +166,7 @@ export const FrameNode = React.memo(({ data, selected, id }: NodeProps<FrameNode
             >
                 {childCount === 0 && (
                     <Box
-                        className="absolute text-center pointer-events-none top-[50%] left-[50%] text-gray-400 dark:text-gray-600" >
+                        className="absolute text-center pointer-events-none top-[50%] left-[50%] text-fg-muted dark:text-fg-muted" >
                         <Typography variant="body2" color="text.disabled">
                             Drag nodes here
                         </Typography>
@@ -177,7 +177,7 @@ export const FrameNode = React.memo(({ data, selected, id }: NodeProps<FrameNode
             {/* Collapsed State */}
             {isCollapsed && (
                 <Box
-                    className="p-4 flex items-center justify-center text-gray-400 dark:text-gray-600"
+                    className="p-4 flex items-center justify-center text-fg-muted dark:text-fg-muted"
                 >
                     <Typography variant="caption">
                         {childCount} {childCount === 1 ? 'item' : 'items'} collapsed

@@ -1,3 +1,4 @@
+# Shared template source: config/docker/templates/product-launcher.Dockerfile.template
 FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /workspace
@@ -6,8 +7,7 @@ COPY . .
 
 ENV GRADLE_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
 
-RUN chmod +x gradlew && ./gradlew :products:phr:launcher:installDist \
-	-x test \
+RUN chmod +x gradlew && ./gradlew :products:phr:launcher:check :products:phr:launcher:installDist \
 	--no-daemon \
 	--no-configuration-cache \
 	--max-workers=2 \

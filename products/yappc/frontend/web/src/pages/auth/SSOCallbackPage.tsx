@@ -47,10 +47,10 @@ const SSOCallbackPage: React.FC = () => {
   }, [searchParams, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950">
+    <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="text-center space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto" />
-        <p className="text-zinc-400">Completing Sign-In</p>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-info-border mx-auto" />
+        <p className="text-fg-muted">Completing Sign-In</p>
       </div>
     </div>
   );

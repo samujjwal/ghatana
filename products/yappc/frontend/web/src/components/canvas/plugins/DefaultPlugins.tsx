@@ -218,7 +218,7 @@ const CommentsPanel: React.FC<{
                                 <Typography as="p" className="text-sm">
                                     {comment.text}
                                 </Typography>
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                     {comment.author} • {comment.timestamp}
                                 </Typography>
                             </Paper>
@@ -356,7 +356,7 @@ const ValidationPanel: React.FC<{
 
     return (
         <Paper className="transition-all duration-300 flex flex-col" style={{ height: isMinimized ? 40 : 200 }}>
-            <Box className="flex items-center justify-between p-2 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="flex items-center justify-between p-2 border-border dark:border-border border-b" >
                 <Typography as="h6">
                     Validation ({errors.length} issues)
                 </Typography>

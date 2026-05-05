@@ -107,7 +107,7 @@ export function UnifiedLeftRail({
     return (
       <>
         {!panelOpen && (
-          <Box className="w-[48px] border-gray-200 dark:border-gray-700 border-r" />
+          <Box className="w-[48px] border-border dark:border-border border-r" />
         )}
         <Drawer
           anchor="left"
@@ -118,7 +118,7 @@ export function UnifiedLeftRail({
           <Box
             className="flex flex-col h-full"
           >
-            <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="p-4 border-border dark:border-border border-b" >
               <Typography variant="h6">Assets (Fallback)</Typography>
               <Typography variant="caption" color="text.secondary">
                 No panels matched context. Context: mode={context.mode}, role=
@@ -177,7 +177,7 @@ export function UnifiedLeftRail({
       {/* Collapsed Rail - Icon buttons for each visible panel */}
       {!panelOpen && (
         <Box
-          className="flex flex-col items-center py-2 gap-2 w-[48px] border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+          className="flex flex-col items-center py-2 gap-2 w-[48px] border-r border-border dark:border-border bg-white dark:bg-surface"
         >
           {visiblePanels.slice(0, 6).map((panel) => (
             <IconButton
@@ -200,12 +200,12 @@ export function UnifiedLeftRail({
         anchor="left"
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
-        className="w-[320px] shrink-0 w-[320px] relative h-full border-r border-gray-200 dark:border-gray-700"
+        className="w-[320px] shrink-0 w-[320px] relative h-full border-r border-border dark:border-border"
       >
         <Box className="flex flex-col h-full">
           {/* Header */}
           <Box
-            className="flex items-center justify-between p-4 border-gray-200 dark:border-gray-700 border-b" >
+            className="flex items-center justify-between p-4 border-border dark:border-border border-b" >
             <Typography variant="h6">
               {activePanel?.label || 'Canvas Tools'}
             </Typography>
@@ -219,7 +219,7 @@ export function UnifiedLeftRail({
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
-              className="min-h-[40px] border-gray-200 dark:border-gray-700 border-b" >
+              className="min-h-[40px] border-border dark:border-border border-b" >
               {visiblePanels.map((panel) => (
                 <Tab
                   key={panel.id}

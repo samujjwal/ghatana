@@ -64,7 +64,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
             case 0:
                 return (
                     <Box className="text-center py-8">
-                        <Avatar className="mb-6 w-[64px] h-[64px] bg-blue-600 mx-auto">
+                        <Avatar className="mb-6 w-[64px] h-[64px] bg-primary mx-auto">
                             <AutoAwesome size={32} />
                         </Avatar>
                         <Typography as="h4" fontWeight="bold" mb={2}>
@@ -105,7 +105,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                                 <Card
                                     key={role.id}
                                     variant="flat"
-                                    className="cursor-pointer hover:border-blue-600" style={{ border: userData.role === role.id ? '2px solid' : '1px solid', borderColor: userData.role === role.id ? 'primary.main' : 'divider' }}
+                                    className="cursor-pointer hover:border-info-border" style={{ border: userData.role === role.id ? '2px solid' : '1px solid', borderColor: userData.role === role.id ? 'primary.main' : 'divider' }}
                                     onClick={() => setUserData({ ...userData, role: role.id })}
                                 >
                                     <CardContent>
@@ -136,7 +136,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
                                 <Card
                                     key={type.id}
                                     variant="flat"
-                                    className="cursor-pointer hover:border-blue-600" style={{ border: userData.projectType === type.id ? '2px solid' : '1px solid', borderColor: userData.projectType === type.id ? 'primary.main' : 'divider' }}
+                                    className="cursor-pointer hover:border-info-border" style={{ border: userData.projectType === type.id ? '2px solid' : '1px solid', borderColor: userData.projectType === type.id ? 'primary.main' : 'divider' }}
                                     onClick={() => setUserData({ ...userData, projectType: type.id })}
                                 >
                                     <CardContent className="text-center">
@@ -156,7 +156,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
             case 3:
                 return (
                     <Box className="text-center py-8">
-                        <Avatar className="mb-6 w-[64px] h-[64px] bg-green-600 mx-auto">
+                        <Avatar className="mb-6 w-[64px] h-[64px] bg-success-bg mx-auto">
                             <CheckCircle size={32} />
                         </Avatar>
                         <Typography as="h4" fontWeight="bold" mb={2}>
@@ -183,7 +183,7 @@ export function IntelligentOnboarding({ onComplete }: IntelligentOnboardingProps
 
     return (
         <Box className="h-full overflow-auto bg-bg-default p-6">
-            <Card variant="flat" className="border border-solid border-gray-200 dark:border-gray-700 max-w-[600px] mx-auto">
+            <Card variant="flat" className="border border-solid border-border dark:border-border max-w-[600px] mx-auto">
                 <CardContent>
                     {/* Stepper */}
                     <Stepper activeStep={currentStep} className="mb-8">

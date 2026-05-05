@@ -44,16 +44,16 @@ function getConfidenceLevel(score: number): ConfidenceLevel {
 
 const LEVEL_STYLES: Record<ConfidenceLevel, { badge: string; dot: string }> = {
   high: {
-    badge: 'bg-green-100 text-green-700 border-green-200',
-    dot: 'bg-green-500',
+    badge: 'bg-success-bg text-success-color border-success-border',
+    dot: 'bg-success-bg',
   },
   medium: {
-    badge: 'bg-amber-100 text-amber-700 border-amber-200',
-    dot: 'bg-amber-500',
+    badge: 'bg-warning-bg text-warning-color border-warning-border',
+    dot: 'bg-warning-bg',
   },
   low: {
-    badge: 'bg-orange-100 text-orange-700 border-orange-200',
-    dot: 'bg-orange-500',
+    badge: 'bg-warning-bg text-warning-color border-warning-border',
+    dot: 'bg-warning-bg',
   },
   uncertain: {
     badge: 'bg-grey-100 text-grey-700 border-grey-200',

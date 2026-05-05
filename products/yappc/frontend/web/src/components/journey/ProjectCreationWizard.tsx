@@ -120,7 +120,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                                 <Card
                                     key={type.id}
                                     variant="flat"
-                                    className="cursor-pointer hover:border-blue-600" style={{ border: projectData.type === type.id ? '2px solid' : '1px solid', borderColor: projectData.type === type.id ? 'primary.main' : 'divider' }}
+                                    className="cursor-pointer hover:border-info-border" style={{ border: projectData.type === type.id ? '2px solid' : '1px solid', borderColor: projectData.type === type.id ? 'primary.main' : 'divider' }}
                                     onClick={() => setProjectData({ ...projectData, type: type.id })}
                                 >
                                     <CardContent className="text-center">
@@ -154,7 +154,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                                 <Card
                                     key={template.id}
                                     variant="flat"
-                                    className="cursor-pointer hover:border-blue-600" style={{ border: projectData.template === template.id ? '2px solid' : '1px solid', borderColor: projectData.template === template.id ? 'primary.main' : 'divider' }}
+                                    className="cursor-pointer hover:border-info-border" style={{ border: projectData.template === template.id ? '2px solid' : '1px solid', borderColor: projectData.template === template.id ? 'primary.main' : 'divider' }}
                                     onClick={() => setProjectData({ ...projectData, template: template.id })}
                                 >
                                     <CardContent>
@@ -185,7 +185,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                                 <Card
                                     key={feature.id}
                                     variant="flat"
-                                    className="cursor-pointer hover:border-blue-600" style={{ border: projectData.features.includes(feature.id) ? '2px solid' : '1px solid', borderColor: projectData.features.includes(feature.id) ? 'primary.main' : 'divider' }}
+                                    className="cursor-pointer hover:border-info-border" style={{ border: projectData.features.includes(feature.id) ? '2px solid' : '1px solid', borderColor: projectData.features.includes(feature.id) ? 'primary.main' : 'divider' }}
                                     onClick={() => toggleFeature(feature.id)}
                                 >
                                     <CardContent>
@@ -205,7 +205,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
             case 4:
                 return (
                     <Box className="text-center py-8">
-                        <Avatar className="mb-6 w-[64px] h-[64px] bg-green-600 mx-auto">
+                        <Avatar className="mb-6 w-[64px] h-[64px] bg-success-bg mx-auto">
                             <CheckCircle size={32} />
                         </Avatar>
                         <Typography as="h4" fontWeight="bold" mb={2}>
@@ -214,7 +214,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                         <Typography as="p" color="text.secondary" mb={4}>
                             Review your project details and click create to get started
                         </Typography>
-                        <Card variant="flat" className="border border-solid border-gray-200 dark:border-gray-700 max-w-[400px] mx-auto">
+                        <Card variant="flat" className="border border-solid border-border dark:border-border max-w-[400px] mx-auto">
                             <CardContent>
                                 <Typography as="h6" fontWeight="medium" mb={2}>
                                     {projectData.name || 'Untitled Project'}
@@ -223,13 +223,13 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
                                     {projectData.description || 'No description provided'}
                                 </Typography>
                                 <Box display="flex" gap={1} flexWrap="wrap" justifyContent="center">
-                                    <Typography as="span" className="text-xs text-gray-500">
+                                    <Typography as="span" className="text-xs text-fg-muted">
                                         Type: {projectTypes.find(t => t.id === projectData.type)?.name || 'Not selected'}
                                     </Typography>
-                                    <Typography as="span" className="text-xs text-gray-500">
+                                    <Typography as="span" className="text-xs text-fg-muted">
                                         Template: {templates.find(t => t.id === projectData.template)?.name || 'Not selected'}
                                     </Typography>
-                                    <Typography as="span" className="text-xs text-gray-500">
+                                    <Typography as="span" className="text-xs text-fg-muted">
                                         Features: {projectData.features.length} selected
                                     </Typography>
                                 </Box>
@@ -245,7 +245,7 @@ export function ProjectCreationWizard({ onComplete }: ProjectCreationWizardProps
 
     return (
         <Box className="h-full overflow-auto bg-bg-default p-6">
-            <Card variant="flat" className="border border-solid border-gray-200 dark:border-gray-700 max-w-[600px] mx-auto">
+            <Card variant="flat" className="border border-solid border-border dark:border-border max-w-[600px] mx-auto">
                 <CardContent>
                     {/* Stepper */}
                     <Stepper activeStep={currentStep} className="mb-8">

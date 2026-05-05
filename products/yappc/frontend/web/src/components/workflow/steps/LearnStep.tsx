@@ -216,7 +216,7 @@ export function LearnStep() {
                                                     {cat.label} ({cat.lessons.length})
                                                 </Typography>
                                             </Box>
-                                            <List className="rounded bg-gray-100 dark:bg-gray-800">
+                                            <List className="rounded bg-surface-muted dark:bg-surface">
                                                 {cat.lessons.map((lesson: Lesson, index: number) => (
                                                     <React.Fragment key={lesson.id}>
                                                         <ListItem className="px-4">
@@ -244,7 +244,7 @@ export function LearnStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <RootCauseIcon className="text-amber-600" />
+                        <RootCauseIcon className="text-warning-color" />
                         <Typography className="text-lg font-medium" fontWeight={600}>
                             Root Cause Analysis
                         </Typography>
@@ -279,7 +279,7 @@ export function LearnStep() {
 
                     {/* Contributing factors */}
                     <Box className="mb-4">
-                        <Typography className="mb-2 text-sm text-gray-500" color="text.secondary">
+                        <Typography className="mb-2 text-sm text-fg-muted" color="text.secondary">
                             Contributing Factors
                         </Typography>
                         <Box className="flex gap-2 mb-2">
@@ -326,7 +326,7 @@ export function LearnStep() {
                                     <React.Fragment key={rootCause.id}>
                                         <ListItem className="px-0 items-start">
                                             <ListItemIcon className="mt-1 min-w-[40px]">
-                                                <CatIcon className="text-amber-600" />
+                                                <CatIcon className="text-warning-color" />
                                             </ListItemIcon>
                                             <ListItemText
                                                 primary={

@@ -81,19 +81,19 @@ describe('ValidationSummaryPanel', () => {
             await waitFor(() => expect(onRunValidation).toHaveBeenCalledOnce());
         });
 
-        it('does not render AI Assist button when onAIAssist is absent', () => {
+        it('does not render Assist button when onAIAssist is absent', () => {
             render(<ValidationSummaryPanel {...defaultProps()} />);
-            expect(screen.queryByRole('button', { name: /ai assist/i })).not.toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: /^assist$/i })).not.toBeInTheDocument();
         });
 
-        it('renders AI Assist button when onAIAssist is provided', () => {
+        it('renders Assist button when onAIAssist is provided', () => {
             render(
                 <ValidationSummaryPanel
                     {...defaultProps()}
                     onAIAssist={vi.fn().mockResolvedValue(null)}
                 />
             );
-            expect(screen.getByRole('button', { name: /ai assist/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /^assist$/i })).toBeInTheDocument();
         });
     });
 
@@ -276,7 +276,7 @@ describe('ValidationSummaryPanel', () => {
         it('calls onAIAssist with current checks when clicked', async () => {
             const onAIAssist = vi.fn().mockResolvedValue(null);
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
             await waitFor(() => {
                 expect(onAIAssist).toHaveBeenCalledWith(sampleChecks);
             });
@@ -288,22 +288,22 @@ describe('ValidationSummaryPanel', () => {
                 prioritizedFixes: ['Fix SQL injection first'],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
             await waitFor(() => {
                 expect(screen.getByText('Consider caching')).toBeInTheDocument();
                 expect(screen.getByText('Fix SQL injection first')).toBeInTheDocument();
             });
         });
 
-        it('shows AI Analysis heading when suggestions are shown', async () => {
+        it('shows Analysis heading when suggestions are shown', async () => {
             const onAIAssist = vi.fn().mockResolvedValue({
                 suggestions: ['Tip'],
                 prioritizedFixes: [],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
             await waitFor(() => {
-                expect(screen.getByText('AI Analysis')).toBeInTheDocument();
+                expect(screen.getByText('Analysis')).toBeInTheDocument();
             });
         });
 
@@ -313,7 +313,7 @@ describe('ValidationSummaryPanel', () => {
                 prioritizedFixes: [],
             });
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
             await waitFor(() => {
                 expect(screen.getByText('Consider caching')).toBeInTheDocument();
             });
@@ -329,7 +329,7 @@ describe('ValidationSummaryPanel', () => {
                 })
             );
             render(<ValidationSummaryPanel {...defaultProps({ onAIAssist })} />);
-            fireEvent.click(screen.getByRole('button', { name: /ai assist/i }));
+            fireEvent.click(screen.getByRole('button', { name: /^assist$/i }));
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: /analyzing/i })).toBeInTheDocument();
             });

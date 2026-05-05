@@ -48,37 +48,37 @@ const PHASE_CONFIG: Record<
 > = {
   INTENT: {
     label: 'INTENT',
-    color: 'bg-purple-100 dark:bg-purple-900/30 border-purple-500',
+    color: 'bg-info-bg dark:bg-info-bg/30 border-info-border',
     description: 'Define goals and requirements',
   },
   SHAPE: {
     label: 'SHAPE',
-    color: 'bg-blue-100 dark:bg-blue-900/30 border-blue-500',
+    color: 'bg-info-bg dark:bg-info-bg/30 border-info-border',
     description: 'Design architecture and components',
   },
   VALIDATE: {
     label: 'VALIDATE',
-    color: 'bg-green-100 dark:bg-green-900/30 border-green-500',
+    color: 'bg-success-bg dark:bg-success-bg/30 border-success-border',
     description: 'Verify design and requirements',
   },
   GENERATE: {
     label: 'GENERATE',
-    color: 'bg-yellow-100 dark:bg-yellow-900/30 border-yellow-500',
+    color: 'bg-warning-bg dark:bg-warning-bg/30 border-warning-border',
     description: 'Generate code and assets',
   },
   BUILD: {
     label: 'BUILD',
-    color: 'bg-orange-100 dark:bg-orange-900/30 border-orange-500',
+    color: 'bg-warning-bg dark:bg-warning-bg/30 border-warning-border',
     description: 'Build and compile',
   },
   RUN: {
     label: 'RUN',
-    color: 'bg-red-100 dark:bg-red-900/30 border-red-500',
+    color: 'bg-destructive-bg dark:bg-destructive-bg/30 border-destructive-border',
     description: 'Execute and test',
   },
   IMPROVE: {
     label: 'IMPROVE',
-    color: 'bg-pink-100 dark:bg-pink-900/30 border-pink-500',
+    color: 'bg-info-bg dark:bg-info-bg/30 border-info-border',
     description: 'Refine and optimize',
   },
 };
@@ -98,7 +98,7 @@ const PhaseZoneCard = React.memo(function PhaseZoneCard({
 }) {
   const config = PHASE_CONFIG[zone.phase] ?? {
     label: zone.phase,
-    color: 'bg-gray-100 dark:bg-gray-900/30 border-gray-500',
+    color: 'bg-surface-muted dark:bg-surface/30 border-border',
     description: 'Lifecycle phase',
   };
 
@@ -131,10 +131,10 @@ const PhaseZoneCard = React.memo(function PhaseZoneCard({
             {config.label}
           </h3>
           {zone.status === 'completed' && (
-            <span className="text-green-600 dark:text-green-400">✓</span>
+            <span className="text-success-color dark:text-success-color">✓</span>
           )}
           {zone.status === 'active' && (
-            <span className="text-blue-600 dark:text-blue-400 animate-pulse">
+            <span className="text-info-color dark:text-info-color animate-pulse">
               ●
             </span>
           )}
@@ -153,9 +153,9 @@ const PhaseZoneCard = React.memo(function PhaseZoneCard({
             <span>Progress</span>
             <span>{Math.round(zone.progress)}%</span>
           </div>
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-2 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 transition-all duration-300"
+              className="h-full bg-info-bg transition-all duration-300"
               style={{ width: `${zone.progress}%` }}
             />
           </div>
@@ -227,10 +227,10 @@ export function ZoomableLifecycleZones({
         <g key={`${zone.phase}-${nextZone.phase}`}>
           <line x1={startX} y1={startY} x2={endX} y2={endY}
             stroke="currentColor" strokeWidth="2" strokeDasharray="5,5"
-            className="text-gray-300 dark:text-gray-700" />
+            className="text-fg-muted dark:text-fg" />
           <polygon
             points={`${endX},${endY} ${endX - 10},${endY - 5} ${endX - 10},${endY + 5}`}
-            fill="currentColor" className="text-gray-300 dark:text-gray-700" />
+            fill="currentColor" className="text-fg-muted dark:text-fg" />
         </g>
       );
     }),

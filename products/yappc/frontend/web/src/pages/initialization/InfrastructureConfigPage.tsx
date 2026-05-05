@@ -54,17 +54,17 @@ const InfrastructureConfigPage: React.FC = () => {
   const categories = [...new Set(services.map((s) => s.category))];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-surface-muted p-6">
       <div className="mx-auto max-w-6xl">
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">Infrastructure Configuration</h1>
-        <p className="mb-8 text-gray-600">Enable and configure platform infrastructure services.</p>
+        <h1 className="mb-2 text-3xl font-bold text-fg">Infrastructure Configuration</h1>
+        <p className="mb-8 text-fg-muted">Enable and configure platform infrastructure services.</p>
 
         <div className="flex gap-6">
           {/* Service List */}
           <div className="flex-1 space-y-6">
             {categories.map((cat) => (
               <div key={cat}>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-fg-muted">
                   {CATEGORY_LABELS[cat]}
                 </h2>
                 <div className="space-y-2">
@@ -76,19 +76,19 @@ const InfrastructureConfigPage: React.FC = () => {
                         onClick={() => setSelectedId(svc.id)}
                         className={`flex cursor-pointer items-center gap-4 rounded-lg border p-4 transition ${
                           selectedId === svc.id
-                            ? 'border-blue-400 bg-blue-50'
-                            : 'bg-white hover:border-gray-300'
+                            ? 'border-info-border bg-info-bg'
+                            : 'bg-white hover:border-border'
                         }`}
                       >
                         <span className="text-2xl">{svc.icon}</span>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900">{svc.name}</p>
-                          <p className="text-sm text-gray-500">{svc.description}</p>
+                          <p className="font-semibold text-fg">{svc.name}</p>
+                          <p className="text-sm text-fg-muted">{svc.description}</p>
                         </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); toggle(svc.id); }}
                           className={`relative h-6 w-11 rounded-full transition ${
-                            svc.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                            svc.enabled ? 'bg-primary' : 'bg-surface-muted'
                           }`}
                         >
                           <span
@@ -111,9 +111,9 @@ const InfrastructureConfigPage: React.FC = () => {
                 <div className="mb-4 flex items-center gap-3">
                   <span className="text-3xl">{selected.icon}</span>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{selected.name}</h3>
+                    <h3 className="font-semibold text-fg">{selected.name}</h3>
                     <span className={`text-xs font-medium ${
-                      selected.enabled ? 'text-green-600' : 'text-gray-400'
+                      selected.enabled ? 'text-success-color' : 'text-fg-muted'
                     }`}>
                       {selected.enabled ? 'Enabled' : 'Disabled'}
                     </span>
@@ -122,20 +122,20 @@ const InfrastructureConfigPage: React.FC = () => {
                 <div className="space-y-3">
                   {Object.entries(selected.config).map(([k, v]) => (
                     <div key={k}>
-                      <label className="mb-1 block text-xs font-medium text-gray-500">{k}</label>
+                      <label className="mb-1 block text-xs font-medium text-fg-muted">{k}</label>
                       <input
                         defaultValue={v}
-                        className="w-full rounded border px-3 py-1.5 font-mono text-sm focus:border-blue-500 focus:outline-none"
+                        className="w-full rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
                       />
                     </div>
                   ))}
                 </div>
-                <button className="mt-4 w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                <button className="mt-4 w-full rounded-md bg-primary py-2 text-sm font-medium text-white hover:bg-info-bg">
                   Save Configuration
                 </button>
               </div>
             ) : (
-              <div className="rounded-lg border bg-white p-8 text-center text-sm text-gray-400 shadow-sm">
+              <div className="rounded-lg border bg-white p-8 text-center text-sm text-fg-muted shadow-sm">
                 Select a service to configure
               </div>
             )}

@@ -276,10 +276,10 @@ export function CanvasFeatureStoryList({
             ))}
           </Tabs>
           <Box
-            className="flex min-w-full items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900 md:min-w-[320px]"
+            className="flex min-w-full items-center gap-2 rounded-md border border-border bg-white px-3 py-2 dark:border-border dark:bg-surface md:min-w-[320px]"
             data-testid="canvas-feature-story-search"
           >
-            <SearchIcon size={16} aria-hidden className="text-gray-500" />
+            <SearchIcon size={16} aria-hidden className="text-fg-muted" />
             <input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
@@ -297,7 +297,7 @@ export function CanvasFeatureStoryList({
               <select
                 value={progressFilter}
                 onChange={(event) => updateProgressFilter(event.target.value)}
-                className="min-h-9 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
+                className="min-h-9 rounded-md border border-border bg-white px-3 py-2 text-sm dark:border-border dark:bg-surface"
                 data-testid="canvas-feature-story-progress-filter-input"
               >
                 <option value={ALL_PROGRESS_VALUE}>All statuses</option>
@@ -326,7 +326,7 @@ export function CanvasFeatureStoryList({
         {progressOptions.length ? (
           <Stack spacing={1}>
             <Box>
-              <Typography className="text-xs text-gray-500" color="text.secondary">
+              <Typography className="text-xs text-fg-muted" color="text.secondary">
                 Status summary (all stories)
               </Typography>
               <Stack
@@ -353,7 +353,7 @@ export function CanvasFeatureStoryList({
             </Box>
 
             <Box>
-              <Typography className="text-xs text-gray-500" color="text.secondary">
+              <Typography className="text-xs text-fg-muted" color="text.secondary">
                 Status summary (visible list)
               </Typography>
               <Stack

@@ -1,0 +1,26 @@
+FROM eclipse-temurin:21-jdk-jammy AS build
+
+WORKDIR /workspace
+
+COPY . .
+
+ENV GRADLE_OPTS="-Xms256m -Xmx512m -Dfile.encoding=UTF-8"
+
+# PRODUCT_TASK_PREFIX must point at the product launcher module, for example:
+# :products:phr:launcher or :products:finance:launcher
+RUN chmod +x gradlew && ./gradlew \
+    ${PRODUCT_TASK_PREFIX}:check \
+    ${PRODUCT_TASK_PREFIX}:installDist \
+    --no-daemon \
+    --no-configuration-cache \
+    --max-workers=2 \
+    -Dorg.gradle.parallel=false \
+    -Dorg.gradle.caching=false \
+    -Dorg.gradle.jvmargs="-Xms512m -Xmx2g -XX:MaxMetaspaceSize=512m -XX:+UseSerialGC -Dfile.encoding=UTF-8"
+
+FROM eclipse-temurin:21-jre-jammy
+
+WORKDIR /app
+COPY --from=build /workspace/${PRODUCT_DIST_PATH} /app
+
+ENTRYPOINT ["/app/bin/launcher"]

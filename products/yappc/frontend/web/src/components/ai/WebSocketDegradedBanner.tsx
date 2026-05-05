@@ -38,13 +38,13 @@ const HEALTH_CONFIG: Record<
   { bg: string; icon: React.ReactNode; label: string }
 > = {
   degraded: {
-    bg: 'border-yellow-300 bg-yellow-50 text-yellow-800',
-    icon: <Wifi className="h-4 w-4 text-yellow-600" aria-hidden="true" />,
+    bg: 'border-warning-border bg-warning-bg text-warning-color',
+    icon: <Wifi className="h-4 w-4 text-warning-color" aria-hidden="true" />,
     label: 'Live updates degraded — reconnecting',
   },
   down: {
-    bg: 'border-red-300 bg-red-50 text-red-800',
-    icon: <WifiOff className="h-4 w-4 text-red-600" aria-hidden="true" />,
+    bg: 'border-destructive-border bg-destructive-bg text-destructive',
+    icon: <WifiOff className="h-4 w-4 text-destructive" aria-hidden="true" />,
     label: 'Live updates unavailable',
   },
 };

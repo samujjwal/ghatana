@@ -50,13 +50,13 @@ const getMatchTypeIcon = (matchType: SearchResult['matchType']) => {
 const getMatchTypeColor = (matchType: SearchResult['matchType']) => {
   switch (matchType) {
     case 'exact':
-      return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20';
+      return 'text-success-color dark:text-success-color bg-success-bg dark:bg-success-bg/20';
     case 'semantic':
-      return 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20';
+      return 'text-info-color dark:text-info-color bg-info-bg dark:bg-info-bg/20';
     case 'fuzzy':
-      return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20';
+      return 'text-info-color dark:text-info-color bg-info-bg dark:bg-info-bg/20';
     default:
-      return 'text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20';
+      return 'text-fg-muted dark:text-fg-muted bg-surface-muted dark:bg-surface/20';
   }
 };
 
@@ -116,7 +116,7 @@ export function SemanticSearch({
     <div className={`w-full ${className}`}>
       {/* Search Input */}
       <Box className="relative mb-4">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-fg-muted" />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -128,7 +128,7 @@ export function SemanticSearch({
             size="sm"
             variant="text"
             onClick={clearQuery}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-fg-muted hover:text-fg-muted"
           >
             <ClearIcon className="w-4 h-4" />
           </Button>
@@ -137,7 +137,7 @@ export function SemanticSearch({
 
       {/* Search Status */}
       {query && (
-        <Box className="flex items-center justify-between mb-2 text-xs text-gray-500">
+        <Box className="flex items-center justify-between mb-2 text-xs text-fg-muted">
           <Typography>
             {isLoading ? 'Searching...' : `${totalResults} results found`}
           </Typography>
@@ -151,9 +151,9 @@ export function SemanticSearch({
 
       {/* Error State */}
       {error && (
-        <Card variant="outlined" className="mb-4 border-red-200 dark:border-red-800">
+        <Card variant="outlined" className="mb-4 border-destructive-border dark:border-destructive-border">
           <CardContent className="p-3">
-            <Typography className="text-sm text-red-600 dark:text-red-400">
+            <Typography className="text-sm text-destructive dark:text-destructive">
               Search error: {error.message}
             </Typography>
           </CardContent>
@@ -200,20 +200,20 @@ export function SemanticSearch({
 
                   {/* Score */}
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-blue-500"
+                        className="h-full bg-info-bg"
                         style={{ width: `${result.score * 100}%` }}
                       />
                     </div>
-                    <Typography className="text-xs text-gray-500">
+                    <Typography className="text-xs text-fg-muted">
                       {Math.round(result.score * 100)}%
                     </Typography>
                   </div>
 
                   {/* Description */}
                   {result.document.content && (
-                    <Typography className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                    <Typography className="text-xs text-fg-muted dark:text-fg-muted line-clamp-2">
                       {result.document.content}
                     </Typography>
                   )}
@@ -224,7 +224,7 @@ export function SemanticSearch({
                       {result.highlights.map((highlight, idx) => (
                         <Typography
                           key={idx}
-                          className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-1 py-0.5 rounded inline-block mr-1"
+                          className="text-xs text-info-color dark:text-info-color bg-info-bg dark:bg-info-bg/20 px-1 py-0.5 rounded inline-block mr-1"
                         >
                           {highlight}
                         </Typography>
@@ -241,11 +241,11 @@ export function SemanticSearch({
         {query && !isLoading && results.length === 0 && !error && (
           <Card variant="outlined">
             <CardContent className="p-6 text-center">
-              <SearchIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-              <Typography className="text-gray-600 dark:text-gray-400">
+              <SearchIcon className="w-12 h-12 mx-auto mb-2 text-fg-muted" />
+              <Typography className="text-fg-muted dark:text-fg-muted">
                 No results found for "{query}"
               </Typography>
-              <Typography className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+              <Typography className="text-sm text-fg-muted dark:text-fg-muted mt-1">
                 Try different keywords or check your spelling
               </Typography>
             </CardContent>

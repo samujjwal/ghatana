@@ -164,9 +164,9 @@ function IconButton({
         default: active
             ? 'bg-grey-100 dark:bg-grey-800 text-text-primary'
             : 'text-text-secondary hover:bg-grey-100 dark:hover:bg-grey-800',
-        success: 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30',
-        warning: 'text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30',
-        error: 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30',
+        success: 'text-success-color hover:bg-success-bg dark:hover:bg-success-bg/30',
+        warning: 'text-warning-color hover:bg-warning-bg dark:hover:bg-warning-bg/30',
+        error: 'text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/30',
         primary: active
             ? 'bg-grey-100 dark:bg-grey-800 text-primary-600'
             : 'text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30',
@@ -220,10 +220,10 @@ function BadgeButton({
     'aria-label': ariaLabel,
 }: BadgeButtonProps) {
     const variantClass = {
-        success: 'bg-green-500 text-white hover:bg-green-600',
-        warning: 'bg-yellow-500 text-black hover:bg-yellow-600',
-        error: 'bg-red-500 text-white hover:bg-red-600',
-        info: 'bg-blue-500 text-white hover:bg-blue-600',
+        success: 'bg-success-bg text-white hover:bg-success-bg',
+        warning: 'bg-warning-bg text-black hover:bg-warning-bg',
+        error: 'bg-destructive-bg text-white hover:bg-destructive-bg',
+        info: 'bg-info-bg text-white hover:bg-primary',
         secondary: 'bg-secondary-500 text-white hover:bg-secondary-600',
         default: 'bg-grey-200 text-text-secondary hover:bg-grey-300 dark:bg-grey-700 dark:hover:bg-grey-600',
     }[variant];
@@ -522,9 +522,9 @@ export function UnifiedCanvasToolbar({
                         flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium
                         ${RADIUS.button} ${TRANSITIONS.fast}
                         ${saveStatus === 'error'
-                            ? 'text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 cursor-pointer'
+                            ? 'text-destructive bg-destructive-bg dark:bg-destructive-bg/20 hover:bg-destructive-bg dark:hover:bg-destructive-bg/30 cursor-pointer'
                             : saveStatus === 'saving'
-                                ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                                ? 'text-info-color bg-info-bg dark:bg-info-bg/20'
                                 : 'text-text-secondary hover:bg-grey-50 dark:hover:bg-grey-800 cursor-default'
                         }
                     `}

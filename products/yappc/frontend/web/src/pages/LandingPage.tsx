@@ -10,17 +10,17 @@ import { Link } from 'react-router';
  */
 const LandingPage: React.FC = () => {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
+    <div className="flex min-h-screen flex-col bg-surface text-fg-muted">
       {/* Nav */}
-      <nav className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
+      <nav className="flex items-center justify-between border-b border-border px-6 py-4">
         <span className="text-lg font-bold tracking-tight">YAPPC</span>
         <div className="flex items-center gap-4">
-          <Link to="/auth/login" className="text-sm text-zinc-400 hover:text-zinc-200">
+          <Link to="/auth/login" className="text-sm text-fg-muted hover:text-fg-muted">
             Sign in
           </Link>
           <Link
             to="/auth/register"
-            className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500"
+            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-info-bg"
           >
             Get started
           </Link>
@@ -32,9 +32,9 @@ const LandingPage: React.FC = () => {
         <h1 className="max-w-2xl text-4xl font-extrabold leading-tight sm:text-5xl">
           Ship software faster,
           <br />
-          <span className="text-blue-400">securely</span>
+          <span className="text-info-color">securely</span>
         </h1>
-        <p className="mt-4 max-w-lg text-lg text-zinc-400">
+        <p className="mt-4 max-w-lg text-lg text-fg-muted">
           YAPPC is the AI-native platform for project management, DevSecOps, and
           collaborative development — all on one canvas.
         </p>
@@ -42,13 +42,13 @@ const LandingPage: React.FC = () => {
         <div className="mt-8 flex gap-4">
           <Link
             to="/auth/register"
-            className="rounded-md bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-500"
+            className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow hover:bg-info-bg"
           >
             Start free trial
           </Link>
           <Link
             to="/docs"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800"
+            className="rounded-md border border-border bg-surface px-6 py-2.5 text-sm font-semibold text-fg-muted hover:bg-surface"
           >
             Documentation
           </Link>
@@ -72,17 +72,17 @@ const LandingPage: React.FC = () => {
           ].map((f) => (
             <div
               key={f.title}
-              className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-6 text-left"
+              className="rounded-lg border border-border bg-surface/50 p-6 text-left"
             >
-              <h3 className="text-sm font-semibold text-zinc-200">{f.title}</h3>
-              <p className="mt-2 text-sm text-zinc-400">{f.desc}</p>
+              <h3 className="text-sm font-semibold text-fg-muted">{f.title}</h3>
+              <p className="mt-2 text-sm text-fg-muted">{f.desc}</p>
             </div>
           ))}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-800 px-6 py-4 text-center text-xs text-zinc-600">
+      <footer className="border-t border-border px-6 py-4 text-center text-xs text-fg-muted">
         &copy; {new Date().getFullYear()} Ghatana Technologies. All rights reserved.
       </footer>
     </div>

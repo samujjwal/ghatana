@@ -45,7 +45,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
         return (
             <IconButton
                 onClick={() => setPanelOpen(true)}
-                className="absolute right-[16px] top-[50%] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 hover:dark:bg-gray-800" style={{ transform: 'translateY(-50%)' }} >
+                className="absolute right-[16px] top-[50%] bg-white dark:bg-surface border border-border dark:border-border hover:bg-surface-muted hover:dark:bg-surface" style={{ transform: 'translateY(-50%)' }} >
                 <SmartToy size={16} />
             </IconButton>
         );
@@ -62,7 +62,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
             <Box className="flex flex-col h-full">
                 {/* Header */}
                 <Box
-                    className="flex items-center justify-between p-4 border-gray-200 dark:border-gray-700 border-b" >
+                    className="flex items-center justify-between p-4 border-border dark:border-border border-b" >
                     <Typography variant="h6">Assistant</Typography>
                     <IconButton size="small" onClick={() => setPanelOpen(false)}>
                         <Close size={16} />
@@ -92,17 +92,17 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
                                 What to do now:
                             </Typography>
                             <Box className="mt-4 flex flex-col gap-2">
-                                <Box className="p-4 rounded bg-gray-50 dark:bg-gray-800">
+                                <Box className="p-4 rounded bg-surface-muted dark:bg-surface">
                                     <Typography variant="body2">
                                         1. Complete architecture diagram
                                     </Typography>
                                 </Box>
-                                <Box className="p-4 rounded bg-gray-50 dark:bg-gray-800">
+                                <Box className="p-4 rounded bg-surface-muted dark:bg-surface">
                                     <Typography variant="body2">
                                         2. Document API decisions
                                     </Typography>
                                 </Box>
-                                <Box className="p-4 rounded bg-gray-50 dark:bg-gray-800">
+                                <Box className="p-4 rounded bg-surface-muted dark:bg-surface">
                                     <Typography variant="body2">
                                         3. Create UX wireframes
                                     </Typography>
@@ -118,7 +118,7 @@ export function UnifiedRightPanel({ selectedNodeIds = [], nodes = [], onUpdateNo
                             </Typography>
                             <Box className="mt-4">
                                 <Box
-                                    className="p-3 rounded border border-gray-200 dark:border-gray-700 min-h-[100px]"
+                                    className="p-3 rounded border border-border dark:border-border min-h-[100px]"
                                 >
                                     <Typography variant="body2" color="text.secondary">
                                         What should I do next?

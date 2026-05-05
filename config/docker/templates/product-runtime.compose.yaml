@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  product-runtime:
+    build:
+      context: ../../
+      dockerfile: ${PRODUCT_DOCKERFILE}
+    environment:
+      PRODUCT_ENV: ${PRODUCT_ENV:-local}
+      PRODUCT_AI_DISABLED: ${PRODUCT_AI_DISABLED:-false}
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${PRODUCT_PORT}/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  observability-prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ${PRODUCT_OBSERVABILITY_ROOT}/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  observability-grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/dashboards:/var/lib/grafana/dashboards
+      - ${PRODUCT_OBSERVABILITY_ROOT}/grafana/provisioning:/etc/grafana/provisioning

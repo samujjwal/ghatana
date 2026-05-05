@@ -136,15 +136,15 @@ export function NavigationHintsDisplay({
   const getHintColor = (type: NavigationHint['type']) => {
     switch (type) {
       case 'tip':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800';
+        return 'bg-info-bg dark:bg-info-bg/20 border-info-border dark:border-info-border';
       case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800';
+        return 'bg-warning-bg dark:bg-warning-bg/20 border-warning-border dark:border-warning-border';
       case 'info':
-        return 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800';
+        return 'bg-info-bg dark:bg-info-bg/20 border-info-border dark:border-info-border';
       case 'suggestion':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800';
+        return 'bg-success-bg dark:bg-success-bg/20 border-success-border dark:border-success-border';
       default:
-        return 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-800';
+        return 'bg-surface-muted dark:bg-surface/20 border-border dark:border-border';
     }
   };
 

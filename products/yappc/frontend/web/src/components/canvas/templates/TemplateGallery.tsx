@@ -279,7 +279,7 @@ export const TemplateGallery: React.FC<TemplateGalleryProps> = ({
                     <Tabs
                         value={selectedCategory}
                         onChange={(_, value) => setSelectedCategory(value)}
-                        className="mb-6 border-gray-200 dark:border-gray-700 border-b" >
+                        className="mb-6 border-border dark:border-border border-b" >
                         <Tab label="All Templates" value="all" />
                         <Tab label="Web Apps" value="web" />
                         <Tab label="Mobile" value="mobile" />

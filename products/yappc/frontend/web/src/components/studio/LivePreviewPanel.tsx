@@ -260,21 +260,21 @@ export function LivePreviewPanel({
   return (
     <div
       className={cn(
-        'flex flex-col h-full bg-gray-50 dark:bg-gray-900',
+        'flex flex-col h-full bg-surface-muted dark:bg-surface',
         className
       )}
     >
       {/* Header */}
-      <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-3">
+      <div className="h-10 border-b border-border dark:border-border flex items-center justify-between px-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-sm font-semibold text-fg dark:text-fg-muted">
             Live Preview
           </h3>
-          <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-700 dark:bg-gray-700 dark:text-gray-100">
+          <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-fg dark:bg-surface-muted dark:text-fg-muted">
             {previewPolicy.trustLevel.replaceAll('_', ' ')}
           </span>
           {isLoading && (
-            <span className="text-xs text-blue-500 animate-pulse">●</span>
+            <span className="text-xs text-info-color animate-pulse">●</span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export function LivePreviewPanel({
               { value: 'en-GB', label: 'en-GB' },
             ]}
           />
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-fg-muted">
             {lastUpdate.toLocaleTimeString()}
           </span>
           <Button
@@ -323,13 +323,13 @@ export function LivePreviewPanel({
       </div>
 
       {previewPolicy.diagnostics.length > 0 && (
-        <div className="border-b border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+        <div className="border-b border-warning-border bg-warning-bg px-3 py-2 text-xs text-warning-color dark:border-warning-border/50 dark:bg-warning-bg/40 dark:text-warning-color">
           {previewPolicy.diagnostics.join(' ')}
         </div>
       )}
 
       {validation && !validation.valid ? (
-        <div className="border-b border-red-200 bg-red-50 px-3 py-2 text-xs text-red-900 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-100">
+        <div className="border-b border-destructive-border bg-destructive-bg px-3 py-2 text-xs text-destructive dark:border-destructive-border/50 dark:bg-destructive-bg/40 dark:text-destructive">
           Preview blocked by validation: {validation.errorCount} error(s), {validation.warningCount} warning(s).
         </div>
       ) : null}
@@ -340,7 +340,7 @@ export function LivePreviewPanel({
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <span className="text-4xl mb-2">⚠️</span>
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm text-destructive dark:text-destructive">
                 {error ?? 'Preview is paused until validation errors are resolved.'}
               </p>
               <Button
@@ -355,20 +355,20 @@ export function LivePreviewPanel({
           </div>
         ) : !document && !componentPath && !previewUrl && !previewContext ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 dark:text-gray-400">
+            <div className="text-center text-fg-muted dark:text-fg-muted">
               <span className="text-4xl mb-2">👁️</span>
               <p className="text-sm">Select a document or component to preview</p>
             </div>
           </div>
         ) : previewContext && !previewUrl && !resolvedPreviewUrl ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-center text-gray-500 dark:text-gray-400">
+            <div className="text-center text-fg-muted dark:text-fg-muted">
               <span className="text-4xl mb-2">🔐</span>
               <p className="text-sm">Preparing secure preview session…</p>
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 min-h-[200px]">
+          <div className="bg-white dark:bg-surface rounded-lg shadow-sm border border-border dark:border-border p-4 min-h-[200px]">
             <iframe
               ref={iframeRef}
               src={resolvedPreviewUrl ?? previewUrl ?? '/preview/builder'}

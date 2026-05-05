@@ -182,7 +182,7 @@ export default function Component() {
 
                     <div className="rounded-2xl border border-divider bg-bg-paper p-5 shadow-sm">
                         <div className="mb-3 flex items-center gap-2">
-                            <div className="inline-flex rounded-full bg-amber-50 p-2 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300">
+                            <div className="inline-flex rounded-full bg-warning-bg p-2 text-warning-color dark:bg-warning-bg/30 dark:text-warning-color">
                                 <ShieldAlert className="h-5 w-5" />
                             </div>
                             <h2 className="text-lg font-semibold text-text-primary">Workspace Health</h2>
@@ -193,7 +193,7 @@ export default function Component() {
                                     .filter((ws) => !allProjects.some((p) => p.ownerWorkspaceId === ws.id))
                                     .slice(0, 2)
                                     .map((ws) => (
-                                        <p key={ws.id} className="text-sm text-amber-700 dark:text-amber-300">
+                                        <p key={ws.id} className="text-sm text-warning-color dark:text-warning-color">
                                             {ws.name} has no projects yet.
                                         </p>
                                     ))

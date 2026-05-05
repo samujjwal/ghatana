@@ -63,8 +63,8 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
     };
 
     const getConfidenceColor = (confidence: number) => {
-        if (confidence >= 80) return 'text-green-600 bg-green-50';
-        if (confidence >= 60) return 'text-amber-600 bg-amber-50';
+        if (confidence >= 80) return 'text-success-color bg-success-bg';
+        if (confidence >= 60) return 'text-warning-color bg-warning-bg';
         return 'text-grey-600 bg-grey-50';
     };
 
@@ -80,10 +80,10 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/50 dark:hover:bg-black/20 transition-colors rounded-t-lg"
             >
                 <div className="flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-amber-600" />
+                    <Lightbulb className="w-5 h-5 text-warning-color" />
                     <span className="text-sm font-medium text-text-primary">AI Suggestions</span>
                     {recommendedKinds.length > 0 && (
-                        <span className="px-2 py-0.5 text-xs font-medium bg-amber-600 text-white rounded-full">
+                        <span className="px-2 py-0.5 text-xs font-medium bg-warning-bg text-white rounded-full">
                             {recommendedKinds.length}
                         </span>
                     )}
@@ -103,7 +103,7 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                     )}
 
                     {error && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                        <div className="p-3 bg-destructive-bg border border-destructive-border rounded text-sm text-destructive">
                             {error}
                             <button
                                 onClick={loadSuggestions}
@@ -160,7 +160,7 @@ export const AISuggestionPanel: React.FC<AISuggestionPanelProps> = ({
                             </div>
 
                             {!compact && (
-                                <div className="pl-3 border-l-2 border-purple-200 text-xs text-text-secondary">
+                                <div className="pl-3 border-l-2 border-info-border text-xs text-text-secondary">
                                     <div className="flex items-start gap-1">
                                         <TrendingUp className="w-3 h-3 mt-0.5 flex-shrink-0" />
                                         <span>{suggestion.reasoning}</span>

@@ -53,14 +53,14 @@ export interface HealthPanelProps {
 }
 
 const STATUS_CONFIG = {
-    healthy: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
-    warning: { icon: <Warning className="w-4 h-4" />, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-    critical: { icon: <Cancel className="w-4 h-4" />, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-    degraded: { icon: <Warning className="w-4 h-4" />, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-    down: { icon: <Cancel className="w-4 h-4" />, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-    met: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
-    at_risk: { icon: <Warning className="w-4 h-4" />, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-    breached: { icon: <Cancel className="w-4 h-4" />, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
+    healthy: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-success-color', bg: 'bg-success-bg dark:bg-success-bg/30' },
+    warning: { icon: <Warning className="w-4 h-4" />, color: 'text-warning-color', bg: 'bg-warning-bg dark:bg-warning-bg/30' },
+    critical: { icon: <Cancel className="w-4 h-4" />, color: 'text-destructive', bg: 'bg-destructive-bg dark:bg-destructive-bg/30' },
+    degraded: { icon: <Warning className="w-4 h-4" />, color: 'text-warning-color', bg: 'bg-warning-bg dark:bg-warning-bg/30' },
+    down: { icon: <Cancel className="w-4 h-4" />, color: 'text-destructive', bg: 'bg-destructive-bg dark:bg-destructive-bg/30' },
+    met: { icon: <CheckCircle className="w-4 h-4" />, color: 'text-success-color', bg: 'bg-success-bg dark:bg-success-bg/30' },
+    at_risk: { icon: <Warning className="w-4 h-4" />, color: 'text-warning-color', bg: 'bg-warning-bg dark:bg-warning-bg/30' },
+    breached: { icon: <Cancel className="w-4 h-4" />, color: 'text-destructive', bg: 'bg-destructive-bg dark:bg-destructive-bg/30' },
 };
 
 const TREND_ICONS = {
@@ -173,19 +173,19 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-2 p-4 bg-grey-50 dark:bg-grey-800/50 border-b border-divider">
                 <div className="text-center">
-                    <div className={`text-2xl font-bold ${services.length === services.filter((s) => s.status === 'healthy').length ? 'text-green-500' : 'text-yellow-500'}`}>
+                    <div className={`text-2xl font-bold ${services.length === services.filter((s) => s.status === 'healthy').length ? 'text-success-color' : 'text-warning-color'}`}>
                         {services.filter((s) => s.status === 'healthy').length}/{services.length}
                     </div>
                     <div className="text-xs text-text-secondary">Services Up</div>
                 </div>
                 <div className="text-center">
-                    <div className={`text-2xl font-bold ${slosMet === slos.length ? 'text-green-500' : 'text-yellow-500'}`}>
+                    <div className={`text-2xl font-bold ${slosMet === slos.length ? 'text-success-color' : 'text-warning-color'}`}>
                         {slosMet}/{slos.length}
                     </div>
                     <div className="text-xs text-text-secondary">SLOs Met</div>
                 </div>
                 <div className="text-center">
-                    <div className={`text-2xl font-bold ${criticalMetrics === 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`text-2xl font-bold ${criticalMetrics === 0 ? 'text-success-color' : 'text-destructive'}`}>
                         {criticalMetrics}
                     </div>
                     <div className="text-xs text-text-secondary">Critical Alerts</div>
@@ -231,9 +231,9 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                             <div
                                 key={metric.id}
                                 className={`p-3 border rounded-lg ${metric.status === 'critical'
-                                        ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
+                                        ? 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/10'
                                         : metric.status === 'warning'
-                                            ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10'
+                                            ? 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/10'
                                             : 'border-divider bg-bg-paper'
                                     }`}
                             >
@@ -257,9 +257,9 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                                                     <span
                                                         className={
                                                             metric.trend === 'up'
-                                                                ? 'text-red-500'
+                                                                ? 'text-destructive'
                                                                 : metric.trend === 'down'
-                                                                    ? 'text-green-500'
+                                                                    ? 'text-success-color'
                                                                     : 'text-grey-500'
                                                         }
                                                     >
@@ -290,9 +290,9 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                             <div
                                 key={slo.id}
                                 className={`p-4 border rounded-lg ${slo.status === 'breached'
-                                        ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
+                                        ? 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/10'
                                         : slo.status === 'at_risk'
-                                            ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10'
+                                            ? 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/10'
                                             : 'border-divider bg-bg-paper'
                                     }`}
                             >
@@ -307,7 +307,7 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                                 </div>
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm text-text-secondary">Target: {slo.target}%</span>
-                                    <span className={`font-mono font-bold ${slo.current >= slo.target ? 'text-green-500' : 'text-red-500'
+                                    <span className={`font-mono font-bold ${slo.current >= slo.target ? 'text-success-color' : 'text-destructive'
                                         }`}>
                                         {slo.current}%
                                     </span>
@@ -315,10 +315,10 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                                 <div className="h-2 bg-grey-200 dark:bg-grey-700 rounded-full overflow-hidden">
                                     <div
                                         className={`h-full ${slo.status === 'met'
-                                                ? 'bg-green-500'
+                                                ? 'bg-success-bg'
                                                 : slo.status === 'at_risk'
-                                                    ? 'bg-yellow-500'
-                                                    : 'bg-red-500'
+                                                    ? 'bg-warning-bg'
+                                                    : 'bg-destructive-bg'
                                             }`}
                                         style={{ width: `${Math.min(slo.current, 100)}%` }}
                                     />
@@ -339,9 +339,9 @@ export const HealthPanel: React.FC<HealthPanelProps> = ({
                             <div
                                 key={service.id}
                                 className={`p-4 border rounded-lg ${service.status === 'down'
-                                        ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
+                                        ? 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/10'
                                         : service.status === 'degraded'
-                                            ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/10'
+                                            ? 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/10'
                                             : 'border-divider bg-bg-paper'
                                     }`}
                             >

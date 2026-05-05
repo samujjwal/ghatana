@@ -235,7 +235,7 @@ export const CanvasURLIntegration: React.FC<CanvasURLIntegrationProps> = ({
       {/* Debug Info (Development Only) */}
       {process.env.NODE_ENV === 'development' && (
         <Box
-          className="fixed p-4 rounded-lg text-xs bottom-[16px] right-[16px] z-[9999] bg-white dark:bg-gray-900 shadow-md font-mono max-w-[300px] opacity-[0.8]"
+          className="fixed p-4 rounded-lg text-xs bottom-[16px] right-[16px] z-[9999] bg-white dark:bg-surface shadow-md font-mono max-w-[300px] opacity-[0.8]"
         >
           <Box className="font-bold mb-2">Canvas URL State</Box>
           <Box className="flex flex-col gap-1">
@@ -269,7 +269,7 @@ export const CanvasURLIntegration: React.FC<CanvasURLIntegrationProps> = ({
             )}
             {focusedTask && (
               <Box
-                className="mt-2 pt-2 border-t border-solid border-gray-200 dark:border-gray-700"
+                className="mt-2 pt-2 border-t border-solid border-border dark:border-border"
               >
                 <strong>Focused Task:</strong>
                 <Box className="text-[11px] mt-1">{focusedTask.name}</Box>

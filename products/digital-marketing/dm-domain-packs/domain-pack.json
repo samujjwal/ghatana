@@ -1,4 +1,5 @@
 {
+  "id": "digital-marketing",
   "productName": "Digital Marketing Operating System",
   "productCode": "DM",
   "rulePrefix": "DM-",
@@ -7,6 +8,32 @@
   "boundaryPolicyStoreClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingBoundaryPolicyStore",
   "pluginBindingsClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingPluginBindings",
   "complianceRulePackClass": "com.ghatana.digitalmarketing.pack.DigitalMarketingComplianceRulePack",
+  "kernelCapabilitiesConsumed": [
+    "boundary-policy-evaluation",
+    "audit-trail",
+    "approval-workflow",
+    "tenant-context"
+  ],
+  "pluginsConsumed": [
+    "plugin-audit-trail",
+    "plugin-compliance",
+    "plugin-consent",
+    "plugin-human-approval",
+    "plugin-risk-management"
+  ],
+  "bridgesConsumed": [],
+  "domainPacksProvided": [
+    "digital-marketing-boundary-policy",
+    "digital-marketing-compliance-rule-pack"
+  ],
+  "uiSurfaces": [
+    "web"
+  ],
+  "runtimeServices": [
+    "dm-api",
+    "dm-application"
+  ],
+  "dataSensitivity": "marketing-consent",
   "complianceRuleSets": [
     "DM_MARKETING_INTEGRITY",
     "DM_CONSENT_LIFECYCLE",

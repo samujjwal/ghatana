@@ -277,7 +277,7 @@ export default function OnboardingChecklist() {
           return (
             <Box key={category} className="mb-4">
               <Box
-                className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-100 hover:dark:bg-gray-800"
+                className="flex items-center cursor-pointer p-2 rounded hover:bg-surface-muted hover:dark:bg-surface"
                 onClick={() => toggleCategory(category)}
               >
                 <Box className="flex items-center grow gap-2">
@@ -358,7 +358,7 @@ export default function OnboardingChecklist() {
           );
         })}
 
-        <Box className="mt-6 p-4 rounded bg-gray-100 dark:bg-gray-800">
+        <Box className="mt-6 p-4 rounded bg-surface-muted dark:bg-surface">
           <Typography variant="body2" color="text.secondary">
             💡 <strong>Tip:</strong> You can complete these steps in any order. Click on the play
             icon to jump to relevant guides and examples.

@@ -63,32 +63,32 @@ const getSuggestionIcon = (type: ContextualSuggestion['type']) => {
 const getSuggestionColor = (type: ContextualSuggestion['type']) => {
   switch (type) {
     case 'action':
-      return 'text-blue-600 dark:text-blue-400';
+      return 'text-info-color dark:text-info-color';
     case 'warning':
-      return 'text-orange-600 dark:text-orange-400';
+      return 'text-warning-color dark:text-warning-color';
     case 'info':
-      return 'text-purple-600 dark:text-purple-400';
+      return 'text-info-color dark:text-info-color';
     case 'success':
-      return 'text-green-600 dark:text-green-400';
+      return 'text-success-color dark:text-success-color';
     case 'pending':
-      return 'text-gray-600 dark:text-gray-400';
+      return 'text-fg-muted dark:text-fg-muted';
     default:
-      return 'text-gray-600 dark:text-gray-400';
+      return 'text-fg-muted dark:text-fg-muted';
   }
 };
 
 const getPriorityColor = (priority: ContextualSuggestion['priority']) => {
   switch (priority) {
     case 'critical':
-      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
+      return 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive';
     case 'high':
-      return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300';
+      return 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
+      return 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color';
     case 'low':
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+      return 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted';
     default:
-      return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300';
+      return 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted';
   }
 };
 
@@ -142,8 +142,8 @@ export function ContextualSuggestions({
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <AIIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <Typography className="font-medium text-sm text-blue-900 dark:text-blue-100">
+          <AIIcon className="w-4 h-4 text-info-color dark:text-info-color" />
+          <Typography className="font-medium text-sm text-info-color dark:text-info-color">
             AI Suggestions
           </Typography>
           <Chip
@@ -157,7 +157,7 @@ export function ContextualSuggestions({
             size="sm"
             variant="text"
             onClick={handleDismissAll}
-            className="text-xs text-gray-500"
+            className="text-xs text-fg-muted"
           >
             Dismiss All
           </Button>
@@ -193,27 +193,27 @@ export function ContextualSuggestions({
                     className={`text-xs ${getPriorityColor(suggestion.priority)}`}
                   />
                 </div>
-                <Typography className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                <Typography className="text-xs text-fg-muted dark:text-fg-muted line-clamp-2">
                   {suggestion.description}
                 </Typography>
 
                 {/* Confidence indicator */}
                 <div className="flex items-center gap-2 mt-2">
-                  <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div className="flex-1 h-1.5 bg-surface-muted dark:bg-surface-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 transition-all duration-300"
+                      className="h-full bg-info-bg transition-all duration-300"
                       style={{ width: `${suggestion.confidence * 100}%` }}
                     />
                   </div>
-                  <Typography className="text-xs text-gray-500">
+                  <Typography className="text-xs text-fg-muted">
                     {Math.round(suggestion.confidence * 100)}%
                   </Typography>
                 </div>
 
                 {/* Expanded details */}
                 {expandedId === suggestion.id && (
-                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                    <Typography className="text-xs text-gray-500">
+                  <div className="mt-2 pt-2 border-t border-border dark:border-border">
+                    <Typography className="text-xs text-fg-muted">
                       Context: {suggestion.context}
                     </Typography>
                   </div>
@@ -228,7 +228,7 @@ export function ContextualSuggestions({
                   e.stopPropagation();
                   handleDismiss(suggestion.id);
                 }}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600"
+                className="flex-shrink-0 text-fg-muted hover:text-fg-muted"
               >
                 <DismissIcon className="w-4 h-4" />
               </Button>

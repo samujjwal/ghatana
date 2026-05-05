@@ -117,14 +117,14 @@ export const ComponentLibrary: React.FC<ComponentLibraryProps> = ({
   onComponentSelect,
 }) => {
   return (
-    <Box className="p-4 border-r border-gray-200 dark:border-gray-700">
+    <Box className="p-4 border-r border-border dark:border-border">
       <Typography variant="h6" component="h3">Component Library</Typography>
       <Box className="grid gap-2 mt-4">
         {components.map((comp) => (
           <Box
             key={comp.type}
             onClick={() => onComponentSelect(comp.type)}
-            className="p-2 border border-gray-200 dark:border-gray-700 rounded cursor-pointer bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 hover:dark:bg-gray-800"
+            className="p-2 border border-border dark:border-border rounded cursor-pointer bg-surface-muted dark:bg-surface hover:bg-surface-muted hover:dark:bg-surface"
           >
             {comp.label}
           </Box>
@@ -194,10 +194,10 @@ export const DraggableCanvas: React.FC<DraggableCanvasProps> = ({
         onComponentSelect={addNewItem}
       />
       <Box
-        className="flex-1 p-4 bg-gray-100 dark:bg-gray-800 min-h-full border-[2px] border-gray-200 dark:border-gray-700 border-dashed" >
+        className="flex-1 p-4 bg-surface-muted dark:bg-surface min-h-full border-[2px] border-border dark:border-border border-dashed" >
         <Typography variant="h6" component="h3">Canvas</Typography>
         {items.length === 0 ? (
-          <Box className="text-center p-10 text-gray-500 dark:text-gray-400">
+          <Box className="text-center p-10 text-fg-muted dark:text-fg-muted">
             Click on components in the library to add them to the canvas
           </Box>
         ) : (

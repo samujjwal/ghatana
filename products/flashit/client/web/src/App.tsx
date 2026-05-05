@@ -7,21 +7,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { isAuthenticatedAtom } from './store/atoms';
 import { useCurrentUser } from './hooks/use-api';
+import { flashitRouteManifest } from './routeManifest';
 
 // Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import CapturePage from './pages/CapturePage';
-import MomentsPage from './pages/MomentsPage';
-import SpheresPage from './pages/SpheresPage';
-import SearchPage from './pages/SearchPage';
-import AnalyticsPage from './pages/AnalyticsPage';
-import SettingsPage from './pages/SettingsPage';
-import ReflectionPage from './pages/ReflectionPage';
-import CollaborationPage from './pages/CollaborationPage';
-import MemoryExpansionPage from './pages/MemoryExpansionPage';
-import { LanguageInsightsPage } from './pages/LanguageInsightsPage';
 
 // Loading component for auth state
 function AuthLoading() {
@@ -110,94 +100,13 @@ function App() {
         />
 
         {/* Private routes */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/capture"
-          element={
-            <PrivateRoute>
-              <CapturePage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/moments"
-          element={
-            <PrivateRoute>
-              <MomentsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/spheres"
-          element={
-            <PrivateRoute>
-              <SpheresPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            <PrivateRoute>
-              <SearchPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/analytics"
-          element={
-            <PrivateRoute>
-              <AnalyticsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <SettingsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/reflection"
-          element={
-            <PrivateRoute>
-              <ReflectionPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/collaboration"
-          element={
-            <PrivateRoute>
-              <CollaborationPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/memory-expansion"
-          element={
-            <PrivateRoute>
-              <MemoryExpansionPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/language-insights"
-          element={
-            <PrivateRoute>
-              <LanguageInsightsPage />
-            </PrivateRoute>
-          }
-        />
+        {flashitRouteManifest.map((route) => (
+          <Route
+            key={route.path}
+            path={route.path}
+            element={<PrivateRoute>{route.element}</PrivateRoute>}
+          />
+        ))}
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -207,4 +116,3 @@ function App() {
 }
 
 export default App;
-

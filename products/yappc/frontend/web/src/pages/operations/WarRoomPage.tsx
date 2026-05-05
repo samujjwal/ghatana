@@ -42,17 +42,17 @@ const authHeaders = (): Record<string, string> => ({
 });
 
 const SEVERITY_COLORS: Record<IncidentSeverity, string> = {
-  critical: 'bg-red-600 text-white',
-  high: 'bg-orange-600 text-white',
-  medium: 'bg-yellow-600 text-black',
-  low: 'bg-blue-600 text-white',
+  critical: 'bg-destructive-bg text-white',
+  high: 'bg-warning-bg text-white',
+  medium: 'bg-warning-bg text-black',
+  low: 'bg-primary text-white',
 };
 
 const STATUS_COLORS: Record<IncidentStatus, string> = {
-  investigating: 'bg-red-500/20 text-red-400 border-red-500/30',
-  identified: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  monitoring: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  resolved: 'bg-green-500/20 text-green-400 border-green-500/30',
+  investigating: 'bg-destructive-bg/20 text-destructive border-destructive-border/30',
+  identified: 'bg-warning-bg/20 text-warning-color border-warning-border/30',
+  monitoring: 'bg-warning-bg/20 text-warning-color border-warning-border/30',
+  resolved: 'bg-success-bg/20 text-success-color border-success-border/30',
 };
 
 /**
@@ -119,7 +119,7 @@ const WarRoomPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -127,7 +127,7 @@ const WarRoomPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           {error instanceof Error ? error.message : 'Failed to load incident'}
         </div>
       </div>
@@ -141,8 +141,8 @@ const WarRoomPage: React.FC = () => {
       {/* Summary banner */}
       <div className={`rounded-lg border p-5 ${
         incident?.severity === 'critical'
-          ? 'bg-red-950/40 border-red-800'
-          : 'bg-zinc-900 border-zinc-800'
+          ? 'bg-destructive-bg/40 border-destructive-border'
+          : 'bg-surface border-border'
       }`}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
@@ -154,15 +154,15 @@ const WarRoomPage: React.FC = () => {
                 {incident?.status}
               </span>
               {!isResolved && incident?.startedAt && (
-                <span className="text-xs text-zinc-500">Duration: {formatDuration(incident.startedAt)}</span>
+                <span className="text-xs text-fg-muted">Duration: {formatDuration(incident.startedAt)}</span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-zinc-100">{incident?.title}</h1>
-            <p className="text-sm text-zinc-400 max-w-2xl">{incident?.summary}</p>
+            <h1 className="text-2xl font-bold text-fg-muted">{incident?.title}</h1>
+            <p className="text-sm text-fg-muted max-w-2xl">{incident?.summary}</p>
             {(incident?.affectedServices ?? []).length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {incident?.affectedServices.map((svc) => (
-                  <span key={svc} className="px-2 py-0.5 text-xs bg-zinc-800 text-zinc-400 rounded">{svc}</span>
+                  <span key={svc} className="px-2 py-0.5 text-xs bg-surface text-fg-muted rounded">{svc}</span>
                 ))}
               </div>
             )}
@@ -171,21 +171,21 @@ const WarRoomPage: React.FC = () => {
             <button
               onClick={() => escalateMutation.mutate()}
               disabled={isResolved || escalateMutation.isPending}
-              className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-warning-bg text-white text-sm font-medium rounded-lg hover:bg-warning-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {escalateMutation.isPending ? 'Escalating…' : 'Escalate'}
             </button>
             <button
               onClick={() => resolveMutation.mutate()}
               disabled={isResolved || resolveMutation.isPending}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-success-bg text-white text-sm font-medium rounded-lg hover:bg-success-bg disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {resolveMutation.isPending ? 'Resolving…' : 'Resolve'}
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-4 mt-3 text-xs text-zinc-500">
-          <span>Commander: <span className="text-zinc-300">{incident?.commander}</span></span>
+        <div className="flex items-center gap-4 mt-3 text-xs text-fg-muted">
+          <span>Commander: <span className="text-fg-muted">{incident?.commander}</span></span>
           <span>Started: {incident?.startedAt ? formatTimestamp(incident.startedAt) : '—'}</span>
         </div>
       </div>
@@ -193,34 +193,34 @@ const WarRoomPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Live timeline */}
         <div className="lg:col-span-2">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg">
-            <div className="px-5 py-3 border-b border-zinc-800 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-200">Live Timeline</h2>
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <div className="bg-surface border border-border rounded-lg">
+            <div className="px-5 py-3 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-fg-muted">Live Timeline</h2>
+              <span className="flex items-center gap-1.5 text-xs text-fg-muted">
+                <span className="w-2 h-2 rounded-full bg-success-bg animate-pulse" />
                 Auto-refreshing
               </span>
             </div>
             <div className="p-5 max-h-[500px] overflow-y-auto">
               {(incident?.timeline ?? []).length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-8">No timeline events yet.</p>
+                <p className="text-sm text-fg-muted text-center py-8">No timeline events yet.</p>
               ) : (
                 <div className="relative">
-                  <div className="absolute left-3 top-2 bottom-2 w-px bg-zinc-800" />
+                  <div className="absolute left-3 top-2 bottom-2 w-px bg-surface" />
                   <div className="space-y-4">
                     {incident?.timeline.map((evt) => (
                       <div key={evt.id} className="flex gap-4 relative">
-                        <div className="w-6 h-6 rounded-full bg-zinc-800 border-2 border-zinc-700 shrink-0 flex items-center justify-center z-10">
-                          <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        <div className="w-6 h-6 rounded-full bg-surface border-2 border-border shrink-0 flex items-center justify-center z-10">
+                          <span className="w-2 h-2 rounded-full bg-info-bg" />
                         </div>
                         <div className="min-w-0 pb-1">
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-zinc-200">{evt.actor}</span>
-                            <span className="text-xs text-zinc-500">{evt.action}</span>
-                            <span className="text-xs text-zinc-600">{formatTimestamp(evt.timestamp)}</span>
+                            <span className="text-sm font-medium text-fg-muted">{evt.actor}</span>
+                            <span className="text-xs text-fg-muted">{evt.action}</span>
+                            <span className="text-xs text-fg-muted">{formatTimestamp(evt.timestamp)}</span>
                           </div>
                           {evt.detail && (
-                            <p className="text-sm text-zinc-400 mt-0.5">{evt.detail}</p>
+                            <p className="text-sm text-fg-muted mt-0.5">{evt.detail}</p>
                           )}
                         </div>
                       </div>
@@ -234,22 +234,22 @@ const WarRoomPage: React.FC = () => {
 
         {/* Responders list */}
         <div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg">
-            <div className="px-5 py-3 border-b border-zinc-800">
-              <h2 className="text-sm font-semibold text-zinc-200">
+          <div className="bg-surface border border-border rounded-lg">
+            <div className="px-5 py-3 border-b border-border">
+              <h2 className="text-sm font-semibold text-fg-muted">
                 Responders ({incident?.responders.length ?? 0})
               </h2>
             </div>
             <div className="p-4 space-y-3">
               {(incident?.responders ?? []).length === 0 ? (
-                <p className="text-sm text-zinc-500 text-center py-4">No responders yet.</p>
+                <p className="text-sm text-fg-muted text-center py-4">No responders yet.</p>
               ) : (
                 incident?.responders.map((r) => (
-                  <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-zinc-800/50">
-                    <img src={r.avatarUrl} alt={r.name} className="w-8 h-8 rounded-full bg-zinc-800" />
+                  <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-surface/50">
+                    <img src={r.avatarUrl} alt={r.name} className="w-8 h-8 rounded-full bg-surface" />
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-zinc-200 truncate">{r.name}</p>
-                      <p className="text-xs text-zinc-500">{r.role}</p>
+                      <p className="text-sm font-medium text-fg-muted truncate">{r.name}</p>
+                      <p className="text-xs text-fg-muted">{r.role}</p>
                     </div>
                   </div>
                 ))

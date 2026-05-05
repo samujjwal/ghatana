@@ -33,7 +33,7 @@ function TeamsComingSoon({ reason }: { reason: 'backend-not-live' | 'insufficien
       data-testid="teams-unavailable"
     >
       <div className="max-w-sm space-y-2 text-center">
-        <p className="text-sm text-zinc-400">{message}</p>
+        <p className="text-sm text-fg-muted">{message}</p>
       </div>
     </div>
   );

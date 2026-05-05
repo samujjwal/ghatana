@@ -55,7 +55,7 @@ const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
     return (
       <div
         role="alert"
-        className={`rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 ${className ?? ''}`}
+        className={`rounded-lg border border-destructive-border bg-destructive-bg p-4 text-sm text-destructive ${className ?? ''}`}
       >
         Could not load AI cost data.
       </div>
@@ -79,7 +79,7 @@ const CostTile: React.FC<CostTileProps> = ({ projectId, className }) => {
         {data.costBasis === 'indicative' && (
           <span
             title="Cost is estimated based on a flat per-run rate. Actual token costs will be shown once AIMetric is project-scoped."
-            className="cursor-help rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700"
+            className="cursor-help rounded-full bg-warning-bg px-2 py-0.5 text-[10px] font-medium text-warning-color"
           >
             Estimate
           </span>

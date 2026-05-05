@@ -121,7 +121,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
         >
             {/* Content Creation Buttons */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="mb-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="mb-2 text-xs font-bold text-fg-muted dark:text-fg-muted">
                     ADD CONTENT
                 </Typography>
 
@@ -129,7 +129,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
                     <Tooltip title="Add Sketch" placement="right">
                         <IconButton
                             onClick={handleAddSketch}
-                            className="text-white bg-purple-600" >
+                            className="text-white bg-info-bg" >
                             <Brush />
                         </IconButton>
                     </Tooltip>
@@ -137,7 +137,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
                     <Tooltip title="Add Diagram" placement="right">
                         <IconButton
                             onClick={handleAddDiagram}
-                            className="bg-green-600 text-white hover:bg-green-800"
+                            className="bg-success-bg text-white hover:bg-success-bg"
                         >
                             <AccountTree />
                         </IconButton>
@@ -146,7 +146,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
                     <Tooltip title="Add Code" placement="right">
                         <IconButton
                             onClick={handleAddCode}
-                            className="bg-amber-600 text-gray-900 hover:bg-amber-800"
+                            className="bg-warning-bg text-fg hover:bg-warning-bg"
                         >
                             <Code />
                         </IconButton>
@@ -155,7 +155,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
                     <Tooltip title="Add Artifact" placement="right">
                         <IconButton
                             onClick={handleAddArtifact}
-                            className="bg-blue-600 text-white hover:bg-blue-800"
+                            className="bg-primary text-white hover:bg-info-bg"
                         >
                             <Description />
                         </IconButton>
@@ -165,7 +165,7 @@ export const UnifiedPlaygroundToolbar: React.FC<UnifiedPlaygroundToolbarProps> =
 
             {/* Zoom Controls */}
             <Box className="flex flex-col gap-2">
-                <Typography as="span" className="mb-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+                <Typography as="span" className="mb-2 text-xs font-bold text-fg-muted dark:text-fg-muted">
                     VIEW
                 </Typography>
 

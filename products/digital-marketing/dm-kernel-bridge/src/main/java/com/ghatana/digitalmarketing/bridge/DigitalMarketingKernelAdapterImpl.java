@@ -165,11 +165,18 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(subjectId, "subjectId must not be null");
         Objects.requireNonNull(purpose,   "purpose must not be null");
 
-        return consentPlugin.verifyConsent(subjectId, purpose)
-            .whenResult(valid -> LOG.debug(
-                "[{}] Consent check: subjectId={}, purpose={}, valid={}, tenant={}",
-                BRIDGE_ID, subjectId, purpose, valid, context.getTenantId().getValue()
-            ));
+        BridgeContext bridgeContext = context.toBridgeContext();
+        return checkAuthorized(bridgeContext, "consent:" + subjectId, "verify")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.of(Boolean.FALSE);
+                }
+                return consentPlugin.verifyConsent(subjectId, purpose)
+                    .whenResult(valid -> LOG.debug(
+                        "[{}] Consent check: subjectId={}, purpose={}, valid={}, tenant={}",
+                        BRIDGE_ID, subjectId, purpose, valid, context.getTenantId().getValue()
+                    ));
+            });
     }
 
     // -----------------------------------------------------------------------
@@ -194,30 +201,38 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(operationType, "operationType must not be null");
         Objects.requireNonNull(subjectId,     "subjectId must not be null");
         Objects.requireNonNull(description,   "description must not be null");
+        BridgeContext bridgeContext = context.toBridgeContext();
 
-        String requestId = UUID.randomUUID().toString();
+        return checkAuthorized(bridgeContext, "approval:" + subjectId, "request")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException("Not authorized to request approval"));
+                }
 
-        ApprovalRequest request = new ApprovalRequest(
-            requestId,
-            subjectId,
-            context.getActor().getPrincipalId(),
-            operationType,
-            description,
-            Map.of(
-                "tenantId",     context.getTenantId().getValue(),
-                "workspaceId",  context.getWorkspaceId().getValue(),
-                "correlationId", context.getCorrelationId().getValue()
-            ),
-            Instant.now(),
-            null  // no expiry by default; callers may set expiry via plugin directly if needed
-        );
+                String requestId = UUID.randomUUID().toString();
 
-        return approvalPlugin.requestApproval(request)
-            .map(ApprovalRecord::requestId)
-            .whenResult(id -> LOG.info(
-                "[{}] Approval requested: requestId={}, operationType={}, subjectId={}, tenant={}",
-                BRIDGE_ID, id, operationType, subjectId, context.getTenantId().getValue()
-            ));
+                ApprovalRequest request = new ApprovalRequest(
+                    requestId,
+                    subjectId,
+                    context.getActor().getPrincipalId(),
+                    operationType,
+                    description,
+                    Map.of(
+                        "tenantId",     context.getTenantId().getValue(),
+                        "workspaceId",  context.getWorkspaceId().getValue(),
+                        "correlationId", context.getCorrelationId().getValue()
+                    ),
+                    Instant.now(),
+                    null
+                );
+
+                return approvalPlugin.requestApproval(request)
+                    .map(ApprovalRecord::requestId)
+                    .whenResult(id -> LOG.info(
+                        "[{}] Approval requested: requestId={}, operationType={}, subjectId={}, tenant={}",
+                        BRIDGE_ID, id, operationType, subjectId, context.getTenantId().getValue()
+                    ));
+            });
     }
 
     // -----------------------------------------------------------------------
@@ -242,15 +257,28 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(entityId,   "entityId must not be null");
         Objects.requireNonNull(action,     "action must not be null");
         Objects.requireNonNull(attributes, "attributes must not be null");
+        BridgeContext bridgeContext = context.toBridgeContext();
 
-        Map<String, Object> enrichedAttributes = buildAuditAttributes(context, attributes);
+        return checkAuthorized(bridgeContext, "audit:" + entityId, "record")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException("Not authorized to record audit"));
+                }
 
-        return auditTrailPlugin.logEvent(entityId, action, enrichedAttributes)
-            .map(AuditEntry::entryId)
-            .whenResult(id -> LOG.debug(
-                "[{}] Audit recorded: entryId={}, entityId={}, action={}, tenant={}",
-                BRIDGE_ID, id, entityId, action, context.getTenantId().getValue()
-            ));
+                Map<String, Object> enrichedAttributes = buildAuditAttributes(context, attributes);
+
+                return auditTrailPlugin.logEvent(entityId, action, enrichedAttributes)
+                    .map(AuditEntry::entryId)
+                    .whenResult(id -> LOG.debug(
+                        "[{}] Audit recorded: entryId={}, entityId={}, action={}, tenant={}, attributes={}",
+                        BRIDGE_ID,
+                        id,
+                        entityId,
+                        action,
+                        context.getTenantId().getValue(),
+                        redact(enrichedAttributes.toString())
+                    ));
+            });
     }
 
     /**
@@ -270,32 +298,36 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(entityId, "entityId must not be null");
         Objects.requireNonNull(riskModelId, "riskModelId must not be null");
         Objects.requireNonNull(factors, "factors must not be null");
+        BridgeContext bridgeContext = context.toBridgeContext();
 
-        return riskManagementPlugin.calculateRisk(
-                entityId,
-                new RiskManagementPlugin.RiskModelId(riskModelId),
-                factors
-            )
-            .map(RiskManagementPlugin.RiskScore::score)
-            .whenException(e -> {
-                // P1-018: Log and handle risk evaluation failure
-                LOG.error("[{}] Risk evaluation failed: entityId={}, model={}, tenant={}, error={}",
-                    BRIDGE_ID, entityId, riskModelId, context.getTenantId().getValue(), e.getMessage());
-                // P1-018: Fail closed in production - return maximum risk score (1.0)
-                if (productionMode) {
-                    return 1.0;
+        return checkAuthorized(bridgeContext, "risk:" + entityId, "evaluate")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException("Not authorized to evaluate risk"));
                 }
-                // In non-production, return 0.0 for testing convenience
-                return 0.0;
-            })
-            .whenResult(score -> LOG.debug(
-                "[{}] Risk evaluated: entityId={}, model={}, score={}, tenant={}",
-                BRIDGE_ID,
-                entityId,
-                riskModelId,
-                score,
-                context.getTenantId().getValue()
-            ));
+                return riskManagementPlugin.calculateRisk(
+                        entityId,
+                        new RiskManagementPlugin.RiskModelId(riskModelId),
+                        factors
+                    )
+                    .map(RiskManagementPlugin.RiskScore::score)
+                    .whenException(e -> {
+                        LOG.error("[{}] Risk evaluation failed: entityId={}, model={}, tenant={}, error={}",
+                            BRIDGE_ID, entityId, riskModelId, context.getTenantId().getValue(), e.getMessage());
+                        if (productionMode) {
+                            return 1.0;
+                        }
+                        return 0.0;
+                    })
+                    .whenResult(score -> LOG.debug(
+                        "[{}] Risk evaluated: entityId={}, model={}, score={}, tenant={}",
+                        BRIDGE_ID,
+                        entityId,
+                        riskModelId,
+                        score,
+                        context.getTenantId().getValue()
+                    ));
+            });
     }
 
     /**
@@ -309,19 +341,24 @@ public final class DigitalMarketingKernelAdapterImpl
         requireStarted();
         Objects.requireNonNull(context, "context must not be null");
         Objects.requireNonNull(flagKey, "flagKey must not be null");
+        BridgeContext bridgeContext = context.toBridgeContext();
 
-        return featureFlagPlugin.isEnabled(flagKey, context.getTenantId().getValue())
-            .whenException(e -> {
-                // P1-017: Log feature flag check failure and fail closed
-                LOG.error("[{}] Feature flag check failed: flagKey={}, tenant={}, error={}",
-                    BRIDGE_ID, flagKey, context.getTenantId().getValue(), e.getMessage());
-                // P1-017: Fail closed - return false when plugin is unavailable
-                return false;
-            })
-            .whenResult(enabled -> LOG.debug(
-                "[{}] Feature flag checked: flagKey={}, enabled={}, tenant={}",
-                BRIDGE_ID, flagKey, enabled, context.getTenantId().getValue()
-            ));
+        return checkAuthorized(bridgeContext, "feature-flag:" + flagKey, "read")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.of(Boolean.FALSE);
+                }
+                return featureFlagPlugin.isEnabled(flagKey, context.getTenantId().getValue())
+                    .whenException(e -> {
+                        LOG.error("[{}] Feature flag check failed: flagKey={}, tenant={}, error={}",
+                            BRIDGE_ID, flagKey, context.getTenantId().getValue(), e.getMessage());
+                        return false;
+                    })
+                    .whenResult(enabled -> LOG.debug(
+                        "[{}] Feature flag checked: flagKey={}, enabled={}, tenant={}",
+                        BRIDGE_ID, flagKey, enabled, context.getTenantId().getValue()
+                    ));
+            });
     }
 
     // -----------------------------------------------------------------------
@@ -350,43 +387,53 @@ public final class DigitalMarketingKernelAdapterImpl
         Objects.requireNonNull(recipientId, "recipientId must not be null");
         Objects.requireNonNull(template,    "template must not be null");
         Objects.requireNonNull(attributes,  "attributes must not be null");
+        BridgeContext bridgeContext = context.toBridgeContext();
 
-        // Enrich attributes with context information
-        java.util.Map<String, String> enrichedAttributes = new java.util.HashMap<>(attributes);
-        enrichedAttributes.put("tenantId", context.getTenantId().getValue());
-        enrichedAttributes.put("workspaceId", context.getWorkspaceId().getValue());
-        enrichedAttributes.put("correlationId", context.getCorrelationId().getValue());
-        enrichedAttributes.put("actor", context.getActor().getPrincipalId());
-
-        return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
-            .whenException(e -> {
-                // P1-019: Production safety - log and fail closed for notification failures
-                if (productionMode) {
-                    LOG.error(
-                        "[{}] P1-019: Notification dispatch failed in production: " +
-                        "recipientId={}, template={}, tenant={}, error={}",
-                        BRIDGE_ID, recipientId, template,
-                        context.getTenantId().getValue(), e.getMessage()
-                    );
-                    // P1-019: Fail closed in production - throw exception to indicate failure
-                    throw new RuntimeException(
-                        "P1-019: Notification dispatch failed in production mode. " +
-                        "recipientId=" + recipientId + ", template=" + template, e
-                    );
-                } else {
-                    LOG.warn(
-                        "[{}] Notification dispatch failed: recipientId={}, template={}, tenant={}",
-                        BRIDGE_ID, recipientId, template, context.getTenantId().getValue()
-                    );
-                    // In non-production, log warning but don't fail
-                    return null;
+        return checkAuthorized(bridgeContext, "notification:" + recipientId, "dispatch")
+            .then(allowed -> {
+                if (!allowed) {
+                    return Promise.ofException(new SecurityException("Not authorized to notify user"));
                 }
-            })
-            .whenResult(notificationId -> LOG.info(
-                "[{}] Notification dispatched: notificationId={}, recipientId={}, template={}, tenant={}",
-                BRIDGE_ID, notificationId, recipientId, template, context.getTenantId().getValue()
-            ))
-            .map(notificationId -> null);
+
+                java.util.Map<String, String> enrichedAttributes = new java.util.HashMap<>(attributes);
+                enrichedAttributes.put("tenantId", context.getTenantId().getValue());
+                enrichedAttributes.put("workspaceId", context.getWorkspaceId().getValue());
+                enrichedAttributes.put("correlationId", context.getCorrelationId().getValue());
+                enrichedAttributes.put("actor", context.getActor().getPrincipalId());
+
+                return notificationPlugin.dispatch(recipientId, template, enrichedAttributes)
+                    .whenException(e -> {
+                        if (productionMode) {
+                            LOG.error(
+                                "[{}] P1-019: Notification dispatch failed in production: " +
+                                "recipientId={}, template={}, tenant={}, metadata={}, error={}",
+                                BRIDGE_ID, recipientId, template,
+                                context.getTenantId().getValue(),
+                                redact(enrichedAttributes.toString()),
+                                e.getMessage()
+                            );
+                            throw new RuntimeException(
+                                "P1-019: Notification dispatch failed in production mode. " +
+                                "recipientId=" + recipientId + ", template=" + template, e
+                            );
+                        } else {
+                            LOG.warn(
+                                "[{}] Notification dispatch failed: recipientId={}, template={}, tenant={}, metadata={}",
+                                BRIDGE_ID,
+                                recipientId,
+                                template,
+                                context.getTenantId().getValue(),
+                                redact(enrichedAttributes.toString())
+                            );
+                            return null;
+                        }
+                    })
+                    .whenResult(notificationId -> LOG.info(
+                        "[{}] Notification dispatched: notificationId={}, recipientId={}, template={}, tenant={}",
+                        BRIDGE_ID, notificationId, recipientId, template, context.getTenantId().getValue()
+                    ))
+                    .map(notificationId -> null);
+            });
     }
 
     // -----------------------------------------------------------------------

@@ -161,7 +161,7 @@ export const MemberManagement: React.FC<MemberManagementProps> = ({
                       <Typography as="p" className="text-sm" fontWeight="medium">
                         {member.name}
                       </Typography>
-                      <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                      <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         {member.email}
                       </Typography>
                     </Box>
@@ -441,7 +441,7 @@ export const AuditLog: React.FC<AuditLogProps> = ({
                   <Typography as="p" className="text-sm" color="text.secondary">
                     {log.details}
                   </Typography>
-                  <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                  <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     {new Date(log.timestamp).toLocaleString()}
                   </Typography>
                 </Box>
@@ -542,7 +542,7 @@ export const SecurityAlerts: React.FC<SecurityAlertsProps> = ({
             <Typography as="p" className="text-sm">
               {alert.message}
             </Typography>
-            <Typography as="span" className="text-xs text-gray-500">
+            <Typography as="span" className="text-xs text-fg-muted">
               {new Date(alert.timestamp).toLocaleString()}
             </Typography>
           </Alert>
@@ -656,7 +656,7 @@ export const WorkspaceAdminDashboardRefactored: React.FC<WorkspaceAdminDashboard
       )}
 
       {/* Tabs */}
-      <Box className="border-gray-200 dark:border-gray-700 border-b" >
+      <Box className="border-border dark:border-border border-b" >
         <Tabs value={activeTab} onChange={handleTabChange}>
           <Tab label="Members" icon={<PersonAdd />} />
           <Tab label="Security" icon={<SecurityIcon />} />

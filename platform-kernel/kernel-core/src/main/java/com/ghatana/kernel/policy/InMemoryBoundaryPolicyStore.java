@@ -7,8 +7,12 @@ import java.util.Objects;
  * In-memory implementation of {@link BoundaryPolicyStore}.
  *
  * <p>Holds a fixed, pre-validated list of rules supplied at construction time.
- * Suitable for unit tests, bootstrapped kernel configurations, and policy packs
+ * Suitable for unit tests, local bootstrapped kernel configurations, and policy packs
  * that load rules from code or static configuration at startup.</p>
+
+ * <p>This store is not the product runtime default. Product launchers and production
+ * composition roots must not wire {@code InMemoryBoundaryPolicyStore} directly; CI
+ * enforces that guardrail in product main sources.</p>
  *
  * <p>Rules are validated at construction. Any violation causes an immediate
  * {@link BoundaryPolicyStore.BoundaryPolicyStoreException} — no deferred failure.</p>

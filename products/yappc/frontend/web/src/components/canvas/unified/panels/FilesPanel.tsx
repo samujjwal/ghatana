@@ -62,7 +62,7 @@ export function FilesPanel() {
 
   const getFileIcon = (file: FileItem) => {
     if (file.type === 'folder') {
-      return <FolderOpen className="text-blue-600 text-lg" />;
+      return <FolderOpen className="text-info-color text-lg" />;
     }
     return <InsertDriveFile className="opacity-[0.6] text-lg" />;
   };
@@ -94,7 +94,7 @@ export function FilesPanel() {
       {currentPath !== '/' && (
         <Typography
           variant="caption"
-          className="mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-sm cursor-pointer hover:bg-blue-50 hover:dark:bg-blue-900/20"
+          className="mb-2 p-2 bg-surface-muted dark:bg-surface rounded-sm cursor-pointer hover:bg-info-bg hover:dark:bg-info-bg/20"
           onClick={() => setCurrentPath('/')}
         >
           📂 {currentPath}

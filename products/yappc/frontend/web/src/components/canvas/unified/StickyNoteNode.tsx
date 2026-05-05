@@ -107,7 +107,7 @@ export const StickyNoteNode = React.memo(
         >
           {/* Sticky note "tape" effect */}
           <Box
-            className="absolute top-0 left-[40%] w-[20%] h-[10px] bg-amber-200/60 rounded-b-sm"
+            className="absolute top-0 left-[40%] w-[20%] h-[10px] bg-warning-bg/60 rounded-b-sm"
             style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
           />
 

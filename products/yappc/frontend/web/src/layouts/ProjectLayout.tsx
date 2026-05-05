@@ -172,13 +172,13 @@ const ProjectHeader: React.FC = () => {
 
   const statusColors: Record<string, string> = {
     active: 'bg-emerald-500',
-    paused: 'bg-amber-500',
-    archived: 'bg-zinc-500',
+    paused: 'bg-warning-bg',
+    archived: 'bg-surface-muted',
     setup: 'bg-violet-500',
   };
 
   return (
-    <div className="flex items-center justify-between py-4 px-6 bg-zinc-900/50 border-b border-zinc-800">
+    <div className="flex items-center justify-between py-4 px-6 bg-surface/50 border-b border-border">
       {/* Left: Project Info */}
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-lg font-bold">
@@ -190,16 +190,16 @@ const ProjectHeader: React.FC = () => {
             <span
               className={cn(
                 'w-2 h-2 rounded-full',
-                statusColors[activeProject.status] || 'bg-zinc-500'
+                statusColors[activeProject.status] || 'bg-surface-muted'
               )}
             />
           </div>
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <div className="flex items-center gap-2 text-sm text-fg-muted">
             {breadcrumbs.map((crumb, i) => (
               <React.Fragment key={i}>
-                {i > 0 && <span className="text-zinc-600">/</span>}
+                {i > 0 && <span className="text-fg-muted">/</span>}
                 {crumb.path ? (
-                  <NavLink to={crumb.path} className="hover:text-zinc-300 transition-colors">
+                  <NavLink to={crumb.path} className="hover:text-fg-muted transition-colors">
                     {crumb.label}
                   </NavLink>
                 ) : (
@@ -214,21 +214,21 @@ const ProjectHeader: React.FC = () => {
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
         {/* Environment indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border">
           <Cloud className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm text-zinc-300">Production</span>
+          <span className="text-sm text-fg-muted">Production</span>
         </div>
 
         {/* Branch indicator */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border">
           <GitBranch className="w-4 h-4 text-violet-400" />
-          <span className="text-sm text-zinc-300">main</span>
+          <span className="text-sm text-fg-muted">main</span>
         </div>
 
         {/* Star */}
         <IconButton
           aria-label="Star project"
-          className="text-zinc-400 hover:text-amber-400"
+          className="text-fg-muted hover:text-warning-color"
         >
           <Star className="w-5 h-5" />
         </IconButton>
@@ -236,7 +236,7 @@ const ProjectHeader: React.FC = () => {
         {/* Share */}
         <IconButton
           aria-label="Share project"
-          className="text-zinc-400 hover:text-white"
+          className="text-fg-muted hover:text-white"
         >
           <Share2 className="w-5 h-5" />
         </IconButton>
@@ -244,7 +244,7 @@ const ProjectHeader: React.FC = () => {
         {/* Search */}
         <IconButton
           aria-label="Search in project"
-          className="text-zinc-400 hover:text-white"
+          className="text-fg-muted hover:text-white"
         >
           <Search className="w-5 h-5" />
         </IconButton>
@@ -252,10 +252,10 @@ const ProjectHeader: React.FC = () => {
         {/* Notifications */}
         <IconButton
           aria-label="Project notifications"
-          className="text-zinc-400 hover:text-white relative"
+          className="text-fg-muted hover:text-white relative"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-destructive-bg rounded-full" />
         </IconButton>
 
         {/* More Menu */}
@@ -263,7 +263,7 @@ const ProjectHeader: React.FC = () => {
           <IconButton
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="More options"
-            className="text-zinc-400 hover:text-white"
+            className="text-fg-muted hover:text-white"
           >
             <MoreVertical className="w-5 h-5" />
           </IconButton>
@@ -279,16 +279,16 @@ const ProjectHeader: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="absolute right-0 top-full mt-2 w-48 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-20 py-1"
+                  className="absolute right-0 top-full mt-2 w-48 bg-surface border border-border rounded-lg shadow-xl z-20 py-1"
                 >
-                  <Button variant="ghost" size="sm" startIcon={<Settings className="w-4 h-4" />} fullWidth className="justify-start text-zinc-300">
+                  <Button variant="ghost" size="sm" startIcon={<Settings className="w-4 h-4" />} fullWidth className="justify-start text-fg-muted">
                     Project Settings
                   </Button>
-                  <Button variant="ghost" size="sm" startIcon={<Users className="w-4 h-4" />} fullWidth className="justify-start text-zinc-300">
+                  <Button variant="ghost" size="sm" startIcon={<Users className="w-4 h-4" />} fullWidth className="justify-start text-fg-muted">
                     Manage Team
                   </Button>
-                  <hr className="my-1 border-zinc-700" />
-                  <Button variant="ghost" size="sm" startIcon={<Trash2 className="w-4 h-4" />} fullWidth className="justify-start text-red-400">
+                  <hr className="my-1 border-border" />
+                  <Button variant="ghost" size="sm" startIcon={<Trash2 className="w-4 h-4" />} fullWidth className="justify-start text-destructive">
                     <Trash2 className="w-4 h-4" />
                     Archive Project
                   </Button>
@@ -344,17 +344,17 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-full bg-zinc-900 border-r border-zinc-800',
+        'fixed left-0 top-0 h-full bg-surface border-r border-border',
         'flex flex-col transition-all duration-300 z-40',
         collapsed ? 'w-16' : 'w-56'
       )}
     >
       {/* Back to Dashboard */}
-      <div className="h-14 flex items-center justify-between px-3 border-b border-zinc-800">
+      <div className="h-14 flex items-center justify-between px-3 border-b border-border">
         <NavLink
           to={ROUTES.DASHBOARD}
           className={cn(
-            'flex items-center gap-2 text-zinc-400 hover:text-white transition-colors',
+            'flex items-center gap-2 text-fg-muted hover:text-white transition-colors',
             collapsed && 'justify-center w-full'
           )}
         >
@@ -365,7 +365,7 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
           <IconButton
             onClick={onToggle}
             aria-label="Collapse sidebar"
-            className="text-zinc-500 hover:text-white"
+            className="text-fg-muted hover:text-white"
           >
             <ChevronLeft className="w-4 h-4" />
           </IconButton>
@@ -382,7 +382,7 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all',
-                  'text-zinc-400 hover:text-white hover:bg-zinc-800',
+                  'text-fg-muted hover:text-white hover:bg-surface',
                   (isActive || currentPhase === item.id) &&
                   'bg-violet-500/10 text-violet-400 border border-violet-500/20',
                   collapsed && 'justify-center px-2'
@@ -402,9 +402,9 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
 
         {/* Sub-navigation for current phase */}
         {!collapsed && currentSubItems.length > 0 && (
-          <div className="mt-6 pt-4 border-t border-zinc-800">
+          <div className="mt-6 pt-4 border-t border-border">
             <div className="px-3 mb-2">
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
                 {currentPhase}
               </span>
             </div>
@@ -417,8 +417,8 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
-                      'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50',
-                      isActive && 'text-white bg-zinc-800'
+                      'text-fg-muted hover:text-fg-muted hover:bg-surface/50',
+                      isActive && 'text-white bg-surface'
                     )
                   }
                 >
@@ -433,11 +433,11 @@ const PhaseNav: React.FC<PhaseNavProps> = ({ collapsed, onToggle }) => {
 
       {/* Toggle Button (collapsed state) */}
       {collapsed && (
-        <div className="p-3 border-t border-zinc-800">
+        <div className="p-3 border-t border-border">
           <IconButton
             onClick={onToggle}
             aria-label="Expand sidebar"
-            className="w-full text-zinc-400 hover:text-white flex items-center justify-center"
+            className="w-full text-fg-muted hover:text-white flex items-center justify-center"
           >
             <ChevronRight className="w-5 h-5" />
           </IconButton>
@@ -459,7 +459,7 @@ const ProjectLayout: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-surface">
       {/* Phase Navigation Sidebar */}
       <PhaseNav collapsed={sidebarCollapsed} onToggle={handleToggleSidebar} />
 

@@ -61,7 +61,7 @@ export function MindMapLayoutDialog({
                         <Stack spacing={2}>
                             {/* Tree Layout */}
                             <Box
-                                className="p-4 border border-solid rounded cursor-pointer hover:bg-gray-100 hover:dark:bg-gray-800" style={{ borderColor: selectedLayout === 'tree' ? 'primary.main' : 'divider' }}
+                                className="p-4 border border-solid rounded cursor-pointer hover:bg-surface-muted hover:dark:bg-surface" style={{ borderColor: selectedLayout === 'tree' ? 'primary.main' : 'divider' }}
                                 onClick={() => setSelectedLayout('tree')}
                             >
                                 <FormControlLabel
@@ -86,7 +86,7 @@ export function MindMapLayoutDialog({
 
                             {/* Radial Layout */}
                             <Box
-                                className="p-4 border border-solid rounded cursor-pointer hover:bg-gray-100 hover:dark:bg-gray-800" style={{ borderColor: selectedLayout === 'radial' ? 'primary.main' : 'divider' }}
+                                className="p-4 border border-solid rounded cursor-pointer hover:bg-surface-muted hover:dark:bg-surface" style={{ borderColor: selectedLayout === 'radial' ? 'primary.main' : 'divider' }}
                                 onClick={() => setSelectedLayout('radial')}
                             >
                                 <FormControlLabel
@@ -111,7 +111,7 @@ export function MindMapLayoutDialog({
 
                             {/* Fishbone Layout */}
                             <Box
-                                className="p-4 border border-solid rounded cursor-pointer hover:bg-gray-100 hover:dark:bg-gray-800" style={{ borderColor: selectedLayout === 'fishbone' ? 'primary.main' : 'divider' }}
+                                className="p-4 border border-solid rounded cursor-pointer hover:bg-surface-muted hover:dark:bg-surface" style={{ borderColor: selectedLayout === 'fishbone' ? 'primary.main' : 'divider' }}
                                 onClick={() => setSelectedLayout('fishbone')}
                             >
                                 <FormControlLabel

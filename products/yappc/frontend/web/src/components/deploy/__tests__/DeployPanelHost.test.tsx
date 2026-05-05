@@ -79,7 +79,7 @@ describe('DeployPanelHost', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('AI Strategy')).toBeInTheDocument();
+    expect(screen.getAllByText('Strategy').length).toBeGreaterThan(0);
 
     rerender(
       <MemoryRouter initialEntries={['/?segment=health']}>

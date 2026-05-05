@@ -134,10 +134,10 @@ const ToolbarButton: React.FC<ToolbarButtonProps> = ({
 
     const variantClasses = {
         default: active
-            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+            ? 'bg-info-bg dark:bg-info-bg/50 text-info-color dark:text-info-color'
             : 'text-grey-600 dark:text-grey-400 hover:bg-grey-100 dark:hover:bg-grey-700',
-        primary: 'bg-blue-500 text-white hover:bg-blue-600',
-        danger: 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30',
+        primary: 'bg-info-bg text-white hover:bg-primary',
+        danger: 'text-destructive dark:text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/30',
     };
 
     return (
@@ -182,14 +182,14 @@ const ToolbarSection: React.FC<ToolbarSectionProps> = ({ title, children }) => {
  */
 const PhaseIndicator: React.FC<{ phase: LifecyclePhase }> = ({ phase }) => {
     const phaseColors: Record<LifecyclePhase, string> = {
-        [LifecyclePhase.INTENT]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
+        [LifecyclePhase.INTENT]: 'bg-info-bg text-info-color dark:bg-info-bg/50 dark:text-info-color',
         [LifecyclePhase.CONTEXT]: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300',
-        [LifecyclePhase.PLAN]: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+        [LifecyclePhase.PLAN]: 'bg-warning-bg text-warning-color dark:bg-warning-bg/50 dark:text-warning-color',
         [LifecyclePhase.EXECUTE]: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
-        [LifecyclePhase.VERIFY]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300',
-        [LifecyclePhase.OBSERVE]: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300',
-        [LifecyclePhase.LEARN]: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-300',
-        [LifecyclePhase.INSTITUTIONALIZE]: 'bg-slate-100 text-slate-700 dark:bg-slate-900/50 dark:text-slate-300',
+        [LifecyclePhase.VERIFY]: 'bg-info-bg text-info-color dark:bg-info-bg/50 dark:text-info-color',
+        [LifecyclePhase.OBSERVE]: 'bg-info-bg text-info-color dark:bg-info-bg/50 dark:text-info-color',
+        [LifecyclePhase.LEARN]: 'bg-info-bg text-info-color dark:bg-info-bg/50 dark:text-info-color',
+        [LifecyclePhase.INSTITUTIONALIZE]: 'bg-surface-muted text-fg dark:bg-surface/50 dark:text-fg-muted',
     };
 
     return (
@@ -450,7 +450,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                 size="sm"
                 startIcon={<AiIcon className="w-4 h-4" />}
                 onClick={() => handlers.openAI?.() || handleActionClick('ai.open')}
-                className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/30"
+                className="text-info-color border-info-border hover:bg-info-bg dark:text-info-color dark:border-info-border dark:hover:bg-info-bg/30"
             >
                 AI
             </Button>
@@ -483,7 +483,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                         size="sm"
                         startIcon={<DeployIcon className="w-4 h-4" />}
                         onClick={() => handlers.deploy?.() || handleActionClick('deploy.deploy')}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-primary hover:bg-info-bg"
                     >
                         Deploy
                     </Button>
@@ -503,7 +503,7 @@ export const ContextualToolbar: React.FC<ContextualToolbarProps> = ({
                     </IconButton>
                     {moreMenuAnchor ? (
                     <div className="relative">
-                    <div className="absolute right-0 top-8 z-20 min-w-[240px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <div className="absolute right-0 top-8 z-20 min-w-[240px] rounded-md border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface">
                         {overflowActions.map((action: ActionDefinition) => (
                             <MenuItem
                                 key={action.id}

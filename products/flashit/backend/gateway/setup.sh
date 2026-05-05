@@ -21,8 +21,7 @@ echo "Step 2: Checking .env file..."
 if [ ! -f ".env" ]; then
   echo "❌ ERROR: .env file not found in $(pwd)"
   echo ""
-  echo "Please create .env with:"
-  echo "DATABASE_URL=postgresql://ghatana:ghatana123@localhost:5433/flashit_dev"
+  echo "Please create .env from ../.env.example and set DATABASE_URL explicitly."
   exit 1
 fi
 echo "✅ .env exists"
@@ -39,7 +38,7 @@ echo ""
 
 # Step 4: Install dependencies
 echo "Step 4: Installing dependencies..."
-npm install 2>&1 | grep -E "added|up to date" || true
+pnpm install 2>&1 | grep -E "added|up to date|Already up to date" || true
 echo "✅ Dependencies installed"
 echo ""
 
@@ -72,5 +71,5 @@ echo "✅ Setup Complete!"
 echo "=========================================="
 echo ""
 echo "To start the API server, run:"
-echo "  npm run dev"
+echo "  pnpm run dev"
 echo ""

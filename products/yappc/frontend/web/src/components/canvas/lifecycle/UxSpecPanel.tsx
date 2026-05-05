@@ -362,11 +362,11 @@ export const UxSpecPanel: React.FC<UxSpecPanelProps> = ({
                                 className="w-full px-3 py-2 border border-divider rounded-lg bg-bg-paper text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                             />
                         </div>
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+                        <div className="p-3 bg-info-bg dark:bg-info-bg/20 rounded-lg">
+                            <h4 className="text-sm font-medium text-info-color dark:text-info-color mb-2">
                                 WCAG Quick Reference
                             </h4>
-                            <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                            <ul className="text-xs text-info-color dark:text-info-color space-y-1">
                                 <li>• Perceivable: Text alternatives, captions, adaptable content</li>
                                 <li>• Operable: Keyboard accessible, enough time, navigable</li>
                                 <li>• Understandable: Readable, predictable, input assistance</li>

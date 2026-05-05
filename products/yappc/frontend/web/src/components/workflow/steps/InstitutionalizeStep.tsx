@@ -132,11 +132,11 @@ export function InstitutionalizeStep() {
 
             {/* Summary Stats */}
             {actions.length > 0 && (
-                <Paper className="p-4 mb-6 bg-gray-100 dark:bg-gray-800">
+                <Paper className="p-4 mb-6 bg-surface-muted dark:bg-surface">
                     <Box className="flex gap-6 justify-center">
                         <Box className="text-center">
                             <Typography variant="h4">{actions.length}</Typography>
-                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Total Actions
                             </Typography>
                         </Box>
@@ -145,7 +145,7 @@ export function InstitutionalizeStep() {
                             <Typography variant="h4" color="warning.main">
                                 {pendingCount}
                             </Typography>
-                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Pending
                             </Typography>
                         </Box>
@@ -153,7 +153,7 @@ export function InstitutionalizeStep() {
                             <Typography variant="h4" color="success.main">
                                 {approvedCount}
                             </Typography>
-                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Approved
                             </Typography>
                         </Box>
@@ -161,7 +161,7 @@ export function InstitutionalizeStep() {
                             <Typography variant="h4" color="error.main">
                                 {rejectedCount}
                             </Typography>
-                            <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                            <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                 Rejected
                             </Typography>
                         </Box>
@@ -183,16 +183,16 @@ export function InstitutionalizeStep() {
                                 key={actionType.value}
                                 elevation={newActionType === actionType.value ? 3 : 0}
                                 onClick={() => setNewActionType(actionType.value)}
-                                className={`p-3 cursor-pointer border rounded-lg transition-all duration-200 min-w-[140px] ${newActionType === actionType.value ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'}`}
+                                className={`p-3 cursor-pointer border rounded-lg transition-all duration-200 min-w-[140px] ${newActionType === actionType.value ? 'border-info-border bg-info-bg dark:bg-info-bg/20' : 'border-border dark:border-border bg-white dark:bg-surface'}`}
                                 style={{ flex: '1 1 150px' }}
                             >
                                 <Box className="flex items-center gap-2">
-                                    <actionType.icon className={newActionType === actionType.value ? 'text-blue-600' : 'text-gray-500'} />
+                                    <actionType.icon className={newActionType === actionType.value ? 'text-info-color' : 'text-fg-muted'} />
                                     <Typography component="p" className="text-sm" fontWeight={newActionType === actionType.value ? 600 : 400}>
                                         {actionType.label}
                                     </Typography>
                                 </Box>
-                                <Typography component="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography component="span" className="text-xs text-fg-muted" color="text.secondary">
                                     {actionType.desc}
                                 </Typography>
                             </Paper>
@@ -255,7 +255,7 @@ export function InstitutionalizeStep() {
                         {/* Enforcement Level Slider */}
                         <Box className="px-4">
                             <Box className="flex items-center gap-2 mb-2">
-                                <EnforcementIcon size={16} className="text-gray-500" />
+                                <EnforcementIcon size={16} className="text-fg-muted" />
                                 <Typography component="p" className="text-sm" color="text.secondary">
                                     Enforcement Level: <strong>{getEnforcementLabel(newActionEnforcement)}</strong>
                                 </Typography>
@@ -271,7 +271,7 @@ export function InstitutionalizeStep() {
                                 max={100}
                                 className="w-full"
                             />
-                            <Box className="mt-2 flex justify-between text-xs text-gray-500">
+                            <Box className="mt-2 flex justify-between text-xs text-fg-muted">
                                 {ENFORCEMENT_LEVELS.map((level) => (
                                     <span key={level.value}>{level.label}</span>
                                 ))}
@@ -349,12 +349,12 @@ export function InstitutionalizeStep() {
                                                 }
                                                 secondary={
                                                     <>
-                                                        <Typography component="span" className="mt-2 block text-xs text-gray-500" color="text.secondary">
-                                                            <PersonIcon size={12} className="mr-1 inline-block text-gray-500 dark:text-gray-400 align-middle" />
+                                                        <Typography component="span" className="mt-2 block text-xs text-fg-muted" color="text.secondary">
+                                                            <PersonIcon size={12} className="mr-1 inline-block text-fg-muted dark:text-fg-muted align-middle" />
                                                             Owner: {action.owner}
                                                         </Typography>
                                                         {(action.approvers ?? []).length > 0 && (
-                                                            <Typography component="span" className="mt-1 block text-xs text-gray-500" color="text.secondary">
+                                                            <Typography component="span" className="mt-1 block text-xs text-fg-muted" color="text.secondary">
                                                                 Approvers:
                                                                 {(action.approvers ?? []).map((approver, i) => (
                                                                     <Chip
@@ -419,9 +419,9 @@ export function InstitutionalizeStep() {
                         type="date"
                         value={currentData.effectiveDate ?? ''}
                         onChange={(e) => handleChange('effectiveDate', e.target.value || undefined)}
-                        className="min-w-[200px] rounded border border-gray-300 px-3 py-2 text-sm"
+                        className="min-w-[200px] rounded border border-border px-3 py-2 text-sm"
                     />
-                    <Typography component="p" className="mt-2 text-sm text-gray-500" color="text.secondary">
+                    <Typography component="p" className="mt-2 text-sm text-fg-muted" color="text.secondary">
                         When should these changes take effect?
                     </Typography>
                 </CardContent>

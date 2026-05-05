@@ -71,7 +71,7 @@ describe('AIChatInterface', () => {
 
   it('has a textarea with correct placeholder text', () => {
     render(<AIChatInterface />);
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)');
     expect(textarea).toBeDefined();
   });
 
@@ -79,7 +79,7 @@ describe('AIChatInterface', () => {
     const onSendMessage = vi.fn();
     render(<AIChatInterface onSendMessage={onSendMessage} />);
 
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)');
     fireEvent.change(textarea, { target: { value: '  What is a microservice?  ' } });
 
     fireEvent.click(screen.getByRole('button', { name: /send message/i }));
@@ -91,7 +91,7 @@ describe('AIChatInterface', () => {
     const onSendMessage = vi.fn();
     render(<AIChatInterface onSendMessage={onSendMessage} />);
 
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)') as HTMLTextAreaElement;
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)') as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: 'Hello AI' } });
     fireEvent.click(screen.getByRole('button', { name: /send message/i }));
 
@@ -102,7 +102,7 @@ describe('AIChatInterface', () => {
     const onSendMessage = vi.fn();
     render(<AIChatInterface onSendMessage={onSendMessage} />);
 
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)');
     fireEvent.change(textarea, { target: { value: 'Enter key test' } });
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
 
@@ -113,7 +113,7 @@ describe('AIChatInterface', () => {
     const onSendMessage = vi.fn();
     render(<AIChatInterface onSendMessage={onSendMessage} />);
 
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)');
     fireEvent.change(textarea, { target: { value: 'New line test' } });
     fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
 
@@ -137,7 +137,7 @@ describe('AIChatInterface', () => {
 
   it('enables send button when input has text', () => {
     render(<AIChatInterface />);
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant… (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant… (Shift+Enter for new line)');
     fireEvent.change(textarea, { target: { value: 'some text' } });
     const sendButton = screen.getByRole('button', { name: /send message/i }) as HTMLButtonElement;
     expect(sendButton.disabled).toBe(false);
@@ -145,7 +145,7 @@ describe('AIChatInterface', () => {
 
   it('disables send button when isLoading is true even with text', () => {
     render(<AIChatInterface isLoading onSendMessage={vi.fn()} />);
-    const textarea = screen.getByPlaceholderText('Ask the AI assistant\u2026 (Shift+Enter for new line)');
+    const textarea = screen.getByPlaceholderText('Ask the assistant\u2026 (Shift+Enter for new line)');
     fireEvent.change(textarea, { target: { value: 'some typed text' } });
     const sendButton = screen.getByRole('button', { name: /send message/i }) as HTMLButtonElement;
     expect(sendButton.disabled).toBe(true);

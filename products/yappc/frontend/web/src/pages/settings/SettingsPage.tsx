@@ -107,13 +107,13 @@ function ToggleSwitch({
   return (
     <div className="flex items-center justify-between py-3">
       <div>
-        <p className="text-sm font-medium text-zinc-200">{label}</p>
-        <p className="text-xs text-zinc-500">{description}</p>
+        <p className="text-sm font-medium text-fg-muted">{label}</p>
+        <p className="text-xs text-fg-muted">{description}</p>
       </div>
       <button
         onClick={() => onChange(!checked)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          checked ? 'bg-blue-600' : 'bg-zinc-700'
+          checked ? 'bg-primary' : 'bg-surface-muted'
         }`}
       >
         <span
@@ -134,40 +134,40 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">Workspace Name</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">Workspace Name</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="My Workspace"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">Description</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">Description</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="What this workspace is about..."
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">Timezone</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">Timezone</label>
         <input
           type="text"
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted placeholder-zinc-500 focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="America/New_York"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-zinc-300 mb-1.5">Language</label>
+        <label className="block text-sm font-medium text-fg-muted mb-1.5">Language</label>
         <select
           value={settings.general.language}
-          className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-fg-muted focus:border-info-border focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="en">English</option>
           <option value="es">Spanish</option>
@@ -177,7 +177,7 @@ function GeneralPanel({ settings }: { settings: WorkspaceSettings }) {
         </select>
       </div>
       <div className="flex justify-end">
-        <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
+        <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg transition-colors">
           Save Changes
         </button>
       </div>
@@ -228,7 +228,7 @@ function NotificationsPanel({ settings }: { settings: WorkspaceSettings }) {
         onChange={() => toggle('prReviews')}
       />
       <div className="pt-4 flex justify-end">
-        <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
+        <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg transition-colors">
           Save Preferences
         </button>
       </div>
@@ -242,66 +242,66 @@ function SecurityPanel({ settings }: { settings: WorkspaceSettings }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="bg-zinc-800/50 rounded-lg p-4">
+        <div className="bg-surface/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-zinc-200">Two-Factor Auth</p>
+            <p className="text-sm font-medium text-fg-muted">Two-Factor Auth</p>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                sec.twoFactorEnabled ? 'bg-green-600/20 text-green-400' : 'bg-zinc-700 text-zinc-400'
+                sec.twoFactorEnabled ? 'bg-success-bg/20 text-success-color' : 'bg-surface-muted text-fg-muted'
               }`}
             >
               {sec.twoFactorEnabled ? 'Enabled' : 'Disabled'}
             </span>
           </div>
-          <p className="text-xs text-zinc-500">Add an extra layer of security to your account</p>
-          <button className="mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+          <p className="text-xs text-fg-muted">Add an extra layer of security to your account</p>
+          <button className="mt-3 text-xs text-info-color hover:text-info-color transition-colors">
             {sec.twoFactorEnabled ? 'Manage 2FA' : 'Enable 2FA'}
           </button>
         </div>
 
-        <div className="bg-zinc-800/50 rounded-lg p-4">
+        <div className="bg-surface/50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-medium text-zinc-200">SSO</p>
+            <p className="text-sm font-medium text-fg-muted">SSO</p>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                sec.ssoEnabled ? 'bg-green-600/20 text-green-400' : 'bg-zinc-700 text-zinc-400'
+                sec.ssoEnabled ? 'bg-success-bg/20 text-success-color' : 'bg-surface-muted text-fg-muted'
               }`}
             >
               {sec.ssoEnabled ? 'Enabled' : 'Disabled'}
             </span>
           </div>
-          <p className="text-xs text-zinc-500">Single sign-on for enterprise authentication</p>
-          <button className="mt-3 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+          <p className="text-xs text-fg-muted">Single sign-on for enterprise authentication</p>
+          <button className="mt-3 text-xs text-info-color hover:text-info-color transition-colors">
             Configure SSO
           </button>
         </div>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-zinc-200 mb-1">Session Timeout</p>
-        <p className="text-xs text-zinc-500 mb-2">Auto-logout after inactivity</p>
-        <span className="text-sm text-zinc-300">{sec.sessionTimeout} minutes</span>
+        <p className="text-sm font-medium text-fg-muted mb-1">Session Timeout</p>
+        <p className="text-xs text-fg-muted mb-2">Auto-logout after inactivity</p>
+        <span className="text-sm text-fg-muted">{sec.sessionTimeout} minutes</span>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-zinc-200 mb-1">Last Password Change</p>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm font-medium text-fg-muted mb-1">Last Password Change</p>
+        <p className="text-sm text-fg-muted">
           {sec.lastPasswordChange ? new Date(sec.lastPasswordChange).toLocaleDateString() : 'Never'}
         </p>
-        <button className="mt-2 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+        <button className="mt-2 text-xs text-info-color hover:text-info-color transition-colors">
           Change Password
         </button>
       </div>
 
       <div>
-        <p className="text-sm font-medium text-zinc-200 mb-1">IP Allowlist</p>
-        <p className="text-xs text-zinc-500 mb-2">Restrict access to specific IP addresses</p>
+        <p className="text-sm font-medium text-fg-muted mb-1">IP Allowlist</p>
+        <p className="text-xs text-fg-muted mb-2">Restrict access to specific IP addresses</p>
         {sec.ipAllowlist.length === 0 ? (
-          <p className="text-sm text-zinc-500">No IP restrictions configured.</p>
+          <p className="text-sm text-fg-muted">No IP restrictions configured.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {sec.ipAllowlist.map((ip) => (
-              <span key={ip} className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 font-mono">
+              <span key={ip} className="rounded bg-surface px-2 py-1 text-xs text-fg-muted font-mono">
                 {ip}
               </span>
             ))}
@@ -316,20 +316,20 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
   return (
     <div className="grid gap-3">
       {settings.integrations.length === 0 ? (
-        <p className="text-sm text-zinc-500 py-4">No integrations available.</p>
+        <p className="text-sm text-fg-muted py-4">No integrations available.</p>
       ) : (
         settings.integrations.map((integration) => (
           <div
             key={integration.id}
-            className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-800/30 p-4"
+            className="flex items-center justify-between rounded-lg border border-border bg-surface/30 p-4"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">{integration.icon}</span>
               <div>
-                <p className="text-sm font-medium text-zinc-200">{integration.name}</p>
-                <p className="text-xs text-zinc-500">{integration.description}</p>
+                <p className="text-sm font-medium text-fg-muted">{integration.name}</p>
+                <p className="text-xs text-fg-muted">{integration.description}</p>
                 {integration.lastSync && (
-                  <p className="text-xs text-zinc-600 mt-0.5">
+                  <p className="text-xs text-fg-muted mt-0.5">
                     Last synced: {new Date(integration.lastSync).toLocaleDateString()}
                   </p>
                 )}
@@ -338,8 +338,8 @@ function IntegrationsPanel({ settings }: { settings: WorkspaceSettings }) {
             <button
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 integration.connected
-                  ? 'border border-zinc-700 text-zinc-300 hover:bg-zinc-700'
-                  : 'bg-blue-600 text-white hover:bg-blue-500'
+                  ? 'border border-border text-fg-muted hover:bg-surface-muted'
+                  : 'bg-primary text-white hover:bg-info-bg'
               }`}
             >
               {integration.connected ? 'Disconnect' : 'Connect'}
@@ -356,19 +356,19 @@ function DangerZonePanel() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-red-800/50 p-4">
-        <h3 className="text-sm font-semibold text-red-400 mb-1">Transfer Workspace</h3>
-        <p className="text-xs text-zinc-400 mb-3">
+      <div className="rounded-lg border border-destructive-border/50 p-4">
+        <h3 className="text-sm font-semibold text-destructive mb-1">Transfer Workspace</h3>
+        <p className="text-xs text-fg-muted mb-3">
           Transfer ownership of this workspace to another user.
         </p>
-        <button className="rounded-lg border border-red-700 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-900/20 transition-colors">
+        <button className="rounded-lg border border-destructive-border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive-bg/20 transition-colors">
           Transfer Ownership
         </button>
       </div>
 
-      <div className="rounded-lg border border-red-800/50 p-4">
-        <h3 className="text-sm font-semibold text-red-400 mb-1">Delete Workspace</h3>
-        <p className="text-xs text-zinc-400 mb-3">
+      <div className="rounded-lg border border-destructive-border/50 p-4">
+        <h3 className="text-sm font-semibold text-destructive mb-1">Delete Workspace</h3>
+        <p className="text-xs text-fg-muted mb-3">
           Permanently delete this workspace and all its data. This action cannot be undone.
         </p>
         <div className="flex items-center gap-3">
@@ -377,11 +377,11 @@ function DangerZonePanel() {
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder='Type "DELETE" to confirm'
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-sm text-zinc-200 placeholder-zinc-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-fg-muted placeholder-zinc-500 focus:border-destructive-border focus:outline-none focus:ring-1 focus:ring-red-500"
           />
           <button
             disabled={confirmText !== 'DELETE'}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg bg-destructive-bg px-3 py-1.5 text-xs font-medium text-white hover:bg-destructive-bg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Delete Workspace
           </button>
@@ -413,8 +413,8 @@ const SettingsPage: React.FC = () => {
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-zinc-100">Workspace Settings</h1>
-        <p className="mt-1 text-sm text-zinc-400">Manage your workspace configuration and preferences</p>
+        <h1 className="text-2xl font-bold text-fg-muted">Workspace Settings</h1>
+        <p className="mt-1 text-sm text-fg-muted">Manage your workspace configuration and preferences</p>
       </div>
 
       <div className="flex gap-8">
@@ -426,10 +426,10 @@ const SettingsPage: React.FC = () => {
               onClick={() => setActiveTab(tab)}
               className={`w-full flex items-center gap-2.5 text-left px-3 py-2 text-sm rounded-lg transition-colors ${
                 activeTab === tab
-                  ? 'bg-zinc-800 text-zinc-100'
+                  ? 'bg-surface text-fg-muted'
                   : tab === 'Danger Zone'
-                    ? 'text-red-400/70 hover:text-red-400 hover:bg-red-900/10'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                    ? 'text-destructive/70 hover:text-destructive hover:bg-destructive-bg/10'
+                    : 'text-fg-muted hover:text-fg-muted hover:bg-surface/50'
               }`}
             >
               {TAB_ICONS[tab]}
@@ -439,16 +439,16 @@ const SettingsPage: React.FC = () => {
         </nav>
 
         {/* Content Panel */}
-        <main className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg p-6 min-h-[400px]">
-          <h2 className="text-lg font-semibold text-zinc-100 mb-6">{activeTab}</h2>
+        <main className="flex-1 bg-surface border border-border rounded-lg p-6 min-h-[400px]">
+          <h2 className="text-lg font-semibold text-fg-muted mb-6">{activeTab}</h2>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
             </div>
           ) : error || !data ? (
-            <div className="rounded-lg border border-red-800 bg-red-900/20 p-4">
-              <p className="text-sm text-red-400">Failed to load settings.</p>
+            <div className="rounded-lg border border-destructive-border bg-destructive-bg/20 p-4">
+              <p className="text-sm text-destructive">Failed to load settings.</p>
             </div>
           ) : (
             <>

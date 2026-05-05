@@ -30,10 +30,10 @@ type EnhancementSource = 'incident' | 'feedback' | 'metrics' | 'team' | 'ai_sugg
 
 const STATUS_COLORS: Record<EnhancementStatus, string> = {
     proposed: 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300',
-    approved: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    in_progress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    declined: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    approved: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    in_progress: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    completed: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+    declined: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
 };
 
 const SOURCE_ICONS: Record<EnhancementSource, React.ReactNode> = {
@@ -237,7 +237,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-divider">
                 <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <TrendingUp className="w-5 h-5 text-info-color" />
                     <div>
                         <h3 className="font-semibold text-text-primary">Improve</h3>
                         <p className="text-xs text-text-secondary">Enhancements & Learnings</p>
@@ -357,9 +357,9 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                 value={item.priority}
                                                 onChange={(e) => updateEnhancement(idx, { priority: e.target.value as 'low' | 'medium' | 'high' })}
                                                 className={`px-2 py-1 text-xs rounded ${item.priority === 'high'
-                                                        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                                                        ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive'
                                                         : item.priority === 'medium'
-                                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                                                            ? 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color'
                                                             : 'bg-grey-100 text-grey-700 dark:bg-grey-800 dark:text-grey-300'
                                                     }`}
                                             >
@@ -426,7 +426,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-green-50 dark:bg-green-900/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-green-500 resize-none"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-success-bg dark:bg-success-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-green-500 resize-none"
                                                     />
                                                 </div>
                                                 <div>
@@ -440,7 +440,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-yellow-50 dark:bg-yellow-900/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-yellow-500 resize-none"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-warning-bg dark:bg-warning-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-yellow-500 resize-none"
                                                     />
                                                 </div>
                                                 <div>
@@ -454,7 +454,7 @@ export const ImprovePanel: React.FC<ImprovePanelProps> = ({
                                                         }
                                                         placeholder="One per line..."
                                                         rows={3}
-                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-blue-50 dark:bg-blue-900/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                                        className="w-full px-2 py-1 text-xs border border-divider rounded bg-info-bg dark:bg-info-bg/20 text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                                                     />
                                                 </div>
                                             </div>

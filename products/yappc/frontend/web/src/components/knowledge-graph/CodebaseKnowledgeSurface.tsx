@@ -80,19 +80,19 @@ export function CodebaseKnowledgeSurface({
 
   return (
     <div
-      className={cn('rounded-xl border border-zinc-800 bg-zinc-900 p-5', className)}
+      className={cn('rounded-xl border border-border bg-surface p-5', className)}
       data-testid="codebase-knowledge-surface"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <Brain size={18} className="text-violet-400" />
-          <h2 className="text-base font-semibold text-zinc-100">What AI Knows About Your Codebase</h2>
+          <h2 className="text-base font-semibold text-fg-muted">What the assistant knows about your codebase</h2>
         </div>
         <button
           onClick={() => { void refetch(); }}
-          className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors"
-          aria-label="Refresh AI knowledge"
+          className="p-1.5 rounded-lg hover:bg-surface text-fg-muted hover:text-fg-muted transition-colors"
+          aria-label="Refresh knowledge"
           data-testid="knowledge-refresh-btn"
         >
           <RefreshCw size={14} />
@@ -101,17 +101,17 @@ export function CodebaseKnowledgeSurface({
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex items-center gap-2 text-zinc-400 py-4" data-testid="knowledge-loading">
+        <div className="flex items-center gap-2 text-fg-muted py-4" data-testid="knowledge-loading">
           <Loader2 size={16} className="animate-spin" />
-          <span className="text-sm">Loading AI knowledge summary…</span>
+          <span className="text-sm">Loading knowledge summary…</span>
         </div>
       )}
 
       {/* Error */}
       {isError && (
-        <div className="flex items-center gap-2 text-red-400 text-sm py-4" data-testid="knowledge-error">
+        <div className="flex items-center gap-2 text-destructive text-sm py-4" data-testid="knowledge-error">
           <AlertCircle size={16} />
-          <span>Failed to load AI knowledge. Check indexing status.</span>
+          <span>Failed to load knowledge. Check indexing status.</span>
         </div>
       )}
 
@@ -124,8 +124,8 @@ export function CodebaseKnowledgeSurface({
           {/* Knowledge-graph entities */}
           <section data-testid="knowledge-entities">
             <div className="flex items-center gap-2 mb-2">
-              <Database size={14} className="text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              <Database size={14} className="text-fg-muted" />
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
                 Knowledge Graph
               </span>
             </div>
@@ -133,16 +133,16 @@ export function CodebaseKnowledgeSurface({
               {data.entitySummary.map((e) => (
                 <div
                   key={e.type}
-                  className="rounded-lg bg-zinc-800 px-3 py-2"
+                  className="rounded-lg bg-surface px-3 py-2"
                   data-testid={`entity-type-${e.type.toLowerCase()}`}
                 >
-                  <div className="text-lg font-semibold text-zinc-100">{e.count}</div>
-                  <div className="text-xs text-zinc-400">{e.type}</div>
+                  <div className="text-lg font-semibold text-fg-muted">{e.count}</div>
+                  <div className="text-xs text-fg-muted">{e.type}</div>
                 </div>
               ))}
-              <div className="rounded-lg bg-zinc-800 px-3 py-2" data-testid="relation-count">
-                <div className="text-lg font-semibold text-zinc-100">{data.relationCount}</div>
-                <div className="text-xs text-zinc-400">Relations</div>
+              <div className="rounded-lg bg-surface px-3 py-2" data-testid="relation-count">
+                <div className="text-lg font-semibold text-fg-muted">{data.relationCount}</div>
+                <div className="text-xs text-fg-muted">Relations</div>
               </div>
             </div>
           </section>
@@ -150,26 +150,26 @@ export function CodebaseKnowledgeSurface({
           {/* Semantic cache */}
           <section data-testid="knowledge-cache">
             <div className="flex items-center gap-2 mb-2">
-              <Search size={14} className="text-zinc-400" />
-              <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+              <Search size={14} className="text-fg-muted" />
+              <span className="text-xs font-medium text-fg-muted uppercase tracking-wider">
                 Semantic Cache
               </span>
             </div>
-            <div className="rounded-lg bg-zinc-800 px-4 py-3 space-y-1">
+            <div className="rounded-lg bg-surface px-4 py-3 space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Cached entries</span>
-                <span className="text-zinc-100 font-medium">{data.cacheStats.totalEntries}</span>
+                <span className="text-fg-muted">Cached entries</span>
+                <span className="text-fg-muted font-medium">{data.cacheStats.totalEntries}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-zinc-400">Hit rate (24 h)</span>
-                <span className="text-zinc-100 font-medium">
+                <span className="text-fg-muted">Hit rate (24 h)</span>
+                <span className="text-fg-muted font-medium">
                   {Math.round(data.cacheStats.hitRateLast24h * 100)}%
                 </span>
               </div>
               {data.cacheStats.topQueryTypes.length > 0 && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-400">Top query types</span>
-                  <span className="text-zinc-100 font-medium">
+                  <span className="text-fg-muted">Top query types</span>
+                  <span className="text-fg-muted font-medium">
                     {data.cacheStats.topQueryTypes.slice(0, 3).join(', ')}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export function CodebaseKnowledgeSurface({
           </section>
 
           {/* Index info */}
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-fg-muted">
             {data.indexedFilesCount} files indexed · last updated{' '}
             {new Date(data.lastIndexedAt).toLocaleString()}
           </div>

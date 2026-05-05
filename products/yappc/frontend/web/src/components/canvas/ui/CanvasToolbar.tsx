@@ -331,7 +331,7 @@ export const TemplateMenu: React.FC<TemplateMenuProps> = ({
                     >
                         <Stack>
                             <Box>{template.name}</Box>
-                            <Box className="text-gray-500 dark:text-gray-400 text-[0.75em]">
+                            <Box className="text-fg-muted dark:text-fg-muted text-[0.75em]">
                                 {template.nodeCount} nodes
                                 {template.description && ` • ${template.description}`}
                             </Box>

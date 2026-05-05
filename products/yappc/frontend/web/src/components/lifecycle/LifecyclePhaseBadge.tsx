@@ -31,14 +31,14 @@ export interface LifecyclePhaseBadgeProps {
  * Color mapping for each lifecycle phase
  */
 const PHASE_COLORS: Record<LifecyclePhase, string> = {
-    [LifecyclePhase.INTENT]: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-    [LifecyclePhase.SHAPE]: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-    [LifecyclePhase.VALIDATE]: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    [LifecyclePhase.GENERATE]: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-    [LifecyclePhase.RUN]: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-    [LifecyclePhase.OBSERVE]: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
-    [LifecyclePhase.IMPROVE]: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
-    [LifecyclePhase.INSTITUTIONALIZE]: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+    [LifecyclePhase.INTENT]: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    [LifecyclePhase.SHAPE]: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    [LifecyclePhase.VALIDATE]: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    [LifecyclePhase.GENERATE]: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    [LifecyclePhase.RUN]: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+    [LifecyclePhase.OBSERVE]: 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted',
+    [LifecyclePhase.IMPROVE]: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+    [LifecyclePhase.INSTITUTIONALIZE]: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
 };
 
 /**

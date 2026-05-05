@@ -158,7 +158,7 @@ export function ContextualHelpTooltip({
         >
             <Paper
                 elevation={8}
-                className="p-4 rounded-lg relative bg-white dark:bg-gray-900 border-[2px_solid] border-blue-600"
+                className="p-4 rounded-lg relative bg-white dark:bg-surface border-[2px_solid] border-info-border"
             >
                 {/* Close Button */}
                 <IconButton
@@ -174,7 +174,7 @@ export function ContextualHelpTooltip({
                     {/* Header with Icon */}
                     <Stack direction="row" spacing={1} alignItems="center">
                         <Lightbulb
-                            className="text-blue-600 text-xl"
+                            className="text-info-color text-xl"
                         />
                         <Typography
                             variant="subtitle2"
@@ -193,7 +193,7 @@ export function ContextualHelpTooltip({
                     {/* Keyboard Shortcut */}
                     {tip.shortcut && (
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <KeyboardOutlined className="text-base text-gray-500" />
+                            <KeyboardOutlined className="text-base text-fg-muted" />
                             <Chip
                                 label={tip.shortcut}
                                 size="small"
@@ -231,7 +231,7 @@ export function ContextualHelpTooltip({
                                 size="small"
                                 variant="text"
                                 onClick={handleDismissForever}
-                                className="text-xs normal-case text-gray-500" >
+                                className="text-xs normal-case text-fg-muted" >
                                 Don't show again
                             </Button>
                             <Button

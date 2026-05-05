@@ -149,7 +149,7 @@ export const SpatialZones: React.FC<SpatialZonesProps> = ({
                                 as="span"
                                 fontWeight="bold"
                                 color="text.secondary"
-                                className="text-xs text-gray-500 uppercase tracking-[1.5px]"
+                                className="text-xs text-fg-muted uppercase tracking-[1.5px]"
                             >
                                 {zone.name}
                             </Typography>
@@ -158,7 +158,7 @@ export const SpatialZones: React.FC<SpatialZonesProps> = ({
                                     as="span"
                                     tone="primary"
                                     fontWeight="bold"
-                                    className="text-xs text-gray-500 text-[0.65rem]"
+                                    className="text-xs text-fg-muted text-[0.65rem]"
                                 >
                                     ◀ CURRENT
                                 </Typography>

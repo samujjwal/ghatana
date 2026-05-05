@@ -21,10 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 
 /**
  * Server-side validator for PageArtifactDocument.
@@ -58,6 +60,13 @@ public final class PageArtifactValidator {
             "imported"
     );
 
+        private static final Set<String> ALLOWED_ACTION_BINDING_TYPES = Set.of(
+            "NAVIGATE",
+            "SUBMIT",
+            "OPEN_MODAL",
+            "CUSTOM_EVENT"
+        );
+
     // Valid sync status values
     private static final String[] VALID_SYNC_STATUS = {
             "SYNCED", "PENDING", "CONFLICT", "ERROR"
@@ -72,6 +81,21 @@ public final class PageArtifactValidator {
     private static final String[] VALID_DATA_CLASSIFICATION = {
             "UNCLASSIFIED", "PUBLIC", "INTERNAL", "CONFIDENTIAL", "RESTRICTED"
     };
+
+    /**
+     * Data classification severity order (least to most restrictive).
+     * A node must not claim a classification lower than its containing document.
+     */
+    private static final Map<String, Integer> DATA_CLASSIFICATION_LEVEL;
+
+    static {
+        DATA_CLASSIFICATION_LEVEL = new HashMap<>();
+        DATA_CLASSIFICATION_LEVEL.put("UNCLASSIFIED", 0);
+        DATA_CLASSIFICATION_LEVEL.put("PUBLIC", 1);
+        DATA_CLASSIFICATION_LEVEL.put("INTERNAL", 2);
+        DATA_CLASSIFICATION_LEVEL.put("CONFIDENTIAL", 3);
+        DATA_CLASSIFICATION_LEVEL.put("RESTRICTED", 4);
+    }
 
     private PageArtifactValidator() {
         // Utility class
@@ -91,7 +115,7 @@ public final class PageArtifactValidator {
         LOG.debug("Validating PageArtifactDocument: artifactId={}", document.artifactId());
 
         // Validate BuilderDocument structure
-        validateBuilderDocument(document.builderDocument(), errors, warnings);
+        validateBuilderDocument(document.builderDocument(), document.dataClassification(), errors, warnings);
 
         // Validate sync status
         validateSyncStatus(document.syncStatus(), errors);
@@ -125,6 +149,7 @@ public final class PageArtifactValidator {
 
     private static void validateBuilderDocument(
             @NotNull Map<String, Object> builderDocument,
+            String documentDataClassification,
             @NotNull List<String> errors,
             @NotNull List<String> warnings
     ) {
@@ -162,10 +187,36 @@ public final class PageArtifactValidator {
             validateRootNodeReferences(rootNodeList, nodesMap, errors);
             validateSlotReferences(nodesMap, errors);
             validateTreeShape(rootNodeList, nodesMap, errors, warnings);
+            validateNodeDataClassificationPropagation(nodesMap, documentDataClassification, errors);
         }
+
+        validateBuilderMetadata(builderDocument, documentDataClassification, errors);
 
         // Reject executable payloads (security concern, fail-closed)
         checkForExecutablePayloads(builderDocument, errors);
+    }
+
+    private static void validateBuilderMetadata(
+            @NotNull Map<String, Object> builderDocument,
+            String documentDataClassification,
+            @NotNull List<String> errors
+    ) {
+        Object metadata = builderDocument.get("metadata");
+        if (!(metadata instanceof Map<?, ?> metadataMap)) {
+            return;
+        }
+
+        Object builderClassification = metadataMap.get("dataClassification");
+        if (builderClassification instanceof String classification && !classification.isBlank()) {
+            if (documentDataClassification == null || documentDataClassification.isBlank()) {
+                errors.add("Document data_classification must be present when BuilderDocument.metadata.dataClassification is set");
+                return;
+            }
+
+            if (!classification.equals(documentDataClassification)) {
+                errors.add("BuilderDocument.metadata.dataClassification does not match document data_classification");
+            }
+        }
     }
 
     private static void validateNodeEntries(
@@ -348,20 +399,138 @@ public final class PageArtifactValidator {
                             + "' prop '" + propName + "' contains unsafe executable payload");
                 }
             }
+
+            if ("actionBinding".equals(propName) || "actionBindings".equals(propName)) {
+                validateActionBindingProp(nodeId, contractName, propName, propValue, errors);
+            }
+
+            if ("dataBinding".equals(propName) || "dataBindings".equals(propName)) {
+                validateDataBindingProp(nodeId, contractName, propName, propValue, errors);
+            }
         }
 
         if ("Image".equals(contractName)) {
             Object src = propsMap.get("src");
             if (src instanceof String srcValue) {
-                String normalizedSrc = srcValue.trim().toLowerCase();
-                boolean safeDataImage = normalizedSrc.startsWith("data:image/");
-                boolean safeRelative = normalizedSrc.startsWith("/");
-                boolean safeHttp = normalizedSrc.startsWith("http://") || normalizedSrc.startsWith("https://");
-
-                if (!safeDataImage && !safeRelative && !safeHttp) {
-                    errors.add("BuilderDocument node '" + nodeId + "' contract 'Image' has unsupported src scheme");
-                }
+                validateSrcScheme(nodeId, contractName, srcValue, errors);
             }
+        } else {
+            // Generalized src scheme check for any node that exposes an `src` prop —
+            // even non-Image contracts must not accept javascript: or unsafe data URIs.
+            Object src = propsMap.get("src");
+            if (src instanceof String srcValue) {
+                validateSrcScheme(nodeId, contractName, srcValue, errors);
+            }
+        }
+    }
+
+    private static void validateSrcScheme(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String srcValue,
+            @NotNull List<String> errors
+    ) {
+        String normalizedSrc = srcValue.trim().toLowerCase(Locale.ROOT);
+        boolean safeDataImage = normalizedSrc.startsWith("data:image/");
+        boolean safeRelative = normalizedSrc.startsWith("/");
+        boolean safeHttp = normalizedSrc.startsWith("http://") || normalizedSrc.startsWith("https://");
+
+        if (!safeDataImage && !safeRelative && !safeHttp) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' has unsupported or unsafe src scheme: '" + normalizedSrc.split(":")[0] + ":'");
+        }
+    }
+
+    private static void validateActionBindingProp(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String propName,
+            Object propValue,
+            @NotNull List<String> errors
+    ) {
+        if (propValue instanceof List<?> listValue) {
+            for (Object value : listValue) {
+                validateActionBindingObject(nodeId, contractName, propName, value, errors);
+            }
+            return;
+        }
+
+        validateActionBindingObject(nodeId, contractName, propName, propValue, errors);
+    }
+
+    private static void validateActionBindingObject(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String propName,
+            Object value,
+            @NotNull List<String> errors
+    ) {
+        if (!(value instanceof Map<?, ?> bindingMap)) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' must be an object or list of objects");
+            return;
+        }
+
+        Object type = bindingMap.get("type");
+        if (!(type instanceof String typeValue) || typeValue.isBlank()) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' missing required field 'type'");
+            return;
+        }
+
+        String normalizedType = typeValue.toUpperCase(Locale.ROOT);
+        if (!ALLOWED_ACTION_BINDING_TYPES.contains(normalizedType)) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' has unsupported action binding type '" + typeValue + "'");
+        }
+
+        Object target = bindingMap.get("target");
+        if (!(target instanceof String targetValue) || targetValue.isBlank()) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' missing required field 'target'");
+        }
+    }
+
+    private static void validateDataBindingProp(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String propName,
+            Object propValue,
+            @NotNull List<String> errors
+    ) {
+        if (propValue instanceof List<?> listValue) {
+            for (Object value : listValue) {
+                validateDataBindingObject(nodeId, contractName, propName, value, errors);
+            }
+            return;
+        }
+
+        validateDataBindingObject(nodeId, contractName, propName, propValue, errors);
+    }
+
+    private static void validateDataBindingObject(
+            @NotNull String nodeId,
+            @NotNull String contractName,
+            @NotNull String propName,
+            Object value,
+            @NotNull List<String> errors
+    ) {
+        if (!(value instanceof Map<?, ?> bindingMap)) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' must be an object or list of objects");
+            return;
+        }
+
+        Object source = bindingMap.get("source");
+        if (!(source instanceof String sourceValue) || sourceValue.isBlank()) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' missing required field 'source'");
+        }
+
+        Object path = bindingMap.get("path");
+        if (!(path instanceof String pathValue) || pathValue.isBlank()) {
+            errors.add("BuilderDocument node '" + nodeId + "' contract '" + contractName
+                    + "' prop '" + propName + "' missing required field 'path'");
         }
     }
 
@@ -559,6 +728,57 @@ public final class PageArtifactValidator {
                 errors.add("Governance record missing documentId");
             } else if (!documentId.equals(record.documentId())) {
                 errors.add("Governance record documentId does not match document documentId");
+            }
+        }
+    }
+
+    /**
+     * Validates that no individual node's {@code props.dataClassification} under-declares
+     * the sensitivity of the containing document. A node that processes or renders data
+     * must claim at least the same classification level as the document-level declaration.
+     * If a node's classification is lower than the document's, the node would present
+     * higher-sensitivity data under a weaker constraint — which is an information-leakage risk.
+     */
+    private static void validateNodeDataClassificationPropagation(
+            @NotNull Map<String, Object> nodesMap,
+            String documentDataClassification,
+            @NotNull List<String> errors
+    ) {
+        if (documentDataClassification == null || documentDataClassification.isBlank()) {
+            return;
+        }
+
+        int documentLevel = DATA_CLASSIFICATION_LEVEL.getOrDefault(documentDataClassification, -1);
+        if (documentLevel < 0) {
+            return; // Unknown classification — structural validation will already flag this
+        }
+
+        for (Map.Entry<String, Object> entry : nodesMap.entrySet()) {
+            if (!(entry.getValue() instanceof Map<?, ?> nodeMap)) {
+                continue;
+            }
+
+            Object props = nodeMap.get("props");
+            if (!(props instanceof Map<?, ?> propsMap)) {
+                continue;
+            }
+
+            Object nodeClassificationObj = propsMap.get("dataClassification");
+            if (!(nodeClassificationObj instanceof String nodeClassification) || nodeClassification.isBlank()) {
+                continue;
+            }
+
+            int nodeLevel = DATA_CLASSIFICATION_LEVEL.getOrDefault(nodeClassification, -1);
+            if (nodeLevel < 0) {
+                // Unknown node-level classification — skip; contract prop type checks will surface this
+                continue;
+            }
+
+            if (nodeLevel < documentLevel) {
+                errors.add("BuilderDocument node '" + entry.getKey()
+                        + "' declares dataClassification '" + nodeClassification
+                        + "' which is less restrictive than the document-level classification '"
+                        + documentDataClassification + "' — node classification must not under-declare sensitivity");
             }
         }
     }

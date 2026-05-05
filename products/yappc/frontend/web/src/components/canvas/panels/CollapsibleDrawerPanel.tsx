@@ -158,7 +158,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
             >
                 {/* Header */}
                 <Box
-                    className="flex items-center border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 min-h-[56px] border-b" style={{ justifyContent: isCollapsed ? 'center' : 'space-between', padding: isCollapsed ? 8 : 16 }} >
+                    className="flex items-center border-border dark:border-border bg-surface-muted dark:bg-surface min-h-[56px] border-b" style={{ justifyContent: isCollapsed ? 'center' : 'space-between', padding: isCollapsed ? 8 : 16 }} >
                     {!isCollapsed && (
                         <Box className="flex items-center gap-2">
                             {icon}
@@ -167,7 +167,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
                             </Typography>
                             {badgeCount !== undefined && badgeCount > 0 && (
                                 <Box
-                                    className="px-2 py-0.5 text-xs font-semibold bg-blue-600 text-white rounded-[12px]"
+                                    className="px-2 py-0.5 text-xs font-semibold bg-primary text-white rounded-[12px]"
                                 >
                                     {badgeCount}
                                 </Box>
@@ -183,7 +183,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
                             size="small"
                             onClick={handleToggle}
                             aria-label={isCollapsed ? `Expand ${title}` : `Collapse ${title}`}
-                            className="hover:bg-gray-100 hover:dark:bg-gray-800"
+                            className="hover:bg-surface-muted hover:dark:bg-surface"
                         >
                             {isCollapsed ? <ExpandIcon size={16} /> : <CollapseIcon size={16} />}
                         </IconButton>
@@ -204,11 +204,11 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
                     <Box
                         className="flex-1 flex flex-col items-center py-6 gap-4"
                     >
-                        <Box className="text-blue-600">{icon}</Box>
+                        <Box className="text-info-color">{icon}</Box>
 
                         {badgeCount !== undefined && badgeCount > 0 && (
                             <Box
-                                className="rounded-full flex items-center justify-center text-xs font-semibold bg-blue-600 text-white w-[24px] h-[24px]"
+                                className="rounded-full flex items-center justify-center text-xs font-semibold bg-primary text-white w-[24px] h-[24px]"
                             >
                                 {badgeCount}
                             </Box>
@@ -216,7 +216,7 @@ export const CollapsibleDrawerPanel: React.FC<CollapsibleDrawerPanelProps> = ({
 
                         <Typography
                             variant="caption"
-                            className="font-semibold text-xs text-gray-500 dark:text-gray-400 tracking-[0.1em] rotate-[180deg]" style={{ writingMode: 'vertical-rl' }} >
+                            className="font-semibold text-xs text-fg-muted dark:text-fg-muted tracking-[0.1em] rotate-[180deg]" style={{ writingMode: 'vertical-rl' }} >
                             {title.toUpperCase()}
                         </Typography>
                     </Box>

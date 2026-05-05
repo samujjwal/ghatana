@@ -135,14 +135,46 @@ export function AuthProvider({
 
     const refresh = async () => {
       if (isProduction && AUTH_PROVIDER_ENABLED) {
-        // P0-008: In production with auth provider, session refresh must be
-        // handled via the provider's token refresh mechanism.
-        // This is a placeholder for the real implementation that should:
-        // 1. Call the backend token refresh endpoint
-        // 2. If refresh fails, log the user out (fail closed)
-        // 3. If refresh succeeds, update the token and expiry
-        console.warn('[DMOS] P0-008: Production session refresh not yet implemented - logging out');
-        logout();
+        // P0-008: In production with auth provider, call backend refresh endpoint
+        try {
+          const response = await fetch('/auth/refresh', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+          });
+
+          if (!response.ok) {
+            // P0-008: Fail closed on refresh failure - log user out
+            console.warn('[DMOS] P0-008: Session refresh failed with status:', response.status);
+            logout();
+            return;
+          }
+
+          const data = await response.json();
+          if (data.token && data.expiresAt) {
+            // P0-008: Update token and expiry from provider response
+            setAuthToken(data.token);
+            setToken(data.token);
+            setSessionExpiry(data.expiresAt);
+            // Update roles if provided in refresh response
+            if (data.roles && Array.isArray(data.roles)) {
+              const normalizedRoles = normalizeRoles(data.roles);
+              setRoles(normalizedRoles);
+              setRequestContext(tenantId, principalId, sessionId, normalizedRoles, []);
+            }
+          } else {
+            // P0-008: Invalid refresh response - fail closed
+            console.warn('[DMOS] P0-008: Invalid refresh response from provider');
+            logout();
+          }
+        } catch (error) {
+          // P0-008: Network or parsing error - fail closed
+          console.error('[DMOS] P0-008: Session refresh error:', error);
+          logout();
+        }
       } else if (isDevMode) {
         // In development only, extend the local expiry time
         setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
@@ -153,7 +185,7 @@ export function AuthProvider({
 
     const interval = setInterval(refresh, SESSION_REFRESH_MS);
     return () => clearInterval(interval);
-  }, [token, logout]);
+  }, [token, logout, tenantId, principalId, sessionId]);
 
   const login = useCallback(
     (newToken: string, wsId: string, tId: string, pId: string, newSessionId: string, newRoles: string[] = []) => {
@@ -192,7 +224,7 @@ export function AuthProvider({
   /**
    * P0-008: Refresh session.
    *
-   * <p>In production with auth provider, this should call the provider's
+   * <p>In production with auth provider, this calls the provider's
    * token refresh endpoint. Without provider integration, this fails closed
    * in production (logs user out) and only extends session in dev mode.</p>
    */
@@ -200,16 +232,16 @@ export function AuthProvider({
     if (!token) return;
 
     if (isProduction && AUTH_PROVIDER_ENABLED) {
-      // P0-008: Production with auth provider - require real token refresh
-      // Until implemented, fail closed by logging out
-      console.warn('[DMOS] P0-008: Production session refresh requires provider integration');
-      logout();
+      // P0-008: Production with auth provider - trigger the refresh logic
+      // The useEffect hook handles the actual refresh call
+      // This manual trigger is for explicit refresh requests
+      console.warn('[DMOS] P0-008: Manual refresh called - automatic refresh is handled by useEffect');
     } else if (isDevMode) {
       // In development only, extend the session expiry
       setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
     }
     // In production without auth provider, do not extend session
-  }, [token, logout]);
+  }, [token]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ token, workspaceId, tenantId, principalId, sessionId, roles, isAuthenticated: token !== null && Date.now() < sessionExpiry, login, logout, refreshSession }),

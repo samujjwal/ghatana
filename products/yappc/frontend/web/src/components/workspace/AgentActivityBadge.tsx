@@ -159,7 +159,7 @@ export const AgentActivityBadge: React.FC<AgentActivityBadgeProps> = ({
       {/* Expanded panel */}
       {isExpanded && (
         <Box
-          className="absolute mt-2 p-3 rounded-lg top-[100%] right-[0px] min-w-[200px] bg-white dark:bg-gray-900 shadow-md z-[1000]"
+          className="absolute mt-2 p-3 rounded-lg top-[100%] right-[0px] min-w-[200px] bg-white dark:bg-surface shadow-md z-[1000]"
         >
           <Typography variant="subtitle2" gutterBottom>
             Active AI Agents
@@ -170,7 +170,7 @@ export const AgentActivityBadge: React.FC<AgentActivityBadgeProps> = ({
             return (
               <Box
                 key={personaId}
-                className="flex items-center gap-2 py-1 px-2 rounded hover:bg-gray-100"
+                className="flex items-center gap-2 py-1 px-2 rounded hover:bg-surface-muted"
               >
                 <Typography className="text-base">
                   {definition.icon}

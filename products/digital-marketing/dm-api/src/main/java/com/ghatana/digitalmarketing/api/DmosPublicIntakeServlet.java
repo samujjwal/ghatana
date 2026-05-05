@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.application.abuse.IntakeAbuseControlService;
 import com.ghatana.digitalmarketing.application.lead.LeadService;
 import com.ghatana.digitalmarketing.application.suppression.SuppressionService;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
@@ -29,14 +30,18 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Public intake servlet for self-marketing lead capture.
  *
+ * <p>P1-038: Enhanced with comprehensive abuse controls including rate limiting,
+ * honeypot validation, duplicate detection, and suspicious pattern detection.</p>
+ *
  * @doc.type class
- * @doc.purpose DMOS public intake API for lead form submissions with suppression enforcement
+ * @doc.purpose DMOS public intake API for lead form submissions with suppression and abuse enforcement
  * @doc.layer product
  * @doc.pattern Controller, Adapter
  */
@@ -52,14 +57,17 @@ public final class DmosPublicIntakeServlet {
 
     private final LeadService leadService;
     private final SuppressionService suppressionService;
+    private final IntakeAbuseControlService abuseControlService;
     private final Eventloop eventloop;
 
     public DmosPublicIntakeServlet(
             LeadService leadService,
             SuppressionService suppressionService,
+            IntakeAbuseControlService abuseControlService,
             Eventloop eventloop) {
         this.leadService = Objects.requireNonNull(leadService, "leadService must not be null");
         this.suppressionService = Objects.requireNonNull(suppressionService, "suppressionService must not be null");
+        this.abuseControlService = Objects.requireNonNull(abuseControlService, "abuseControlService must not be null");
         this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
     }
 
@@ -69,6 +77,18 @@ public final class DmosPublicIntakeServlet {
             .with(HttpMethod.POST, "/public/v1/workspaces/:workspaceId/intake/leads", this::handleCaptureLead)
             .build()
         );
+    }
+
+    /**
+     * P1-038: Resolve client IP from request headers.
+     */
+    private String resolveClientIp(HttpRequest request) {
+        String forwarded = request.getHeader(HttpHeaders.of("X-Forwarded-For"));
+        if (forwarded != null && !forwarded.isBlank()) {
+            int commaIdx = forwarded.indexOf(',');
+            return commaIdx > 0 ? forwarded.substring(0, commaIdx).trim() : forwarded.trim();
+        }
+        return request.getRemoteAddress();
     }
 
     private Promise<HttpResponse> handleCaptureLead(HttpRequest request) {
@@ -81,23 +101,47 @@ public final class DmosPublicIntakeServlet {
                     CaptureLeadRequest.class
                 );
 
-                return suppressionService.isSuppressed(ctx, body.email())
-                    .then(suppressed -> {
-                        if (suppressed) {
-                            return Promise.of(errorResponse(409, "Lead email is suppressed"));
+                String clientIp = resolveClientIp(request);
+
+                // P1-038: Abuse control check
+                Map<String, String> formData = Map.of(
+                    "email", body.email(),
+                    "firstName", body.firstName(),
+                    "lastName", body.lastName(),
+                    "phone", body.phone()
+                );
+
+                return abuseControlService.checkAbuse(ctx, clientIp, body.email(), formData)
+                    .then(abuseResult -> {
+                        if (abuseResult.blocked()) {
+                            LOG.warn("[P1-038] Abuse blocked: {} - {}", abuseResult.blockCode(), abuseResult.blockReason());
+                            return Promise.of(errorResponse(429, abuseResult.blockReason()));
                         }
 
-                        LeadService.CaptureLeadCommand command = new LeadService.CaptureLeadCommand(
-                            body.campaignId(),
-                            body.email(),
-                            body.firstName(),
-                            body.lastName(),
-                            body.phone(),
-                            body.source()
-                        );
+                        return suppressionService.isSuppressed(ctx, body.email())
+                            .then(suppressed -> {
+                                if (suppressed) {
+                                    return Promise.of(errorResponse(409, "Lead email is suppressed"));
+                                }
 
-                        return leadService.captureLead(ctx, command)
-                            .map(lead -> jsonResponse(201, LeadResponse.from(lead)))
+                                LeadService.CaptureLeadCommand command = new LeadService.CaptureLeadCommand(
+                                    body.campaignId(),
+                                    body.email(),
+                                    body.firstName(),
+                                    body.lastName(),
+                                    body.phone(),
+                                    body.source()
+                                );
+
+                                return leadService.captureLead(ctx, command)
+                                    .map(lead -> jsonResponse(201, LeadResponse.from(lead)))
+                                    .then(response -> {
+                                        // Record submission for rate limiting
+                                        return abuseControlService.recordSubmission(ctx, clientIp, body.email())
+                                            .then(__ -> Promise.of(response));
+                                    });
+                            });
+                    })
                             .then(r -> Promise.of(r), e -> {
                                 if (e instanceof SecurityException) {
                                     return Promise.of(errorResponse(403, e.getMessage()));

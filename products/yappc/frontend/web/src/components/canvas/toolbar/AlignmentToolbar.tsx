@@ -134,7 +134,7 @@ export function AlignmentToolbar() {
         <Box
             role="toolbar"
             aria-label={`Alignment — ${selectedNodes.length} nodes selected`}
-            className="flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-md px-1 py-1"
+            className="flex items-center gap-0.5 bg-white dark:bg-surface border border-border dark:border-border rounded-lg shadow-md px-1 py-1"
         >
             {ACTIONS.map(({ axis, label, Icon }, i) => (
                 <React.Fragment key={axis}>

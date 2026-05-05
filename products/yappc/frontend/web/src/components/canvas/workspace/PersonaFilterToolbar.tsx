@@ -43,7 +43,7 @@ export const PersonaFilterToolbar: React.FC<PersonaFilterToolbarProps> = ({
 
     return (
         <Box
-            className="flex items-center gap-4 p-3 rounded-lg bg-white dark:bg-gray-900 shadow"
+            className="flex items-center gap-4 p-3 rounded-lg bg-white dark:bg-surface shadow"
         >
             {/* Filter Icon */}
             <FilterList color="action" />
@@ -56,11 +56,11 @@ export const PersonaFilterToolbar: React.FC<PersonaFilterToolbarProps> = ({
                     onPersonaChange(value === 'all' ? null : value);
                 }}
                 size="sm"
-                className="[&_.MuiToggleButton-root]:px-3 [&_.MuiToggleButton-root]:py-1 [&_.MuiToggleButton-root]:border [&_.MuiToggleButton-root]:border-gray-300"
+                className="[&_.MuiToggleButton-root]:px-3 [&_.MuiToggleButton-root]:py-1 [&_.MuiToggleButton-root]:border [&_.MuiToggleButton-root]:border-border"
             >
                 {/* All Personas */}
                 <ToggleButton value="all">
-                    <Typography as="span" className="text-xs text-gray-500" fontWeight="medium">
+                    <Typography as="span" className="text-xs text-fg-muted" fontWeight="medium">
                         All Personas
                     </Typography>
                 </ToggleButton>
@@ -78,8 +78,8 @@ export const PersonaFilterToolbar: React.FC<PersonaFilterToolbarProps> = ({
                                 className="[&_.MuiBadge-badge]:text-[0.65rem] [&_.MuiBadge-badge]:h-4 [&_.MuiBadge-badge]:min-w-[16px]"
                             >
                                 <Box className="flex items-center gap-1">
-                                    <Typography as="span" className="text-xs text-gray-500">{icon}</Typography>
-                                    <Typography as="span" className="text-xs text-gray-500" fontWeight="medium">
+                                    <Typography as="span" className="text-xs text-fg-muted">{icon}</Typography>
+                                    <Typography as="span" className="text-xs text-fg-muted" fontWeight="medium">
                                         {personaData.persona.split(' ')[0]}
                                     </Typography>
                                 </Box>
@@ -94,7 +94,7 @@ export const PersonaFilterToolbar: React.FC<PersonaFilterToolbarProps> = ({
                 <>
                     <Divider orientation="vertical" flexItem />
                     <Box className="flex gap-3 items-center">
-                        <Typography as="span" className="text-xs text-gray-500" fontWeight="bold">
+                        <Typography as="span" className="text-xs text-fg-muted" fontWeight="bold">
                             YOUR TASKS ({activeData.persona}):
                         </Typography>
                         <Chip

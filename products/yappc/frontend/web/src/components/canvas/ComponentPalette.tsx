@@ -499,7 +499,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
       className="flex flex-col h-full w-full overflow-hidden"
     >
       {/* Header - Search */}
-      <Box className="px-5 py-4 border-b border-solid border-gray-200 dark:border-gray-700">
+      <Box className="px-5 py-4 border-b border-solid border-border dark:border-border">
         <Typography variant="body2" fontWeight="600" color="text.secondary" className="uppercase text-xs mb-3 tracking-[0.5px]">
           Components Library
         </Typography>
@@ -519,12 +519,12 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
         {
           recentlyUsed.length > 0 && (
             <Box
-              className="px-4 py-3 border-b border-solid border-gray-200 dark:border-gray-700"
+              className="px-4 py-3 border-b border-solid border-border dark:border-border"
               style={{ backgroundColor: 'rgba(59, 130, 246, 0.08)' }}
             >
               <Typography
                 variant="body2"
-                className="font-semibold mb-2 text-blue-600 text-[0.8125rem]"
+                className="font-semibold mb-2 text-info-color text-[0.8125rem]"
               >
                 Recently Used
               </Typography>
@@ -547,7 +547,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
           Object.entries(componentsByCategory).map(([category, components]) => (
             <Accordion
               key={category}
-              className="shadow-none border-b border-solid border-gray-200 dark:border-gray-700"
+              className="shadow-none border-b border-solid border-border dark:border-border"
             >
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
@@ -583,7 +583,7 @@ export const ComponentPalette: React.FC<ComponentPaletteProps> = ({
 
       {/* Footer with stats */}
       <Box
-        className="px-5 py-3 border-t border-solid border-gray-200 dark:border-gray-700"
+        className="px-5 py-3 border-t border-solid border-border dark:border-border"
         style={{ backgroundColor: 'rgba(148, 163, 184, 0.08)' }}
       >
         <Typography variant="caption" color="text.secondary" className="text-[0.7rem]">

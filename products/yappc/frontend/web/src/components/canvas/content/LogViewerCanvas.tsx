@@ -108,7 +108,7 @@ const LogEntryItem = ({ log }: { log: LogEntry }) => {
             <Box className="flex items-center gap-4">
                 <Typography
                     variant="caption"
-                    className="text-gray-500 dark:text-gray-400 min-w-[180px] font-mono"
+                    className="text-fg-muted dark:text-fg-muted min-w-[180px] font-mono"
                 >
                     {new Date(log.timestamp).toLocaleString()}
                 </Typography>

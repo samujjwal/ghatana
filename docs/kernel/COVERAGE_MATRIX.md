@@ -3,6 +3,7 @@
 > **Status**: Living document — update when modules are added or tests change  
 > **Purpose**: Track test coverage by module, feature, flow, and test tier  
 > **Owner**: Platform Engineering
+> **Ownership source of truth**: [KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md](./KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md)
 
 ---
 

@@ -222,10 +222,10 @@ export default function BuilderPreviewRoute() {
   if (sessionValid === false) {
     return (
       <div className="flex h-screen flex-col items-center justify-center p-8 text-center font-sans">
-        <div className="mb-2 text-base font-semibold text-red-700">
+        <div className="mb-2 text-base font-semibold text-destructive">
           Preview access denied
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-fg-muted">
           {sessionError}
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function BuilderPreviewRoute() {
 
   if (!document) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-gray-500 font-sans">
+      <div className="flex h-screen items-center justify-center text-sm text-fg-muted font-sans">
         Waiting for document…
       </div>
     );

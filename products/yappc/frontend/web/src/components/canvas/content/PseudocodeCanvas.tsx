@@ -388,7 +388,7 @@ export const PseudocodeCanvas = () => {
 
                                 <Typography
                                     variant="body2"
-                                    className="text-xs whitespace-pre-wrap overflow-hidden text-ellipsis font-mono text-gray-500 dark:text-gray-400 line-clamp-2 line-clamp-3" >
+                                    className="text-xs whitespace-pre-wrap overflow-hidden text-ellipsis font-mono text-fg-muted dark:text-fg-muted line-clamp-2 line-clamp-3" >
                                     {block.content}
                                 </Typography>
                             </Paper>

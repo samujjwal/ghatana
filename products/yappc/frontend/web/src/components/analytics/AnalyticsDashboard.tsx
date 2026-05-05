@@ -51,9 +51,9 @@ interface TrendIconProps {
 }
 
 const TrendIcon: React.FC<TrendIconProps> = ({ trend }) => {
-  if (trend === 'up') return <TrendingUp className="w-4 h-4 text-green-600" />;
-  if (trend === 'down') return <TrendingDown className="w-4 h-4 text-red-600" />;
-  return <Minus className="w-4 h-4 text-gray-400" />;
+  if (trend === 'up') return <TrendingUp className="w-4 h-4 text-success-color" />;
+  if (trend === 'down') return <TrendingDown className="w-4 h-4 text-destructive" />;
+  return <Minus className="w-4 h-4 text-fg-muted" />;
 };
 
 interface MetricCardProps {
@@ -71,7 +71,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
 }) => (
   <Card>
     <CardContent className="p-4">
-      <Box className="flex items-center gap-2 mb-2 text-gray-500">
+      <Box className="flex items-center gap-2 mb-2 text-fg-muted">
         {icon}
         <Typography className="text-xs font-medium uppercase tracking-wide">{label}</Typography>
       </Box>
@@ -82,10 +82,10 @@ const MetricCard: React.FC<MetricCardProps> = ({
           <Typography
             className={`text-xs font-medium ${
               metric.trend === 'up'
-                ? 'text-green-600'
+                ? 'text-success-color'
                 : metric.trend === 'down'
-                  ? 'text-red-600'
-                  : 'text-gray-400'
+                  ? 'text-destructive'
+                  : 'text-fg-muted'
             }`}
           >
             {metric.change > 0 ? '+' : ''}{metric.change}%
@@ -104,21 +104,21 @@ interface ProjectRowProps {
 const ProjectRow: React.FC<ProjectRowProps> = ({ project, onClick }) => {
   const healthColor =
     project.healthScore >= 70
-      ? 'bg-green-500'
+      ? 'bg-success-bg'
       : project.healthScore >= 40
-        ? 'bg-orange-500'
-        : 'bg-red-500';
+        ? 'bg-warning-bg'
+        : 'bg-destructive-bg';
 
   return (
     <Box
-      className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+      className="flex items-center justify-between py-2 px-3 hover:bg-surface-muted dark:hover:bg-surface rounded cursor-pointer"
       onClick={onClick}
     >
       <Box className="flex items-center gap-3 min-w-0">
         <Box className={`w-2 h-2 rounded-full ${healthColor}`} />
         <Typography className="text-sm font-medium truncate">{project.name}</Typography>
       </Box>
-      <Box className="flex items-center gap-4 text-xs text-gray-500">
+      <Box className="flex items-center gap-4 text-xs text-fg-muted">
         <span>{Math.round(project.completionRate * 100)}%</span>
         <span>{project.openIssues} issues</span>
         <span>{project.avgCycleTime}d cycle</span>
@@ -135,15 +135,15 @@ interface TeamRowProps {
 const TeamRow: React.FC<TeamRowProps> = ({ member }) => {
   const utilColor =
     member.utilisation >= 0.85
-      ? 'text-red-600'
+      ? 'text-destructive'
       : member.utilisation >= 0.6
-        ? 'text-green-600'
-        : 'text-orange-500';
+        ? 'text-success-color'
+        : 'text-warning-color';
 
   return (
     <Box className="flex items-center justify-between py-2 px-3">
       <Typography className="text-sm">{member.name}</Typography>
-      <Box className="flex items-center gap-4 text-xs text-gray-500">
+      <Box className="flex items-center gap-4 text-xs text-fg-muted">
         <span>{member.tasksCompleted} done</span>
         <span>{member.avgResponseTime}h resp</span>
         <span className={`font-medium ${utilColor}`}>
@@ -172,7 +172,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Header */}
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-blue-600" />
+          <BarChart3 className="w-5 h-5 text-info-color" />
           <Typography className="font-semibold text-lg">Analytics</Typography>
         </Box>
         {onRefresh && (
@@ -209,9 +209,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       {/* Bottleneck Alert */}
       {bottleneck && (
-        <Card className="border-l-4 border-orange-400 bg-orange-50 dark:bg-orange-900/20">
+        <Card className="border-l-4 border-warning-border bg-warning-bg dark:bg-warning-bg/20">
           <CardContent className="p-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-orange-500" />
+            <AlertTriangle className="w-4 h-4 text-warning-color" />
             <Typography className="text-sm">
               Bottleneck detected in <strong>{bottleneck}</strong> phase
             </Typography>
@@ -222,7 +222,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Projects Table */}
       {projectMetrics.length > 0 && (
         <Box>
-          <Typography className="text-xs font-medium text-gray-500 mb-2">
+          <Typography className="text-xs font-medium text-fg-muted mb-2">
             Projects ({projectMetrics.length})
           </Typography>
           <Card>
@@ -242,7 +242,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
       {/* Team Table */}
       {teamMetrics.length > 0 && (
         <Box>
-          <Typography className="text-xs font-medium text-gray-500 mb-2">
+          <Typography className="text-xs font-medium text-fg-muted mb-2">
             Team ({teamMetrics.length})
           </Typography>
           <Card>

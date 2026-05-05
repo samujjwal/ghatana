@@ -126,7 +126,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
       data-testid="comments-panel"
     >
       {/* Header */}
-      <Box className="p-4 border-gray-200 dark:border-gray-700 border-b" >
+      <Box className="p-4 border-border dark:border-border border-b" >
         <Box className="flex items-center mb-2">
           <CommentIcon className="mr-2" />
           <Typography variant="h6">
@@ -144,7 +144,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
       {/* Comments List */}
       <Box className="flex-1 overflow-auto p-2">
         {comments.length === 0 ? (
-          <Box className="p-6 text-center text-gray-500 dark:text-gray-400">
+          <Box className="p-6 text-center text-fg-muted dark:text-fg-muted">
             <CommentIcon className="mb-2 text-5xl opacity-[0.3]" />
             <Typography variant="body2">
               {selectedElementId 
@@ -165,7 +165,7 @@ export const CommentsPanel: React.FC<CommentsPanelProps> = ({
               >
                 <Paper
                   variant="outlined"
-                  className={`w-full p-4 ${comment.resolved ? 'bg-gray-50' : 'bg-white dark:bg-gray-900'}`} style={{ opacity: comment.resolved ? 0.6 : 1 }}
+                  className={`w-full p-4 ${comment.resolved ? 'bg-surface-muted' : 'bg-white dark:bg-surface'}`} style={{ opacity: comment.resolved ? 0.6 : 1 }}
                 >
                   {/* Comment Header */}
                   <Box className="flex items-center mb-2">

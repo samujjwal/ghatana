@@ -61,12 +61,12 @@ export function WorkspaceSelectionDialog({
         >
             <DialogTitle id="workspace-selection-dialog-title">
                 <Box className="flex items-center gap-1">
-                    <Business className="text-blue-600" />
+                    <Business className="text-info-color" />
                     <span>Select Workspace</span>
                 </Box>
             </DialogTitle>
             <DialogContent>
-                <Typography className="mb-6 text-sm text-gray-600 dark:text-gray-400">
+                <Typography className="mb-6 text-sm text-fg-muted dark:text-fg-muted">
                     <strong>{projectName}</strong> is part of multiple workspaces.
                     Choose which workspace context to open it in.
                 </Typography>
@@ -92,7 +92,7 @@ export function WorkspaceSelectionDialog({
                                         <span>{workspace.name}</span>
                                         {workspace.isOwner && (
                                             <span title="Owner">
-                                                <CheckCircle className="text-green-600 text-base" />
+                                                <CheckCircle className="text-success-color text-base" />
                                             </span>
                                         )}
                                     </Box>

@@ -155,7 +155,7 @@ export function ActionsToolbar({
 
                     {moreMenuAnchor ? (
                     <div className="relative">
-                    <div className="absolute right-0 top-2 z-20 min-w-[240px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                    <div className="absolute right-0 top-2 z-20 min-w-[240px] rounded-md border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface">
                         {/* Mobile: Show all context actions */}
                         <div className="md:hidden">
                             {contextActions.map((action, index) => {

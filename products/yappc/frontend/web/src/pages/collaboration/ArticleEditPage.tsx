@@ -20,17 +20,17 @@ const ArticleEditPage: React.FC = () => {
   const [content, setContent] = useState('');
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-8">
+    <div className="min-h-screen bg-surface text-white p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <NavLink
             to={projectId ? ROUTES.team.knowledge(projectId) : '/'}
-            className="inline-flex items-center gap-2 text-sm text-zinc-400 hover:text-white"
+            className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Knowledge Base
           </NavLink>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 text-sm text-zinc-300 hover:text-white">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface text-sm text-fg-muted hover:text-white">
               <Eye className="w-4 h-4" /> Preview
             </button>
             <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 transition-colors text-sm font-medium">
@@ -52,7 +52,7 @@ const ArticleEditPage: React.FC = () => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             rows={20}
-            className="w-full px-0 py-2 bg-transparent border-none text-zinc-300 placeholder-zinc-600 focus:outline-none resize-none font-mono text-sm leading-relaxed"
+            className="w-full px-0 py-2 bg-transparent border-none text-fg-muted placeholder-zinc-600 focus:outline-none resize-none font-mono text-sm leading-relaxed"
           />
         </div>
       </div>

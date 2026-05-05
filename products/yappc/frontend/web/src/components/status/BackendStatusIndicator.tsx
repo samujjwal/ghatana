@@ -41,22 +41,22 @@ function getHealthConfig(health: BackendHealth): {
       };
     case 'degraded':
       return {
-        color: 'text-amber-500',
-        bg: 'bg-amber-500',
+        color: 'text-warning-color',
+        bg: 'bg-warning-bg',
         icon: <AlertCircle className="w-3 h-3" />,
         label: 'Backend degraded',
       };
     case 'unavailable':
       return {
-        color: 'text-red-500',
-        bg: 'bg-red-500',
+        color: 'text-destructive',
+        bg: 'bg-destructive-bg',
         icon: <WifiOff className="w-3 h-3" />,
         label: 'Backend unavailable',
       };
     case 'checking':
       return {
-        color: 'text-blue-500',
-        bg: 'bg-blue-500',
+        color: 'text-info-color',
+        bg: 'bg-info-bg',
         icon: <Loader2 className="w-3 h-3 animate-spin" />,
         label: 'Checking backend...',
       };

@@ -36,21 +36,21 @@ export interface PhaseGovernanceTraceProps {
  * Source badge colors
  */
 const SOURCE_COLORS: Record<GovernanceRecord['source'], string> = {
-  backed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  derived: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  suggested: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-  preview: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-  unavailable: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
+  backed: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+  derived: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+  suggested: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
+  preview: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+  unavailable: 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted',
 };
 
 /**
  * Review state colors
  */
 const REVIEW_STATE_COLORS: Record<GovernanceRecord['reviewState'], string> = {
-  pending: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-  approved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-  rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-  auto_applied: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  pending: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+  approved: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color',
+  rejected: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
+  auto_applied: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
 };
 
 /**
@@ -70,7 +70,7 @@ export const PhaseGovernanceTrace: React.FC<PhaseGovernanceTraceProps> = ({
   if (records.length === 0) {
     return (
       <div className={`phase-governance-trace ${className}`}>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+        <p className="text-sm text-fg-muted dark:text-fg-muted text-center py-4">
           No governance records available
         </p>
       </div>
@@ -83,7 +83,7 @@ export const PhaseGovernanceTrace: React.FC<PhaseGovernanceTraceProps> = ({
         {records.map((record) => (
           <div
             key={record.id}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            className="bg-white dark:bg-surface border border-border dark:border-border rounded-lg p-4"
           >
             <div className="flex items-start justify-between gap-3 mb-2">
               <div className="flex-1">
@@ -97,10 +97,10 @@ export const PhaseGovernanceTrace: React.FC<PhaseGovernanceTraceProps> = ({
                     </span>
                   )}
                 </div>
-                <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <h4 className="font-medium text-fg dark:text-fg-muted mb-1">
                   {record.action}
                 </h4>
-                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                <div className="flex items-center gap-3 text-xs text-fg-muted dark:text-fg-muted">
                   <span>Actor: {record.actor}</span>
                   {record.system && <span>System: {record.system}</span>}
                   <span>{new Date(record.timestamp).toLocaleString()}</span>
@@ -108,21 +108,21 @@ export const PhaseGovernanceTrace: React.FC<PhaseGovernanceTraceProps> = ({
               </div>
               {record.confidence !== undefined && (
                 <div className="flex-shrink-0 text-right">
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="text-xs text-fg-muted dark:text-fg-muted mb-1">
                     Confidence
                   </div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <div className="text-sm font-medium text-fg dark:text-fg-muted">
                     {Math.round(record.confidence * 100)}%
                   </div>
                 </div>
               )}
             </div>
             {record.metadata && Object.keys(record.metadata).length > 0 && (
-              <details className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                <summary className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer list-none">
+              <details className="mt-3 pt-3 border-t border-border dark:border-border">
+                <summary className="text-xs text-fg-muted dark:text-fg-muted cursor-pointer list-none">
                   Metadata
                 </summary>
-                <div className="mt-2 text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/50 p-2 rounded">
+                <div className="mt-2 text-xs font-mono text-fg-muted dark:text-fg-muted bg-surface-muted dark:bg-surface/50 p-2 rounded">
                   <pre>{JSON.stringify(record.metadata, null, 2)}</pre>
                 </div>
               </details>

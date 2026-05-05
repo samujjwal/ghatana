@@ -215,19 +215,19 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
                 <Stack direction="row" spacing={1}>
                   <Typography
                     variant="caption"
-                    className="px-2 py-0.5 rounded bg-blue-100 text-blue-700"
+                    className="px-2 py-0.5 rounded bg-info-bg text-info-color"
                   >
                     {req.type}
                   </Typography>
                   <Typography
                     variant="caption"
-                    className="px-2 py-0.5 rounded bg-purple-100 text-purple-700"
+                    className="px-2 py-0.5 rounded bg-info-bg text-info-color"
                   >
                     {req.priority}
                   </Typography>
                   <Typography
                     variant="caption"
-                    className="px-2 py-0.5 rounded bg-green-100 text-green-700"
+                    className="px-2 py-0.5 rounded bg-success-bg text-success-color"
                   >
                     {req.status}
                   </Typography>
@@ -259,7 +259,7 @@ export const RequirementExtractor: React.FC<RequirementExtractorProps> = ({
                           <Typography
                             key={tag}
                             variant="caption"
-                            className="px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                            className="px-2 py-0.5 rounded bg-surface-muted text-fg"
                           >
                             {tag}
                           </Typography>

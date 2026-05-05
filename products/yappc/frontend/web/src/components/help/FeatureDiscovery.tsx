@@ -85,7 +85,7 @@ export function FeatureDiscoveryTooltip({
 
     return (
         <div
-            className="fixed z-50 max-w-xs p-4 bg-white rounded-lg shadow-lg border border-gray-200"
+            className="fixed z-50 max-w-xs p-4 bg-white rounded-lg shadow-lg border border-border"
             style={{
                 top: position.top,
                 left: position.left,
@@ -96,12 +96,12 @@ export function FeatureDiscoveryTooltip({
         >
             <div className="flex items-start justify-between gap-2">
                 <div>
-                    <h3 className="font-semibold text-gray-900">{feature.title}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{feature.description}</p>
+                    <h3 className="font-semibold text-fg">{feature.title}</h3>
+                    <p className="text-sm text-fg-muted mt-1">{feature.description}</p>
                 </div>
                 <button
                     onClick={onDismiss}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-fg-muted hover:text-fg-muted"
                     aria-label="Dismiss"
                 >
                     ×
@@ -110,7 +110,7 @@ export function FeatureDiscoveryTooltip({
             <div className="mt-3 flex justify-end">
                 <button
                     onClick={onDismiss}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    className="text-sm text-info-color hover:text-info-color font-medium"
                 >
                     Got it
                 </button>
@@ -192,8 +192,8 @@ export function FeatureBadge({ featureId, children }: { featureId: string; child
             {children}
             {isNew && (
                 <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-info-bg opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-info-bg"></span>
                 </span>
             )}
         </div>

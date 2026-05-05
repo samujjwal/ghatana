@@ -227,6 +227,57 @@ describe('ImportSourceWorkflow', () => {
     );
   });
 
+  it('delegates local import to backend endpoint when local file access is disabled', async () => {
+    const projectDir = await createTempProject();
+    const componentPath = join(projectDir, 'ServerImportedCard.tsx');
+    await writeFile(componentPath, 'export function ServerImportedCard() { return <div />; }\n');
+
+    const originalFetch = globalThis.fetch;
+    const serverResponse = {
+      success: true,
+      componentId: 'proj-1/ServerImportedCard',
+      files: [
+        {
+          path: 'ServerImportedCard.tsx',
+          content: 'export function ServerImportedCard() { return <div />; }',
+          type: 'component',
+          source: componentPath,
+        },
+      ],
+      warnings: [],
+      errors: [],
+      metadata: {
+        sourceType: 'tsx',
+        source: componentPath,
+        importedAt: new Date().toISOString(),
+        componentName: 'ServerImportedCard',
+        dependencies: [],
+        fileCount: 1,
+        totalSize: 58,
+      },
+    };
+
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify(serverResponse), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+    try {
+      const result = await importFromSource({
+        sourceType: 'tsx',
+        source: componentPath,
+        projectId: 'proj-1',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.componentId).toBe('proj-1/ServerImportedCard');
+      expect(result.files[0]?.path).toBe('ServerImportedCard.tsx');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('blocks unsafe imported component code by default', async () => {
     const projectDir = await createTempProject();
     const componentPath = join(projectDir, 'DangerousWidget.tsx');
@@ -256,6 +307,37 @@ describe('ImportSourceWorkflow', () => {
         expect.stringContaining("Imported source 'DangerousWidget.tsx' was flagged as unsafe"),
       ]),
     );
+  });
+
+  it('artifact import passes through the safety gate without false-positives on clean JSON', async () => {
+    // Confirm that adding enforceImportedComponentSafety to the artifact path does not break
+    // legitimate artifact imports — clean sanitized JSON must still succeed.
+    const projectDir = await createTempProject();
+    const artifactPath = join(projectDir, 'safe.artifact.json');
+    await writeFile(
+      artifactPath,
+      JSON.stringify(
+        {
+          metadata: { name: 'SafeWidget' },
+          dependencies: ['@ghatana/design-system'],
+        },
+        null,
+        2
+      )
+    );
+
+    const result = await importFromSource({
+      sourceType: 'artifact',
+      source: artifactPath,
+      projectId: 'proj-1',
+      options: {
+        allowLocalFileAccess: true,
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.metadata.componentName).toBe('SafeWidget');
+    expect(result.errors).toHaveLength(0);
   });
 
   it('compiles imported source output into page artifacts for canvas ingestion', async () => {
@@ -288,5 +370,52 @@ describe('ImportSourceWorkflow', () => {
     expect(result.pageArtifacts[0]?.source).toBe('imported');
     expect(result.pageArtifacts[0]?.artifactId).toContain('proj-99');
     expect(result.pageArtifacts[0]?.serializedBuilderDocument.name).toBe('ProfileCard');
+  });
+
+  it('produces populated canvas nodes when the TSX component uses JSX child elements', async () => {
+    // COMP-001: importing a real TSX component should produce a BuilderDocument
+    // whose canvas graph contains real nodes (root + child nodes from jsxUsage),
+    // not just an empty document.
+    const projectDir = await createTempProject();
+    const componentPath = join(projectDir, 'ContactForm.tsx');
+    await writeFile(
+      componentPath,
+      [
+        "import { Card, Button, TextField } from '@ghatana/design-system';",
+        '',
+        'export function ContactForm() {',
+        '  return (',
+        '    <Card>',
+        '      <TextField label="Email" />',
+        '      <Button>Submit</Button>',
+        '    </Card>',
+        '  );',
+        '}',
+        '',
+      ].join('\n'),
+    );
+
+    const result = await importSourceToPageArtifacts(
+      {
+        sourceType: 'tsx',
+        source: componentPath,
+        projectId: 'proj-comp001',
+        options: { allowLocalFileAccess: true },
+      },
+      'test-runner',
+    );
+
+    expect(result.importResult.success).toBe(true);
+    const artifact = result.pageArtifacts[0];
+    expect(artifact).toBeDefined();
+    // The serialized document should carry real nodes — root + one per unique JSX usage
+    const serialized = artifact?.serializedBuilderDocument;
+    expect(serialized?.name).toBe('ContactForm');
+    expect(serialized?.rootNodes).toHaveLength(1); // ContactForm as root
+    // At least Card, TextField, Button should appear as canvas nodes
+    const nodeEntries = Object.values(serialized?.nodes ?? {}) as Array<{ contractName: string }>;
+    const contractNames = nodeEntries.map((n) => n.contractName);
+    expect(contractNames).toContain('ContactForm'); // root node
+    expect(contractNames.some((c) => ['Card', 'TextField', 'Button'].includes(c))).toBe(true);
   });
 });

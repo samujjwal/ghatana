@@ -300,16 +300,16 @@ export function ShortcutProvider({ children }: ShortcutProviderProps) {
                                         command.action();
                                         hideCommandPalette();
                                     }}
-                                    className="flex w-full items-start justify-between rounded-lg px-3 py-2 text-left hover:bg-slate-100"
+                                    className="flex w-full items-start justify-between rounded-lg px-3 py-2 text-left hover:bg-surface-muted"
                                 >
                                     <span>
                                         <span className="block font-medium">{command.title}</span>
                                         {command.description ? (
-                                            <span className="block text-sm text-slate-500">{command.description}</span>
+                                            <span className="block text-sm text-fg-muted">{command.description}</span>
                                         ) : null}
                                     </span>
                                     {command.shortcut ? (
-                                        <span className="text-xs text-slate-400">{command.shortcut}</span>
+                                        <span className="text-xs text-fg-muted">{command.shortcut}</span>
                                     ) : null}
                                 </button>
                             ))}

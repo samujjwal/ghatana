@@ -69,11 +69,11 @@ export interface StrideSuggestionPanelProps {
 // ── Category colours ───────────────────────────────────────────────────────────
 
 const CATEGORY_COLOR: Record<StrideCategory, string> = {
-  Spoofing: 'bg-blue-50 text-blue-700 border-blue-200',
-  Tampering: 'bg-orange-50 text-orange-700 border-orange-200',
-  Repudiation: 'bg-purple-50 text-purple-700 border-purple-200',
-  InformationDisclosure: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-  DenialOfService: 'bg-red-50 text-red-700 border-red-200',
+  Spoofing: 'bg-info-bg text-info-color border-info-border',
+  Tampering: 'bg-warning-bg text-warning-color border-warning-border',
+  Repudiation: 'bg-info-bg text-info-color border-info-border',
+  InformationDisclosure: 'bg-warning-bg text-warning-color border-warning-border',
+  DenialOfService: 'bg-destructive-bg text-destructive border-destructive-border',
   ElevationOfPrivilege: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 

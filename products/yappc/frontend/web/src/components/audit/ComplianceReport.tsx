@@ -146,11 +146,11 @@ export function ComplianceReport({
     if (!report) {
         return (
             <Box className="text-center py-16">
-                <SecurityIcon className="mb-4 text-[64px] text-gray-500 dark:text-gray-400" />
+                <SecurityIcon className="mb-4 text-[64px] text-fg-muted dark:text-fg-muted" />
                 <Typography gutterBottom className="text-lg font-semibold">
                     No Compliance Report
                 </Typography>
-                <Typography className="mb-6 text-sm text-gray-500" color="text.secondary">
+                <Typography className="mb-6 text-sm text-fg-muted" color="text.secondary">
                     Run a compliance check to generate a report
                 </Typography>
                 <Button
@@ -179,7 +179,7 @@ export function ComplianceReport({
                         </Avatar>
                         <Box className="flex-1">
                             <Typography className="text-xl font-semibold">{frameworkInfo.name} Compliance Report</Typography>
-                            <Typography className="text-sm text-gray-500" color="text.secondary">
+                            <Typography className="text-sm text-fg-muted" color="text.secondary">
                                 Generated {new Date(report.generatedAt).toLocaleString()}
                             </Typography>
                         </Box>
@@ -222,7 +222,7 @@ export function ComplianceReport({
                                     <Typography className="text-2xl font-bold">
                                         {report.score}%
                                     </Typography>
-                                    <Typography className="text-xs text-gray-500" color="text.secondary">
+                                    <Typography className="text-xs text-fg-muted" color="text.secondary">
                                         Score
                                     </Typography>
                                 </Box>
@@ -240,7 +240,7 @@ export function ComplianceReport({
                                 }
                                 className="text-base py-5 px-4"
                             />
-                            <Typography className="mt-2 text-sm text-gray-500" color="text.secondary">
+                            <Typography className="mt-2 text-sm text-fg-muted" color="text.secondary">
                                 Overall Status
                             </Typography>
                         </Box>
@@ -324,7 +324,7 @@ function StatusCounter({
             <Typography className="text-2xl font-bold" color={`${color}.main`}>
                 {count}
             </Typography>
-            <Typography className="text-xs text-gray-500" color="text.secondary">
+            <Typography className="text-xs text-fg-muted" color="text.secondary">
                 {label}
             </Typography>
         </Box>
@@ -353,7 +353,7 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
                 </Box>
             </AccordionSummary>
             <AccordionDetails>
-                <Typography className="mb-3 text-sm text-gray-500" color="text.secondary">
+                <Typography className="mb-3 text-sm text-fg-muted" color="text.secondary">
                     {check.description}
                 </Typography>
 
@@ -371,9 +371,9 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
                                         <ListItem key={i} className="py-0.5">
                                         <ListItemIcon className="min-w-[32px]">
                                             {isFound ? (
-                                                <PassedIcon className="text-green-600" size={16} />
+                                                <PassedIcon className="text-success-color" size={16} />
                                             ) : (
-                                                <FailedIcon className="text-red-600" size={16} />
+                                                <FailedIcon className="text-destructive" size={16} />
                                             )}
                                         </ListItemIcon>
                                         <ListItemText primary={artifact} />
@@ -403,7 +403,7 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
                                 })}
                             </List>
                         ) : (
-                            <Typography className="text-sm text-gray-500" color="text.secondary">
+                            <Typography className="text-sm text-fg-muted" color="text.secondary">
                                 No artifacts found
                             </Typography>
                         )}
@@ -419,14 +419,14 @@ function CheckCard({ check, defaultExpanded = false }: CheckCardProps) {
                                 {check.recommendations.map((rec: string, i: number) => (
                                     <ListItem key={i} className="py-0.5">
                                         <ListItemIcon className="min-w-[32px]">
-                                            <RecommendationIcon className="text-blue-600" size={16} />
+                                            <RecommendationIcon className="text-info-color" size={16} />
                                         </ListItemIcon>
                                         <ListItemText primary={rec} />
                                     </ListItem>
                                 ))}
                             </List>
                         ) : (
-                            <Typography className="text-sm text-gray-500" color="text.secondary">
+                            <Typography className="text-sm text-fg-muted" color="text.secondary">
                                 No recommendations
                             </Typography>
                         )}

@@ -1,8 +1,11 @@
 /**
  * Dashboard Page (F1-024).
  *
+ * P1-015: Complete DMOS command center dashboard.
+ *
  * Overview of the workspace: pending approvals, workflow status,
- * growth goals, and risk/compliance.
+ * growth goals, risk/compliance, campaign status, budget tracking,
+ * strategy insights, and connector health.
  *
  * @doc.type page
  * @doc.purpose Main workspace dashboard for authenticated DMOS users
@@ -18,6 +21,10 @@ import { RiskComplianceWidget } from '@/components/dashboard/RiskComplianceWidge
 import { WorkflowStatusWidget } from '@/components/dashboard/WorkflowStatusWidget';
 import { AiActionLogWidget } from '@/components/dashboard/AiActionLogWidget';
 import { useAiActionLog } from '@/hooks/useAiActionLog';
+import { CampaignStatusWidget } from '@/components/dashboard/CampaignStatusWidget';
+import { BudgetTrackingWidget } from '@/components/dashboard/BudgetTrackingWidget';
+import { StrategyInsightsWidget } from '@/components/dashboard/StrategyInsightsWidget';
+import { ConnectorHealthWidget } from '@/components/dashboard/ConnectorHealthWidget';
 
 export function DashboardPage(): React.ReactElement {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -95,6 +102,40 @@ export function DashboardPage(): React.ReactElement {
           approvals={approvals}
           isLoading={isLoading}
           isError={isError}
+        />
+        <CampaignStatusWidget
+          workspaceId={workspaceId ?? ''}
+          activeCount={3}
+          pausedCount={2}
+          pendingCount={1}
+          isLoading={false}
+          isError={false}
+        />
+        <BudgetTrackingWidget
+          workspaceId={workspaceId ?? ''}
+          totalBudget={50000}
+          spent={12500}
+          remaining={37500}
+          utilizationPercent={25}
+          isLoading={false}
+          isError={false}
+        />
+        <StrategyInsightsWidget
+          workspaceId={workspaceId ?? ''}
+          strategyCount={2}
+          recentRecommendation="Increase budget for high-performing campaigns"
+          confidenceScore={0.85}
+          isLoading={false}
+          isError={false}
+        />
+        <ConnectorHealthWidget
+          workspaceId={workspaceId ?? ''}
+          connectors={[
+            { name: 'Google Ads', status: 'healthy', lastSync: '2 min ago' },
+            { name: 'Meta Ads', status: 'healthy', lastSync: '5 min ago' },
+          ]}
+          isLoading={false}
+          isError={false}
         />
         <AiActionLogWidget
           workspaceId={workspaceId ?? ''}

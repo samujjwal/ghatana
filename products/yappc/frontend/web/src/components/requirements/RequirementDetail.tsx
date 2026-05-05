@@ -18,19 +18,19 @@ export interface RequirementDetailProps {
 }
 
 const PRIORITY_STYLE: Record<RequirementRecord['priority'], string> = {
-  LOW: 'bg-gray-100 text-gray-700',
-  MEDIUM: 'bg-blue-100 text-blue-700',
-  HIGH: 'bg-amber-100 text-amber-800',
-  CRITICAL: 'bg-red-100 text-red-800',
+  LOW: 'bg-surface-muted text-fg',
+  MEDIUM: 'bg-info-bg text-info-color',
+  HIGH: 'bg-warning-bg text-warning-color',
+  CRITICAL: 'bg-destructive-bg text-destructive',
 };
 
 const STATUS_STYLE: Record<RequirementRecord['status'], string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
-  SUBMITTED: 'bg-indigo-100 text-indigo-700',
-  IN_REVIEW: 'bg-amber-100 text-amber-800',
+  DRAFT: 'bg-surface-muted text-fg',
+  SUBMITTED: 'bg-info-bg text-info-color',
+  IN_REVIEW: 'bg-warning-bg text-warning-color',
   APPROVED: 'bg-emerald-100 text-emerald-700',
-  REJECTED: 'bg-red-100 text-red-700',
-  IMPLEMENTED: 'bg-slate-100 text-slate-700',
+  REJECTED: 'bg-destructive-bg text-destructive',
+  IMPLEMENTED: 'bg-surface-muted text-fg',
 };
 
 export const RequirementDetail: React.FC<RequirementDetailProps> = ({ requirement }) => {
@@ -45,7 +45,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({ requiremen
           </Box>
         </Box>
 
-        <Typography className="text-sm text-gray-700">{requirement.description}</Typography>
+        <Typography className="text-sm text-fg">{requirement.description}</Typography>
 
         {requirement.tags && requirement.tags.length > 0 && (
           <Box className="flex flex-wrap gap-1">
@@ -55,7 +55,7 @@ export const RequirementDetail: React.FC<RequirementDetailProps> = ({ requiremen
           </Box>
         )}
 
-        <Box className="grid gap-3 text-xs text-gray-500 md:grid-cols-2">
+        <Box className="grid gap-3 text-xs text-fg-muted md:grid-cols-2">
           <Typography>Created: {new Date(requirement.createdAt).toLocaleString()}</Typography>
           <Typography>Updated: {new Date(requirement.updatedAt).toLocaleString()}</Typography>
         </Box>

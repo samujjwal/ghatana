@@ -58,28 +58,28 @@ async function fetchTopology(): Promise<TopologyData> {
 
 const STATUS_CONFIG: Record<HealthStatus, { label: string; dot: string; bg: string; text: string }> = {
   healthy: { label: 'Healthy', dot: 'bg-emerald-400', bg: 'bg-emerald-900/20', text: 'text-emerald-400' },
-  degraded: { label: 'Degraded', dot: 'bg-amber-400', bg: 'bg-amber-900/20', text: 'text-amber-400' },
-  down: { label: 'Down', dot: 'bg-red-400', bg: 'bg-red-900/20', text: 'text-red-400' },
-  unknown: { label: 'Unknown', dot: 'bg-zinc-500', bg: 'bg-zinc-800', text: 'text-zinc-400' },
+  degraded: { label: 'Degraded', dot: 'bg-warning-bg', bg: 'bg-warning-bg/20', text: 'text-warning-color' },
+  down: { label: 'Down', dot: 'bg-destructive-bg', bg: 'bg-destructive-bg/20', text: 'text-destructive' },
+  unknown: { label: 'Unknown', dot: 'bg-surface-muted', bg: 'bg-surface', text: 'text-fg-muted' },
 };
 
 const DEP_TYPE_COLORS: Record<ServiceDependency['type'], string> = {
-  sync: 'text-blue-400 bg-blue-900/20',
-  async: 'text-purple-400 bg-purple-900/20',
-  database: 'text-amber-400 bg-amber-900/20',
+  sync: 'text-info-color bg-info-bg/20',
+  async: 'text-info-color bg-info-bg/20',
+  database: 'text-warning-color bg-warning-bg/20',
   cache: 'text-emerald-400 bg-emerald-900/20',
 };
 
 function healthScoreColor(score: number): string {
   if (score >= 90) return 'text-emerald-400';
-  if (score >= 70) return 'text-amber-400';
-  return 'text-red-400';
+  if (score >= 70) return 'text-warning-color';
+  return 'text-destructive';
 }
 
 function healthBarColor(score: number): string {
   if (score >= 90) return 'bg-emerald-500';
-  if (score >= 70) return 'bg-amber-500';
-  return 'bg-red-500';
+  if (score >= 70) return 'bg-warning-bg';
+  return 'bg-destructive-bg';
 }
 
 // ============================================================================
@@ -105,7 +105,7 @@ const ServiceMapPage: React.FC = () => {
   if (error) {
     return (
       <div className="p-8">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400">
+        <div className="bg-destructive-bg/20 border border-destructive-border rounded-lg p-4 text-destructive">
           Failed to load service map: {error instanceof Error ? error.message : 'Unknown error'}
         </div>
       </div>
@@ -115,7 +115,7 @@ const ServiceMapPage: React.FC = () => {
   if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-info-border" />
       </div>
     );
   }
@@ -137,37 +137,37 @@ const ServiceMapPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Service Map</h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <h1 className="text-2xl font-bold text-fg-muted">Service Map</h1>
+          <p className="text-sm text-fg-muted mt-1">
             {data.services.length} services &middot; Last updated {data.lastUpdated}
           </p>
         </div>
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors">
+        <button className="px-4 py-2 bg-primary hover:bg-info-bg text-white text-sm font-medium rounded-lg transition-colors">
           Register Service
         </button>
       </div>
 
       {/* Status Summary */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
+        <div className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-emerald-400" />
           <div>
-            <p className="text-xl font-bold text-zinc-100">{statusCounts.healthy}</p>
-            <p className="text-xs text-zinc-500">Healthy</p>
+            <p className="text-xl font-bold text-fg-muted">{statusCounts.healthy}</p>
+            <p className="text-xs text-fg-muted">Healthy</p>
           </div>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
-          <span className="w-3 h-3 rounded-full bg-amber-400" />
+        <div className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3">
+          <span className="w-3 h-3 rounded-full bg-warning-bg" />
           <div>
-            <p className="text-xl font-bold text-zinc-100">{statusCounts.degraded}</p>
-            <p className="text-xs text-zinc-500">Degraded</p>
+            <p className="text-xl font-bold text-fg-muted">{statusCounts.degraded}</p>
+            <p className="text-xs text-fg-muted">Degraded</p>
           </div>
         </div>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
-          <span className="w-3 h-3 rounded-full bg-red-400" />
+        <div className="bg-surface border border-border rounded-xl p-4 flex items-center gap-3">
+          <span className="w-3 h-3 rounded-full bg-destructive-bg" />
           <div>
-            <p className="text-xl font-bold text-zinc-100">{statusCounts.down}</p>
-            <p className="text-xs text-zinc-500">Down</p>
+            <p className="text-xl font-bold text-fg-muted">{statusCounts.down}</p>
+            <p className="text-xs text-fg-muted">Down</p>
           </div>
         </div>
       </div>
@@ -179,17 +179,17 @@ const ServiceMapPage: React.FC = () => {
           placeholder="Search services..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 min-w-[200px] max-w-sm px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-100 text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500"
+          className="flex-1 min-w-[200px] max-w-sm px-3 py-2 bg-surface border border-border rounded-lg text-fg-muted text-sm placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-info-border"
         />
-        <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
+        <div className="flex rounded-lg border border-border overflow-hidden">
           {(['all', 'healthy', 'degraded', 'down'] as StatusFilter[]).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-2 text-xs font-medium capitalize transition-colors ${
                 statusFilter === s
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-zinc-900 text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-primary text-white'
+                  : 'bg-surface text-fg-muted hover:text-fg-muted'
               }`}
             >
               {s}
@@ -205,20 +205,20 @@ const ServiceMapPage: React.FC = () => {
           return (
             <div
               key={service.id}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors"
+              className="bg-surface border border-border rounded-xl p-5 hover:border-border transition-colors"
             >
               {/* Service Header */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-300">
+                    <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center text-sm font-bold text-fg-muted">
                       {service.name.slice(0, 2).toUpperCase()}
                     </div>
-                    <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-900 ${cfg.dot}`} />
+                    <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-border ${cfg.dot}`} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-zinc-100">{service.name}</h3>
-                    <p className="text-xs text-zinc-500">v{service.version} &middot; {service.owner}</p>
+                    <h3 className="text-sm font-semibold text-fg-muted">{service.name}</h3>
+                    <p className="text-xs text-fg-muted">v{service.version} &middot; {service.owner}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -226,17 +226,17 @@ const ServiceMapPage: React.FC = () => {
                 </span>
               </div>
 
-              <p className="text-xs text-zinc-400 mb-4 line-clamp-2">{service.description}</p>
+              <p className="text-xs text-fg-muted mb-4 line-clamp-2">{service.description}</p>
 
               {/* Health Score Bar */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-zinc-500">Health Score</span>
+                  <span className="text-xs text-fg-muted">Health Score</span>
                   <span className={`text-sm font-bold ${healthScoreColor(service.healthScore)}`}>
                     {service.healthScore}%
                   </span>
                 </div>
-                <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-surface rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${healthBarColor(service.healthScore)}`}
                     style={{ width: `${service.healthScore}%` }}
@@ -247,18 +247,18 @@ const ServiceMapPage: React.FC = () => {
               {/* Metrics */}
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div>
-                  <p className="text-xs text-zinc-500">RPS</p>
-                  <p className="text-sm font-semibold text-zinc-200">{service.requestsPerSec}</p>
+                  <p className="text-xs text-fg-muted">RPS</p>
+                  <p className="text-sm font-semibold text-fg-muted">{service.requestsPerSec}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">Error %</p>
-                  <p className={`text-sm font-semibold ${service.errorRate > 1 ? 'text-red-400' : 'text-zinc-200'}`}>
+                  <p className="text-xs text-fg-muted">Error %</p>
+                  <p className={`text-sm font-semibold ${service.errorRate > 1 ? 'text-destructive' : 'text-fg-muted'}`}>
                     {service.errorRate}%
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-zinc-500">P95 Lat</p>
-                  <p className={`text-sm font-semibold ${service.p95LatencyMs > 500 ? 'text-amber-400' : 'text-zinc-200'}`}>
+                  <p className="text-xs text-fg-muted">P95 Lat</p>
+                  <p className={`text-sm font-semibold ${service.p95LatencyMs > 500 ? 'text-warning-color' : 'text-fg-muted'}`}>
                     {service.p95LatencyMs}ms
                   </p>
                 </div>
@@ -266,8 +266,8 @@ const ServiceMapPage: React.FC = () => {
 
               {/* Dependencies */}
               {service.dependencies.length > 0 && (
-                <div className="pt-3 border-t border-zinc-800">
-                  <p className="text-xs text-zinc-500 mb-2">Dependencies ({service.dependencies.length})</p>
+                <div className="pt-3 border-t border-border">
+                  <p className="text-xs text-fg-muted mb-2">Dependencies ({service.dependencies.length})</p>
                   <div className="flex flex-wrap gap-1.5">
                     {service.dependencies.map((dep) => (
                       <span
@@ -288,7 +288,7 @@ const ServiceMapPage: React.FC = () => {
               {service.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-3">
                   {service.tags.map((tag) => (
-                    <span key={tag} className="px-1.5 py-0.5 bg-zinc-800 text-zinc-500 text-[10px] rounded">
+                    <span key={tag} className="px-1.5 py-0.5 bg-surface text-fg-muted text-[10px] rounded">
                       {tag}
                     </span>
                   ))}
@@ -299,7 +299,7 @@ const ServiceMapPage: React.FC = () => {
         })}
 
         {filtered.length === 0 && (
-          <div className="col-span-full py-16 text-center text-zinc-500">
+          <div className="col-span-full py-16 text-center text-fg-muted">
             No services match the current filters
           </div>
         )}

@@ -213,7 +213,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
     return (
         <>
             <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth className="backdrop-blur-[4px]">
-                <DialogTitle className="pb-4 border-b border-solid border-gray-200 dark:border-gray-700">
+                <DialogTitle className="pb-4 border-b border-solid border-border dark:border-border">
                     <Box display="flex" justifyContent="space-between" alignItems="center">
                         <Typography variant="h6" fontWeight="800">Version History</Typography>
                         {onCreateSnapshot && (
@@ -244,7 +244,7 @@ export const VersionHistoryPanel: React.FC<VersionHistoryPanelProps> = ({
                     />
                 </DialogContent>
 
-                <DialogActions className="p-4 border-t border-solid border-gray-200 dark:border-gray-700">
+                <DialogActions className="p-4 border-t border-solid border-border dark:border-border">
                     <Button onClick={onClose} variant="outlined" className="rounded-lg">Close</Button>
                 </DialogActions>
             </Dialog>

@@ -89,7 +89,7 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
             onKeyDown={handleKeyDown}
         >
             {/* Search Header */}
-            <Box className="px-4 py-3 border-gray-200 dark:border-gray-700 border-b" >
+            <Box className="px-4 py-3 border-border dark:border-border border-b" >
                 <TextField
                     inputRef={searchInputRef}
                     fullWidth
@@ -103,15 +103,15 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
                                 <SearchIcon size={16} />
                             </InputAdornment>
                         ),
-                        className: 'bg-white dark:bg-gray-900',
+                        className: 'bg-white dark:bg-surface',
                     }}
                 />
             </Box>
 
             {/* Context Info */}
             {!searchQuery && (
-                <Box className="px-4 py-2 bg-gray-100 dark:bg-gray-800">
-                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Box className="px-4 py-2 bg-surface-muted dark:bg-surface">
+                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                         Creating in <strong>{currentPhase}</strong> phase
                     </Typography>
                 </Box>
@@ -135,7 +135,7 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
                         <MenuItem
                             key={template.type}
                             onClick={() => handleCreate(template)}
-                            className={`py-3 ${isCurrentPhase ? 'bg-gray-50' : 'bg-transparent'}`}
+                            className={`py-3 ${isCurrentPhase ? 'bg-surface-muted' : 'bg-transparent'}`}
                         >
                             <ListItemIcon className="text-2xl">{template.icon}</ListItemIcon>
                             <ListItemText
@@ -144,8 +144,8 @@ export const QuickCreateMenu: React.FC<QuickCreateMenuProps> = ({
                                         <Typography as="p" className="text-sm">{template.label}</Typography>
                                         {isCurrentPhase && (
                                             <Typography
-                                                as="span" className="text-xs text-gray-500"
-                                                className="px-1 bg-blue-600 text-white rounded-sm text-[0.65rem]"
+                                                as="span" className="text-xs text-fg-muted"
+                                                className="px-1 bg-primary text-white rounded-sm text-[0.65rem]"
                                             >
                                                 CURRENT
                                             </Typography>

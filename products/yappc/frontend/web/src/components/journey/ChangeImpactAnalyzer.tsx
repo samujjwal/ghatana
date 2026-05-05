@@ -136,7 +136,7 @@ export function ChangeImpactAnalyzer({
             </Alert>
 
             {/* Impact Analysis */}
-            <Card variant="flat" className="mb-8 border border-solid border-gray-200 dark:border-gray-700">
+            <Card variant="flat" className="mb-8 border border-solid border-border dark:border-border">
                 <CardContent>
                     <Typography as="h6" fontWeight="bold" mb={3}>
                         Detected Changes
@@ -146,7 +146,7 @@ export function ChangeImpactAnalyzer({
                         {impactData.changes.map((change, index) => (
                             <React.Fragment key={change.id}>
                                 <ListItem
-                                    className={`flex-col items-start py-4 rounded cursor-pointer ${selectedChanges.includes(change.id) ? 'bg-gray-50 dark:bg-gray-800' : 'bg-transparent'}`}
+                                    className={`flex-col items-start py-4 rounded cursor-pointer ${selectedChanges.includes(change.id) ? 'bg-surface-muted dark:bg-surface' : 'bg-transparent'}`}
                                     onClick={() => handleToggleChange(change.id)}
                                 >
                                     <Box display="flex" alignItems="center" gap={2} width="100%">
@@ -193,7 +193,7 @@ export function ChangeImpactAnalyzer({
             </Card>
 
             {/* Recommendations */}
-            <Card variant="flat" className="mb-8 border border-solid border-gray-200 dark:border-gray-700">
+            <Card variant="flat" className="mb-8 border border-solid border-border dark:border-border">
                 <CardContent>
                     <Typography as="h6" fontWeight="bold" mb={3}>
                         Recommendations
@@ -213,7 +213,7 @@ export function ChangeImpactAnalyzer({
             </Card>
 
             {/* Affected Phases Details */}
-            <Card variant="flat" className="mb-8 border border-solid border-gray-200 dark:border-gray-700">
+            <Card variant="flat" className="mb-8 border border-solid border-border dark:border-border">
                 <CardContent>
                     <Typography as="h6" fontWeight="bold" mb={3}>
                         Affected Phases Details

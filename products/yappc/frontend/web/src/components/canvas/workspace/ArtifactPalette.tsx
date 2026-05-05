@@ -57,7 +57,7 @@ export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, o
         <Box
             className="h-full flex flex-col"
         >
-            <Box className="flex items-center justify-between px-5 py-4 border-b border-solid border-gray-200 dark:border-gray-700">
+            <Box className="flex items-center justify-between px-5 py-4 border-b border-solid border-border dark:border-border">
                 <Typography as="p" className="text-sm uppercase text-xs tracking-[0.5px]" fontWeight="600" color="text.secondary">
                     Artifacts Library
                 </Typography>
@@ -79,7 +79,7 @@ export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, o
                         <Box key={group.phase}>
                             <Box
                                 onClick={() => togglePhase(group.phase)}
-                                className="flex items-center justify-between px-3 py-[10px] rounded-lg cursor-pointer border border-solid border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-sm"
+                                className="flex items-center justify-between px-3 py-[10px] rounded-lg cursor-pointer border border-solid border-border dark:border-border transition-all duration-200 hover:shadow-sm"
                                 style={{ backgroundColor: `${group.color}20` }}
                             >
                                 <Box className="flex items-center gap-2">
@@ -102,19 +102,19 @@ export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, o
                                             draggable
                                             onDragStart={(e) => handleDragStart(e, template)}
                                             onClick={() => onQuickCreate(template)}
-                                            className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-grab transition-all duration-200 bg-white dark:bg-gray-900 active:cursor-grabbing shadow translate-x-[4px]"
+                                            className="p-3 border border-border dark:border-border rounded-lg cursor-grab transition-all duration-200 bg-white dark:bg-surface active:cursor-grabbing shadow translate-x-[4px]"
                                             style={{ borderColor: `${group.color}55` }}
                                         >
                                             <Box className="flex items-start gap-2">
                                                 <Box className="flex items-center gap-1">
-                                                    <DragIcon className="text-gray-400 dark:text-gray-600 text-sm" />
+                                                    <DragIcon className="text-fg-muted dark:text-fg-muted text-sm" />
                                                     <Typography className="text-lg">{template.icon}</Typography>
                                                 </Box>
                                                 <Box className="flex-1 min-w-0">
                                                     <Typography as="p" className="text-sm" fontWeight="medium" noWrap>
                                                         {template.label}
                                                     </Typography>
-                                                    <Typography as="span" className="text-xs text-gray-500 block" color="text.secondary">
+                                                    <Typography as="span" className="text-xs text-fg-muted block" color="text.secondary">
                                                         {template.description}
                                                     </Typography>
                                                 </Box>
@@ -129,11 +129,11 @@ export const ArtifactPalette: React.FC<ArtifactPaletteProps> = ({ onDragStart, o
             </Stack>
 
             <Box
-                className="px-5 py-3 border-t border-solid border-gray-200 dark:border-gray-700 flex items-center gap-2 justify-center"
+                className="px-5 py-3 border-t border-solid border-border dark:border-border flex items-center gap-2 justify-center"
                 style={{ backgroundColor: 'rgba(148, 163, 184, 0.08)' }}
             >
-                <LightbulbIcon className="text-gray-500 dark:text-gray-400 text-base" />
-                <Typography as="span" className="text-xs text-gray-500 text-[0.7rem]" color="text.secondary">
+                <LightbulbIcon className="text-fg-muted dark:text-fg-muted text-base" />
+                <Typography as="span" className="text-xs text-fg-muted text-[0.7rem]" color="text.secondary">
                     Drag to canvas or double-click canvas for quick menu
                 </Typography>
             </Box>

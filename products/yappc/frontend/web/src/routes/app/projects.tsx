@@ -118,10 +118,10 @@ export default function ProjectsRoute() {
     // Health color based on AI score
     const getHealthColor = (score?: number) => {
         if (score === undefined) return 'bg-grey-300 dark:bg-grey-600';
-        if (score >= 80) return 'bg-green-500';
-        if (score >= 60) return 'bg-yellow-500';
-        if (score >= 40) return 'bg-orange-500';
-        return 'bg-red-500';
+        if (score >= 80) return 'bg-success-bg';
+        if (score >= 60) return 'bg-warning-bg';
+        if (score >= 40) return 'bg-warning-bg';
+        return 'bg-destructive-bg';
     };
 
     if (isLoading) {

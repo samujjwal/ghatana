@@ -209,6 +209,94 @@ class CostControllerTest extends EventloopTestBase {
     }
 
     // =========================================================================
+    // Provenance (AEP-P2-005)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("Data provenance")
+    class Provenance {
+
+        @Test
+        @DisplayName("dataSource field indicates whether cost is estimated or actual")
+        void dataSourceIndicatesOrigin() throws Exception {
+            HttpResponse response = runPromise(() ->
+                    controller.handleGetCostSummary(buildGet("provenance-tenant")));
+
+            JsonNode summary = parseBody(response).get("summary");
+            assertThat(summary.has("dataSource")).isTrue();
+            String dataSource = summary.get("dataSource").asText();
+            assertThat(dataSource).isIn("estimated", "actual");
+        }
+
+        @Test
+        @DisplayName("timestamp field provides when the cost snapshot was generated")
+        void timestampProvidesSnapshotTime() throws Exception {
+            HttpResponse response = runPromise(() ->
+                    controller.handleGetCostSummary(buildGet("timestamp-tenant")));
+
+            JsonNode json = parseBody(response);
+            assertThat(json.has("timestamp")).isTrue();
+            String timestamp = json.get("timestamp").asText();
+            // Verify it's a valid ISO-8601 format
+            Instant.parse(timestamp);
+        }
+
+        @Test
+        @DisplayName("response includes correlationId when provided in request")
+        void correlationIdPropagatedToResponse() throws Exception {
+            HttpRequest request = HttpRequest.get(
+                    "http://localhost/api/v1/cost/summary?tenantId=corr-tenant&correlationId=corr-12345").build();
+
+            HttpResponse response = runPromise(() ->
+                    controller.handleGetCostSummary(request));
+
+            JsonNode json = parseBody(response);
+            assertThat(json.has("correlationId")).isTrue();
+            assertThat(json.get("correlationId").asText()).isEqualTo("corr-12345");
+        }
+
+        @Test
+        @DisplayName("dataSource is 'estimated' when no analytics store is configured")
+        void dataSourceEstimatedWhenNoStore() throws Exception {
+            HttpResponse response = runPromise(() ->
+                    controller.handleGetCostSummary(buildGet("no-store-tenant")));
+
+            JsonNode summary = parseBody(response).get("summary");
+            assertThat(summary.get("dataSource").asText()).isEqualTo("estimated");
+        }
+
+        @Test
+        @DisplayName("breakdown items include source metadata (pipelineId, agentId, modelId)")
+        void breakdownItemsIncludeSourceMetadata() throws Exception {
+            List<Map<String, Object>> runs = List.of(
+                    Map.of(
+                            "tenantId", "source-meta-tenant",
+                            "pipelineId", "pipeline-1",
+                            "pipelineName", "Pipeline One",
+                            "startedAt", Instant.now().minusSeconds(60).toString(),
+                            "completedAt", Instant.now().minusSeconds(5).toString(),
+                            "durationMs", "55000",
+                            "eventsProcessed", "1000",
+                            "status", "succeeded"
+                    )
+            );
+            CostController controllerWithRuns = new CostController(null, null, () -> runs);
+
+            HttpResponse response = runPromise(() ->
+                    controllerWithRuns.handleGetCostSummary(buildGet("source-meta-tenant")));
+
+            JsonNode summary = parseBody(response).get("summary");
+            JsonNode perPipeline = summary.get("perPipeline");
+            assertThat(perPipeline.isArray()).isTrue();
+            if (perPipeline.size() > 0) {
+                JsonNode firstPipeline = perPipeline.get(0);
+                assertThat(firstPipeline.has("pipelineId")).isTrue();
+                assertThat(firstPipeline.has("pipelineName")).isTrue();
+            }
+        }
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 

@@ -188,7 +188,7 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactCanvasNode>> = ({ id, data, 
                         </Typography>
                         <Typography
                             component="span"
-                            className="text-xs text-gray-500 block overflow-hidden text-ellipsis whitespace-nowrap"
+                            className="text-xs text-fg-muted block overflow-hidden text-ellipsis whitespace-nowrap"
                         >
                             {data.type}
                         </Typography>
@@ -223,7 +223,7 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactCanvasNode>> = ({ id, data, 
                 </Box>
 
                 {contextMenuAnchor && (
-                    <Box className="absolute right-3 top-12 z-20 flex min-w-[190px] flex-col rounded border border-gray-200 bg-white p-2 shadow-lg">
+                    <Box className="absolute right-3 top-12 z-20 flex min-w-[190px] flex-col rounded border border-border bg-white p-2 shadow-lg">
                         <Button size="small" variant="text" onClick={() => {
                             data.onEdit?.(data.id);
                             setContextMenuAnchor(null);
@@ -286,7 +286,7 @@ const ArtifactNodeInner: React.FC<NodeProps<ArtifactCanvasNode>> = ({ id, data, 
                 {/* Description */}
                 {data.description && (
                     <Typography
-                        component="p" className="text-xs mb-2 overflow-hidden line-clamp-2 nodrag nopan text-gray-500"
+                        component="p" className="text-xs mb-2 overflow-hidden line-clamp-2 nodrag nopan text-fg-muted"
                     >
                         {data.description}
                     </Typography>

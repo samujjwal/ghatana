@@ -34,9 +34,9 @@ export interface ValidationRunDialogProps {
 const STATUS_ICONS: Record<ValidationRunStep['status'], React.ReactNode> = {
     pending: <HourglassEmpty className="w-5 h-5 text-grey-400" />,
     running: <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin" />,
-    passed: <CheckCircle className="w-5 h-5 text-green-500" />,
-    failed: <Cancel className="w-5 h-5 text-red-500" />,
-    warning: <Warning className="w-5 h-5 text-yellow-500" />,
+    passed: <CheckCircle className="w-5 h-5 text-success-color" />,
+    failed: <Cancel className="w-5 h-5 text-destructive" />,
+    warning: <Warning className="w-5 h-5 text-warning-color" />,
     skipped: <span className="w-5 h-5 text-grey-400 text-center">—</span>,
 };
 
@@ -108,10 +108,10 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
                     <div className="h-1 bg-grey-200 dark:bg-grey-700">
                         <div
                             className={`h-full transition-all duration-300 ${failedSteps > 0
-                                    ? 'bg-red-500'
+                                    ? 'bg-destructive-bg'
                                     : warningSteps > 0
-                                        ? 'bg-yellow-500'
-                                        : 'bg-green-500'
+                                        ? 'bg-warning-bg'
+                                        : 'bg-success-bg'
                                 }`}
                             style={{ width: `${progress}%` }}
                         />
@@ -148,15 +148,15 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
                                         <div className="text-xs text-text-secondary">Total</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-xl font-bold text-green-500">{passedSteps}</div>
+                                        <div className="text-xl font-bold text-success-color">{passedSteps}</div>
                                         <div className="text-xs text-text-secondary">Passed</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-xl font-bold text-red-500">{failedSteps}</div>
+                                        <div className="text-xl font-bold text-destructive">{failedSteps}</div>
                                         <div className="text-xs text-text-secondary">Failed</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-xl font-bold text-yellow-500">{warningSteps}</div>
+                                        <div className="text-xl font-bold text-warning-color">{warningSteps}</div>
                                         <div className="text-xs text-text-secondary">Warnings</div>
                                     </div>
                                 </div>
@@ -170,11 +170,11 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
                                         className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${step.status === 'running'
                                                 ? 'bg-primary-50 dark:bg-primary-900/20'
                                                 : step.status === 'failed'
-                                                    ? 'bg-red-50/50 dark:bg-red-900/10'
+                                                    ? 'bg-destructive-bg/50 dark:bg-destructive-bg/10'
                                                     : step.status === 'warning'
-                                                        ? 'bg-yellow-50/50 dark:bg-yellow-900/10'
+                                                        ? 'bg-warning-bg/50 dark:bg-warning-bg/10'
                                                         : step.status === 'passed'
-                                                            ? 'bg-green-50/50 dark:bg-green-900/10'
+                                                            ? 'bg-success-bg/50 dark:bg-success-bg/10'
                                                             : 'bg-grey-50 dark:bg-grey-800/30'
                                             }`}
                                     >
@@ -217,7 +217,7 @@ export const ValidationRunDialog: React.FC<ValidationRunDialogProps> = ({
                     {isRunning ? (
                         <button
                             onClick={onCancel}
-                            className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            className="px-4 py-2 text-sm text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg/20 rounded-lg transition-colors"
                         >
                             Cancel
                         </button>

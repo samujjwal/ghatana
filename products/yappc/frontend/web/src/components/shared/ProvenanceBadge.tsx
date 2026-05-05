@@ -45,31 +45,31 @@ const PROVENANCE_CONFIG: Record<ProvenanceType, {
     label: 'Backed',
     description: 'Persisted API data - safe to act on',
     icon: '✓',
-    colors: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800',
+    colors: 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color border-success-border dark:border-success-border',
   },
   derived: {
     label: 'Derived',
     description: 'Computed from backed data',
     icon: '→',
-    colors: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-200 dark:border-blue-800',
+    colors: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color border-info-border dark:border-info-border',
   },
   suggested: {
     label: 'Suggested',
     description: 'Generated recommendation requiring review',
     icon: '💡',
-    colors: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200 dark:border-purple-800',
+    colors: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color border-info-border dark:border-info-border',
   },
   preview: {
     label: 'Preview',
     description: 'Non-production / preview-only',
     icon: '👁️',
-    colors: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800',
+    colors: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color border-warning-border dark:border-warning-border',
   },
   unavailable: {
     label: 'Unavailable',
     description: 'Missing capability or integration',
     icon: '—',
-    colors: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300 border-gray-200 dark:border-gray-800',
+    colors: 'bg-surface-muted text-fg dark:bg-surface/30 dark:text-fg-muted border-border dark:border-border',
   },
 };
 

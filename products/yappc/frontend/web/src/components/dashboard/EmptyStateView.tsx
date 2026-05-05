@@ -13,7 +13,7 @@ export function EmptyStateView({ onCreateProject, onSkip }: EmptyStateViewProps)
             <div className="max-w-4xl mx-auto p-6 pt-20 text-center">
                 <Box className="mb-12">
                     <div className="inline-flex items-center justify-center p-4 bg-primary-50 rounded-full mb-4">
-                        <AutoAwesomeIcon className="text-blue-600 text-5xl" />
+                        <AutoAwesomeIcon className="text-info-color text-5xl" />
                     </div>
                     <Typography as="h3" fontWeight="bold" gutterBottom>
                         Welcome to YAPPC

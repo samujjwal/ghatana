@@ -1,0 +1,28 @@
+pack:
+  id: flashit-domain-pack
+  version: 1.0.0
+  product: flashit
+  domain: personal-reflection
+  rulePrefix: FLASHIT-BP-
+  boundaryPolicyStoreClass: com.ghatana.flashit.kernel.policy.FlashItBoundaryPolicyStore
+  pluginBindingsClass: com.ghatana.flashit.kernel.policy.FlashItPluginBindings
+  kernelCapabilitiesConsumed:
+    - boundary-policy-evaluation
+    - audit-trail
+    - human-approval
+    - observability
+  pluginsConsumed:
+    - plugin-audit-trail
+    - plugin-compliance
+    - plugin-human-approval
+  bridgesConsumed: []
+  domainPacksProvided:
+    - flashit-boundary-policy
+    - flashit-compliance-rule-pack
+  uiSurfaces:
+    - web
+    - mobile
+  runtimeServices:
+    - backend-agent
+    - web-api
+  dataSensitivity: personal-journal

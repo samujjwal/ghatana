@@ -78,9 +78,9 @@ export function SmartFormField({
       </div>
 
       {reasoning && hasSuggestion && (
-        <div className="mb-2 flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-          <LightBulbIcon className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-          <Typography className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="mb-2 flex items-start gap-2 p-2 bg-info-bg dark:bg-info-bg/20 rounded-md">
+          <LightBulbIcon className="w-4 h-4 text-info-color dark:text-info-color mt-0.5 flex-shrink-0" />
+          <Typography className="text-sm text-info-color dark:text-info-color">
             {reasoning}
           </Typography>
         </div>
@@ -102,7 +102,7 @@ export function SmartFormField({
             size="sm"
             variant="text"
             onClick={onRejectSuggestion}
-            className="text-xs text-gray-500"
+            className="text-xs text-fg-muted"
           >
             Dismiss
           </Button>
@@ -155,15 +155,15 @@ export function SmartForm<T extends Record<string, unknown>>({
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Prediction Banner */}
       {form.predictions.length > 0 && !isSubmitting && (
-        <Box className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <Box className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-info-border dark:border-info-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AutoAwesome className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <AutoAwesome className="w-5 h-5 text-info-color dark:text-info-color" />
               <div>
-                <Typography className="font-medium text-blue-900 dark:text-blue-100">
-                  AI Suggestions Available
+                <Typography className="font-medium text-info-color dark:text-info-color">
+                  Suggestions Available
                 </Typography>
-                <Typography className="text-sm text-blue-700 dark:text-blue-300">
+                <Typography className="text-sm text-info-color dark:text-info-color">
                   {form.predictions.length} field{form.predictions.length !== 1 ? 's' : ''} predicted
                 </Typography>
               </div>

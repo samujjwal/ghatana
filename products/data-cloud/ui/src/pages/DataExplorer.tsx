@@ -4,8 +4,10 @@
  * Full-featured Data Explorer with progressive loading and performance optimizations.
  * Maintains all original features while improving load times.
  *
+ * DC-P2-007: Added sorting functionality for collections list
+ *
  * @doc.type page
- * @doc.purpose Feature-complete data exploration with optimized loading
+ * @doc.purpose Feature-complete data exploration with optimized loading and sorting
  * @doc.layer frontend
  */
 
@@ -25,6 +27,9 @@ import {
     Edit,
     RefreshCw,
     Loader2,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
 } from 'lucide-react';
 import { cn } from '../lib/theme';
 import { collectionsApi, type Collection } from '../lib/api/collections';
@@ -39,6 +44,16 @@ const DATA_EXPLORER_VIEW_MODES = ['table', 'lineage', 'quality', 'schema'] as co
 const QUALITY_VIEW_ENABLED = true;
 
 type ViewMode = (typeof DATA_EXPLORER_VIEW_MODES)[number];
+
+/**
+ * Sort fields for collections
+ */
+type SortField = 'name' | 'entityCount' | 'updatedAt' | 'qualityScore' | 'createdAt';
+
+/**
+ * Sort direction
+ */
+type SortDirection = 'asc' | 'desc';
 
 interface QualityAdvisory {
     suggestion: string;
@@ -310,6 +325,9 @@ export function DataExplorer() {
     // DC-UX-012: Filter state wired to API — was accepted by API params but ignored by the call
     const [statusFilter, setStatusFilter] = useState<Collection['status'] | 'all'>('all');
     const [schemaTypeFilter, setSchemaTypeFilter] = useState<Collection['schemaType'] | 'all'>('all');
+    // DC-P2-007: Sort state
+    const [sortField, setSortField] = useState<SortField>('updatedAt');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
 
     useEffect(() => {
@@ -322,12 +340,14 @@ export function DataExplorer() {
 
     // DC-UX-012: Fetch real collections — all filter/sort params wired to queryKey and API call
     const { data: collectionsPage, isLoading, isError, refetch } = useQuery({
-        queryKey: ['collections', searchQuery, statusFilter, schemaTypeFilter],
+        queryKey: ['collections', searchQuery, statusFilter, schemaTypeFilter, sortField, sortDirection],
         queryFn: () => collectionsApi.list({
             search: searchQuery || undefined,
             pageSize: 50,
             status: statusFilter !== 'all' ? statusFilter : undefined,
             schemaType: schemaTypeFilter !== 'all' ? schemaTypeFilter : undefined,
+            sortBy: sortField,
+            sortOrder: sortDirection,
         }),
         staleTime: 60_000,
     });
@@ -363,6 +383,24 @@ export function DataExplorer() {
     const handleCollectionClick = (collection: Collection) => {
         setSelectedCollection(collection);
         navigate(`/data/${collection.id}?view=${viewMode}`);
+    };
+
+    // DC-P2-007: Handle sort field change
+    const handleSortFieldChange = (field: SortField) => {
+        if (sortField === field) {
+            // Toggle direction if same field
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            // New field, default to desc
+            setSortField(field);
+            setSortDirection('desc');
+        }
+    };
+
+    // DC-P2-007: Get sort icon based on current field and direction
+    const getSortIcon = (field: SortField) => {
+        if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+        return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
     };
 
     return (
@@ -431,6 +469,54 @@ export function DataExplorer() {
                     <option value="graph">Graph</option>
                     <option value="document">Document</option>
                 </select>
+                {/* DC-P2-007: Sort controls */}
+                <label htmlFor="collection-sort-field" className="sr-only">Sort by</label>
+                <div className="flex items-center gap-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <button
+                        onClick={() => handleSortFieldChange('name')}
+                        data-testid="sort-by-name"
+                        className={cn(
+                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors rounded-l-lg',
+                            sortField === 'name' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
+                        )}
+                    >
+                        {getSortIcon('name')}
+                        Name
+                    </button>
+                    <button
+                        onClick={() => handleSortFieldChange('entityCount')}
+                        data-testid="sort-by-entityCount"
+                        className={cn(
+                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors border-l border-gray-300 dark:border-gray-600',
+                            sortField === 'entityCount' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
+                        )}
+                    >
+                        {getSortIcon('entityCount')}
+                        Records
+                    </button>
+                    <button
+                        onClick={() => handleSortFieldChange('qualityScore')}
+                        data-testid="sort-by-qualityScore"
+                        className={cn(
+                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors border-l border-gray-300 dark:border-gray-600',
+                            sortField === 'qualityScore' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
+                        )}
+                    >
+                        {getSortIcon('qualityScore')}
+                        Quality
+                    </button>
+                    <button
+                        onClick={() => handleSortFieldChange('updatedAt')}
+                        data-testid="sort-by-updatedAt"
+                        className={cn(
+                            'flex items-center gap-1 px-3 py-2 text-sm transition-colors border-l border-gray-300 dark:border-gray-600 rounded-r-lg',
+                            sortField === 'updatedAt' ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-gray-800'
+                        )}
+                    >
+                        {getSortIcon('updatedAt')}
+                        Updated
+                    </button>
+                </div>
                 <div className="flex items-center gap-2 ml-auto">
                     <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" onClick={() => void refetch()} aria-label="Refresh">
                         <RefreshCw className={cn('h-4 w-4 text-gray-500', isLoading && 'animate-spin')} />

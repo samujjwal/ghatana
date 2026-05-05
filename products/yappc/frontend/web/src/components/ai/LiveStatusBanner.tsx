@@ -53,31 +53,31 @@ export interface LiveStatusBannerProps {
 const STATUS_CONFIG = {
   IDLE: null, // not rendered
   RUNNING: {
-    bgClass: 'bg-blue-50 border-blue-200 text-blue-800',
+    bgClass: 'bg-info-bg border-info-border text-info-color',
     icon: '○',
     ariaLabel: 'Operation running',
     animate: true,
   },
   PAUSED: {
-    bgClass: 'bg-yellow-50 border-yellow-200 text-yellow-800',
+    bgClass: 'bg-warning-bg border-warning-border text-warning-color',
     icon: '⏸',
     ariaLabel: 'Operation paused',
     animate: false,
   },
   COMPLETED: {
-    bgClass: 'bg-green-50 border-green-200 text-green-800',
+    bgClass: 'bg-success-bg border-success-border text-success-color',
     icon: '✓',
     ariaLabel: 'Operation completed',
     animate: false,
   },
   FAILED: {
-    bgClass: 'bg-red-50 border-red-200 text-red-800',
+    bgClass: 'bg-destructive-bg border-destructive-border text-destructive',
     icon: '✕',
     ariaLabel: 'Operation failed',
     animate: false,
   },
   CANCELLED: {
-    bgClass: 'bg-slate-50 border-slate-200 text-slate-700',
+    bgClass: 'bg-surface-muted border-border text-fg',
     icon: '○',
     ariaLabel: 'Operation cancelled',
     animate: false,

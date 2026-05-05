@@ -133,13 +133,13 @@ export const VisualRegression: React.FC<VisualRegressionProps> = ({ config }) =>
             <ListItem key={test.id}>
               <ListItemIcon>
                 {test.status === 'passed' && (
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  <div className="w-2 h-2 rounded-full bg-success-bg" />
                 )}
                 {test.status === 'failed' && (
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
+                  <div className="w-2 h-2 rounded-full bg-destructive-bg" />
                 )}
                 {test.status === 'pending' && (
-                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                  <div className="w-2 h-2 rounded-full bg-warning-bg" />
                 )}
               </ListItemIcon>
               <ListItemText

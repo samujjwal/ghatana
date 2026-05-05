@@ -69,7 +69,7 @@ export const ArtifactNodeContent: React.FC<ArtifactNodeContentProps> = ({
 
             {/* Additional artifact content can be rendered here */}
             <Box className="mt-2">
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     Type: {data.type}
                 </Typography>
             </Box>

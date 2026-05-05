@@ -41,28 +41,28 @@ function getPreviewStatusView(status: PreviewStatusContract): {
         case 'loading':
             return {
                 label: 'Checking preview host...',
-                className: 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-200',
+                className: 'border-info-border bg-info-bg text-info-color dark:border-info-border/60 dark:bg-info-bg/40 dark:text-info-color',
                 detail: 'Verifying that the configured preview host is reachable.',
                 capabilityBoundary: 'Preview only — this is not a live deployment console.',
             };
         case 'unavailable':
             return {
                 label: 'Preview host unreachable',
-                className: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200',
+                className: 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color',
                 detail: 'The preview host is configured but not responding. It may be starting up or temporarily offline.',
                 capabilityBoundary: 'Preview only — this is not a live deployment console.',
             };
         case 'error':
             return {
                 label: 'Preview host error',
-                className: 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200',
+                className: 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive',
                 detail: 'The preview host returned an error. Check the host configuration or try again later.',
                 capabilityBoundary: 'Preview only — this is not a live deployment console.',
             };
         default:
             return {
                 label: 'Preview unavailable',
-                className: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200',
+                className: 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color',
                 detail: 'A preview host must be configured before this screen can expose a live preview.',
                 capabilityBoundary: 'Preview only — this is not a live deployment console.',
             };

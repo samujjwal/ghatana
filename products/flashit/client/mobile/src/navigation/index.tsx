@@ -12,6 +12,8 @@ import { View, Text, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mobileAtoms } from '../state/localAtoms';
 import { ApiProvider } from '../contexts/ApiContext';
+import { flashitMobileTheme } from '../theme/kernelTheme';
+import { getFlashitMobileTabRoutes } from '../routeManifest';
 
 // Screens
 import LoginScreen from '../screens/LoginScreen';
@@ -80,13 +82,13 @@ function AuthLoading() {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: '#f0f9ff'
+      backgroundColor: flashitMobileTheme.background.canvas,
     }}>
-      <ActivityIndicator size="large" color="#0ea5e9" />
+      <ActivityIndicator size="large" color={flashitMobileTheme.brand.primaryStrong} />
       <Text style={{
         marginTop: 16,
-        color: '#64748b',
-        fontSize: 16
+        color: flashitMobileTheme.text.secondary,
+        fontSize: 16,
       }}>
         Loading...
       </Text>
@@ -96,33 +98,26 @@ function AuthLoading() {
 
 // Main Tab Navigator with accessibility
 function MainTabNavigator() {
+  const tabRoutes = getFlashitMobileTabRoutes();
+  const iconByRoute = Object.fromEntries(
+    tabRoutes.map((route) => [route.screen, route.iconName ?? 'ellipse']),
+  ) as Readonly<Record<string, string>>;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }: { route: { name: string } }) => ({
         tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
+          const iconName = (focused
+            ? iconByRoute[route.name]?.replace('-outline', '')
+            : iconByRoute[route.name]) ?? 'ellipse';
 
-          if (route.name === 'Dashboard') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Moments') {
-            iconName = focused ? 'time' : 'time-outline';
-          } else if (route.name === 'Capture') {
-            iconName = focused ? 'add-circle' : 'add-circle-outline';
-          } else if (route.name === 'Spheres') {
-            iconName = focused ? 'grid' : 'grid-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
-          } else {
-            iconName = 'ellipse';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007aff',
-        tabBarInactiveTintColor: '#8e8e93',
+        tabBarActiveTintColor: flashitMobileTheme.brand.primary,
+        tabBarInactiveTintColor: flashitMobileTheme.brand.inactive,
         tabBarStyle: {
-          backgroundColor: '#ffffff',
-          borderTopColor: '#e5e5e5',
+          backgroundColor: flashitMobileTheme.background.surface,
+          borderTopColor: flashitMobileTheme.border,
           borderTopWidth: 1,
           paddingBottom: 8,
           paddingTop: 8,
@@ -133,9 +128,9 @@ function MainTabNavigator() {
           fontWeight: '600',
         },
         headerStyle: {
-          backgroundColor: '#0ea5e9',
+          backgroundColor: flashitMobileTheme.brand.primaryStrong,
         },
-        headerTintColor: '#fff',
+        headerTintColor: flashitMobileTheme.text.inverse,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -206,9 +201,9 @@ function AppNavigator() {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#0ea5e9',
+          backgroundColor: flashitMobileTheme.brand.primaryStrong,
         },
-        headerTintColor: '#fff',
+        headerTintColor: flashitMobileTheme.text.inverse,
         headerTitleStyle: {
           fontWeight: 'bold',
         },
@@ -341,4 +336,3 @@ export default function Navigation() {
     </NavigationContainer>
   );
 }
-

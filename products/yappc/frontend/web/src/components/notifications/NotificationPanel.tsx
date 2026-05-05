@@ -81,7 +81,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
       {/* Bell icon button */}
       <button
         ref={buttonRef}
-        className="relative p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
+        className="relative p-2 text-fg-muted hover:text-fg rounded-lg hover:bg-surface-muted"
         onClick={() => {
           updatePanelPosition();
           setIsOpen(!isOpen);
@@ -89,7 +89,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-destructive-bg text-white text-xs font-bold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
@@ -106,7 +106,7 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
 
           {/* Panel */}
           <div
-            className="w-96 bg-white rounded-lg shadow-xl border border-gray-200"
+            className="w-96 bg-white rounded-lg shadow-xl border border-border"
             style={{
               position: 'fixed',
               top: `${panelPosition.top}px`,
@@ -116,21 +116,21 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
           >
 
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-fg">
                 Notifications
               </h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
-                    className="text-xs text-blue-600 hover:text-blue-700"
+                    className="text-xs text-info-color hover:text-info-color"
                     onClick={() => clearAllMutation.mutate()}
                   >
                     Clear all
                   </button>
                 )}
                 <button
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-fg-muted hover:text-fg-muted"
                   onClick={() => setIsOpen(false)}
                 >
                   <X className="w-4 h-4" />
@@ -141,8 +141,8 @@ export function NotificationPanel({ tenantId }: { tenantId: string }) {
             {/* Notification list */}
             <div className="max-h-96 overflow-y-auto">
               {notifications?.length === 0 ? (
-                <div className="px-4 py-12 text-center text-gray-500">
-                  <Bell className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                <div className="px-4 py-12 text-center text-fg-muted">
+                  <Bell className="w-12 h-12 mx-auto mb-3 text-fg-muted" />
                   <p>No notifications</p>
                 </div>
               ) : (
@@ -197,8 +197,8 @@ function NotificationItem({
   return (
     <div
       className={cn(
-        'px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer',
-        !notification.isRead && 'bg-blue-50'
+        'px-4 py-3 hover:bg-surface-muted transition-colors cursor-pointer',
+        !notification.isRead && 'bg-info-bg'
       )}
       onClick={handleClick}
     >
@@ -210,13 +210,13 @@ function NotificationItem({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-900 font-medium">
+          <p className="text-sm text-fg font-medium">
             {notification.title}
           </p>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+          <p className="text-sm text-fg-muted mt-1 line-clamp-2">
             {notification.message}
           </p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 mt-2 text-xs text-fg-muted">
             <Clock className="w-3 h-3" />
             <span>{formatTime(notification.createdAt)}</span>
           </div>
@@ -224,7 +224,7 @@ function NotificationItem({
 
         {/* Unread indicator */}
         {!notification.isRead && (
-          <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2" />
+          <div className="flex-shrink-0 w-2 h-2 bg-info-bg rounded-full mt-2" />
         )}
       </div>
     </div>
@@ -251,19 +251,19 @@ function getNotificationTypeConfig(type: string) {
   const configs = {
     INFO: {
       icon: <Info className="w-5 h-5" />,
-      color: 'text-blue-600',
+      color: 'text-info-color',
     },
     WARNING: {
       icon: <AlertTriangle className="w-5 h-5" />,
-      color: 'text-yellow-600',
+      color: 'text-warning-color',
     },
     ERROR: {
       icon: <AlertTriangle className="w-5 h-5" />,
-      color: 'text-red-600',
+      color: 'text-destructive',
     },
     SUCCESS: {
       icon: <CheckCircle className="w-5 h-5" />,
-      color: 'text-green-600',
+      color: 'text-success-color',
     },
   };
 

@@ -176,7 +176,7 @@ export function ObserveStep() {
             <Card className="mb-6">
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <TimerIcon className="text-blue-600" />
+                        <TimerIcon className="text-info-color" />
                         <Typography className="text-lg font-medium" fontWeight={600}>
                             Observation Window
                         </Typography>
@@ -189,10 +189,10 @@ export function ObserveStep() {
 
                     <Box className="mb-2">
                         <Box className="flex justify-between mb-1">
-                            <Typography className="text-sm text-gray-500" color="text.secondary">
+                            <Typography className="text-sm text-fg-muted" color="text.secondary">
                                 {progress.toFixed(0)}% complete
                             </Typography>
-                            <Typography className="text-sm text-gray-500" color="text.secondary">
+                            <Typography className="text-sm text-fg-muted" color="text.secondary">
                                 {hoursRemaining.toFixed(1)}h remaining
                             </Typography>
                         </Box>
@@ -313,7 +313,7 @@ export function ObserveStep() {
             <Card>
                 <CardContent>
                     <Box className="flex items-center gap-2 mb-4">
-                        <AnomalyIcon className={unresolvedAnomalies.length > 0 ? 'text-amber-600' : 'text-green-600'} />
+                        <AnomalyIcon className={unresolvedAnomalies.length > 0 ? 'text-warning-color' : 'text-success-color'} />
                         <Typography className="text-lg font-medium" fontWeight={600}>
                             Anomalies ({unresolvedAnomalies.length} unresolved)
                         </Typography>

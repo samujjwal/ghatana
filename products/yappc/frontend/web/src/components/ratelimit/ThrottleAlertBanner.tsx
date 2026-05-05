@@ -125,27 +125,27 @@ export const ThrottleAlertBanner: React.FC<ThrottleAlertBannerProps> = ({
     switch (severity) {
       case 'error':
         return {
-          bg: 'bg-red-50',
-          border: 'border-red-200',
-          text: 'text-red-800',
-          icon: 'text-red-600',
-          button: 'bg-red-600 hover:bg-red-700',
+          bg: 'bg-destructive-bg',
+          border: 'border-destructive-border',
+          text: 'text-destructive',
+          icon: 'text-destructive',
+          button: 'bg-destructive-bg hover:bg-destructive-bg',
         };
       case 'warning':
         return {
-          bg: 'bg-yellow-50',
-          border: 'border-yellow-200',
-          text: 'text-yellow-800',
-          icon: 'text-yellow-600',
-          button: 'bg-yellow-600 hover:bg-yellow-700',
+          bg: 'bg-warning-bg',
+          border: 'border-warning-border',
+          text: 'text-warning-color',
+          icon: 'text-warning-color',
+          button: 'bg-warning-bg hover:bg-warning-bg',
         };
       default:
         return {
-          bg: 'bg-blue-50',
-          border: 'border-blue-200',
-          text: 'text-blue-800',
-          icon: 'text-blue-600',
-          button: 'bg-blue-600 hover:bg-blue-700',
+          bg: 'bg-info-bg',
+          border: 'border-info-border',
+          text: 'text-info-color',
+          icon: 'text-info-color',
+          button: 'bg-primary hover:bg-info-bg',
         };
     }
   };

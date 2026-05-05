@@ -107,10 +107,10 @@ const ScoreRing: React.FC<{ score: number }> = ({ score }) => {
 // =============================================================================
 
 const SEV_STYLES = {
-  critical: { text: 'text-red-400', bg: 'bg-red-500/10', icon: XCircle },
-  high: { text: 'text-orange-400', bg: 'bg-orange-500/10', icon: AlertTriangle },
-  medium: { text: 'text-yellow-400', bg: 'bg-yellow-500/10', icon: AlertTriangle },
-  low: { text: 'text-blue-400', bg: 'bg-blue-500/10', icon: Info },
+  critical: { text: 'text-destructive', bg: 'bg-destructive-bg/10', icon: XCircle },
+  high: { text: 'text-warning-color', bg: 'bg-warning-bg/10', icon: AlertTriangle },
+  medium: { text: 'text-warning-color', bg: 'bg-warning-bg/10', icon: AlertTriangle },
+  low: { text: 'text-info-color', bg: 'bg-info-bg/10', icon: Info },
 } as const;
 
 // =============================================================================
@@ -147,9 +147,9 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
     : '#';
 
   return (
-    <div className={`bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden ${className}`}>
+    <div className={`bg-surface rounded-xl border border-border overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-violet-400" />
           <h3 className="text-sm font-semibold text-white">Security Overview</h3>
@@ -169,7 +169,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
           {/* Score ring */}
           <div className="flex flex-col items-center gap-1">
             <ScoreRing score={score} />
-            <span className="text-[10px] text-zinc-500">Security Score</span>
+            <span className="text-[10px] text-fg-muted">Security Score</span>
           </div>
 
           {/* Severity breakdown */}
@@ -186,7 +186,7 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
                     <Icon className={`w-3.5 h-3.5 ${cfg.text}`} />
                     <div>
                       <div className={`text-sm font-bold ${cfg.text}`}>{count}</div>
-                      <div className="text-[10px] text-zinc-500 capitalize">{severity}</div>
+                      <div className="text-[10px] text-fg-muted capitalize">{severity}</div>
                     </div>
                   </div>
                 );
@@ -197,11 +197,11 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
 
         {/* Recent Alerts */}
         <div>
-          <p className="text-xs font-medium text-zinc-500 uppercase tracking-wide mb-2">
+          <p className="text-xs font-medium text-fg-muted uppercase tracking-wide mb-2">
             Open Alerts
           </p>
           {recentAlerts.length === 0 ? (
-            <div className="flex items-center gap-2 py-3 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 py-3 text-xs text-fg-muted">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               No open alerts
             </div>
@@ -214,10 +214,10 @@ export const SecurityDashboard: React.FC<SecurityDashboardProps> = ({
                 return (
                   <li
                     key={alert.id}
-                    className="flex items-start gap-2 p-2 rounded-lg bg-zinc-800/60"
+                    className="flex items-start gap-2 p-2 rounded-lg bg-surface/60"
                   >
                     <Icon className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${cfg.text}`} />
-                    <span className="text-xs text-zinc-300 line-clamp-1">
+                    <span className="text-xs text-fg-muted line-clamp-1">
                       {alert.title ?? alert.message ?? 'Security alert'}
                     </span>
                   </li>

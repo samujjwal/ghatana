@@ -1,13 +1,17 @@
 #!/bin/bash
+set -e
 
-cd /home/samujjwal/Developments/ghatana/products/flashit/apps/web-api
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 echo "Step 1: Removing old Prisma client..."
 rm -rf node_modules/.prisma 2>/dev/null || true
 rm -rf node_modules/.bin/prisma 2>/dev/null || true
 
 echo "Step 2: Setting DATABASE_URL..."
-export DATABASE_URL="postgresql://ghatana:ghatana123@localhost:5433/flashit_dev"
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "❌ DATABASE_URL must be set before running this script"
+  exit 1
+fi
 
 echo "Step 3: Running prisma generate..."
 npx prisma generate --schema=prisma/schema.prisma

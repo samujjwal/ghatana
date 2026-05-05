@@ -101,7 +101,7 @@ function PhaseDot({ phase, status, isCurrent, progress, onClick }: PhaseDotProps
         }
 
         if (status === 'completed') {
-            return `${base} w-2 h-2 bg-green-500 opacity-60 scale-90`;
+            return `${base} w-2 h-2 bg-success-bg opacity-60 scale-90`;
         }
 
         return `${base} w-2 h-2 bg-grey-300 dark:bg-grey-600 opacity-40 scale-85`;

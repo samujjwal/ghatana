@@ -180,7 +180,7 @@ function FrameNodeComponent({ data, selected, id }: FrameNodeProps) {
                         {/* Child count indicator */}
                         {childNodeIds.length > 0 && (
                             <Box
-                                className="absolute rounded px-2 py-0.5 bottom-[8px] right-[8px] text-[0.7rem] text-gray-500 dark:text-gray-400" >
+                                className="absolute rounded px-2 py-0.5 bottom-[8px] right-[8px] text-[0.7rem] text-fg-muted dark:text-fg-muted" >
                                 {childNodeIds.length} items
                             </Box>
                         )}
@@ -190,7 +190,7 @@ function FrameNodeComponent({ data, selected, id }: FrameNodeProps) {
                 {/* Collapsed indicator */}
                 {collapsed && (
                     <Box
-                        className="flex items-center justify-center py-2 text-xs text-gray-500 dark:text-gray-400"
+                        className="flex items-center justify-center py-2 text-xs text-fg-muted dark:text-fg-muted"
                     >
                         {childNodeIds.length} items hidden
                     </Box>

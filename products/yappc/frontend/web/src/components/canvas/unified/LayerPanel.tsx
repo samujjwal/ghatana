@@ -58,10 +58,10 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
     return (
         <Paper
             elevation={2}
-            className="h-full flex flex-col w-[280px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-l" >
+            className="h-full flex flex-col w-[280px] bg-white dark:bg-surface border-border dark:border-border border-l" >
             {/* Header */}
             <Box
-                className="p-3 flex items-center justify-between border-gray-200 dark:border-gray-700 border-b" >
+                className="p-3 flex items-center justify-between border-border dark:border-border border-b" >
                 <Typography variant="subtitle2" fontWeight={600}>
                     Layers ({nodes.length})
                 </Typography>
@@ -73,7 +73,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
             >
                 {sortedNodes.length === 0 ? (
                     <Box
-                        className="p-6 text-center text-gray-500 dark:text-gray-400"
+                        className="p-6 text-center text-fg-muted dark:text-fg-muted"
                     >
                         <Typography variant="body2">
                             No elements yet
@@ -93,10 +93,10 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
                                 <Paper
                                     key={node.id}
                                     onClick={(e) => handleLayerClick(node.id, e)}
-                                    className={`p-2 flex items-center gap-2 cursor-pointer border ${isSelected ? 'bg-blue-100 border-blue-600' : 'bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700'}`} style={{ opacity: isVisible ? 1 : 0.5 }}
+                                    className={`p-2 flex items-center gap-2 cursor-pointer border ${isSelected ? 'bg-info-bg border-info-border' : 'bg-surface-muted dark:bg-surface border-border dark:border-border'}`} style={{ opacity: isVisible ? 1 : 0.5 }}
                                 >
                                     {/* Drag Handle */}
-                                    <DragIcon className="cursor-grab text-base text-gray-500 dark:text-gray-400" />
+                                    <DragIcon className="cursor-grab text-base text-fg-muted dark:text-fg-muted" />
 
                                     {/* Node Info */}
                                     <Box className="flex-1 min-w-0">

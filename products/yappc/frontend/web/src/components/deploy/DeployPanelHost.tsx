@@ -272,7 +272,7 @@ export const DeployPanelHost: React.FC<DeployPanelHostProps> = ({ projectId: _pr
                                     onClick={() => handlePanelChange('strategy')}
                                     className="p-4 border border-divider rounded-lg bg-bg-paper hover:bg-grey-50 dark:hover:bg-grey-800/50 text-left transition-colors"
                                 >
-                                    <h3 className="font-medium text-text-primary mb-1">AI Strategy</h3>
+                                    <h3 className="font-medium text-text-primary mb-1">Strategy</h3>
                                     <p className="text-xs text-text-secondary">
                                         Review deployment risk, rollout recommendation, and blockers
                                     </p>

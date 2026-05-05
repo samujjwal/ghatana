@@ -77,18 +77,18 @@ export function InlineCodePanel({
   if (isMinimized) {
     return (
       <div className={cn('fixed bottom-0 left-0 right-0 z-30', className)}>
-        <div className="h-10 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+        <div className="h-10 bg-surface-muted dark:bg-surface border-t border-border dark:border-border flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-sm font-medium text-fg dark:text-fg-muted">
               {fileName}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-500">
+            <span className="text-xs text-fg-muted dark:text-fg-muted">
               {language}
             </span>
           </div>
           <button
             onClick={() => setIsMinimized(false)}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+            className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
           >
             ▲ Expand
           </button>
@@ -102,7 +102,7 @@ export function InlineCodePanel({
       data-testid="inline-code-panel"
       aria-label="Code editor panel"
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-gray-900',
+        'fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-surface',
         className
       )}
       style={{ height: `${height}px` }}
@@ -110,19 +110,19 @@ export function InlineCodePanel({
       {/* Resize Handle */}
       <div
         className={cn(
-          'h-1 cursor-row-resize hover:bg-blue-500 transition-colors',
-          isResizing && 'bg-blue-500'
+          'h-1 cursor-row-resize hover:bg-info-bg transition-colors',
+          isResizing && 'bg-info-bg'
         )}
         onMouseDown={() => setIsResizing(true)}
       />
 
       {/* Header */}
-      <div className="h-10 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+      <div className="h-10 border-b border-border dark:border-border flex items-center justify-between px-4">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          <span className="text-sm font-medium text-fg dark:text-fg-muted">
             {fileName}
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-500">
+          <span className="text-xs text-fg-muted dark:text-fg-muted">
             {language}
           </span>
         </div>
@@ -132,7 +132,7 @@ export function InlineCodePanel({
             <button
               onClick={onFormat}
               tabIndex={0}
-              className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              className="px-2 py-1 text-xs bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded"
               title="Format Code (⌘⇧F)"
             >
               Format
@@ -142,7 +142,7 @@ export function InlineCodePanel({
             <button
               onClick={onRun}
               tabIndex={0}
-              className="px-2 py-1 text-xs bg-green-500 hover:bg-green-600 text-white rounded"
+              className="px-2 py-1 text-xs bg-success-bg hover:bg-success-bg text-white rounded"
               title="Run Code"
             >
               Run
@@ -151,7 +151,7 @@ export function InlineCodePanel({
           {onAIFix && (
             <button
               onClick={onAIFix}
-              className="px-2 py-1 text-xs bg-purple-500 hover:bg-purple-600 text-white rounded"
+              className="px-2 py-1 text-xs bg-info-bg hover:bg-info-bg text-white rounded"
               title="AI Fix (⌘.)"
             >
               ✨ AI Fix
@@ -159,7 +159,7 @@ export function InlineCodePanel({
           )}
           <button
             onClick={() => setIsMinimized(true)}
-            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+            className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
             title="Minimize (⌘J)"
           >
             ▼
@@ -168,7 +168,7 @@ export function InlineCodePanel({
             <button
               onClick={onToggle}
               tabIndex={0}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
+              className="text-fg-muted hover:text-fg dark:hover:text-fg-muted text-sm"
               title="Close"
             >
               Hide Code Panel
@@ -180,7 +180,7 @@ export function InlineCodePanel({
       {/* Editor Area */}
       <div
         ref={editorRef}
-        className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900"
+        className="flex-1 overflow-auto bg-surface-muted dark:bg-surface"
         style={{ height: `${height - 44}px` }}
       >
         {/* Code Editor */}
@@ -188,7 +188,7 @@ export function InlineCodePanel({
           role="textbox"
           value={code || ''}
           onChange={(e) => onCodeChange?.(e.target.value)}
-          className="w-full h-full p-4 font-mono text-sm bg-transparent text-gray-900 dark:text-gray-100 resize-none outline-none"
+          className="w-full h-full p-4 font-mono text-sm bg-transparent text-fg dark:text-fg-muted resize-none outline-none"
           placeholder="// Select a component on canvas to view its code"
           aria-label="Code editor"
         />

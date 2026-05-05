@@ -294,7 +294,7 @@ export function MinimapPanel({
   return (
     <Paper
       elevation={3}
-      className={`absolute flex flex-col gap-2 bottom-[16px] right-[16px] p-2 bg-white dark:bg-gray-900 select-none ${className ?? ''}`}
+      className={`absolute flex flex-col gap-2 bottom-[16px] right-[16px] p-2 bg-white dark:bg-surface select-none ${className ?? ''}`}
     >
       {/* Zoom controls */}
       <Box className="flex justify-center gap-1">
@@ -347,7 +347,7 @@ export function MinimapPanel({
       />
 
       {/* Zoom level indicator */}
-      <Box className="text-center text-xs text-gray-500 dark:text-gray-400">
+      <Box className="text-center text-xs text-fg-muted dark:text-fg-muted">
         {Math.round(viewport.zoom * 100)}%
       </Box>
     </Paper>

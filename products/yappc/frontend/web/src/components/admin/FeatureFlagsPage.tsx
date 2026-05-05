@@ -192,7 +192,7 @@ const AuditDrawer: React.FC<AuditDrawerProps> = ({ tenantId, flagKey, onClose })
               className={
                 entry.newValue
                   ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-red-100 text-red-800'
+                  : 'bg-destructive-bg text-destructive'
               }
             />
             <span className="text-text-secondary">
@@ -377,7 +377,7 @@ export const FeatureFlagsPage: React.FC<FeatureFlagsPageProps> = ({ className })
 
         {/* Error state */}
         {error instanceof Error && (
-          <Box className="flex items-center gap-2 text-red-600 dark:text-red-400 py-4" role="alert">
+          <Box className="flex items-center gap-2 text-destructive dark:text-destructive py-4" role="alert">
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <Typography className="text-sm">{error.message}</Typography>
           </Box>

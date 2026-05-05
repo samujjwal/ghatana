@@ -187,12 +187,12 @@ function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
             />
 
             <Box
-                className="w-full h-full min-w-[300px] min-h-[200px] flex flex-col rounded-lg border-[2px] bg-white dark:bg-gray-900 overflow-hidden" style={{ borderColor: selected ? 'primary.main' : 'divider', boxShadow: selected ? '0 0 0 2px rgba(25, 118, 210, 0.2)' : 1 }}
+                className="w-full h-full min-w-[300px] min-h-[200px] flex flex-col rounded-lg border-[2px] bg-white dark:bg-surface overflow-hidden" style={{ borderColor: selected ? 'primary.main' : 'divider', boxShadow: selected ? '0 0 0 2px rgba(25, 118, 210, 0.2)' : 1 }}
             >
                 {/* Header */}
                 {showControls && (
                     <Box
-                        className="flex items-center gap-2 px-3 py-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 border-b" >
+                        className="flex items-center gap-2 px-3 py-2 border-border dark:border-border bg-surface-muted dark:bg-surface border-b" >
                         <Box className="text-xl">{embedIcon}</Box>
                         <Typography variant="subtitle2" className="flex-1" noWrap>
                             {title || (url ? new URL(url).hostname : 'Embed Content')}
@@ -223,7 +223,7 @@ function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
                     {/* URL Input (editing mode) */}
                     {isEditing && (
                         <Box
-                            className="absolute flex flex-col items-center justify-center gap-4 p-6 bg-gray-50 dark:bg-gray-800 inset-0" >
+                            className="absolute flex flex-col items-center justify-center gap-4 p-6 bg-surface-muted dark:bg-surface inset-0" >
                             <Typography variant="body2" color="text.secondary">
                                 Paste a URL to embed
                             </Typography>
@@ -267,7 +267,7 @@ function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
                     {/* Loading state */}
                     {isLoading && !isEditing && (
                         <Box
-                            className="absolute flex items-center justify-center bg-gray-50 dark:bg-gray-800 inset-0" >
+                            className="absolute flex items-center justify-center bg-surface-muted dark:bg-surface inset-0" >
                             <CircularProgress size={32} />
                         </Box>
                     )}
@@ -337,7 +337,7 @@ function EmbedNodeComponent({ data, selected, id }: EmbedNodeProps) {
 
                 {/* Description */}
                 {description && !isEditing && (
-                    <Box className="px-3 py-2 border-gray-200 dark:border-gray-700 border-t" >
+                    <Box className="px-3 py-2 border-border dark:border-border border-t" >
                         <Typography variant="caption" color="text.secondary">
                             {description}
                         </Typography>

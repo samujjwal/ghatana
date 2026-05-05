@@ -13,10 +13,10 @@ interface ProjectSummary {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-zinc-700 text-zinc-300',
-  ACTIVE: 'bg-green-900/60 text-green-300',
-  COMPLETED: 'bg-blue-900/60 text-blue-300',
-  ARCHIVED: 'bg-zinc-800 text-zinc-500',
+  DRAFT: 'bg-surface-muted text-fg-muted',
+  ACTIVE: 'bg-success-bg/60 text-success-color',
+  COMPLETED: 'bg-info-bg/60 text-info-color',
+  ARCHIVED: 'bg-surface text-fg-muted',
 };
 
 /**
@@ -53,14 +53,14 @@ const ProjectsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-100">Projects</h1>
-          <p className="mt-1 text-sm text-zinc-400">
+          <h1 className="text-2xl font-bold text-fg-muted">Projects</h1>
+          <p className="mt-1 text-sm text-fg-muted">
             {sorted.length} project{sorted.length !== 1 ? 's' : ''} in this workspace
           </p>
         </div>
         <Link
           to="/projects/new"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-info-bg"
         >
           New project
         </Link>
@@ -69,23 +69,23 @@ const ProjectsPage: React.FC = () => {
       {/* Content */}
       <div className="mt-6">
         {isLoading && (
-          <div className="flex items-center justify-center py-16 text-zinc-500">
+          <div className="flex items-center justify-center py-16 text-fg-muted">
             Loading projects…
           </div>
         )}
 
         {error && (
-          <div className="rounded-md border border-red-800 bg-red-950/50 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-md border border-destructive-border bg-destructive-bg/50 px-4 py-3 text-sm text-destructive">
             {error instanceof Error ? error.message : 'Failed to load projects'}
           </div>
         )}
 
         {!isLoading && !error && sorted.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-800 py-16 text-center">
-            <p className="text-zinc-400">No projects yet</p>
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16 text-center">
+            <p className="text-fg-muted">No projects yet</p>
             <Link
               to="/projects/new"
-              className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500"
+              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm text-white hover:bg-info-bg"
             >
               Create your first project
             </Link>
@@ -98,14 +98,14 @@ const ProjectsPage: React.FC = () => {
               <Link
                 key={project.id}
                 to={`/projects/${project.id}`}
-                className="group rounded-lg border border-zinc-800 bg-zinc-900/50 p-5 transition hover:border-zinc-700 hover:bg-zinc-900"
+                className="group rounded-lg border border-border bg-surface/50 p-5 transition hover:border-border hover:bg-surface"
               >
                 <div className="flex items-start justify-between">
                   <div className="min-w-0">
-                    <h3 className="truncate text-sm font-semibold text-zinc-100 group-hover:text-blue-400">
+                    <h3 className="truncate text-sm font-semibold text-fg-muted group-hover:text-info-color">
                       {project.name}
                     </h3>
-                    <span className="text-xs font-mono text-zinc-500">{project.key}</span>
+                    <span className="text-xs font-mono text-fg-muted">{project.key}</span>
                   </div>
                   <span
                     className={`ml-2 shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${STATUS_COLORS[project.status] ?? STATUS_COLORS.DRAFT}`}
@@ -114,11 +114,11 @@ const ProjectsPage: React.FC = () => {
                   </span>
                 </div>
                 {project.description && (
-                  <p className="mt-2 line-clamp-2 text-xs text-zinc-400">
+                  <p className="mt-2 line-clamp-2 text-xs text-fg-muted">
                     {project.description}
                   </p>
                 )}
-                <p className="mt-3 text-[10px] text-zinc-600">
+                <p className="mt-3 text-[10px] text-fg-muted">
                   Updated {new Date(project.updatedAt).toLocaleDateString()}
                 </p>
               </Link>

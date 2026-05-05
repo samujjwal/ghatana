@@ -5,18 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
-import com.ghatana.digitalmarketing.contracts.ActorRef;
-import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
-import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.DmOperationContext;
-import com.ghatana.digitalmarketing.contracts.DmSecurityContextMapper;
-import com.ghatana.digitalmarketing.contracts.DmTenantId;
-import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.workspace.Workspace;
-import com.ghatana.kernel.security.TenantSecurityContext;
 import io.activej.eventloop.Eventloop;
 import io.activej.http.AsyncServlet;
-import io.activej.http.HttpHeaders;
 import io.activej.http.HttpMethod;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -26,11 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * ActiveJ HTTP servlet exposing the DMOS workspace management API.
@@ -47,6 +37,10 @@ import java.util.Set;
  * <p>Tenant isolation is enforced through the {@code X-Tenant-ID} header.
  * All mutating operations require an {@code X-Idempotency-Key} header.
  * The {@code X-Correlation-ID} header is propagated; a new ID is generated if absent.</p>
+ *
+ * P2-025: Uses DmosHttpContextFactory for server-side identity derivation to prevent
+ * spoofed identity attacks (P0-015). Client-provided X-Roles/X-Permissions headers are
+ * ignored in production mode.
  *
  * @doc.type class
  * @doc.purpose DMOS HTTP API servlet for workspace management endpoints
@@ -65,16 +59,19 @@ public final class DmosWorkspaceServlet {
 
     private final WorkspaceService workspaceService;
     private final Eventloop eventloop;
+    private final DmosHttpContextFactory httpContextFactory;
 
     /**
      * Creates the DMOS workspace servlet.
      *
      * @param workspaceService the workspace application service; must not be null
-     * @param eventloop        the ActiveJ eventloop; must not be null
+     * @param eventloop the ActiveJ eventloop; must not be null
+     * @param httpContextFactory the shared HTTP context factory for fail-closed security; must not be null
      */
-    public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop) {
+    public DmosWorkspaceServlet(WorkspaceService workspaceService, Eventloop eventloop, DmosHttpContextFactory httpContextFactory) {
         this.workspaceService = Objects.requireNonNull(workspaceService, "workspaceService must not be null");
-        this.eventloop        = Objects.requireNonNull(eventloop,        "eventloop must not be null");
+        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**

@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto';
 import { prisma } from '../../lib/prisma';
 import { Readable } from 'stream';
 import { VectorEmbeddingService } from '../embeddings/vector-service.js';
+import { requireAiSecret, isAiDisabled } from '../../lib/ai-mode.js';
 
 // Redis connection
 const redis = new Redis({
@@ -28,10 +29,15 @@ const redis = new Redis({
   maxRetriesPerRequest: null, // Required by BullMQ
 });
 
-// OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+const getOpenAiClient = (): OpenAI => {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: requireAiSecret('OPENAI_API_KEY', 'audio transcription'),
+    });
+  }
+  return openai;
+};
 
 // S3 client (reuse from upload service)
 const s3 = new S3Client({
@@ -194,6 +200,9 @@ export class WhisperTranscriptionService {
    * Add transcription job to queue
    */
   static async enqueueTranscription(jobData: TranscriptionJobData): Promise<string> {
+    if (isAiDisabled()) {
+      throw new Error('FlashIt AI is disabled by feature flag. Transcription is unavailable.');
+    }
     const job = await transcriptionQueue.add('transcribe', jobData, {
       priority: jobData.priority === 'high' ? 10 : jobData.priority === 'low' ? 1 : 5,
       jobId: `transcription-${jobData.mediaReferenceId}`,
@@ -290,7 +299,7 @@ export class WhisperTranscriptionService {
       }
 
       // Transcribe with OpenAI Whisper
-      const transcription = await openai.audio.transcriptions.create({
+      const transcription = await getOpenAiClient().audio.transcriptions.create({
         file: createReadStream(optimizedPath) as any,
         model: 'whisper-1',
         response_format: 'verbose_json',

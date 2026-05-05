@@ -63,18 +63,18 @@ export function ProjectListPanel({
     // Get health color based on AI score
     const getHealthColor = (score?: number) => {
         if (score === undefined) return 'bg-grey-300 dark:bg-grey-600';
-        if (score >= 80) return 'bg-green-500';
-        if (score >= 60) return 'bg-yellow-500';
-        if (score >= 40) return 'bg-orange-500';
-        return 'bg-red-500';
+        if (score >= 80) return 'bg-success-bg';
+        if (score >= 60) return 'bg-warning-bg';
+        if (score >= 40) return 'bg-warning-bg';
+        return 'bg-destructive-bg';
     };
 
     // Get status badge styling
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'ACTIVE': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+            case 'ACTIVE': return 'bg-success-bg text-success-color dark:bg-success-bg/30 dark:text-success-color';
             case 'DRAFT': return 'bg-grey-100 text-grey-600 dark:bg-grey-700 dark:text-grey-400';
-            case 'COMPLETED': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+            case 'COMPLETED': return 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color';
             case 'ARCHIVED': return 'bg-grey-100 text-grey-500 dark:bg-grey-800 dark:text-grey-500';
             default: return 'bg-grey-100 text-grey-600';
         }
@@ -191,8 +191,8 @@ export function ProjectListPanel({
                                                     {/* Ownership Badge */}
                                                     {!project.isOwned && (
                                                         <span className="px-1.5 py-0.5 text-[10px] font-medium 
-                              bg-amber-100 dark:bg-amber-900/30 
-                              text-amber-700 dark:text-amber-400 
+                              bg-warning-bg dark:bg-warning-bg/30 
+                              text-warning-color dark:text-warning-color 
                               rounded-full whitespace-nowrap">
                                                             read-only
                                                         </span>

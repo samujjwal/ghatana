@@ -170,7 +170,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
           transition: 'border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1)',
           boxShadow: highlight ? '0px 2px 4px -1px rgba(0,0,0,0.2), 0px 4px 5px 0px rgba(0,0,0,0.14), 0px 1px 10px 0px rgba(0,0,0,0.12)' : 'none',
         }}
-        className={`border border-solid ${interactive ? 'hover:border-blue-600 hover:shadow-md' : ''} focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-4`}
+        className={`border border-solid ${interactive ? 'hover:border-info-border hover:shadow-md' : ''} focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-4`}
         {...paperProps}
       >
         <Stack spacing={2} divider={<Divider aria-hidden />}>
@@ -268,7 +268,7 @@ const CanvasFeatureStoryCardComponent = forwardRef<
                 >
                   <ListItemText
                     primary={<Typography className="text-sm font-semibold">{criterion.title ?? criterion.summary}</Typography>}
-                    secondary={criterion.title ? <Typography className="text-sm text-gray-600">{criterion.summary}</Typography> : undefined}
+                    secondary={criterion.title ? <Typography className="text-sm text-fg-muted">{criterion.summary}</Typography> : undefined}
                   />
                 </ListItem>
               ))}

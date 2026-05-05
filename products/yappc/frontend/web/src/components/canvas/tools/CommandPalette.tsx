@@ -493,8 +493,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <Command label="Command Palette">
           {/* Search Input */}
           <Box
-            className="flex items-center px-4 py-3 border-gray-200 dark:border-gray-700 border-b" >
-            <SearchIcon className="mr-3 text-gray-500 dark:text-gray-400" />
+            className="flex items-center px-4 py-3 border-border dark:border-border border-b" >
+            <SearchIcon className="mr-3 text-fg-muted dark:text-fg-muted" />
             <Command.Input
               value={search}
               onValueChange={setSearch}
@@ -523,7 +523,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }}
           >
             <Command.Empty>
-              <Box className="p-6 text-center text-gray-500 dark:text-gray-400">
+              <Box className="p-6 text-center text-fg-muted dark:text-fg-muted">
                 No commands found. Try a different search.
               </Box>
             </Command.Empty>
@@ -547,7 +547,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     }}
                   >
                     {action.icon && (
-                      <Box className="mr-3 flex text-gray-500 dark:text-gray-400">
+                      <Box className="mr-3 flex text-fg-muted dark:text-fg-muted">
                         {action.icon}
                       </Box>
                     )}
@@ -580,7 +580,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
           {/* Footer */}
           <Box
-            className="px-4 py-2 flex justify-between border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 border-t" >
+            className="px-4 py-2 flex justify-between border-border dark:border-border bg-surface-muted dark:bg-surface border-t" >
             <Typography variant="caption" color="text.secondary">
               {allCommands.length} commands available
             </Typography>

@@ -52,17 +52,17 @@ function GraphNode({
   showStatus,
 }: GraphNodeProps): ReactNode {
   const getStatusIcon = () => {
-    if (isCompleted) return <CompletedIcon className="w-4 h-4 text-green-600" />;
-    if (isBlocked) return <BlockedIcon className="w-4 h-4 text-red-600" />;
-    if (!canStart) return <BlockedIcon className="w-4 h-4 text-orange-600" />;
-    return <PendingIcon className="w-4 h-4 text-blue-600" />;
+    if (isCompleted) return <CompletedIcon className="w-4 h-4 text-success-color" />;
+    if (isBlocked) return <BlockedIcon className="w-4 h-4 text-destructive" />;
+    if (!canStart) return <BlockedIcon className="w-4 h-4 text-warning-color" />;
+    return <PendingIcon className="w-4 h-4 text-info-color" />;
   };
 
   const getStatusColor = () => {
-    if (isCompleted) return 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20';
-    if (isBlocked) return 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
-    if (!canStart) return 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20';
-    return 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20';
+    if (isCompleted) return 'border-success-border dark:border-success-border bg-success-bg dark:bg-success-bg/20';
+    if (isBlocked) return 'border-destructive-border dark:border-destructive-border bg-destructive-bg dark:bg-destructive-bg/20';
+    if (!canStart) return 'border-warning-border dark:border-warning-border bg-warning-bg dark:bg-warning-bg/20';
+    return 'border-info-border dark:border-info-border bg-info-bg dark:bg-info-bg/20';
   };
 
   return (
@@ -83,7 +83,7 @@ function GraphNode({
         <Chip size="sm" label={task.priority} className="text-xs" />
       </div>
       {task.dueDate && (
-        <Typography className="text-xs text-gray-500 mt-1">
+        <Typography className="text-xs text-fg-muted mt-1">
           Due: {new Date(task.dueDate).toLocaleDateString()}
         </Typography>
       )}
@@ -176,21 +176,21 @@ export function TaskDependencyGraph({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Legend */}
-      <Box className="flex items-center gap-4 text-xs text-gray-500">
+      <Box className="flex items-center gap-4 text-xs text-fg-muted">
         <div className="flex items-center gap-1">
-          <CompletedIcon className="w-4 h-4 text-green-600" />
+          <CompletedIcon className="w-4 h-4 text-success-color" />
           <span>Completed</span>
         </div>
         <div className="flex items-center gap-1">
-          <BlockedIcon className="w-4 h-4 text-orange-600" />
+          <BlockedIcon className="w-4 h-4 text-warning-color" />
           <span>Waiting for dependencies</span>
         </div>
         <div className="flex items-center gap-1">
-          <BlockedIcon className="w-4 h-4 text-red-600" />
+          <BlockedIcon className="w-4 h-4 text-destructive" />
           <span>Blocked</span>
         </div>
         <div className="flex items-center gap-1">
-          <PendingIcon className="w-4 h-4 text-blue-600" />
+          <PendingIcon className="w-4 h-4 text-info-color" />
           <span>Ready to start</span>
         </div>
       </Box>
@@ -200,7 +200,7 @@ export function TaskDependencyGraph({
         .sort(([a], [b]) => a - b)
         .map(([level, levelTasks]) => (
           <div key={level} className="space-y-2">
-            <Typography className="text-xs font-medium text-gray-500">
+            <Typography className="text-xs font-medium text-fg-muted">
               Level {level}
             </Typography>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -219,7 +219,7 @@ export function TaskDependencyGraph({
             </div>
             {level < levels.size - 1 && (
               <div className="flex justify-center py-2">
-                <ArrowIcon className="w-5 h-5 text-gray-400" />
+                <ArrowIcon className="w-5 h-5 text-fg-muted" />
               </div>
             )}
           </div>

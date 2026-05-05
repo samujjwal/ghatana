@@ -20,9 +20,9 @@ export function ImprovedEmptyState({
     <Box className="absolute inset-0 flex flex-col items-center justify-center p-6">
       <Card
         variant="flat"
-        className="flex w-full max-w-[600px] flex-col items-center gap-6 border border-solid border-gray-200 p-10 dark:border-gray-700"
+        className="flex w-full max-w-[600px] flex-col items-center gap-6 border border-solid border-border p-10 dark:border-border"
       >
-        <Box className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+        <Box className="flex h-[64px] w-[64px] items-center justify-center rounded-xl bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color">
           <AccountTree className="text-[32px]" />
         </Box>
 
@@ -69,13 +69,13 @@ export function ImprovedEmptyState({
           </Button>
         </Stack>
 
-        <Box className="mt-2 flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        <Box className="mt-2 flex items-center gap-2 rounded-lg bg-surface-muted p-3 text-fg-muted dark:bg-surface dark:text-fg-muted">
           <ViewModule size={16} />
           <Typography as="p" className="text-sm">
             <strong>Tip:</strong> Press{' '}
             <Box
               component="kbd"
-              className="px-[6.4px] py-[1.6px] rounded font-semibold bg-blue-50 dark:bg-blue-900/20 font-mono text-[0.85em]"
+              className="px-[6.4px] py-[1.6px] rounded font-semibold bg-info-bg dark:bg-info-bg/20 font-mono text-[0.85em]"
             >
               ⌘K
             </Box>{' '}

@@ -145,7 +145,7 @@ export const ArtifactDetailPanel: React.FC<ArtifactDetailPanelProps> = ({
     const getStatusColor = () => {
         switch (status) {
             case 'complete': return 'bg-success-color text-white';
-            case 'validated': return 'bg-blue-600 text-white';
+            case 'validated': return 'bg-primary text-white';
             case 'archived': return 'bg-grey-400 text-white';
             default: return 'bg-warning-color text-white';
         }

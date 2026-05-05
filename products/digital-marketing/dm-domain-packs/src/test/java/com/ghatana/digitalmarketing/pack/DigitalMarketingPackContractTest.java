@@ -1,5 +1,10 @@
 package com.ghatana.digitalmarketing.pack;
 
+import com.ghatana.kernel.policy.BoundaryPolicyLoadContext;
+import com.ghatana.kernel.policy.BoundaryPolicyRule;
+import com.ghatana.kernel.policy.BoundaryPolicyStore;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyPackValidator;
+import com.ghatana.kernel.policy.ProductBoundaryPolicyValidationProfile;
 import com.ghatana.platform.plugin.PluginContext;
 import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
@@ -22,12 +27,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Product contract tests for DMOS domain packs.
  */
 @DisplayName("DigitalMarketingPackContract")
 class DigitalMarketingPackContractTest extends EventloopTestBase {
+
+    private static final ProductBoundaryPolicyValidationProfile VALIDATION_PROFILE =
+        ProductBoundaryPolicyValidationProfile.builder()
+            .productName("Digital Marketing")
+            .rulePrefix("DM-BP-")
+            .defaultDenyRuleId("DM-BP-999")
+            .targetScopePrefix("digital-marketing.")
+            .requiredMetadataKeys(Set.of("packVersion", "ruleCategory"))
+            .build();
 
     @Test
     @DisplayName("domain-pack manifest declares DM product code, prefix, and canonical classes")
@@ -72,6 +87,30 @@ class DigitalMarketingPackContractTest extends EventloopTestBase {
 
         assertThat(ruleIds).allMatch(id -> id.startsWith("DM-"));
         assertThat(ruleIds.stream().distinct().count()).isEqualTo(ruleIds.size());
+    }
+
+    @Test
+    @DisplayName("boundary policy rules use kernel validator and include required metadata")
+    void shouldValidateBoundaryPolicyRules() {
+        DigitalMarketingBoundaryPolicyStore store = new DigitalMarketingBoundaryPolicyStore();
+        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.global());
+
+        ProductBoundaryPolicyPackValidator.validate(rules, VALIDATION_PROFILE);
+
+        assertThat(rules).allSatisfy(rule -> assertThat(rule.getMetadata())
+            .containsKeys("packVersion", "ruleCategory"));
+        assertThat(rules.get(rules.size() - 1).getRuleId()).isEqualTo("DM-BP-999");
+        assertThat(rules.get(rules.size() - 1).isRequiresAudit()).isTrue();
+    }
+
+    @Test
+    @DisplayName("unsupported tenant or region override fails closed")
+    void shouldFailClosedForUnsupportedOverrides() {
+        DigitalMarketingBoundaryPolicyStore store = new DigitalMarketingBoundaryPolicyStore();
+
+        assertThatThrownBy(() -> store.loadRules(BoundaryPolicyLoadContext.of("tenant-emea", "EU")))
+            .isInstanceOf(BoundaryPolicyStore.BoundaryPolicyStoreException.class)
+            .hasMessageContaining("unsupported");
     }
 
     private static Set<String> extractComplianceRuleSets(String manifest) {

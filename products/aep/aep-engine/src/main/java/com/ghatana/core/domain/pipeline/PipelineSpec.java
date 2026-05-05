@@ -10,10 +10,13 @@ import java.util.Objects;
  * <p>Defines the structure and configuration of a data processing pipeline
  * including stages, connectors, and execution parameters.
  *
+ * <p>Includes version field for optimistic concurrency control to detect
+ * conflicting updates when multiple clients modify the same pipeline.
+ *
  * @doc.type class
- * @doc.purpose Pipeline specification for stream processing
+ * @doc.purpose Pipeline specification for stream processing with version conflict detection
  * @doc.layer core
-  * @doc.pattern Component
+ * @doc.pattern Component
 */
 public class PipelineSpec {
     private final String id;
@@ -23,6 +26,7 @@ public class PipelineSpec {
     private final List<PipelineStageSpec> stages;
     private final PipelineConfiguration configuration;
     private final boolean enabled;
+    private final long version;
 
     /**
      * Creates a new pipeline specification.
@@ -34,9 +38,10 @@ public class PipelineSpec {
      * @param stages List of pipeline stages
      * @param configuration Pipeline configuration
      * @param enabled Whether pipeline is enabled
+     * @param version Version number for optimistic concurrency control
      */
     public PipelineSpec(String id, String name, String tenantId, String description,
-                       List<PipelineStageSpec> stages, PipelineConfiguration configuration, boolean enabled) {
+                       List<PipelineStageSpec> stages, PipelineConfiguration configuration, boolean enabled, long version) {
         this.id = Objects.requireNonNull(id, "Pipeline ID cannot be null");
         this.name = Objects.requireNonNull(name, "Pipeline name cannot be null");
         this.tenantId = Objects.requireNonNull(tenantId, "Tenant ID cannot be null");
@@ -44,6 +49,23 @@ public class PipelineSpec {
         this.stages = stages != null ? new ArrayList<>(stages) : new ArrayList<>();
         this.configuration = configuration;
         this.enabled = enabled;
+        this.version = version;
+    }
+
+    /**
+     * Creates a new pipeline specification with version 0 (for new pipelines).
+     *
+     * @param id Pipeline identifier
+     * @param name Pipeline name
+     * @param tenantId Tenant identifier
+     * @param description Pipeline description
+     * @param stages List of pipeline stages
+     * @param configuration Pipeline configuration
+     * @param enabled Whether pipeline is enabled
+     */
+    public PipelineSpec(String id, String name, String tenantId, String description,
+                       List<PipelineStageSpec> stages, PipelineConfiguration configuration, boolean enabled) {
+        this(id, name, tenantId, description, stages, configuration, enabled, 0L);
     }
 
     /**
@@ -119,6 +141,15 @@ public class PipelineSpec {
     }
 
     /**
+     * Gets the pipeline version for optimistic concurrency control.
+     *
+     * @return version number
+     */
+    public long getVersion() {
+        return version;
+    }
+
+    /**
      * Adds a stage to the pipeline.
      *
      * @param stage stage to add
@@ -152,18 +183,37 @@ public class PipelineSpec {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         PipelineSpec that = (PipelineSpec) o;
-        return id.equals(that.id) && tenantId.equals(that.tenantId);
+        return id.equals(that.id) && tenantId.equals(that.tenantId) && version == that.version;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, tenantId);
+        return Objects.hash(id, tenantId, version);
     }
 
     @Override
     public String toString() {
-        return String.format("PipelineSpec{id='%s', name='%s', tenant='%s', stages=%d, enabled=%s}",
-            id, name, tenantId, stages.size(), enabled);
+        return String.format("PipelineSpec{id='%s', name='%s', tenant='%s', stages=%d, enabled=%s, version=%d}",
+            id, name, tenantId, stages.size(), enabled, version);
+    }
+
+    /**
+     * Creates a new PipelineSpec with an incremented version.
+     *
+     * @return new PipelineSpec with version + 1
+     */
+    public PipelineSpec withIncrementedVersion() {
+        return new PipelineSpec(id, name, tenantId, description, stages, configuration, enabled, version + 1);
+    }
+
+    /**
+     * Checks if this version matches the expected version for optimistic concurrency control.
+     *
+     * @param expectedVersion the expected version
+     * @return true if versions match
+     */
+    public boolean isVersion(long expectedVersion) {
+        return this.version == expectedVersion;
     }
 
     /**

@@ -83,7 +83,7 @@ const DiffLine: React.FC<DiffLineProps> = ({ op }) => {
     op.kind === 'insert'
       ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200 border-l-4 border-emerald-400'
       : op.kind === 'delete'
-      ? 'bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-200 border-l-4 border-red-400 line-through opacity-70'
+      ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/20 dark:text-destructive border-l-4 border-destructive-border line-through opacity-70'
       : 'text-text-primary';
 
   const prefix = op.kind === 'insert' ? '+ ' : op.kind === 'delete' ? '− ' : '  ';
@@ -121,7 +121,7 @@ const FieldDiff: React.FC<FieldDiffProps> = ({ fieldName, oldValue, newValue }) 
             <Chip label="Unchanged" size="sm" className="bg-grey-100 text-grey-600 text-xs" />
           )}
           {hasChanges && (
-            <Chip label="Changed" size="sm" className="bg-amber-100 text-amber-700 text-xs" />
+            <Chip label="Changed" size="sm" className="bg-warning-bg text-warning-color text-xs" />
           )}
         </Box>
         {expanded ? <ChevronUp className="h-4 w-4 text-text-secondary" /> : <ChevronDown className="h-4 w-4 text-text-secondary" />}
@@ -212,12 +212,12 @@ export const RequirementVersionDiff: React.FC<RequirementVersionDiffProps> = ({
       <CardContent className="space-y-4 p-4">
         {/* Version header */}
         <Box className="flex items-center gap-3 flex-wrap">
-          <Box className="flex items-center gap-2 rounded-md bg-red-50 dark:bg-red-900/20 px-3 py-1.5">
-            <ArrowLeft className="h-3 w-3 text-red-600" aria-hidden="true" />
-            <Typography className="text-sm font-semibold text-red-700 dark:text-red-300">
+          <Box className="flex items-center gap-2 rounded-md bg-destructive-bg dark:bg-destructive-bg/20 px-3 py-1.5">
+            <ArrowLeft className="h-3 w-3 text-destructive" aria-hidden="true" />
+            <Typography className="text-sm font-semibold text-destructive dark:text-destructive">
               v{fromVersion.version}
             </Typography>
-            <Typography className="text-xs text-red-500 dark:text-red-400">
+            <Typography className="text-xs text-destructive dark:text-destructive">
               by {fromVersion.createdBy}
             </Typography>
           </Box>
@@ -247,7 +247,7 @@ export const RequirementVersionDiff: React.FC<RequirementVersionDiffProps> = ({
               <Chip
                 label={`-${totalDeletes}`}
                 size="sm"
-                className="bg-red-100 text-red-700 font-mono text-xs"
+                className="bg-destructive-bg text-destructive font-mono text-xs"
                 aria-label={`${totalDeletes} removed lines`}
               />
             )}

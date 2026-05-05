@@ -50,19 +50,19 @@ export const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({ users, max
                     key={user.id}
                     title={
                         <Box>
-                            <Typography as="span" className="text-xs text-gray-500" fontWeight="bold">
+                            <Typography as="span" className="text-xs text-fg-muted" fontWeight="bold">
                                 {user.name}
                             </Typography>
                             <Box className="flex items-center gap-1 mt-1">
                                 {user.status === 'editing' ? (
                                     <>
                                         <EditingIcon className="text-xs" />
-                                        <Typography as="span" className="text-xs text-gray-500">Editing</Typography>
+                                        <Typography as="span" className="text-xs text-fg-muted">Editing</Typography>
                                     </>
                                 ) : (
                                     <>
                                         <ViewingIcon className="text-xs" />
-                                        <Typography as="span" className="text-xs text-gray-500">Viewing</Typography>
+                                        <Typography as="span" className="text-xs text-fg-muted">Viewing</Typography>
                                     </>
                                 )}
                             </Box>
@@ -75,7 +75,7 @@ export const PresenceIndicator: React.FC<PresenceIndicatorProps> = ({ users, max
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                         badgeContent={
                             <Box
-                                className={`w-[10px] h-[10px] rounded-full border-[2px] border-white ${user.status === 'editing' ? 'bg-green-500' : 'bg-blue-500'}`} />
+                                className={`w-[10px] h-[10px] rounded-full border-[2px] border-white ${user.status === 'editing' ? 'bg-success-bg' : 'bg-info-bg'}`} />
                         }
                     >
                         <Avatar
@@ -104,7 +104,7 @@ export const CanvasPresence: React.FC<CanvasPresenceProps> = ({ users }) => {
 
     return (
         <Box
-            className="flex items-center gap-4 px-4 py-2 rounded bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+            className="flex items-center gap-4 px-4 py-2 rounded bg-white dark:bg-surface border border-border dark:border-border"
         >
             {editingUsers.length > 0 && (
                 <Box className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export const CanvasPresence: React.FC<CanvasPresenceProps> = ({ users }) => {
                 </Box>
             )}
             {users.length === 0 && (
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     No one else here
                 </Typography>
             )}

@@ -160,7 +160,7 @@ export const KeyboardShortcutLegend: React.FC<KeyboardShortcutLegendProps> = ({
                                                     key={keyIdx}
                                                     label={key}
                                                     size="small"
-                                                    className="text-xs h-[24px] bg-gray-100 dark:bg-gray-800 font-mono"
+                                                    className="text-xs h-[24px] bg-surface-muted dark:bg-surface font-mono"
                                                 />
                                             ))}
                                         </Box>

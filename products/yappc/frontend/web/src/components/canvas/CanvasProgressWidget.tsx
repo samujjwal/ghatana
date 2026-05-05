@@ -75,7 +75,7 @@ export function CanvasProgressWidget({
         >
             {/* Header */}
             <Box
-                className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-700 cursor-pointer" style={{ borderBottom: expanded ? 1 : 0 }}
+                className="flex items-center gap-2 px-4 py-2 bg-surface-muted dark:bg-surface border-border dark:border-border cursor-pointer" style={{ borderBottom: expanded ? 1 : 0 }}
                 onClick={() => setExpanded(!expanded)}
             >
                 {/* Overall progress circle */}
@@ -90,7 +90,7 @@ export function CanvasProgressWidget({
                     <Box
                         className="absolute flex items-center justify-center top-[0px] left-[0px] bottom-[0px] right-[0px]"
                     >
-                        <Typography as="span" className="text-xs text-gray-500" fontWeight={600}>
+                        <Typography as="span" className="text-xs text-fg-muted" fontWeight={600}>
                             {overallProgress}%
                         </Typography>
                     </Box>
@@ -125,7 +125,7 @@ export function CanvasProgressWidget({
 
                 <Box className="grow" />
 
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     {completedPhases}/{phases.length} phases
                 </Typography>
 
@@ -162,7 +162,7 @@ export function CanvasProgressWidget({
                                         size="sm"
                                         className="h-[20px] text-[11px]"
                                     />
-                                    <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                    <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                         {phase.progress}%
                                     </Typography>
                                 </Box>
@@ -209,7 +209,7 @@ function MiniProgress({
                     <Box
                         className="absolute flex items-center justify-center top-[0px] left-[0px] bottom-[0px] right-[0px]"
                     >
-                        <Typography as="span" className="text-xs text-gray-500" fontWeight={600} fontSize={10}>
+                        <Typography as="span" className="text-xs text-fg-muted" fontWeight={600} fontSize={10}>
                             {progress}%
                         </Typography>
                     </Box>

@@ -105,6 +105,16 @@ public final class GovernanceController {
 
     // ---- Kill-Switch -------------------------------------------------------
 
+    /**
+     * Checks if the given role has admin privileges for kill-switch operations.
+     *
+     * @param role the user role
+     * @return true if the role is an admin role
+     */
+    private boolean isAdminRole(String role) {
+        return "admin".equalsIgnoreCase(role) || "superadmin".equalsIgnoreCase(role);
+    }
+
     /** GET /governance/kill-switch — returns kill-switch status for the tenant. */
     public Promise<HttpResponse> handleKillSwitchStatus(HttpRequest request) {
         String tenantId = request.getQueryParameter("tenantId");
@@ -135,19 +145,41 @@ public final class GovernanceController {
                 String incidentId = (String) body.getOrDefault("incidentId", "manual");
                 String mfaCode    = (String) body.get("mfaCode");
                 String userId     = (String) body.getOrDefault("userId", "unknown");
+                String role       = (String) body.getOrDefault("role", "viewer");
 
                 if (tenantId == null) {
                     return Promise.of(HttpHelper.errorResponse(400, "tenantId is required"));
                 }
 
+                // F-018: Require admin role for kill-switch activation
+                if (!isAdminRole(role)) {
+                    log.warn("[kill-switch] Activation denied: user='{}' has insufficient role='{}'", userId, role);
+                    if (auditChain != null) {
+                        return auditChain.recordFailedActivation(tenantId, userId, reason, incidentId, "insufficient role")
+                            .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                "Insufficient role: admin role required for kill-switch activation")));
+                    }
+                    return Promise.of(HttpHelper.errorResponse(403, "Insufficient role: admin role required"));
+                }
+
                 // F-018: Require step-up authentication (MFA code) for kill-switch activation
-                if (stepUpGate != null && mfaCode != null) {
+                if (stepUpGate != null) {
+                    if (mfaCode == null || mfaCode.isBlank()) {
+                        log.warn("[kill-switch] Activation denied: MFA code missing for user='{}'", userId);
+                        if (auditChain != null) {
+                            return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch activation denied: MFA missing")
+                                .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                    "MFA code required for kill-switch activation")));
+                        }
+                        return Promise.of(HttpHelper.errorResponse(403, "MFA code required"));
+                    }
+
                     return stepUpGate.verify(userId, tenantId, mfaCode)
                         .then(verified -> {
                             if (!verified) {
                                 // Log failed step-up attempt
                                 if (auditChain != null) {
-                                    return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch activation denied")
+                                    return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch activation denied: MFA failed")
                                         .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
                                             "MFA verification failed; attempt logged")));
                                 }
@@ -161,7 +193,7 @@ public final class GovernanceController {
                                 .then(v -> {
                                     // Record in audit chain
                                     if (auditChain != null) {
-                                        return auditChain.recordActivation(tenantId, userId, reason, incidentId, null)
+                                        return auditChain.recordActivation(tenantId, userId, reason, incidentId, role)
                                             .map(auditId -> jsonResponse.apply(Map.of(
                                                 "activated", true, "tenantId", tenantId,
                                                 "incidentId", incidentId, "auditId", auditId)));
@@ -173,13 +205,22 @@ public final class GovernanceController {
                         });
                 }
 
-                // No MFA or step-up gate not configured; allow direct activation
-                log.warn("[kill-switch] Activating for tenant='{}' incident='{}' reason='{}' (no MFA verification)",
-                    tenantId, incidentId, reason);
+                // MFA not configured but still require admin role
+                log.warn("[kill-switch] Activating for tenant='{}' incident='{}' reason='{}' actor='{}' (MFA not configured)",
+                    tenantId, incidentId, reason, userId);
                 return killSwitchService.activate(tenantId, reason, incidentId)
-                    .map(v -> jsonResponse.apply(Map.of(
-                        "activated", true, "tenantId", tenantId,
-                        "incidentId", incidentId)));
+                    .then(v -> {
+                        // Record in audit chain
+                        if (auditChain != null) {
+                            return auditChain.recordActivation(tenantId, userId, reason, incidentId, role)
+                                .map(auditId -> jsonResponse.apply(Map.of(
+                                    "activated", true, "tenantId", tenantId,
+                                    "incidentId", incidentId, "auditId", auditId)));
+                        }
+                        return Promise.of(jsonResponse.apply(Map.of(
+                            "activated", true, "tenantId", tenantId,
+                            "incidentId", incidentId)));
+                    });
             } catch (Exception e) {
                 return Promise.of(HttpHelper.errorResponse(400, "Invalid request: " + e.getMessage()));
             }
@@ -198,18 +239,73 @@ public final class GovernanceController {
                 String tenantId = (String) body.get("tenantId");
                 String reason   = (String) body.getOrDefault("reason", "manual deactivation");
                 String userId   = (String) body.getOrDefault("userId", "unknown");
+                String role     = (String) body.getOrDefault("role", "viewer");
+                String mfaCode  = (String) body.get("mfaCode");
 
                 if (tenantId == null) {
                     return Promise.of(HttpHelper.errorResponse(400, "tenantId is required"));
                 }
 
-                log.warn("[kill-switch] Deactivating for tenant='{}' reason='{}' actor='{}'",
+                // F-018: Require admin role for kill-switch deactivation
+                if (!isAdminRole(role)) {
+                    log.warn("[kill-switch] Deactivation denied: user='{}' has insufficient role='{}'", userId, role);
+                    if (auditChain != null) {
+                        return auditChain.recordFailedDeactivation(tenantId, userId, reason, "insufficient role")
+                            .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                "Insufficient role: admin role required for kill-switch deactivation")));
+                    }
+                    return Promise.of(HttpHelper.errorResponse(403, "Insufficient role: admin role required"));
+                }
+
+                // F-018: Require step-up authentication (MFA code) for kill-switch deactivation
+                if (stepUpGate != null) {
+                    if (mfaCode == null || mfaCode.isBlank()) {
+                        log.warn("[kill-switch] Deactivation denied: MFA code missing for user='{}'", userId);
+                        if (auditChain != null) {
+                            return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch deactivation denied: MFA missing")
+                                .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                    "MFA code required for kill-switch deactivation")));
+                        }
+                        return Promise.of(HttpHelper.errorResponse(403, "MFA code required"));
+                    }
+
+                    return stepUpGate.verify(userId, tenantId, mfaCode)
+                        .then(verified -> {
+                            if (!verified) {
+                                // Log failed step-up attempt
+                                if (auditChain != null) {
+                                    return auditChain.recordFailedStepUp(tenantId, userId, "kill-switch deactivation denied: MFA failed")
+                                        .then(auditId -> Promise.of(HttpHelper.errorResponse(403,
+                                            "MFA verification failed; attempt logged")));
+                                }
+                                return Promise.of(HttpHelper.errorResponse(403, "MFA verification failed"));
+                            }
+
+                            // MFA verified; proceed with deactivation
+                            log.warn("[kill-switch] Deactivating for tenant='{}' reason='{}' actor='{}'",
+                                tenantId, reason, userId);
+                            return killSwitchService.deactivate(tenantId, reason)
+                                .then(v -> {
+                                    // Record in audit chain
+                                    if (auditChain != null) {
+                                        return auditChain.recordDeactivation(tenantId, userId, reason, role)
+                                            .map(auditId -> jsonResponse.apply(Map.of(
+                                                "deactivated", true, "tenantId", tenantId, "auditId", auditId)));
+                                    }
+                                    return Promise.of(jsonResponse.apply(Map.of(
+                                        "deactivated", true, "tenantId", tenantId)));
+                                });
+                        });
+                }
+
+                // MFA not configured but still require admin role
+                log.warn("[kill-switch] Deactivating for tenant='{}' reason='{}' actor='{}' (MFA not configured)",
                     tenantId, reason, userId);
                 return killSwitchService.deactivate(tenantId, reason)
                     .then(v -> {
                         // Record in audit chain
                         if (auditChain != null) {
-                            return auditChain.recordDeactivation(tenantId, userId, reason, null)
+                            return auditChain.recordDeactivation(tenantId, userId, reason, role)
                                 .map(auditId -> jsonResponse.apply(Map.of(
                                     "deactivated", true, "tenantId", tenantId, "auditId", auditId)));
                         }

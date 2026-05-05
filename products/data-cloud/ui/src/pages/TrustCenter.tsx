@@ -133,6 +133,13 @@ interface RetentionPurgePreview {
   dryRun: RetentionPurgeDryRunResult;
 }
 
+interface PolicyFormState {
+  name: string;
+  type: 'SECURITY' | 'PRIVACY' | 'RETENTION' | 'ACCESS' | 'QUALITY';
+  description: string;
+  enabled: boolean;
+}
+
 const DEFAULT_CLASSIFICATION_FORM: RetentionClassificationFormState = {
   collection: '',
   tier: 'compliance',
@@ -149,6 +156,13 @@ const DEFAULT_REDACTION_FORM: RedactionFormState = {
 
 const DEFAULT_PURGE_FORM: RetentionPurgeFormState = {
   collection: '',
+};
+
+const DEFAULT_POLICY_FORM: PolicyFormState = {
+  name: '',
+  type: 'PRIVACY',
+  description: '',
+  enabled: true,
 };
 
 function parseCommaSeparatedValues(value: string): string[] | undefined {
@@ -591,10 +605,12 @@ function AuditTimelineCard({ entry, 'data-testid': dataTestId }: { entry: AuditT
  */
 export function TrustCenter() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeQuickAction, setActiveQuickAction] = useState<GovernanceQuickAction | null>(null);
+  const [activeQuickAction, setActiveQuickAction] = useState<GovernanceQuickAction | 'create-policy' | null>(null);
   const [classificationForm, setClassificationForm] = useState<RetentionClassificationFormState>(DEFAULT_CLASSIFICATION_FORM);
   const [redactionForm, setRedactionForm] = useState<RedactionFormState>(DEFAULT_REDACTION_FORM);
   const [purgeForm, setPurgeForm] = useState<RetentionPurgeFormState>(DEFAULT_PURGE_FORM);
+  const [policyForm, setPolicyForm] = useState<PolicyFormState>(DEFAULT_POLICY_FORM);
+  const [editingPolicyId, setEditingPolicyId] = useState<string | null>(null);
   const [actionSummary, setActionSummary] = useState<GovernanceActionSummary | null>(null);
   const [purgePreview, setPurgePreview] = useState<RetentionPurgePreview | null>(null);
 
@@ -815,6 +831,114 @@ export function TrustCenter() {
       if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
       if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
       toast.error(error instanceof Error ? error.message : 'Failed to execute retention purge');
+    },
+  });
+
+  // DC-P1-009: Policy CRUD lifecycle mutations
+  const createPolicyMutation = useMutation({
+    mutationFn: (policy: Partial<Policy>) => {
+      // Map UI Policy type to governance service Policy type
+      const servicePolicy: Partial<import('../api/governance.service').Policy> = {
+        ...policy,
+        type: policy.type as any, // Type mapping handled by service
+      };
+      return governanceService.createPolicy(servicePolicy);
+    },
+    onMutate: () => {
+      const jobId = startJob('Create policy');
+      const op = trackOp({ action: 'Create policy', resource: 'governance/policies', outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      toast.success(`Policy created: ${result.name}`);
+      setPolicyForm(DEFAULT_POLICY_FORM);
+      setEditingPolicyId(null);
+      closeQuickAction();
+      refreshGovernanceData();
+    },
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
+      toast.error(error instanceof Error ? error.message : 'Failed to create policy');
+    },
+  });
+
+  const updatePolicyMutation = useMutation({
+    mutationFn: ({ policyId, policy }: { policyId: string; policy: Partial<Policy> }) => {
+      // Map UI Policy type to governance service Policy type
+      const servicePolicy: Partial<import('../api/governance.service').Policy> = {
+        ...policy,
+        type: policy.type as any, // Type mapping handled by service
+      };
+      return governanceService.updatePolicy(policyId, servicePolicy);
+    },
+    onMutate: () => {
+      const jobId = startJob('Update policy');
+      const op = trackOp({ action: 'Update policy', resource: 'governance/policies', outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      toast.success(`Policy updated: ${result.name}`);
+      setPolicyForm(DEFAULT_POLICY_FORM);
+      setEditingPolicyId(null);
+      closeQuickAction();
+      refreshGovernanceData();
+    },
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
+      toast.error(error instanceof Error ? error.message : 'Failed to update policy');
+    },
+  });
+
+  const deletePolicyMutation = useMutation({
+    mutationFn: (policyId: string) => governanceService.deletePolicy(policyId),
+    onMutate: () => {
+      const jobId = startJob('Delete policy');
+      const op = trackOp({ action: 'Delete policy', resource: 'governance/policies', outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (_result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      toast.success('Policy deleted');
+      setPolicyForm(DEFAULT_POLICY_FORM);
+      setEditingPolicyId(null);
+      refreshGovernanceData();
+    },
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete policy');
+    },
+  });
+
+  const togglePolicyMutation = useMutation({
+    mutationFn: ({ policyId, enabled }: { policyId: string; enabled: boolean }) => 
+      governanceService.togglePolicy(policyId, enabled),
+    onMutate: () => {
+      const jobId = startJob('Toggle policy');
+      const op = trackOp({ action: 'Toggle policy', resource: 'governance/policies', outcome: 'pending' });
+      return { op, jobId };
+    },
+    onSuccess: (result, _vars, ctx) => {
+      if (ctx?.op) resolveOp(ctx.op.id, 'success');
+      if (ctx?.jobId) completeJob(ctx.jobId, 'success');
+      toast.success(`Policy ${result.enabled ? 'enabled' : 'disabled'}: ${result.name}`);
+      refreshGovernanceData();
+    },
+    onError: (error, _vars, ctx) => {
+      const msg = error instanceof Error ? error.message : 'Failed';
+      if (ctx?.op) resolveOp(ctx.op.id, 'failure', msg);
+      if (ctx?.jobId) completeJob(ctx.jobId, 'failure', msg);
+      toast.error(error instanceof Error ? error.message : 'Failed to toggle policy');
     },
   });
 

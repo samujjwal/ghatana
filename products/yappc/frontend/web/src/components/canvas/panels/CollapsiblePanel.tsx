@@ -175,11 +175,11 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     return (
         <Paper
             elevation={2}
-            className="h-full flex flex-col overflow-hidden transition-all duration-300 rounded-none border-gray-200 dark:border-gray-700 relative" style={{ width: isCollapsed ? collapsedWidth : width, borderRight: position === 'left' ? 1 : 0, borderLeft: position === 'right' ? 1 : 0 }}
+            className="h-full flex flex-col overflow-hidden transition-all duration-300 rounded-none border-border dark:border-border relative" style={{ width: isCollapsed ? collapsedWidth : width, borderRight: position === 'left' ? 1 : 0, borderLeft: position === 'right' ? 1 : 0 }}
         >
             {/* Header */}
             <Box
-                className="flex items-center justify-between p-3 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 min-h-[48px] border-b" >
+                className="flex items-center justify-between p-3 border-border dark:border-border bg-surface-muted dark:bg-surface min-h-[48px] border-b" >
                 {!isCollapsed && (
                     <Typography variant="subtitle2" className="font-semibold text-sm">
                         {title}
@@ -196,7 +196,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
                             size="small"
                             onClick={handleToggle}
                             aria-label={tooltipText}
-                            className="hover:bg-gray-100 hover:dark:bg-gray-800"
+                            className="hover:bg-surface-muted hover:dark:bg-surface"
                         >
                             {React.createElement(icon, { fontSize: 'small' })}
                         </IconButton>
@@ -209,7 +209,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
                                 size="small"
                                 onClick={onClose}
                                 aria-label="Close panel"
-                                className="hover:bg-gray-100 hover:dark:bg-gray-800"
+                                className="hover:bg-surface-muted hover:dark:bg-surface"
                             >
                                 <CloseIcon size={16} />
                             </IconButton>
@@ -232,7 +232,7 @@ export const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
                 >
                     <Typography
                         variant="caption"
-                        className="font-semibold text-xs text-gray-500 dark:text-gray-400 tracking-[0.1em] rotate-[180deg]" >
+                        className="font-semibold text-xs text-fg-muted dark:text-fg-muted tracking-[0.1em] rotate-[180deg]" >
                         {title.toUpperCase()}
                     </Typography>
                 </Box>

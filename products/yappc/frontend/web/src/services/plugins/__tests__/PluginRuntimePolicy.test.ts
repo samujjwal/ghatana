@@ -122,4 +122,34 @@ describe('PluginRuntimePolicy', () => {
     expect(runtime.emitTelemetry('plugin.secret-export')).toBe(false);
     expect(telemetryEmitter).toHaveBeenCalledTimes(1);
   });
+
+  it('rejects policy with missing plugin ID before creating any runtime surface', () => {
+    expect(() =>
+      createPluginRuntimeEnvironment({
+        pluginId: '',
+        version: '1.0.0',
+        trusted: false,
+        sandboxRequired: true,
+        network: { allowNetworkRequests: false },
+        storage: { allowLocalStorage: false, allowSessionStorage: false, allowIndexedDB: false, allowCookies: false },
+        browserAPI: { allowGeolocation: false, allowMediaDevices: false, allowClipboard: false, allowNotifications: false, allowFullscreen: false, allowWebSockets: false },
+        telemetry: { allowTelemetry: false },
+      }),
+    ).toThrow(/invalid policy/i);
+  });
+
+  it('rejects policy that enables network requests without specifying allowed domains', () => {
+    expect(() =>
+      createPluginRuntimeEnvironment({
+        pluginId: 'plugin-bad-net',
+        version: '1.0.0',
+        trusted: false,
+        sandboxRequired: true,
+        network: { allowNetworkRequests: true, allowedDomains: [] },
+        storage: { allowLocalStorage: false, allowSessionStorage: false, allowIndexedDB: false, allowCookies: false },
+        browserAPI: { allowGeolocation: false, allowMediaDevices: false, allowClipboard: false, allowNotifications: false, allowFullscreen: false, allowWebSockets: false },
+        telemetry: { allowTelemetry: false },
+      }),
+    ).toThrow(/invalid policy/i);
+  });
 });

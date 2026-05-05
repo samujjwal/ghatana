@@ -159,7 +159,7 @@ function PhaseStep({
         }
 
         if (status === 'completed') {
-            return `${base} bg-green-500 text-white shadow-md`;
+            return `${base} bg-success-bg text-white shadow-md`;
         }
 
         return `${base} bg-grey-200 dark:bg-grey-700 text-grey-500 dark:text-grey-400`;
@@ -239,7 +239,7 @@ function PhaseStep({
                 <div
                     className={`
                         flex-1 h-0.5 mx-1 ${TRANSITIONS.fast}
-                        ${status === 'completed' ? 'bg-green-500' : 'bg-grey-300 dark:bg-grey-600'}
+                        ${status === 'completed' ? 'bg-success-bg' : 'bg-grey-300 dark:bg-grey-600'}
                     `}
                     style={{
                         minWidth: variant === 'full' ? '24px' : '16px',

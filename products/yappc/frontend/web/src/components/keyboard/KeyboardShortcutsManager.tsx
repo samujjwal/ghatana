@@ -264,7 +264,7 @@ const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
 
 function ShortcutKey({ keyLabel }: { keyLabel: string }) {
   return (
-    <kbd className="px-2 py-1 text-xs font-semibold bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded">
+    <kbd className="px-2 py-1 text-xs font-semibold bg-surface-muted dark:bg-surface border border-border dark:border-border rounded">
       {keyLabel}
     </kbd>
   );
@@ -272,8 +272,8 @@ function ShortcutKey({ keyLabel }: { keyLabel: string }) {
 
 function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-800 last:border-b-0">
-      <span className="text-sm text-gray-900 dark:text-gray-100">
+    <div className="flex items-center justify-between py-2 border-b border-border dark:border-border last:border-b-0">
+      <span className="text-sm text-fg dark:text-fg-muted">
         {shortcut.description}
       </span>
       <div className="flex items-center gap-1">
@@ -281,7 +281,7 @@ function ShortcutRow({ shortcut }: { shortcut: KeyboardShortcut }) {
           <React.Fragment key={index}>
             <ShortcutKey keyLabel={key} />
             {index < shortcut.keys.length - 1 && key !== '+' && (
-              <span className="text-gray-400 text-xs">+</span>
+              <span className="text-fg-muted text-xs">+</span>
             )}
           </React.Fragment>
         ))}
@@ -299,7 +299,7 @@ function ShortcutCategory({
 }) {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wide">
+      <h3 className="text-sm font-semibold text-fg dark:text-fg-muted mb-3 uppercase tracking-wide">
         {title}
       </h3>
       <div className="space-y-0">
@@ -351,15 +351,15 @@ export function KeyboardShortcutsHelp({
         data-testid="keyboard-shortcuts-help"
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+        <div className="bg-white dark:bg-surface rounded-lg shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+          <div className="px-6 py-4 border-b border-border dark:border-border flex items-center justify-between">
+            <h2 className="text-xl font-bold text-fg dark:text-fg-muted">
               Keyboard Shortcuts
             </h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="text-fg-muted hover:text-fg dark:hover:text-fg-muted"
             >
               ✕
             </button>
@@ -396,12 +396,12 @@ export function KeyboardShortcutsHelp({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+          <div className="px-6 py-3 border-t border-border dark:border-border flex items-center justify-between text-sm text-fg-muted dark:text-fg-muted">
             <span>Press <ShortcutKey keyLabel="Esc" /> to close</span>
             <button
               onClick={onClose}
               tabIndex={0}
-              className="px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300"
+              className="px-3 py-1 bg-surface-muted dark:bg-surface hover:bg-surface-muted dark:hover:bg-surface-muted rounded text-fg dark:text-fg-muted"
               onKeyDown={(e) => { if (e.key === 'Enter') onClose(); }}
             >
               Close

@@ -75,6 +75,15 @@ public class PageArtifactModule extends AbstractModule {
         return new DbPageArtifactAuditRepository(dataSource, executor);
     }
 
+    @Provides
+    PageArtifactResourceScopeAuthorizer pageArtifactResourceScopeAuthorizer(
+            DataSource dataSource,
+            Executor executor
+    ) {
+        LOG.info("Creating DbPageArtifactScopeAuthorizer");
+        return new DbPageArtifactScopeAuthorizer(dataSource, executor);
+    }
+
     /**
      * Provides the PageArtifactController.
      * <p>
@@ -93,7 +102,8 @@ public class PageArtifactModule extends AbstractModule {
             PageArtifactAuditRepository auditRepository,
             ObjectMapper objectMapper,
             com.ghatana.platform.security.rbac.SyncAuthorizationService authorizationService,
-            com.ghatana.platform.observability.MetricsCollector metrics
+            com.ghatana.platform.observability.MetricsCollector metrics,
+            PageArtifactResourceScopeAuthorizer resourceScopeAuthorizer
     ) {
         LOG.info("Creating PageArtifactController with authorization and observability");
         return new PageArtifactController(
@@ -102,7 +112,7 @@ public class PageArtifactModule extends AbstractModule {
                 objectMapper,
                 authorizationService,
                 metrics,
-                PageArtifactResourceScopeAuthorizer.allowAll()
+                resourceScopeAuthorizer
         );
     }
 }

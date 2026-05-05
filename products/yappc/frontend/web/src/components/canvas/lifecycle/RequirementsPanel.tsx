@@ -67,9 +67,9 @@ const defaultRequirement = (): Requirement => ({
 });
 
 const PRIORITY_COLORS = {
-    must: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
-    should: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
-    could: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    must: 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive',
+    should: 'bg-warning-bg text-warning-color dark:bg-warning-bg/30 dark:text-warning-color',
+    could: 'bg-info-bg text-info-color dark:bg-info-bg/30 dark:text-info-color',
     wont: 'bg-grey-100 text-grey-700 dark:bg-grey-900/30 dark:text-grey-300',
 };
 

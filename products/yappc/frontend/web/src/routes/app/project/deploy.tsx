@@ -86,9 +86,9 @@ function getReleasePlanningStatusClassName(status: ReleasePlanningStatusContract
         case 'final-phase':
             return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-200';
         case 'approval-needed':
-            return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200';
+            return 'border-warning-border bg-warning-bg text-warning-color dark:border-warning-border/60 dark:bg-warning-bg/40 dark:text-warning-color';
         default:
-            return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200';
+            return 'border-destructive-border bg-destructive-bg text-destructive dark:border-destructive-border/60 dark:bg-destructive-bg/40 dark:text-destructive';
     }
 }
 
@@ -390,7 +390,7 @@ export default function Component() {
                         !phasePreview?.canAdvance ||
                         !phasePreview?.nextPhase
                     }
-                    className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-success-bg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-success-bg disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {isAdvancing
                         ? 'Advancing...'
@@ -416,7 +416,7 @@ export default function Component() {
                         </div>
                         <div className="rounded-lg border border-divider p-3">
                             <span className="block text-[10px] uppercase tracking-wide text-text-secondary">Risk score</span>
-                            <span className={`block text-lg font-semibold ${deploymentPlan.riskScore >= 7 ? 'text-red-600' : deploymentPlan.riskScore >= 4 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                            <span className={`block text-lg font-semibold ${deploymentPlan.riskScore >= 7 ? 'text-destructive' : deploymentPlan.riskScore >= 4 ? 'text-warning-color' : 'text-emerald-600'}`}>
                                 {deploymentPlan.riskScore}/10
                             </span>
                         </div>
@@ -428,9 +428,9 @@ export default function Component() {
                         </div>
                     </div>
                     {phasePreview.blockers.length > 0 && (
-                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                            <p className="text-xs font-medium text-amber-800">Remaining blockers:</p>
-                            <ul className="mt-1 list-disc pl-4 text-xs text-amber-700">
+                        <div className="mt-3 rounded-lg border border-warning-border bg-warning-bg p-3">
+                            <p className="text-xs font-medium text-warning-color">Remaining blockers:</p>
+                            <ul className="mt-1 list-disc pl-4 text-xs text-warning-color">
                                 {phasePreview.blockers.map((blocker) => (
                                     <li key={blocker}>{blocker}</li>
                                 ))}
@@ -449,7 +449,7 @@ export default function Component() {
                                 void handleAdvancePhase(operatorNote.trim() || undefined);
                             }}
                             disabled={isAdvancing}
-                            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="rounded-lg bg-success-bg px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-success-bg disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isAdvancing ? 'Advancing...' : 'Confirm advance'}
                         </button>
@@ -467,7 +467,7 @@ export default function Component() {
             )}
 
             {(phasePreviewError || (phasePreview?.blockers.length ?? 0) > 0) && (
-                <div className="border-b border-divider bg-amber-50 px-6 py-3 text-sm text-amber-900">
+                <div className="border-b border-divider bg-warning-bg px-6 py-3 text-sm text-warning-color">
                     {phasePreviewError && (
                         <p className="font-medium" data-testid="phase-preview-error">{phasePreviewError}</p>
                     )}

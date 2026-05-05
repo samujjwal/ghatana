@@ -115,7 +115,7 @@ export function ShortcutOverlay({
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <KeyboardIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <KeyboardIcon className="w-6 h-6 text-info-color dark:text-info-color" />
               <Typography className="font-bold text-lg">
                 Keyboard Shortcut
               </Typography>
@@ -124,25 +124,25 @@ export function ShortcutOverlay({
               size="sm"
               variant="text"
               onClick={handleDismiss}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-fg-muted hover:text-fg-muted"
             >
               <CloseIcon className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Shortcut Display */}
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-4">
+          <div className="bg-surface-muted dark:bg-surface rounded-lg p-4 mb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
               {activeShortcut.keys.map((key, idx) => (
                 <kbd
                   key={idx}
-                  className="px-4 py-2 text-lg font-mono bg-white dark:bg-gray-700 rounded-lg border-2 border-gray-300 dark:border-gray-600 shadow-sm"
+                  className="px-4 py-2 text-lg font-mono bg-white dark:bg-surface-muted rounded-lg border-2 border-border dark:border-border shadow-sm"
                 >
                   {key}
                 </kbd>
               ))}
             </div>
-            <Typography className="text-center text-sm text-gray-600 dark:text-gray-400">
+            <Typography className="text-center text-sm text-fg-muted dark:text-fg-muted">
               {activeShortcut.description}
             </Typography>
           </div>

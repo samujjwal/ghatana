@@ -53,10 +53,10 @@ export function DataPanel({ context }: RailPanelProps) {
         return <StorageOutlined className="text-sky-600 text-lg" />;
       case 'api':
         return (
-          <CloudQueueOutlined className="text-green-600 text-lg" />
+          <CloudQueueOutlined className="text-success-color text-lg" />
         );
       case 'service':
-        return <CloudOutlined className="text-amber-600 text-lg" />;
+        return <CloudOutlined className="text-warning-color text-lg" />;
       default:
         return <StorageOutlined className="text-lg" />;
     }

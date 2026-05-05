@@ -20,7 +20,7 @@ export function StatusCard({
     <div className="text-center">
       <div className="flex justify-center mb-2">{icon}</div>
       <div className={`text-2xl font-bold ${color}`}>{count}</div>
-      <div className="text-xs text-gray-600">{label}</div>
+      <div className="text-xs text-fg-muted">{label}</div>
     </div>
   );
 }

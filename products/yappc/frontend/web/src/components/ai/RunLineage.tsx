@@ -71,7 +71,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
         className={['animate-pulse flex gap-2', className].filter(Boolean).join(' ')}
       >
         {[1, 2, 3].map((i) => (
-          <span key={i} className="h-5 w-20 bg-slate-200 rounded" />
+          <span key={i} className="h-5 w-20 bg-surface-muted rounded" />
         ))}
       </div>
     );
@@ -81,7 +81,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
     return (
       <p
         role="alert"
-        className={['text-xs text-red-600', className].filter(Boolean).join(' ')}
+        className={['text-xs text-destructive', className].filter(Boolean).join(' ')}
       >
         Failed to load lineage: {error.message}
       </p>
@@ -90,7 +90,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
 
   if (!data || data.nodes.length === 0) {
     return (
-      <p className={['text-xs text-slate-500', className].filter(Boolean).join(' ')}>
+      <p className={['text-xs text-fg-muted', className].filter(Boolean).join(' ')}>
         No lineage available
       </p>
     );
@@ -106,7 +106,7 @@ export const RunLineage = React.memo<RunLineageProps>(function RunLineage({
       {data.nodes.map((node, index) => (
         <React.Fragment key={node.id}>
           {index > 0 && (
-            <span aria-hidden="true" className="text-slate-400">
+            <span aria-hidden="true" className="text-fg-muted">
               /
             </span>
           )}
@@ -127,11 +127,11 @@ interface LineageNodeProps {
 }
 
 const TYPE_COLORS: Record<RunLineageNode['type'], string> = {
-  workflow: 'text-blue-600',
-  plan: 'text-purple-600',
-  step: 'text-indigo-600',
-  run: 'text-slate-700',
-  agent: 'text-teal-600',
+  workflow: 'text-info-color',
+  plan: 'text-info-color',
+  step: 'text-info-color',
+  run: 'text-fg',
+  agent: 'text-info-color',
 };
 
 function LineageNode({ node, onClick }: LineageNodeProps): React.ReactElement {

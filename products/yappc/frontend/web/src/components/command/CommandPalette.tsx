@@ -90,7 +90,7 @@ function highlightMatches(text: string, query: string): React.ReactNode {
     return parts.map((part, i) => (
         <span
             key={i}
-            className={part.matched ? 'font-bold bg-yellow-200 dark:bg-yellow-700' : ''}
+            className={part.matched ? 'font-bold bg-warning-bg dark:bg-warning-bg' : ''}
         >
             {part.text}
         </span>
@@ -284,7 +284,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                 className={`
                                     px-4 py-3 transition-colors
                                     ${index === selectedIndex
-                                        ? 'bg-blue-50 dark:bg-blue-900/30'
+                                        ? 'bg-info-bg dark:bg-info-bg/30'
                                         : ''
                                     }
                                 `}
@@ -294,7 +294,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                                         className={`
                                             w-8 h-8 rounded-lg flex items-center justify-center text-sm
                                             ${action.isDangerous
-                                                ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                                                ? 'bg-destructive-bg text-destructive dark:bg-destructive-bg/30 dark:text-destructive'
                                                 : 'bg-grey-100 text-grey-600 dark:bg-grey-800 dark:text-grey-400'
                                             }
                                         `}

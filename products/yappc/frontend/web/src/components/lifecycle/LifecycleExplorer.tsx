@@ -464,7 +464,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                             >
                                                 {group.icon}
                                             </div>
-                                            {isCompleted && <CheckCircle className="text-green-500" />}
+                                            {isCompleted && <CheckCircle className="text-success-color" />}
                                             {isActive && <Info className="text-primary-500" />}
                                         </div>
 
@@ -559,10 +559,10 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                                                     <div
                                                         key={gate.id}
                                                         className={`p-3 rounded border ${gate.status === 'passed'
-                                                            ? 'border-green-300 bg-green-50 dark:bg-green-900/20'
+                                                            ? 'border-success-border bg-success-bg dark:bg-success-bg/20'
                                                             : gate.status === 'failed'
-                                                                ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
-                                                                : 'border-amber-300 bg-amber-50 dark:bg-amber-900/20'
+                                                                ? 'border-destructive-border bg-destructive-bg dark:bg-destructive-bg/20'
+                                                                : 'border-warning-border bg-warning-bg dark:bg-warning-bg/20'
                                                             }`}
                                                     >
                                                         <div className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -584,11 +584,11 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
 
                                     {/* Next Actions */}
                                     {isActive && (
-                                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-300 rounded p-3">
-                                            <div className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                                        <div className="bg-info-bg dark:bg-info-bg/20 border border-info-border rounded p-3">
+                                            <div className="text-sm font-semibold text-info-color dark:text-info-color mb-2">
                                                 Next Steps
                                             </div>
-                                            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
+                                            <ul className="text-sm text-info-color dark:text-info-color space-y-1 list-disc list-inside">
                                                 <li>Create missing artifacts</li>
                                                 <li>Satisfy phase gates</li>
                                                 <li>Complete validation</li>
@@ -615,7 +615,7 @@ export const LifecycleExplorer: React.FC<LifecycleExplorerProps> = ({
                 <h3 className="text-sm font-semibold text-text-primary mb-3">Legend</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
-                        <CheckCircle className="text-green-500 w-5 h-5" />
+                        <CheckCircle className="text-success-color w-5 h-5" />
 
                         {/* Artifact Detail Panel */}
                         {selectedArtifact && (

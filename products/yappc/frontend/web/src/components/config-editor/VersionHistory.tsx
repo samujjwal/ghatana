@@ -141,9 +141,9 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
               >
                 <ListItemIcon>
                   {isCurrent ? (
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 rounded-full bg-success-bg" />
                   ) : (
-                    <div className="w-2 h-2 rounded-full bg-gray-300" />
+                    <div className="w-2 h-2 rounded-full bg-surface-muted" />
                   )}
                 </ListItemIcon>
                 <ListItemText

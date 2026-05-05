@@ -27,9 +27,9 @@ export interface ActivityFeedProps {
 }
 
 const SEVERITY_COLOR: Record<ActivitySeverity, string> = {
-  info: 'bg-blue-100 text-blue-700',
-  warn: 'bg-amber-100 text-amber-800',
-  error: 'bg-red-100 text-red-700',
+  info: 'bg-info-bg text-info-color',
+  warn: 'bg-warning-bg text-warning-color',
+  error: 'bg-destructive-bg text-destructive',
 };
 
 function formatTime(isoTimestamp: string): string {
@@ -51,7 +51,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       {items.length === 0 && (
         <Card>
           <CardContent className="p-4">
-            <Typography className="text-sm text-gray-600">No activity yet.</Typography>
+            <Typography className="text-sm text-fg-muted">No activity yet.</Typography>
           </CardContent>
         </Card>
       )}
@@ -64,9 +64,9 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               <Chip label={item.severity} size="sm" className={SEVERITY_COLOR[item.severity]} />
             </Box>
 
-            <Typography className="text-xs text-gray-500">Actor: {item.actor}</Typography>
-            <Typography className="text-xs text-gray-500">Time: {formatTime(item.occurredAt)}</Typography>
-            {item.details && <Typography className="text-sm text-gray-700">{item.details}</Typography>}
+            <Typography className="text-xs text-fg-muted">Actor: {item.actor}</Typography>
+            <Typography className="text-xs text-fg-muted">Time: {formatTime(item.occurredAt)}</Typography>
+            {item.details && <Typography className="text-sm text-fg">{item.details}</Typography>}
           </CardContent>
         </Card>
       ))}

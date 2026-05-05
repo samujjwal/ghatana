@@ -202,7 +202,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
           return (
             <Box
               key={categoryId}
-              className={`mb-2 rounded border border-gray-200 dark:border-gray-700 ${isPriority ? 'bg-gray-100 dark:bg-gray-800' : 'bg-transparent'}`}
+              className={`mb-2 rounded border border-border dark:border-border ${isPriority ? 'bg-surface-muted dark:bg-surface' : 'bg-transparent'}`}
             >
               <button
                 type="button"
@@ -224,7 +224,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                       <span style={{ fontSize: '0.9rem' }}>⭐</span>
                     </Tooltip>
                   )}
-                  <Typography as="span" className="text-xs text-gray-500">
+                  <Typography as="span" className="text-xs text-fg-muted">
                     {expandedCategories.has(categoryId) ? '▲' : '▼'}
                   </Typography>
                 </Box>
@@ -244,7 +244,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                       >
                           <Box
                             onClick={() => handleAssetClick(asset)}
-                            className="flex min-h-[88px] flex-col items-center justify-center cursor-pointer rounded border border-solid border-gray-200 bg-white transition-all duration-200 hover:border-blue-600 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800" >
+                            className="flex min-h-[88px] flex-col items-center justify-center cursor-pointer rounded border border-solid border-border bg-white transition-all duration-200 hover:border-info-border hover:bg-surface-muted dark:border-border dark:bg-surface dark:hover:bg-surface" >
                           <Box className="text-2xl mb-1">
                             {asset.icon}
                           </Box>
@@ -269,7 +269,7 @@ export function AssetsPanel({ context, onInsertNode }: RailPanelProps) {
                       <Box
                         key={asset.id}
                         onClick={() => handleAssetClick(asset)}
-                        className="flex items-center gap-2 p-2 cursor-pointer rounded hover:bg-gray-100 hover:dark:bg-gray-800"
+                        className="flex items-center gap-2 p-2 cursor-pointer rounded hover:bg-surface-muted hover:dark:bg-surface"
                       >
                         <Box className="text-[1.2rem]">{asset.icon}</Box>
                         <Typography variant="body2">{asset.name}</Typography>

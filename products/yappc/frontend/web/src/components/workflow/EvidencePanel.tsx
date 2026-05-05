@@ -127,7 +127,7 @@ export function EvidencePanel() {
                 value={tabValue}
                 onChange={handleTabChange}
                 variant="underline"
-                className="border-gray-200 dark:border-gray-700 border-b" >
+                className="border-border dark:border-border border-b" >
                 <Tab value="audit" label="Audit" />
                 <Tab value="ai" label="AI" />
             </Tabs>
@@ -136,7 +136,7 @@ export function EvidencePanel() {
             {tabValue === 'audit' && (
                 auditEntries.length === 0 ? (
                     <Box className="py-8 text-center">
-                        <HistoryIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                        <HistoryIcon className="mb-2 text-5xl text-fg-muted dark:text-fg-muted" />
                         <Typography color="text.secondary">
                             No audit entries yet
                         </Typography>
@@ -153,8 +153,8 @@ export function EvidencePanel() {
                                 <React.Fragment key={entry.id}>
                                     <ListItem className="px-0 py-3">
                                         <ListItemIcon className="min-w-[40px]">
-                                            <Avatar className="h-[28px] w-[28px] bg-gray-100 dark:bg-gray-800">
-                                                <ActionIcon className="text-base text-gray-500 dark:text-gray-400" />
+                                            <Avatar className="h-[28px] w-[28px] bg-surface-muted dark:bg-surface">
+                                                <ActionIcon className="text-base text-fg-muted dark:text-fg-muted" />
                                             </Avatar>
                                         </ListItemIcon>
                                         <ListItemText
@@ -167,10 +167,10 @@ export function EvidencePanel() {
                                             }
                                             secondary={
                                                 <>
-                                                    <Typography className="mt-1 block text-xs text-gray-500" color="text.secondary">
+                                                    <Typography className="mt-1 block text-xs text-fg-muted" color="text.secondary">
                                                         Audit entry {entry.id}
                                                     </Typography>
-                                                    <Typography className="block text-xs text-gray-500" color="text.disabled">
+                                                    <Typography className="block text-xs text-fg-muted" color="text.disabled">
                                                         {formatTimestamp(entry.at)}
                                                     </Typography>
                                                 </>
@@ -190,7 +190,7 @@ export function EvidencePanel() {
                 <>
                     {!showAISuggestions ? (
                         <Box className="py-8 text-center">
-                            <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                            <AIIcon className="mb-2 text-5xl text-fg-muted dark:text-fg-muted" />
                             <Typography color="text.secondary">
                                 AI suggestions are disabled
                             </Typography>
@@ -199,8 +199,8 @@ export function EvidencePanel() {
                         <Card variant="outlined">
                             <CardContent>
                                 <Box className="mb-2 flex items-center gap-2">
-                                    <SuggestionIcon className="text-blue-600" size={16} />
-                                    <Typography className="text-sm font-medium text-blue-600">
+                                    <SuggestionIcon className="text-info-color" size={16} />
+                                    <Typography className="text-sm font-medium text-info-color">
                                         AI Suggestion
                                     </Typography>
                                     <Chip
@@ -210,7 +210,7 @@ export function EvidencePanel() {
                                         className="ml-auto"
                                     />
                                 </Box>
-                                <Typography className="text-sm text-gray-500" color="text.secondary">
+                                <Typography className="text-sm text-fg-muted" color="text.secondary">
                                     {aiSuggestion.content}
                                 </Typography>
                             </CardContent>
@@ -237,11 +237,11 @@ export function EvidencePanel() {
                         </Card>
                     ) : (
                         <Box className="py-8 text-center">
-                            <AIIcon className="mb-2 text-5xl text-gray-400 dark:text-gray-600" />
+                            <AIIcon className="mb-2 text-5xl text-fg-muted dark:text-fg-muted" />
                             <Typography color="text.secondary" gutterBottom>
                                 No suggestions right now
                             </Typography>
-                            <Typography className="text-xs text-gray-500" color="text.disabled">
+                            <Typography className="text-xs text-fg-muted" color="text.disabled">
                                 AI will provide suggestions as you work through the workflow
                             </Typography>
                         </Box>
@@ -261,7 +261,7 @@ export function EvidencePanel() {
                             ].map((capability) => (
                                 <ListItem key={capability} className="px-0 py-1">
                                     <ListItemIcon className="min-w-[28px]">
-                                        <CheckIcon size={16} className="text-green-600" />
+                                        <CheckIcon size={16} className="text-success-color" />
                                     </ListItemIcon>
                                     <ListItemText primary={capability} />
                                 </ListItem>

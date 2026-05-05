@@ -32,6 +32,36 @@ jobs:
         id: arch-check
         continue-on-error: true
 
+      - name: Check product UI script/router/design-system contract
+        run: node scripts/check-product-ui-contracts.mjs
+
+      - name: Check shared layout primitive composition
+        run: node scripts/check-shared-layout-primitives.mjs
+
+      - name: Check bridge compliance
+        run: node scripts/check-bridge-compliance.mjs
+
+      - name: Check product manifest contract
+        run: node scripts/check-product-manifest-contracts.mjs
+
+      - name: Check shared data-access contract
+        run: node scripts/check-data-access-contract.mjs
+
+      - name: Check observability conformance
+        run: node scripts/check-observability-conformance.mjs
+
+      - name: Check in-memory policy store usage
+        run: node scripts/check-inmemory-policy-store-usage.mjs
+
+      - name: Check route entitlement contracts
+        run: node scripts/check-route-entitlement-contracts.mjs
+
+      - name: Check FlashIt client conformance
+        run: node scripts/check-flashit-client-conformance.mjs
+
+      - name: Check runtime template conformance
+        run: node scripts/check-runtime-template-conformance.mjs
+
       - name: Check for banned libraries
         run: |
           if grep -r "lodash\|axios\|moment\|jquery\|request-promise" --include="package.json" .; then

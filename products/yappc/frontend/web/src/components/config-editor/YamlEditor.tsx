@@ -199,9 +199,9 @@ export const YamlEditor: React.FC<YamlEditorProps> = ({
         </Typography>
         <Stack direction="row" alignItems="center" spacing={1}>
           {isValid ? (
-            <CheckIcon size={14} className="text-green-500" />
+            <CheckIcon size={14} className="text-success-color" />
           ) : (
-            <WarningIcon size={14} className="text-red-500" />
+            <WarningIcon size={14} className="text-destructive" />
           )}
           <Typography variant="caption" color={isValid ? 'success.main' : 'error.main'}>
             {isValid ? 'Valid YAML' : 'Invalid YAML'}

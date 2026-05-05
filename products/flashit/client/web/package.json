@@ -9,6 +9,9 @@
     "build": "tsc --noEmit || true && vite build",
     "preview": "vite preview",
     "test": "playwright test",
+    "test:coverage": "playwright test --reporter=line",
+    "test:e2e": "playwright test",
+    "test:e2e:a11y": "playwright test --grep @a11y",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
     "test:chromium": "playwright test --project=chromium",
@@ -22,6 +25,8 @@
   },
   "dependencies": {
     "@ghatana/design-system": "workspace:*",
+    "@ghatana/product-shell": "workspace:*",
+    "@ghatana/tokens": "workspace:*",
     "@flashit/shared": "workspace:*",
     "@tanstack/react-query": "^5.99.0",
     "date-fns": "^4.1.0",

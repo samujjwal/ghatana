@@ -14,6 +14,8 @@ packages:
   - "products/aep/gateway"
   - "products/phr/apps/*"
   - "products/digital-marketing/ui"
+  # Finance currently ships as backend-only in this monorepo. Add a workspace entry here
+  # once a Finance UI/client package is introduced and aligned to the kernel shell contract.
 
   # YAPPC frontend (existing)
   - "products/yappc/frontend"
@@ -38,6 +40,7 @@ packages:
   - "products/audio-video/modules/intelligence/ai-voice/libs/*"
 
   # flashit product
+  - "products/flashit"
   - "products/flashit/client/*"
   - "products/flashit/backend/gateway"
   - "products/flashit/libs/ts/*"

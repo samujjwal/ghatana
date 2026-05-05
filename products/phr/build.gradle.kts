@@ -3,8 +3,11 @@
  * All rights reserved.
  */
 
+import com.ghatana.buildlogic.ProductPackValidationExtension
+
 plugins {
     id("java-module")
+    id("product-pack-validation")
 }
 
 group = "com.ghatana.products"
@@ -139,63 +142,21 @@ tasks.register<Test>("checkApiContractConformance") {
     }
 }
 
-// =============================================================================
-// Phase 3.3: Pack schema validation gates
-// =============================================================================
-
-tasks.register("validateDomainPackManifest") {
-    description = "Validates the PHR domain-pack-manifest.yaml for required fields and schema correctness."
-    group = "verification"
-    val manifestFile = layout.projectDirectory.file("domain-pack-manifest.yaml").asFile
-    doLast {
-        require(manifestFile.exists()) { "domain-pack-manifest.yaml is missing from product root" }
-        val content = manifestFile.readText()
-        val requiredFields = listOf("pack:", "id:", "version:", "capabilities:", "domain:")
-        val missing = requiredFields.filter { field -> !content.contains(field) }
-        if (missing.isNotEmpty()) {
-            throw GradleException("PHR domain-pack-manifest.yaml is missing required fields: $missing")
-        }
-        logger.lifecycle("PHR domain-pack-manifest.yaml validation passed.")
-    }
-}
-
-tasks.register("validatePolicyPack") {
-    description = "Validates that PHR boundary policy store class compiles and its rules are non-empty."
-    group = "verification"
-    dependsOn(tasks.named("compileJava"))
-    val classesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
-    doLast {
-        val storeClass = "com.ghatana.phr.kernel.policy.PhrBoundaryPolicyStore"
-        val classFile = classesDir.walkTopDown().toList()
-            .firstOrNull { it.name == "PhrBoundaryPolicyStore.class" }
-        requireNotNull(classFile) {
-            "PHR policy pack class not found: $storeClass — ensure it compiles correctly"
-        }
-        logger.lifecycle("PHR policy pack validation passed: ${classFile.name}")
-    }
-}
-
-tasks.register("validateComplianceRulePack") {
-    description = "Validates that PHR compliance rule pack compiles and rule set IDs are non-blank."
-    group = "verification"
-    dependsOn(tasks.named("compileJava"))
-    val classesDir = layout.buildDirectory.dir("classes/java/main").get().asFile
-    doLast {
-        val packClass = "com.ghatana.phr.kernel.policy.PhrComplianceRulePack"
-        val classFile = classesDir.walkTopDown().toList()
-            .firstOrNull { it.name == "PhrComplianceRulePack.class" }
-        requireNotNull(classFile) {
-            "PHR compliance rule pack class not found: $packClass — ensure it compiles correctly"
-        }
-        logger.lifecycle("PHR compliance rule pack validation passed: ${classFile.name}")
-    }
-}
-
-tasks.named("check") {
-    dependsOn(
-        "validateDomainPackManifest",
-        "validatePolicyPack",
-        "validateComplianceRulePack"
+configure<ProductPackValidationExtension> {
+    productName.set("PHR")
+    manifestFile.set(layout.projectDirectory.file("domain-pack-manifest.yaml"))
+    requiredManifestFields.set(
+        listOf(
+            "pack:", "id:", "version:", "capabilities:", "domain:",
+            "kernelCapabilitiesConsumed:", "pluginsConsumed:", "bridgesConsumed:",
+            "domainPacksProvided:", "uiSurfaces:", "runtimeServices:", "dataSensitivity:"
+        )
     )
+    policyPackTestPatterns.set(
+        listOf(
+            "com.ghatana.phr.kernel.PhrPackContractTest",
+            "com.ghatana.phr.kernel.PhrKernelBoundaryContractTest"
+        )
+    )
+    complianceClassFileName.set("PhrComplianceRulePack.class")
 }
-

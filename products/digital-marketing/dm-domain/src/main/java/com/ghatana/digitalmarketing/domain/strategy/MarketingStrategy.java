@@ -1,6 +1,7 @@
 package com.ghatana.digitalmarketing.domain.strategy;
 
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
+import com.ghatana.digitalmarketing.domain.ai.AiProvenance;
 
 import java.time.Instant;
 import java.util.List;
@@ -11,6 +12,8 @@ import java.util.Objects;
  *
  * <p>Strategies start as DRAFT, require human approval before execution commands are created,
  * and become immutable once approved.</p>
+ *
+ * <p>P1-029: Includes AI provenance tracking for model attribution and reproducibility.</p>
  *
  * @doc.type class
  * @doc.purpose Aggregate root representing a workspace-scoped 30-day marketing strategy
@@ -30,6 +33,7 @@ public final class MarketingStrategy {
     private final String measurementPlan;
     private final String contentPlan;
     private final String modelVersion;
+    private final AiProvenance aiProvenance;
     private final Instant generatedAt;
     private final String generatedBy;
     private final Instant approvedAt;
@@ -47,6 +51,7 @@ public final class MarketingStrategy {
         this.measurementPlan = builder.measurementPlan;
         this.contentPlan = builder.contentPlan;
         this.modelVersion = builder.modelVersion;
+        this.aiProvenance = builder.aiProvenance;
         this.generatedAt = builder.generatedAt;
         this.generatedBy = builder.generatedBy;
         this.approvedAt = builder.approvedAt;
@@ -84,6 +89,7 @@ public final class MarketingStrategy {
             .measurementPlan(measurementPlan)
             .contentPlan(contentPlan)
             .modelVersion(modelVersion)
+            .aiProvenance(aiProvenance)
             .generatedAt(generatedAt)
             .generatedBy(generatedBy)
             .approvedAt(approvedAt)
@@ -115,6 +121,7 @@ public final class MarketingStrategy {
             .measurementPlan(measurementPlan)
             .contentPlan(contentPlan)
             .modelVersion(modelVersion)
+            .aiProvenance(aiProvenance)
             .generatedAt(generatedAt)
             .generatedBy(generatedBy)
             .approvedAt(null)
@@ -166,6 +173,10 @@ public final class MarketingStrategy {
         return modelVersion;
     }
 
+    public AiProvenance getAiProvenance() {
+        return aiProvenance;
+    }
+
     public Instant getGeneratedAt() {
         return generatedAt;
     }
@@ -206,6 +217,7 @@ public final class MarketingStrategy {
         private String measurementPlan;
         private String contentPlan;
         private String modelVersion;
+        private AiProvenance aiProvenance;
         private Instant generatedAt;
         private String generatedBy;
         private Instant approvedAt;
@@ -332,6 +344,17 @@ public final class MarketingStrategy {
          */
         public Builder modelVersion(String modelVersion) {
             this.modelVersion = modelVersion;
+            return this;
+        }
+
+        /**
+         * P1-029: Sets the AI provenance record.
+         *
+         * @param aiProvenance AI provenance record
+         * @return this builder
+         */
+        public Builder aiProvenance(AiProvenance aiProvenance) {
+            this.aiProvenance = aiProvenance;
             return this;
         }
 

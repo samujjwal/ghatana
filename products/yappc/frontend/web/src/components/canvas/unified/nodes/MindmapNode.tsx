@@ -191,7 +191,7 @@ function MindmapNodeComponent({ data, selected, id }: MindmapNodeProps) {
             {hasChildren && (
                 <IconButton
                     size="small"
-                    className="absolute w-[20px] h-[20px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-[0.7rem] hover:bg-gray-100 hover:dark:bg-gray-800" style={{ right: layoutDirection === 'left' ? 'auto' : -24, left: layoutDirection === 'left' ? -24 : 'auto' }}
+                    className="absolute w-[20px] h-[20px] bg-white dark:bg-surface border border-border dark:border-border text-[0.7rem] hover:bg-surface-muted hover:dark:bg-surface" style={{ right: layoutDirection === 'left' ? 'auto' : -24, left: layoutDirection === 'left' ? -24 : 'auto' }}
                     title={collapsed ? 'Expand' : 'Collapse'}
                 >
                     {collapsed ? `+${childIds.length}` : '−'}
@@ -202,7 +202,7 @@ function MindmapNodeComponent({ data, selected, id }: MindmapNodeProps) {
             {selected && !isEditing && (
                 <IconButton
                     size="small"
-                    className="absolute w-[20px] h-[20px] bg-blue-600 text-white text-[0.8rem] hover:bg-blue-800" style={{ right: layoutDirection === 'left' ? 'auto' : hasChildren ? -48 : -24, left: layoutDirection === 'left' ? (hasChildren ? -48 : -24) : 'auto' }}
+                    className="absolute w-[20px] h-[20px] bg-primary text-white text-[0.8rem] hover:bg-info-bg" style={{ right: layoutDirection === 'left' ? 'auto' : hasChildren ? -48 : -24, left: layoutDirection === 'left' ? (hasChildren ? -48 : -24) : 'auto' }}
                     title="Add child (Tab)"
                 >
                     +

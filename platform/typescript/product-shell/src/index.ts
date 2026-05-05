@@ -12,6 +12,7 @@
 // Core types
 export type {
   ProductRouteCapability,
+  ProductRouteEntitlement,
   ProductShellConfig,
   ProductNotification,
   UnsupportedSurfaceConfig,

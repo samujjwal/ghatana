@@ -149,7 +149,7 @@ export function PhaseGuidedFlow({
             </Box>
 
             {/* Progress Overview */}
-            <Card variant="flat" className="mb-8 border border-solid border-gray-200 dark:border-gray-700">
+            <Card variant="flat" className="mb-8 border border-solid border-border dark:border-border">
                 <CardContent>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography as="h6" fontWeight="medium">
@@ -170,7 +170,7 @@ export function PhaseGuidedFlow({
             </Card>
 
             {/* Stepper */}
-            <Card variant="flat" className="border border-solid border-gray-200 dark:border-gray-700">
+            <Card variant="flat" className="border border-solid border-border dark:border-border">
                 <CardContent>
                     <Stepper activeStep={currentStep} orientation="vertical">
                         {tasks.map((task, index) => (
@@ -182,7 +182,7 @@ export function PhaseGuidedFlow({
                                         ) : currentStep === index ? (
                                             <PlayArrow tone="primary" />
                                         ) : (
-                                            <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+                                            <div className="w-6 h-6 rounded-full border-2 border-border" />
                                         )
                                     }
                                 >

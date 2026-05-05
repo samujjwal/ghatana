@@ -194,7 +194,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                         disabled={isLoading}
                         InputProps={{
                             endAdornment: isLoading && <CircularProgress size={20} />,
-                            className: 'bg-white dark:bg-gray-900',
+                            className: 'bg-white dark:bg-surface',
                         }}
                     />
                 </Box>
@@ -202,7 +202,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 {/* Quick Actions */}
                 {!suggestions.length && (
                     <Box className="mb-6">
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mb-2 block">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" className="mb-2 block">
                             Quick Actions
                         </Typography>
                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -221,8 +221,8 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
 
                 {/* Context Info */}
                 {context && (
-                    <Box className="mb-4 p-3 rounded bg-gray-100 dark:bg-gray-800">
-                        <Typography as="span" className="text-xs text-gray-500" color="text.secondary" gutterBottom>
+                    <Box className="mb-4 p-3 rounded bg-surface-muted dark:bg-surface">
+                        <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" gutterBottom>
                             Current Context
                         </Typography>
                         <Stack direction="row" spacing={1} className="mt-1">
@@ -263,7 +263,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                                 <Paper
                                     key={suggestion.id}
                                     variant="flat"
-                                    className="p-4 border border-gray-200 dark:border-gray-700 transition-all duration-200 shadow-sm" style={{ cursor: suggestion.action ? 'pointer' : 'default' }}
+                                    className="p-4 border border-border dark:border-border transition-all duration-200 shadow-sm" style={{ cursor: suggestion.action ? 'pointer' : 'default' }}
                                     onClick={() => suggestion.action && handleSuggestionClick(suggestion)}
                                 >
                                     <Box className="flex items-start gap-3">
@@ -302,7 +302,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
                 {/* Empty State */}
                 {!isLoading && suggestions.length === 0 && query === '' && (
                     <Box className="text-center py-12">
-                        <AIIcon className="mb-4 text-5xl text-gray-400 dark:text-gray-600" />
+                        <AIIcon className="mb-4 text-5xl text-fg-muted dark:text-fg-muted" />
                         <Typography as="p" className="text-sm" color="text.secondary">
                             Ask me anything about your project, or use the quick actions above.
                         </Typography>

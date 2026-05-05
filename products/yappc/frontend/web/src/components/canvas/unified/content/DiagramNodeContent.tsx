@@ -144,19 +144,19 @@ export const DiagramNodeContent: React.FC<DiagramNodeContentProps> = ({
     return (
         <Box className="relative w-full h-[200px]">
             {/* Diagram Preview */}
-            <Box className="w-full h-full rounded overflow-hidden border border-solid border-[#ccc] bg-white dark:bg-gray-900">
+            <Box className="w-full h-full rounded overflow-hidden border border-solid border-[#ccc] bg-white dark:bg-surface">
                 {diagramType === 'mermaid' ? (
                     <MermaidDiagram
                         content={editContent}
                         zoom={1}
                     />
                 ) : (
-                    <Box className="p-4 flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <Box className="p-4 flex items-center justify-center h-full text-fg-muted dark:text-fg-muted">
                         <Box className="text-center">
                             <Typography as="p" className="text-sm">
                                 Excalidraw diagrams
                             </Typography>
-                            <Typography as="span" className="text-xs text-gray-500">
+                            <Typography as="span" className="text-xs text-fg-muted">
                                 Click edit to modify
                             </Typography>
                         </Box>
@@ -165,7 +165,7 @@ export const DiagramNodeContent: React.FC<DiagramNodeContentProps> = ({
             </Box>
 
             {/* Toolbar */}
-            <Box className="absolute flex gap-1 rounded p-1 top-[8px] right-[8px] bg-white dark:bg-gray-900 shadow-sm">
+            <Box className="absolute flex gap-1 rounded p-1 top-[8px] right-[8px] bg-white dark:bg-surface shadow-sm">
                 {!readonly && (
                     <Tooltip title="Edit">
                         <IconButton size="sm" onClick={handleEdit}>

@@ -245,7 +245,7 @@ export const KnowledgeGraphPanel: React.FC<Props> = ({ projectId, className }) =
           <Box sx={{ mb: 3 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
               <InsightIcon size={14} style={{ marginRight: 4 }} />
-              AI Insights
+              Insights
             </Typography>
             {graphData.insights.map((insight, index) => (
               <Alert key={index} severity="info" sx={{ mb: 1 }}>

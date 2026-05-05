@@ -117,7 +117,7 @@ export function DraggablePanel({
             {/* Drag Handle Header */}
             <Box
                 onMouseDown={handleDragStart}
-                className="flex items-center justify-between border-gray-200 p-2 select-none dark:border-gray-700"
+                className="flex items-center justify-between border-border p-2 select-none dark:border-border"
                 style={{
                     cursor: isDragging ? 'grabbing' : 'grab',
                     backgroundColor: 'rgba(0,0,0,0.02)',
@@ -125,7 +125,7 @@ export function DraggablePanel({
                 }}
             >
                 <Box className="flex items-center gap-2">
-                    <DragIndicator className="text-gray-500 dark:text-gray-400 text-base" />
+                    <DragIndicator className="text-fg-muted dark:text-fg-muted text-base" />
                     {title && (
                         <Typography className="max-w-[150px] truncate text-sm font-semibold">
                             {title}

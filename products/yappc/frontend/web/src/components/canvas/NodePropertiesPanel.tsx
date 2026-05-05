@@ -89,7 +89,7 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded border border-border px-3 py-2 text-sm"
             />
         </Box>
     );
@@ -108,7 +108,7 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
                 rows={rows}
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                className="w-full rounded border border-border px-3 py-2 text-sm"
             />
         </Box>
     );
@@ -264,10 +264,10 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
 
     return (
         <Box
-            className="h-full flex flex-col w-[300px] bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700" style={{ borderLeft: '1px solid' }} >
+            className="h-full flex flex-col w-[300px] bg-white dark:bg-surface border-border dark:border-border" style={{ borderLeft: '1px solid' }} >
             {/* Header */}
             <Box
-                className="flex items-center justify-between p-4 border-b border-solid border-gray-200 dark:border-gray-700"
+                className="flex items-center justify-between p-4 border-b border-solid border-border dark:border-border"
             >
                 <Typography variant="h6" className="font-semibold">
                     Node Properties
@@ -299,7 +299,7 @@ export const NodePropertiesPanel: React.FC<NodePropertiesPanelProps> = ({
             </Box>
 
             {/* Actions */}
-            <Box className="border-gray-200 dark:border-gray-700 p-4 border-t border-solid">
+            <Box className="border-border dark:border-border p-4 border-t border-solid">
                 <Button
                     variant="contained"
                     onClick={handleSave}

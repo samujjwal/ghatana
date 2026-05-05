@@ -54,13 +54,13 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
   <Card className="mb-2">
     <CardContent className="p-3">
       <Box className="flex items-start gap-3">
-        <Box className="mt-0.5 text-purple-600">{icon}</Box>
+        <Box className="mt-0.5 text-info-color">{icon}</Box>
         <Box className="flex-1 min-w-0">
           <Box className="flex items-start justify-between mb-1">
             <Typography className="font-medium text-sm">{title}</Typography>
             {action}
           </Box>
-          <Typography className="text-xs text-gray-600 dark:text-gray-400">
+          <Typography className="text-xs text-fg-muted dark:text-fg-muted">
             {description}
           </Typography>
         </Box>
@@ -99,7 +99,7 @@ export const AdaptiveUI: React.FC<AdaptiveUIProps> = ({
     <Box className={`space-y-4 ${className}`}>
       <Box className="flex items-center justify-between">
         <Box className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-purple-600" />
+          <Sparkles className="w-5 h-5 text-info-color" />
           <Typography className="font-semibold">Personalisation</Typography>
         </Box>
         <Button size="sm" variant="text" onClick={reset}>
@@ -108,7 +108,7 @@ export const AdaptiveUI: React.FC<AdaptiveUIProps> = ({
       </Box>
 
       {!hasEnoughData ? (
-        <Typography className="text-sm text-gray-500">
+        <Typography className="text-sm text-fg-muted">
           Keep using YAPPC — personalised suggestions will appear after more activity.
         </Typography>
       ) : (
@@ -152,14 +152,14 @@ export const AdaptiveUI: React.FC<AdaptiveUIProps> = ({
           {/* AI level */}
           <SuggestionCard
             icon={<Zap className="w-4 h-4" />}
-            title={`AI assistance: ${preferences.aiAssistanceLevel}`}
-            description={`We've set AI suggestions to "${preferences.aiAssistanceLevel}" based on how often you interact with AI features.`}
+            title={`Assistant level: ${preferences.aiAssistanceLevel}`}
+            description={`We've set assistant suggestions to "${preferences.aiAssistanceLevel}" based on how often you interact with assistant features.`}
           />
 
           {/* Frequent actions */}
           {preferences.frequentActions.length > 0 && (
             <Box>
-              <Typography className="text-xs font-medium text-gray-500 mb-2">
+              <Typography className="text-xs font-medium text-fg-muted mb-2">
                 Your top actions
               </Typography>
               <Box className="flex flex-wrap gap-2">

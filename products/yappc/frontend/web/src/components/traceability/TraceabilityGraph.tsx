@@ -181,13 +181,13 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
       case 'completed':
         return 'bg-emerald-500/10 border-emerald-500 text-emerald-400';
       case 'in-progress':
-        return 'bg-blue-500/10 border-blue-500 text-blue-400';
+        return 'bg-info-bg/10 border-info-border text-info-color';
       case 'pending':
-        return 'bg-zinc-800 border-zinc-700 text-zinc-400';
+        return 'bg-surface border-border text-fg-muted';
       case 'blocked':
-        return 'bg-red-500/10 border-red-500 text-red-400';
+        return 'bg-destructive-bg/10 border-destructive-border text-destructive';
       default:
-        return 'bg-zinc-800 border-zinc-700 text-zinc-400';
+        return 'bg-surface border-border text-fg-muted';
     }
   };
 
@@ -209,21 +209,21 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
       case 'present':
         return 'text-emerald-400';
       case 'missing':
-        return 'text-zinc-500';
+        return 'text-fg-muted';
       case 'invalid':
-        return 'text-red-400';
+        return 'text-destructive';
       default:
-        return 'text-zinc-400';
+        return 'text-fg-muted';
     }
   };
 
   return (
     <div className={cn('p-6', className)}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-zinc-100 mb-2">
+        <h1 className="text-2xl font-bold text-fg-muted mb-2">
           End-to-End Traceability
         </h1>
-        <p className="text-sm text-zinc-400">
+        <p className="text-sm text-fg-muted">
           Complete lineage from intent through all lifecycle phases to production run.
         </p>
       </div>
@@ -246,8 +246,8 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
                   <div className={cn(
                     'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center',
                     node.status === 'completed' ? 'bg-emerald-500/20' :
-                    node.status === 'in-progress' ? 'bg-blue-500/20' :
-                    'bg-zinc-700'
+                    node.status === 'in-progress' ? 'bg-info-bg/20' :
+                    'bg-surface-muted'
                   )}>
                     <Icon size={24} />
                   </div>
@@ -258,16 +258,16 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
                       <h3 className="text-lg font-semibold">{node.label}</h3>
                       {getStatusIcon(node.status)}
                       {node.timestamp && (
-                        <span className="text-xs text-zinc-500">
+                        <span className="text-xs text-fg-muted">
                           {new Date(node.timestamp).toLocaleString()}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-zinc-400 mb-3">{node.description}</p>
+                    <p className="text-sm text-fg-muted mb-3">{node.description}</p>
 
                     {/* Artifacts */}
                     <div className="space-y-2">
-                      <div className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+                      <div className="text-xs font-medium text-fg-muted uppercase tracking-wider">
                         Artifacts ({node.artifacts.length})
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -275,13 +275,13 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
                           <div
                             key={artifact.id}
                             className={cn(
-                              'inline-flex items-center gap-1.5 px-2 py-1 rounded bg-zinc-800 text-xs',
+                              'inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface text-xs',
                               getArtifactStatusColor(artifact.status)
                             )}
                           >
                             <span className="font-medium">{artifact.name}</span>
                             {artifact.status === 'present' && <CheckCircle size={10} />}
-                            {artifact.status === 'missing' && <span className="text-zinc-600">—</span>}
+                            {artifact.status === 'missing' && <span className="text-fg-muted">—</span>}
                             {artifact.status === 'invalid' && <AlertCircle size={10} />}
                           </div>
                         ))}
@@ -297,8 +297,8 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
                   <div className={cn(
                     'flex items-center gap-2 text-xs',
                     edge.status === 'valid' ? 'text-emerald-400' :
-                    edge.status === 'broken' ? 'text-red-400' :
-                    'text-zinc-500'
+                    edge.status === 'broken' ? 'text-destructive' :
+                    'text-fg-muted'
                   )}>
                     {edge.status === 'valid' && <CheckCircle size={14} />}
                     {edge.status === 'broken' && <AlertCircle size={14} />}
@@ -313,23 +313,23 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
       </div>
 
       {/* Summary */}
-      <div className="mt-8 p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
-        <h3 className="text-md font-semibold text-zinc-100 mb-3">Traceability Summary</h3>
+      <div className="mt-8 p-4 bg-surface border border-border rounded-xl">
+        <h3 className="text-md font-semibold text-fg-muted mb-3">Traceability Summary</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <div className="text-zinc-400">Completed Phases</div>
+            <div className="text-fg-muted">Completed Phases</div>
             <div className="text-2xl font-bold text-emerald-400">
               {mockNodes.filter(n => n.status === 'completed').length}/8
             </div>
           </div>
           <div>
-            <div className="text-zinc-400">Total Artifacts</div>
-            <div className="text-2xl font-bold text-zinc-100">
+            <div className="text-fg-muted">Total Artifacts</div>
+            <div className="text-2xl font-bold text-fg-muted">
               {mockNodes.reduce((sum, n) => sum + n.artifacts.length, 0)}
             </div>
           </div>
           <div>
-            <div className="text-zinc-400">Present Artifacts</div>
+            <div className="text-fg-muted">Present Artifacts</div>
             <div className="text-2xl font-bold text-emerald-400">
               {mockNodes.reduce((sum, n) => 
                 sum + n.artifacts.filter(a => a.status === 'present').length, 0
@@ -337,8 +337,8 @@ export function TraceabilityGraph({ projectId, className }: TraceabilityGraphPro
             </div>
           </div>
           <div>
-            <div className="text-zinc-400">Missing Artifacts</div>
-            <div className="text-2xl font-bold text-amber-400">
+            <div className="text-fg-muted">Missing Artifacts</div>
+            <div className="text-2xl font-bold text-warning-color">
               {mockNodes.reduce((sum, n) => 
                 sum + n.artifacts.filter(a => a.status === 'missing').length, 0
               )}

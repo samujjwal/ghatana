@@ -63,7 +63,7 @@ export function CanvasNodeContextMenu({
 
   return (
     <Box
-      className="absolute z-50 min-w-[220px] rounded-md border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+      className="absolute z-50 min-w-[220px] rounded-md border border-border bg-white p-1 shadow-lg dark:border-border dark:bg-surface"
       style={{ top: nodeContextMenu.y, left: nodeContextMenu.x }}
     >
       <Button
@@ -81,11 +81,11 @@ export function CanvasNodeContextMenu({
       </Button>
       <Button
         variant="ghost"
-        className="flex w-full items-center justify-between text-red-600"
+        className="flex w-full items-center justify-between text-destructive"
         onClick={() => withNode((id) => canvas.removeNode(id))}
       >
         <Box className="flex items-center gap-2">
-          <Delete size={16} className="text-red-500" />
+          <Delete size={16} className="text-destructive" />
           <span>Delete</span>
         </Box>
         <Typography variant="caption" color="text.secondary">

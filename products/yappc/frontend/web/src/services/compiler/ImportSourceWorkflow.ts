@@ -15,22 +15,32 @@
  * @doc.layer product
  */
 
+import * as ts from 'typescript';
 import {
   extractComponentsFromSource,
   extractPageFromSource,
   parseCsfSource,
   type ExtractedComponent,
   type ExtractedPage,
-  type ExtractedStory,
   type ExtractedCsfData,
 } from 'yappc-artifact-compiler';
-import * as ts from 'typescript';
-import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
+
 import {
   compileImportedSourceToPageArtifacts,
   type ImportedSourceArtifactInput,
 } from '@/components/canvas/page/artifactCompilerBridge';
 import type { PageArtifactDocument } from '@/components/canvas/page/pageArtifactDocument';
+import { assessComponentSafety } from '@/security/UnsafeComponentHandler';
+
+const compileImportedSourceToPageArtifactsSafe = compileImportedSourceToPageArtifacts as (
+  input: ImportedSourceArtifactInput,
+  createdBy: string,
+) => unknown;
+
+const assessComponentSafetySafe = assessComponentSafety as (
+  source: string,
+  filePath: string,
+) => unknown;
 
 export type ImportSourceType = 'tsx' | 'route' | 'storybook' | 'artifact' | 'zip';
 
@@ -64,6 +74,8 @@ export interface ImportOptions {
   allowLocalFileAccess?: boolean;
   /** Allow imports to continue when safety assessment flags risky or unsafe code */
   allowUnsafeComponents?: boolean;
+  /** Explicit backend endpoint used for server-side source import orchestration */
+  importApiEndpoint?: string;
 }
 
 export interface ImportResult {
@@ -79,6 +91,12 @@ export interface ImportResult {
   errors: string[];
   /** Metadata */
   metadata: ImportMetadata;
+  /**
+   * Extracted component AST data from yappc-artifact-compiler.
+   * Present when the import was performed from a TSX or route source.
+   * Used by importSourceToPageArtifacts to populate canvas nodes.
+   */
+  extractedComponents?: readonly ExtractedComponent[];
 }
 
 export interface ImportToPageArtifactResult {
@@ -121,10 +139,13 @@ export async function importFromSource(options: ImportSourceOptions): Promise<Im
   const { sourceType, source, projectId, targetComponentName, options: importOptions = {} } = options;
   const warnings: string[] = [];
   const errors: string[] = [];
-  const files: ImportedFile[] = [];
-  const dependencies: string[] = [];
 
   try {
+    const serverImportResult = await tryImportFromServer(options);
+    if (serverImportResult != null) {
+      return serverImportResult;
+    }
+
     switch (sourceType) {
       case 'tsx':
         return await importFromTSX(source, projectId, targetComponentName, importOptions);
@@ -137,7 +158,7 @@ export async function importFromSource(options: ImportSourceOptions): Promise<Im
       case 'zip':
         return await importFromZip(source, projectId, targetComponentName, importOptions);
       default:
-        throw new Error(`Unsupported source type: ${sourceType}`);
+        throw new Error('Unsupported source type');
     }
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
@@ -176,11 +197,15 @@ export async function importSourceToPageArtifacts(
     source: options.source,
     sourceType: options.sourceType,
     importedAt: importResult.metadata.importedAt,
+    extractedComponents: importResult.extractedComponents,
   };
+
+  const compiledArtifactsRaw: unknown = compileImportedSourceToPageArtifactsSafe(artifactInput, createdBy);
+  const compiledArtifacts = normalizeCompiledPageArtifacts(compiledArtifactsRaw);
 
   return {
     importResult,
-    pageArtifacts: compileImportedSourceToPageArtifacts(artifactInput, createdBy),
+    pageArtifacts: compiledArtifacts as readonly PageArtifactDocument[],
   };
 }
 
@@ -224,7 +249,12 @@ async function importFromTSX(
     }
 
     // Use the first component or specified target
-    const extractedComponent = extractedComponents[0]!;
+    const extractedComponent = extractedComponents[0];
+    if (!extractedComponent) {
+      errors.push('No components found in source file');
+      return buildFailedImportResult('tsx', source, warnings, errors, dependencies);
+    }
+
     const componentName = targetComponentName || extractedComponent.name;
 
     files.push({
@@ -265,6 +295,7 @@ async function importFromTSX(
         fileCount: files.length,
         totalSize,
       },
+      extractedComponents,
     };
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
@@ -528,6 +559,10 @@ async function importFromArtifact(
 
   dependencies.push(...(artifactData.dependencies || []));
 
+  if (!enforceImportedComponentSafety(files, warnings, errors, options)) {
+    return buildFailedImportResult('artifact', source, warnings, errors, dependencies);
+  }
+
   const totalSize = files.reduce((sum, file) => sum + file.content.length, 0);
 
   return {
@@ -648,7 +683,7 @@ async function fetchArtifact(
   options?: ImportOptions,
 ): Promise<{ metadata: { name: string }; dependencies?: string[] }> {
   const content = await readTextSource(source, options);
-  const artifactData = JSON.parse(content) as { metadata?: { name?: string }; dependencies?: string[] };
+  const artifactData = parseArtifactJson(content);
   return {
     metadata: { name: artifactData.metadata?.name ?? extractComponentName(content) },
     dependencies: artifactData.dependencies ?? [],
@@ -671,8 +706,9 @@ async function unzipArchive(source: string, options?: ImportOptions): Promise<{ 
 
 function extractComponentName(content: string): string {
   const extractedComponents = extractComponentsFromSource(content, 'inline-component.tsx');
-  if (extractedComponents.length > 0) {
-    return extractedComponents[0]!.name;
+  const firstExtractedComponent = extractedComponents[0];
+  if (firstExtractedComponent) {
+    return firstExtractedComponent.name;
   }
 
   const sourceFile = ts.createSourceFile(
@@ -835,7 +871,8 @@ function enforceImportedComponentSafety(
   const componentLikeFiles = files.filter((file) => file.type === 'component' || file.type === 'route');
 
   for (const file of componentLikeFiles) {
-    const assessment = assessComponentSafety(file.content, file.path);
+    const rawAssessment: unknown = assessComponentSafetySafe(file.content, file.path);
+    const assessment = normalizeSafetyAssessment(rawAssessment);
     if (assessment.safetyLevel === 'safe') {
       continue;
     }
@@ -873,8 +910,21 @@ interface SourcePathParts {
   readonly extension: string;
 }
 
+interface ParsedArtifactJson {
+  readonly metadata?: {
+    readonly name?: string;
+  };
+  readonly dependencies?: readonly string[];
+}
+
+interface ComponentSafetyAssessment {
+  readonly safetyLevel: 'safe' | 'risky' | 'unsafe';
+  readonly recommendedAction: 'allow' | 'review' | 'block';
+  readonly riskFactors: readonly string[];
+}
+
 function isRemoteSource(source: string): boolean {
-  return /^(https?:)?\/\//.test(source);
+  return source.startsWith('http://') || source.startsWith('https://');
 }
 
 function splitSourcePath(source: string): SourcePathParts {
@@ -891,6 +941,82 @@ function splitSourcePath(source: string): SourcePathParts {
     fileName,
     baseName,
     extension,
+  };
+}
+
+function parseArtifactJson(content: string): ParsedArtifactJson {
+  const parsed: unknown = JSON.parse(content);
+  if (!(parsed instanceof Object) || parsed == null) {
+    throw new Error('Artifact JSON must be an object');
+  }
+
+  const candidate = parsed as Record<string, unknown>;
+  const metadataValue = candidate.metadata;
+  const dependenciesValue = candidate.dependencies;
+  let metadata: ParsedArtifactJson['metadata'];
+
+  if (metadataValue instanceof Object && metadataValue != null) {
+    const metadataCandidate = metadataValue as Record<string, unknown>;
+    metadata = {
+      name: typeof metadataCandidate.name === 'string' ? metadataCandidate.name : undefined,
+    };
+  }
+
+  const dependencies = Array.isArray(dependenciesValue)
+    ? dependenciesValue.filter((entry): entry is string => typeof entry === 'string')
+    : undefined;
+
+  return {
+    metadata,
+    dependencies,
+  };
+}
+
+function normalizeCompiledPageArtifacts(value: unknown): readonly Record<string, unknown>[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const artifacts: Record<string, unknown>[] = [];
+  for (const entry of value) {
+    if (entry instanceof Object && entry != null) {
+      artifacts.push(entry as Record<string, unknown>);
+    }
+  }
+
+  return artifacts;
+}
+
+function normalizeSafetyAssessment(value: unknown): ComponentSafetyAssessment {
+  if (!(value instanceof Object) || value == null) {
+    return {
+      safetyLevel: 'unsafe',
+      recommendedAction: 'block',
+      riskFactors: ['Unrecognized safety assessment payload'],
+    };
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const safetyLevel =
+    candidate.safetyLevel === 'safe' || candidate.safetyLevel === 'risky' || candidate.safetyLevel === 'unsafe'
+      ? candidate.safetyLevel
+      : 'unsafe';
+
+  const recommendedAction =
+    candidate.recommendedAction === 'allow' ||
+    candidate.recommendedAction === 'review' ||
+    candidate.recommendedAction === 'block'
+      ? candidate.recommendedAction
+      : 'block';
+
+  const riskFactors = Array.isArray(candidate.riskFactors)
+    ? candidate.riskFactors.filter((factor): factor is string => typeof factor === 'string')
+    : ['Unknown risk factors'];
+
+  return {
+    safetyLevel,
+    recommendedAction,
+    riskFactors,
   };
 }
 
@@ -914,6 +1040,84 @@ async function readTextSource(source: string, options?: ImportOptions): Promise<
     throw new Error(`Failed to load source: ${source} (${response.status})`);
   }
   return response.text();
+}
+
+async function tryImportFromServer(options: ImportSourceOptions): Promise<ImportResult | null> {
+  if (!shouldUseServerImport(options)) {
+    return null;
+  }
+
+  const endpoint = options.options?.importApiEndpoint ?? '/api/v1/yappc/artifact/import-source';
+  const payload = {
+    sourceType: options.sourceType,
+    source: options.source,
+    projectId: options.projectId,
+    targetComponentName: options.targetComponentName,
+    options: {
+      includeDependencies: options.options?.includeDependencies,
+      includeStyles: options.options?.includeStyles,
+      includeTests: options.options?.includeTests,
+      includeDocumentation: options.options?.includeDocumentation,
+      preserveStructure: options.options?.preserveStructure,
+      allowUnsafeComponents: options.options?.allowUnsafeComponents,
+    },
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return null;
+  }
+
+  if (response.status === 404 || response.status === 501) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`Server import failed (${response.status})`);
+  }
+
+  const result = (await response.json()) as ImportResult;
+  if (!isImportResultShape(result)) {
+    throw new Error('Server import returned an invalid response payload');
+  }
+
+  return result;
+}
+
+function shouldUseServerImport(options: ImportSourceOptions): boolean {
+  if (options.source.startsWith('inline:')) {
+    return false;
+  }
+
+  if (options.options?.allowLocalFileAccess) {
+    return false;
+  }
+
+  return true;
+}
+
+function isImportResultShape(value: unknown): value is ImportResult {
+  if (!(value instanceof Object) || value == null) {
+    return false;
+  }
+
+  const candidate = value as Partial<ImportResult>;
+  return (
+    typeof candidate.success === 'boolean' &&
+    Array.isArray(candidate.files) &&
+    Array.isArray(candidate.warnings) &&
+    Array.isArray(candidate.errors) &&
+    typeof candidate.metadata === 'object' &&
+    candidate.metadata != null
+  );
 }
 
 async function readBinarySource(source: string, options?: ImportOptions): Promise<Uint8Array> {

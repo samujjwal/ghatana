@@ -55,7 +55,7 @@ interface DiffStatProps {
 const DiffStat: React.FC<DiffStatProps> = ({ icon, label, value, color }) => (
     <Paper
         elevation={0}
-        className="p-4 flex items-center gap-3 border border-solid border-gray-200 dark:border-gray-700"
+        className="p-4 flex items-center gap-3 border border-solid border-border dark:border-border"
     >
         <Box
             className="w-[40px] h-[40px] rounded-full flex items-center justify-center" style={{ backgroundColor: `${color}` }}
@@ -119,7 +119,7 @@ export const VersionDiffViewer: React.FC<VersionDiffViewerProps> = ({
                             <Grid xs={6}>
                                 <Paper
                                     elevation={0}
-                                    className="p-4 border-[2px_solid] border-blue-600 bg-blue-50" >
+                                    className="p-4 border-[2px_solid] border-info-border bg-info-bg" >
                                     <Typography variant="subtitle2" color="primary.main" gutterBottom>
                                         Version {snapshot2.version}
                                         {snapshot2.label && ` - ${snapshot2.label}`}
@@ -145,7 +145,7 @@ export const VersionDiffViewer: React.FC<VersionDiffViewerProps> = ({
                             <Grid xs={6}>
                                 <Paper
                                     elevation={0}
-                                    className="p-4 border border-solid border-gray-200 dark:border-gray-700"
+                                    className="p-4 border border-solid border-border dark:border-border"
                                 >
                                     <Typography variant="subtitle2" gutterBottom>
                                         Version {snapshot1.version}

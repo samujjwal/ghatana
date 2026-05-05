@@ -56,8 +56,8 @@ export const PhaseEvidencePanel: React.FC<PhaseEvidencePanelProps> = ({
   if (evidence.length === 0) {
     return (
       <div className={`phase-evidence-panel ${className}`}>
-        <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
+        <div className="bg-surface-muted dark:bg-surface/50 border border-border dark:border-border rounded-lg p-4 text-center">
+          <p className="text-fg-muted dark:text-fg-muted text-sm">
             No evidence available
           </p>
         </div>
@@ -67,14 +67,14 @@ export const PhaseEvidencePanel: React.FC<PhaseEvidencePanelProps> = ({
 
   return (
     <div className={`phase-evidence-panel ${className}`}>
-      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+      <h3 className="text-sm font-medium text-fg dark:text-fg-muted mb-3">
         Evidence ({evidence.length})
       </h3>
       <div className="space-y-3">
         {evidence.map((item) => (
           <div
             key={item.id}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+            className="bg-white dark:bg-surface border border-border dark:border-border rounded-lg p-4"
           >
             <div className="flex items-start gap-3">
               <span className="text-xl" aria-hidden="true">
@@ -82,20 +82,20 @@ export const PhaseEvidencePanel: React.FC<PhaseEvidencePanelProps> = ({
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                  <h4 className="font-medium text-fg dark:text-fg-muted">
                     {item.title}
                   </h4>
                   {item.value !== undefined && (
-                    <span className="text-sm font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                    <span className="text-sm font-mono text-fg-muted dark:text-fg-muted bg-surface-muted dark:bg-surface-muted px-2 py-0.5 rounded">
                       {item.value}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-sm text-fg-muted dark:text-fg-muted mb-2">
                   {item.description}
                 </p>
                 {(item.source || item.timestamp) && (
-                  <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                  <div className="flex items-center gap-3 text-xs text-fg-muted dark:text-fg-muted">
                     {item.source && (
                       <span>Source: {item.source}</span>
                     )}

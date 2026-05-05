@@ -176,12 +176,12 @@ export function LifecycleProgressRail({
                             badgeContent={
                                 status === 'completed' ? (
                                     <CompleteIcon
-                                        className="text-green-600 text-sm"
+                                        className="text-success-color text-sm"
                                     />
                                 ) : status === 'active' ? (
-                                    <ActiveIcon className="text-blue-600 text-sm" />
+                                    <ActiveIcon className="text-info-color text-sm" />
                                 ) : status === 'locked' ? (
-                                    <LockedIcon className="text-gray-400 dark:text-gray-600 text-xs" />
+                                    <LockedIcon className="text-fg-muted dark:text-fg-muted text-xs" />
                                 ) : null
                             }
                         >
@@ -205,7 +205,7 @@ export function LifecycleProgressRail({
                         }
                         secondary={
                             tasks ? (
-                                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                                     {tasks.completed}/{tasks.total} tasks
                                 </Typography>
                             ) : undefined
@@ -244,7 +244,7 @@ export function LifecycleProgressRail({
 
             {/* Overall Progress */}
             <Box className="px-4 mt-4">
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary">
                     Overall Progress
                 </Typography>
                 <LinearProgress
@@ -252,7 +252,7 @@ export function LifecycleProgressRail({
                     value={(completedStages.length / STAGES.length) * 100}
                     className="mt-2 rounded"
                 />
-                <Typography as="span" className="text-xs text-gray-500" color="text.secondary" className="mt-1">
+                <Typography as="span" className="text-xs text-fg-muted" color="text.secondary" className="mt-1">
                     {completedStages.length} of {STAGES.length} stages complete
                 </Typography>
             </Box>

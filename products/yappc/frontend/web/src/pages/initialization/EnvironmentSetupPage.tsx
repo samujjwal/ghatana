@@ -71,10 +71,10 @@ const EnvironmentSetupPage: React.FC = () => {
     s === 'installed' ? '✅' : s === 'outdated' ? '⚠️' : '❌';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-surface-muted p-6">
       <div className="mx-auto max-w-5xl">
-        <h1 className="mb-2 text-3xl font-bold text-gray-900">Environment Setup</h1>
-        <p className="mb-8 text-gray-600">Configure toolchain and environment variables.</p>
+        <h1 className="mb-2 text-3xl font-bold text-fg">Environment Setup</h1>
+        <p className="mb-8 text-fg-muted">Configure toolchain and environment variables.</p>
 
         {/* Environment Selector */}
         <div className="mb-6 flex gap-2">
@@ -84,8 +84,8 @@ const EnvironmentSetupPage: React.FC = () => {
               onClick={() => setActiveEnv(env)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium capitalize transition ${
                 activeEnv === env
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-fg hover:bg-surface-muted'
               }`}
             >
               {env}
@@ -95,21 +95,21 @@ const EnvironmentSetupPage: React.FC = () => {
 
         {/* Toolchain */}
         <div className="mb-8 rounded-lg border bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Toolchain Checks</h2>
+          <h2 className="mb-4 text-lg font-semibold text-fg">Toolchain Checks</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {TOOL_CHECKS.map((tool) => (
               <div key={tool.name} className="flex items-center gap-3 rounded-lg border p-3">
                 <span className="text-lg">{statusIcon(tool.status)}</span>
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-900">{tool.name}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-fg">{tool.name}</p>
+                  <p className="text-xs text-fg-muted">
                     {tool.version}{tool.required ? '' : ' (optional)'}
                   </p>
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-sm text-gray-500">
+          <p className="mt-3 text-sm text-fg-muted">
             {TOOL_CHECKS.filter((t) => t.status === 'installed').length}/{TOOL_CHECKS.length} tools ready
           </p>
         </div>
@@ -117,25 +117,25 @@ const EnvironmentSetupPage: React.FC = () => {
         {/* Environment Variables */}
         <div className="rounded-lg border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-fg">
               Environment Variables — <span className="capitalize">{activeEnv}</span>
             </h2>
-            <span className="text-sm text-gray-500">{envVars.length} variables</span>
+            <span className="text-sm text-fg-muted">{envVars.length} variables</span>
           </div>
 
           <div className="mb-4 space-y-2">
             {envVars.map((v) => (
               <div key={v.key} className="flex items-center gap-3 rounded border px-3 py-2">
-                <span className="w-40 truncate font-mono text-sm font-medium text-gray-900">{v.key}</span>
-                <span className="flex-1 truncate font-mono text-sm text-gray-600">
+                <span className="w-40 truncate font-mono text-sm font-medium text-fg">{v.key}</span>
+                <span className="flex-1 truncate font-mono text-sm text-fg-muted">
                   {v.sensitive ? '••••••••' : v.value}
                 </span>
                 <span className={`rounded px-2 py-0.5 text-xs ${
-                  v.source === 'vault' ? 'bg-purple-50 text-purple-700'
-                    : v.source === 'inherited' ? 'bg-green-50 text-green-700'
-                    : 'bg-gray-50 text-gray-600'
+                  v.source === 'vault' ? 'bg-info-bg text-info-color'
+                    : v.source === 'inherited' ? 'bg-success-bg text-success-color'
+                    : 'bg-surface-muted text-fg-muted'
                 }`}>{v.source}</span>
-                <button onClick={() => removeVar(v.key)} className="text-gray-400 hover:text-red-500">✕</button>
+                <button onClick={() => removeVar(v.key)} className="text-fg-muted hover:text-destructive">✕</button>
               </div>
             ))}
           </div>
@@ -146,17 +146,17 @@ const EnvironmentSetupPage: React.FC = () => {
               placeholder="KEY"
               value={newKey}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewKey(e.target.value)}
-              className="w-40 rounded border px-3 py-1.5 font-mono text-sm focus:border-blue-500 focus:outline-none"
+              className="w-40 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
             />
             <input
               placeholder="value"
               value={newValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewValue(e.target.value)}
-              className="flex-1 rounded border px-3 py-1.5 font-mono text-sm focus:border-blue-500 focus:outline-none"
+              className="flex-1 rounded border px-3 py-1.5 font-mono text-sm focus:border-info-border focus:outline-none"
             />
             <button
               onClick={addVar}
-              className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white hover:bg-info-bg"
             >
               Add
             </button>

@@ -76,20 +76,20 @@ export class CanvasErrorBoundary extends Component<CanvasErrorBoundaryProps, Can
 
             return (
                 <Box
-                    className="p-4 border border-red-200 dark:border-red-800 rounded-lg bg-red-50 dark:bg-red-950 text-center"
+                    className="p-4 border border-destructive-border dark:border-destructive-border rounded-lg bg-destructive-bg dark:bg-destructive-bg text-center"
                     role="alert"
                     aria-live="assertive"
                 >
-                    <Typography as="p" className="text-sm font-medium text-red-700 dark:text-red-300">
+                    <Typography as="p" className="text-sm font-medium text-destructive dark:text-destructive">
                         {this.props.label} encountered an error
                     </Typography>
-                    <Typography as="p" className="text-xs text-red-500 dark:text-red-400 mt-1">
+                    <Typography as="p" className="text-xs text-destructive dark:text-destructive mt-1">
                         {this.state.error?.message || 'Unknown error'}
                     </Typography>
                     {this.props.showReset !== false && (
                         <button
                             onClick={this.handleReset}
-                            className="mt-2 px-3 py-1 text-xs rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                            className="mt-2 px-3 py-1 text-xs rounded bg-destructive-bg dark:bg-destructive-bg text-destructive dark:text-destructive hover:bg-destructive-bg dark:hover:bg-destructive-bg transition-colors"
                             type="button"
                         >
                             Retry
