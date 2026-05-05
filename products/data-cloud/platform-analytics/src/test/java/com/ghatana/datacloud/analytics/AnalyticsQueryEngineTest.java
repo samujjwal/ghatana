@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -19,6 +20,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.verify;
 
 /**
  * Comprehensive tests for {@link AnalyticsQueryEngine} with 100% coverage.
@@ -162,6 +164,40 @@ class AnalyticsQueryEngineTest extends EventloopTestBase {
 
         // THEN: Query executes successfully
         assertThat(result).isNotNull(); 
+    }
+
+    @Test
+    @DisplayName("Should push _rowLimit parameter into storage query spec")
+    void shouldPushRowLimitToStorageQuerySpec() {
+        String query = "SELECT * FROM users";
+        Map<String, Object> params = Map.of("_rowLimit", 2500);
+
+        QueryResult result = runPromise(() ->
+            engine.submitQuery("tenant-1", query, params)
+        );
+
+        assertThat(result).isNotNull();
+
+        ArgumentCaptor<QuerySpec> specCaptor = ArgumentCaptor.forClass(QuerySpec.class);
+        verify(storageConnector).query(eq("tenant-1"), eq("users"), specCaptor.capture());
+        assertThat(specCaptor.getValue().getLimit()).isEqualTo(2500);
+    }
+
+    @Test
+    @DisplayName("Should use stricter limit when SQL LIMIT and _rowLimit are both present")
+    void shouldUseStricterLimitWhenSqlAndRowLimitProvided() {
+        String query = "SELECT * FROM users LIMIT 200";
+        Map<String, Object> params = Map.of("_rowLimit", 500);
+
+        QueryResult result = runPromise(() ->
+            engine.submitQuery("tenant-1", query, params)
+        );
+
+        assertThat(result).isNotNull();
+
+        ArgumentCaptor<QuerySpec> specCaptor = ArgumentCaptor.forClass(QuerySpec.class);
+        verify(storageConnector).query(eq("tenant-1"), eq("users"), specCaptor.capture());
+        assertThat(specCaptor.getValue().getLimit()).isEqualTo(200);
     }
 
     // ========================================================================

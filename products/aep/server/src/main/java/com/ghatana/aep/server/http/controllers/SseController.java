@@ -122,15 +122,12 @@ public class SseController {
             ChannelBuffer<ByteBuf> q = queues.get(i);
             if (q.isSaturated()) {
                 queues.remove(i);
-                q.closeEx(new java.io.IOException(
-                    "SSE publisher: subscriber removed (backpressure)"));
             } else {
-                final int idx = i;
                 q.put(ByteBuf.wrapForReading(bytes))
                     .whenException(e -> {
                         log.debug("SSE subscriber disconnected during publish: {}",
                             e.getMessage());
-                        queues.remove(idx < queues.size() ? idx : queues.size() - 1);
+                        queues.remove(q);
                     });
             }
         }

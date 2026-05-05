@@ -3,7 +3,9 @@ package com.ghatana.plugin.notification.impl;
 import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.platform.plugin.PluginContext;
+import com.ghatana.platform.plugin.PluginMetadata;
 import com.ghatana.platform.plugin.PluginState;
+import com.ghatana.platform.plugin.PluginType;
 import io.activej.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 
@@ -53,6 +56,28 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
     }
 
     @Override
+    public PluginMetadata metadata() {
+        return new PluginMetadata(
+            "notification-durable",
+            "Durable Notification Plugin",
+            "1.0.0",
+            "JDBC-backed durable notification delivery with retry and dead-letter queue",
+            PluginType.INTEGRATION,
+            "Ghatana",
+            "Proprietary",
+            Set.of("notification", "durable", "jdbc"),
+            Map.of(),
+            Set.of(),
+            null
+        );
+    }
+
+    @Override
+    public PluginState getState() {
+        return state;
+    }
+
+    @Override
     public Promise<Void> initialize(PluginContext context) {
         state = PluginState.INITIALIZED;
         LOG.info("[NotificationPlugin] Durable notification plugin initialized");
@@ -66,6 +91,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
             return Promise.complete();
         }
         started = true;
+        state = PluginState.RUNNING;
         LOG.info("[NotificationPlugin] Durable notification plugin started");
         return Promise.complete();
     }
@@ -73,6 +99,7 @@ public final class DurableNotificationPlugin implements NotificationPlugin {
     @Override
     public Promise<Void> stop() {
         started = false;
+        state = PluginState.STOPPED;
         LOG.info("[NotificationPlugin] Durable notification plugin stopped");
         return Promise.complete();
     }

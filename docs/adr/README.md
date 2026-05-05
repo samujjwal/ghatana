@@ -21,6 +21,7 @@ ADRs document significant architectural decisions made during the AEP + Event-Cl
 | [ADR-012](ADR-012-keep-aep-gateway.md) | Keep AEP Gateway as First-Class Service | Accepted | 3 |
 | [ADR-017](ADR-017-aep-runtime-hardening.md) | AEP Runtime Hardening and Extension Seams | Accepted | 6 |
 | [ADR-020](ADR-020-agent-system-five-layer-architecture.md) | Agent System Five-Layer Architecture | Accepted | 8 |
+| [ADR-026](ADR-026-workflow-terminology-and-ownership.md) | Workflow Terminology and Ownership Boundary | Accepted | 4 |
 
 ## ADR Format
 

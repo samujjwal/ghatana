@@ -16,10 +16,12 @@ function base(workspaceId: string): string {
 export async function generateStrategy(
   workspaceId: string,
   body: GenerateStrategyRequest,
+  idempotencyKey?: string,
 ): Promise<MarketingStrategy> {
   return apiRequest<MarketingStrategy>(base(workspaceId), {
     method: 'POST',
     body,
+    idempotencyKey,
   });
 }
 
@@ -30,19 +32,21 @@ export async function getLatestStrategy(workspaceId: string): Promise<MarketingS
 export async function submitStrategyForApproval(
   workspaceId: string,
   strategyId: string,
+  idempotencyKey?: string,
 ): Promise<MarketingStrategy> {
   return apiRequest<MarketingStrategy>(
     `${base(workspaceId)}/${encodeURIComponent(strategyId)}/submit`,
-    { method: 'POST' },
+    { method: 'POST', idempotencyKey },
   );
 }
 
 export async function approveStrategy(
   workspaceId: string,
   strategyId: string,
+  idempotencyKey?: string,
 ): Promise<MarketingStrategy> {
   return apiRequest<MarketingStrategy>(
     `${base(workspaceId)}/${encodeURIComponent(strategyId)}/approve`,
-    { method: 'POST' },
+    { method: 'POST', idempotencyKey },
   );
 }

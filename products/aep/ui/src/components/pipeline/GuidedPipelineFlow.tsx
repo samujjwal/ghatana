@@ -310,7 +310,7 @@ function DescribeStep({
           placeholder="e.g. Ingest customer events from Kafka, validate schema, enrich with CRM data, and publish to the analytics topic."
           required
           aria-required="true"
-          fullWidth
+          className="w-full"
         />
       </label>
 

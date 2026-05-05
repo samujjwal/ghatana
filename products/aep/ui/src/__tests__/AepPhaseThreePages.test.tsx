@@ -240,4 +240,93 @@ describe('CostDashboardPage', () => {
     expect(screen.getByText('Fraud Triage')).toBeInTheDocument();
     expect(screen.getByText('gpt-4.1-mini')).toBeInTheDocument();
   });
+
+  it('shows data source provenance badge', async () => {
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Observed Spend')).toBeInTheDocument());
+
+    // Provenance badge shows data source and allocation model
+    expect(screen.getByText(/Source: metrics/i)).toBeInTheDocument();
+    expect(screen.getByText(/analytics-metrics/i)).toBeInTheDocument();
+  });
+
+  it('does not show estimated warning banner when data is real', async () => {
+    vi.mocked(aepApi.getCostSummary).mockResolvedValue({ ...COST_SUMMARY, estimated: false });
+
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Observed Spend')).toBeInTheDocument());
+
+    expect(screen.queryByText(/Estimated costs/i)).not.toBeInTheDocument();
+  });
+
+  it('shows estimated warning banner when data is synthetic', async () => {
+    vi.mocked(aepApi.getCostSummary).mockResolvedValue({ ...COST_SUMMARY, estimated: true });
+
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText(/Estimated costs/i)).toBeInTheDocument());
+    // Must not label synthetic data as live
+    expect(screen.getByText(/Billing telemetry is not yet available/i)).toBeInTheDocument();
+  });
+
+  it('shows backend failure state when API errors', async () => {
+    vi.mocked(aepApi.getCostSummary).mockRejectedValue(new Error('503 Service Unavailable'));
+
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Failed to load cost summary/i)).toBeInTheDocument();
+    });
+  });
+
+  it('shows empty state for alerts when no alerts are present', async () => {
+    vi.mocked(aepApi.getCostSummary).mockResolvedValue({ ...COST_SUMMARY, alerts: [] });
+
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Observed Spend')).toBeInTheDocument());
+
+    // Active Alerts stat card should show 0
+    expect(screen.getByText('Active Alerts')).toBeInTheDocument();
+  });
+
+  it('shows budget threshold status labels', async () => {
+    vi.mocked(aepApi.getCostSummary).mockResolvedValue(COST_SUMMARY);
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Observed Spend')).toBeInTheDocument());
+
+    // Daily budget is 'exceeded', monthly is 'warning'
+    const statusBadges = screen.getAllByText(/exceeded|warning/i);
+    expect(statusBadges.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('applies updated budget thresholds and re-fetches with new budget', async () => {
+    vi.mocked(aepApi.getCostSummary).mockClear();
+    vi.mocked(aepApi.getCostSummary).mockResolvedValue(COST_SUMMARY);
+    const user = userEvent.setup();
+    renderWithQuery(<CostDashboardPage />);
+
+    await waitFor(() => expect(screen.getByText('Budget guardrails')).toBeInTheDocument());
+
+    // Change daily budget input to a new value
+    const dailyInput = screen.getByLabelText(/Daily budget/i);
+    await user.clear(dailyInput);
+    await user.type(dailyInput, '50');
+
+    const applyButton = screen.getByRole('button', { name: /Apply thresholds/i });
+    await user.click(applyButton);
+
+    // The page should still render cost summary data (not error) after applying
+    await waitFor(() => {
+      expect(screen.getByText('Observed Spend')).toBeInTheDocument();
+    });
+    // getCostSummary was called with the updated budget parameters
+    expect(aepApi.getCostSummary).toHaveBeenCalledWith(
+      expect.any(String), // tenantId
+      expect.objectContaining({ dailyBudgetUsd: 50 }),
+    );
+  });
 });

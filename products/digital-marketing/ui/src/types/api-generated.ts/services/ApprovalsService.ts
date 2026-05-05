@@ -11,14 +11,18 @@ import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
 export class ApprovalsService {
     /**
-     * List pending approvals
+     * List pending approvals for a workspace
+     * @param workspaceId Workspace ID
      * @returns PendingApprovalsResponse List of pending approvals
      * @throws ApiError
      */
-    public static listPendingApprovals(): CancelablePromise<PendingApprovalsResponse> {
+    public static listPendingApprovals(workspaceId: string): CancelablePromise<PendingApprovalsResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/approvals/pending',
+            url: '/api/v1/workspaces/{workspaceId}/approvals/pending',
+            path: {
+                'workspaceId': workspaceId,
+            },
         });
     }
     /**

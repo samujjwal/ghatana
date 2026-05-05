@@ -10,12 +10,13 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
+import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import ApprovalQueuePage from './pages/ApprovalQueuePage';
 import ApprovalDetailPage from './pages/ApprovalDetailPage';
-import AiActionLogPage from './pages/AiActionLogPage';
-import BudgetPage from './pages/BudgetPage';
-import StrategyPage from './pages/StrategyPage';
+import { AiActionLogPage } from './pages/AiActionLogPage';
+import { BudgetPage } from './pages/BudgetPage';
+import { StrategyPage } from './pages/StrategyPage';
 import CampaignsPage from './pages/CampaignsPage';
 import FeatureFlaggedRoute from './components/FeatureFlaggedRoute';
 
@@ -33,6 +34,7 @@ export function App(): React.ReactElement {
           <Suspense fallback={<div data-testid="app-loading">Loading…</div>}>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route
                 path="/workspaces/:workspaceId/dashboard"
                 element={<DashboardPage />}

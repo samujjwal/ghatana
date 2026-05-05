@@ -90,6 +90,7 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-suite:1.11.4")
     testImplementation(project(":platform:java:testing"))
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.archunit.junit5)
 }
 
 tasks.named<Test>("test") {

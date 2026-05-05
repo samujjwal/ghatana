@@ -13,10 +13,13 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,14 +41,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class DataCloudMigrationTest {
 
     @Container
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
         .withDatabaseName("datacloud_test")
         .withUsername("test")
-        .withPassword("test");
+        .withPassword("test")
+        .withReuse(true);
 
     private Flyway flyway;
     private DataSource dataSource;
@@ -53,11 +57,16 @@ class DataCloudMigrationTest {
     @BeforeEach
     void setUp() {
         // Configure Flyway with test database
+        // Use filesystem location to avoid picking up migrations from other JARs on classpath
+        File migrationDir = Paths.get("src/main/resources/db/migration").toFile();
+        String location = migrationDir.exists() ? "filesystem:" + migrationDir.getAbsolutePath() : "classpath:db/migration";
+        
         flyway = Flyway.configure()
             .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-            .locations("classpath:db/migration")
+            .locations(location)
             .baselineOnMigrate(true)
             .baselineVersion("0")
+            .cleanDisabled(false)  // Enable clean for test isolation
             .load();
 
         dataSource = flyway.getConfiguration().getDataSource();

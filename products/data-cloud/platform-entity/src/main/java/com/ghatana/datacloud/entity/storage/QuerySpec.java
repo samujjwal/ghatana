@@ -92,7 +92,7 @@ public final class QuerySpec {
      * Hard ceiling on result limit to guard against runaway queries.
      * Adapters may enforce this or a stricter backend-specific cap.
      */
-    public static final int MAX_LIMIT = 10_000;
+    public static final int MAX_LIMIT = 50_000;
 
     private final String filter;
     private final List<SortField> sortFields;

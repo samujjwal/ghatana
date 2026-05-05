@@ -106,9 +106,10 @@ val verifyGeneratedTypeScriptSdk by tasks.registering(Exec::class) {
     dependsOn(generateDataCloudSdks)
     workingDir = rootDir
 
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
     val command = when {
-        hasPnpmCommand -> listOf("pnpm", "exec", "tsc")
-        hasNpxCommand -> listOf("npx", "tsc")
+        hasPnpmCommand -> if (isWindows) listOf("pnpm.cmd", "exec", "tsc") else listOf("pnpm", "exec", "tsc")
+        hasNpxCommand -> if (isWindows) listOf("npx.cmd", "tsc") else listOf("npx", "tsc")
         else -> null
     }
 

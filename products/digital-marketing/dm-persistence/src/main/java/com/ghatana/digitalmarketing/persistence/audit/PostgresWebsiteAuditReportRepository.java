@@ -2,6 +2,7 @@ package com.ghatana.digitalmarketing.persistence.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ghatana.digitalmarketing.domain.audit.AuditSeverity;
 import com.ghatana.digitalmarketing.application.audit.WebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.contracts.DmWorkspaceId;
 import com.ghatana.digitalmarketing.domain.audit.WebsiteAuditFinding;
@@ -150,11 +151,27 @@ public final class PostgresWebsiteAuditReportRepository implements WebsiteAuditR
         for (Object item : rawList) {
             if (item instanceof java.util.Map<?, ?>) {
                 java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
+                String severityStr = (String) map.get("severity");
+                AuditSeverity severity;
+                try {
+                    severity = severityStr != null ? AuditSeverity.valueOf(severityStr.toUpperCase()) : AuditSeverity.INFO;
+                } catch (IllegalArgumentException ex) {
+                    severity = AuditSeverity.INFO;
+                }
+                String category = map.get("category") != null ? (String) map.get("category") : "unknown";
+                String evidenceRaw = (String) map.get("evidence");
+                String evidence = evidenceRaw != null ? evidenceRaw : (String) map.get("description");
+                String rationale = map.get("rationale") != null ? (String) map.get("rationale") : "";
+                String recommendedActionRaw = (String) map.get("recommendedAction");
+                String recommendedAction = recommendedActionRaw != null ? recommendedActionRaw : (String) map.get("recommendation");
+                String sourceUrl = map.get("sourceUrl") != null ? (String) map.get("sourceUrl") : "";
                 findings.add(new WebsiteAuditFinding(
-                    (String) map.get("category"),
-                    (String) map.get("severity"),
-                    (String) map.get("description"),
-                    (String) map.get("recommendation")
+                    severity,
+                    category,
+                    evidence != null ? evidence : "",
+                    rationale,
+                    recommendedAction != null ? recommendedAction : "",
+                    sourceUrl
                 ));
             }
         }
@@ -167,7 +184,7 @@ public final class PostgresWebsiteAuditReportRepository implements WebsiteAuditR
         }
         int criticalCount = 0;
         for (WebsiteAuditFinding finding : findings) {
-            if ("critical".equalsIgnoreCase(finding.severity())) {
+            if (AuditSeverity.CRITICAL == finding.severity()) {
                 criticalCount++;
             }
         }
@@ -179,8 +196,8 @@ public final class PostgresWebsiteAuditReportRepository implements WebsiteAuditR
         if (findings.isEmpty()) {
             return "No issues found. Website is healthy.";
         }
-        long criticalCount = findings.stream().filter(f -> "critical".equalsIgnoreCase(f.severity())).count();
-        long warningCount = findings.stream().filter(f -> "warning".equalsIgnoreCase(f.severity())).count();
+        long criticalCount = findings.stream().filter(f -> AuditSeverity.CRITICAL == f.severity()).count();
+        long warningCount = findings.stream().filter(f -> AuditSeverity.WARNING == f.severity()).count();
         return String.format("Found %d critical and %d warning issues.", criticalCount, warningCount);
     }
 
@@ -193,7 +210,7 @@ public final class PostgresWebsiteAuditReportRepository implements WebsiteAuditR
             if (sb.length() > 0) {
                 sb.append("; ");
             }
-            sb.append(finding.recommendation());
+            sb.append(finding.recommendedAction());
         }
         return sb.toString();
     }

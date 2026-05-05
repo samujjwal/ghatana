@@ -613,5 +613,10 @@ class DmGoogleAdsPerformanceSyncServiceImplTest extends EventloopTestBase {
                 Map<String, Object> attributes) {
             return Promise.of("audit-1");
         }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(true);
+        }
     }
 }

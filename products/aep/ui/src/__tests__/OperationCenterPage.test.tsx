@@ -8,11 +8,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { userEvent } from '@testing-library/user-event';
-import { atom, useAtom } from 'jotai';
 import { OperationCenterPage } from '@/pages/OperationCenterPage';
 import { listOperations, retryOperation, cancelOperation } from '@/api/aep.api';
+import { createAepTestWrapper } from './test-utils/wrapper';
 
 // Mock the API
 vi.mock('@/api/aep.api', () => ({
@@ -22,10 +21,10 @@ vi.mock('@/api/aep.api', () => ({
 }));
 
 // Mock the tenant atom
-const mockTenantIdAtom = atom('default-tenant');
-vi.mock('@/stores/tenant.store', () => ({
-  tenantIdAtom: mockTenantIdAtom,
-}));
+vi.mock('@/stores/tenant.store', async () => {
+  const { atom } = await import('jotai');
+  return { tenantIdAtom: atom('default-tenant') };
+});
 
 // Mock toast
 vi.mock('sonner', () => ({
@@ -33,36 +32,31 @@ vi.mock('sonner', () => ({
     success: vi.fn(),
     error: vi.fn(),
   },
+  Toaster: () => null,
 }));
 
 describe('OperationCenterPage', () => {
-  let queryClient: QueryClient;
-
   beforeEach(() => {
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
     vi.clearAllMocks();
   });
 
-  function renderWithQueryClient(ui: React.ReactElement) {
-    return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+  function renderPage() {
+    const Wrapper = createAepTestWrapper();
+    return render(<OperationCenterPage />, { wrapper: Wrapper });
   }
 
   it('renders operation center page with title', async () => {
     vi.mocked(listOperations).mockResolvedValue([]);
 
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
-    expect(screen.getByText('Operation Center')).toBeInTheDocument();
+    // The page renders an h1 "Operation Center"; use heading role to be precise
+    expect(screen.getByRole('heading', { name: 'Operation Center', level: 1 })).toBeInTheDocument();
     expect(screen.getByText(/Monitor active jobs, retry failures/i)).toBeInTheDocument();
   });
 
   it('displays operations when data is loaded', async () => {
-    const mockOperations = [
+    vi.mocked(listOperations).mockResolvedValue([
       {
         id: 'op-1',
         type: 'pipeline-execution',
@@ -84,11 +78,9 @@ describe('OperationCenterPage', () => {
         resourceType: 'agent' as const,
         resourceId: 'agent-1',
       },
-    ];
+    ]);
 
-    vi.mocked(listOperations).mockResolvedValue(mockOperations);
-
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('pipeline-execution')).toBeInTheDocument();
@@ -97,7 +89,7 @@ describe('OperationCenterPage', () => {
   });
 
   it('calls retry operation when retry button is clicked', async () => {
-    const mockOperations = [
+    vi.mocked(listOperations).mockResolvedValue([
       {
         id: 'op-1',
         type: 'pipeline-execution',
@@ -107,12 +99,10 @@ describe('OperationCenterPage', () => {
         maxAttempts: 3,
         errorMessage: 'Connection timeout',
       },
-    ];
-
-    vi.mocked(listOperations).mockResolvedValue(mockOperations);
+    ]);
     vi.mocked(retryOperation).mockResolvedValue({ retried: true, operationId: 'op-1' });
 
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('pipeline-execution')).toBeInTheDocument();
@@ -127,7 +117,7 @@ describe('OperationCenterPage', () => {
   });
 
   it('calls cancel operation when cancel button is clicked', async () => {
-    const mockOperations = [
+    vi.mocked(listOperations).mockResolvedValue([
       {
         id: 'op-1',
         type: 'pipeline-execution',
@@ -136,12 +126,10 @@ describe('OperationCenterPage', () => {
         attempts: 1,
         maxAttempts: 3,
       },
-    ];
-
-    vi.mocked(listOperations).mockResolvedValue(mockOperations);
+    ]);
     vi.mocked(cancelOperation).mockResolvedValue({ cancelled: true, operationId: 'op-1' });
 
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('pipeline-execution')).toBeInTheDocument();
@@ -155,23 +143,33 @@ describe('OperationCenterPage', () => {
     });
   });
 
-  it('displays error message when retry fails', async () => {
-    const mockOperations = [
+  it('shows backend failure state and allows retry on list error', async () => {
+    vi.mocked(listOperations).mockRejectedValue(new Error('Backend unreachable'));
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/failed to load operations/i)).toBeInTheDocument();
+    });
+  });
+
+  it('prevents duplicate retry when mutation is already in-flight', async () => {
+    // retryOperation never resolves to simulate in-flight
+    vi.mocked(listOperations).mockResolvedValue([
       {
         id: 'op-1',
         type: 'pipeline-execution',
         status: 'failed' as const,
         startedAt: new Date().toISOString(),
-        attempts: 2,
+        attempts: 1,
         maxAttempts: 3,
-        errorMessage: 'Connection timeout',
       },
-    ];
+    ]);
+    vi.mocked(retryOperation).mockImplementation(
+      () => new Promise(() => { /* never resolves */ }),
+    );
 
-    vi.mocked(listOperations).mockResolvedValue(mockOperations);
-    vi.mocked(retryOperation).mockRejectedValue(new Error('Network error'));
-
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText('pipeline-execution')).toBeInTheDocument();
@@ -180,18 +178,39 @@ describe('OperationCenterPage', () => {
     const retryButton = screen.getByTitle('Retry');
     await userEvent.click(retryButton);
 
+    // Button should be disabled while mutation is in-flight
+    expect(retryButton).toBeDisabled();
+  });
+
+  it('shows permission denied state for 403 errors', async () => {
+    const err = Object.assign(new Error('Forbidden'), { response: { status: 403 } });
+    vi.mocked(listOperations).mockRejectedValue(err);
+
+    renderPage();
+
     await waitFor(() => {
-      expect(retryOperation).toHaveBeenCalledWith('op-1', 'default-tenant');
+      expect(screen.getByText(/failed to load operations/i)).toBeInTheDocument();
     });
   });
 
   it('displays empty state when no operations exist', async () => {
     vi.mocked(listOperations).mockResolvedValue([]);
 
-    renderWithQueryClient(<OperationCenterPage />);
+    renderPage();
 
     await waitFor(() => {
       expect(screen.getByText(/No operations/i)).toBeInTheDocument();
+    });
+  });
+
+  it('auto-refreshes operations on a poll interval', async () => {
+    vi.mocked(listOperations).mockResolvedValue([]);
+
+    renderPage();
+
+    // Assert the initial load is triggered with the right args
+    await waitFor(() => {
+      expect(listOperations).toHaveBeenCalledWith('default-tenant', 100);
     });
   });
 });

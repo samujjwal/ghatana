@@ -15,7 +15,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Mic, Command, X } from 'lucide-react';
 import { useConsent } from '../privacy/ConsentManager';
-import { Button } from '@ghatana/design-system';
+import { Button, Input } from '@ghatana/design-system';
 
 /**
  * Voice command intent
@@ -165,13 +165,12 @@ export const VoiceCommandBar: React.FC<VoiceCommandBarProps> = ({
             'h-5 w-5',
             isListening ? 'text-red-500 animate-pulse' : 'text-gray-400'
           )} />
-          <input
-            ref={inputRef}
-            type="text"
+          <Input
+            inputRef={inputRef}
             value={transcript}
             onChange={(e) => setTranscript(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder:text-gray-500"
+            className="flex-1"
           />
           <Button
             onClick={() => setIsOpen(false)}

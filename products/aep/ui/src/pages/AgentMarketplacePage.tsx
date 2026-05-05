@@ -21,9 +21,7 @@ import {
   type MarketplaceInstallInput,
   type PublishMarketplaceAgentInput,
 } from '@/api/aep.api';
-import { Button } from '@ghatana/design-system';
-import { TextField } from '@ghatana/design-system';
-import { TextArea } from '@ghatana/design-system';
+import { Button, TextField, TextArea, Select } from '@ghatana/design-system';
 import { SensitiveActionDialog } from '@/components/shared/SensitiveActionDialog';
 import { useAuth } from '@/context/AuthContext';
 import { MarketplaceInstallDialog } from '@/components/marketplace/MarketplaceInstallDialog';
@@ -286,7 +284,7 @@ export function AgentMarketplacePage() {
         {/* Tab switcher: Browse | Publish */}
         <div className="flex gap-1 border-b border-gray-200 px-6 py-2 dark:border-gray-800">
           {(['browse', 'publish'] as const).map((tab) => (
-            <button
+            <Button
               key={tab}
               type="button"
               onClick={() => {
@@ -296,6 +294,7 @@ export function AgentMarketplacePage() {
                 setActiveTab(tab);
               }}
               disabled={tab === 'publish' && !canManageMarketplace}
+              variant="ghost"
               className={[
                 'rounded-md px-3 py-1.5 text-sm font-medium transition',
                 activeTab === tab
@@ -305,7 +304,7 @@ export function AgentMarketplacePage() {
               ].join(' ')}
             >
               {tab === 'browse' ? 'Browse' : 'Publish'}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -404,15 +403,16 @@ export function AgentMarketplacePage() {
               </label>
               <label className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <span className="font-medium">Level</span>
-                <select
+                <Select
                   value={publishForm.level}
-                  onChange={(event) => setPublishForm((current) => ({ ...current, level: event.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                >
-                  <option value="worker">worker</option>
-                  <option value="expert">expert</option>
-                  <option value="strategic">strategic</option>
-                </select>
+                  onChange={(event) => setPublishForm((current) => ({ ...current, level: (event.target as HTMLSelectElement).value }))}
+                  className="w-full text-sm"
+                  options={[
+                    { value: 'worker', label: 'worker' },
+                    { value: 'expert', label: 'expert' },
+                    { value: 'strategic', label: 'strategic' },
+                  ]}
+                />
               </label>
 
               <div className="lg:col-span-2 flex items-center justify-between gap-3">
@@ -564,17 +564,18 @@ export function AgentMarketplacePage() {
                     placeholder="Review title"
                     className="rounded-lg text-sm"
                   />
-                  <select
+                  <Select
                     value={reviewForm.rating}
-                    onChange={(event) => setReviewForm((current) => ({ ...current, rating: event.target.value }))}
-                    className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100"
-                  >
-                    <option value="5">5 stars</option>
-                    <option value="4">4 stars</option>
-                    <option value="3">3 stars</option>
-                    <option value="2">2 stars</option>
-                    <option value="1">1 star</option>
-                  </select>
+                    onChange={(event) => setReviewForm((current) => ({ ...current, rating: (event.target as HTMLSelectElement).value }))}
+                    className="rounded-lg text-sm"
+                    options={[
+                      { value: '5', label: '5 stars' },
+                      { value: '4', label: '4 stars' },
+                      { value: '3', label: '3 stars' },
+                      { value: '2', label: '2 stars' },
+                      { value: '1', label: '1 star' },
+                    ]}
+                  />
                 </div>
                 <TextArea
                   value={reviewForm.comment}

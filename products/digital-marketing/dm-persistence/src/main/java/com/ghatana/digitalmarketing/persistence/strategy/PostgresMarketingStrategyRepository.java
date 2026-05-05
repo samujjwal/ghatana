@@ -220,8 +220,10 @@ public final class PostgresMarketingStrategyRepository implements MarketingStrat
         for (Object item : rawList) {
             if (item instanceof java.util.Map<?, ?>) {
                 java.util.Map<?, ?> map = (java.util.Map<?, ?>) item;
-                List<String> keyMessages = (List<String>) map.getOrDefault("keyMessages", List.of());
-                List<String> targetKeywords = (List<String>) map.getOrDefault("targetKeywords", List.of());
+                Object keyMsgsRaw = map.get("keyMessages");
+                Object keywordsRaw = map.get("targetKeywords");
+                List<String> keyMessages = keyMsgsRaw instanceof List ? (List<String>) keyMsgsRaw : List.of();
+                List<String> targetKeywords = keywordsRaw instanceof List ? (List<String>) keywordsRaw : List.of();
                 plans.add(new CampaignPlan(
                     StrategyChannel.valueOf((String) map.get("channelType")),
                     (String) map.get("objective"),

@@ -1,5 +1,6 @@
 package com.ghatana.digitalmarketing.api;
 
+import io.activej.http.HttpHeaders;
 import io.activej.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,9 @@ public final class DmosApiHeaderValidator {
      * @throws IllegalArgumentException if mandatory headers are missing in production
      */
     public static void validateMandatoryHeaders(HttpRequest request) {
-        String tenantId = request.getHeader(TENANT_ID_HEADER);
-        String principalId = request.getHeader(PRINCIPAL_ID_HEADER);
-        String sessionId = request.getHeader(SESSION_ID_HEADER);
+        String tenantId = request.getHeader(HttpHeaders.of(TENANT_ID_HEADER));
+        String principalId = request.getHeader(HttpHeaders.of(PRINCIPAL_ID_HEADER));
+        String sessionId = request.getHeader(HttpHeaders.of(SESSION_ID_HEADER));
 
         if (isProduction()) {
             // Fail closed in production
@@ -65,18 +66,27 @@ public final class DmosApiHeaderValidator {
             }
         } else {
             // Log warnings in development/test
+            String remoteAddress = resolveRemoteAddress(request);
             if (tenantId == null || tenantId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), TENANT_ID_HEADER);
+                    remoteAddress, TENANT_ID_HEADER);
             }
             if (principalId == null || principalId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), PRINCIPAL_ID_HEADER);
+                    remoteAddress, PRINCIPAL_ID_HEADER);
             }
             if (sessionId == null || sessionId.isBlank()) {
                 LOG.warn("[{}] Missing header: {} - using default for development",
-                    request.getRemoteAddress(), SESSION_ID_HEADER);
+                    remoteAddress, SESSION_ID_HEADER);
             }
+        }
+    }
+
+    private static String resolveRemoteAddress(HttpRequest request) {
+        try {
+            return String.valueOf(request.getRemoteAddress());
+        } catch (NullPointerException ex) {
+            return "unknown";
         }
     }
 
@@ -87,7 +97,7 @@ public final class DmosApiHeaderValidator {
      * @return tenant ID or default
      */
     public static String getTenantId(HttpRequest request) {
-        String tenantId = request.getHeader(TENANT_ID_HEADER);
+        String tenantId = request.getHeader(HttpHeaders.of(TENANT_ID_HEADER));
         if ((tenantId == null || tenantId.isBlank()) && !isProduction()) {
             return "default-tenant-dev";
         }
@@ -101,7 +111,7 @@ public final class DmosApiHeaderValidator {
      * @return principal ID or default
      */
     public static String getPrincipalId(HttpRequest request) {
-        String principalId = request.getHeader(PRINCIPAL_ID_HEADER);
+        String principalId = request.getHeader(HttpHeaders.of(PRINCIPAL_ID_HEADER));
         if ((principalId == null || principalId.isBlank()) && !isProduction()) {
             return "default-principal-dev";
         }
@@ -115,7 +125,7 @@ public final class DmosApiHeaderValidator {
      * @return session ID or default
      */
     public static String getSessionId(HttpRequest request) {
-        String sessionId = request.getHeader(SESSION_ID_HEADER);
+        String sessionId = request.getHeader(HttpHeaders.of(SESSION_ID_HEADER));
         if ((sessionId == null || sessionId.isBlank()) && !isProduction()) {
             return "default-session-dev";
         }
@@ -129,7 +139,7 @@ public final class DmosApiHeaderValidator {
      * @return correlation ID (never null)
      */
     public static String getCorrelationId(HttpRequest request) {
-        String correlationId = request.getHeader(CORRELATION_ID_HEADER);
+        String correlationId = request.getHeader(HttpHeaders.of(CORRELATION_ID_HEADER));
         if (correlationId == null || correlationId.isBlank()) {
             correlationId = java.util.UUID.randomUUID().toString();
         }
@@ -142,7 +152,10 @@ public final class DmosApiHeaderValidator {
      * @return {@code true} if production
      */
     private static boolean isProduction() {
-        String env = System.getenv(DMOS_ENV);
+        String env = System.getProperty(DMOS_ENV);
+        if (env == null || env.isBlank()) {
+            env = System.getenv(DMOS_ENV);
+        }
         if (env == null || env.isBlank()) {
             return false;
         }

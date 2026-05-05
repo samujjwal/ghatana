@@ -256,4 +256,43 @@ class DataCloudHttpServerDisabledCapabilityTest {
             assertThat(response.statusCode()).isEqualTo(503);
         }
     }
+
+    // ─── DC-P1-006: Alerting capability gated ─────────────────────────────────────
+
+    @Nested
+    @DisplayName("Alerting capability — DC-P1-006")
+    class AlertingCapabilityTests {
+
+        @Test
+        @DisplayName("GET /api/v1/capabilities shows alerts capability as configured")
+        void capabilities_alertsEntry_isMapped() throws Exception {
+            startServer();
+
+            HttpResponse<String> response = get("/api/v1/capabilities");
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            assertThat(response.body()).contains("\"alerts\"");
+        }
+    }
+
+    // ─── DC-P1-006: Data Fabric capability gated (feature flag disabled by default) ─
+
+    @Nested
+    @DisplayName("Data Fabric capability — DC-P1-006")
+    class DataFabricCapabilityTests {
+
+        @Test
+        @DisplayName("GET /api/v1/capabilities shows dataFabric as unavailable by default")
+        void capabilities_dataFabricEntry_unavailableByDefault() throws Exception {
+            startServer();
+
+            HttpResponse<String> response = get("/api/v1/capabilities");
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            // dataFabric should be present in snapshot with configured=false (feature flag default)
+            assertThat(response.body()).contains("\"dataFabric\"");
+            // maturity should be "unavailable" when DATA_CLOUD_DATA_FABRIC flag is false
+            assertThat(response.body()).contains("\"unavailable\"");
+        }
+    }
 }

@@ -34,7 +34,7 @@ public final class ProductionProfileGuard {
      * @throws IllegalStateException if in-memory adapters would be used in production
      */
     public static void validate() {
-        String env = System.getenv(DMOS_ENV);
+        String env = resolveEnvironment();
         if (env == null || env.isBlank()) {
             env = "development";
         }
@@ -54,11 +54,19 @@ public final class ProductionProfileGuard {
      * @return {@code true} if production environment
      */
     public static boolean isProduction() {
-        String env = System.getenv(DMOS_ENV);
+        String env = resolveEnvironment();
         if (env == null || env.isBlank()) {
             return false;
         }
         return PRODUCTION_ENV.equalsIgnoreCase(env.trim());
+    }
+
+    private static String resolveEnvironment() {
+        String env = System.getProperty(DMOS_ENV);
+        if (env == null || env.isBlank()) {
+            env = System.getenv(DMOS_ENV);
+        }
+        return env;
     }
 
     /**

@@ -213,6 +213,31 @@ class DataCloudHttpServerAnalyticsTest extends DataCloudHttpServerTestBase {
         }
 
         @Test
+        @DisplayName("result response includes totalRows-based truncation metadata")
+        void getResult_includesTruncationMetadata() throws Exception {
+            QueryResult result = QueryResult.builder()
+                .queryId("qid-truncated")
+                .queryType("SELECT")
+                .rows(List.of(Map.of("value", 1)))
+                .rowCount(1)
+                .totalRows(10)
+                .columnCount(1)
+                .executionTimeMs(9L)
+                .build();
+            when(mockEngine.getResult("qid-truncated")).thenReturn(Promise.of(result));
+
+            startServer();
+            HttpResponse<String> resp = get("/api/v1/analytics/query/qid-truncated?limit=100");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<?, ?> body = mapper.readValue(resp.body(), Map.class);
+            assertThat(body.get("queryId")).isEqualTo("qid-truncated");
+            assertThat(((Number) body.get("rowCount")).intValue()).isEqualTo(1);
+            assertThat(body.get("truncated")).isEqualTo(true);
+            assertThat(((Number) body.get("limit")).intValue()).isEqualTo(100);
+        }
+
+        @Test
         @DisplayName("unknown queryId (null result) → 404")
         void getResult_nullResult_returns404() throws Exception { 
             when(mockEngine.getResult("unknown")).thenReturn(Promise.of(null));

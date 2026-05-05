@@ -119,7 +119,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(recommendation));
 
         Optional<BudgetRecommendation> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-beta"), "rec-002"));
+            repository.findById("rec-002"));
 
         assertThat(found).isPresent();
         assertThat(found.get().getRecommendationId()).isEqualTo("rec-002");
@@ -132,7 +132,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
     @DisplayName("findById — returns empty when recommendation does not exist")
     void findById_returnsEmpty_whenNotFound() {
         Optional<BudgetRecommendation> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-missing"), "nonexistent"));
+            repository.findById("nonexistent"));
 
         assertThat(found).isEmpty();
     }
@@ -144,7 +144,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(recommendation));
 
         Optional<BudgetRecommendation> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-wrong"), "rec-003"));
+            repository.findById("rec-003"));
 
         assertThat(found).isEmpty();
     }
@@ -181,7 +181,7 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(updated));
 
         Optional<BudgetRecommendation> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-delta"), "rec-004"));
+            repository.findById("rec-004"));
         assertThat(found).isPresent();
         assertThat(found.get().getTotalMonthlyCap()).isEqualTo(15000.0);
         assertThat(found.get().getRationale()).isEqualTo("Updated rationale");
@@ -221,9 +221,9 @@ class PostgresBudgetRecommendationRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(r2));
 
         Optional<BudgetRecommendation> found1 = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-one"), "rec-007"));
+            repository.findById("rec-007"));
         Optional<BudgetRecommendation> found2 = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-two"), "rec-007"));
+            repository.findById("rec-007"));
 
         assertThat(found1).isPresent();
         assertThat(found2).isPresent();

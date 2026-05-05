@@ -1112,6 +1112,25 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
         return httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
     }
 
+    private HttpResponse<String> put(String path, String jsonBody) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+            .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("Content-Type", "application/json")
+            .header("X-Tenant-Id", "tenant-test")
+            .build();
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpResponse<String> deleteByTenant(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+            .DELETE()
+            .uri(URI.create("http://127.0.0.1:" + port + path))
+            .header("X-Tenant-Id", "tenant-test")
+            .build();
+        return httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+    }
+
     protected static int findFreePort() throws IOException { 
         try (ServerSocket ss = new ServerSocket(0)) { 
             return ss.getLocalPort(); 
@@ -1235,6 +1254,327 @@ class DataCloudHttpServerGovernanceTest extends DataCloudHttpServerTestBase {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString()); 
 
             assertThat(resp.statusCode()).isEqualTo(200); 
+        }
+    }
+
+    /**
+     * DC-P1-010: Purge/redaction/governance audit assertions.
+     */
+    @Nested
+    @DisplayName("Governance audit assertions (DC-P1-010)")
+    class GovernanceAuditAssertionTests {
+
+        @Test
+        @DisplayName("Invalid purge token is audited as a denied action")
+        @SuppressWarnings("unchecked")
+        void invalidPurgeToken_deniedActionIsAudited() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String body = mapper.writeValueAsString(Map.of(
+                "collection", "sensitive_data",
+                "confirmationToken", "deliberately-invalid-token"
+            ));
+            HttpResponse<String> resp = post("/api/v1/governance/retention/purge", body);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            Map<String, Object> error = (Map<String, Object>) mapper.readValue(resp.body(), Map.class).get("error");
+            assertThat(error.get("code")).isEqualTo("INVALID_CONFIRMATION_TOKEN");
+            // Denied/failed purge attempts must be audited
+            verify(mockAuditService).record(argThat(event ->
+                "RETENTION_PURGE_REJECTED".equals(event.eventType())));
+        }
+
+        @Test
+        @DisplayName("Retention classify is deterministic — same input always produces same tier")
+        @SuppressWarnings("unchecked")
+        void retentionClassify_sameTier_isDeterministic() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            // Classify twice with the same params
+            String body = mapper.writeValueAsString(Map.of(
+                "collection", "orders",
+                "tier", "compliance",
+                "reason", "SOC2 compliance"
+            ));
+
+            HttpResponse<String> firstResp = post("/api/v1/governance/retention/classify", body);
+            HttpResponse<String> secondResp = post("/api/v1/governance/retention/classify", body);
+
+            assertThat(firstResp.statusCode()).isEqualTo(200);
+            assertThat(secondResp.statusCode()).isEqualTo(200);
+
+            Map<String, Object> firstData = (Map<String, Object>) mapper.readValue(firstResp.body(), Map.class).get("data");
+            Map<String, Object> secondData = (Map<String, Object>) mapper.readValue(secondResp.body(), Map.class).get("data");
+
+            assertThat(firstData.get("tier")).isEqualTo("compliance");
+            assertThat(secondData.get("tier")).isEqualTo("compliance");
+            assertThat(firstData.get("tier")).isEqualTo(secondData.get("tier"));
+            assertThat(firstData.get("collection")).isEqualTo(secondData.get("collection"));
+        }
+
+        @Test
+        @DisplayName("Compliance summary reflects tenant context (tenant scoping)")
+        @SuppressWarnings("unchecked")
+        void complianceSummary_isTenantScoped() throws Exception {
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            HttpResponse<String> resp = get("/api/v1/governance/compliance/summary");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> envelope = mapper.readValue(resp.body(), Map.class);
+            // Compliance summary is wrapped in an ApiResponse envelope; data is under "data"
+            Map<String, Object> data = (Map<String, Object>) envelope.get("data");
+            assertThat(data).isNotNull();
+            // Must return tenantId in response for scoping verification
+            assertThat(data.get("tenantId")).isEqualTo("tenant-test");
+        }
+
+        @Test
+        @DisplayName("Purge audit record includes hashed confirmation token (not plaintext)")
+        @SuppressWarnings("unchecked")
+        void purgeAuditRecord_tokenHashedNotPlaintext() throws Exception {
+            storeEntity(entity("audit-ent-1", "audit_events",
+                Map.of("expiresAt", java.time.Instant.now().minusSeconds(300).toString())));
+
+            server = new DataCloudHttpServer(mockClient, port).withAuditService(mockAuditService);
+            server.start();
+            waitForServerReady(port);
+
+            String dryRunBody = mapper.writeValueAsString(Map.of(
+                "collection", "audit_events",
+                "dryRun", true
+            ));
+            HttpResponse<String> dryRunResp = post("/api/v1/governance/retention/purge", dryRunBody);
+            String confirmationToken = (String)
+                ((Map<String, Object>) mapper.readValue(dryRunResp.body(), Map.class).get("data"))
+                    .get("confirmationToken");
+
+            String purgeBody = mapper.writeValueAsString(Map.of(
+                "collection", "audit_events",
+                "confirmationToken", confirmationToken
+            ));
+            post("/api/v1/governance/retention/purge", purgeBody);
+
+            verify(mockAuditService).record(argThat(event -> {
+                if (!"RETENTION_PURGE".equals(event.eventType())) return false;
+                // Token must be stored as hash, never as plaintext
+                String tokenHash = (String) event.getDetail("confirmationTokenHash");
+                String expectedHash = sha256Hex(confirmationToken);
+                return tokenHash != null
+                    && !confirmationToken.equals(tokenHash)
+                    && expectedHash != null
+                    && expectedHash.equals(tokenHash);
+            }));
+        }
+    }
+
+    /**
+     * DC-P1-009: Policy CRUD lifecycle — Trust Center governance contract.
+     */
+    @Nested
+    @DisplayName("POST|GET|PUT|DELETE /api/v1/governance/policies — Trust Center policy lifecycle (DC-P1-009)")
+    class PolicyCrudLifecycleTests {
+        private static final String TENANT_ID = "tenant-test";
+
+        @Test
+        @DisplayName("POST /api/v1/governance/policies creates policy and returns 201")
+        @SuppressWarnings("unchecked")
+        void createPolicy_returns201WithPolicyId() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of(
+                    "name", "GDPR Retention",
+                    "type", "RETENTION",
+                    "description", "GDPR 7-year retention rule",
+                    "rules", List.of(Map.of("tier", "compliance", "years", 7))
+                )));
+
+            assertThat(resp.statusCode()).isEqualTo(201);
+            Map<String, Object> created = mapper.readValue(resp.body(), Map.class);
+            assertThat(created.get("id")).isNotNull();
+            assertThat(created.get("name")).isEqualTo("GDPR Retention");
+            assertThat(created.get("type")).isEqualTo("RETENTION");
+            assertThat(created.get("enabled")).isEqualTo(true);
+            assertThat(created.get("createdAt")).isNotNull();
+            assertThat(created.get("tenantId")).isEqualTo(TENANT_ID);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies lists policies for tenant")
+        @SuppressWarnings("unchecked")
+        void listPolicies_returnsTenantScopedPolicies() throws Exception {
+            startServer();
+
+            // Create a policy first
+            post("/api/v1/governance/policies", mapper.writeValueAsString(Map.of("name", "Test Policy", "type", "CUSTOM")));
+
+            HttpResponse<String> resp = get("/api/v1/governance/policies");
+
+            assertThat(resp.statusCode()).isEqualTo(200);
+            Map<String, Object> listBody = mapper.readValue(resp.body(), Map.class);
+            assertThat(listBody.get("policies")).isNotNull();
+            assertThat(listBody.get("count")).isNotNull();
+            assertThat(listBody.get("tenantId")).isEqualTo(TENANT_ID);
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> policies = (List<Map<String, Object>>) listBody.get("policies");
+            assertThat(policies).anyMatch(p -> "Test Policy".equals(p.get("name")));
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies/:id returns specific policy")
+        @SuppressWarnings("unchecked")
+        void getPolicy_returnsPolicy() throws Exception {
+            startServer();
+
+            // Create a policy
+            HttpResponse<String> createResp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of("name", "Findable Policy", "type", "CUSTOM")));
+            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            String policyId = (String) created.get("id");
+
+            HttpResponse<String> getResp = get("/api/v1/governance/policies/" + policyId);
+
+            assertThat(getResp.statusCode()).isEqualTo(200);
+            Map<String, Object> found = mapper.readValue(getResp.body(), Map.class);
+            assertThat(found.get("id")).isEqualTo(policyId);
+            assertThat(found.get("name")).isEqualTo("Findable Policy");
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies/:id returns 404 when not found")
+        void getPolicy_nonExistent_returns404() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = get("/api/v1/governance/policies/non-existent-policy-id");
+
+            assertThat(resp.statusCode()).isEqualTo(404);
+        }
+
+        @Test
+        @DisplayName("PUT /api/v1/governance/policies/:id updates policy fields")
+        @SuppressWarnings("unchecked")
+        void updatePolicy_updatesFields() throws Exception {
+            startServer();
+
+            // Create policy
+            HttpResponse<String> createResp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of("name", "Original Name", "type", "CUSTOM")));
+            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            String policyId = (String) created.get("id");
+
+            // Update name
+            HttpResponse<String> updateResp = put("/api/v1/governance/policies/" + policyId,
+                mapper.writeValueAsString(Map.of("name", "Updated Name", "description", "Updated desc")));
+
+            assertThat(updateResp.statusCode()).isEqualTo(200);
+            Map<String, Object> updated = mapper.readValue(updateResp.body(), Map.class);
+            assertThat(updated.get("name")).isEqualTo("Updated Name");
+            assertThat(updated.get("description")).isEqualTo("Updated desc");
+            assertThat(updated.get("id")).isEqualTo(policyId);
+            assertThat(updated.get("updatedAt")).isNotNull();
+        }
+
+        @Test
+        @DisplayName("DELETE /api/v1/governance/policies/:id removes policy")
+        @SuppressWarnings("unchecked")
+        void deletePolicy_removesPolicy() throws Exception {
+            startServer();
+
+            // Create policy
+            HttpResponse<String> createResp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of("name", "To Delete", "type", "CUSTOM")));
+            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            String policyId = (String) created.get("id");
+
+            // Delete
+            HttpResponse<String> deleteResp = deleteByTenant("/api/v1/governance/policies/" + policyId);
+
+            assertThat(deleteResp.statusCode()).isEqualTo(200);
+            Map<String, Object> deleteBody = mapper.readValue(deleteResp.body(), Map.class);
+            assertThat(deleteBody.get("id")).isEqualTo(policyId);
+            assertThat(deleteBody.get("status")).isEqualTo("deleted");
+
+            // Verify not found after delete
+            HttpResponse<String> getAfterDelete = get("/api/v1/governance/policies/" + policyId);
+            assertThat(getAfterDelete.statusCode()).isEqualTo(404);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/governance/policies/:id/toggle disables a policy")
+        @SuppressWarnings("unchecked")
+        void togglePolicy_disablesPolicy() throws Exception {
+            startServer();
+
+            // Create policy (enabled by default)
+            HttpResponse<String> createResp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of("name", "Toggle Test", "type", "CUSTOM")));
+            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            String policyId = (String) created.get("id");
+            assertThat(created.get("enabled")).isEqualTo(true);
+
+            // Toggle off
+            HttpResponse<String> toggleResp = post("/api/v1/governance/policies/" + policyId + "/toggle",
+                mapper.writeValueAsString(Map.of("enabled", false)));
+
+            assertThat(toggleResp.statusCode()).isEqualTo(200);
+            Map<String, Object> toggled = mapper.readValue(toggleResp.body(), Map.class);
+            assertThat(toggled.get("enabled")).isEqualTo(false);
+        }
+
+        @Test
+        @DisplayName("Policy CRUD: complete create → read → update → delete lifecycle")
+        @SuppressWarnings("unchecked")
+        void fullPolicyCrudLifecycle() throws Exception {
+            startServer();
+
+            // CREATE
+            HttpResponse<String> createResp = post("/api/v1/governance/policies",
+                mapper.writeValueAsString(Map.of(
+                    "name", "E2E Policy",
+                    "type", "RETENTION",
+                    "description", "End-to-end lifecycle test",
+                    "rules", List.of(Map.of("collection", "orders", "tier", "standard", "years", 3))
+                )));
+            assertThat(createResp.statusCode()).isEqualTo(201);
+            Map<String, Object> created = mapper.readValue(createResp.body(), Map.class);
+            String policyId = (String) created.get("id");
+            assertThat(policyId).isNotNull();
+
+            // READ (GET by ID)
+            HttpResponse<String> getResp = get("/api/v1/governance/policies/" + policyId);
+            assertThat(getResp.statusCode()).isEqualTo(200);
+            Map<String, Object> read = mapper.readValue(getResp.body(), Map.class);
+            assertThat(read.get("name")).isEqualTo("E2E Policy");
+
+            // READ (LIST)
+            HttpResponse<String> listResp = get("/api/v1/governance/policies");
+            Map<String, Object> list = mapper.readValue(listResp.body(), Map.class);
+            List<Map<String, Object>> policies = (List<Map<String, Object>>) list.get("policies");
+            assertThat(policies).anyMatch(p -> policyId.equals(p.get("id")));
+
+            // UPDATE
+            HttpResponse<String> updateResp = put("/api/v1/governance/policies/" + policyId,
+                mapper.writeValueAsString(Map.of("description", "Updated by E2E test")));
+            assertThat(updateResp.statusCode()).isEqualTo(200);
+            Map<String, Object> updated = mapper.readValue(updateResp.body(), Map.class);
+            assertThat(updated.get("description")).isEqualTo("Updated by E2E test");
+            assertThat(updated.get("name")).isEqualTo("E2E Policy");
+
+            // DELETE
+            HttpResponse<String> deleteResp = deleteByTenant("/api/v1/governance/policies/" + policyId);
+            assertThat(deleteResp.statusCode()).isEqualTo(200);
+
+            // VERIFY GONE
+            HttpResponse<String> verifyGone = get("/api/v1/governance/policies/" + policyId);
+            assertThat(verifyGone.statusCode()).isEqualTo(404);
         }
     }
 }

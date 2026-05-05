@@ -5,6 +5,8 @@ import com.ghatana.digitalmarketing.domain.campaign.Campaign;
 import com.ghatana.digitalmarketing.domain.campaign.CampaignType;
 import io.activej.promise.Promise;
 
+import java.util.List;
+
 /**
  * Application service interface for DMOS campaign use cases.
  *
@@ -29,6 +31,16 @@ public interface CampaignService {
      * @return promise resolving to the created campaign
      */
     Promise<Campaign> createCampaign(DmOperationContext ctx, CreateCampaignCommand command);
+
+    /**
+     * Lists campaigns for a workspace with pagination.
+     *
+     * @param ctx    the operation context
+     * @param limit  maximum number of results (max 100)
+     * @param offset pagination offset
+     * @return promise resolving to a paginated list of campaigns
+     */
+    Promise<List<Campaign>> listCampaigns(DmOperationContext ctx, int limit, int offset);
 
     /**
      * Launches a campaign that is in DRAFT or PAUSED status.

@@ -94,9 +94,10 @@ public final class GoogleAdsCampaignRollbackCommandHandler implements DmCommandH
             return linkRepository.findByInternalCampaignId(payload.internalCampaignId())
                 .then(opt -> {
                     if (opt.isEmpty()) {
-                        LOG.warn("[DMOS-ROLLBACK] No campaign link found for internalCampaignId={}, treating as no-op",
+                        LOG.warn("[DMOS-ROLLBACK] No campaign link found for internalCampaignId={}",
                             payload.internalCampaignId());
-                        return Promise.<Void>of(null);
+                        throw new NoSuchElementException(
+                            "No Google Ads campaign link for internalCampaignId=" + payload.internalCampaignId());
                     }
 
                     DmGoogleAdsCampaignLink link = opt.get();

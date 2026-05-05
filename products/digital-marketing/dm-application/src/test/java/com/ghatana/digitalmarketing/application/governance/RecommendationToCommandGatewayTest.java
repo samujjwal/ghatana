@@ -335,6 +335,35 @@ class RecommendationToCommandGatewayTest extends EventloopTestBase {
         }
 
         @Override
+        public com.ghatana.platform.plugin.PluginMetadata metadata() {
+            return com.ghatana.platform.plugin.PluginMetadata.builder()
+                .id("test-compliance-plugin")
+                .name("Test compliance plugin")
+                .version("1.0.0")
+                .build();
+        }
+
+        @Override
+        public com.ghatana.platform.plugin.PluginState getState() {
+            return com.ghatana.platform.plugin.PluginState.RUNNING;
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> initialize(com.ghatana.platform.plugin.PluginContext context) {
+            return io.activej.promise.Promise.of(null);
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> start() {
+            return io.activej.promise.Promise.of(null);
+        }
+
+        @Override
+        public io.activej.promise.Promise<Void> stop() {
+            return io.activej.promise.Promise.of(null);
+        }
+
+        @Override
         public Promise<Void> addRule(String ruleSetId, ComplianceRule rule) {
             return Promise.of(null);
         }

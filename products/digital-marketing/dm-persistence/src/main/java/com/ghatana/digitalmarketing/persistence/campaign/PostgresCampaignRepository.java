@@ -16,6 +16,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -35,16 +37,27 @@ public final class PostgresCampaignRepository implements CampaignRepository {
 
     private static final Logger LOG = LoggerFactory.getLogger(PostgresCampaignRepository.class);
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private static final String UPSERT_SQL =
         "INSERT INTO dmos_campaigns (id, workspace_id, name, status, type, created_at, updated_at, created_by) " +
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?) " +
         "ON CONFLICT (id, workspace_id) DO UPDATE SET " +
         "  name = EXCLUDED.name, status = EXCLUDED.status, type = EXCLUDED.type, " +
-        "  updated_at = EXCLUDED.updated_at, created_by = EXCLUDED.created_by";
+        "  updated_at = EXCLUDED.updated_at";
 
     private static final String SELECT_BY_ID_SQL =
         "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
         "FROM dmos_campaigns WHERE id = ? AND workspace_id = ?";
+
+    private static final String LIST_BY_WORKSPACE_SQL =
+        "SELECT id, workspace_id, name, status, type, created_at, updated_at, created_by " +
+        "FROM dmos_campaigns WHERE workspace_id = ? " +
+        "ORDER BY created_at DESC, id DESC " +
+        "LIMIT ? OFFSET ?";
+
+    private static final String COUNT_BY_WORKSPACE_SQL =
+        "SELECT COUNT(*) FROM dmos_campaigns WHERE workspace_id = ?";
 
     private final DataSource dataSource;
     private final Executor executor;
@@ -97,6 +110,57 @@ public final class PostgresCampaignRepository implements CampaignRepository {
             } catch (SQLException e) {
                 LOG.error("[DMOS-PERSIST] failed to find campaign id={}: {}", campaignId, e.getMessage(), e);
                 throw new DmPersistenceException("Failed to find campaign: " + campaignId, e);
+            }
+        });
+    }
+
+    @Override
+    public Promise<List<Campaign>> listByWorkspace(DmWorkspaceId workspaceId, int limit, int offset) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+        int boundedLimit = Math.min(Math.max(limit, 1), MAX_PAGE_SIZE);
+        int boundedOffset = Math.max(offset, 0);
+
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(LIST_BY_WORKSPACE_SQL)) {
+                stmt.setString(1, workspaceId.getValue());
+                stmt.setInt(2, boundedLimit);
+                stmt.setInt(3, boundedOffset);
+                try (ResultSet rs = stmt.executeQuery()) {
+                    List<Campaign> results = new ArrayList<>();
+                    while (rs.next()) {
+                        results.add(mapRow(rs));
+                    }
+                    LOG.info("[DMOS-PERSIST] Listed {} campaigns for workspace {}",
+                        results.size(), workspaceId.getValue());
+                    return results;
+                }
+            } catch (SQLException e) {
+                LOG.error("[DMOS-PERSIST] Failed to list campaigns for workspace {}: {}",
+                    workspaceId.getValue(), e.getMessage(), e);
+                throw new DmPersistenceException("Failed to list campaigns for workspace: " + workspaceId.getValue(), e);
+            }
+        });
+    }
+
+    @Override
+    public Promise<Long> countByWorkspace(DmWorkspaceId workspaceId) {
+        Objects.requireNonNull(workspaceId, "workspaceId must not be null");
+
+        return Promise.ofBlocking(executor, () -> {
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(COUNT_BY_WORKSPACE_SQL)) {
+                stmt.setString(1, workspaceId.getValue());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getLong(1);
+                    }
+                    return 0L;
+                }
+            } catch (SQLException e) {
+                LOG.error("[DMOS-PERSIST] Failed to count campaigns for workspace {}: {}",
+                    workspaceId.getValue(), e.getMessage(), e);
+                throw new DmPersistenceException("Failed to count campaigns for workspace: " + workspaceId.getValue(), e);
             }
         });
     }

@@ -165,6 +165,10 @@ subprojects {
         isShowViolations = true
     }
     
+    tasks.withType<org.gradle.api.plugins.quality.Checkstyle>().configureEach {
+        maxHeapSize.set("2g")
+    }
+    
     // PMD configuration
     configure<PmdExtension> {
         toolVersion = libs.versions.pmd.get()
@@ -172,6 +176,10 @@ subprojects {
         ruleSets = emptyList()
         isIgnoreFailures = false
         isConsoleOutput = true
+    }
+    
+    tasks.withType<org.gradle.api.plugins.quality.Pmd>().configureEach {
+        maxHeapSize.set("2g")
     }
     
     // SpotBugs configuration — ENABLED

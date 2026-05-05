@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -67,10 +70,16 @@ public final class DmosBudgetRecommendationServlet {
 
     private final BudgetRecommendationService budgetService;
     private final Eventloop eventloop;
+    private final DmosMetricsCollector metrics;
+    private final DmosTelemetry telemetry;
+    private final DmosHttpContextFactory httpContextFactory;
 
-    public DmosBudgetRecommendationServlet(BudgetRecommendationService budgetService, Eventloop eventloop) {
-        this.budgetService = Objects.requireNonNull(budgetService, "budgetService must not be null");
-        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+    public DmosBudgetRecommendationServlet(BudgetRecommendationService budgetService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this.budgetService   = Objects.requireNonNull(budgetService,   "budgetService must not be null");
+        this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
+        this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
+        this.telemetry          = Objects.requireNonNull(telemetry,          "telemetry must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**
@@ -80,16 +89,18 @@ public final class DmosBudgetRecommendationServlet {
      */
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation",
-                this::handleRecommendBudget)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation/:recId/submit",
-                this::handleSubmitForApproval)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation/:recId/approve",
-                this::handleApproveRecommendation)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/budget-recommendation",
-                this::handleGetLatestRecommendation)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation",
+                    this::handleRecommendBudget)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation/:recId/submit",
+                    this::handleSubmitForApproval)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/budget-recommendation/:recId/approve",
+                    this::handleApproveRecommendation)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/budget-recommendation",
+                    this::handleGetLatestRecommendation)
+                .build(),
+            metrics,
+            "budget"
         );
     }
 
@@ -99,20 +110,35 @@ public final class DmosBudgetRecommendationServlet {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                 GenerateBudgetRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     GenerateBudgetRequest.class
                 );
-                BudgetRecommendationService.GenerateBudgetCommand command =
-                    new BudgetRecommendationService.GenerateBudgetCommand(
-                        body.strategyId(),
-                        body.totalMonthlyCap(),
-                        body.changeThreshold()
-                    );
-                return budgetService.recommendBudget(ctx, command)
-                    .map(rec -> jsonResponse(201, BudgetRecommendationResponse.from(rec)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("recommend budget", e));
+
+                // P1-026: Create span for budget recommendation
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /budget-recommendation", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    BudgetRecommendationService.GenerateBudgetCommand command =
+                        new BudgetRecommendationService.GenerateBudgetCommand(
+                            body.strategyId(),
+                            body.totalMonthlyCap(),
+                            body.changeThreshold()
+                        );
+                    return budgetService.recommendBudget(ctx, command)
+                        .map(rec -> {
+                            telemetry.setBudgetId(rec.getId());
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(201, BudgetRecommendationResponse.from(rec));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("recommend budget", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -127,10 +153,25 @@ public final class DmosBudgetRecommendationServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
-                return budgetService.submitForApproval(ctx, recId)
-                    .map(rec -> jsonResponse(200, BudgetRecommendationResponse.from(rec)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("submit for approval", e));
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+
+                // P1-026: Create span for budget submission
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /budget-recommendation/:recId/submit", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    telemetry.setBudgetId(recId);
+                    return budgetService.submitForApproval(ctx, recId)
+                        .map(rec -> {
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(200, BudgetRecommendationResponse.from(rec));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("submit for approval", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -145,10 +186,25 @@ public final class DmosBudgetRecommendationServlet {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
                 String recId = request.getPathParameter("recId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
-                return budgetService.approveRecommendation(ctx, recId)
-                    .map(rec -> jsonResponse(200, BudgetRecommendationResponse.from(rec)))
-                    .then(r -> Promise.of(r), e -> mapServiceError("approve recommendation", e));
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+
+                // P1-026: Create span for budget approval
+                io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /budget-recommendation/:recId/approve", ctx).startSpan();
+                try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                    telemetry.setBudgetId(recId);
+                    return budgetService.approveRecommendation(ctx, recId)
+                        .map(rec -> {
+                            span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                            span.end();
+                            return jsonResponse(200, BudgetRecommendationResponse.from(rec));
+                        })
+                        .then(r -> Promise.of(r), e -> {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return mapServiceError("approve recommendation", e);
+                        });
+                }
             } catch (IllegalArgumentException e) {
                 return Promise.of(errorResponse(400, e.getMessage()));
             } catch (Exception e) {
@@ -161,7 +217,8 @@ public final class DmosBudgetRecommendationServlet {
     private Promise<HttpResponse> handleGetLatestRecommendation(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return budgetService.getLatestRecommendation(ctx)
                 .map(rec -> jsonResponse(200, BudgetRecommendationResponse.from(rec)))
                 .then(r -> Promise.of(r), e -> mapServiceError("get latest recommendation", e));
@@ -197,72 +254,11 @@ public final class DmosBudgetRecommendationServlet {
 
     // ---- context builder ----
 
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
-        String tenantId = getRequiredHeader(request, "X-Tenant-ID");
-        String principal = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idempotencyKeyValue = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
-
-        if (requireIdempotencyKey && (idempotencyKeyValue == null || idempotencyKeyValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
-
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-        DmIdempotencyKey idempotencyKey =
-            (idempotencyKeyValue != null && !idempotencyKeyValue.isBlank())
-                ? DmIdempotencyKey.of(idempotencyKeyValue)
-                : null;
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlationId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlationId),
-            idempotencyKey
-        );
-    }
+    // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
 
     // ---- utilities ----
 
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
-    }
+    // P1-001: Local helper methods removed - using shared DmosHttpContextFactory
 
     private HttpResponse jsonResponse(int code, Object body) {
         try {

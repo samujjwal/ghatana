@@ -2,7 +2,11 @@ package com.ghatana.datacloud.launcher.http.handlers;
 
 import com.ghatana.datacloud.DataCloudClient;
 import com.ghatana.datacloud.fabric.DataFabricConnector;
+import com.ghatana.datacloud.feature.DataCloudFeature;
+import com.ghatana.datacloud.feature.DataCloudFeatureFlags;
 import com.ghatana.datacloud.launcher.http.ApiInputValidator;
+import com.ghatana.platform.audit.AuditEvent;
+import com.ghatana.platform.audit.AuditService;
 import com.ghatana.platform.security.annotation.RequiresRole;
 import io.activej.http.HttpRequest;
 import io.activej.http.HttpResponse;
@@ -66,16 +70,20 @@ public final class DataSourceRegistryHandler {
     private final DataCloudClient client;
     private final HttpHandlerSupport http;
     private final DataFabricConnector fabric;
+    private final AuditService auditService;
 
     /**
-     * @param client entity store client for persisting connection metadata
-     * @param http   shared HTTP helper
-     * @param fabric optional DataFabricConnector implementation; may be null
+     * @param client       entity store client for persisting connection metadata
+     * @param http         shared HTTP helper
+     * @param fabric       optional DataFabricConnector implementation; may be null
+     * @param auditService optional audit service; when null audit emissions are skipped
      */
-    public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http, DataFabricConnector fabric) {
+    public DataSourceRegistryHandler(DataCloudClient client, HttpHandlerSupport http,
+                                     DataFabricConnector fabric, AuditService auditService) {
         this.client = client;
         this.http = http;
         this.fabric = fabric;
+        this.auditService = auditService;
     }
 
     // ─── GET /api/v1/connectors ───────────────────────────────────────────────
@@ -130,13 +138,16 @@ public final class DataSourceRegistryHandler {
                 }
 
                 return client.save(tenantId, DC_CONNECTIONS, data)
-                    .map(saved -> http.jsonResponse(201, Map.of(
-                        "tenantId", tenantId,
-                        "connectionId", saved.id(),
-                        "state", data.get("state"),
-                        "created", true,
-                        "timestamp", Instant.now().toString()
-                    )));
+                    .map(saved -> {
+                        emitConnectorAudit(tenantId, saved.id(), "CONNECTOR_CREATED", true);
+                        return http.jsonResponse(201, Map.of(
+                            "tenantId", tenantId,
+                            "connectionId", saved.id(),
+                            "state", data.get("state"),
+                            "created", true,
+                            "timestamp", Instant.now().toString()
+                        ));
+                    });
             } catch (Exception e) {
                 log.error("[registerConnection] tenant={} failed: {}", tenantId, e.getMessage(), e);
                 return Promise.of(http.errorResponse(500, "Connection registration failed: " + e.getMessage()));
@@ -172,20 +183,22 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
         if (fabric == null) {
-            return updateConnectionState(tenantId, connectionId, "TESTING", "test_pending")
-                .map(e -> http.jsonResponse(Map.of(
-                    "tenantId", tenantId,
-                    "connectionId", connectionId,
-                    "testStatus", "pending",
-                    "message", "Data fabric connector not available; test queued",
-                    "timestamp", Instant.now().toString()
-                )));
+            // DC-P2-006: When no fabric connector is available, do NOT mutate the connection state.
+            // Setting state to TESTING creates a phantom state that never resolves; return pending instead.
+            return Promise.of(http.jsonResponse(Map.of(
+                "tenantId", tenantId,
+                "connectionId", connectionId,
+                "testStatus", "pending",
+                "message", "Data fabric connector not available; test cannot be performed",
+                "timestamp", Instant.now().toString()
+            )));
         }
         return fabric.testConnection(connectionId)
             .map(result -> {
                 String healthStatus = result.success() ? "healthy" : "unhealthy";
                 String state = result.success() ? "ACTIVE" : "ERROR";
                 updateConnectionStateAsync(tenantId, connectionId, state, healthStatus);
+                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TESTED", result.success());
                 return http.jsonResponse(Map.of(
                     "tenantId", tenantId,
                     "connectionId", connectionId,
@@ -200,6 +213,7 @@ public final class DataSourceRegistryHandler {
                 e -> {
                     log.error("[testConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
                     updateConnectionStateAsync(tenantId, connectionId, "ERROR", "unhealthy");
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_TESTED", false);
                     return Promise.of(http.errorResponse(502, "Connection test failed: " + e.getMessage()));
                 });
     }
@@ -216,13 +230,16 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
         }
         return updateConnectionState(tenantId, connectionId, "ACTIVE", "healthy")
-            .map(e -> http.jsonResponse(Map.of(
-                "tenantId", tenantId,
-                "connectionId", connectionId,
-                "state", "ACTIVE",
-                "enabled", true,
-                "timestamp", Instant.now().toString()
-            )));
+            .map(e -> {
+                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_ENABLED", true);
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "connectionId", connectionId,
+                    "state", "ACTIVE",
+                    "enabled", true,
+                    "timestamp", Instant.now().toString()
+                ));
+            });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/disable ──────────────────────────
@@ -239,36 +256,45 @@ public final class DataSourceRegistryHandler {
         if (fabric != null) {
             return fabric.disconnect(connectionId)
                 .then(() -> updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled"))
-                .map(e -> http.jsonResponse(Map.of(
-                    "tenantId", tenantId,
-                    "connectionId", connectionId,
-                    "state", "INACTIVE",
-                    "enabled", false,
-                    "timestamp", Instant.now().toString()
-                )))
+                .map(e -> {
+                    emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
+                    return http.jsonResponse(Map.of(
+                        "tenantId", tenantId,
+                        "connectionId", connectionId,
+                        "state", "INACTIVE",
+                        "enabled", false,
+                        "timestamp", Instant.now().toString()
+                    ));
+                })
                 .then(
                     r -> Promise.of(r),
                     e -> {
                         log.error("[disableConnection] tenant={} id={} disconnect failed: {}", tenantId, connectionId, e.getMessage(), e);
                         return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
-                            .map(ent -> http.jsonResponse(Map.of(
-                                "tenantId", tenantId,
-                                "connectionId", connectionId,
-                                "state", "INACTIVE",
-                                "enabled", false,
-                                "warning", "Disconnect failed but state set to inactive: " + e.getMessage(),
-                                "timestamp", Instant.now().toString()
-                            )));
+                            .map(ent -> {
+                                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
+                                return http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "state", "INACTIVE",
+                                    "enabled", false,
+                                    "warning", "Disconnect failed but state set to inactive: " + e.getMessage(),
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
                     });
         }
         return updateConnectionState(tenantId, connectionId, "INACTIVE", "disabled")
-            .map(e -> http.jsonResponse(Map.of(
-                "tenantId", tenantId,
-                "connectionId", connectionId,
-                "state", "INACTIVE",
-                "enabled", false,
-                "timestamp", Instant.now().toString()
-            )));
+            .map(e -> {
+                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_DISABLED", true);
+                return http.jsonResponse(Map.of(
+                    "tenantId", tenantId,
+                    "connectionId", connectionId,
+                    "state", "INACTIVE",
+                    "enabled", false,
+                    "timestamp", Instant.now().toString()
+                ));
+            });
     }
 
     // ─── POST /api/v1/connectors/:connectionId/rotate-credentials ───────────────
@@ -301,12 +327,15 @@ public final class DataSourceRegistryHandler {
                             data.put("credentials", payload.get("credentials"));
                         }
                         return client.save(tenantId, DC_CONNECTIONS, data)
-                            .map(saved -> http.jsonResponse(Map.of(
-                                "tenantId", tenantId,
-                                "connectionId", connectionId,
-                                "rotated", true,
-                                "timestamp", Instant.now().toString()
-                            )));
+                            .map(saved -> {
+                                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_CREDENTIALS_ROTATED", true);
+                                return http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "rotated", true,
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
                     });
             } catch (Exception e) {
                 log.error("[rotateCredentials] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
@@ -607,8 +636,28 @@ public final class DataSourceRegistryHandler {
             return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
         }
 
-        // Check if fabric metrics capability is enabled (preview capability, disabled in production by default)
-        String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE", "local");
+        // DC-P1-002: Gate behind DATA_CLOUD_DATA_FABRIC feature flag (disabled by default).
+        // Live fabric metrics require a real DataFabricConnector implementation.
+        if (!DataCloudFeatureFlags.isEnabled(DataCloudFeature.DATA_CLOUD_DATA_FABRIC)) {
+            log.info("[getFabricMetrics] tenant={} - Data Fabric metrics are unavailable: DATA_CLOUD_DATA_FABRIC feature flag is disabled (default)",
+                tenantId);
+            return Promise.of(http.jsonResponse(Map.of(
+                "tiers", List.of(),
+                "totalEventsPerSec", 0.0,
+                "totalStorageGb", 0.0,
+                "lastUpdated", Instant.now().toString(),
+                "capability", "unavailable",
+                "preview", true,
+                "disabled", true,
+                "message", "Data Fabric metrics are not available in this deployment. " +
+                    "Check the dataFabric entry at GET /api/v1/capabilities for current capability status."
+            )));
+        }
+
+        // Check if fabric metrics capability is enabled (preview capability, disabled in production by default).
+        // Reads env var first (production deployment), then system property (test/CI override).
+        String profile = System.getenv().getOrDefault("DATACLOUD_PROFILE",
+                System.getProperty("DATACLOUD_PROFILE", "local"));
         boolean isProductionProfile = "production".equalsIgnoreCase(profile) || "staging".equalsIgnoreCase(profile);
         
         if (isProductionProfile) {
@@ -619,6 +668,7 @@ public final class DataSourceRegistryHandler {
                 "totalEventsPerSec", 0.0,
                 "totalStorageGb", 0.0,
                 "lastUpdated", Instant.now().toString(),
+                "capability", "preview",
                 "preview", true,
                 "disabled", true,
                 "message", "Data Fabric metrics are a preview capability and disabled in production profiles"
@@ -855,6 +905,7 @@ public final class DataSourceRegistryHandler {
                 return client.delete(finalTenantId, DC_CONNECTIONS, finalConnectionId)
                     .map(ignored -> {
                         log.info("[deleteConnection] tenant={} connectionId={} deleted", finalTenantId, finalConnectionId);
+                        emitConnectorAudit(finalTenantId, finalConnectionId, "CONNECTOR_DELETED", true);
                         return http.noContentResponse();
                     });
             })
@@ -862,5 +913,95 @@ public final class DataSourceRegistryHandler {
                 log.error("[deleteConnection] tenant={} connectionId={} failed: {}", finalTenantId, finalConnectionId, e.getMessage(), e);
                 return Promise.of(http.errorResponse(500, "Failed to delete connection: " + e.getMessage()));
             });
+    }
+
+    // ─── PUT /api/v1/connectors/:connectionId ─────────────────────────────────
+
+    /**
+     * Updates mutable fields on a registered data source connection (DC-P2-006).
+     *
+     * <p>Identity fields ({@code id}, {@code tenantId}, {@code type}) are immutable.
+     * Only {@code name}, {@code properties}, {@code residencyPolicy}, and {@code state}
+     * may be updated via this operation.
+     *
+     * <p>Returns HTTP 200 on success, HTTP 404 when the connection does not exist.
+     *
+     * @param request the incoming HTTP request
+     * @return a Promise resolving to the HTTP response
+     */
+    public Promise<HttpResponse> handleUpdateConnection(HttpRequest request) {
+        String tenantId = http.requireTenantIdOrFail(request);
+        if (tenantId == null) {
+            return Promise.of(http.errorResponse(400, "X-Tenant-Id header is required"));
+        }
+        String connectionId = request.getPathParameter("connectionId");
+        if (connectionId == null || connectionId.isBlank()) {
+            return Promise.of(http.errorResponse(400, "connectionId path parameter is required"));
+        }
+        return request.loadBody().then(buf -> {
+            try {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> payload = http.objectMapper().readValue(
+                    buf.getString(StandardCharsets.UTF_8), Map.class);
+
+                return client.findById(tenantId, DC_CONNECTIONS, connectionId)
+                    .then(opt -> {
+                        if (opt.isEmpty()) {
+                            return Promise.of(http.errorResponse(404, "Connection not found: " + connectionId));
+                        }
+                        Map<String, Object> existing = new LinkedHashMap<>(opt.get().data());
+                        // Only mutable fields may be updated; identity and tenantId are preserved
+                        if (payload.containsKey("name")) existing.put("name", payload.get("name"));
+                        if (payload.containsKey("properties")) existing.put("properties", payload.get("properties"));
+                        if (payload.containsKey("residencyPolicy")) existing.put("residencyPolicy", payload.get("residencyPolicy"));
+                        if (payload.containsKey("state") && VALID_STATES.contains(String.valueOf(payload.get("state")))) {
+                            existing.put("state", payload.get("state"));
+                        }
+                        existing.put("updatedAt", Instant.now().toString());
+                        return client.save(tenantId, DC_CONNECTIONS, existing)
+                            .map(saved -> {
+                                emitConnectorAudit(tenantId, connectionId, "CONNECTOR_UPDATED", true);
+                                return http.jsonResponse(Map.of(
+                                    "tenantId", tenantId,
+                                    "connectionId", connectionId,
+                                    "updated", true,
+                                    "timestamp", Instant.now().toString()
+                                ));
+                            });
+                    });
+            } catch (Exception e) {
+                log.error("[updateConnection] tenant={} id={} failed: {}", tenantId, connectionId, e.getMessage(), e);
+                return Promise.of(http.errorResponse(500, "Connection update failed: " + e.getMessage()));
+            }
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Audit helper
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Emits a connector lifecycle audit event.
+     *
+     * <p>When {@link #auditService} is null, the call is a no-op so callers
+     * do not need to guard against null service references.
+     *
+     * @param tenantId     tenant that owns the connection
+     * @param connectionId the connection being acted on
+     * @param eventType    lifecycle event type (e.g. {@code CONNECTOR_CREATED})
+     * @param success      whether the operation succeeded
+     */
+    private void emitConnectorAudit(String tenantId, String connectionId,
+                                    String eventType, boolean success) {
+        if (auditService == null) return;
+        AuditEvent event = AuditEvent.builder()
+            .tenantId(tenantId)
+            .eventType(eventType)
+            .resourceType("CONNECTOR")
+            .resourceId(connectionId)
+            .success(success)
+            .build();
+        auditService.record(event).whenException(e ->
+            log.warn("[connector-audit] emission failed eventType={} connectionId={}: {}", eventType, connectionId, e.getMessage()));
     }
 }

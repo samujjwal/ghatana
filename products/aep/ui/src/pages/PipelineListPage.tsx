@@ -122,7 +122,7 @@ export function PipelineListPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pipelines</h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Manage event-processing pipelines for tenant{' '}
+            Agentic orchestration runtime surface for tenant{' '}
             <span className="font-mono text-indigo-600">{tenantId}</span>
           </p>
         </div>
@@ -173,7 +173,7 @@ export function PipelineListPage() {
         <EmptyState
           title={search ? 'No pipelines match your search' : 'No pipelines found'}
           description={search ? 'Try clearing the search filter.' : 'Create your first pipeline to get started.'}
-          action={!search && canManagePipelines ? { label: '+ New Pipeline', onClick: handleNew } : undefined}
+          action={!search && canManagePipelines ? <Button onClick={handleNew} variant="primary">+ New Pipeline</Button> : undefined}
         />
       )}
 

@@ -1,7 +1,9 @@
 package com.ghatana.platform.observability;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 
 /**
@@ -83,13 +85,37 @@ public class Metrics {
     }
 
     /**
+     * Gets the underlying MeterRegistry.
+     *
+     * <p>Counters are monotonically increasing values (never decrease). Use for
+     * counting events, requests, errors, etc.</p>
+     *
+     * @param name the counter name (e.g., "requests.total", "events.processed")
+     * @return a configured Counter
+     */
+    public Counter counter(String name) {
+        return Counter.builder(name)
+            .register(registry);
+    }
+
+    /**
+     * Creates a counter with key-value tag pairs.
+     *
+     * @param name the counter name
+     * @param tags alternating key-value tag pairs (must be even count)
+     * @return a configured Counter with the specified tags
+     */
+    public Counter counter(String name, String... tags) {
+        return Counter.builder(name)
+            .tags(Tags.of(tags))
+            .register(registry);
+    }
+
+    /**
      * Creates a timer with standard percentile configuration.
      *
      * <p>Percentiles: p50 (0.5), p95 (0.95), p99 (0.99). Useful for latency tracking
      * and SLA monitoring.</p>
-     *
-     * <p><b>Note:</b> Percentiles incur higher memory overhead than basic timers.
-     * Use for critical latency metrics only.</p>
      *
      * @param name the timer name (e.g., "request.latency", "database.query.duration")
      * @return a configured Timer with percentiles
@@ -101,17 +127,43 @@ public class Metrics {
     }
 
     /**
-     * Creates a counter.
+     * Creates a timer with standard percentile configuration and key-value tag pairs.
      *
-     * <p>Counters are monotonically increasing values (never decrease). Use for
-     * counting events, requests, errors, etc.</p>
-     *
-     * @param name the counter name (e.g., "requests.total", "events.processed")
-     * @return a configured Counter
+     * @param name the timer name
+     * @param tags alternating key-value tag pairs (must be even count)
+     * @return a configured Timer with percentiles and the specified tags
      */
-    public Counter counter(String name) {
-        return Counter.builder(name)
+    public Timer timer(String name, String... tags) {
+        return Timer.builder(name)
+            .publishPercentiles(0.5, 0.95, 0.99)
+            .tags(Tags.of(tags))
             .register(registry);
+    }
+
+    /**
+     * Registers a gauge that reports a fixed {@code double} value.
+     *
+     * <p>Suitable for one-time startup or status metrics where the value
+     * does not change after registration (e.g., startup duration, readiness flag).</p>
+     *
+     * @param name  the gauge name
+     * @param value the fixed value to report
+     */
+    public void gauge(String name, double value) {
+        java.util.concurrent.atomic.AtomicReference<Double> ref =
+            new java.util.concurrent.atomic.AtomicReference<>(value);
+        Gauge.builder(name, ref, java.util.concurrent.atomic.AtomicReference::get)
+            .register(registry);
+    }
+
+    /**
+     * Registers a gauge that reports a fixed {@code long} value converted to {@code double}.
+     *
+     * @param name  the gauge name
+     * @param value the fixed value to report
+     */
+    public void gauge(String name, long value) {
+        gauge(name, (double) value);
     }
 
     /**

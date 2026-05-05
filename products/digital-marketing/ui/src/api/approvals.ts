@@ -22,10 +22,12 @@ function base(workspaceId: string): string {
 export async function submitApproval(
   workspaceId: string,
   body: SubmitApprovalRequest,
+  idempotencyKey?: string,
 ): Promise<ApprovalRecordResponse> {
   return apiRequest<ApprovalRecordResponse>(base(workspaceId), {
     method: 'POST',
     body,
+    idempotencyKey,
   });
 }
 
@@ -57,13 +59,24 @@ export async function listPendingApprovals(
   return response.items;
 }
 
+// P1-013: Workspace-scoped pending approvals - lists all pending approvals in a workspace
+export async function listPendingApprovalsForWorkspace(
+  workspaceId: string,
+): Promise<ApprovalRecordResponse[]> {
+  const response = await apiRequest<PendingApprovalsResponse>(
+    `${base(workspaceId)}/pending`,
+  );
+  return response.items;
+}
+
 export async function decideApproval(
   workspaceId: string,
   requestId: string,
   body: DecideApprovalRequest,
+  idempotencyKey?: string,
 ): Promise<ApprovalRecordResponse> {
   return apiRequest<ApprovalRecordResponse>(
     `${base(workspaceId)}/${encodeURIComponent(requestId)}/decide`,
-    { method: 'POST', body },
+    { method: 'POST', body, idempotencyKey },
   );
 }

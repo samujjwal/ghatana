@@ -64,6 +64,19 @@ public interface ApprovalWorkflowService {
     Promise<List<ApprovalRecord>> listPendingApprovals(DmOperationContext ctx, String subjectId);
 
     /**
+     * Lists all pending approvals for a workspace.
+     *
+     * <p>P1-013: Returns all pending approvals in a workspace that the current approver
+     * can act on based on their role/workspace membership. This enables workspace-scoped
+     * approval queues where approvers see all pending approvals relevant to their workspace.</p>
+     *
+     * @param ctx operation context
+     * @param workspaceId the workspace identifier
+     * @return Promise resolving to list of pending approval records for the workspace
+     */
+    Promise<List<ApprovalRecord>> listPendingApprovalsForWorkspace(DmOperationContext ctx, String workspaceId);
+
+    /**
      * Retrieves the stored approval snapshot for a request.
      *
      * @param ctx       operation context

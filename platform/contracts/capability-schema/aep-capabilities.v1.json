@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ghatana.com/schemas/aep-capabilities/v1.json",
+  "title": "AepCapabilities",
+  "description": "Server-driven capability manifest returned by GET /api/v1/capabilities. All consumers (UI, gateways, agents) must derive their feature gates from this canonical schema. Do not add fields here without a matching backend change and a corresponding test.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "dataCloud",
+    "redis",
+    "analyticsStore",
+    "aiSuggestions",
+    "nlpParse",
+    "gdprCompliance",
+    "soc2Compliance",
+    "piiEnforcement",
+    "killSwitch",
+    "gracefulDegradation",
+    "policyEngine",
+    "episodeLearning",
+    "humanInTheLoop",
+    "serverSideConsent",
+    "durableSessions",
+    "sseStreaming"
+  ],
+  "properties": {
+    "dataCloud": {
+      "type": "boolean",
+      "description": "Data Cloud integration is available for this tenant. When false, Data Cloud-dependent pages and actions must be hidden."
+    },
+    "redis": {
+      "type": "boolean",
+      "description": "Redis cache layer is available. Affects session durability and real-time event buffering."
+    },
+    "analyticsStore": {
+      "type": "boolean",
+      "description": "Analytics store (ClickHouse or equivalent) is reachable. Gates cost and monitoring dashboards."
+    },
+    "aiSuggestions": {
+      "type": "boolean",
+      "description": "AI-powered suggestions (NLP triage, confidence hints) are available."
+    },
+    "nlpParse": {
+      "type": "boolean",
+      "description": "NLP parser is available for request triage and pattern matching."
+    },
+    "gdprCompliance": {
+      "type": "boolean",
+      "description": "GDPR fulfilment endpoints are wired. Gates the Privacy Requests page."
+    },
+    "soc2Compliance": {
+      "type": "boolean",
+      "description": "SOC 2 audit log integration is active. Gates compliance-level audit views."
+    },
+    "piiEnforcement": {
+      "type": "boolean",
+      "description": "PII enforcement middleware is active. When false, PII-sensitive fields are not masked."
+    },
+    "killSwitch": {
+      "type": "boolean",
+      "description": "Emergency kill-switch capability is available for tenant administrators."
+    },
+    "gracefulDegradation": {
+      "type": "boolean",
+      "description": "Backend supports graceful degradation; UI degraded-mode banner should respect this flag."
+    },
+    "policyEngine": {
+      "type": "boolean",
+      "description": "Policy engine (HITL approve/reject, pattern policies) is available."
+    },
+    "episodeLearning": {
+      "type": "boolean",
+      "description": "Agent episode learning and memory replay are available."
+    },
+    "humanInTheLoop": {
+      "type": "boolean",
+      "description": "HITL review queue is wired. Gates the HITL Review page."
+    },
+    "serverSideConsent": {
+      "type": "boolean",
+      "description": "Server-side consent propagation is active for privacy-aware data flows."
+    },
+    "durableSessions": {
+      "type": "boolean",
+      "description": "Sessions are persisted across restarts (requires Redis). When false, sessions are in-memory only."
+    },
+    "sseStreaming": {
+      "type": "boolean",
+      "description": "Server-Sent Events endpoint is available for real-time pipeline streaming."
+    }
+  }
+}

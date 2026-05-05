@@ -1664,7 +1664,12 @@ public class AiAssistHandler {
 
     private Map<String, Object> parseBody(String json) {
         try {
-            return json == null || json.isBlank() ? Map.of() : http.objectMapper().readValue(json, Map.class);
+            if (json == null || json.isBlank()) {
+                return Map.of();
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = http.objectMapper().readValue(json, Map.class);
+            return result;
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid JSON body: " + e.getMessage(), e);
         }

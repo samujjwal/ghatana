@@ -33,6 +33,12 @@
     "check:jwt-policy": "./scripts/check-jwt-dependency-policy.sh",
     "check:license-policy": "./scripts/check-license-policy.sh",
     "check:cross-workspace-deps": "node ./scripts/check-cross-workspace-deps.mjs",
+    "check:capability-schema-drift": "node ./scripts/check-capability-schema-drift.mjs",
+    "check:data-cloud-feature-gates": "node ./scripts/generate-data-cloud-feature-gates.mjs --check",
+    "generate:data-cloud-feature-gates": "node ./scripts/generate-data-cloud-feature-gates.mjs",
+    "check:openapi-canonical": "node ./scripts/check-openapi-contract-canonical.mjs",
+    "check:production-stubs": "node ./scripts/check-production-stubs.mjs --report --allowlist=config/production-stub-allowlist.json",
+    "check:doc-truth": "node ./scripts/check-doc-truth.mjs",
     "check:circular-deps": "node ./scripts/check-circular-deps.mjs",
     "test:eslint-rules": "node ./eslint-rules/ghatana-architecture-rules.test.js",
     "prepare": "husky"

@@ -1,8 +1,11 @@
 /**
  * Hook for fetching and managing marketing strategies.
  *
+ * <p>P1-032: Mutations invalidate approval queue and AI action log queries
+ * to ensure related state updates without manual refresh.</p>
+ *
  * @doc.type hook
- * @doc.purpose Fetch and mutate strategies for a workspace
+ * @doc.purpose Fetch and mutate strategies with cache invalidation
  * @doc.layer frontend
  */
 
@@ -47,9 +50,15 @@ export function useGenerateStrategy(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<MarketingStrategy, Error, GenerateStrategyRequest>({
-    mutationFn: (body) => generateStrategy(workspaceId!, body),
+    mutationFn: (body) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return generateStrategy(workspaceId!, body, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate strategy and AI action log queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['ai-actions', workspaceId] });
     },
   });
 
@@ -70,9 +79,15 @@ export function useSubmitStrategyApproval(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<MarketingStrategy, Error, string>({
-    mutationFn: (strategyId) => submitStrategyForApproval(workspaceId!, strategyId),
+    mutationFn: (strategyId) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return submitStrategyForApproval(workspaceId!, strategyId, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate strategy and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
   });
 
@@ -93,9 +108,15 @@ export function useApproveStrategy(workspaceId: string | null): {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<MarketingStrategy, Error, string>({
-    mutationFn: (strategyId) => approveStrategy(workspaceId!, strategyId),
+    mutationFn: (strategyId) => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return approveStrategy(workspaceId!, strategyId, idempotencyKey);
+    },
     onSuccess: () => {
+      // P1-032: Invalidate strategy and approval queue queries
       queryClient.invalidateQueries({ queryKey: ['strategy', 'latest', workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ['approvals', 'pending', workspaceId] });
     },
   });
 

@@ -247,7 +247,7 @@ class StrategyGeneratorServiceImplTest extends EventloopTestBase {
         }
 
         @Override
-        public Promise<Optional<MarketingStrategy>> findById(String strategyId) {
+        public Promise<Optional<MarketingStrategy>> findById(DmWorkspaceId workspaceId, String strategyId) {
             return Promise.of(Optional.ofNullable(store.get(strategyId)));
         }
     }

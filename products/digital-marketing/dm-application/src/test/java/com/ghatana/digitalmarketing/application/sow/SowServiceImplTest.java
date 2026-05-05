@@ -417,6 +417,23 @@ class SowServiceImplTest extends EventloopTestBase {
                 String subjectId, String description) {
             return Promise.of("approval-1");
         }
+
+        @Override
+        public Promise<Double> evaluateRisk(DmOperationContext context, String entityId,
+                String riskModelId, Map<String, Object> factors) {
+            return Promise.of(0.0);
+        }
+
+        @Override
+        public Promise<Void> notifyUser(DmOperationContext context, String recipientId,
+                String template, Map<String, String> attributes) {
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Boolean> isFeatureEnabled(DmOperationContext context, String flagKey) {
+            return Promise.of(true);
+        }
     }
 
     private static final class InMemoryClauseRepository implements SowClauseRepository {

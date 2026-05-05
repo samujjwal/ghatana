@@ -71,6 +71,23 @@ pnpm --dir products/data-cloud/ui install
 pnpm --dir products/data-cloud/ui dev
 ```
 
+### Profile Durability Modes
+
+Workflow execution durability depends on the selected Data Cloud profile.
+
+- `local`: non-durable in-memory stores. Restarting the process clears workflow execution snapshots, logs, and checkpoints.
+- `sovereign`: durable on-disk H2 stores. Workflow execution snapshots, logs, and checkpoints survive restart when the same sovereign data directory is reused.
+
+For `sovereign`, configure the storage path through Data Cloud custom config key `sovereign.dataDir`.
+If not provided, Data Cloud uses:
+
+- `${user.home}/.ghatana/datacloud/sovereign`
+
+Operational guidance:
+
+- Use `local` for quick development and non-persistent testing.
+- Use `sovereign` (or another durable provider) for any restart-safe workflow history requirement.
+
 ## 4. Main UI Areas
 
 The current primary route model is defined in `ui/src/routes.tsx`.

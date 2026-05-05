@@ -101,10 +101,10 @@ export const canonicalRouteRegistry: RouteCapabilityRegistry = {
     label: 'Pipelines',
     minimumShellRole: 'primary-user',
     lifecycle: 'active',
-    capabilities: ['workflows', 'orchestration'],
+    capabilities: ['workflows', 'plugin-execution'],
     discoverable: true,
     iconName: 'Workflow',
-    description: 'Manage data pipelines and workflows',
+    description: 'Manage data-local plugin workflow execution and history',
   },
   query: {
     path: '/query',

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ghatana.digitalmarketing.application.adcopy.AdCopyGeneratorService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -66,16 +67,19 @@ public final class DmosAdCopyServlet {
 
     private final AdCopyGeneratorService generatorService;
     private final Eventloop eventloop;
+    private final DmosMetricsCollector metrics;
 
     /**
      * Constructs a new {@code DmosAdCopyServlet}.
      *
      * @param generatorService ad copy generator service; must not be null
      * @param eventloop        ActiveJ event loop; must not be null
+     * @param metrics          metrics collector for request telemetry; must not be null
      */
-    public DmosAdCopyServlet(AdCopyGeneratorService generatorService, Eventloop eventloop) {
+    public DmosAdCopyServlet(AdCopyGeneratorService generatorService, Eventloop eventloop, DmosMetricsCollector metrics) {
         this.generatorService = Objects.requireNonNull(generatorService, "generatorService must not be null");
         this.eventloop        = Objects.requireNonNull(eventloop,        "eventloop must not be null");
+        this.metrics          = Objects.requireNonNull(metrics,          "metrics must not be null");
     }
 
     /**
@@ -85,14 +89,16 @@ public final class DmosAdCopyServlet {
      */
     public AsyncServlet getServlet() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST,
-                "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/generate",
-                this::handleGenerateAdCopyDraft)
-            .with(HttpMethod.GET,
-                "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/latest-approved",
-                this::handleGetLatestApproved)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST,
+                    "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/generate",
+                    this::handleGenerateAdCopyDraft)
+                .with(HttpMethod.GET,
+                    "/v1/workspaces/:workspaceId/content-items/:itemId/ad-copy/latest-approved",
+                    this::handleGetLatestApproved)
+                .build(),
+            metrics,
+            "adcopy"
         );
     }
 

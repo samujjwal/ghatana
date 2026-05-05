@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.transparency.AiActionLogService;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
 import com.ghatana.digitalmarketing.contracts.DmIdempotencyKey;
@@ -58,19 +60,25 @@ public final class DmosAiActionLogServlet {
 
     private final AiActionLogService service;
     private final Eventloop eventloop;
+    private final DmosMetricsCollector metrics;
+    private final DmosHttpContextFactory httpContextFactory;
 
-    public DmosAiActionLogServlet(AiActionLogService service, Eventloop eventloop) {
-        this.service = Objects.requireNonNull(service, "service must not be null");
-        this.eventloop = Objects.requireNonNull(eventloop, "eventloop must not be null");
+    public DmosAiActionLogServlet(AiActionLogService service, Eventloop eventloop, DmosMetricsCollector metrics, DmosHttpContextFactory httpContextFactory) {
+        this.service            = Objects.requireNonNull(service,            "service must not be null");
+        this.eventloop           = Objects.requireNonNull(eventloop,           "eventloop must not be null");
+        this.metrics             = Objects.requireNonNull(metrics,             "metrics must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     public AsyncServlet routes() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/ai-actions", this::handleRecord)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions", this::handleList)
-            .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions/:actionId", this::handleGet)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST, "/v1/workspaces/:workspaceId/ai-actions", this::handleRecord)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions", this::handleList)
+                .with(HttpMethod.GET, "/v1/workspaces/:workspaceId/ai-actions/:actionId", this::handleGet)
+                .build(),
+            metrics,
+            "aiactions"
         );
     }
 
@@ -78,7 +86,8 @@ public final class DmosAiActionLogServlet {
         return request.loadBody().then(__ -> {
             try {
                 String workspaceId = request.getPathParameter("workspaceId");
-                DmOperationContext ctx = buildContext(request, workspaceId, true);
+                // P1-001: Use shared fail-closed HTTP context factory
+                DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                 RecordRequest body = MAPPER.readValue(
                     request.getBody().getString(StandardCharsets.UTF_8),
                     RecordRequest.class
@@ -111,7 +120,8 @@ public final class DmosAiActionLogServlet {
     private Promise<HttpResponse> handleList(HttpRequest request) {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             String correlationId = request.getQueryParameter("correlationId");
             String relatedEntityId = request.getQueryParameter("relatedEntityId");
             int limit = parseLimit(request.getQueryParameter("limit"));
@@ -135,7 +145,8 @@ public final class DmosAiActionLogServlet {
         try {
             String workspaceId = request.getPathParameter("workspaceId");
             String actionId = request.getPathParameter("actionId");
-            DmOperationContext ctx = buildContext(request, workspaceId, false);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, false);
             return service.getAction(ctx, actionId)
                 .map(entry -> jsonResponse(200, EntryResponse.from(entry)))
                 .then(r -> Promise.of(r), e -> mapServiceError("get action", e));
@@ -175,70 +186,9 @@ public final class DmosAiActionLogServlet {
         return Promise.of(errorResponse(500, "Internal error"));
     }
 
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId, boolean requireIdempotencyKey) {
-        String tenantId = getRequiredHeader(request, "X-Tenant-ID");
-        String principal = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", DmCorrelationId.generate().getValue());
-        String idempotencyKeyValue = getHeader(request, "X-Idempotency-Key", null);
-        String sessionId = getHeader(request, "X-Session-ID", null);
-        Set<String> roles = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> permissions = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
+    // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
 
-        if (requireIdempotencyKey && (idempotencyKeyValue == null || idempotencyKeyValue.isBlank())) {
-            throw new IllegalArgumentException("X-Idempotency-Key header is required for write operations");
-        }
-
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-        DmIdempotencyKey idempotencyKey =
-            (idempotencyKeyValue != null && !idempotencyKeyValue.isBlank())
-                ? DmIdempotencyKey.of(idempotencyKeyValue)
-                : null;
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlationId))
-            .build();
-
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext,
-            sessionId,
-            roles,
-            permissions,
-            null
-        );
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext,
-            workspace,
-            DmCorrelationId.of(correlationId),
-            idempotencyKey
-        );
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        return Arrays.stream(value.split(","))
-            .map(String::trim)
-            .filter(token -> !token.isBlank())
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Required header missing: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value != null && !value.isBlank()) ? value : defaultValue;
-    }
+    // P1-001: Local helper methods removed - using shared DmosHttpContextFactory
 
     private HttpResponse jsonResponse(int code, Object body) {
         try {

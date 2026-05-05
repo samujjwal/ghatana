@@ -144,4 +144,74 @@ class AgentMarketplaceServiceTest {
         assertThat(simulation.allowedToInstall()).isFalse();
         assertThat(simulation.compatibilityNotes()).anyMatch(note -> note.contains("does not match published version"));
     }
+
+    @Test
+    @DisplayName("MKT-ROLL-1: installAgent fails atomically when simulation blocks install")
+    void installAgentFailsWhenSimulationBlocked() {
+        AgentMarketplaceService service = new AgentMarketplaceService(
+                null,
+                List.of(CatalogAgentEntry.builder()
+                        .id("ops-agent")
+                        .name("Ops Agent")
+                        .version("2.4.0")
+                        .catalogId("platform")
+                        .metadata(Map.of("level", "worker", "domain", "operations"))
+                        .capabilities(Set.of("triage"))
+                        .build()));
+
+        // Requesting a mismatched version causes the simulation to block install
+        Throwable[] throwableHolder = new Throwable[1];
+        service.installAgent(
+                TENANT_ID,
+                "ops-agent",
+                new AgentMarketplaceService.InstallAgentRequest("production", Map.of(), "1.9.0"))
+            .whenException(e -> throwableHolder[0] = e);
+
+        assertThat(throwableHolder[0]).isNotNull();
+        assertThat(throwableHolder[0].getMessage()).contains("Marketplace install blocked");
+    }
+
+    @Test
+    @DisplayName("MKT-ROLL-2: installAgent succeeds and returns a non-null install record in-memory")
+    void installAgentSucceedsInMemoryModeWithVersionMatch() {
+        AgentMarketplaceService service = new AgentMarketplaceService(
+                null,
+                List.of(CatalogAgentEntry.builder()
+                        .id("ops-agent")
+                        .name("Ops Agent")
+                        .version("2.4.0")
+                        .catalogId("platform")
+                        .metadata(Map.of("level", "worker", "domain", "operations"))
+                        .capabilities(Set.of("triage"))
+                        .build()));
+
+        AgentMarketplaceService.MarketplaceInstallRecord record = service
+                .installAgent(
+                        TENANT_ID,
+                        "ops-agent",
+                        new AgentMarketplaceService.InstallAgentRequest("sandbox", Map.of(), "2.4.0"))
+                .getResult();
+
+        assertThat(record).isNotNull();
+        assertThat(record.tenantId()).isEqualTo(TENANT_ID);
+        assertThat(record.agentId()).isEqualTo("ops-agent");
+        assertThat(record.compatibilityStatus()).isEqualTo("COMPATIBLE");
+        assertThat(record.installedAt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("MKT-ROLL-3: installAgent for unknown agent throws IllegalArgumentException (no partial state)")
+    void installAgentForUnknownAgentThrowsWithoutPartialState() {
+        AgentMarketplaceService service = new AgentMarketplaceService(null, List.of());
+
+        Throwable[] throwableHolder = new Throwable[1];
+        service.installAgent(
+                TENANT_ID,
+                "agent-does-not-exist",
+                new AgentMarketplaceService.InstallAgentRequest("sandbox", Map.of(), null))
+            .whenException(e -> throwableHolder[0] = e);
+
+        assertThat(throwableHolder[0]).isNotNull();
+        assertThat(throwableHolder[0].getMessage()).contains("not found");
+    }
 }

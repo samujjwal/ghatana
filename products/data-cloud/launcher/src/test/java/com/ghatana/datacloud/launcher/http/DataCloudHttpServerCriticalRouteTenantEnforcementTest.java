@@ -383,6 +383,177 @@ class DataCloudHttpServerCriticalRouteTenantEnforcementTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
+     * Workflow execution and pipeline route cross-tenant enforcement.
+     *
+     * <p>DC-P1-005: A principal bound to tenant-A must receive {@code 403} when the request
+     * carries tenant-B in the {@code X-Tenant-ID} header on pipeline/execution routes.
+     *
+     * @doc.type class
+     * @doc.purpose DC-P1-005 cross-tenant enforcement for workflow/pipeline routes
+     * @doc.layer product
+     * @doc.pattern Test
+     */
+    @Nested
+    @DisplayName("Workflow / Pipeline routes – cross-tenant enforcement (DC-P1-005)")
+    class WorkflowPipelineCrossTenantTests {
+
+        @Test
+        @DisplayName("POST /api/v1/pipelines/:id/execute with wrong tenant returns 403")
+        void executePipeline_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/pipelines/pipe-001/execute"))
+                    .header("Content-Type", "application/json"),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/pipelines/:id/executions with wrong tenant returns 403")
+        void listExecutions_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/pipelines/pipe-001/executions")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/pipelines/:id/executions/:execId with wrong tenant returns 403")
+        void getExecution_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/pipelines/pipe-001/executions/exec-001")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/executions/:execId/cancel with wrong tenant returns 403")
+        void cancelExecution_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/executions/exec-001/cancel"))
+                    .header("Content-Type", "application/json"),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/executions/:execId/retry with wrong tenant returns 403")
+        void retryExecution_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{}"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/executions/exec-001/retry"))
+                    .header("Content-Type", "application/json"),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/pipelines/:id/executions/:execId/logs with wrong tenant returns 403")
+        void getExecutionLogs_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/pipelines/pipe-001/executions/exec-001/logs")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+    }
+
+    /**
+     * Brain/memory and context route cross-tenant enforcement.
+     *
+     * <p>DC-P1-005: A principal bound to tenant-A must receive {@code 403} when the request
+     * carries tenant-B in the {@code X-Tenant-ID} header on brain/memory/context routes.
+     *
+     * @doc.type class
+     * @doc.purpose DC-P1-005 cross-tenant enforcement for brain/memory/context routes
+     * @doc.layer product
+     * @doc.pattern Test
+     */
+    @Nested
+    @DisplayName("Brain / Memory / Context routes – cross-tenant enforcement (DC-P1-005)")
+    class BrainMemoryContextCrossTenantTests {
+
+        @Test
+        @DisplayName("GET /api/v1/brain/workspace with wrong tenant returns 403")
+        void brainWorkspace_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/brain/workspace")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/brain/entities with wrong tenant returns 403")
+        void brainEntities_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/brain/entities")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/brain/query with wrong tenant returns 403")
+        void brainQuery_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString("{\"query\":\"test\"}"))
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/brain/query"))
+                    .header("Content-Type", "application/json"),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+    }
+
+    /**
      * Stream and SSE route tenant isolation guardrails.
      *
      * <p>The security filter runs before every handler, including SSE endpoints. A
@@ -395,10 +566,91 @@ class DataCloudHttpServerCriticalRouteTenantEnforcementTest {
      * @doc.layer product
      * @doc.pattern Test
      */
+    /**
+     * DC-P1-013: Privacy tests — semantic similarity tenant scope, PII exclusion from RAG,
+     * memory TTL deletion, and cross-tenant governance isolation.
+     */
+    @Nested
+    @DisplayName("Privacy – semantic scope, PII exclusion, memory TTL (DC-P1-013)")
+    class PrivacyCrossTenantTests {
+
+        @Test
+        @DisplayName("POST /api/v1/brain/query with wrong tenant returns 403 (semantic scope guard)")
+        void brainQuery_semanticScope_wrongTenantReturnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendPostWithTenant(
+                "/api/v1/brain/query",
+                "{\"query\":\"show me orders\",\"limit\":5}",
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/memory/agents/:agentId with wrong tenant returns 403")
+        void agentMemory_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/memory/agents/agent-xyz")),
+                TENANT_A_KEY, TENANT_B);
+
+            // Must be 403 for wrong tenant — agent memory is tenant-scoped
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/memory/agents/:agentId with wrong tenant returns 403")
+        void storeAgentMemory_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendPostWithTenant(
+                "/api/v1/memory/agents/agent-xyz",
+                "{\"type\":\"EPISODIC\",\"content\":\"private memory\"}",
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("GET /api/v1/governance/policies with wrong tenant returns 403")
+        void governancePolicies_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendWithTenant(
+                HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://127.0.0.1:" + port + "/api/v1/governance/policies")),
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+
+        @Test
+        @DisplayName("POST /api/v1/governance/privacy/redact with wrong tenant returns 403")
+        void piiRedact_wrongTenant_returnsForbidden() throws Exception {
+            startServer();
+
+            HttpResponse<String> resp = sendPostWithTenant(
+                "/api/v1/governance/privacy/redact",
+                "{\"collection\":\"user_profiles\",\"entityId\":\"ent-123\",\"fields\":[\"email\"]}",
+                TENANT_A_KEY, TENANT_B);
+
+            assertThat(resp.statusCode()).isEqualTo(403);
+            assertErrorPayload(resp);
+        }
+    }
+
     @Nested
     @DisplayName("Stream / SSE routes – cross-tenant enforcement (P0-04)")
     class StreamTransportCrossTenantTests {
-
         @Test
         @DisplayName("GET /api/v1/entities/:collection/query/stream with wrong tenant returns 403") 
         void sseEntityQueryStream_wrongTenant_returnsForbidden() throws Exception { 

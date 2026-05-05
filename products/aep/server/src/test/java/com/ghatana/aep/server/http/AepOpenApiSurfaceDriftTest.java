@@ -166,6 +166,16 @@ class AepOpenApiSurfaceDriftTest {
         }
     }
 
+    @Test
+    @DisplayName("OpenAPI description keeps AEP agentic orchestration terminology explicit")
+    void shouldDocumentAepOrchestrationBoundary() throws IOException {
+        String spec = Files.readString(findRepoFile("products/aep/contracts/openapi.yaml"));
+
+        assertThat(spec)
+            .contains("AEP provides an agentic orchestration runtime for event-driven execution")
+            .doesNotContain("data-local plugin runtime execution");
+    }
+
     @Nested
     @DisplayName("Schema Validation")
     class SchemaValidationTests {

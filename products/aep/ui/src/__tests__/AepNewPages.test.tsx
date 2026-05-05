@@ -28,11 +28,17 @@ import { HitlReviewPage } from '@/pages/HitlReviewPage';
 // API modules mocked
 import * as aepApi from '@/api/aep.api';
 import * as pipelineApi from '@/api/pipeline.api';
+import * as useAgentMemory from '@/hooks/useAgentMemory';
 
 // ── Mocks ────────────────────────────────────────────────────────────
 
 vi.mock('@/api/aep.api');
 vi.mock('@/api/pipeline.api');
+vi.mock('@/hooks/useAgentMemory', () => ({
+  useAllEpisodes: vi.fn(),
+  usePolicies: vi.fn(),
+  POLICIES_QUERY_KEY: 'policies',
+}));
 vi.mock('@audio-video/ui', () => ({
   useSpeechSynthesis: () => ({ speak: vi.fn() }),
 }));
@@ -381,6 +387,108 @@ describe('PatternStudioPage', () => {
     vi.mocked(pipelineApi.listPatterns).mockResolvedValue([]);
     renderWithQuery(<PatternStudioPage />);
     await waitFor(() => expect(screen.getByText(/no patterns found/i)).toBeInTheDocument());
+  });
+});
+
+// ── PatternStudioPage: Learning Tab ──────────────────────────────────
+
+describe('PatternStudioPage — learning tab', () => {
+  beforeEach(() => {
+    vi.mocked(pipelineApi.listPatterns).mockResolvedValue([PATTERN]);
+    vi.mocked(aepApi.approvePolicy).mockResolvedValue({ ...POLICY, status: 'APPROVED' });
+    vi.mocked(aepApi.rejectPolicy).mockResolvedValue({ ...POLICY, status: 'REJECTED' });
+    vi.mocked(aepApi.triggerReflection).mockResolvedValue(undefined);
+    // Default: episodes and policies return data
+    vi.mocked(useAgentMemory.useAllEpisodes).mockReturnValue({
+      data: [EPISODE],
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof useAgentMemory.useAllEpisodes>);
+    vi.mocked(useAgentMemory.usePolicies).mockReturnValue({
+      data: [POLICY],
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    } as ReturnType<typeof useAgentMemory.usePolicies>);
+  });
+
+  it('navigates to learning tab on click', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /episodes/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('renders episodes sub-tab by default in learning tab', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /episodes/i })).toBeInTheDocument(),
+    );
+  });
+
+  it('shows episodes empty state when no episodes', async () => {
+    vi.mocked(useAgentMemory.useAllEpisodes).mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    } as ReturnType<typeof useAgentMemory.useAllEpisodes>);
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/no episodes yet/i)).toBeInTheDocument(),
+    );
+  });
+
+  it('shows episodes error state when hook errors', async () => {
+    vi.mocked(useAgentMemory.useAllEpisodes).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    } as ReturnType<typeof useAgentMemory.useAllEpisodes>);
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await waitFor(() =>
+      expect(screen.getByText(/failed to load episodes/i)).toBeInTheDocument(),
+    );
+  });
+
+  it('shows policies when switching to policies sub-tab', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
+    await waitFor(() =>
+      expect(screen.getByText('Auto-escalation rule')).toBeInTheDocument(),
+    );
+  });
+
+  it('does not auto-promote policies — approve requires explicit action', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
+    await waitFor(() => screen.getByText('Auto-escalation rule'));
+    // Approve button must be present but policy must not be auto-promoted
+    expect(aepApi.approvePolicy).not.toHaveBeenCalled();
+  });
+
+  it('calls triggerReflection when Trigger reflection button clicked', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PatternStudioPage />);
+    await user.click(screen.getByRole('button', { name: /learning/i }));
+    await user.click(await screen.findByRole('button', { name: /policies/i }));
+    // The reflect button has unicode ▶ prefix — match by partial name accessor
+    const reflectBtn = await screen.findByRole('button', {
+      name: (name) => name.includes('Trigger reflection'),
+    });
+    await user.click(reflectBtn);
+    await waitFor(() => expect(aepApi.triggerReflection).toHaveBeenCalledWith('default'));
   });
 });
 

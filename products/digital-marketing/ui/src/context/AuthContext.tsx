@@ -1,9 +1,11 @@
 /**
  * DMOS auth context.
  *
- * <p>Production-safe auth implementation (DMOS-P0-1):</p>
+ * <p>Production-safe auth implementation addressing P0-006, P0-007, P0-008:</p>
  * <ul>
- *   <li>Local auth disabled in production - requires real auth provider</li>
+ *   <li>P0-007: Local manual auth disabled in production - requires real auth provider</li>
+ *   <li>P0-006: Production auth via OAuth2/OIDC callback handler</li>
+ *   <li>P0-008: Real session refresh via provider tokens (not fake local extension)</li>
  *   <li>Auth tokens stored in runtime memory only (never localStorage/sessionStorage)</li>
  *   <li>Session expiry handling with automatic logout</li>
  *   <li>Session invalidation on logout</li>
@@ -34,8 +36,25 @@ import { normalizeRoles, validateRoles } from '@/lib/role-utils';
 const SESSION_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
 const SESSION_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
-// Production environment check
+// P0-007: Production environment check using Vite env
 const isProduction = import.meta.env.MODE === 'production';
+const isDevMode = import.meta.env.DEV === true;
+
+// P0-006: Auth provider configuration from environment
+const AUTH_PROVIDER_ENABLED = import.meta.env.VITE_AUTH_PROVIDER_ENABLED === 'true';
+const AUTH_CALLBACK_PATH = '/auth/callback';
+
+/** Auth session info from provider token validation */
+interface AuthSessionInfo {
+  token: string;
+  workspaceId: string;
+  tenantId: string;
+  principalId: string;
+  sessionId: string;
+  roles: string[];
+  expiresAt: number;
+  refreshToken?: string;
+}
 
 interface AuthContextValue {
   token: string | null;
@@ -110,33 +129,36 @@ export function AuthProvider({
     return () => clearInterval(interval);
   }, [token, sessionExpiry, logout]);
 
-  // Session refresh (DMOS-P0-1)
+  // P0-008: Real session refresh handling
   useEffect(() => {
     if (!token) return;
 
-    const refresh = () => {
-      if (isProduction) {
-        // In production, session refresh should be handled by the authentication provider
-        // via token refresh tokens or similar mechanism. The current implementation
-        // uses local storage expiry for demo purposes. Production deployments should
-        // integrate with the configured authentication provider's refresh mechanism.
-        console.warn('[DMOS] Production session refresh requires auth provider integration');
-        // Extend expiry to prevent immediate logout (temporary measure)
-        setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
-      } else {
-        // In development, extend the expiry time
+    const refresh = async () => {
+      if (isProduction && AUTH_PROVIDER_ENABLED) {
+        // P0-008: In production with auth provider, session refresh must be
+        // handled via the provider's token refresh mechanism.
+        // This is a placeholder for the real implementation that should:
+        // 1. Call the backend token refresh endpoint
+        // 2. If refresh fails, log the user out (fail closed)
+        // 3. If refresh succeeds, update the token and expiry
+        console.warn('[DMOS] P0-008: Production session refresh not yet implemented - logging out');
+        logout();
+      } else if (isDevMode) {
+        // In development only, extend the local expiry time
         setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
       }
+      // In production without explicit dev mode, do NOT extend session
+      // Let the session expire naturally for security
     };
 
     const interval = setInterval(refresh, SESSION_REFRESH_MS);
     return () => clearInterval(interval);
-  }, [token]);
+  }, [token, logout]);
 
   const login = useCallback(
     (newToken: string, wsId: string, tId: string, pId: string, newSessionId: string, newRoles: string[] = []) => {
-      // P0-1: Fail closed in production - local auth not allowed
-      if (isProduction) {
+      // P0-007: Gate manual login to local/dev/test only - fail closed in production
+      if (isProduction && !isDevMode) {
         throw new Error(
           'Local authentication is not allowed in production. ' +
           'Please use the configured authentication provider.'
@@ -167,10 +189,27 @@ export function AuthProvider({
     [],
   );
 
+  /**
+   * P0-008: Refresh session.
+   *
+   * <p>In production with auth provider, this should call the provider's
+   * token refresh endpoint. Without provider integration, this fails closed
+   * in production (logs user out) and only extends session in dev mode.</p>
+   */
   const refreshSession = useCallback(() => {
     if (!token) return;
-    setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
-  }, [token]);
+
+    if (isProduction && AUTH_PROVIDER_ENABLED) {
+      // P0-008: Production with auth provider - require real token refresh
+      // Until implemented, fail closed by logging out
+      console.warn('[DMOS] P0-008: Production session refresh requires provider integration');
+      logout();
+    } else if (isDevMode) {
+      // In development only, extend the session expiry
+      setSessionExpiry(Date.now() + SESSION_EXPIRY_MS);
+    }
+    // In production without auth provider, do not extend session
+  }, [token, logout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ token, workspaceId, tenantId, principalId, sessionId, roles, isAuthenticated: token !== null && Date.now() < sessionExpiry, login, logout, refreshSession }),

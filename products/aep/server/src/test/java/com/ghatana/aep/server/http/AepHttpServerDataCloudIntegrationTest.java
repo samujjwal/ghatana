@@ -292,6 +292,56 @@ class AepHttpServerDataCloudIntegrationTest {
     }
 
     @Test
+    @DisplayName("pipeline update without any version token returns 428 PIPELINE_VERSION_REQUIRED")
+    void pipelineUpdateWithoutVersionTokenReturns428() throws Exception {
+        dataCloud = DataCloud.embedded();
+
+        String pipelineId = "pipeline-no-version-1";
+        DataCloudPipelineStore pipelineStore = new DataCloudPipelineStore(dataCloud);
+        Pipeline existing = new Pipeline();
+        existing.setId(pipelineId);
+        existing.setTenantId(TenantId.of("tenant-pipeline"));
+        existing.setName("no-version-pipeline");
+        existing.setVersion(2);
+        existing.setActive(true);
+        existing.setConfig("{\"stages\":[{\"name\":\"step1\"}]}");
+        existing.setCreatedBy("test");
+        existing.setUpdatedBy("test");
+        pipelineStore.save(existing).getResult();
+
+        int port = findFreePort();
+        engine = Aep.forTesting();
+        server = new AepHttpServer(engine, port, null, dataCloud);
+        server.start();
+        waitForServerReady(port);
+
+        // PUT with no If-Match header and no version/expectedVersion in the body
+        HttpResponse<String> updateResp = put(
+            port,
+            "/api/v1/pipelines/" + pipelineId,
+            mapper.writeValueAsString(Map.of(
+                "id", pipelineId,
+                "tenantId", "tenant-pipeline",
+                "name", "no-version-pipeline-updated",
+                "stages", List.of()
+            )),
+            "tenant-pipeline",
+            null);  // no If-Match
+
+        assertThat(updateResp.statusCode()).isEqualTo(428);
+        Map<?, ?> body = mapper.readValue(updateResp.body(), Map.class);
+        assertThat(body.get("errorCode")).isEqualTo("PIPELINE_VERSION_REQUIRED");
+        assertThat(((Number) body.get("currentVersion")).intValue()).isEqualTo(2);
+
+        // Original pipeline must be unchanged
+        HttpResponse<String> getPipeline = get(port, "/api/v1/pipelines/" + pipelineId, "tenant-pipeline");
+        assertThat(getPipeline.statusCode()).isEqualTo(200);
+        Map<?, ?> pipelineBody = mapper.readValue(getPipeline.body(), Map.class);
+        assertThat(((Number) pipelineBody.get("version")).intValue()).isEqualTo(2);
+        assertThat(pipelineBody.get("name")).isEqualTo("no-version-pipeline");
+    }
+
+    @Test
     @DisplayName("pipeline updates reject stale versions with a structured 409 conflict")
     void pipelineUpdateRejectsStaleVersion() throws Exception { 
         dataCloud = DataCloud.embedded(); 

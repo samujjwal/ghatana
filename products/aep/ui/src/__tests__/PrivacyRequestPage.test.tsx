@@ -149,4 +149,65 @@ describe('PrivacyRequestPage', () => {
     expect(screen.getByText(/records affected/i)).toBeInTheDocument();
     expect(screen.getByText('audit: 1')).toBeInTheDocument();
   });
+
+  it('submits a GDPR portability/export request and renders the export result', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PrivacyRequestPage />);
+
+    // Select the portability operation button
+    await user.click(screen.getByRole('button', { name: /portability/i }));
+    await user.type(screen.getByLabelText(/subject id/i), 'subject-123');
+    await user.click(screen.getByRole('button', { name: /submit portability request/i }));
+
+    await waitFor(() => expect(aepApi.requestGdprPortability).toHaveBeenCalledWith('subject-123', 'default'));
+    expect(await screen.findByText(/portable export payload/i)).toBeInTheDocument();
+  });
+
+  it('submits a GDPR erasure/delete request and shows warnings', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PrivacyRequestPage />);
+
+    await user.click(screen.getByRole('button', { name: /erasure/i }));
+    await user.type(screen.getByLabelText(/subject id/i), 'subject-123');
+    await user.click(screen.getByRole('button', { name: /submit erasure request/i }));
+
+    await waitFor(() => expect(aepApi.requestGdprErasure).toHaveBeenCalledWith('subject-123', 'default'));
+    expect(await screen.findByText(/deleted matching subject records/i)).toBeInTheDocument();
+    expect(screen.getByText(/one immutable audit record remains by policy/i)).toBeInTheDocument();
+  });
+
+  it('shows backend error state when API rejects', async () => {
+    vi.mocked(aepApi.requestGdprAccess).mockRejectedValue(new Error('Backend unavailable'));
+    const user = userEvent.setup();
+    renderWithQuery(<PrivacyRequestPage />);
+
+    await user.type(screen.getByLabelText(/subject id/i), 'subject-123');
+    await user.click(screen.getByRole('button', { name: /submit access request/i }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/backend unavailable/i)).toBeInTheDocument(),
+    );
+  });
+
+  it('scopes request to current tenant — calls API with tenant id from atom', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PrivacyRequestPage />);
+
+    await user.type(screen.getByLabelText(/subject id/i), 'subject-abc');
+    await user.click(screen.getByRole('button', { name: /submit access request/i }));
+
+    await waitFor(() =>
+      expect(aepApi.requestGdprAccess).toHaveBeenCalledWith('subject-abc', 'default'),
+    );
+  });
+
+  it('shows success fulfilment status label after access request', async () => {
+    const user = userEvent.setup();
+    renderWithQuery(<PrivacyRequestPage />);
+
+    await user.type(screen.getByLabelText(/subject id/i), 'subject-123');
+    await user.click(screen.getByRole('button', { name: /submit access request/i }));
+
+    await waitFor(() => expect(screen.getByText(/fulfilled/i)).toBeInTheDocument());
+  });
 });

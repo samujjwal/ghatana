@@ -578,6 +578,7 @@ public final class AlertingHandler {
         return request.loadBody().then(body -> {
             String reason = null;
             try {
+                @SuppressWarnings("unchecked")
                 Map<String, Object> payload = http.objectMapper().readValue(body.getString(StandardCharsets.UTF_8), Map.class);
                 Object reasonValue = payload.get("reason");
                 if (reasonValue != null) {

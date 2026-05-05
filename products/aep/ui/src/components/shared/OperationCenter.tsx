@@ -118,9 +118,11 @@ export function OperationCenter({
         </div>
         <div className="flex gap-1">
           {(['all', 'pending', 'running', 'completed', 'failed'] as const).map((f) => (
-            <button
+            <Button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
+              variant="ghost"
               className={[
                 'px-2.5 py-1 rounded-full text-[11px] font-medium capitalize transition-colors',
                 filter === f
@@ -129,7 +131,7 @@ export function OperationCenter({
               ].join(' ')}
             >
               {f}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

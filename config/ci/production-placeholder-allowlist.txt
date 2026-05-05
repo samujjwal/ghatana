@@ -1,0 +1,2 @@
+# One line per substring to ignore in scan-production-placeholders.sh output.
+# Keep entries narrow and temporary; include ticket IDs in comments.

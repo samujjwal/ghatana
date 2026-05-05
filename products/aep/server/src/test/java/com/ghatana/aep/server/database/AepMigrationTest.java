@@ -13,6 +13,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import javax.sql.DataSource;
+import java.io.File;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -37,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @doc.layer product
  * @doc.pattern IntegrationTest
  */
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 class AepMigrationTest {
 
     @Container
@@ -52,11 +54,16 @@ class AepMigrationTest {
     @BeforeEach
     void setUp() {
         // Configure Flyway with test database
+        // Use filesystem location to avoid picking up migrations from other JARs on classpath
+        File migrationDir = Paths.get("src/main/resources/db/migration").toFile();
+        String location = migrationDir.exists() ? "filesystem:" + migrationDir.getAbsolutePath() : "classpath:db/migration";
+        
         flyway = Flyway.configure()
             .dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword())
-            .locations("classpath:db/migration")
+            .locations(location)
             .baselineOnMigrate(true)
             .baselineVersion("0")
+            .cleanDisabled(false)  // Enable clean for test isolation
             .load();
 
         dataSource = flyway.getConfiguration().getDataSource();
@@ -215,7 +222,7 @@ class AepMigrationTest {
                 INSERT INTO patterns (
                     tenant_id, name, description, spec, labels, event_types,
                     pattern_type, status, enabled
-                ) VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)
                 """;
             
             try (PreparedStatement stmt = conn.prepareStatement(insertSql)) {
@@ -223,8 +230,8 @@ class AepMigrationTest {
                 stmt.setString(2, "Test Pattern");
                 stmt.setString(3, "A test pattern for validation");
                 stmt.setString(4, "{\"type\": \"temporal\", \"window\": 60}");
-                stmt.setString(5, "[\"label1\", \"label2\"]");
-                stmt.setString(6, "[\"event1\", \"event2\"]");
+                stmt.setArray(5, conn.createArrayOf("text", new String[]{"label1", "label2"}));
+                stmt.setArray(6, conn.createArrayOf("text", new String[]{"event1", "event2"}));
                 stmt.setString(7, "TEMPORAL");
                 stmt.setString(8, "ACTIVE");
                 stmt.setBoolean(9, true);
@@ -274,7 +281,7 @@ class AepMigrationTest {
                 stmt.setString(4, "{\"input\": \"data\"}");
                 stmt.setString(5, "{\"output\": \"result\"}");
                 stmt.setLong(6, 1500);
-                stmt.setObject(7, java.time.Instant.now());
+                stmt.setTimestamp(7, java.sql.Timestamp.from(java.time.Instant.now()));
                 
                 int rowsInserted = stmt.executeUpdate();
                 assertEquals(1, rowsInserted, "Should insert one execution record");

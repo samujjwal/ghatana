@@ -8,6 +8,9 @@ import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService.RecordApprovalDecisionCommand;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService.SubmitForApprovalCommand;
 import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
+import com.ghatana.digitalmarketing.api.observability.DmosTelemetry;
+import com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory;
 import com.ghatana.digitalmarketing.application.idempotency.IdempotencyService.IdempotentResponse;
 import com.ghatana.digitalmarketing.contracts.ActorRef;
 import com.ghatana.digitalmarketing.contracts.DmCorrelationId;
@@ -75,15 +78,21 @@ public final class DmosApprovalServlet {
     private final ApprovalWorkflowService approvalService;
     private final Eventloop eventloop;
     private final IdempotencyService idempotencyService;
+    private final DmosMetricsCollector metrics;
+    private final DmosTelemetry telemetry;
+    private final DmosHttpContextFactory httpContextFactory;
 
-    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop) {
-        this(approvalService, eventloop, null);
+    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this(approvalService, eventloop, null, metrics, telemetry, httpContextFactory);
     }
 
-    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop, IdempotencyService idempotencyService) {
-        this.approvalService = Objects.requireNonNull(approvalService, "approvalService must not be null");
-        this.eventloop       = Objects.requireNonNull(eventloop,       "eventloop must not be null");
+    public DmosApprovalServlet(ApprovalWorkflowService approvalService, Eventloop eventloop, IdempotencyService idempotencyService, DmosMetricsCollector metrics, DmosTelemetry telemetry, DmosHttpContextFactory httpContextFactory) {
+        this.approvalService   = Objects.requireNonNull(approvalService,   "approvalService must not be null");
+        this.eventloop          = Objects.requireNonNull(eventloop,          "eventloop must not be null");
         this.idempotencyService = idempotencyService;
+        this.metrics            = Objects.requireNonNull(metrics,            "metrics must not be null");
+        this.telemetry          = Objects.requireNonNull(telemetry,          "telemetry must not be null");
+        this.httpContextFactory = Objects.requireNonNull(httpContextFactory, "httpContextFactory must not be null");
     }
 
     /**
@@ -91,23 +100,28 @@ public final class DmosApprovalServlet {
      */
     public AsyncServlet routes() {
         return DmosApiRateLimiter.wrap(
-        RoutingServlet.builder(eventloop)
-            .with(HttpMethod.POST,
-                "/v1/workspaces/:workspaceId/approvals",
-                this::handleSubmit)
-            .with(HttpMethod.POST,
-                "/v1/workspaces/:workspaceId/approvals/:requestId/decide",
-                this::handleDecide)
-            .with(HttpMethod.GET,
-                "/v1/workspaces/:workspaceId/approvals/:requestId",
-                this::handleGetStatus)
-            .with(HttpMethod.GET,
-                "/v1/workspaces/:workspaceId/approvals/:requestId/snapshot",
-                this::handleGetSnapshot)
-            .with(HttpMethod.GET,
-                "/v1/workspaces/:workspaceId/approvals/pending/:subjectId",
-                this::handleListPending)
-            .build()
+            RoutingServlet.builder(eventloop)
+                .with(HttpMethod.POST,
+                    "/v1/workspaces/:workspaceId/approvals",
+                    this::handleSubmit)
+                .with(HttpMethod.POST,
+                    "/v1/workspaces/:workspaceId/approvals/:requestId/decide",
+                    this::handleDecide)
+                .with(HttpMethod.GET,
+                    "/v1/workspaces/:workspaceId/approvals/:requestId",
+                    this::handleGetStatus)
+                .with(HttpMethod.GET,
+                    "/v1/workspaces/:workspaceId/approvals/:requestId/snapshot",
+                    this::handleGetSnapshot)
+                .with(HttpMethod.GET,
+                    "/v1/workspaces/:workspaceId/approvals/pending/:subjectId",
+                    this::handleListPending)
+                .with(HttpMethod.GET,
+                    "/v1/workspaces/:workspaceId/approvals/pending",
+                    this::handleListPendingForWorkspace)
+                .build(),
+            metrics,
+            "approval"
         );
     }
 
@@ -123,7 +137,8 @@ public final class DmosApprovalServlet {
             if (idempotencyService != null) {
                 String idempotencyKey = request.getHeader(HttpHeaders.of(IDEMPOTENCY_KEY_HEADER));
                 if (idempotencyKey != null && !idempotencyKey.isBlank()) {
-                    DmOperationContext ctx = buildContext(request, workspaceId);
+                    // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
                     return idempotencyService.getCachedResponse(ctx, idempotencyKey)
                         .then(cached -> {
                             if (cached != null) {
@@ -144,63 +159,88 @@ public final class DmosApprovalServlet {
         }
     }
 
-    private Promise<HttpResponse> handleSubmitInternal(HttpRequest request, String workspaceId, 
+    private Promise<HttpResponse> handleSubmitInternal(HttpRequest request, String workspaceId,
                                                          DmOperationContext ctx, String idempotencyKey) {
         final DmOperationContext effectiveCtx = ctx != null ? ctx : buildContext(request, workspaceId);
         final String effectiveIdempotencyKey = idempotencyKey;
 
-        return request.loadBody()
-            .then(body -> {
-                try {
-                    SubmitRequest req;
+        // P1-026: Create span for approval submission
+        io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /approvals", effectiveCtx).startSpan();
+        try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+            return request.loadBody()
+                .then(body -> {
                     try {
-                        req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), SubmitRequest.class);
-                    } catch (Exception e) {
-                        LOG.warn("Invalid submit approval request body: {}", e.getMessage());
-                        return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
-                    }
+                        SubmitRequest req;
+                        try {
+                            req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), SubmitRequest.class);
+                        } catch (Exception e) {
+                            LOG.warn("Invalid submit approval request body: {}", e.getMessage());
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                        }
 
-                    ApprovalTargetType targetType;
-                    try {
-                        targetType = ApprovalTargetType.valueOf(req.targetType());
-                    } catch (IllegalArgumentException e) {
-                        return Promise.of(badRequest("Unknown targetType: " + req.targetType()));
-                    }
+                        ApprovalTargetType targetType;
+                        try {
+                            targetType = ApprovalTargetType.valueOf(req.targetType());
+                        } catch (IllegalArgumentException e) {
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return Promise.of(badRequest("Unknown targetType: " + req.targetType()));
+                        }
 
-                    SubmitForApprovalCommand command = new SubmitForApprovalCommand(
-                        targetType,
-                        req.targetId(),
-                        req.description(),
-                        req.riskLevel() != null ? req.riskLevel() : 1,
-                        req.requiredApproverRole() != null ? req.requiredApproverRole() : "brand-manager",
-                        req.validationResultId()
-                    );
+                        SubmitForApprovalCommand command = new SubmitForApprovalCommand(
+                            targetType,
+                            req.targetId(),
+                            req.description(),
+                            req.riskLevel() != null ? req.riskLevel() : 1,
+                            req.requiredApproverRole() != null ? req.requiredApproverRole() : "brand-manager",
+                            req.validationResultId()
+                        );
 
-                    return approvalService.submitForApproval(effectiveCtx, command)
-                        .map(this::toRecordResponse)
-                        .then(record -> {
-                            // P0-6.2: Store response for idempotency
-                            if (idempotencyService != null && effectiveIdempotencyKey != null) {
-                                try {
-                                    String responseBody = MAPPER.writeValueAsString(record);
-                                    IdempotentResponse response = new IdempotentResponse(responseBody, 201, null);
-                                    return idempotencyService.storeResponse(effectiveCtx, effectiveIdempotencyKey, response)
-                                        .then(__ -> Promise.of(jsonResponse(201, record)));
-                                } catch (Exception e) {
-                                    LOG.warn("Failed to store idempotency response", e);
-                                    return Promise.of(jsonResponse(201, record));
+                        telemetry.setApprovalId(req.targetId());
+                        return approvalService.submitForApproval(effectiveCtx, command)
+                            .map(this::toRecordResponse)
+                            .then(record -> {
+                                // P0-6.2: Store response for idempotency
+                                if (idempotencyService != null && effectiveIdempotencyKey != null) {
+                                    try {
+                                        String responseBody = MAPPER.writeValueAsString(record);
+                                        IdempotentResponse response = new IdempotentResponse(responseBody, 201, null);
+                                        return idempotencyService.storeResponse(effectiveCtx, effectiveIdempotencyKey, response)
+                                            .then(__ -> {
+                                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                                span.end();
+                                                return Promise.of(jsonResponse(201, record));
+                                            });
+                                    } catch (Exception e) {
+                                        LOG.warn("Failed to store idempotency response", e);
+                                        span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                        span.end();
+                                        return Promise.of(jsonResponse(201, record));
+                                    }
                                 }
-                            }
-                            return Promise.of(jsonResponse(201, record));
-                        })
-                        .then(r -> Promise.of(r), e -> mapServiceError("submit", e));
-                } catch (IllegalArgumentException e) {
-                    return Promise.of(badRequest("Invalid request: " + e.getMessage()));
-                } catch (Exception e) {
-                    LOG.error("Unexpected error during submit approval", e);
-                    return Promise.of(internalError("Unexpected error"));
-                }
-            });
+                                span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                span.end();
+                                return Promise.of(jsonResponse(201, record));
+                            })
+                            .then(r -> Promise.of(r), e -> {
+                                telemetry.recordException(span, e);
+                                span.end();
+                                return mapServiceError("submit", e);
+                            });
+                    } catch (IllegalArgumentException e) {
+                        telemetry.recordException(span, e);
+                        span.end();
+                        return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                    } catch (Exception e) {
+                        LOG.error("Unexpected error during submit approval", e);
+                        telemetry.recordException(span, e);
+                        span.end();
+                        return Promise.of(internalError("Unexpected error"));
+                    }
+                });
+        }
     }
 
     private Promise<HttpResponse> handleDecide(HttpRequest request) {
@@ -208,42 +248,64 @@ public final class DmosApprovalServlet {
         String requestId   = request.getPathParameter("requestId");
 
         try {
-            return request.loadBody()
-                .then(body -> {
-                    try {
-                        DecideRequest req;
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            // P1-026: Create span for approval decision
+            io.opentelemetry.api.trace.Span span = telemetry.httpSpanBuilder("POST /approvals/:requestId/decide", ctx).startSpan();
+            try (io.opentelemetry.context.Scope scope = span.makeCurrent()) {
+                telemetry.setApprovalId(requestId);
+                return request.loadBody()
+                    .then(body -> {
                         try {
-                            req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), DecideRequest.class);
-                        } catch (Exception e) {
-                            LOG.warn("Invalid decide request body: {}", e.getMessage());
-                            return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
-                        }
+                            DecideRequest req;
+                            try {
+                                req = MAPPER.readValue(body.getString(StandardCharsets.UTF_8), DecideRequest.class);
+                            } catch (Exception e) {
+                                LOG.warn("Invalid decide request body: {}", e.getMessage());
+                                telemetry.recordException(span, e);
+                                span.end();
+                                return Promise.of(badRequest("Invalid request body: " + e.getMessage()));
+                            }
 
-                        ApprovalDecision decision;
-                        try {
-                            decision = ApprovalDecision.valueOf(req.decision());
+                            ApprovalDecision decision;
+                            try {
+                                decision = ApprovalDecision.valueOf(req.decision());
+                            } catch (IllegalArgumentException e) {
+                                telemetry.recordException(span, e);
+                                span.end();
+                                return Promise.of(badRequest("Unknown decision: " + req.decision()));
+                            }
+
+                            RecordApprovalDecisionCommand command = new RecordApprovalDecisionCommand(
+                                requestId,
+                                decision,
+                                req.notes()
+                            );
+
+                            return approvalService.recordDecision(ctx, command)
+                                .map(this::toRecordResponse)
+                                .map(r -> {
+                                    span.setStatus(io.opentelemetry.api.trace.StatusCode.OK);
+                                    span.end();
+                                    return jsonResponse(200, r);
+                                })
+                                .then(r -> Promise.of(r), e -> {
+                                    telemetry.recordException(span, e);
+                                    span.end();
+                                    return mapServiceError("decide", e);
+                                });
                         } catch (IllegalArgumentException e) {
-                            return Promise.of(badRequest("Unknown decision: " + req.decision()));
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+                        } catch (Exception e) {
+                            LOG.error("Unexpected error during decide approval", e);
+                            telemetry.recordException(span, e);
+                            span.end();
+                            return Promise.of(internalError("Unexpected error"));
                         }
-
-                        DmOperationContext ctx = buildContext(request, workspaceId);
-                        RecordApprovalDecisionCommand command = new RecordApprovalDecisionCommand(
-                            requestId,
-                            decision,
-                            req.notes()
-                        );
-
-                        return approvalService.recordDecision(ctx, command)
-                            .map(this::toRecordResponse)
-                            .map(r -> jsonResponse(200, r))
-                            .then(r -> Promise.of(r), e -> mapServiceError("decide", e));
-                    } catch (IllegalArgumentException e) {
-                        return Promise.of(badRequest("Invalid request: " + e.getMessage()));
-                    } catch (Exception e) {
-                        LOG.error("Unexpected error during decide approval", e);
-                        return Promise.of(internalError("Unexpected error"));
-                    }
-                });
+                    });
+            }
         } catch (IllegalArgumentException e) {
             return Promise.of(badRequest("Invalid request: " + e.getMessage()));
         } catch (Exception e) {
@@ -257,7 +319,8 @@ public final class DmosApprovalServlet {
         String requestId   = request.getPathParameter("requestId");
 
         try {
-            DmOperationContext ctx = buildContext(request, workspaceId);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
             return Promises.toList(
                     approvalService.getApprovalStatus(ctx, requestId),
                     approvalService.getSnapshot(ctx, requestId))
@@ -288,7 +351,8 @@ public final class DmosApprovalServlet {
         String requestId   = request.getPathParameter("requestId");
 
         try {
-            DmOperationContext ctx = buildContext(request, workspaceId);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
             return approvalService.getSnapshot(ctx, requestId)
                 .map(opt -> opt.map(s -> new SnapshotResponse(
                     s.requestId(),
@@ -316,7 +380,8 @@ public final class DmosApprovalServlet {
         String subjectId   = request.getPathParameter("subjectId");
 
         try {
-            DmOperationContext ctx = buildContext(request, workspaceId);
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
             return approvalService.listPendingApprovals(ctx, subjectId)
                 .map(list -> list.stream().map(this::toRecordResponse).toList())
                 .map(list -> jsonResponse(200, new PendingListResponse(list)))
@@ -330,37 +395,31 @@ public final class DmosApprovalServlet {
         }
     }
 
+    // P1-013: Workspace-scoped pending approvals endpoint
+    private Promise<HttpResponse> handleListPendingForWorkspace(HttpRequest request) {
+        String workspaceId = request.getPathParameter("workspaceId");
+
+        try {
+            // P1-001: Use shared fail-closed HTTP context factory
+            DmOperationContext ctx = httpContextFactory.buildContext(request, workspaceId, true);
+            return approvalService.listPendingApprovalsForWorkspace(ctx, workspaceId)
+                .map(list -> list.stream().map(this::toRecordResponse).toList())
+                .map(list -> jsonResponse(200, new PendingListResponse(list)))
+                .map(r -> (HttpResponse) r)
+                .then(r -> Promise.of(r), e -> mapServiceError("list-pending-workspace", e));
+        } catch (IllegalArgumentException e) {
+            return Promise.of(badRequest("Invalid request: " + e.getMessage()));
+        } catch (Exception e) {
+            LOG.error("Error in handleListPendingForWorkspace", e);
+            return Promise.of(internalError("Error processing request"));
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Context builder
     // -------------------------------------------------------------------------
 
-    private DmOperationContext buildContext(HttpRequest request, String workspaceId) {
-        // Tenant remains mandatory; other headers fall back to safe defaults.
-        String tenantId      = getRequiredHeader(request, "X-Tenant-ID");
-        String principal     = getHeader(request, "X-Principal-ID", "anonymous");
-        String correlationId = getHeader(request, "X-Correlation-ID", "corr-" + java.util.UUID.randomUUID());
-        String sessionId     = getHeader(request, "X-Session-ID", "session-unknown");
-        
-        // P0-3.4: Treat missing/empty roles as no privileges (deny by default)
-        Set<String> roles    = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Roles")));
-        Set<String> perms    = parseCsvHeader(request.getHeader(HttpHeaders.of("X-Permissions")));
-
-        DmWorkspaceId workspace = DmWorkspaceId.of(workspaceId);
-
-        DmOperationContext baseContext = DmOperationContext.builder()
-            .tenantId(DmTenantId.of(tenantId))
-            .workspaceId(workspace)
-            .actor(ActorRef.user(principal))
-            .correlationId(DmCorrelationId.of(correlationId))
-            .build();
-
-        // Empty roles/permissions result in no privileges (deny by default)
-        TenantSecurityContext securityContext = DmSecurityContextMapper.toTenantSecurityContext(
-            baseContext, sessionId, roles, perms, null);
-
-        return DmSecurityContextMapper.fromSecurityContext(
-            securityContext, workspace, DmCorrelationId.of(correlationId), null);
-    }
+    // P1-001: Local buildContext method removed - using shared DmosHttpContextFactory
 
     // -------------------------------------------------------------------------
     // Response mapping
@@ -468,36 +527,7 @@ public final class DmosApprovalServlet {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Header helpers
-    // -------------------------------------------------------------------------
-
-    private static String getRequiredHeader(HttpRequest request, String name) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Missing required header: " + name);
-        }
-        return value;
-    }
-
-    private static String getHeader(HttpRequest request, String name, String defaultValue) {
-        String value = request.getHeader(HttpHeaders.of(name));
-        return (value == null || value.isBlank()) ? defaultValue : value;
-    }
-
-    private static Set<String> parseCsvHeader(String value) {
-        if (value == null || value.isBlank()) {
-            return Set.of();
-        }
-        Set<String> result = new LinkedHashSet<>();
-        for (String part : value.split(",")) {
-            String trimmed = part.strip();
-            if (!trimmed.isEmpty()) {
-                result.add(trimmed);
-            }
-        }
-        return result;
-    }
+    // P1-001: Local helper methods removed - using shared DmosHttpContextFactory
 
     // -------------------------------------------------------------------------
     // Request/Response records

@@ -30,11 +30,14 @@ export const DecideDialog: React.FC<DecideDialogProps> = ({
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: () =>
-      decideApproval(workspaceId, requestId, {
+    mutationFn: () => {
+      // P1-022: Generate idempotency key at mutation start
+      const idempotencyKey = crypto.randomUUID();
+      return decideApproval(workspaceId, requestId, {
         decision,
         notes: comment.trim() || undefined,
-      }),
+      }, idempotencyKey);
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ['approvals'],

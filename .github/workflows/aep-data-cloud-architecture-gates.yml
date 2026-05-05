@@ -1,0 +1,56 @@
+name: AEP Data Cloud Architecture Gates
+
+on:
+  pull_request:
+    paths:
+      - 'products/aep/**'
+      - 'products/data-cloud/**'
+      - 'platform/contracts/capability-schema/**'
+      - 'scripts/check-*.mjs'
+      - 'scripts/generate-*.mjs'
+      - 'docs/**'
+      - 'code-audits/**'
+      - '.github/workflows/aep-data-cloud-architecture-gates.yml'
+  workflow_dispatch:
+
+jobs:
+  architecture-gates:
+    name: Architecture And Truth Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run cross-workspace dependency check
+        run: node scripts/check-cross-workspace-deps.mjs
+
+      - name: Run capability schema drift check
+        run: node scripts/check-capability-schema-drift.mjs
+
+      - name: Run Data Cloud generated gate and route-gate drift check
+        run: node scripts/generate-data-cloud-feature-gates.mjs --check
+
+      - name: Run canonical OpenAPI checks
+        run: node scripts/check-openapi-contract-canonical.mjs
+
+      - name: Run documentation truth checks
+        run: node scripts/check-doc-truth.mjs --changed-only --base-ref=origin/main
+
+      - name: Run production stub scan
+        run: node scripts/check-production-stubs.mjs --report --allowlist=config/production-stub-allowlist.json --changed-only --base-ref=origin/main
+
+      - name: Upload stub-scan report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stub-scan-report
+          path: build/reports/stub-scan.json
+          if-no-files-found: ignore

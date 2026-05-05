@@ -109,43 +109,6 @@ class PostgresWebsiteAuditReportRepositoryIT extends EventloopTestBase {
     }
 
     @Test
-    @DisplayName("findById — returns saved report when it exists")
-    void findById_returnsSavedReport() {
-        WebsiteAuditReport report = buildReport("rep-002", "ws-beta");
-        runPromise(() -> repository.save(report));
-
-        Optional<WebsiteAuditReport> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-beta"), "rep-002"));
-
-        assertThat(found).isPresent();
-        assertThat(found.get().getReportId()).isEqualTo("rep-002");
-        assertThat(found.get().getWorkspaceId().getValue()).isEqualTo("ws-beta");
-        assertThat(found.get().getWebsiteUrl()).isEqualTo("https://example.com");
-        assertThat(found.get().getGeneratedBy()).isEqualTo("test-user");
-    }
-
-    @Test
-    @DisplayName("findById — returns empty when report does not exist")
-    void findById_returnsEmpty_whenNotFound() {
-        Optional<WebsiteAuditReport> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-missing"), "nonexistent"));
-
-        assertThat(found).isEmpty();
-    }
-
-    @Test
-    @DisplayName("findById — returns empty when workspace does not match")
-    void findById_returnsEmpty_whenWorkspaceMismatch() {
-        WebsiteAuditReport report = buildReport("rep-003", "ws-gamma");
-        runPromise(() -> repository.save(report));
-
-        Optional<WebsiteAuditReport> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-wrong"), "rep-003"));
-
-        assertThat(found).isEmpty();
-    }
-
-    @Test
     @DisplayName("save — idempotent upsert updates findings on conflict")
     void save_upsert_updatesOnConflict() {
         WebsiteAuditReport original = buildReport("rep-004", "ws-delta");
@@ -171,7 +134,7 @@ class PostgresWebsiteAuditReportRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(updated));
 
         Optional<WebsiteAuditReport> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-delta"), "rep-004"));
+            repository.findLatestByWorkspace(DmWorkspaceId.of("ws-delta")));
         assertThat(found).isPresent();
         assertThat(found.get().getWebsiteUrl()).isEqualTo("https://updated-example.com");
         assertThat(found.get().getFindings()).hasSize(1);
@@ -207,14 +170,14 @@ class PostgresWebsiteAuditReportRepositoryIT extends EventloopTestBase {
     @DisplayName("save — reports in different workspaces are stored independently")
     void save_multipleWorkspaces_storedIndependently() {
         WebsiteAuditReport r1 = buildReport("rep-007", "ws-one");
-        WebsiteAuditReport r2 = buildReport("rep-007", "ws-two");
+        WebsiteAuditReport r2 = buildReport("rep-008", "ws-two");
         runPromise(() -> repository.save(r1));
         runPromise(() -> repository.save(r2));
 
         Optional<WebsiteAuditReport> found1 = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-one"), "rep-007"));
+            repository.findLatestByWorkspace(DmWorkspaceId.of("ws-one")));
         Optional<WebsiteAuditReport> found2 = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-two"), "rep-007"));
+            repository.findLatestByWorkspace(DmWorkspaceId.of("ws-two")));
 
         assertThat(found1).isPresent();
         assertThat(found2).isPresent();
@@ -254,7 +217,7 @@ class PostgresWebsiteAuditReportRepositoryIT extends EventloopTestBase {
         runPromise(() -> repository.save(report));
 
         Optional<WebsiteAuditReport> found = runPromise(() ->
-            repository.findById(DmWorkspaceId.of("ws-multi"), "rep-008"));
+            repository.findLatestByWorkspace(DmWorkspaceId.of("ws-multi")));
 
         assertThat(found).isPresent();
         assertThat(found.get().getFindings()).hasSize(2);

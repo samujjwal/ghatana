@@ -293,6 +293,9 @@ public class HttpHandlerSupport {
                 case 500:
                     errorCode = "INTERNAL_SERVER_ERROR";
                     break;
+                case 501:
+                    errorCode = "NOT_IMPLEMENTED";
+                    break;
                 case 503:
                     errorCode = "SERVICE_UNAVAILABLE";
                     break;

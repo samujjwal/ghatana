@@ -25,6 +25,7 @@ import com.ghatana.plugin.approval.ApprovalStatus;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
 import com.ghatana.plugin.audit.AuditTrailPlugin;
 import com.ghatana.plugin.consent.ConsentPlugin;
+import com.ghatana.plugin.notification.NotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import static com.ghatana.plugin.consent.ConsentPlugin.ConsentAction;
 import static com.ghatana.plugin.consent.ConsentPlugin.ConsentRecord;
@@ -79,6 +80,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
     private InMemoryApprovalPlugin approvalPlugin;
     private RecordingAuditTrailPlugin auditTrailPlugin;
     private InMemoryRiskPlugin riskPlugin;
+    private InMemoryNotificationPlugin notificationPlugin;
     private DigitalMarketingKernelAdapterImpl adapter;
 
     private DmOperationContext ctx;
@@ -91,6 +93,7 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         approvalPlugin = new InMemoryApprovalPlugin();
         auditTrailPlugin = new RecordingAuditTrailPlugin();
         riskPlugin = new InMemoryRiskPlugin();
+        notificationPlugin = new InMemoryNotificationPlugin();
 
         adapter = new DigitalMarketingKernelAdapterImpl(
             authService,
@@ -99,7 +102,8 @@ class KernelBridgeWiringIT extends EventloopTestBase {
             consentPlugin,
             approvalPlugin,
             auditTrailPlugin,
-            riskPlugin
+            riskPlugin,
+            notificationPlugin
         );
 
         ctx = DmOperationContext.builder()
@@ -266,13 +270,13 @@ class KernelBridgeWiringIT extends EventloopTestBase {
     // ── Feature Flags (KE-05) ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("isFeatureEnabled returns true (default forward stub, KE-05)")
-    void shouldReturnTrueForAllFlagsUntilPluginLands() {
+    @DisplayName("isFeatureEnabled returns false by default (fail-closed, KE-05)")
+    void shouldReturnFalseForAllFlagsByDefault() {
         adapter.start();
 
         boolean enabled = runPromise(() -> adapter.isFeatureEnabled(ctx, "dmos.multivariate-testing"));
 
-        assertThat(enabled).isTrue();
+        assertThat(enabled).isFalse();
     }
 
     // ── Risk ─────────────────────────────────────────────────────────────────────
@@ -460,6 +464,34 @@ class KernelBridgeWiringIT extends EventloopTestBase {
         @Override
         public PluginMetadata metadata() {
             return PluginMetadata.builder().id("wiring-it-risk").name("Wiring IT Risk").type(PluginType.CUSTOM).build();
+        }
+        @Override public PluginState getState() { return PluginState.RUNNING; }
+        @Override public Promise<Void> initialize(PluginContext ctx) { return Promise.of(null); }
+        @Override public Promise<Void> start() { return Promise.of(null); }
+        @Override public Promise<Void> stop() { return Promise.of(null); }
+    }
+
+    private static final class InMemoryNotificationPlugin implements NotificationPlugin {
+        @Override
+        public Promise<String> dispatch(String recipientId, String template, Map<String, String> attributes) {
+            return Promise.of("notif-" + recipientId);
+        }
+
+        @Override
+        public Promise<DeliveryStatus> getDeliveryStatus(String notificationId) {
+            return Promise.of(new DeliveryStatus(
+                notificationId, "recipient", "template",
+                DeliveryState.DELIVERED, 1, Instant.now(), null, Instant.now()
+            ));
+        }
+
+        @Override public Promise<Void> retry(String notificationId) { return Promise.of(null); }
+        @Override public Promise<List<DeadLetterEntry>> listDeadLetterQueue(int limit, int offset) { return Promise.of(List.of()); }
+        @Override public Promise<Void> reprocessDeadLetter(String notificationId) { return Promise.of(null); }
+
+        @Override
+        public PluginMetadata metadata() {
+            return PluginMetadata.builder().id("wiring-it-notification").name("Wiring IT Notification").type(PluginType.CUSTOM).build();
         }
         @Override public PluginState getState() { return PluginState.RUNNING; }
         @Override public Promise<Void> initialize(PluginContext ctx) { return Promise.of(null); }

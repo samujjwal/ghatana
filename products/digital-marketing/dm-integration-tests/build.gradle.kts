@@ -26,6 +26,8 @@ dependencies {
     testImplementation(project(":platform-plugins:plugin-human-approval"))
     testImplementation(project(":platform-plugins:plugin-audit-trail"))
     testImplementation(project(":platform-plugins:plugin-risk-management"))
+    testImplementation(project(":platform-plugins:plugin-notification"))
+    testImplementation(libs.postgresql)
 
     testImplementation(libs.bundles.testing.core)
     testImplementation(libs.testcontainers.core)

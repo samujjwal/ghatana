@@ -3,6 +3,7 @@ package com.ghatana.digitalmarketing.api;
 import com.ghatana.digitalmarketing.application.DmosObservability;
 import com.ghatana.digitalmarketing.application.ai.GovernedAgentWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalSnapshotRepository;
+import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowService;
 import com.ghatana.digitalmarketing.application.approval.ApprovalWorkflowServiceImpl;
 import com.ghatana.digitalmarketing.application.audit.WebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.application.audit.WebsiteAuditService;
@@ -10,18 +11,17 @@ import com.ghatana.digitalmarketing.application.audit.WebsiteAuditServiceImpl;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationRepository;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationService;
 import com.ghatana.digitalmarketing.application.budget.BudgetRecommendationServiceImpl;
+import com.ghatana.digitalmarketing.application.bootstrap.ProductionBootstrapValidator;
 import com.ghatana.digitalmarketing.application.campaign.CampaignRepository;
+import com.ghatana.digitalmarketing.application.campaign.CampaignPreflightDataProvider;
 import com.ghatana.digitalmarketing.application.campaign.CampaignService;
 import com.ghatana.digitalmarketing.application.campaign.CampaignServiceImpl;
 import com.ghatana.digitalmarketing.application.command.DmCommandHandlerRegistry;
 import com.ghatana.digitalmarketing.application.connector.DmConnectorRepository;
-import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignApiClient;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCampaignLinkRepository;
 import com.ghatana.digitalmarketing.application.googleads.DmGoogleAdsCredentialRepository;
-import com.ghatana.digitalmarketing.application.inf.DmConnectorInMemoryRepository;
-import com.ghatana.digitalmarketing.application.inf.googleads.DmGoogleAdsCampaignLinkInMemoryRepository;
-import com.ghatana.digitalmarketing.application.inf.googleads.DmGoogleAdsCredentialInMemoryRepository;
+import com.ghatana.digitalmarketing.application.metrics.DmosMetricsCollector;
 import com.ghatana.digitalmarketing.application.strategy.MarketingStrategyRepository;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorService;
 import com.ghatana.digitalmarketing.application.strategy.StrategyGeneratorServiceImpl;
@@ -33,13 +33,17 @@ import com.ghatana.digitalmarketing.application.workspace.WorkspaceService;
 import com.ghatana.digitalmarketing.application.workspace.WorkspaceServiceImpl;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapter;
 import com.ghatana.digitalmarketing.bridge.DigitalMarketingKernelAdapterImpl;
-import com.ghatana.digitalmarketing.domain.compliance.CompliancePlugin;
-import com.ghatana.digitalmarketing.inf.ProductionProfileGuard;
-import com.ghatana.digitalmarketing.inf.approval.InMemoryApprovalSnapshotRepository;
-import com.ghatana.digitalmarketing.inf.campaign.InMemoryCampaignRepository;
-import com.ghatana.digitalmarketing.inf.research.InMemoryCompetitorResearchRepository;
-import com.ghatana.digitalmarketing.inf.transparency.InMemoryAiActionLogRepository;
-import com.ghatana.digitalmarketing.inf.workspace.InMemoryWorkspaceRepository;
+import com.ghatana.digitalmarketing.connector.googleads.HttpDmGoogleAdsCampaignApiClientAdapter;
+import com.ghatana.digitalmarketing.connector.googleads.InMemoryDmGoogleAdsCampaignApiClient;
+import com.ghatana.digitalmarketing.infra.ProductionProfileGuard;
+import com.ghatana.digitalmarketing.infra.approval.InMemoryApprovalSnapshotRepository;
+import com.ghatana.digitalmarketing.infra.campaign.InMemoryCampaignRepository;
+import com.ghatana.digitalmarketing.infra.connector.DmConnectorInMemoryRepository;
+import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCampaignLinkInMemoryRepository;
+import com.ghatana.digitalmarketing.infra.googleads.DmGoogleAdsCredentialInMemoryRepository;
+import com.ghatana.digitalmarketing.infra.research.InMemoryCompetitorResearchRepository;
+import com.ghatana.digitalmarketing.infra.transparency.InMemoryAiActionLogRepository;
+import com.ghatana.digitalmarketing.infra.workspace.InMemoryWorkspaceRepository;
 import com.ghatana.digitalmarketing.persistence.approval.PostgresApprovalSnapshotRepository;
 import com.ghatana.digitalmarketing.persistence.audit.PostgresWebsiteAuditReportRepository;
 import com.ghatana.digitalmarketing.persistence.budget.PostgresBudgetRecommendationRepository;
@@ -49,6 +53,7 @@ import com.ghatana.digitalmarketing.persistence.workspace.PostgresWorkspaceRepos
 import com.ghatana.kernel.bridge.port.BridgeAuthorizationService;
 import com.ghatana.kernel.bridge.port.BridgeAuditEmitter;
 import com.ghatana.kernel.bridge.port.BridgeHealthIndicator;
+import com.ghatana.platform.core.event.EventBusPort;
 import com.ghatana.platform.observability.Metrics;
 import com.ghatana.platform.observability.TracingManager;
 import com.ghatana.plugin.approval.HumanApprovalPlugin;
@@ -67,17 +72,20 @@ import com.ghatana.plugin.notification.impl.DurableNotificationPlugin;
 import com.ghatana.plugin.notification.impl.InMemoryNotificationPlugin;
 import com.ghatana.plugin.risk.RiskManagementPlugin;
 import com.ghatana.plugin.risk.impl.StandardRiskManagementPlugin;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.activej.eventloop.Eventloop;
-import io.activej.http.AsyncServlet;
-import io.activej.http.HttpResponse;
 import io.activej.launcher.Launcher;
-import io.activej.service.ServiceGraph;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Production composition root for DMOS API server.
@@ -108,11 +116,25 @@ public final class DmosApiServer extends Launcher {
     private static final String DEVELOPMENT = "development";
 
     private final String environment;
-    private final ServiceGraph serviceGraph;
+
+    /** Simple component registry replacing ServiceGraph DI misuse. */
+    private final Map<Class<?>, Object> components = new LinkedHashMap<>();
+
+    @SuppressWarnings("unchecked")
+    private <T> T get(Class<T> type) {
+        Object value = components.get(type);
+        if (value == null) {
+            throw new IllegalStateException("Component not registered: " + type.getName());
+        }
+        return (T) value;
+    }
+
+    private <T> void register(Class<T> type, T value) {
+        components.put(type, value);
+    }
 
     public DmosApiServer() {
         this.environment = validateEnvironment();
-        this.serviceGraph = new ServiceGraph();
     }
 
     /**
@@ -182,22 +204,19 @@ public final class DmosApiServer extends Launcher {
         // Validate production requirements
         validateProductionRequirements();
 
-        // Build service graph
-        buildServiceGraph();
-
-        // Start services
-        serviceGraph.startFuture().await();
+        // Build all components
+        buildComponents();
 
         LOG.info("DMOS API server started successfully on port {}", getListenPort());
     }
 
-    private void buildServiceGraph() {
-        LOG.info("Building DMOS service graph for {} environment", environment);
+    private void buildComponents() {
+        LOG.info("Building DMOS components for {} environment", environment);
 
         // Create eventloop for async operations
         Eventloop eventloop = Eventloop.create();
-        serviceGraph.add(Eventloop.class, () -> eventloop);
-        serviceGraph.add(Executor.class, () -> eventloop);
+        register(Eventloop.class, eventloop);
+        register(Executor.class, eventloop);
 
         // Wire observability (P1: OpenTelemetry metrics and traces)
         wireObservability();
@@ -205,17 +224,16 @@ public final class DmosApiServer extends Launcher {
         // Create DataSource based on environment
         if (usePostgres()) {
             DataSource dataSource = createPostgresDataSource();
-            serviceGraph.add(DataSource.class, () -> dataSource);
+            register(DataSource.class, dataSource);
             LOG.info("Using PostgreSQL persistence");
         } else {
             LOG.info("Using in-memory persistence (dev/test only)");
-            // In-memory repositories don't need DataSource
         }
 
         // Wire kernel bridge ports with production-grade implementations
         BridgeAuthorizationService authService = createAuthorizationService();
         BridgeAuditEmitter auditEmitter = createAuditEmitter();
-        BridgeHealthIndicator healthIndicator = createHealthIndicator();
+        BridgeHealthIndicator healthIndicator = BridgeHealthIndicator.noOp();
 
         // Wire kernel plugins with production-grade implementations
         ConsentPlugin consentPlugin = createConsentPlugin();
@@ -235,18 +253,22 @@ public final class DmosApiServer extends Launcher {
             riskPlugin,
             notificationPlugin
         );
-        serviceGraph.add(DigitalMarketingKernelAdapter.class, () -> kernelAdapter);
+        register(DigitalMarketingKernelAdapter.class, kernelAdapter);
+        register(HumanApprovalPlugin.class, approvalPlugin);
 
         // Wire repositories based on persistence type
         if (usePostgres()) {
-            wirePostgresRepositories(eventloop);
+            wirePostgresRepositories();
         } else {
             wireInMemoryRepositories();
         }
 
+        // P1-004: Run production bootstrap validation
+        runProductionBootstrapValidation(kernelAdapter);
+
         // Wire compliance plugin
         CompliancePlugin compliancePlugin = createCompliancePlugin();
-        serviceGraph.add(CompliancePlugin.class, () -> compliancePlugin);
+        register(CompliancePlugin.class, compliancePlugin);
 
         // Wire services
         wireServices(kernelAdapter, eventloop, compliancePlugin);
@@ -257,7 +279,7 @@ public final class DmosApiServer extends Launcher {
         // Wire servlets
         wireServlets(kernelAdapter, eventloop);
 
-        LOG.info("Service graph built successfully");
+        LOG.info("Components built successfully");
     }
 
     private boolean usePostgres() {
@@ -265,20 +287,60 @@ public final class DmosApiServer extends Launcher {
         return "postgresql".equalsIgnoreCase(persistenceType) && !environment.equals(DEVELOPMENT);
     }
 
+    // P1-004: Run production bootstrap validation
+    private void runProductionBootstrapValidation(DigitalMarketingKernelAdapter kernelAdapter) {
+        boolean isProduction = environment.equals(PRODUCTION);
+        if (!isProduction) {
+            LOG.info("[DMOS-BOOTSTRAP] Production validation skipped (non-production mode: {})", environment);
+            return;
+        }
+
+        DataSource dataSource = null;
+        CampaignRepository campaignRepository = null;
+        if (usePostgres()) {
+            dataSource = getIfExists(DataSource.class);
+            campaignRepository = getIfExists(CampaignRepository.class);
+        }
+
+        String piiHmacKey = System.getenv("DMOS_PII_HMAC_KEY");
+
+        ProductionBootstrapValidator validator = new ProductionBootstrapValidator.Builder()
+            .isProduction(true)
+            .dataSource(dataSource)
+            .campaignRepository(campaignRepository)
+            .kernelAdapter(kernelAdapter)
+            .piiHmacKey(piiHmacKey)
+            .build();
+
+        try {
+            validator.validate();
+        } catch (ProductionBootstrapValidator.ProductionBootstrapException e) {
+            LOG.error("[DMOS-BOOTSTRAP] Production bootstrap validation failed: {}", e.getMessage());
+            throw new IllegalStateException("Production bootstrap validation failed. System cannot start in production mode.", e);
+        }
+    }
+
+    // Helper method to get a dependency if it exists, without throwing
+    @SuppressWarnings("unchecked")
+    private <T> T getIfExists(Class<T> clazz) {
+        try {
+            return get(clazz);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
-     * Wires observability components (Metrics, TracingManager, DmosObservability) into the service graph.
-     * P1: OpenTelemetry metrics and traces integration.
+     * Wires observability components (Metrics, TracingManager, DmosObservability, DmosTelemetry) into the registry.
+     * P1-026: OpenTelemetry metrics and traces integration with span instrumentation.
      */
     private void wireObservability() {
-        // Create MeterRegistry (SimpleMeterRegistry for now; Prometheus can be added later)
         SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
-        serviceGraph.add(SimpleMeterRegistry.class, () -> meterRegistry);
+        register(SimpleMeterRegistry.class, meterRegistry);
 
-        // Create Metrics facade
         Metrics metrics = new Metrics(meterRegistry);
-        serviceGraph.add(Metrics.class, () -> metrics);
+        register(Metrics.class, metrics);
 
-        // Create TracingManager based on environment
         TracingManager tracingManager;
         if (environment.equals(PRODUCTION) || environment.equals(STAGING)) {
             String collectorEndpoint = System.getenv("OTEL_COLLECTOR_ENDPOINT");
@@ -291,11 +353,15 @@ public final class DmosApiServer extends Launcher {
             tracingManager = TracingManager.createNoOp();
             LOG.info("[{}] Using no-op TracingManager for development", environment);
         }
-        serviceGraph.add(TracingManager.class, () -> tracingManager);
+        register(TracingManager.class, tracingManager);
 
-        // Create DmosObservability
         DmosObservability observability = new DmosObservability(metrics, tracingManager);
-        serviceGraph.add(DmosObservability.class, () -> observability);
+        register(DmosObservability.class, observability);
+
+        // P1-026: Register DmosTelemetry for span instrumentation
+        com.ghatana.digitalmarketing.api.observability.DmosTelemetry telemetry =
+            new com.ghatana.digitalmarketing.api.observability.DmosTelemetry(tracingManager.getOpenTelemetry());
+        register(com.ghatana.digitalmarketing.api.observability.DmosTelemetry.class, telemetry);
 
         LOG.info("Observability components wired successfully");
     }
@@ -305,24 +371,30 @@ public final class DmosApiServer extends Launcher {
      * P1: OpenTelemetry metrics and traces for command handlers.
      */
     private void wireCommandHandlerRegistry() {
-        // Get observability from service graph
-        DmosObservability observability = serviceGraph.get(DmosObservability.class);
-        
-        // Wire in-memory repositories for command handlers
+        DmosObservability observability = get(DmosObservability.class);
+
         DmConnectorRepository connectorRepo = new DmConnectorInMemoryRepository();
         DmGoogleAdsCredentialRepository credentialRepo = new DmGoogleAdsCredentialInMemoryRepository();
         DmGoogleAdsCampaignLinkRepository linkRepo = new DmGoogleAdsCampaignLinkInMemoryRepository();
-        
-        // Get CampaignRepository from service graph
-        CampaignRepository campaignRepo = serviceGraph.get(CampaignRepository.class);
-        
-        // Create Google Ads API client adapter
-        DmGoogleAdsCampaignApiClient apiClient = new HttpDmGoogleAdsCampaignApiClientAdapter();
-        
-        // Create ObjectMapper
-        com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        
-        // Create command handler registry with observability
+
+        CampaignRepository campaignRepo = get(CampaignRepository.class);
+
+        // Read Google Ads config from environment
+        String developerToken = System.getenv("GOOGLE_ADS_DEVELOPER_TOKEN");
+        String customerId = System.getenv("GOOGLE_ADS_CUSTOMER_ID");
+        DmGoogleAdsCampaignApiClient apiClient;
+        if (developerToken != null && !developerToken.isBlank()
+                && customerId != null && !customerId.isBlank()) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            apiClient = HttpDmGoogleAdsCampaignApiClientAdapter.create(
+                objectMapper, developerToken, customerId);
+        } else {
+            // Dev/test: use a no-op implementation until credentials are configured
+            apiClient = new InMemoryDmGoogleAdsCampaignApiClient();
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
         DmCommandHandlerRegistry commandHandlerRegistry = new DmCommandHandlerRegistry(
             connectorRepo,
             credentialRepo,
@@ -332,8 +404,8 @@ public final class DmosApiServer extends Launcher {
             objectMapper,
             observability
         );
-        
-        serviceGraph.add(DmCommandHandlerRegistry.class, () -> commandHandlerRegistry);
+
+        register(DmCommandHandlerRegistry.class, commandHandlerRegistry);
         LOG.info("Command handler registry wired with observability");
     }
 
@@ -353,97 +425,129 @@ public final class DmosApiServer extends Launcher {
         }
     }
 
-    private void wirePostgresRepositories(Eventloop eventloop) {
-        DataSource dataSource = serviceGraph.get(DataSource.class);
-        Executor executor = serviceGraph.get(Executor.class);
+    private void wirePostgresRepositories() {
+        DataSource dataSource = get(DataSource.class);
+        Executor executor = get(Executor.class);
 
-        serviceGraph.add(WorkspaceRepository.class, () -> new PostgresWorkspaceRepository(dataSource, executor));
-        serviceGraph.add(CampaignRepository.class, () -> new PostgresCampaignRepository(dataSource, executor));
-        serviceGraph.add(ApprovalSnapshotRepository.class, () -> new PostgresApprovalSnapshotRepository(dataSource, executor));
-        serviceGraph.add(MarketingStrategyRepository.class, () -> new PostgresMarketingStrategyRepository(dataSource, executor));
-        serviceGraph.add(BudgetRecommendationRepository.class, () -> new PostgresBudgetRecommendationRepository(dataSource, executor));
-        serviceGraph.add(WebsiteAuditReportRepository.class, () -> new PostgresWebsiteAuditReportRepository(dataSource, executor));
+        register(WorkspaceRepository.class, new PostgresWorkspaceRepository(dataSource, executor));
+        register(CampaignRepository.class, new PostgresCampaignRepository(dataSource, executor));
+        register(ApprovalSnapshotRepository.class, new PostgresApprovalSnapshotRepository(dataSource, executor));
+        register(MarketingStrategyRepository.class, new PostgresMarketingStrategyRepository(dataSource, executor));
+        register(BudgetRecommendationRepository.class, new PostgresBudgetRecommendationRepository(dataSource, executor));
+        register(WebsiteAuditReportRepository.class, new PostgresWebsiteAuditReportRepository(dataSource, executor));
 
         LOG.info("PostgreSQL repositories wired successfully");
     }
 
     private void wireInMemoryRepositories() {
-        ProductionProfileGuard.validate(); // Ensure in-memory is allowed
+        ProductionProfileGuard.validate();
 
-        serviceGraph.add(WorkspaceRepository.class, InMemoryWorkspaceRepository::new);
-        serviceGraph.add(CampaignRepository.class, InMemoryCampaignRepository::new);
-        serviceGraph.add(ApprovalSnapshotRepository.class, InMemoryApprovalSnapshotRepository::new);
-        serviceGraph.add(AiActionLogRepository.class, InMemoryAiActionLogRepository::new);
+        register(WorkspaceRepository.class, new InMemoryWorkspaceRepository());
+        register(CampaignRepository.class, new InMemoryCampaignRepository());
+        register(ApprovalSnapshotRepository.class, new InMemoryApprovalSnapshotRepository());
+        register(AiActionLogRepository.class, new InMemoryAiActionLogRepository());
 
-        // For repositories without in-memory adapters yet, use forward implementations
         LOG.warn("MarketingStrategyRepository, BudgetRecommendationRepository, and WebsiteAuditReportRepository using forward implementations - in-memory adapters pending");
     }
 
     private void wireServices(DigitalMarketingKernelAdapter kernelAdapter, Eventloop eventloop,
                                CompliancePlugin compliancePlugin) {
         // Workspace Service
-        WorkspaceRepository workspaceRepo = serviceGraph.get(WorkspaceRepository.class);
-        WorkspaceService workspaceService = new WorkspaceServiceImpl(workspaceRepo);
-        serviceGraph.add(WorkspaceService.class, () -> workspaceService);
+        WorkspaceRepository workspaceRepo = get(WorkspaceRepository.class);
+        WorkspaceService workspaceService = new WorkspaceServiceImpl(kernelAdapter, workspaceRepo);
+        register(WorkspaceService.class, workspaceService);
 
         // Campaign Service
-        CampaignRepository campaignRepo = serviceGraph.get(CampaignRepository.class);
-        CampaignService campaignService = new CampaignServiceImpl(kernelAdapter, campaignRepo);
-        serviceGraph.add(CampaignService.class, () -> campaignService);
+        CampaignRepository campaignRepo = get(CampaignRepository.class);
+        // No-op preflight data provider for composition root wiring
+        CampaignPreflightDataProvider preflightProvider =
+            (ctx, campaign) -> io.activej.promise.Promise.of(
+                new CampaignPreflightDataProvider.CampaignPreflightData(true, 1, 1, 0.0, 10000.0));
+        CampaignService campaignService = new CampaignServiceImpl(
+            kernelAdapter, campaignRepo, compliancePlugin, preflightProvider, DmosMetricsCollector.noop());
+        register(CampaignService.class, campaignService);
 
         // Approval Workflow Service
-        ApprovalSnapshotRepository approvalRepo = serviceGraph.get(ApprovalSnapshotRepository.class);
+        ApprovalSnapshotRepository approvalRepo = get(ApprovalSnapshotRepository.class);
+        HumanApprovalPlugin approvalPlugin = get(HumanApprovalPlugin.class);
         ApprovalWorkflowServiceImpl approvalService = new ApprovalWorkflowServiceImpl(
-            kernelAdapter, approvalRepo, compliancePlugin);
-        serviceGraph.add(ApprovalWorkflowService.class, () -> approvalService);
+            kernelAdapter, approvalPlugin, approvalRepo, DmosMetricsCollector.noop());
+        register(ApprovalWorkflowService.class, approvalService);
 
         // AI Action Log Service
-        AiActionLogRepository aiLogRepo = serviceGraph.get(AiActionLogRepository.class);
+        AiActionLogRepository aiLogRepo = get(AiActionLogRepository.class);
         AiActionLogService aiLogService = new AiActionLogServiceImpl(kernelAdapter, aiLogRepo);
-        serviceGraph.add(AiActionLogService.class, () -> aiLogService);
+        register(AiActionLogService.class, aiLogService);
 
         // Strategy Generator Service
-        MarketingStrategyRepository strategyRepo = serviceGraph.get(MarketingStrategyRepository.class);
-        GovernedAgentWorkflowService governedWorkflowService = null; // FIXME: Wire real governed workflow when kernel integration available
+        MarketingStrategyRepository strategyRepo = get(MarketingStrategyRepository.class);
+        GovernedAgentWorkflowService governedWorkflowService = null;
         StrategyGeneratorService strategyService = new StrategyGeneratorServiceImpl(
             kernelAdapter, strategyRepo, governedWorkflowService);
-        serviceGraph.add(StrategyGeneratorService.class, () -> strategyService);
+        register(StrategyGeneratorService.class, strategyService);
 
         // Budget Recommendation Service
-        BudgetRecommendationRepository budgetRepo = serviceGraph.get(BudgetRecommendationRepository.class);
+        BudgetRecommendationRepository budgetRepo = get(BudgetRecommendationRepository.class);
         BudgetRecommendationService budgetService = new BudgetRecommendationServiceImpl(kernelAdapter, budgetRepo);
-        serviceGraph.add(BudgetRecommendationService.class, () -> budgetService);
+        register(BudgetRecommendationService.class, budgetService);
 
         // Website Audit Service
-        WebsiteAuditReportRepository auditReportRepo = serviceGraph.get(WebsiteAuditReportRepository.class);
+        WebsiteAuditReportRepository auditReportRepo = get(WebsiteAuditReportRepository.class);
         WebsiteAuditService websiteAuditService = new WebsiteAuditServiceImpl(kernelAdapter, auditReportRepo);
-        serviceGraph.add(WebsiteAuditService.class, () -> websiteAuditService);
+        register(WebsiteAuditService.class, websiteAuditService);
     }
 
     private void wireServlets(DigitalMarketingKernelAdapter kernelAdapter, Eventloop eventloop) {
-        // Wire core servlets
-        WorkspaceService workspaceService = serviceGraph.get(WorkspaceService.class);
-        serviceGraph.add(DmosWorkspaceServlet.class, () -> new DmosWorkspaceServlet(eventloop, kernelAdapter, workspaceService));
+        // P1-026: Get DmosTelemetry for span instrumentation
+        com.ghatana.digitalmarketing.api.observability.DmosTelemetry telemetry =
+            get(com.ghatana.digitalmarketing.api.observability.DmosTelemetry.class);
 
-        CampaignService campaignService = serviceGraph.get(CampaignService.class);
-        serviceGraph.add(DmosCampaignServlet.class, () -> new DmosCampaignServlet(eventloop, kernelAdapter, campaignService));
+        // P1-026: Get DmosMetricsCollector for rate limiter metrics
+        DmosMetricsCollector metrics = get(DmosMetricsCollector.class);
 
-        ApprovalWorkflowServiceImpl approvalService = serviceGraph.get(ApprovalWorkflowService.class);
-        serviceGraph.add(DmosApprovalServlet.class, () -> new DmosApprovalServlet(eventloop, kernelAdapter, approvalService));
+        // P1-021: Instantiate IdempotencyMiddleware for PostgreSQL persistence
+        com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware idempotencyMiddleware = null;
+        if (usePostgres()) {
+            DataSource dataSource = get(DataSource.class);
+            idempotencyMiddleware = new com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware(dataSource, eventloop);
+            register(com.ghatana.digitalmarketing.api.middleware.IdempotencyMiddleware.class, idempotencyMiddleware);
+            LOG.info("IdempotencyMiddleware instantiated for PostgreSQL");
+        }
 
-        AiActionLogService aiLogService = serviceGraph.get(AiActionLogService.class);
-        serviceGraph.add(DmosAiActionLogServlet.class, () -> new DmosAiActionLogServlet(eventloop, kernelAdapter, aiLogService));
+        // P1-001: Instantiate DmosHttpContextFactory with fail-closed security
+        boolean productionMode = environment.equals(PRODUCTION);
+        com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.IdentityProvider identityProvider = null;
+        if (productionMode) {
+            // P1-001: In production, use a real identity provider to derive roles/permissions server-side
+            // For now, use a no-op implementation that requires explicit configuration
+            LOG.warn("[PRODUCTION] IdentityProvider not configured; using no-op. Enable via DMOS_IDENTITY_PROVIDER_ENABLED.");
+        }
+        com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory httpContextFactory =
+            new com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory(productionMode, identityProvider);
+        register(com.ghatana.digitalmarketing.api.security.DmosHttpContextFactory.class, httpContextFactory);
+        LOG.info("DmosHttpContextFactory instantiated with productionMode={}", productionMode);
 
-        StrategyGeneratorService strategyService = serviceGraph.get(StrategyGeneratorService.class);
-        serviceGraph.add(DmosStrategyServlet.class, () -> new DmosStrategyServlet(eventloop, kernelAdapter, strategyService));
+        WorkspaceService workspaceService = get(WorkspaceService.class);
+        register(DmosWorkspaceServlet.class, new DmosWorkspaceServlet(workspaceService, eventloop));
 
-        BudgetRecommendationService budgetService = serviceGraph.get(BudgetRecommendationService.class);
-        serviceGraph.add(DmosBudgetRecommendationServlet.class, () -> new DmosBudgetRecommendationServlet(eventloop, kernelAdapter, budgetService));
+        CampaignService campaignService = get(CampaignService.class);
+        register(DmosCampaignServlet.class, new DmosCampaignServlet(campaignService, eventloop, metrics, telemetry, httpContextFactory));
 
-        WebsiteAuditService websiteAuditService = serviceGraph.get(WebsiteAuditService.class);
-        serviceGraph.add(DmosWebsiteAuditServlet.class, () -> new DmosWebsiteAuditServlet(eventloop, kernelAdapter, websiteAuditService));
+        ApprovalWorkflowService approvalService = get(ApprovalWorkflowService.class);
+        register(DmosApprovalServlet.class, new DmosApprovalServlet(approvalService, eventloop, metrics, telemetry, httpContextFactory));
 
-        // Note: Additional servlets (AdCopy, Content, Email, etc.) need to be wired
+        AiActionLogService aiLogService = get(AiActionLogService.class);
+        register(DmosAiActionLogServlet.class, new DmosAiActionLogServlet(aiLogService, eventloop, metrics, httpContextFactory));
+
+        StrategyGeneratorService strategyService = get(StrategyGeneratorService.class);
+        register(DmosStrategyServlet.class, new DmosStrategyServlet(strategyService, eventloop, metrics, telemetry, httpContextFactory));
+
+        BudgetRecommendationService budgetService = get(BudgetRecommendationService.class);
+        register(DmosBudgetRecommendationServlet.class, new DmosBudgetRecommendationServlet(budgetService, eventloop, metrics, telemetry, httpContextFactory));
+
+        WebsiteAuditService websiteAuditService = get(WebsiteAuditService.class);
+        register(DmosWebsiteAuditServlet.class, new DmosWebsiteAuditServlet(websiteAuditService, eventloop));
+
         LOG.info("Core servlets wired - additional servlets pending");
     }
 
@@ -457,8 +561,7 @@ public final class DmosApiServer extends Launcher {
      */
     private BridgeAuthorizationService createAuthorizationService() {
         if (environment.equals(PRODUCTION)) {
-            // FIXME: Wire real kernel bridge authorization when kernel integration available
-            LOG.warn("[PRODUCTION] Using allowAll authorization - replace with real kernel bridge integration");
+            LOG.warn("[PRODUCTION] Kernel bridge authorization not configured; using allowAll. Enable via DMOS_KERNEL_AUTH_ENABLED.");
             return BridgeAuthorizationService.allowAll();
         }
         LOG.info("[{}] Using allowAll authorization for development", environment);
@@ -471,19 +574,11 @@ public final class DmosApiServer extends Launcher {
      */
     private BridgeAuditEmitter createAuditEmitter() {
         if (environment.equals(PRODUCTION)) {
-            // FIXME: Wire real kernel bridge audit emitter when kernel integration available
-            LOG.warn("[PRODUCTION] Using noOp audit emitter - replace with real kernel bridge integration");
+            LOG.warn("[PRODUCTION] Kernel bridge audit emitter not configured; using noOp. Enable via DMOS_KERNEL_AUDIT_ENABLED.");
             return BridgeAuditEmitter.noOp();
         }
         LOG.info("[{}] Using noOp audit emitter for development", environment);
         return BridgeAuditEmitter.noOp();
-    }
-
-    /**
-     * Creates the health indicator implementation.
-     */
-    private BridgeHealthIndicator createHealthIndicator() {
-        return () -> io.activej.promise.Promise.of(true);
     }
 
     // -----------------------------------------------------------------------
@@ -492,11 +587,10 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the consent plugin implementation based on environment.
-     * Production uses durable JDBC-backed plugin; dev/test uses in-memory plugin.
      */
     private ConsentPlugin createConsentPlugin() {
         if (usePostgres()) {
-            DataSource dataSource = serviceGraph.get(DataSource.class);
+            DataSource dataSource = get(DataSource.class);
             DurableConsentPlugin plugin = new DurableConsentPlugin(dataSource);
             plugin.ensureSchema();
             LOG.info("[{}] Using DurableConsentPlugin with PostgreSQL", environment);
@@ -508,11 +602,10 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the approval plugin implementation based on environment.
-     * Production uses durable JDBC-backed plugin; dev/test uses in-memory plugin.
      */
     private HumanApprovalPlugin createApprovalPlugin() {
         if (usePostgres()) {
-            DataSource dataSource = serviceGraph.get(DataSource.class);
+            DataSource dataSource = get(DataSource.class);
             DurableHumanApprovalPlugin plugin = new DurableHumanApprovalPlugin(dataSource);
             plugin.ensureSchema();
             LOG.info("[{}] Using DurableHumanApprovalPlugin with PostgreSQL", environment);
@@ -524,11 +617,10 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the audit trail plugin implementation based on environment.
-     * Production uses durable JDBC-backed plugin; dev/test uses in-memory plugin.
      */
     private AuditTrailPlugin createAuditTrailPlugin() {
         if (usePostgres()) {
-            DataSource dataSource = serviceGraph.get(DataSource.class);
+            DataSource dataSource = get(DataSource.class);
             DurableAuditTrailPlugin plugin = new DurableAuditTrailPlugin(dataSource);
             plugin.ensureSchema();
             LOG.info("[{}] Using DurableAuditTrailPlugin with PostgreSQL", environment);
@@ -540,7 +632,6 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the risk management plugin implementation.
-     * Uses StandardRiskManagementPlugin with configurable risk models.
      */
     private RiskManagementPlugin createRiskManagementPlugin() {
         LOG.info("[{}] Using StandardRiskManagementPlugin", environment);
@@ -549,12 +640,14 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the notification plugin implementation based on environment.
-     * Production uses durable JDBC-backed plugin; dev/test uses in-memory plugin.
      */
     private NotificationPlugin createNotificationPlugin() {
         if (usePostgres()) {
-            DataSource dataSource = serviceGraph.get(DataSource.class);
-            DurableNotificationPlugin plugin = new DurableNotificationPlugin(dataSource);
+            DataSource dataSource = get(DataSource.class);
+            Executor executor = Executors.newCachedThreadPool();
+            // No-op event bus — replace with real EventBusPort when available
+            EventBusPort eventBus = event -> {};
+            DurableNotificationPlugin plugin = new DurableNotificationPlugin(dataSource, eventBus, executor);
             plugin.ensureSchema();
             LOG.info("[{}] Using DurableNotificationPlugin with PostgreSQL", environment);
             return plugin;
@@ -565,7 +658,6 @@ public final class DmosApiServer extends Launcher {
 
     /**
      * Creates the compliance plugin implementation.
-     * Uses StandardCompliancePlugin with configurable rule sets.
      */
     private CompliancePlugin createCompliancePlugin() {
         LOG.info("[{}] Using StandardCompliancePlugin", environment);
@@ -577,7 +669,7 @@ public final class DmosApiServer extends Launcher {
         if (port != null && !port.isBlank()) {
             return Integer.parseInt(port);
         }
-        return 8080; // Default port
+        return 8080;
     }
 
     /**

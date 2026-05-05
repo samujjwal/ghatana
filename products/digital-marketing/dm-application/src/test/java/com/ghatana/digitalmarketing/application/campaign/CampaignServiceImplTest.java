@@ -42,11 +42,18 @@ class CampaignServiceImplTest extends EventloopTestBase {
     private CampaignServiceImpl service;
     private DmOperationContext ctx;
 
+    private InMemoryKillSwitchService killSwitchService;
+    private InMemoryCommandService commandService;
+    private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @BeforeEach
     void setUp() {
         kernelAdapter = new RecordingKernelAdapter();
         repository = new InMemoryCampaignRepository();
         compliancePlugin = new ToggleCompliancePlugin();
+        killSwitchService = new InMemoryKillSwitchService();
+        commandService = new InMemoryCommandService();
+        objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         service = new CampaignServiceImpl(
             kernelAdapter,
             repository,
@@ -58,7 +65,10 @@ class CampaignServiceImplTest extends EventloopTestBase {
                 0.0,
                 1000.0
             )),
-            DmosMetricsCollector.noop()
+            DmosMetricsCollector.noop(),
+            killSwitchService,
+            commandService,
+            objectMapper
         );
 
         ctx = DmOperationContext.builder()
@@ -219,6 +229,76 @@ class CampaignServiceImplTest extends EventloopTestBase {
             .isThrownBy(() -> runPromise(() -> service.pauseCampaign(ctx, "no-such-campaign")));
     }
 
+    @Test
+    @DisplayName("launchCampaign issues GOOGLE_ADS_CAMPAIGN_CREATE command for PAID_SEARCH campaigns")
+    void shouldIssueGoogleAdsCommandForPaidSearchCampaign() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("PaidSearchCampaign", CampaignType.PAID_SEARCH)
+        ));
+
+        Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
+
+        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+
+        // Verify command was issued
+        Long pendingCount = runPromise(() -> commandService.countByStatus(
+            ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING));
+        assertThat(pendingCount).isEqualTo(1L);
+
+        // Verify command type and payload
+        var commands = runPromise(() -> commandService.listPending(ctx, 10));
+        assertThat(commands).hasSize(1);
+        var cmd = commands.get(0);
+        assertThat(cmd.getCommandType()).isEqualTo(
+            com.ghatana.digitalmarketing.domain.command.DmCommandType.GOOGLE_ADS_CAMPAIGN_CREATE);
+        assertThat(cmd.getSerializedPayload()).contains("internalCampaignId");
+        assertThat(cmd.getSerializedPayload()).contains(created.getId());
+    }
+
+    @Test
+    @DisplayName("launchCampaign does not issue Google Ads command for non-PAID_SEARCH campaigns")
+    void shouldNotIssueGoogleAdsCommandForEmailCampaign() {
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("EmailCampaign", CampaignType.EMAIL)
+        ));
+
+        Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
+
+        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+
+        // Verify no commands were issued
+        Long pendingCount = runPromise(() -> commandService.countByStatus(
+            ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING));
+        assertThat(pendingCount).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("launchCampaign blocks Google Ads command when kill switch is active")
+    void shouldBlockGoogleAdsCommandWhenKillSwitchActive() {
+        // Activate kill switch for Google Ads publish
+        runPromise(() -> killSwitchService.activateKillSwitch(
+            "TENANT", ctx.getTenantId().getValue(),
+            com.ghatana.digitalmarketing.application.governance.DmKillSwitchService.Features.GOOGLE_ADS_PUBLISH,
+            "Test block", "test-user"));
+
+        Campaign created = runPromise(() -> service.createCampaign(
+            ctx,
+            new CampaignService.CreateCampaignCommand("BlockedCampaign", CampaignType.PAID_SEARCH)
+        ));
+
+        Campaign launched = runPromise(() -> service.launchCampaign(ctx, created.getId()));
+
+        // Campaign should still be launched internally
+        assertThat(launched.getStatus()).isEqualTo(CampaignStatus.LAUNCHED);
+
+        // Verify no commands were issued due to kill switch
+        Long pendingCount = runPromise(() -> commandService.countByStatus(
+            ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING));
+        assertThat(pendingCount).isEqualTo(0L);
+    }
+
     private static final class InMemoryCampaignRepository implements CampaignRepository {
         private final ConcurrentHashMap<String, Campaign> store = new ConcurrentHashMap<>();
 
@@ -365,6 +445,130 @@ class CampaignServiceImplTest extends EventloopTestBase {
         @Override
         public Promise<Void> stop() {
             return Promise.of(null);
+        }
+    }
+
+    /**
+     * In-memory kill switch service for testing.
+     */
+    private static class InMemoryKillSwitchService implements com.ghatana.digitalmarketing.application.governance.DmKillSwitchService {
+        private final java.util.Set<String> activeSwitches = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
+        @Override
+        public Promise<Boolean> isKillSwitchActive(String tenantId, String workspaceId, String feature) {
+            String key = tenantId + ":" + workspaceId + ":" + feature;
+            return Promise.of(activeSwitches.contains(key));
+        }
+
+        @Override
+        public Promise<Void> activateKillSwitch(String scope, String scopeId, String feature, String reason, String activatedBy) {
+            String key = scopeId + ":" + feature;
+            activeSwitches.add(key);
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> deactivateKillSwitch(String scope, String scopeId, String feature, String deactivatedBy) {
+            String key = scopeId + ":" + feature;
+            activeSwitches.remove(key);
+            return Promise.of(null);
+        }
+
+        @Override
+        public Promise<Void> recordKillSwitchAudit(String tenantId, String workspaceId, String feature, boolean wasBlocked, String correlationId) {
+            return Promise.of(null);
+        }
+    }
+
+    /**
+     * In-memory command service for testing.
+     */
+    private static class InMemoryCommandService implements com.ghatana.digitalmarketing.application.command.DmCommandService {
+        private final java.util.List<com.ghatana.digitalmarketing.domain.command.DmCommand> commands = new java.util.ArrayList<>();
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> issue(
+                DmOperationContext ctx, IssueCommandRequest request) {
+            var command = com.ghatana.digitalmarketing.domain.command.DmCommand.builder()
+                .id(java.util.UUID.randomUUID().toString())
+                .commandType(request.commandType())
+                .tenantId(ctx.getTenantId().getValue())
+                .workspaceId(ctx.getWorkspaceId().getValue())
+                .correlationId(ctx.getCorrelationId().getValue())
+                .issuedBy(ctx.getActor().getPrincipalId())
+                .serializedPayload(request.serializedPayload())
+                .status(com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING)
+                .attemptCount(0)
+                .createdAt(java.time.Instant.now())
+                .scheduledAt(java.time.Instant.now())
+                .build();
+            commands.add(command);
+            return Promise.of(command);
+        }
+
+        @Override
+        public Promise<java.util.Optional<com.ghatana.digitalmarketing.domain.command.DmCommand>> findById(DmOperationContext ctx, String id) {
+            return Promise.of(commands.stream().filter(c -> c.getId().equals(id)).findFirst());
+        }
+
+        @Override
+        public Promise<java.util.List<com.ghatana.digitalmarketing.domain.command.DmCommand>> listPending(DmOperationContext ctx, int limit) {
+            return Promise.of(commands.stream()
+                .filter(c -> c.getTenantId().equals(ctx.getTenantId().getValue())
+                    && c.getStatus() == com.ghatana.digitalmarketing.domain.command.DmCommandStatus.PENDING)
+                .limit(limit)
+                .toList());
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markExecuting(DmOperationContext ctx, String commandId) {
+            return findById(ctx, commandId)
+                .then(opt -> opt.map(c -> {
+                    var updated = c.markExecuting();
+                    commands.remove(c);
+                    commands.add(updated);
+                    return Promise.of(updated);
+                }).orElse(Promise.ofException(new NoSuchElementException("Command not found: " + commandId))));
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markSucceeded(DmOperationContext ctx, String commandId) {
+            return findById(ctx, commandId)
+                .then(opt -> opt.map(c -> {
+                    var updated = c.markSucceeded();
+                    commands.remove(c);
+                    commands.add(updated);
+                    return Promise.of(updated);
+                }).orElse(Promise.ofException(new NoSuchElementException("Command not found: " + commandId))));
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markFailed(DmOperationContext ctx, String commandId, String failureReason) {
+            return findById(ctx, commandId)
+                .then(opt -> opt.map(c -> {
+                    var updated = c.markFailed(failureReason);
+                    commands.remove(c);
+                    commands.add(updated);
+                    return Promise.of(updated);
+                }).orElse(Promise.ofException(new NoSuchElementException("Command not found: " + commandId))));
+        }
+
+        @Override
+        public Promise<com.ghatana.digitalmarketing.domain.command.DmCommand> markRolledBack(DmOperationContext ctx, String commandId) {
+            return findById(ctx, commandId)
+                .then(opt -> opt.map(c -> {
+                    var updated = c.markRolledBack();
+                    commands.remove(c);
+                    commands.add(updated);
+                    return Promise.of(updated);
+                }).orElse(Promise.ofException(new NoSuchElementException("Command not found: " + commandId))));
+        }
+
+        @Override
+        public Promise<Long> countByStatus(DmOperationContext ctx, com.ghatana.digitalmarketing.domain.command.DmCommandStatus status) {
+            return Promise.of(commands.stream()
+                .filter(c -> c.getTenantId().equals(ctx.getTenantId().getValue()) && c.getStatus() == status)
+                .count());
         }
     }
 }

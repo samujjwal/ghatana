@@ -471,7 +471,7 @@ export function WorkflowsPage() {
                         Workflows
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Focus on what needs a run, what is stalled, and what should happen next.
+                        Data-local plugin execution surface: focus on what needs a run, what is stalled, and what should happen next.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

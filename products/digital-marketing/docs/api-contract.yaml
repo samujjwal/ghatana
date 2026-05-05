@@ -1,0 +1,452 @@
+openapi: 3.1.0
+info:
+  title: DMOS API
+  description: |
+    Digital Marketing Operating System (DMOS) API Contract.
+
+    **P0-009: Canonical API Contract**
+
+    This document serves as the authoritative definition of all DMOS API endpoints,
+    request/response schemas, error handling, and security requirements.
+
+    ## Key Principles
+
+    - **Tenant Isolation**: All requests must include `X-Tenant-ID` header
+    - **Idempotency**: Write operations require `X-Idempotency-Key` header
+    - **Correlation**: `X-Correlation-ID` is propagated or auto-generated
+    - **Auth**: Server-side identity derived from Authorization Bearer token (P0-015)
+
+    ## Error Format
+
+    All errors follow the canonical envelope:
+    ```json
+    {
+      "error": "ERROR_CODE",
+      "message": "Human readable description",
+      "status": 400,
+      "correlationId": "uuid",
+      "details": null
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: DMOS Team
+
+servers:
+  - url: https://api.ghatana.com/dmos/v1
+    description: Production
+  - url: https://staging-api.ghatana.com/dmos/v1
+    description: Staging
+  - url: http://localhost:8080/v1
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+paths:
+  /workspaces/{workspaceId}/campaigns:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: The workspace scope for the operation
+
+    get:
+      summary: List campaigns
+      description: |
+        P0-001: Returns a paginated list of campaigns for the workspace.
+        Results are ordered by createdAt descending (newest first).
+      operationId: listCampaigns
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: Maximum number of results to return
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of results to skip for pagination
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Tenant scope for isolation
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Correlation ID for tracing (auto-generated if absent)
+      responses:
+        '200':
+          description: Paginated list of campaigns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampaignListResponse'
+        '400':
+          description: Bad request - missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - not authorized to list campaigns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      summary: Create a campaign
+      description: |
+        Creates a new campaign in DRAFT status. Requires idempotency key.
+      operationId: createCampaign
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Required for write operations
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCampaignRequest'
+      responses:
+        '201':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - idempotency key already used
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Compliance violation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/campaigns/{campaignId}:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    get:
+      summary: Get a campaign
+      description: Returns a single campaign by ID.
+      operationId: getCampaign
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /workspaces/{workspaceId}/campaigns/{campaignId}/launch:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      summary: Launch a campaign
+      description: |
+        Transitions a campaign from DRAFT or PAUSED to LAUNCHED status.
+        Requires compliance preflight and human approval gate.
+      operationId: launchCampaign
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign launched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '400':
+          description: Invalid request
+        '403':
+          description: Not authorized
+        '404':
+          description: Campaign not found
+        '409':
+          description: Conflict - invalid state transition
+        '422':
+          description: Compliance or risk check failed
+
+  /workspaces/{workspaceId}/campaigns/{campaignId}/pause:
+    parameters:
+      - name: workspaceId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: campaignId
+        in: path
+        required: true
+        schema:
+          type: string
+
+    post:
+      summary: Pause a campaign
+      description: |
+        Transitions a campaign from LAUNCHED to PAUSED status.
+      operationId: pauseCampaign
+      parameters:
+        - name: X-Tenant-ID
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: X-Correlation-ID
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Campaign paused successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+        '403':
+          description: Not authorized
+        '404':
+          description: Campaign not found
+        '409':
+          description: Conflict - invalid state transition
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: JWT or OAuth2 Bearer token
+
+  schemas:
+    Campaign:
+      type: object
+      required:
+        - id
+        - workspaceId
+        - name
+        - status
+        - type
+        - createdBy
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: Unique campaign identifier
+        workspaceId:
+          type: string
+          description: Workspace scope
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: Campaign name
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - LAUNCHED
+            - PAUSED
+            - COMPLETED
+            - ARCHIVED
+          description: Campaign lifecycle status (P0-010)
+        type:
+          type: string
+          enum:
+            - EMAIL
+            - SOCIAL
+            - PAID_SEARCH
+            - PUSH
+            - SMS
+            - OMNICHANNEL
+          description: Campaign channel type (P0-010)
+        createdBy:
+          type: string
+          description: Principal ID of the creator
+        createdAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+
+    CreateCampaignRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        type:
+          type: string
+          enum:
+            - EMAIL
+            - SOCIAL
+            - PAID_SEARCH
+            - PUSH
+            - SMS
+            - OMNICHANNEL
+
+    CampaignListResponse:
+      type: object
+      required:
+        - items
+        - count
+        - offset
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Campaign'
+          description: List of campaigns (paginated)
+        count:
+          type: integer
+          description: Number of items in this response
+        offset:
+          type: integer
+          description: Pagination offset used for this query
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - status
+        - correlationId
+      properties:
+        error:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - BAD_REQUEST
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - CONFLICT
+            - UNPROCESSABLE_ENTITY
+            - RATE_LIMITED
+            - INTERNAL_ERROR
+        message:
+          type: string
+          description: Human-readable error description
+        status:
+          type: integer
+          description: HTTP status code
+        correlationId:
+          type: string
+          description: Correlation ID for tracing
+        details:
+          type: object
+          nullable: true
+          description: Additional error context (optional)
