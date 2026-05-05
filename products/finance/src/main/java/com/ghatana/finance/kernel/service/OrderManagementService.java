@@ -1,7 +1,6 @@
 package com.ghatana.finance.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
 import io.activej.promise.Promise;
 
 import java.math.BigDecimal;
@@ -29,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class OrderManagementService extends AbstractDataService {
+public class OrderManagementService extends FinanceServiceBase {
 
     private static final String ORDER_DATASET = "finance.orders";
 

@@ -70,7 +70,7 @@ export function ProductHeader({ config, sidebarCollapsed, onMenuClick }: Product
         {/* Notification center */}
         <NotificationCenter
           notifications={config.notifications ?? []}
-          onAction={config.onNotificationAction}
+          {...(config.onNotificationAction ? { onAction: config.onNotificationAction } : {})}
         />
 
         {/* Mode selector */}

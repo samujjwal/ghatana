@@ -38,13 +38,13 @@ echo ""
 
 # Step 4: Install dependencies
 echo "Step 4: Installing dependencies..."
-pnpm install 2>&1 | grep -E "added|up to date|Already up to date" || true
+pnpm --dir .. install --frozen-lockfile 2>&1 | grep -E "added|up to date|Already up to date|Done in" || true
 echo "✅ Dependencies installed"
 echo ""
 
 # Step 5: Generate Prisma client
 echo "Step 5: Generating Prisma client..."
-npm run db:generate 2>&1
+pnpm run db:generate 2>&1
 
 echo ""
 echo "Step 6: Verifying generation..."

@@ -36,7 +36,7 @@ echo ""
 echo "📦 Step 4: Checking Prisma installation..."
 if [ ! -d "node_modules/@prisma/client" ]; then
   echo "❌ ERROR: @prisma/client not installed!"
-  echo "Run: npm install"
+  echo "Run: pnpm --dir .. install --frozen-lockfile"
   exit 1
 fi
 echo "✅ @prisma/client is installed"
@@ -72,7 +72,7 @@ if [ -f "generated/prisma/index.js" ]; then
   SIZE=$(wc -c < "generated/prisma/index.js")
   echo "   Size: $SIZE bytes"
   echo ""
-  echo "🎉 Ready to start! Run: npm run dev"
+  echo "🎉 Ready to start! Run: pnpm run dev"
 else
   echo "❌ ERROR: generated/prisma/index.js not found!"
   echo ""

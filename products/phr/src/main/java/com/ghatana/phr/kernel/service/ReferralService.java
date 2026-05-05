@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -24,7 +24,7 @@ import java.util.Optional;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class ReferralService extends AbstractDataService {
+public class ReferralService extends PhrServiceBase {
 
     private static final String REFERRAL_DATASET = "phr.referrals";
 

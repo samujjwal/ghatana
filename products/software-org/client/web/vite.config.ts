@@ -39,7 +39,7 @@ const workspaceAliases = [
     },
     {
         find: /^@ghatana\/utils$/,
-        replacement: path.resolve(__dirname, "../../../../platform/typescript/foundation/platform-utils/src/index.ts"),
+        replacement: path.resolve(__dirname, "../../../../platform/typescript/platform-utils/src/index.ts"),
     },
     {
         find: /^react-router-dom$/,

@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import com.ghatana.platform.security.ratelimit.RateLimiter;
 import io.activej.promise.Promise;
 import java.time.Duration;
@@ -26,7 +26,7 @@ import java.util.Optional;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class TelemedicineService extends AbstractDataService {
+public class TelemedicineService extends PhrServiceBase {
 
     private static final String SESSION_DATASET = "phr.telemedicine.sessions";
     private static final Duration RATE_LIMIT_WINDOW = Duration.ofMinutes(1);

@@ -145,12 +145,18 @@ class DigitalMarketingBoundaryPolicyStoreTest {
     }
 
     @Test
-    @DisplayName("all rules use the digital-marketing.* source and target scope pattern")
+    @DisplayName("all non-sentinel rules use the digital-marketing.* scope pattern and default deny fails closed globally")
     void shouldAllUseDmScopePatterns() {
         rules.forEach(rule -> {
-            assertThat(rule.getSourceScopePattern())
-                .as("rule %s should use digital-marketing.* source scope", rule.getRuleId())
-                .isEqualTo("digital-marketing.*");
+            if ("DM-BP-999".equals(rule.getRuleId())) {
+                assertThat(rule.getSourceScopePattern())
+                    .as("default deny should fail closed across all caller scopes")
+                    .isEqualTo("**");
+            } else {
+                assertThat(rule.getSourceScopePattern())
+                    .as("rule %s should use digital-marketing.* source scope", rule.getRuleId())
+                    .isEqualTo("digital-marketing.*");
+            }
             assertThat(rule.getTargetScopePattern())
                 .as("rule %s should use digital-marketing.* target scope", rule.getRuleId())
                 .isEqualTo("digital-marketing.*");

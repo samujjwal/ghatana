@@ -68,7 +68,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_SUBMITTED) &&
+                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED) &&
                 record.tags().containsKey("tenant_id") &&
                 record.tags().get("tenant_id").equals("tenant-1"));
         }
@@ -81,7 +81,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_EXECUTION_DURATION_MS));
+                record.name().equals(AnalyticsMetrics.QUERY_EXECUTION_DURATION_MS));
         }
 
         @Test
@@ -92,7 +92,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_COMPLETED) &&
+                record.name().equals(AnalyticsMetrics.QUERY_COMPLETED) &&
                 record.tags().get("status").equals("success"));
         }
 
@@ -115,7 +115,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_CANCELLED));
+                record.name().equals(AnalyticsMetrics.QUERY_CANCELLED));
         }
 
         @Test
@@ -138,7 +138,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_COST_ESTIMATED));
+                record.name().equals(AnalyticsMetrics.QUERY_COST_ESTIMATED));
         }
     }
 
@@ -256,7 +256,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals("analytics.query.tracker.registered"));
+                record.name().equals("analytics.query.tracker.registered"));
         }
 
         @Test
@@ -270,7 +270,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals("analytics.query.tracker.cancelled"));
+                record.name().equals("analytics.query.tracker.cancelled"));
         }
 
         @Test
@@ -281,7 +281,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals("analytics.query.tracker.completed"));
+                record.name().equals("analytics.query.tracker.completed"));
         }
 
         @Test
@@ -311,11 +311,11 @@ class AnalyticsObservabilityIntegrationTest {
 
             // Verify key metrics are emitted
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_SUBMITTED));
+                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED));
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_EXECUTED));
+                record.name().equals(AnalyticsMetrics.QUERY_EXECUTED));
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_COMPLETED));
+                record.name().equals(AnalyticsMetrics.QUERY_COMPLETED));
         }
 
         @Test
@@ -330,7 +330,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             // Verify metrics are emitted for all queries
             long submissionCount = records.stream()
-                .filter(record -> record.metricName().equals(AnalyticsMetrics.QUERY_SUBMITTED))
+                .filter(record -> record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED))
                 .count();
             assertThat(submissionCount).isGreaterThanOrEqualTo(3);
         }
@@ -354,7 +354,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_CANCELLED));
+                record.name().equals(AnalyticsMetrics.QUERY_CANCELLED));
         }
     }
 
@@ -372,7 +372,7 @@ class AnalyticsObservabilityIntegrationTest {
 
             List<RecordingMetricsCollector.MetricRecord> records = metricsCollector.getRecords();
             assertThat(records).anyMatch(record ->
-                record.metricName().equals(AnalyticsMetrics.QUERY_SUBMITTED));
+                record.name().equals(AnalyticsMetrics.QUERY_SUBMITTED));
         }
 
         @Test

@@ -6,6 +6,7 @@ pack:
   rulePrefix: FLASHIT-BP-
   boundaryPolicyStoreClass: com.ghatana.flashit.kernel.policy.FlashItBoundaryPolicyStore
   pluginBindingsClass: com.ghatana.flashit.kernel.policy.FlashItPluginBindings
+  defaultDenyRuleId: FLASHIT-BP-999
   kernelCapabilitiesConsumed:
     - boundary-policy-evaluation
     - audit-trail

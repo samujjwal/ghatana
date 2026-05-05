@@ -103,10 +103,11 @@ public final class FinanceBoundaryPolicyStore implements BoundaryPolicyStore {
                     .build(),
 
             // FIN-BP-004: Market-data interop read requires explicit feature flag.
+            // Restricts access to finance scopes only (not universal **) for safer boundary posture.
             BoundaryPolicyRule.builder()
                     .ruleId("FIN-BP-004")
-                    .sourceScopePattern("**")
-                    .targetScopePattern("**")
+                    .sourceScopePattern("finance.*")
+                    .targetScopePattern("finance.*")
                     .resourcePattern("market-data/*")
                     .actions("read")
                     .classificationCondition("*")

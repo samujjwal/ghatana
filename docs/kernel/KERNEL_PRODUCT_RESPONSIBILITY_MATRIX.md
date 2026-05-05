@@ -28,7 +28,8 @@
 |---|---|---|
 | `boundary-policy-validation` | Kernel | Product-local regex/source scanning or class-existence-only checks |
 | `app-shell/layout` | Design system | Product-local shell implementations except thin wrappers |
-| `router/version strategy` | Kernel frontend platform | Mixed router families across products |
+| `component-library ownership` | Design system | Direct product imports of overlapping UI systems such as MUI, Chakra, Mantine, Ant Design, or Semantic UI unless explicitly approved |
+| `router/version strategy` | Kernel frontend platform | Mixed router families across products or product web packages depending directly on `react-router` |
 | `compose/docker base image, healthcheck, secret rules, observability wiring` | Infrastructure/tooling | Product-local copies of the base runtime setup |
 | `trace/log/metric/audit conventions` | Kernel observability | Product-specific logging schemas for shared flows |
 

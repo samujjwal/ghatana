@@ -107,7 +107,7 @@ export function ProductShell({ config, children, contentClassName }: ProductShel
       {/* Active operations bar */}
       <ActiveOperationsBar
         count={config.activeOperationsCount ?? 0}
-        onClick={config.onActiveOperationsClick}
+        {...(config.onActiveOperationsClick ? { onClick: config.onActiveOperationsClick } : {})}
       />
     </div>
   );

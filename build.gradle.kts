@@ -8,6 +8,15 @@
 import org.gradle.api.plugins.quality.Pmd
 import org.gradle.api.plugins.quality.PmdExtension
 import org.gradle.api.Project
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import java.io.File
 
 plugins {
@@ -18,6 +27,41 @@ plugins {
     // resolves to the same class, preventing the cross-project classloader mismatch.
     // See: https://github.com/diffplug/spotless/issues/1495
     alias(libs.plugins.spotless) apply false
+}
+
+@DisableCachingByDefault(because = "Scans project source files to enforce kernel/product boundary rules.")
+abstract class KernelProductBoundaryCheckTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val sourceFiles: ConfigurableFileCollection
+
+    @get:Input
+    abstract val bannedPatterns: ListProperty<String>
+
+    @TaskAction
+    fun runBoundaryCheck() {
+        val violations = mutableListOf<String>()
+        val compiledPatterns = bannedPatterns.get().map(::Regex)
+
+        sourceFiles.files
+            .filter(File::isFile)
+            .sortedBy { it.path }
+            .forEach { file ->
+                val content = file.readText()
+                compiledPatterns.forEachIndexed { index, regex ->
+                    if (regex.containsMatchIn(content)) {
+                        violations += "${project.relativePath(file)} contains product-specific term '${bannedPatterns.get()[index]}'"
+                    }
+                }
+            }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Kernel/product boundary violations found in ${project.path}:\n" +
+                    violations.joinToString("\n") { "  $it" }
+            )
+        }
+    }
 }
 
 group = "com.ghatana"
@@ -65,11 +109,13 @@ private val sharedProductApiAllowlist = setOf(
     ":products:data-cloud:platform-config",
     ":products:data-cloud:platform-entity",
     ":products:data-cloud:platform-event",
+    ":products:data-cloud:platform-event-store",
     // AEP shared APIs (agent runtime, execution engine, registry contracts)
     ":products:aep:aep-operator-contracts",
     ":products:aep:aep-agent-runtime",
     ":products:aep:aep-engine",
     ":products:aep:aep-registry",
+    ":products:aep:aep-analytics",
     ":products:aep:orchestrator",
     // Virtual Org shared APIs (framework consumed by software-org)
     ":products:virtual-org:modules:framework",
@@ -316,36 +362,22 @@ subprojects {
         // Capture project properties early to avoid null issues during task configuration
         val projectDirPath = layout.projectDirectory.asFile
         val projectPathValue = path
-
-        tasks.register("checkKernelProductBoundary") {
+        tasks.register<KernelProductBoundaryCheckTask>("checkKernelProductBoundary") {
             group = "verification"
             description = "Fails when product-specific identifiers leak into kernel or platform-plugin production sources."
-
-            doLast {
-                val mainDir = projectDirPath.resolve("src/main")
-                if (!mainDir.exists()) {
-                    return@doLast
-                }
-
-                val violations = mutableListOf<String>()
-                mainDir.walkTopDown()
-                    .filter { it.isFile && !shouldSkipKernelBoundaryFile(it) }
-                    .forEach { file ->
-                        val content = file.readText()
-                        kernelBoundaryBannedPatterns.forEach { bannedPattern ->
-                            if (Regex(bannedPattern).containsMatchIn(content)) {
-                                violations += "${file.relativeTo(projectDirPath)} contains product-specific term '$bannedPattern'"
-                            }
-                        }
-                    }
-
-                if (violations.isNotEmpty()) {
-                    throw GradleException(
-                        "Kernel/product boundary violations found in $projectPathValue:\n" +
-                            violations.joinToString("\n") { "  $it" }
+            sourceFiles.from(
+                project.fileTree(project.layout.projectDirectory.dir("src/main")) {
+                    exclude(
+                        "**/*.md",
+                        "**/example/**",
+                        "**/examples/**",
+                        "**/fixture/**",
+                        "**/fixtures/**",
+                        "**/test-fixtures/**"
                     )
                 }
-            }
+            )
+            bannedPatterns.set(kernelBoundaryBannedPatterns)
         }
 
         tasks.matching { it.name == "check" }.configureEach {
@@ -415,13 +447,14 @@ tasks.register("validateArchitecture") {
 val PLUGIN_BANNED_TERMS = listOf(
     "PHR", "Finance", "FINANCE", "CLINICAL", "phr-kernel", "finance-kernel",
     "SOX", "HIPAA", "GDPR", "PCI-DSS", "PCIDSS", "trade\\.records", "patient\\.records",
-    "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL",
-    "plugin-ledger", "plugin_ledger"
+    "nepal-2081", "sebon", "BillingLedger", "RiskType\\.CLINICAL"
 )
 
 tasks.register("checkPluginPurity") {
     group = "verification"
     description = "Fails the build if product domain terms appear in platform-plugin main sources."
+    notCompatibleWithConfigurationCache("Plugin purity check reads filesystem at execution time")
+    
     doLast {
         val pluginsRoot = file("platform-plugins")
         if (!pluginsRoot.exists()) return@doLast

@@ -60,8 +60,10 @@ export interface ProductRouteCapability {
   readonly personas?: readonly string[];
   /** Optional commercial/feature tier metadata returned by backend entitlement APIs. */
   readonly tiers?: readonly string[];
-  /** Optional product content cards or actions associated with this route. */
+  /** Optional route-level actions returned by backend entitlement APIs. */
   readonly actions?: readonly string[];
+  /** Optional route-level cards or panels returned by backend entitlement APIs. */
+  readonly cards?: readonly string[];
 }
 
 /**
@@ -70,6 +72,28 @@ export interface ProductRouteCapability {
  * Products can hydrate `ProductShellConfig.routes` from this shape instead of
  * hardcoding frontend navigation decisions.
  */
+export interface ProductEntitledAction {
+  readonly id: string;
+  readonly label: string;
+  readonly routePath?: string;
+  readonly requiresConfirmation?: boolean;
+}
+
+export interface ProductEntitledCard {
+  readonly id: string;
+  readonly title: string;
+  readonly routePath?: string;
+  readonly surface?: 'dashboard' | 'detail' | 'sidebar' | 'modal';
+}
+
+/**
+ * Backend-provided route/content entitlement contract.
+ *
+ * Products can hydrate `ProductShellConfig.routes` from this shape instead of
+ * hardcoding frontend navigation decisions. Backend responses should also
+ * return allowed action and card metadata so product UIs do not independently
+ * invent entitlement-sensitive disclosure logic.
+ */
 export interface ProductRouteEntitlement {
   readonly product: string;
   readonly principalId: string;
@@ -77,7 +101,10 @@ export interface ProductRouteEntitlement {
   readonly role: string;
   readonly persona?: string;
   readonly tier?: string;
+  readonly correlationId?: string;
   readonly routes: readonly ProductRouteCapability[];
+  readonly actions?: readonly ProductEntitledAction[];
+  readonly cards?: readonly ProductEntitledCard[];
 }
 
 // ---------------------------------------------------------------------------

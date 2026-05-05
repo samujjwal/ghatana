@@ -1,12 +1,12 @@
 import React from 'react';
-import { Navigate, createBrowserRouter } from 'react-router';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { usePhrAccess, type PhrRole } from './auth/PhrAccessContext';
 import { isRouteAllowedForRole, phrRouteManifest, type PhrRouteManifestEntry } from './routeManifest';
 import { LoginPage } from './pages/LoginPage';
 import { RecordDetailPage } from './pages/RecordDetailPage';
 
-function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
+export function ProtectedPhrRoute({ route }: { route: PhrRouteManifestEntry }): React.ReactElement {
   const { role } = usePhrAccess();
 
   if (!isRouteAllowedForRole(route, role)) {

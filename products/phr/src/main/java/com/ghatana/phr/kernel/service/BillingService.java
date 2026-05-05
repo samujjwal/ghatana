@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import com.ghatana.plugin.ledger.LedgerPlugin;
 import com.ghatana.plugin.ledger.LedgerTransaction;
 import io.activej.promise.Promise;
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class BillingService extends AbstractDataService {
+public class BillingService extends PhrServiceBase {
 
     private static final Logger log = LoggerFactory.getLogger(BillingService.class);
 

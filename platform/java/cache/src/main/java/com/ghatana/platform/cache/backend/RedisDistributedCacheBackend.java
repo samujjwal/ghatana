@@ -2,7 +2,6 @@ package com.ghatana.platform.cache.backend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ghatana.platform.cache.DistributedCacheService.CacheBackend;
-import com.ghatana.platform.cache.DistributedCacheService.CacheStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.lettuce.core.RedisClient;
@@ -10,11 +9,8 @@ import io.lettuce.core.RedisURI;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.ScriptOutputType;
-import io.lettuce.core.protocol.ProtocolVersion;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -47,17 +43,17 @@ import java.util.concurrent.TimeUnit;
  * - REDIS_MAX_RETRIES (default: 3)
  */
 public final class RedisDistributedCacheBackend implements CacheBackend {
-    private static final Logger log = LoggerFactory.getLogger(RedisDistributedCacheBackend.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RedisDistributedCacheBackend.class);
 
     // Lua script for atomic pattern-based key deletion
     // Returns count of deleted keys
     private static final String DELETE_PATTERN_SCRIPT =
-        "local keys = redis.call('KEYS', ARGV[1]) " +
-        "if #keys > 0 then " +
-        "  return redis.call('DEL', unpack(keys)) " +
-        "else " +
-        "  return 0 " +
-        "end";
+        "local keys = redis.call('KEYS', ARGV[1]) "
+        + "if #keys > 0 then "
+        + "  return redis.call('DEL', unpack(keys)) "
+        + "else "
+        + "  return 0 "
+        + "end";
 
     private final StatefulRedisConnection<String, String> connection;
     private final RedisAsyncCommands<String, String> async;
@@ -113,15 +109,15 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
 
             // Verify connection with ping
             this.async.ping()
-                .thenAccept(pong -> log.info("Redis connection established", 
+                .thenAccept(pong -> LOG.info("Redis connection established", 
                     "host", host, "port", port, "database", database, "response", pong))
                 .toCompletableFuture()
                 .join();
 
-            log.info("RedisDistributedCacheBackend initialized successfully", 
+            LOG.info("RedisDistributedCacheBackend initialized successfully", 
                 "host", host, "port", port, "database", database, "timeoutMs", timeoutMs);
         } catch (Exception e) {
-            log.error("Failed to initialize Redis backend", e, 
+            LOG.error("Failed to initialize Redis backend", e, 
                 "host", host, "port", port, "error", e.getMessage());
             throw new RuntimeException("Redis connection failed", e);
         }
@@ -146,14 +142,14 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
             String value = future.get(timeoutMs, TimeUnit.MILLISECONDS);
 
             if (value == null) {
-                log.debug("Cache miss", "key", key);
+                LOG.debug("Cache miss", "key", key);
                 return null;
             }
 
-            log.debug("Cache hit", "key", key);
+            LOG.debug("Cache hit", "key", key);
             return value;
         } catch (Exception e) {
-            log.warn("Cache get operation failed", e, 
+            LOG.warn("Cache get operation failed", e, 
                 "key", key, "error", e.getMessage(), "retrying", "false");
             return null;
         }
@@ -177,9 +173,9 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
                 .toCompletableFuture();
             
             String result = future.get(timeoutMs, TimeUnit.MILLISECONDS);
-            log.debug("Cache put", "key", key, "ttlSeconds", ttlSeconds, "response", result);
+            LOG.debug("Cache put", "key", key, "ttlSeconds", ttlSeconds, "response", result);
         } catch (Exception e) {
-            log.warn("Cache set operation failed", e, 
+            LOG.warn("Cache set operation failed", e, 
                 "key", key, "ttlSeconds", ttlSeconds, "error", e.getMessage(), "retrying", "false");
             // Non-blocking: do not throw, cache write failures are non-critical
         }
@@ -198,9 +194,9 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
         try {
             CompletableFuture<Long> future = async.del(key).toCompletableFuture();
             long deleted = future.get(timeoutMs, TimeUnit.MILLISECONDS);
-            log.debug("Cache delete", "key", key, "deleted", deleted);
+            LOG.debug("Cache delete", "key", key, "deleted", deleted);
         } catch (Exception e) {
-            log.warn("Cache delete operation failed", e, 
+            LOG.warn("Cache delete operation failed", e, 
                 "key", key, "error", e.getMessage(), "retrying", "false");
         }
     }
@@ -231,10 +227,10 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
 
             Object deletedValue = future.get(timeoutMs, TimeUnit.MILLISECONDS);
             int deleted = deletedValue instanceof Number number ? number.intValue() : 0;
-            log.debug("Cache pattern delete", "pattern", pattern, "deleted", deleted);
+            LOG.debug("Cache pattern delete", "pattern", pattern, "deleted", deleted);
             return deleted;
         } catch (Exception e) {
-            log.warn("Cache pattern delete operation failed", e, 
+            LOG.warn("Cache pattern delete operation failed", e, 
                 "pattern", pattern, "error", e.getMessage(), "retrying", "false");
             return 0;
         }
@@ -259,7 +255,7 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
 
             return keys == null ? 0 : keys.size();
         } catch (Exception e) {
-            log.warn("Cache key count retrieval failed", e, 
+            LOG.warn("Cache key count retrieval failed", e, 
                 "pattern", pattern, "error", e.getMessage());
             return 0;
         }
@@ -285,15 +281,15 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
                         totalSize += valueSize;
                     }
                 } catch (Exception e) {
-                    log.debug("Failed to get value size for statistics", 
+                    LOG.debug("Failed to get value size for statistics", 
                         "key", key, "error", e.getMessage());
                 }
             }
 
-            log.debug("Cache statistics", "pattern", pattern, "keyCount", keys.size(), "totalSizeBytes", totalSize);
+            LOG.debug("Cache statistics", "pattern", pattern, "keyCount", keys.size(), "totalSizeBytes", totalSize);
             return totalSize;
         } catch (Exception e) {
-            log.warn("Cache size retrieval failed", e, 
+            LOG.warn("Cache size retrieval failed", e, 
                 "pattern", pattern, "error", e.getMessage());
             return 0;
         }
@@ -325,9 +321,9 @@ public final class RedisDistributedCacheBackend implements CacheBackend {
     public void close() {
         try {
             connection.close();
-            log.info("Redis connection closed successfully", "host", host, "port", port);
+            LOG.info("Redis connection closed successfully", "host", host, "port", port);
         } catch (Exception e) {
-            log.error("Error closing Redis connection", e, 
+            LOG.error("Error closing Redis connection", e, 
                 "host", host, "port", port, "error", e.getMessage());
         }
     }

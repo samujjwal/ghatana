@@ -9,7 +9,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma/
 
 # Install pnpm and dependencies
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@10.33.0
 RUN pnpm install --frozen-lockfile
 
 # Generate Prisma client
@@ -24,7 +24,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Build application
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@10.33.0
 RUN pnpm build
 
 # Stage 3: Runner
@@ -52,4 +52,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 CMD ["node", "dist/server.js"]
-

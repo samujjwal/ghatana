@@ -33,4 +33,4 @@ else
 fi
 
 echo ""
-echo "Ready to start: npm run dev"
+echo "Ready to start: pnpm run dev"

@@ -6,6 +6,8 @@ on:
     paths:
       - 'products/yappc/frontend/**'
       - 'products/dcmaar/apps/**'
+      - 'products/phr/apps/web/**'
+      - 'products/digital-marketing/ui/**'
       - 'products/flashit/client/**'
       - 'products/tutorputor/apps/**'
   workflow_dispatch:
@@ -30,6 +32,7 @@ jobs:
           - name: yappc-frontend
             path: products/yappc/frontend/web
             url: http://localhost:5173
+            port: 5173
             budgets:
               performance: 90
               accessibility: 95
@@ -42,6 +45,7 @@ jobs:
           - name: dcmaar-parent
             path: products/dcmaar/apps/parent-dashboard
             url: http://localhost:3000
+            port: 3000
             budgets:
               performance: 85
               accessibility: 95
@@ -51,13 +55,54 @@ jobs:
               lcp: 3000
               tti: 4000
               cls: 0.15
+          - name: phr-web
+            path: products/phr/apps/web
+            url: http://localhost:4173
+            port: 4173
+            budgets:
+              performance: 85
+              accessibility: 95
+              best-practices: 90
+              seo: 85
+              fcp: 2000
+              lcp: 2800
+              tti: 4000
+              cls: 0.1
+          - name: dmos-ui
+            path: products/digital-marketing/ui
+            url: http://localhost:4174
+            port: 4174
+            budgets:
+              performance: 85
+              accessibility: 95
+              best-practices: 90
+              seo: 85
+              fcp: 2200
+              lcp: 3000
+              tti: 4200
+              cls: 0.1
+          - name: flashit-web
+            path: products/flashit/client/web
+            url: http://localhost:4175
+            port: 4175
+            budgets:
+              performance: 85
+              accessibility: 95
+              best-practices: 90
+              seo: 85
+              fcp: 2200
+              lcp: 3000
+              tti: 4200
+              cls: 0.1
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -79,7 +124,7 @@ jobs:
           echo $! > .preview-pid
           sleep 10
         env:
-          PORT: ${{ matrix.product.url == 'http://localhost:5173' && '5173' || '3000' }}
+          PORT: ${{ matrix.product.port }}
 
       - name: Wait for server
         run: |
@@ -132,7 +177,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

@@ -22,6 +22,10 @@ jobs:
             path: products/yappc/frontend
           - product: flashit-web
             path: products/flashit/client/web
+          - product: phr-web
+            path: products/phr/apps/web
+          - product: dmos-ui
+            path: products/digital-marketing/ui
           - product: tutorputor-web
             path: products/tutorputor/apps/tutorputor-web
           - product: tutorputor-admin
@@ -38,13 +42,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Install pnpm
-        run: npm install -g pnpm@8
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
         working-directory: ${{ matrix.path }}
@@ -105,7 +111,7 @@ jobs:
 
             const products = [
               'dcmaar-parent-dashboard', 'dcmaar-device-health',
-              'yappc-frontend', 'flashit-web',
+              'yappc-frontend', 'flashit-web', 'phr-web', 'dmos-ui',
               'tutorputor-web', 'tutorputor-admin',
               'data-cloud-ui'
             ];

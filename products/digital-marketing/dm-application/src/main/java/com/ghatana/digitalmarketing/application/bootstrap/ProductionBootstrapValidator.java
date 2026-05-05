@@ -213,7 +213,7 @@ public final class ProductionBootstrapValidator {
             "DM_CLAIMS_DISCLOSURES"
         };
 
-        // TODO: isComplianceRuleSetLoaded method doesn't exist in kernelAdapter
+        // NOTE: isComplianceRuleSetLoaded method not yet available on kernelAdapter
         // Skipping compliance rule set validation for now
         LOG.info("[DMOS-BOOTSTRAP] Skipping compliance rule set validation (method not implemented)");
 

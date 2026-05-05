@@ -3,7 +3,7 @@ package com.ghatana.phr.kernel.service;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 import io.activej.promise.Promises;
 
@@ -30,7 +30,7 @@ import java.util.Optional;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class DocumentService extends AbstractDataService {
+public class DocumentService extends PhrServiceBase {
 
     private static final String DOCUMENT_DATASET = "phr.documents";
     private static final String CONTENT_DATASET = "phr.document.content";

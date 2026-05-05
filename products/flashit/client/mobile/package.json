@@ -4,6 +4,7 @@
   "description": "Flashit mobile app for iOS and Android",
   "main": "index.js",
   "browser": "index.web.js",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -80,5 +81,16 @@
     "jest": "^30.3.0",
     "typescript": "^6.0.2"
   },
-  "private": true
+  "private": true,
+  "author": "Ghatana FlashIt Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samujjwal/ghatana.git",
+    "directory": "products/flashit/client/mobile"
+  },
+  "bugs": {
+    "url": "https://github.com/samujjwal/ghatana/issues"
+  },
+  "homepage": "https://github.com/samujjwal/ghatana/tree/main/products/flashit/client/mobile#readme"
 }

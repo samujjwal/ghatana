@@ -5,7 +5,7 @@
 
 import { test, expect } from './fixtures';
 
-test.describe('Accessibility', () => {
+test.describe('Accessibility @a11y', () => {
   test('should navigate with keyboard', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     

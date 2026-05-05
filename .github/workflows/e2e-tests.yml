@@ -1,5 +1,5 @@
 name: E2E Tests
-# P1-4: Toolchain already uses Node 20 and pnpm@10.28.2 as required
+# P1-4: Toolchain already uses Node 20 and pnpm@10.33.0 as required
 
 on:
   push:
@@ -23,6 +23,8 @@ jobs:
             path: products/yappc/frontend
           - product: flashit-web
             path: products/flashit/client/web
+          - product: phr-web
+            path: products/phr/apps/web
           - product: tutorputor-web
             path: products/tutorputor/apps/tutorputor-web
           - product: tutorputor-admin
@@ -33,7 +35,7 @@ jobs:
             path: products/audio-video/modules/intelligence/ai-voice/apps/desktop
           - product: aep-ui
             path: products/aep/ui
-          - product: digital-marketing-ui
+          - product: dmos-ui
             path: products/digital-marketing/ui
 
     steps:
@@ -41,7 +43,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install pnpm
-        run: corepack enable && corepack prepare pnpm@10.28.2 --activate
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -58,7 +62,7 @@ jobs:
 
       - name: Run E2E smoke tests
         working-directory: ${{ matrix.path }}
-        run: pnpm exec playwright test --project=chromium
+        run: pnpm run test:e2e
         env:
           CI: true
 
@@ -94,10 +98,10 @@ jobs:
 
             const products = [
               'dcmaar-parent-dashboard', 'dcmaar-device-health',
-              'yappc-frontend', 'flashit-web',
+              'yappc-frontend', 'flashit-web', 'phr-web',
               'tutorputor-web', 'tutorputor-admin',
               'data-cloud-ui', 'audio-video-desktop',
-              'aep-ui', 'digital-marketing-ui'
+              'aep-ui', 'dmos-ui'
             ];
 
             const body = `## ${status} E2E Smoke Tests ${statusText}

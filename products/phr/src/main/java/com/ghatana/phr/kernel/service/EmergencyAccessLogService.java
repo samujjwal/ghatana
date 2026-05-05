@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 
 import java.time.Duration;
@@ -32,7 +32,7 @@ import java.util.Set;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class EmergencyAccessLogService extends AbstractDataService {
+public class EmergencyAccessLogService extends PhrServiceBase {
 
     private static final String LOG_DATASET = "phr.emergency.access.log";
     private static final Duration EMERGENCY_ACCESS_WINDOW = Duration.ofHours(4);

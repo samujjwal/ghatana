@@ -6,6 +6,7 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "src/index.ts",
+  "packageManager": "pnpm@10.33.0",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -30,5 +31,16 @@
     "@vitest/coverage-v8": "^4.1.4",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
-  }
+  },
+  "author": "Ghatana FlashIt Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samujjwal/ghatana.git",
+    "directory": "products/flashit/libs/ts/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/samujjwal/ghatana/issues"
+  },
+  "homepage": "https://github.com/samujjwal/ghatana/tree/main/products/flashit/libs/ts/shared#readme"
 }

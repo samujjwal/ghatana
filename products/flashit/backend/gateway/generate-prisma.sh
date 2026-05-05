@@ -49,8 +49,8 @@ echo ""
 
 # Step 4: Run Prisma generate
 echo "Step 4: Generating Prisma client..."
-echo "Command: npx prisma generate --schema prisma/schema.prisma"
-npx prisma generate --schema prisma/schema.prisma 2>&1
+echo "Command: pnpm exec prisma generate --schema prisma/schema.prisma"
+pnpm exec prisma generate --schema prisma/schema.prisma 2>&1
 
 echo ""
 echo "Step 5: Verifying generated client..."
@@ -76,5 +76,5 @@ echo "✅ SUCCESS: Prisma client generated!"
 echo "=========================================="
 echo ""
 echo "You can now start the API server:"
-echo "  npm run dev"
+echo "  pnpm run dev"
 echo ""

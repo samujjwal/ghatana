@@ -4,7 +4,7 @@
  */
 package com.ghatana.aep.engine.registry;
 
-import com.ghatana.platform.database.h2.H2SovereignEntityStore;
+import com.ghatana.datacloud.storage.H2SovereignEntityStore;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -522,8 +522,9 @@ class RunLedgerBackedHistoryProductionTest {
             assertThat(rs.next()).isTrue();
             java.sql.Timestamp retrievedTimestamp = rs.getTimestamp("executed_at");
             Instant retrievedInstant = retrievedTimestamp.toInstant();
-            // Allow for small precision differences
-            assertThat(retrievedInstant).isCloseTo(expectedTimestamp, java.time.Duration.ofSeconds(1));
+            // Allow for small precision differences (within 1 second)
+            long diff = Math.abs(java.time.temporal.ChronoUnit.SECONDS.between(expectedTimestamp, retrievedInstant));
+            assertThat(diff).isLessThanOrEqualTo(1);
             rs.close();
             stmt.close();
         }

@@ -35,7 +35,7 @@ try {
   console.log(`   Constructor: ${PrismaClient.name}\n`);
 
   console.log("✅ All tests passed!");
-  console.log("\n🚀 Ready to run: npm run dev");
+  console.log("\n🚀 Ready to run: pnpm run dev");
 
 } catch (error) {
   console.error("❌ Test failed:");

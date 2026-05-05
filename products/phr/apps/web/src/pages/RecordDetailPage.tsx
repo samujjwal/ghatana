@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader } from '@ghatana/design-system';
-import { useParams } from 'react-router';
+import { useParams } from 'react-router-dom';
 import { demoDashboard } from '../mockData';
 
 export function RecordDetailPage(): React.ReactElement {

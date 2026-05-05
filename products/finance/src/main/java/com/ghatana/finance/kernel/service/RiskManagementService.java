@@ -4,7 +4,6 @@ import com.ghatana.finance.kernel.service.dto.OrderRecord;
 import com.ghatana.finance.kernel.service.dto.PositionRecord;
 import com.ghatana.kernel.config.KernelConfigResolver;
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
 import com.ghatana.platform.cache.DistributedCachePort;
 import com.ghatana.platform.cache.InMemoryCacheAdapter;
 import io.activej.promise.Promise;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
  * @author Ghatana Finance Team
  * @since 1.0.0
  */
-public class RiskManagementService extends AbstractDataService {
+public class RiskManagementService extends FinanceServiceBase {
 
     private static final String RISK_DATASET = "finance.risk.metrics";
     private static final String ALERT_DATASET = "finance.risk.alerts";

@@ -3,7 +3,7 @@ package com.ghatana.finance.extension;
 import com.ghatana.kernel.context.KernelContext;
 import com.ghatana.kernel.descriptor.KernelCapability;
 import com.ghatana.kernel.descriptor.KernelDescriptor;
-import com.ghatana.kernel.extension.AbstractKernelExtension;
+import com.ghatana.kernel.extension.KernelExtension;
 import com.ghatana.kernel.module.KernelModule;
 import io.activej.promise.Promise;
 
@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Ghatana Kernel Team
  * @since 1.0.0
  */
-public class RiskManagementKernelExtension extends AbstractKernelExtension {
+public class RiskManagementKernelExtension implements KernelExtension {
 
     private static final String EXTENSION_ID = "risk-management-realtime";
     private static final String VERSION = "1.0.0";
@@ -36,6 +37,9 @@ public class RiskManagementKernelExtension extends AbstractKernelExtension {
     private final ConcurrentHashMap<String, PositionRisk> positionRisks = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, PortfolioRisk> portfolioRisks = new ConcurrentHashMap<>();
     private final AtomicReference<RiskLimits> riskLimits = new AtomicReference<>();
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private volatile KernelContext context;
 
     @Override
     public String getExtensionId() {
@@ -82,8 +86,22 @@ public class RiskManagementKernelExtension extends AbstractKernelExtension {
     }
 
     @Override
-    protected void onInitialize(KernelContext context) {
+    public void onModuleInitialized(KernelContext context) {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+        this.context = context;
         initializeRiskLimits();
+    }
+
+    @Override
+    public void onModuleStarted(KernelContext context) {
+        started.set(true);
+    }
+
+    @Override
+    public void onModuleStopped(KernelContext context) {
+        started.set(false);
     }
 
     @Override
@@ -95,6 +113,21 @@ public class RiskManagementKernelExtension extends AbstractKernelExtension {
     @Override
     public int getPriority() {
         return 200; // Critical priority
+    }
+
+    // Helper methods for lifecycle and context management
+    protected final KernelContext getContext() {
+        return context;
+    }
+
+    protected final boolean isStarted() {
+        return started.get();
+    }
+
+    protected final void requireStarted() {
+        if (!started.get()) {
+            throw new IllegalStateException("Extension not started: " + getExtensionId());
+        }
     }
 
     // ==================== Risk Calculation API ====================

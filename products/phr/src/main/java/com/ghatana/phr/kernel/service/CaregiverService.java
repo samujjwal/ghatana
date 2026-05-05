@@ -1,7 +1,7 @@
 package com.ghatana.phr.kernel.service;
 
 import com.ghatana.kernel.context.KernelContext;
-import com.ghatana.kernel.service.AbstractDataService;
+
 import io.activej.promise.Promise;
 
 import java.time.Instant;
@@ -27,7 +27,7 @@ import java.util.Set;
  * @author Ghatana PHR Team
  * @since 1.0.0
  */
-public class CaregiverService extends AbstractDataService {
+public class CaregiverService extends PhrServiceBase {
 
     private static final String RELATIONSHIP_DATASET = "phr.caregiver.relationships";
 

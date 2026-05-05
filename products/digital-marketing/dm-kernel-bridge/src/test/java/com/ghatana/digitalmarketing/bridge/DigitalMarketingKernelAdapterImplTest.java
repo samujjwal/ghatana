@@ -391,7 +391,8 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
                 request.expiresAt(),
                 null,
                 null,
-                null
+                null,
+                request.context()
             ));
         }
 
@@ -417,12 +418,18 @@ class DigitalMarketingKernelAdapterImplTest extends EventloopTestBase {
                 null,
                 Instant.now(),
                 reviewerId,
-                notes
+                notes,
+                Map.of()
             ));
         }
 
         @Override
         public Promise<List<ApprovalRecord>> listPendingForSubject(String subjectId) {
+            return Promise.of(List.of());
+        }
+
+        @Override
+        public Promise<List<ApprovalRecord>> listPendingForWorkspace(String workspaceId) {
             return Promise.of(List.of());
         }
 

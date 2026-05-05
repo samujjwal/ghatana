@@ -55,7 +55,7 @@ class FinancePolicyCompatibilityTest {
     void setUp() {
         // Wire the generic resolver with the Finance store — no kernel changes required.
         FinanceBoundaryPolicyStore store = new FinanceBoundaryPolicyStore();
-        BoundaryPolicyLoadContext ctx = BoundaryPolicyLoadContext.of("finance-tenant", "region-global");
+        BoundaryPolicyLoadContext ctx = BoundaryPolicyLoadContext.of("default", "GLOBAL");
         resolver = new DefaultBoundaryPolicyResolver(store, ctx);
     }
 
@@ -65,7 +65,7 @@ class FinancePolicyCompatibilityTest {
     @DisplayName("Finance policy store loads non-empty well-formed rules into the resolver")
     void storeLoadsNonEmptyRules() {
         FinanceBoundaryPolicyStore store = new FinanceBoundaryPolicyStore();
-        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("t", "r"));
+        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("default", "GLOBAL"));
 
         assertThat(rules).isNotEmpty();
         for (BoundaryPolicyRule rule : rules) {
@@ -79,7 +79,7 @@ class FinancePolicyCompatibilityTest {
     @DisplayName("Finance rules have at least one ALLOW rule and exactly one default-deny rule")
     void rulesHaveAllowAndDefaultDeny() {
         FinanceBoundaryPolicyStore store = new FinanceBoundaryPolicyStore();
-        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("t", "r"));
+        List<BoundaryPolicyRule> rules = store.loadRules(BoundaryPolicyLoadContext.of("default", "GLOBAL"));
 
         long allowCount = rules.stream().filter(r -> r.getEffect() == Effect.ALLOW).count();
         assertThat(allowCount).as("at least one ALLOW rule must exist").isGreaterThanOrEqualTo(1);

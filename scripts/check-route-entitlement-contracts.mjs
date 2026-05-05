@@ -7,6 +7,24 @@ const repoRoot = process.cwd();
 
 const checks = [
   {
+    name: 'Shared product-shell entitlement contract',
+    file: 'platform/typescript/product-shell/src/types.ts',
+    required: [
+      'ProductRouteEntitlement',
+      'product',
+      'principalId',
+      'tenantId',
+      'role',
+      'persona',
+      'tier',
+      'routes',
+      'actions',
+      'cards',
+      'ProductEntitledAction',
+      'ProductEntitledCard',
+    ],
+  },
+  {
     name: 'PHR route manifest',
     file: 'products/phr/apps/web/src/routeManifest.tsx',
     required: [
@@ -14,6 +32,8 @@ const checks = [
       'minimumRole',
       'personas',
       'tiers',
+      'actions',
+      'cards',
       'emergencyAction',
       'phrRouteManifest',
     ],
@@ -32,8 +52,9 @@ const checks = [
       'personas',
       'tiers',
       'actions',
+      'cards',
       'dmosRouteManifest',
-      'featureFlagKey',
+      'capabilityKey',
     ],
   },
   {
@@ -51,6 +72,7 @@ const checks = [
       'personas',
       'tiers',
       'actions',
+      'cards',
       'flashitRouteManifest',
       'getFlashitNavigationRoutes',
     ],

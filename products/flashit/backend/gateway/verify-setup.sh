@@ -137,7 +137,7 @@ if [ -d "generated/prisma" ]; then
   fi
 else
   check_fail "generated/prisma/ folder not found"
-  check_info "Run: npm run db:generate"
+  check_info "Run: pnpm run db:generate"
 fi
 echo ""
 
@@ -161,17 +161,17 @@ if [ $FAIL -eq 0 ]; then
   echo "🎉 All checks passed!"
   echo ""
   echo "Ready to start with:"
-  echo "  npm run dev"
+  echo "  pnpm run dev"
   echo ""
   echo "Or generate first with:"
-  echo "  npm run db:generate"
+  echo "  pnpm run db:generate"
   exit 0
 else
   echo "⚠️  Some checks failed. See above for details."
   echo ""
   echo "Try:"
-  echo "  npm install                 # Install dependencies"
-  echo "  npm run db:generate         # Generate Prisma client"
-  echo "  npm run dev                 # Start development server"
+  echo "  pnpm --dir .. install --frozen-lockfile  # Install workspace dependencies"
+  echo "  pnpm run db:generate                  # Generate Prisma client"
+  echo "  pnpm run dev                          # Start development server"
   exit 1
 fi

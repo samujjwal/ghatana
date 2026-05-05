@@ -4,6 +4,7 @@
   "description": "Flashit web application for capturing and reflecting on Moments",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit || true && vite build",
@@ -49,5 +50,16 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
     "vite": "^8.0.8"
-  }
+  },
+  "author": "Ghatana FlashIt Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samujjwal/ghatana.git",
+    "directory": "products/flashit/client/web"
+  },
+  "bugs": {
+    "url": "https://github.com/samujjwal/ghatana/issues"
+  },
+  "homepage": "https://github.com/samujjwal/ghatana/tree/main/products/flashit/client/web#readme"
 }

@@ -20,9 +20,9 @@ jobs:
           node-version: '20'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10.33.0
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -38,11 +38,35 @@ jobs:
       - name: Check shared layout primitive composition
         run: node scripts/check-shared-layout-primitives.mjs
 
+      - name: Check shared UI state coverage
+        run: node scripts/check-shared-ui-state-coverage.mjs
+
+      - name: Check workspace source aliases
+        run: node scripts/check-workspace-source-aliases.mjs
+
+      - name: Check router strategy
+        run: node scripts/check-router-strategy.mjs
+
+      - name: Check product package metadata
+        run: node scripts/check-product-package-metadata.mjs
+
+      - name: Check FlashIt package-manager alignment
+        run: node scripts/check-flashit-package-manager.mjs
+
       - name: Check bridge compliance
         run: node scripts/check-bridge-compliance.mjs
 
       - name: Check product manifest contract
         run: node scripts/check-product-manifest-contracts.mjs
+
+      - name: Check product CI matrices
+        run: node scripts/check-product-ci-matrices.mjs
+
+      - name: Check product workspace registration
+        run: node scripts/check-product-workspace-registration.mjs
+
+      - name: Check security workflow coverage
+        run: node scripts/check-security-workflow-coverage.mjs
 
       - name: Check shared data-access contract
         run: node scripts/check-data-access-contract.mjs
@@ -61,6 +85,15 @@ jobs:
 
       - name: Check runtime template conformance
         run: node scripts/check-runtime-template-conformance.mjs
+
+      - name: Check audited UI workflows
+        run: node scripts/check-audited-ui-workflows.mjs
+
+      - name: Check audited E2E workflow
+        run: node scripts/check-audited-e2e-workflow.mjs
+
+      - name: Check audited performance workflows
+        run: node scripts/check-audited-performance-workflows.mjs
 
       - name: Check for banned libraries
         run: |

@@ -36,6 +36,16 @@ const checks = [
       'OPENAI_API_KEY=${OPENAI_API_KEY:-sk-placeholder}',
     ],
   },
+  {
+    file: 'products/flashit/backend/gateway/Dockerfile',
+    required: ['pnpm@10.33.0'],
+    forbidden: ['pnpm@8'],
+  },
+  {
+    file: 'products/flashit/client/web/Dockerfile',
+    required: ['pnpm@10.33.0'],
+    forbidden: ['pnpm@8'],
+  },
 ];
 
 const violations = [];

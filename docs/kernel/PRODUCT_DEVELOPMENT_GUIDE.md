@@ -9,12 +9,13 @@ Products integrate with the kernel through three mechanisms:
 
 1. **Domain Pack Model** — supply boundary policy rules and compliance rule packs.
 2. **Plugin Binding** — wire product-specific implementations to plugin SPIs.
-3. **Kernel Bridge** — use the `AbstractKernelBridge` extension pattern for adapter integration.
+3. **Kernel Bridge** — compose stable bridge ports and pass `BridgeContext` through adapter integration.
 
 Products must **never import kernel implementation classes** directly. Only kernel-owned
 public interfaces and ports are part of the stable API surface.
 
 The canonical ownership map lives in [KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md](./KERNEL_PRODUCT_RESPONSIBILITY_MATRIX.md).
+Progress against the original hardening backlog lives in [PRODUCT_KERNEL_AUDIT_PROGRESS.md](./PRODUCT_KERNEL_AUDIT_PROGRESS.md).
 
 ## 2. Domain Pack Model
 
@@ -136,35 +137,47 @@ Never hardcode product logic inside a platform plugin module.
 
 ## 4. Kernel Bridge Pattern
 
-Products connecting to the kernel use `AbstractKernelBridge` via their adapter implementations:
+Products connecting to the kernel compose stable bridge ports in their adapter implementations rather
+than extending kernel implementation classes:
 
 ```java
 public class ProductXKernelAdapterImpl
-        extends AbstractKernelBridge
         implements ProductXKernelAdapter {
 
     private final ProductXClient client;
+    private final BridgeAuthorizationService auth;
+    private final BridgeAuditEmitter auditor;
+    private final BridgeHealthIndicator health;
+    private final AtomicBoolean started = new AtomicBoolean(false);
 
     public ProductXKernelAdapterImpl(
             ProductXClient client,
             BridgeAuthorizationService auth,
             BridgeAuditEmitter auditor,
             BridgeHealthIndicator health) {
-        super("product-x-kernel-bridge", auth, auditor, health);
         this.client = Objects.requireNonNull(client);
-        markStarted();
+        this.auth = Objects.requireNonNull(auth);
+        this.auditor = Objects.requireNonNull(auditor);
+        this.health = Objects.requireNonNull(health);
+        this.started.set(true);
     }
 
     @Override
     public Promise<DataResult> fetchRecord(BridgeContext ctx, String recordId) {
         requireStarted();
-        return checkAuthorized(ctx, "record:" + recordId, "read")
+        return auth.isAuthorized(ctx, "record:" + recordId, "read")
             .then(allowed -> {
                 if (!allowed) return Promise.ofException(new SecurityException("Not authorized"));
-                return executeWithRetry(
-                    "fetchRecord", ctx, "record:" + recordId, "read",
-                    () -> client.fetch(recordId));
+                auditor.emit(BridgeAuditEvent.allowed("product-x-kernel-bridge", ctx, "record:" + recordId, "read"));
+                health.reportHealthy("product-x-kernel-bridge");
+                return client.fetch(recordId);
             });
+    }
+
+    private void requireStarted() {
+        if (!started.get()) {
+            throw new IllegalStateException("Bridge not started");
+        }
     }
 }
 ```
@@ -172,7 +185,8 @@ public class ProductXKernelAdapterImpl
 **Key points:**
 - Pass `BridgeContext` through every bridge operation.
 - Always call `requireStarted()` at the top of adapter methods.
-- Use `checkAuthorized()` before performing sensitive operations.
+- Check authorization through the stable `BridgeAuthorizationService` before performing sensitive operations.
+- Emit audit and health signals through stable bridge ports instead of depending on kernel implementation helpers.
 - Use `executeWithRetry()` for operations that may experience transient failures.
 - Use `redact()` before including metadata in log messages.
 
@@ -221,11 +235,93 @@ runtime composition. CI enforces this via `check:inmemory-policy-store-usage`.
 
 Every product UI surface must expose a canonical route manifest that is owned by
 the product but shaped by the Kernel shell contract. The manifest must declare
-`path`, `label`, `minimumRole`, `personas`, `tiers`, and route/action metadata
-that can be returned from backend entitlement APIs. Frontend navigation and
-direct URL access must be derived from that manifest rather than hardcoded link
-arrays in product-local shells. CI enforces this via
-`check:route-entitlement-contracts`.
+`path`, `label`, `minimumRole`, `personas`, `tiers`, `actions`, and `cards`
+metadata that can be returned from backend entitlement APIs. The canonical
+backend contract is `ProductRouteEntitlement` in `@ghatana/product-shell` and
+must carry `product`, `principalId`, `tenantId`, `role`, optional
+`persona`/`tier`, plus the allowed `routes`, `actions`, and `cards` payloads
+for the current principal. Frontend navigation and direct URL access must be
+derived from that manifest rather than hardcoded link arrays in product-local
+shells. CI enforces this via `check:route-entitlement-contracts`.
+
+### 5.5 Shared UI-State Coverage
+
+Every product web UI must cover the shared shell and state contract for:
+
+- visual or shell baseline,
+- loading state,
+- empty state,
+- error state, and
+- permission-denied or unauthorized state.
+
+Coverage may be a mix of E2E and component-level tests, but it must live inside
+the product UI package and stay discoverable through the canonical audited test
+paths. CI enforces this via `check:shared-ui-state-coverage`.
+
+### 5.6 Approved Router Strategy
+
+Audited product web UIs must use `react-router-dom` as the approved product-side
+router package and keep production source imports on `react-router-dom`. Shared
+Kernel or design-system packages may continue to depend on `react-router` where
+they expose router-agnostic primitives, but product UI packages must not
+declare a direct `react-router` dependency for web routing. CI enforces this via
+`check:router-strategy`.
+
+### 5.7 Audited UI Workflow Matrix
+
+Audited product UIs must stay registered in the canonical visual and
+accessibility workflows. PHR, Digital Marketing, and FlashIt must remain
+present in `.github/workflows/visual-regression.yml` and
+`.github/workflows/accessibility.yml`, and those workflows must use the
+repo-approved pnpm setup plus the product-owned `test:e2e:a11y` and `@visual`
+contracts. CI enforces this via `check:audited-ui-workflows`.
+
+### 5.8 Audited E2E Smoke Matrix
+
+Audited product UIs must also stay present in the shared Playwright smoke-test
+workflow at `.github/workflows/e2e-tests.yml`. PHR, Digital Marketing, and
+FlashIt must remain in that matrix with their canonical product labels and real
+workspace paths. The workflow must use the repo-approved pnpm setup and execute
+the product-owned `test:e2e` script contract instead of bypassing package
+scripts with direct Playwright invocations. CI enforces this via
+`check:audited-e2e-workflow`.
+
+### 5.9 Product CI Matrices
+
+Cross-product coverage and API contract workflows must continue to include the
+audited products declared in the ownership matrix. Finance, PHR, Digital
+Marketing, and FlashIt must remain present in
+`.github/workflows/product-coverage-gates.yml` and
+`.github/workflows/api-contract-conformance.yml` with product-correct task or
+command entries. CI enforces this via `check:product-ci-matrices`.
+
+### 5.10 Audited Performance Workflows
+
+Audited product web UIs must remain covered by the shared performance and
+lighthouse workflows. PHR, Digital Marketing, and FlashIt must stay present in
+`.github/workflows/performance-budgets.yml` where product-specific preview
+paths and budget entries are declared, and the shared lighthouse workflow must
+continue to watch product web surfaces using the repo-approved pnpm setup. CI
+enforces this via `check:audited-performance-workflows`.
+
+### 5.11 Product Workspace Registration
+
+Product UI and client packages must be registered in the root `pnpm-workspace`
+configuration, and backend-only products must be called out explicitly instead
+of being silently omitted. PHR, Digital Marketing, and FlashIt must retain
+their root workspace registrations, while Finance must remain explicitly marked
+as backend-only in both the workspace note and product-shape metadata until a
+real UI/client package exists. CI enforces this via
+`check:product-workspace-registration`.
+
+### 5.12 Security Workflow Coverage
+
+The shared security workflow must cover the audited Node-based product
+surfaces, not only legacy or unrelated workspaces. PHR web, DMOS UI, FlashIt
+web, and the FlashIt gateway must remain present in
+`.github/workflows/security-scan.yml`, and the workflow must use the
+repo-approved pnpm setup plus the cross-product secret/default-credential scan.
+CI enforces this via `check:security-workflow-coverage`.
 
 ---
 

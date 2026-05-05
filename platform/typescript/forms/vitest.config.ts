@@ -35,7 +35,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@ghatana/design-system': resolve(__dirname, '../design-system/src/index.ts'),
-      '@ghatana/platform-utils': resolve(__dirname, '../foundation/platform-utils/src/index.ts'),
+      '@ghatana/platform-utils': resolve(__dirname, '../platform-utils/src/index.ts'),
     },
   },
 });

@@ -36,10 +36,9 @@ console.log("⏳ Running Prisma generate...\n");
 const schemaPath = path.join(__dirname, "prisma", "schema.prisma");
 console.log(`📖 Using schema: ${schemaPath}\n`);
 
-const prismaProcess = spawn("npx", ["prisma", "generate", "--schema", schemaPath], {
+const prismaProcess = spawn("pnpm", ["exec", "prisma", "generate", "--schema", schemaPath], {
   cwd: __dirname,
   stdio: "inherit",
-  shell: true,
 });
 
 prismaProcess.on("close", (code) => {
@@ -52,7 +51,7 @@ prismaProcess.on("close", (code) => {
     const indexFile = path.join(generatedPath, "index.js");
     if (fs.existsSync(indexFile)) {
       console.log(`✅ Verified: ${indexFile} exists`);
-      console.log("\n🎉 Ready to start the server with: npm run dev");
+      console.log("\n🎉 Ready to start the server with: pnpm run dev");
     } else {
       console.error(`❌ ERROR: ${indexFile} not found!`);
       process.exit(1);
